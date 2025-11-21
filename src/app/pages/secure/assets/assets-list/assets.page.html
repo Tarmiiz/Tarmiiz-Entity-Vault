@@ -1,0 +1,57 @@
+<app-header title="Assets"></app-header>
+
+<ion-content [fullscreen]="true">
+
+    @if(assets) {
+        <div class="table-container">
+
+            <ion-searchbar animated="true" placeholder="Asset Name"></ion-searchbar>
+
+
+            <ion-grid>
+                <ion-row class="grid-header">
+                    <ion-col size="1">#</ion-col>
+                    <ion-col size="1" class="text-left">Symbol</ion-col>
+                    <ion-col size="2" class="text-left">Name</ion-col>
+                    <ion-col size="2" class="text-left">Type</ion-col>
+                    <ion-col size="2" class="text-left">Supply</ion-col>
+                    <ion-col size="2" class="text-left">Circulating</ion-col>
+                    <ion-col size="2" class="text-right">State</ion-col>
+                </ion-row>
+                @if(loadingAssets) {
+                    @for(er of emptyRows; track er) {
+                        <ion-row class="alternate-row">
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 40px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 180px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                        </ion-row>
+                    }
+                }
+                @else {
+                    <!-- no data -->
+                    @if(assets.length == 0) {
+                        <ion-row class="alternate-row no-data"><ion-col>No data</ion-col></ion-row>
+                    }
+                    <!-- list data -->
+                    @for(asset of assets; track asset.address; let i = $index;) {
+                        <ion-row class="alternate-row" (click)="viewAssetDetails(asset)">
+                            <ion-col size="1">{{ i + 1 }}</ion-col>
+                            <ion-col size="1" class="text-left">{{ asset.symbol }}</ion-col>
+                            <ion-col size="2" class="text-left">{{ asset.name }}</ion-col>
+                            <ion-col size="2" class="text-left">{{ asset.assetTypeName }}</ion-col>
+                            <ion-col size="2" class="text-left">{{ asset.totalSupply | number: '1.0-0' }}</ion-col>
+                            <ion-col size="2" class="text-left">{{ asset.circulating | number: '1.0-0' }}</ion-col>
+                            <ion-col size="2" class="text-right">{{ asset.stateName }}</ion-col>
+                        </ion-row>
+                    }
+                }
+    
+            </ion-grid>
+        </div>
+    }
+
+</ion-content>

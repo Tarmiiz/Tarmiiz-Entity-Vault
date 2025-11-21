@@ -1,0 +1,7 @@
+{
+  "name": "Regulator",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

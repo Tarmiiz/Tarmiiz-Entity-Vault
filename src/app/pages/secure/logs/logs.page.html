@@ -1,0 +1,55 @@
+<app-header title="Logs"></app-header>
+
+<ion-content [fullscreen]="true">
+
+    <div>
+        <ion-toolbar class="block-watcher-bar">
+            <ion-row>
+                <ion-col>Current Block:</ion-col>
+                <ion-col>{{ currentBlock | number: '1.0-0' }}</ion-col>
+                <ion-col>Trxs:</ion-col>
+                <ion-col>{{ currentTrxs | number: '1.0-0' }}</ion-col>
+                <ion-col>Created On:</ion-col>
+                <ion-col>{{ currentBlockTimestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</ion-col>
+            </ion-row>
+        </ion-toolbar>
+    </div>
+
+    @if(loginEvents) {
+        <div class="table-container">
+            <ion-grid>
+                <ion-row class="grid-header">
+                    <ion-col size="1" class="text-left">Block</ion-col>
+                    <ion-col size="2" class="text-left">Time</ion-col>
+                    <ion-col size="2" class="text-left">Event</ion-col>
+                    <ion-col size="2" class="text-left">Action</ion-col>
+                    <ion-col size="5" class="text-left">Address</ion-col>
+                </ion-row>
+                @if(loadingEvents) {
+                    @for(er of emptyRows; track er) {
+                        <ion-row class="alternate-row">
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 40px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 180px"></ion-skeleton-text></ion-col>
+                            <ion-col><ion-skeleton-text [animated]="true" style="width: 80px"></ion-skeleton-text></ion-col>
+                        </ion-row>
+                    }
+                }
+                @else {
+                    @for(event of loginEvents; track event.blockNumber; let i = $index;) {
+                        <ion-row class="alternate-row">
+                            <ion-col size="1" class="text-left">{{ event.blockNumber | number: '1.0-0' }}</ion-col>
+                            <ion-col size="2" class="text-left">{{ event.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</ion-col>
+                            <ion-col size="2" class="text-left">{{ event.eventType }}</ion-col>
+                            <ion-col size="2" class="text-left">{{ event.action }}</ion-col>
+                            <ion-col size="5" class="text-left">{{ event.account }}</ion-col>
+                        </ion-row>
+                    }
+                }
+    
+            </ion-grid>
+        </div>
+    }
+
+</ion-content>

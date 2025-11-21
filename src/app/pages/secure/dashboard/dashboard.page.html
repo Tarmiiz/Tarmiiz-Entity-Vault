@@ -1,0 +1,25 @@
+<app-header title="Home"></app-header>
+
+<ion-content [fullscreen]="true">
+
+    @if(regulatorInfo) {
+        <div>
+            <ion-title class="page-title">Welcome: {{ regulatorInfo.name }}</ion-title>
+        </div>
+    }
+
+    <div>
+        <ion-toolbar class="block-watcher-bar">
+            <ion-row>
+                <ion-col>Current Block:</ion-col>
+                <ion-col>{{ currentBlock | number: '1.0-0' }}</ion-col>
+                <ion-col>Trxs:</ion-col>
+                <ion-col>{{ currentTrxs | number: '1.0-0' }}</ion-col>
+                <ion-col>Created On:</ion-col>
+                <ion-col>{{ currentBlockTimestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</ion-col>
+            </ion-row>
+        </ion-toolbar>
+    </div>
+
+</ion-content>
+

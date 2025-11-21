@@ -1,0 +1,437 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.always.css"; */
+/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import '@ionic/angular/css/palettes/dark.system.css';
+
+/*** Tailwind CSS ***/
+@import "tailwindcss";
+
+
+/* Global font */
+:root {
+  --ion-font-family: 'Montserrat', sans-serif;
+}
+
+ion-content {
+  --background: #d1d1d1;
+  --color: rgb(73, 72, 72);
+}
+
+.page-title {
+    // font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.header-md {
+    box-shadow: none;
+    --box-shadow: none;
+}
+
+ion-header {
+
+    .header-md {
+        box-shadow: none;
+        --box-shadow: none;
+    }    
+    // background: #141076;
+    // background: #c0c0c0;
+    // background: #29267e;
+    
+    ion-toolbar {
+      --background: #24488e;
+      color: #d2d2d7;
+      
+      ion-title {
+        font-weight: bold;
+      }
+
+      ion-button {
+          --color: #d2d2d7
+      }
+
+    }
+
+
+}
+
+.balance-container {
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  padding: 8px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  
+  .balance-card {
+    width: 90%;
+    padding: 16px;
+    border-radius: 1rem;
+    margin: 8px;
+    margin-left: auto;
+    margin-right: auto;
+    background: #141838;
+    box-shadow: 7px 8px 8px rgb(122 118 106);
+    text-align: center;
+  
+    h2 {
+      padding: 0;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      font-size: 2rem;
+      // font-weight: 600;    
+    }
+  
+    h3 {
+      padding: 0;
+      // font-weight: 400;
+      margin-top: 5px;
+      // margin-bottom: 30px;
+      font-size: 0.8rem;
+    }
+  
+    ion-label {
+      color: #fff;
+      // font-weight: bold;
+      font-size: 1rem;
+    }
+  
+    .currecny {
+      color: #fff;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+.table-container {
+  padding: 8px;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  
+  h2 {
+    color: #332eb1;
+    font-weight: 600;
+    padding-left: 20px;
+    text-align: center;
+    margin-top: 0;
+  }
+
+  h3 {
+    color: #24488e;
+    font-size: 0.9rem !important;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 10px !important;
+  }
+
+  ion-searchbar {
+    --background: #aaaaaf;
+    --border-radius: 20px;
+    --color: black;
+    --icon-color: black;
+  }
+
+  ion-grid {
+    font-size: 0.9rem;
+    font-family: system-ui;
+    padding: 0;
+    box-shadow: 7px 8px 8px rgb(122 118 106);
+
+    .grid-header {
+      background: #434148;
+      color: #fff;
+      font-weight: bold;
+      padding: 5px;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .grid-footer {
+      background: #434148;
+      color: #fff;
+      // font-weight: bold;
+      border-radius: 0 0 10px 10px;
+      // height: 30px !important;
+      text-align: right;
+      padding-right: 30px;
+    }
+
+    ion-row:not(.grid-header) {
+      height: 30px;
+      color: black;
+      transition: background-color 0.2s ease;
+      cursor: pointer;
+      align-items: center;
+      border-bottom-width: 1px;
+      border-bottom-style: solid;
+      border-bottom-color: #d1d1d1;
+      padding: 5px;
+
+      ion-skeleton-text {
+        background: #8e8e8e;
+        border-radius: 20px;
+      }
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important; // Highlight color on hover
+      }
+    }
+
+    .alternate-row {
+      background-color: #aaaaaf;
+    }
+
+    .no-data {
+      text-align: center;
+      font-size: 0.8rem;
+    }
+  }
+
+}
+
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  flex-flow: column;
+
+  .form-logo {
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    text-align: center;
+    font-size: 1.2rem;
+  }
+
+  .form-card {
+    background:#11347a;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 7px 8px 8px rgb(122 118 106);
+    width: 100%;
+    max-width: 400px;
+    margin: 0 1rem;
+  }
+
+  .form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  
+    h1 {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--ion-color-primary);
+    }
+  
+    p {
+      font-size: 1rem;
+      color: var(--ion-color-medium);
+    }
+  }
+
+  .form-inputs {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    background: transparent;
+  
+    .form-first {
+      --background: #1a2d52;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .form-input {
+      --background: #1a2d52;
+    }    
+  
+    .form-last {
+      --background: #1a2d52;
+      border-radius: 0 0 20px 20px;
+    }
+  }
+  
+  .form-button {
+    margin-top: 1.5rem;
+  }
+  
+  .form-links {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 1rem;
+  
+    a {
+      font-size: 0.9rem;
+      color: #fff;
+      text-decoration: none;
+    }
+  }
+
+  .form-links-center {
+    text-align: center;
+    width: 100%;
+    margin-top: 1rem;
+
+    a {
+      font-size: 0.9rem;
+      color: #fff;
+      text-decoration: none;
+    }
+  }  
+  
+  .form-steps {
+    font-size: 1rem;
+    color: var(--ion-color-medium);
+    text-align: center;
+    margin: 0;
+  }  
+
+}
+
+.app-footer {
+    ion-tab-bar {
+      --background: #141076;
+      // --background: #332eb1;
+      --border: none;
+      border-radius: 30px 30px 0 0;
+      height: 50px;    
+    }
+}
+
+ion-segment {
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  --background: #aaaaaf;
+  border-radius: 20px 20px 0 0;
+
+  ion-segment-button {
+    color: #2e2d2d;
+    font-size: 70%;
+  }
+}
+
+ion-segment-view {
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  // background: #bdbdbf;
+
+  .table-container {
+    margin-top: 0px;
+  }
+
+}
+
+.block-watcher-bar {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    padding: 0 10px;
+    border-radius: 20px;
+    --background: #434148;
+    font-size: 0.8rem;  
+}
+
+.info-card {
+  --background: #c0c0c7;
+  width: 100%;
+  min-height: 500px;
+
+  ion-list {
+    background: transparent;
+    border-color: transparent;
+    padding: 0;
+  }
+
+  ion-item {
+    --background: transparent;
+    --border-color: transparent;
+    font-size: 0.8rem !important;
+  }
+
+  // ion-label {
+  //   --color: #525252 !important;
+  // }
+
+  .item-title {
+    background: #aaaaaf;
+    border-radius: 5px;
+    padding: 5px;
+    margin-right: 5px;
+    // font-weight: 600;
+    color: #525252 !important;
+  }
+
+  .item-data {
+    padding: 5px;
+    margin-right: 5px;
+    color: #000 !important;
+    border-bottom: 1px solid #949497;
+  }  
+
+  ion-input {
+    color: black;
+  }
+
+}
+
+@media (min-width: 768px) {
+  .balance-container {
+    flex-direction: row;
+
+    .balance-card {
+      width: 48%;
+    }
+  }
+}
+
+@media (max-width: 500px) {
+  .table-container {
+    ion-grid {
+      ion-row:not(.grid-header) {
+        height: 45px;
+        font-size: 0.8rem;
+      }
+    }
+  }
+}

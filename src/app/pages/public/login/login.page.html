@@ -1,0 +1,43 @@
+<ion-content>
+  <div class="form-container">
+    <div class="form-logo">
+      <img src="assets/images/tarmiizRegulatorWhite.svg" alt="">
+    </div>
+    <div class="form-card">
+      <div class="form-header">
+        <h1>Welcome Back!</h1>
+        <p>Please sign in to your account</p>
+      </div>
+
+      <form [formGroup]="formLogin">
+
+        <ion-list class="form-inputs">
+
+          <ion-item lines="full" class="form-first">
+            <ion-input formControlName="email" type="email" labelPlacement="floating" label="Email" placeholder="Enter your email" required></ion-input>
+          </ion-item>
+  
+          <ion-item lines="full" class="form-input">
+            <ion-input formControlName="password" type="password" labelPlacement="floating" label="Password" placeholder="Enter your password" required></ion-input>
+          </ion-item>
+  
+          <ion-item lines="full" class="form-last">
+            <ion-input formControlName="contract" type="text" labelPlacement="floating" label="Contract" placeholder="Enter your contract address" required></ion-input>
+          </ion-item>
+
+        </ion-list>
+
+        <ion-button expand="block" class="form-button" (click)="login()">Login</ion-button>
+
+      </form>
+
+
+      <div class="form-links-center">
+        <a routerLink="/forgot-password">Forgot Password?</a>
+      </div>
+
+    </div>
+
+  </div>
+
+</ion-content>

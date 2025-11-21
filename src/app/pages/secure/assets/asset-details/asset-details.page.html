@@ -1,0 +1,185 @@
+@if(asset) {
+  <app-header title="Asset Details: {{ asset!.name }} ({{ asset!.symbol }})"></app-header>
+}
+@else {
+  <app-header title="Asset Details"></app-header>
+}
+
+
+<ion-content [fullscreen]="true">
+  
+  <!-- <ion-breadcrumbs>
+    <ion-breadcrumb routerLink="/authorized/assets">Assets</ion-breadcrumb>
+    <ion-breadcrumb>{{ asset.name }}</ion-breadcrumb>
+  </ion-breadcrumbs> -->
+
+  <ion-segment value="details" (ionChange)="onSegmentChange($event)">
+    <ion-segment-button value="details" content-id="details"><ion-label>Details</ion-label></ion-segment-button>
+    <ion-segment-button value="prices" content-id="prices"><ion-label>Price</ion-label></ion-segment-button>
+    <ion-segment-button value="supply" content-id="supply"><ion-label>Supply</ion-label></ion-segment-button>
+    <ion-segment-button value="holders" content-id="holders"><ion-label>Holders</ion-label></ion-segment-button>
+    <ion-segment-button value="transactions" content-id="transactions"><ion-label>Transactions</ion-label></ion-segment-button>
+    <ion-segment-button value="documents" content-id="documents"><ion-label>Documents</ion-label></ion-segment-button>
+  </ion-segment>
+
+  <ion-segment-view>
+
+    <!-- details info -->
+    <ion-segment-content id="details">
+      <ion-card class="info-card">
+        @if(asset) {
+          <ion-card-content>
+            <ion-list>
+              <ion-item>
+                <ion-col><ion-label class="item-title">Name:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.name }}</ion-label></ion-col>
+                <ion-col><ion-label class="item-title">Symbol:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.symbol }}</ion-label></ion-col>
+              </ion-item>
+              <ion-item>
+                <ion-col><ion-label class="item-title">Type:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.assetTypeName }}</ion-label></ion-col>
+                <ion-col><ion-label class="item-title">Contract:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.tokenTypeName }}</ion-label></ion-col>
+              </ion-item>
+              <!-- <ion-item>
+                <ion-col><ion-label class="item-title">Supply:</ion-label></ion-col>
+                <ion-col><ion-input [value]="asset.totalSupply | number: '1.0-0'"></ion-input></ion-col>
+                <ion-col><ion-label class="item-title">Circulating:</ion-label></ion-col>
+                <ion-col><ion-input [value]="asset.circulating | number: '1.0-0'"></ion-input></ion-col>
+              </ion-item> -->
+              <ion-item>
+                <ion-col size="3"><ion-label class="item-title">Created:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.createdOn * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</ion-label></ion-col>
+              </ion-item>
+              <ion-item>
+                <ion-col size="3"><ion-label class="item-title">Issuer:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.issuer }}</ion-label></ion-col>
+              </ion-item>
+              <ion-item>
+                <ion-col size="3"><ion-label class="item-title">Manager:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.manager }}</ion-label></ion-col>
+              </ion-item>
+              <ion-item>
+                <ion-col size="3"><ion-label class="item-title">Address:</ion-label></ion-col>
+                <ion-col><ion-label class="item-data">{{ asset.address }}</ion-label></ion-col>
+              </ion-item>
+              <ion-item>
+                <ion-col size="3"><ion-label class="item-title">State:</ion-label></ion-col>
+                <ion-col size="3"><ion-label class="item-data">{{ asset.stateName }}</ion-label></ion-col>
+              </ion-item>
+              <ion-item>
+                <ion-col size="3"><ion-label class="item-title">Suspended:</ion-label></ion-col>
+                <ion-col size="3"><ion-label class="item-data">{{ isSuspended}}</ion-label></ion-col>
+                <ion-col size="6"><ion-button (click)="suspend()" fill="outline">Change Suspended State</ion-button></ion-col>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        }
+      </ion-card>
+    </ion-segment-content>
+
+    <!-- prices -->
+    <ion-segment-content id="prices">
+      <ion-card class="info-card">
+        <ion-card-content>
+
+          @if(priceCurrent){
+            <div class="table-container" style="width: 70%;">
+              <h3>Current Price</h3>
+              <ion-grid>
+                  <ion-row class="grid-header">
+                      <ion-col size="4" class="text-center">Time</ion-col>
+                      <ion-col size="4" class="text-center">Bid</ion-col>
+                      <ion-col size="4" class="text-center">Ask</ion-col>
+                  </ion-row>
+                  <ion-row class="alternate-row">
+                    <ion-col size="4" class="text-center">{{ priceCurrent.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</ion-col>
+                    <ion-col size="4" class="text-center">{{ priceCurrent.bid | number: '1.6-6' }}</ion-col>
+                    <ion-col size="4" class="text-center">{{ priceCurrent.ask | number: '1.6-6' }}</ion-col>
+                  </ion-row>
+              </ion-grid>
+            </div>
+          }
+    
+          @if(pricesHistory && pricesHistory.length > 0){
+            <div class="table-container">
+              <h3>Price Change History</h3>
+              <ion-grid>
+                  <ion-row class="grid-header">
+                      <ion-col size="4" class="text-center">Time</ion-col>
+                      <ion-col size="4" class="text-center">Bid</ion-col>
+                      <ion-col size="4" class="text-center">Ask</ion-col>
+                  </ion-row>
+                  @for(price of pricesHistory; track price.timestamp; let i = $index;) {
+                    <ion-row class="alternate-row">
+                      <ion-col size="4" class="text-center">{{ price.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</ion-col>
+                      <ion-col size="4" class="text-center">{{ price.bid | number: '1.6-6' }}</ion-col>
+                      <ion-col size="4" class="text-center">{{ price.ask | number: '1.6-6' }}</ion-col>
+                    </ion-row>
+                  }
+              </ion-grid>
+            </div>
+          }
+
+        </ion-card-content>
+      </ion-card>
+    </ion-segment-content>
+
+    <!-- supply -->
+    <ion-segment-content id="supply">
+      <ion-card class="info-card">
+        <ion-card-content>
+
+          <!-- current supply -->
+          <div class="table-container" style="width: 70%;">
+            <h3>Current Supply</h3>
+            <ion-grid>
+                <ion-row class="grid-header">
+                    <ion-col size="4" class="text-center">Supply</ion-col>
+                    <ion-col size="4" class="text-center">Circulating</ion-col>
+                    <ion-col size="4" class="text-center">%</ion-col>
+                </ion-row>
+                @if(asset) {
+                  <ion-row class="alternate-row">
+                    <ion-col size="4" class="text-center">{{ asset.totalSupply | number: '1.0-0' }}</ion-col>
+                    <ion-col size="4" class="text-center">{{ asset.circulating | number: '1.0-0' }}</ion-col>
+                    <ion-col size="4" class="text-center">{{ asset.circulating / asset.totalSupply * 100 | number: '1.0-0' }}</ion-col>
+                  </ion-row>
+                }
+            </ion-grid>
+          </div>
+
+
+        </ion-card-content>
+      </ion-card>
+
+    </ion-segment-content>
+
+    <!-- holders -->
+    <ion-segment-content id="holders">
+      <ion-card class="info-card">
+        <ion-card-content>
+        </ion-card-content>
+      </ion-card>
+    </ion-segment-content>
+
+    <!-- transactions -->
+    <ion-segment-content id="transactions">
+      <ion-card class="info-card">
+        <ion-card-content>
+        </ion-card-content>
+      </ion-card>
+    </ion-segment-content>
+
+    <!-- documents -->
+    <ion-segment-content id="documents">
+      <ion-card class="info-card">
+        <ion-card-content>
+        </ion-card-content>
+      </ion-card>
+    </ion-segment-content>
+
+  </ion-segment-view>
+
+</ion-content>
