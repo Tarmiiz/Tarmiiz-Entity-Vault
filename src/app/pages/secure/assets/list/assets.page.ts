@@ -97,5 +97,6 @@ export class AssetsPage implements OnInit {
     // this.router.navigate(['/authorized/asset-details'], { state: { address: asset.address } });
     this.router.navigate(['/authorized/asset-details/' + asset.address]);
   }
+  
 }
 

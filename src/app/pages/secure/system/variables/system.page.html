@@ -1,0 +1,114 @@
+<app-header title="Variables"></app-header>
+
+<ion-content [fullscreen]="true">
+
+  <main class="flex-1 overflow-y-auto p-6">
+    <div class="container mx-auto">
+      <!-- Tab Navigation -->
+      <div class="bg-white rounded-t-lg shadow-md p-2">
+        <div class="flex border-b border-gray-200">
+          <button (click)="setTab('countries')"
+                  class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+                  [class.text-blue-600]="activeTab() === 'countries'"
+                  [class.border-b-2]="activeTab() === 'countries'"
+                  [class.border-blue-600]="activeTab() === 'countries'">
+            COUNTRIES LIST
+          </button>
+          <button (click)="setTab('variables')"
+                  class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+                  [class.text-blue-600]="activeTab() === 'variables'"
+                  [class.border-b-2]="activeTab() === 'variables'"
+                  [class.border-blue-600]="activeTab() === 'variables'">
+            SYSTEM VARIABLES
+          </button>
+        </div>
+      </div>
+      
+      <!-- Tab Content -->
+      <div class="bg-white rounded-b-lg shadow-md p-6">
+        @if (activeTab() === 'countries') {
+          <!-- Countries Content -->
+          <div>
+            <div class="mb-4">
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <input type="text" placeholder="Country Name" class="w-full bg-gray-100 border border-gray-300 text-gray-800 placeholder-gray-500 rounded-full py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" [value]="countriesSearchTerm()" (input)="onCountriesSearch($event)">
+              </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-4 py-3">Code</th>
+                    <th scope="col" class="px-4 py-3">Name</th>
+                    <th scope="col" class="px-4 py-3"></th>
+                    <th scope="col" class="px-4 py-3"></th>
+                    <th scope="col" class="px-4 py-3"></th>
+                    <th scope="col" class="px-4 py-3">Currency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (country of filteredCountries(); track country.countryCode; let isEven = $even;) {
+                    <tr class="border-b" [class.bg-gray-100]="isEven" [class.bg-white]="!isEven">
+                      <td class="px-4 py-3 font-medium">{{ country.countryCode }}</td>
+                      <td class="px-4 py-3 font-medium">{{ country.nameShort }}</td>
+                      <td class="px-4 py-3">{{ country.nameFull }}</td>
+                      <td class="px-4 py-3">{{ country.alpha2Code }}</td>
+                      <td class="px-4 py-3">{{ country.alpha3Code }}</td>
+                      <td class="px-4 py-3">{{ country.currencyName }} ({{ country.currencyCode }})</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            
+          </div>
+        } @else {
+          <!-- System Variables Content -->
+          <div>
+            <div class="mb-4">
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <input type="text" placeholder="Category Name" class="w-full bg-gray-100 border border-gray-300 text-gray-800 placeholder-gray-500 rounded-full py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" [value]="variablesSearchTerm()" (input)="onVariablesSearch($event)">
+              </div>
+            </div>
+             <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-4 py-3 w-1/2">Category</th>
+                    <th scope="col" class="px-4 py-3">Id</th>
+                    <th scope="col" class="px-4 py-3">Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (variable of filteredVariables(); track variable.variableId + variable.category; let i = $index; let isEven = $even) {
+                    @let prevCategory = i > 0 ? filteredVariables()[i-1].category : null;
+                    <tr class="border-b" [class.bg-gray-100]="isEven" [class.bg-white]="!isEven">
+                      @if (variable.category !== prevCategory) {
+                        <td class="px-4 py-3 font-semibold">{{ variable.category }}</td>
+                      } @else {
+                        <td></td>
+                      }
+                      <td class="px-4 py-3">{{ variable.variableId }}</td>
+                      <td class="px-4 py-3">{{ variable.name }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </main>
+
+
+
+
+</ion-content>

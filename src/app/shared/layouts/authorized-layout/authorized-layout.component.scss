@@ -1,12 +1,16 @@
+ion-content {
+    padding: 0 !important;
+}
+
 ion-split-pane {
-    --side-min-width: 200px !important;
+    --side-min-width: 250px !important;
 }
 
 ion-menu {
-    width: 200px;
+    width: 250px;
 
     ion-toolbar {
-        width: 200px;
+        width: 250px;
 
         img {
             width: 170px;
@@ -34,7 +38,8 @@ ion-menu {
     }
 
     ion-content {
-        --background: #8ba5d9;
+        // --background: #2c3648;
+        --background:#202a3b;
     }
 }
 
@@ -56,12 +61,24 @@ ion-list {
     background: transparent;
     
     ion-item {
-        color: black;
+        color: white;
         --background : transparent;
     }
 
     ion-icon {
         margin-right: 10px;
-        color: black;
+        color: white;
+    }
+}
+
+ion-accordion {
+    background: transparent;
+}
+
+.sub-item {
+    --background: #3c495e !important;
+
+    ion-icon {
+        padding-left: 20px;
     }
 }

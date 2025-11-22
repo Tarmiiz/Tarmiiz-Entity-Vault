@@ -42,7 +42,8 @@
 
 /* Global font */
 :root {
-  --ion-font-family: 'Montserrat', sans-serif;
+  --ion-font-family: 'Inter', sans-serif;
+  // --ion-font-family: 'Montserrat', sans-serif;
 }
 
 ion-content {
@@ -365,7 +366,9 @@ ion-segment-view {
     width: 90%;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px !important;
+
     padding: 0 10px;
     border-radius: 20px;
     --background: #434148;
@@ -413,6 +416,13 @@ ion-segment-view {
     color: black;
   }
 
+}
+
+.badges {
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px;
 }
 
 @media (min-width: 768px) {

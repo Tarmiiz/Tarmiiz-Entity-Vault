@@ -8,6 +8,8 @@ import * as circomlibjs from 'circomlibjs';
 import { environment } from '../../../environments/environment';
 
 import GlobalVariablesAbi from '../../../assets/ABIs/GVProxy.json';
+import cKYCProxyAbi from '../../../assets/ABIs/cKYCProxy.json';
+import cKYCOperatorTemplateAbi from '../../../assets/ABIs/cKYCOperatorTemplate.json';
 import RegulatorTemplateAbi from '../../../assets/ABIs/GRRRegulatorTemplate.json';
 import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
@@ -59,6 +61,10 @@ export class RpcService {
   gvAddress = environment.GVProxyContract
   gvContract: any;
   
+  ckycProxyAddress = environment.cKYCProxyContract
+  ckycContract: any;
+  ckycOperatorContract: any;
+
   regulatorContractAddress = '';
   regulatorContract: any;
 
@@ -220,6 +226,112 @@ export class RpcService {
     }
     catch (error: any) {
       return { result: null, error: 'Error fetching assets list'};
+    }
+  }
+
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // cKYC Contract
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  async connectCKYCContract() {
+    try {
+      this.ckycContract = new ethers.Contract(this.ckycProxyAddress, cKYCProxyAbi, this.signer);
+    }
+    catch (error: any) {
+    }
+  }
+
+  async cKYCOperatorRegister(
+    regulatorAddress: string, 
+    apiAddress: string,
+    name: string, symbol: string,
+    email: string, password: string, 
+    countryCode: number,
+    userData: string
+  ) {
+
+    try {
+      
+      // Initialize ParseProofUtils
+      await ParseProofUtils.init();
+  
+      // Convert to BigInts
+      const emailBigInt = ParseProofUtils.stringToBigInt(email);
+      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
+      const globalSaltBigInt = BigInt(this.globalSalt);
+  
+      // Generate hashes for contract
+      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
+      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);        
+  
+      // create & encrypt user data
+      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(userData));
+      const encryptedUserData = userData;
+
+      // create new wallet & connect to contract
+      await this.createWallet();
+      await this.connectCKYCContract();
+  
+      // register
+      const tx = await this.ckycContract.operatorAdd(regulatorAddress, apiAddress, emailHashHex, secretHex, name, symbol,encryptedUserData, countryCode);
+      const receipt = await tx.wait();
+  
+      // listen to contract event
+      const operatorEvent = receipt.logs?.map((log: any) => this.ckycContract.interface.parseLog(log))?.find((e: any) => e?.name === 'OperatorEvent');
+      if (operatorEvent) {
+        const { operatorAddress, action } = operatorEvent.args;
+        console.log(operatorAddress, action);
+        return {
+          success: true,
+          contract: operatorAddress,
+        };
+      } else {
+        console.log('No OperatorEvent event found in receipt');
+        return { success: false };
+      }      
+  
+    }
+    catch (error) {
+      console.error(error);
+      return {
+        success: false,
+        contract: ''
+      };
+    }
+  }
+
+  async cKYCOperatorsList() {
+    try {
+      const iface = new ethers.Interface([
+        "function operatorsListByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address operator, string name, string symbol, string data, uint256 countryCode, bool state)[] operators)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('operatorsListByCountry', [818, 1, 100]);
+      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
+      
+      if (result.success && result.data !== null) {
+        // console.log('result data', result.data);
+        const decodedResult = iface.decodeFunctionResult('operatorsListByCountry', result.data);
+        // console.log('decodedResult', decodedResult);
+        
+        // decodedResult[0] is the count, decodedResult[1] is the operators array
+        const count = Number(decodedResult[0]);
+        const operators = decodedResult[1].map((op: any) => ({
+          operator: op.operator,
+          name: op.name,
+          symbol: op.symbol,
+          data: op.data,
+          countryCode: Number(op.countryCode),
+          state: op.state
+        }));
+        
+        return { result: { count, operators }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching operators list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching operators list: ' + error.message};
     }
   }
 

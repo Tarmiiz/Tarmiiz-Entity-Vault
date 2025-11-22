@@ -9,9 +9,9 @@ import {
   IonToolbar
 } from '@ionic/angular/standalone';
 
-import { HeaderComponent } from "../../../shared/components/header/header.component";
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../shared/services/rpc.service';
+import { RpcService } from '../../../../shared/services/rpc.service';
 
 @Component({
   selector: 'app-logs',

@@ -119,3 +119,14 @@ export class AssetPrice {
     public timestamp: number
   ) {}
 }
+
+export class cKYCOperator {
+  constructor (
+    public operator: string,
+    public name: string,
+    public symbol: string,
+    public data: string,
+    public countryCode: number,
+    public state: boolean
+  ) {}
+}

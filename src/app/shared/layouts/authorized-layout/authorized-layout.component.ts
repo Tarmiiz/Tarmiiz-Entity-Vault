@@ -2,12 +2,11 @@ import { Component } from '@angular/core';
 import { 
   IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar, 
   IonTitle, IonContent, IonList, IonItem, IonIcon, IonLabel, 
-  IonButtons, IonMenuButton, MenuController 
-} from '@ionic/angular/standalone';
+  IonButtons, IonMenuButton, MenuController, IonAccordionGroup, IonAccordion } from '@ionic/angular/standalone';
 import { RouterModule } from '@angular/router';
 
 import { addIcons } from 'ionicons';
-import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline, cogOutline, personCircleOutline, globeOutline } from 'ionicons/icons';
+import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline, cogOutline, personCircleOutline, globeOutline, idCardOutline, fingerPrintOutline, bookOutline } from 'ionicons/icons';
 
 import { AuthService } from '../../services/auth.service';
 import { RpcService } from '../../services/rpc.service';
@@ -19,6 +18,7 @@ import { Regulator } from '../../models/data.model';
   styleUrls: ['./authorized-layout.component.scss'],
   standalone: true,
   imports: [
+    IonAccordion, IonAccordionGroup, 
     IonRouterOutlet, 
     IonSplitPane, 
     IonMenu, 
@@ -45,7 +45,7 @@ export class AuthorizedLayoutComponent {
     private rpcService: RpcService,
     
   ) {
-    addIcons({ homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline, cogOutline, personCircleOutline, globeOutline });
+    addIcons({homeOutline,globeOutline,layersOutline,peopleOutline,personCircleOutline,idCardOutline,fingerPrintOutline,cogOutline,searchOutline,bookOutline,logOutOutline});
     if(this.rpcService.regulatorInfo) this.regulatorInfo = this.rpcService.regulatorInfo;
   }
 

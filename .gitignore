@@ -22,6 +22,7 @@ log.txt
 /www
 /platforms
 /plugins
+/.vscode
 
 # Compiled output
 /dist

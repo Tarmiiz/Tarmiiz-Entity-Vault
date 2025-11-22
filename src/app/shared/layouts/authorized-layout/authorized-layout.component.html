@@ -16,7 +16,7 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding">
+    <ion-content>
       <ion-list lines="none">
         <ion-item button routerLink="/authorized/dashboard" routerDirection="root" (click)="closeMenuOnMobile()">
           <ion-icon name="home-outline" slot="start"></ion-icon>
@@ -26,30 +26,58 @@
           <ion-icon name="globe-outline" slot="start"></ion-icon>
           <ion-label>Issuers</ion-label>
         </ion-item>
-        <ion-item button routerLink="/authorized/assets" routerDirection="root" (click)="closeMenuOnMobile()">
+        <ion-item button routerLink="/authorized/assets/list" routerDirection="root" (click)="closeMenuOnMobile()">
           <ion-icon name="layers-outline" slot="start"></ion-icon>
           <ion-label>Assets</ion-label>
         </ion-item>
-        <ion-item button routerLink="/authorized/users" routerDirection="root" (click)="closeMenuOnMobile()">
+        <ion-item button routerLink="/authorized/users/list" routerDirection="root" (click)="closeMenuOnMobile()">
           <ion-icon name="people-outline" slot="start"></ion-icon>
           <ion-label>Users</ion-label>
         </ion-item>
-        <ion-item button routerLink="/authorized/logs" routerDirection="root" (click)="closeMenuOnMobile()">
-          <ion-icon name="search-outline" slot="start"></ion-icon>
-          <ion-label>Logs</ion-label>
-        </ion-item>
-        <ion-item button routerLink="/authorized/system" routerDirection="root" (click)="closeMenuOnMobile()">
-          <ion-icon name="cog-outline" slot="start"></ion-icon>
-          <ion-label>System</ion-label>
-        </ion-item>
-        <ion-item button routerLink="/authorized/profile" routerDirection="root" (click)="closeMenuOnMobile()">
-          <ion-icon name="person-circle-outline" slot="start"></ion-icon>
-          <ion-label>Profile</ion-label>
-        </ion-item>
+
+        <ion-accordion-group>
+          <ion-accordion>
+            <ion-item slot="header">
+              <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+              <ion-label>cKYC</ion-label>
+            </ion-item>
+            <ion-item slot="content" class="sub-item" button routerLink="/authorized/ckyc/operators/list" routerDirection="root" (click)="closeMenuOnMobile()">
+              <ion-icon name="id-card-outline" slot="start"></ion-icon>
+              <ion-label>Operators</ion-label>
+            </ion-item>
+            <ion-item slot="content" class="sub-item" button routerLink="/authorized/ckyc-operators-list" routerDirection="root" (click)="closeMenuOnMobile()">
+              <ion-icon name="finger-print-outline" slot="start"></ion-icon>
+              <ion-label>Validators</ion-label>
+            </ion-item>
+          </ion-accordion>  
+        </ion-accordion-group>
+
+        <ion-accordion-group>
+          <ion-accordion>
+            <ion-item slot="header">
+              <ion-icon name="cog-outline" slot="start"></ion-icon>
+              <ion-label>System</ion-label>
+            </ion-item>
+            <ion-item slot="content" class="sub-item" button routerLink="/authorized/logs" routerDirection="root" (click)="closeMenuOnMobile()">
+              <ion-icon name="search-outline" slot="start"></ion-icon>
+              <ion-label>Logs</ion-label>
+            </ion-item>
+            <ion-item slot="content" class="sub-item" button routerLink="/authorized/variables" routerDirection="root" (click)="closeMenuOnMobile()">
+              <ion-icon name="book-outline" slot="start"></ion-icon>
+              <ion-label>Variables</ion-label>
+            </ion-item>
+            <ion-item slot="content" class="sub-item" button routerLink="/authorized/profile" routerDirection="root" (click)="closeMenuOnMobile()">
+              <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+              <ion-label>Profile</ion-label>
+            </ion-item>
+          </ion-accordion>  
+        </ion-accordion-group>
+
         <ion-item button (click)="logout()">
           <ion-icon name="log-out-outline" slot="start"></ion-icon>
           <ion-label>Logout</ion-label>
         </ion-item>
+
       </ion-list>
     </ion-content>
   </ion-menu>

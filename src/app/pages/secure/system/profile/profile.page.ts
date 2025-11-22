@@ -5,8 +5,8 @@ import {
   IonContent,
 } from '@ionic/angular/standalone';
 
-import { HeaderComponent } from "../../../shared/components/header/header.component";
-import { RpcService } from '../../../shared/services/rpc.service';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { RpcService } from '../../../../shared/services/rpc.service';
 
 @Component({
   selector: 'app-profile',
