@@ -126,6 +126,8 @@ export class cKYCOperator {
     public name: string,
     public symbol: string,
     public data: string,
+    public email: string,
+    public mobile: string,
     public countryCode: number,
     public state: boolean
   ) {}

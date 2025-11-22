@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { 
-  IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar, 
-  IonTitle, IonContent, IonList, IonItem, IonIcon, IonLabel, 
+import {
+  IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar,
+  IonTitle, IonContent, IonList, IonItem, IonIcon, IonLabel,
   IonButtons, IonMenuButton, MenuController, IonAccordionGroup, IonAccordion } from '@ionic/angular/standalone';
 import { RouterModule } from '@angular/router';
 
@@ -11,6 +11,9 @@ import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline
 import { AuthService } from '../../services/auth.service';
 import { RpcService } from '../../services/rpc.service';
 import { Regulator } from '../../models/data.model';
+import { AlertComponent } from '../../components/alert/alert.component';
+import { LoadingComponent } from "../../components/loading/loading.component";
+import { CkycOperatorEditComponent } from '../../components/ckyc-operator-edit/ckyc-operator-edit.component';
 
 @Component({
   selector: 'app-authorized-layout',
@@ -18,22 +21,25 @@ import { Regulator } from '../../models/data.model';
   styleUrls: ['./authorized-layout.component.scss'],
   standalone: true,
   imports: [
-    IonAccordion, IonAccordionGroup, 
-    IonRouterOutlet, 
-    IonSplitPane, 
-    IonMenu, 
-    IonHeader, 
-    IonToolbar, 
-    IonTitle, 
-    IonContent, 
-    IonList, 
-    IonItem, 
-    IonIcon, 
+    IonAccordion, IonAccordionGroup,
+    IonRouterOutlet,
+    IonSplitPane,
+    IonMenu,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonList,
+    IonItem,
+    IonIcon,
     IonLabel,
     IonButtons,
     IonMenuButton,
-    RouterModule
-  ],
+    RouterModule,
+    AlertComponent,
+    LoadingComponent,
+    CkycOperatorEditComponent
+],
 })
 export class AuthorizedLayoutComponent {
 

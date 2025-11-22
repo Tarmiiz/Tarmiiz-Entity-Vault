@@ -13,7 +13,7 @@ import cKYCOperatorTemplateAbi from '../../../assets/ABIs/cKYCOperatorTemplate.j
 import RegulatorTemplateAbi from '../../../assets/ABIs/GRRRegulatorTemplate.json';
 import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { Asset, AssetHolder, AssetPrice, AssetSupplyChange, ControlEvent, Country, GlobalVariable, Key, Regulator, RegulatorData, RegulatorEvent } from '../models/data.model';
+import { Asset, AssetHolder, AssetPrice, AssetSupplyChange, cKYCOperator, ControlEvent, Country, GlobalVariable, Key, Regulator, RegulatorData, RegulatorEvent } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -335,6 +335,54 @@ export class RpcService {
     }
   }
 
+  async cKYCOperatorInfo(address: string) {
+    try {
+      const iface = new ethers.Interface([
+        "function operatorInfo(address operator) external view returns (tuple(address operator, string name, string symbol, string data, uint256 countryCode, bool state) operator)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('operatorInfo', [address]);
+      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('operatorInfo', result.data);
+        const parsedData = JSON.parse(decodedResult[0][3]);
+        const operator: cKYCOperator = {
+          operator: decodedResult[0][0],
+          name: decodedResult[0][1],
+          symbol: decodedResult[0][2],
+          data: decodedResult[0][3],
+          email: parsedData.email,
+          mobile: parsedData.mobile,
+          countryCode: Number(decodedResult[0][4]),
+          state: decodedResult[0][5]
+        };
+        return { result: { operator }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching operators list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching operators list: ' + error.message};
+    }
+  }
+
+  async cKYCOperatorChangeState(address: string, state: boolean) {
+    try {
+      const iface = new ethers.Interface(["function operatorUpdateState(address operator, bool state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('operatorUpdateState', [address, state]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing operator state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing operator state: ' + error.message};
+    }
+
+  }
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // Regulator Contract
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -527,10 +575,10 @@ export class RpcService {
   async callExternal(address: string, callData: string) {
     try {
       await this.connectRegulatorContract();
-      console.log('address', address);
+      // console.log('address', address);
       const tx = await this.regulatorContract.callExternal(address, callData, { gasLimit: 5000000 });
       const receipt = await tx.wait();
-      console.log('callExternal', receipt)
+      // console.log('callExternal', receipt)
       return { result: receipt.blockNumber, error: '' };
     }
     catch (error: any) {

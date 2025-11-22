@@ -1,0 +1,25 @@
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AlertService } from '../../services/alert.service';
+
+@Component({
+  selector: 'app-alert',
+  templateUrl: './alert.component.html',
+  styleUrls: ['./alert.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [CommonModule],
+})
+export class AlertComponent {
+
+  alertService = inject(AlertService);
+
+  onConfirm(): void {
+    this.alertService.confirm();
+  }
+
+  onCancel(): void {
+    this.alertService.cancel();
+  }
+
+}
