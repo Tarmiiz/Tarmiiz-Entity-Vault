@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonList, IonItem, IonInput, IonButton} from '@ionic/angular/standalone';
+import { IonContent } from '@ionic/angular/standalone';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { LoadingController, AlertController } from '@ionic/angular';
@@ -17,7 +17,6 @@ import { StorageService } from '../../../shared/services/storage.service';
   imports: [ 
     IonContent, CommonModule, 
     ReactiveFormsModule, FormsModule,
-    IonList, IonItem, IonInput, IonButton, 
     RouterLink
   ]
 })

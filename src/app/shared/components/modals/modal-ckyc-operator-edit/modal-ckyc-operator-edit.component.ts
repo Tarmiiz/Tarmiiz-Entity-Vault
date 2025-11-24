@@ -1,18 +1,18 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { CkycOperatorEditService, EditOperatorData } from '../../services/ckyc-operator-edit.service';
+import { ModalcKYCOperatorEditService, EditOperatorData } from './modal-ckyc-operator-edit.service';
 
 @Component({
-  selector: 'app-ckyc-operator-edit',
-  templateUrl: './ckyc-operator-edit.component.html',
-  styleUrls: ['./ckyc-operator-edit.component.scss'],
+  selector: 'app-modal-ckyc-operator-edit',
+  templateUrl: './modal-ckyc-operator-edit.component.html',
+  styleUrls: ['./modal-ckyc-operator-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],  
 })
-export class CkycOperatorEditComponent {
+export class ModalcKYCOperatorEditComponent {
 
-  editOperatorService = inject(CkycOperatorEditService);
+  editOperatorService = inject(ModalcKYCOperatorEditService);
   private fb: FormBuilder = inject(FormBuilder);
 
   editForm = this.fb.group({

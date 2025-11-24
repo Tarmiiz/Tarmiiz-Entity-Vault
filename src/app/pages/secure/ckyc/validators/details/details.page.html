@@ -1,0 +1,89 @@
+<app-header title="cKYC Validator Details"></app-header>
+
+<ion-content [fullscreen]="true">
+
+  <div class="px-6 py-4 border-b">
+    @if (validator(); as op) {
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+          <li class="inline-flex items-center">
+            <a routerLink="/authorized/ckyc/validators/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+              cKYC Validators
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+              <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ op.name }}</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+    } @else {
+       <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
+    }
+  </div>
+
+  <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+    <div class="container mx-auto">
+      @if (validator(); as v) {
+      <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
+        <div class="p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <h2 class="text-3xl font-bold text-gray-800">{{ v.name }}</h2>
+              <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
+            </div>
+            <span 
+              class="px-4 py-1.5 text-sm font-semibold rounded-full"
+              [class]="getStateClass(v.state)"
+            >
+              {{ v.stateName }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+            <div class="border-t pt-4">
+              <p class="text-sm font-medium text-gray-500">Email</p>
+              <p class="text-base">{{ v.email }}</p>
+            </div>
+             <div class="border-t pt-4">
+              <p class="text-sm font-medium text-gray-500">Mobile</p>
+              <p class="text-base">{{ v.mobile }}</p>
+            </div>
+            <div class="border-t pt-4">
+              <p class="text-sm font-medium text-gray-500">Country</p>
+              <p class="text-base">{{ v.countryName }}</p>
+            </div>
+            <div class="border-t pt-4">
+            </div>
+            <div class="border-t pt-4 md:col-span-2">
+              <p class="text-sm font-medium text-gray-500">Regulator Address</p>
+              <p class="font-mono text-base">{{ v.regulator }}</p>
+            </div>
+             <!-- <div class="border-t pt-4 md:col-span-2">
+              <p class="text-sm font-medium text-gray-500">Raw Data</p>
+              <p class="text-base font-mono text-sm bg-gray-100 p-2 rounded">{{ v.data }}</p>
+            </div> -->
+          </div>
+          
+          <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+            <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
+              Edit
+            </button>
+            <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+              Change State
+            </button>
+          </div>
+
+        </div>
+      </div>
+      } @else {
+        <div class="text-center py-12 text-gray-500">
+          <p>Loading validator details...</p>
+        </div>
+      }
+    </div>
+  </main>  
+
+</ion-content>

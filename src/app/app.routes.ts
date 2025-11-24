@@ -109,6 +109,22 @@ export const routes: Routes = [
             ]
           },
           {
+            path: 'validators',
+            canActivate: [AuthGuard],
+            children: [
+              {
+                path: 'list',
+                loadComponent: () => import('./pages/secure/ckyc/validators/list/list.page').then( m => m.ListPage),
+                canActivate: [AuthGuard]
+              },
+              {
+                path: 'details/:id',
+                loadComponent: () => import('./pages/secure/ckyc/validators/details/details.page').then( m => m.DetailsPage),
+                canActivate: [AuthGuard]
+              },
+            ]
+          },
+          {
             path: '',
             redirectTo: '/authorized/dashboard',
             pathMatch: 'full',

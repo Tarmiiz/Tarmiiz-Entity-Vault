@@ -2,13 +2,12 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LoadingController } from '@ionic/angular';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   IonContent,
   IonCard, IonCardContent,
-  IonList, IonItem, IonLabel, IonInput, IonButton,
+  IonList, IonItem, IonLabel, IonButton,
   IonSegment, IonSegmentButton, IonSegmentView, IonSegmentContent,
-  IonBreadcrumbs, IonBreadcrumb,
   AlertController,
   IonGrid, IonRow, IonCol
 } from '@ionic/angular/standalone';
@@ -29,10 +28,9 @@ import { RpcService } from '../../../../shared/services/rpc.service';
     CommonModule, FormsModule,
     HeaderComponent,
     IonCard, IonCardContent,
-    IonList, IonItem, IonLabel, IonInput, IonButton,
+    IonList, IonItem, IonLabel, IonButton,
     IonSegment, IonSegmentButton, IonSegmentView, IonSegmentContent,
     IonGrid, IonRow, IonCol,
-    IonBreadcrumbs, IonBreadcrumb,
   ]
 })
 export class AssetDetailsPage implements OnInit {

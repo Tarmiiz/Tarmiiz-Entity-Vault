@@ -35,6 +35,7 @@
           <ion-label>Users</ion-label>
         </ion-item>
 
+        <!-- ckcyc group -->
         <ion-accordion-group>
           <ion-accordion>
             <ion-item slot="header">
@@ -45,13 +46,14 @@
               <ion-icon name="id-card-outline" slot="start"></ion-icon>
               <ion-label>Operators</ion-label>
             </ion-item>
-            <ion-item slot="content" class="sub-item" button routerLink="/authorized/ckyc-operators-list" routerDirection="root" (click)="closeMenuOnMobile()">
+            <ion-item slot="content" class="sub-item" button routerLink="/authorized/ckyc/validators/list" routerDirection="root" (click)="closeMenuOnMobile()">
               <ion-icon name="finger-print-outline" slot="start"></ion-icon>
               <ion-label>Validators</ion-label>
             </ion-item>
           </ion-accordion>  
         </ion-accordion-group>
 
+        <!-- system group -->
         <ion-accordion-group>
           <ion-accordion>
             <ion-item slot="header">
@@ -86,6 +88,9 @@
     <ion-router-outlet></ion-router-outlet>
     <app-alert></app-alert>
     <app-loading></app-loading>
-    <app-ckyc-operator-edit></app-ckyc-operator-edit>
+    <app-modal-ckyc-operator-edit></app-modal-ckyc-operator-edit>
+    <app-modal-ckyc-validator-add></app-modal-ckyc-validator-add>
+    <app-modal-ckyc-validator-edit></app-modal-ckyc-validator-edit>
+    <app-modal-ckyc-validator-state></app-modal-ckyc-validator-state>
   </div>
 </ion-split-pane>

@@ -13,7 +13,7 @@ import cKYCOperatorTemplateAbi from '../../../assets/ABIs/cKYCOperatorTemplate.j
 import RegulatorTemplateAbi from '../../../assets/ABIs/GRRRegulatorTemplate.json';
 import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { Asset, AssetHolder, AssetPrice, AssetSupplyChange, cKYCOperator, ControlEvent, Country, GlobalVariable, Key, Regulator, RegulatorData, RegulatorEvent } from '../models/data.model';
+import { Asset, AssetHolder, AssetPrice, AssetSupplyChange, cKYCOperator, cKYCValidator, ControlEvent, Country, GlobalVariable, Key, Regulator, RegulatorData, RegulatorEvent } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -186,9 +186,9 @@ export class RpcService {
           if(variables) {
             const variable = variables.result.map((variable: any) => ({
               category: category,
-              variableId: Number(variable[0]),
-              name: variable[1],
-              visible: variable[2],
+              variableId: variable.variableId,
+              name: variable.name,
+              visible: variable.visible,
             }))
             this.globalVariables.push(...variable);
           }
@@ -208,7 +208,12 @@ export class RpcService {
     try {
       const result = await this.gvContract.variablesListByCategory(category);
       if(result) {
-        return { result, error: ''};
+        const variables = result.map((variable: any) => ({
+          variableId: Number(variable[0]),
+          name: variable[1],
+          visible: variable[2],
+        }))
+        return { result: variables, error: ''};
       }
       else {
         return { result: null, error: 'Error fetching assets list'};
@@ -310,20 +315,39 @@ export class RpcService {
       const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
       
       if (result.success && result.data !== null) {
-        // console.log('result data', result.data);
         const decodedResult = iface.decodeFunctionResult('operatorsListByCountry', result.data);
-        // console.log('decodedResult', decodedResult);
         
-        // decodedResult[0] is the count, decodedResult[1] is the operators array
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+
         const count = Number(decodedResult[0]);
-        const operators = decodedResult[1].map((op: any) => ({
-          operator: op.operator,
-          name: op.name,
-          symbol: op.symbol,
-          data: op.data,
-          countryCode: Number(op.countryCode),
-          state: op.state
-        }));
+        const operators = decodedResult[1].map((op: any) => {
+          let parsedData = null;
+          try {
+            parsedData = JSON.parse(op.data);
+          } catch (e) {
+            console.error('Error parsing operator data:', e);
+          }
+
+          // Get country name for this operator
+          const countryCode = Number(op.countryCode);
+          const country = this.countriesList.find(c => c.countryCode === countryCode);
+          const countryName = country?.nameShort || 'Unknown';
+          
+          return {
+            operator: op.operator,
+            name: op.name,
+            symbol: op.symbol,
+            data: op.data,
+            email: parsedData?.email || '',
+            mobile: parsedData?.mobile || '',
+            countryCode: Number(op.countryCode),
+            countryName,
+            state: op.state
+          };
+        });
         
         return { result: { count, operators }, error: '' };
       } else {
@@ -346,6 +370,16 @@ export class RpcService {
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('operatorInfo', result.data);
         const parsedData = JSON.parse(decodedResult[0][3]);
+
+        // get country name
+        const countryCode = Number(decodedResult[0][4]);
+        let countryName = 'Unknown';
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        countryName = country?.nameShort || 'Unknown';        
+
         const operator: cKYCOperator = {
           operator: decodedResult[0][0],
           name: decodedResult[0][1],
@@ -354,6 +388,7 @@ export class RpcService {
           email: parsedData.email,
           mobile: parsedData.mobile,
           countryCode: Number(decodedResult[0][4]),
+          countryName,
           state: decodedResult[0][5]
         };
         return { result: { operator }, error: '' };
@@ -383,6 +418,258 @@ export class RpcService {
     }
 
   }
+
+  async cKYCOperatorChangeName(address: string, name: string) {
+    try {
+      const iface = new ethers.Interface(["function operatorUpdateName(address operator, string memory name) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('operatorUpdateName', [address, name]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      console.log('result', result);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing operator name'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing operator name: ' + error.message};
+    }
+
+  }  
+
+  async cKYCOperatorChangeSymbol(address: string, symbol: string) {
+    try {
+      const iface = new ethers.Interface(["function operatorUpdateSymbol(address operator, string memory symbol) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('operatorUpdateSymbol', [address, symbol]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing operator symbol'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing operator symbol: ' + error.message};
+    }
+
+  }  
+
+  async cKYCOperatorChangeData(address: string, data: string) {
+    try {
+      const iface = new ethers.Interface(["function operatorUpdateData(address operator, string memory data) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('operatorUpdateData', [address, data]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing operator data'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing operator data: ' + error.message};
+    }
+
+  }  
+
+  async cKYCValidatorsList() {
+    try {
+      const iface = new ethers.Interface([
+        "function validatorsListByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 id, string name, string data, uint256 countryCode, address regulator, uint8 state)[] validators)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('validatorsListByCountry', [818, 1, 100]);
+      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
+      
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('validatorsListByCountry', result.data);
+
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('cKYC Validator State');
+
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+
+        const count = Number(decodedResult[0]);
+        const validators = decodedResult[1].map((op: any) => {
+          let parsedData = null;
+          try {
+            parsedData = JSON.parse(op.data);
+          } catch (e) {
+            console.error('Error parsing operator data:', e);
+          }
+
+          // Get state name for this validator
+          const stateId = Number(op.state);
+          let stateName = 'Unknown';
+          if (statesResult.result) {
+            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+            stateName = stateVariable?.name || 'Unknown';
+          }          
+
+          // Get country name for this validator
+          const countryCode = Number(op.countryCode);
+          const country = this.countriesList.find(c => c.countryCode === countryCode);
+          const countryName = country?.nameShort || 'Unknown';
+
+          return {
+            id: Number(op.id),
+            name: op.name,
+            data: op.data,
+            email: parsedData.email,
+            mobile: parsedData.mobile,
+            countryCode: Number(op.countryCode),
+            countryName,
+            regulator: op.regulator,
+            state: Number(op.state),
+            stateName
+          }
+        });
+        
+        return { result: { count, validators }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching validators list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching validators list: ' + error.message};
+    }
+  }
+
+  async cKYCValidatorInfo(id: number) {
+    try {
+      const iface = new ethers.Interface([
+        "function validatorInfo(uint256 validatorId) external view returns (tuple(uint256 id, string name, string data, uint256 countryCode, address regulator, uint8 state))"
+      ]);
+      
+      const callData = iface.encodeFunctionData('validatorInfo', [id]);
+      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
+      if (result.success && result.data !== null) {
+
+        
+        const decodedResult = iface.decodeFunctionResult('validatorInfo', result.data);
+        const parsedData = JSON.parse(decodedResult[0][2]);
+
+        // Fetch state names once
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('cKYC Validator State');
+        const stateId = Number(decodedResult[0][5]);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }
+
+        // get country name
+        const countryCode = Number(decodedResult[0][3]);
+        let countryName = 'Unknown';
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        countryName = country?.nameShort || 'Unknown';        
+
+        const validator: cKYCValidator = {
+          id: Number(decodedResult[0][0]),
+          name: decodedResult[0][1],
+          data: decodedResult[0][2],
+          email: parsedData.email,
+          mobile: parsedData.mobile,
+          countryCode: Number(decodedResult[0][3]),
+          countryName,
+          regulator: decodedResult[0][4],
+          state: Number(decodedResult[0][5]),
+          stateName
+        };
+        return { result: { validator }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching validator info' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching validator info: ' + error.message};
+    }
+  }
+
+  async cKYCValidatorAdd(name: string, data: string) {
+    try {
+      const iface = new ethers.Interface(["function validatorAdd(string memory name, string memory name) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('validatorAdd', [name, data]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      console.log('result', result);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing operator name'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing operator name: ' + error.message};
+    }
+
+  } 
+
+  async cKYCValidatorChangeName(id: number, name: string) {
+    try {
+      const iface = new ethers.Interface(["function validatorUpdateName(uint256 validatorId, string memory name) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('validatorUpdateName', [id, name]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing validator data'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing validator data: ' + error.message};
+    }
+
+  }   
+
+  async cKYCValidatorChangeData(id: number, data: string) {
+    try {
+      const iface = new ethers.Interface(["function validatorUpdateData(uint256 validatorId, string memory data) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('validatorUpdateData', [id, data]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing validator data'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing validator data: ' + error.message};
+    }
+
+  }  
+  
+  async cKYCValidatorChangeState(id: number, state: number) {
+    try {
+      console.log('state', state, id);
+      const iface = new ethers.Interface(["function validatorUpdateState(uint256 validatorId, uint8 state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('validatorUpdateState', [id, state]);
+      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing validator state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing validator state: ' + error.message};
+    }
+
+  }
+  
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // Regulator Contract
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -572,13 +859,32 @@ export class RpcService {
     }
   }
 
+
+  async callExternalParallel(address: string, callData: string) {
+    try {
+      await this.connectRegulatorContract();
+      // Get and increment nonce manually
+      const nonce = await this.signer.getNonce();
+      const tx = await this.regulatorContract.callExternal(address, callData, { 
+        gasLimit: 5000000,
+        nonce: nonce  // Explicitly set nonce
+      });
+      const receipt = await tx.wait();
+      return { result: receipt.blockNumber, error: '' };
+    }
+    catch (error: any) {
+      console.error('Full error:', error);
+      return { 
+        result: null, 
+        error: error.message || 'Error calling external contract'
+      };
+    }
+  }
   async callExternal(address: string, callData: string) {
     try {
       await this.connectRegulatorContract();
-      // console.log('address', address);
       const tx = await this.regulatorContract.callExternal(address, callData, { gasLimit: 5000000 });
       const receipt = await tx.wait();
-      // console.log('callExternal', receipt)
       return { result: receipt.blockNumber, error: '' };
     }
     catch (error: any) {

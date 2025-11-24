@@ -129,6 +129,22 @@ export class cKYCOperator {
     public email: string,
     public mobile: string,
     public countryCode: number,
+    public countryName: string,
     public state: boolean
+  ) {}
+}
+
+export class cKYCValidator {
+  constructor (
+    public id: number,
+    public name: string,
+    public data: string,
+    public email: string,
+    public mobile: string,
+    public countryCode: number,
+    public countryName: string,
+    public regulator: string,
+    public state: number,
+    public stateName: string
   ) {}
 }

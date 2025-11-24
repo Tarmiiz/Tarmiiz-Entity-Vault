@@ -2,19 +2,16 @@ import { ChangeDetectionStrategy, Component, OnInit, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-
-import { 
-  IonContent,
-} from '@ionic/angular/standalone';
+import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../../shared/services/rpc.service';
-import { AlertService } from '../../../../../shared/services/alert.service';
-import { LoadingService } from '../../../../../shared/services/loading.service';
-import { CkycOperatorEditService } from '../../../../../shared/services/ckyc-operator-edit.service';
+import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
+import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 
 import { cKYCOperator } from '../../../../../shared/models/data.model';
+import { ModalcKYCOperatorEditService } from '../../../../../shared/components/modals/modal-ckyc-operator-edit/modal-ckyc-operator-edit.service';
 
 @Component({
   selector: 'app-ckyc-operator-details',
@@ -39,7 +36,7 @@ export class CkycOperatorDetailsPage implements OnInit {
     private rpcService: RpcService,
     private alertService: AlertService,
     private loadingService: LoadingService,
-    private ckycOperatorEditService: CkycOperatorEditService
+    private ckycOperatorEditService: ModalcKYCOperatorEditService
 
   ) { 
     const address = this.route.snapshot.paramMap.get('address');
@@ -89,30 +86,21 @@ export class CkycOperatorDetailsPage implements OnInit {
         const updatePromises: Promise<any>[] = [];
 
         if (result.name !== currentOperator.name) {
-          console.log('update name', result.name, currentOperator.name);
-          // updatePromises.push(this.rpcService.updateOperatorName(currentOperator.symbol, result.name!));
+          updatePromises.push(this.rpcService.cKYCOperatorChangeName(currentOperator.operator, result.name!));
         }
         
+        if (result.symbol !== currentOperator.symbol) {
+          updatePromises.push(this.rpcService.cKYCOperatorChangeSymbol(currentOperator.operator, result.symbol!));
+        }
+
         const dataChanged = result.email !== currentOperator.email || result.mobile !== currentOperator.mobile;
         if (dataChanged) {
-          // updatePromises.push(this.rpcService.updateOperatorData(currentOperator.symbol, { email: result.email!, mobile: result.mobile! }));
+          updatePromises.push(this.rpcService.cKYCOperatorChangeData(currentOperator.operator, JSON.stringify({ email: result.email!, mobile: result.mobile! })));
         }
 
-        // Symbol update must be last as it might change the identifier
-        if (result.symbol !== currentOperator.symbol) {
-          // updatePromises.push(this.rpcService.updateOperatorSymbol(currentOperator.symbol, result.symbol!));
-        }
-        
-        // await Promise.all(updatePromises);
+        await Promise.all(updatePromises);
 
-        // // If symbol was changed, we need to navigate to the new URL and refresh
-        // if (result.symbol !== currentOperator.symbol) {
-        //    this.router.navigate(['/operator', result.symbol]).then(() => {
-        //      this.getOperatorDetails(result.symbol!);
-        //    });
-        // } else {
-        //    await this.getOperatorDetails(currentOperator.symbol);
-        // }
+        await this.getOperatorDetails(currentOperator.operator);
 
       } catch (error) {
         console.error('Failed to update operator', error);

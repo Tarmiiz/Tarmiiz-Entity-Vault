@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LoadingService } from '../../services/loading.service';
+import { LoadingService } from './loading.service';
 
 @Component({
   selector: 'app-loading',

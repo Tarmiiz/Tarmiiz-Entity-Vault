@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AlertService } from '../../services/alert.service';
+import { AlertService } from './alert.service';
 
 @Component({
   selector: 'app-alert',

@@ -11,9 +11,12 @@ import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline
 import { AuthService } from '../../services/auth.service';
 import { RpcService } from '../../services/rpc.service';
 import { Regulator } from '../../models/data.model';
-import { AlertComponent } from '../../components/alert/alert.component';
-import { LoadingComponent } from "../../components/loading/loading.component";
-import { CkycOperatorEditComponent } from '../../components/ckyc-operator-edit/ckyc-operator-edit.component';
+import { AlertComponent } from '../../components/alerts/alert/alert.component';
+import { LoadingComponent } from "../../components/alerts/loading/loading.component";
+import { ModalcKYCOperatorEditComponent } from '../../components/modals/modal-ckyc-operator-edit/modal-ckyc-operator-edit.component';
+import { ModalcKYCValidatorAddComponent } from '../../components/modals/modal-ckyc-validator-add/modal-ckyc-validator-add.component';
+import { ModalcKYCValidatorEditComponent } from '../../components/modals/modal-ckyc-validator-edit/modal-ckyc-validator-edit.component';
+import { ModalCkycValidatorStateComponent } from "../../components/modals/modal-ckyc-validator-state/modal-ckyc-validator-state.component";
 
 @Component({
   selector: 'app-authorized-layout',
@@ -38,7 +41,10 @@ import { CkycOperatorEditComponent } from '../../components/ckyc-operator-edit/c
     RouterModule,
     AlertComponent,
     LoadingComponent,
-    CkycOperatorEditComponent
+    ModalcKYCOperatorEditComponent,
+    ModalcKYCValidatorAddComponent,
+    ModalcKYCValidatorEditComponent,
+    ModalCkycValidatorStateComponent
 ],
 })
 export class AuthorizedLayoutComponent {

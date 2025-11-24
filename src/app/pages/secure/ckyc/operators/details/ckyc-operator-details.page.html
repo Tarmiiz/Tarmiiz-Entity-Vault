@@ -1,4 +1,4 @@
-  <app-header title="cKYC Operator Details"></app-header>
+<app-header title="cKYC Operator Details"></app-header>
 
 <ion-content [fullscreen]="true">
 
@@ -47,20 +47,20 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Contract Address</p>
-                <p class="font-mono text-base">{{ op.operator }}</p>
-              </div>
-              <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Country Code</p>
-                <p class="text-base">{{ op.countryCode }}</p>
-              </div>
-              <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">Email</p>
                 <p class="text-base">{{ op.email }}</p>
               </div>
               <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">Mobile</p>
                 <p class="text-base">{{ op.mobile }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Country</p>
+                <p class="text-base">{{ op.countryName }}</p>
+              </div>
+              <div class="border-t pt-4 md:col-span-2">
+                <p class="text-sm font-medium text-gray-500">Contract Address</p>
+                <p class="font-mono text-base">{{ op.operator }}</p>
               </div>
             </div>
             

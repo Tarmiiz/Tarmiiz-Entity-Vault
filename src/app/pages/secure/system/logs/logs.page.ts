@@ -1,17 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LoadingController } from '@ionic/angular';
 import { 
   IonContent,
-  IonGrid, IonRow, IonCol,
-  IonSkeletonText,
-  IonToolbar
 } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../shared/services/rpc.service';
+import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
 @Component({
   selector: 'app-logs',
@@ -22,9 +19,6 @@ import { RpcService } from '../../../../shared/services/rpc.service';
     IonContent, 
     CommonModule, FormsModule,
     HeaderComponent,
-    IonGrid, IonRow, IonCol,
-    IonSkeletonText,
-    IonToolbar
   ]
 })
 export class LogsPage implements OnInit, OnDestroy {
@@ -38,7 +32,7 @@ export class LogsPage implements OnInit, OnDestroy {
   emptyRows: Array<any> = Array(5).fill(null);
 
   constructor(
-    private loadingController: LoadingController,
+    private loadingService: LoadingService,
     private rpcService: RpcService,
   ) { }
 
@@ -51,10 +45,7 @@ export class LogsPage implements OnInit, OnDestroy {
 
   async ionViewWillEnter() {
     this.loadingEvents = true;
-    const loading = await this.loadingController.create({
-      message: 'Loading events...'
-    })
-    await loading.present();
+    this.loadingService.show('Loading data...');
 
     // Initialize current block
     try {
@@ -78,7 +69,7 @@ export class LogsPage implements OnInit, OnDestroy {
 
     await this.getLogs();
     this.loadingEvents = false;
-    this.loadingController.dismiss();
+    this.loadingService.hide();
   }
 
   async ionViewWillLeave() {

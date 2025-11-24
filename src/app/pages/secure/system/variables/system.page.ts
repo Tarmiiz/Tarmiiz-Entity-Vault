@@ -1,7 +1,6 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LoadingController } from '@ionic/angular';
 import { 
   IonContent, 
 } from '@ionic/angular/standalone';
@@ -9,6 +8,7 @@ import {
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../shared/services/rpc.service';
+import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
 import { Country, GlobalVariable } from '../../../../shared/models/data.model';
 
@@ -44,7 +44,7 @@ export class SystemPage implements OnInit {
   // variablesSearchTerm: string = '';
 
   constructor(
-    private loadingController: LoadingController,
+    private loadingService: LoadingService,
     private rpcService: RpcService,
   ) { }
 
@@ -53,15 +53,13 @@ export class SystemPage implements OnInit {
   
   async ionViewDidEnter() {
     this.loadingData = true;
-    const loading = await this.loadingController.create({
-      message: 'Loading data ...'
-    })
-    await loading.present();
+    this.loadingService.show('Loading data...');
+
     await this.rpcService.connectGlobalVariables();
     await this.getCountries();
     await this.getVariables();
     this.loadingData = false;
-    await loading.dismiss();
+    this.loadingService.hide();
   }
 
   async getCountries() {

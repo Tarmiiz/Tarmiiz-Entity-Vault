@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { cKYCOperator } from '../models/data.model';
+import { cKYCOperator } from '../../../models/data.model';
 
 export interface EditOperatorData {
   name: string;
@@ -11,7 +11,7 @@ export interface EditOperatorData {
 @Injectable({
   providedIn: 'root'
 })
-export class CkycOperatorEditService {
+export class ModalcKYCOperatorEditService {
   isVisible = signal(false);
   operator = signal<cKYCOperator | null>(null);
 

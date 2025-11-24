@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { LoadingController } from '@ionic/angular';
 import {
   IonContent, IonTitle,
-  IonToolbar,
-  IonRow, IonCol
 } from '@ionic/angular/standalone'
 
 import { RpcService } from '../../../shared/services/rpc.service';
@@ -33,8 +31,6 @@ interface Asset {
     IonContent, IonTitle,
     CommonModule, FormsModule,
     HeaderComponent,
-    IonToolbar,
-    IonRow, IonCol
   ]
 })
 export class DashboardPage implements OnInit {
