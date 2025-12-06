@@ -68,7 +68,7 @@ export class ListPage implements OnInit {
 
   async listValidators() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.cKYCValidatorsList();
+    const result = await this.rpcService.cKYCValidatorsList(1, 10);
     if(result.result) {
       this.validatorsCount = result.result.count;
       this.validators.set(result.result.validators);

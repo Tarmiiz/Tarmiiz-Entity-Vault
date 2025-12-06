@@ -36,12 +36,7 @@ export class SystemPage implements OnInit {
   loadingData = false;
   emptyRows: Array<any> = Array(5).fill(null);
 
-  // countries: Country[] = [];
-  // filteredCountries: Country[] = [];
   variables: GlobalVariable[] = [];
-  // filteredVariables: GlobalVariable[] = [];
-  // countriesSearchTerm: string = '';
-  // variablesSearchTerm: string = '';
 
   constructor(
     private loadingService: LoadingService,
@@ -72,20 +67,6 @@ export class SystemPage implements OnInit {
     }
   }
 
-  // filterCountries() {
-  //   if (!this.countriesSearchTerm) {
-  //     this.filteredCountries = this.countries;
-  //     return;
-  //   }
-
-  //   const term = this.countriesSearchTerm.toLowerCase();
-  //   this.filteredCountries = this.countries.filter(country =>
-  //     country.nameShort.toLowerCase().includes(term) ||
-  //     country.nameFull.toLowerCase().includes(term) ||
-  //     country.currencyName.toLowerCase().includes(term)
-  //   );
-  // }
-
   async getVariables() {
     const data = await this.rpcService.getGlobalVariables();
     if(data.result) {
@@ -95,19 +76,6 @@ export class SystemPage implements OnInit {
       this.globalVariables.set([]);
     }
   }
-
-  // filterVariables() {
-  //   if (!this.variablesSearchTerm) {
-  //     this.filteredVariables = this.variables;
-  //     return;
-  //   }
-
-  //   const term = this.variablesSearchTerm.toLowerCase();
-  //   this.filteredVariables = this.variables.filter(variable =>
-  //     variable.category.toLowerCase().includes(term) ||
-  //     variable.name.toLowerCase().includes(term)
-  //   );
-  // }
 
   filteredCountries = computed(() => {
     const term = this.countriesSearchTerm().toLowerCase();

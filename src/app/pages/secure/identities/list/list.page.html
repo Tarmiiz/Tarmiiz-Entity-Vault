@@ -1,0 +1,119 @@
+<app-header title="Identities"></app-header>
+
+<ion-content [fullscreen]="true">
+
+  <div class="table-container">
+    
+    <!-- Search Bar -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden badges">
+      <button (click)="toggleSearch()" class="text-gray-200 w-full px-6 py-4 text-left focus:outline-none flex justify-between items-center bg-[#202a3b]">
+        <h2 class="text-ms font-semibold text-gray-200">Identity Lookup</h2>
+        <svg class="w-6 h-6 text-gray-600 transition-transform duration-300" [class.rotate-180]="isSearchExpanded()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      @if(isSearchExpanded()) {
+        <div class="px-6 pb-6 border-t">
+          <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="flex items-center space-x-4 mt-4">
+            <select formControlName="searchType" class="bg-gray-100 border border-gray-300 text-gray-800 rounded-full py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+              <option value="emailMobile">Email / Mobile</option>
+              <option value="nationalId">National Id</option>
+              <option value="ckycId">cKYC-ID</option>
+            </select>            
+            <div class="relative flex-grow">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                formControlName="searchTerm"
+                [placeholder]="getPlaceholder()" 
+                class="w-full bg-gray-100 border border-gray-300 text-gray-800 placeholder-gray-500 rounded-full py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              />
+            </div>
+            <button type="submit" class="px-6 py-3 bg-[#202a3b] hover:bg-[#2c3648] text-white font-semibold rounded-full shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 flex-shrink-0">
+              Search
+            </button>
+          </form>
+
+          <!-- Search Results Table -->
+          @if(searchPerformed()) {
+            <div class="overflow-x-auto rounded-lg" style="margin-top: 10px;">
+              <!-- <h3 class="text-lg font-semibold text-gray-700 mb-2">Search Results</h3> -->
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">GIN</th>
+                    <th scope="col" class="px-6 py-2">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if(searchResults()){
+                    <tr class="bg-white border-b last:border-b-0 hover:bg-gray-100 transition-colors cursor-pointer" (click)="viewDetails(searchResults()!)">
+                      <td class="px-6 py-2 text-xs">{{ searchResults()!.ginHash }}</td>
+                      <td class="px-6 py-2 text-xs">{{ searchResults()!.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                    </tr>
+                    }
+                  @else {
+                    <tr class="bg-white border-b last:border-b-0 hover:bg-gray-100 transition-colors">
+                      <td colspan="2" class="px-6 py-2 text-center text-gray-500">
+                          No identities found matching your search.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+
+    <!-- Data Table -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges">
+      <div class="px-6 py-4 border-b text-left">
+        <h2 class="text-sm font-semibold text-[#202a3b]">Newly Added Identities</h2>
+      </div>      
+      <div class="overflow-x-auto rounded-lg">
+        <table class="w-full text-sm text-left text-gray-700">
+
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <tr>
+                  <th scope="col" class="px-6 py-2">#</th>
+                  <th scope="col" class="px-6 py-2">GIN</th>
+                  <th scope="col" class="px-6 py-2">Created</th>
+              </tr>
+          </thead>
+          <tbody>
+            @if(loadingData) {
+
+            }
+            @else {
+              <!-- no data -->
+              @if(identities().length == 0) {
+                  <tr class="bg-white border-b hover:bg-gray-50">
+                      <td class="px-6 py-2">no data</td>
+                  </tr>
+              }
+              @else {
+                  @for(identity of identities(); track identity.uniqueIdHash; let i = $index; let isEven = $even;) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(identity)">
+                          <td class="px-6 py-2 text-xs">{{ i + 1 }}</td>
+                          <td class="px-6 py-2 text-xs">{{ identity.ginHash }}</td>
+                          <td class="px-6 py-2 text-xs">{{ identity.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                      </tr>
+                  }
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</ion-content>

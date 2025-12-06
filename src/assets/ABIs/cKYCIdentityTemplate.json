@@ -103,56 +103,6 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "ExternalCallEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "ginContract",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "IdentityEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": false,
           "internalType": "uint64",
           "name": "version",
@@ -168,26 +118,7 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "OperatorEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
+          "name": "sender",
           "type": "address"
         },
         {
@@ -261,45 +192,7 @@
           "type": "string"
         }
       ],
-      "name": "ValidatorEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "credentials",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "logins",
+      "name": "UserEvent",
       "type": "event"
     },
     {
@@ -422,19 +315,6 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "apiAddress",
-          "type": "address"
-        }
-      ],
-      "name": "changeAPIAddress",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "bytes32",
           "name": "secret",
           "type": "bytes32"
@@ -442,44 +322,6 @@
       ],
       "name": "changePassword",
       "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "regulatorAddress",
-          "type": "address"
-        }
-      ],
-      "name": "changeRegulatorAddress",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "state",
-          "type": "bool"
-        }
-      ],
-      "name": "changeState",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -556,7 +398,20 @@
     },
     {
       "inputs": [],
-      "name": "getOwner",
+      "name": "getGIN",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getGRRProxyAddress",
       "outputs": [
         {
           "internalType": "address",
@@ -569,7 +424,7 @@
     },
     {
       "inputs": [],
-      "name": "getRegulator",
+      "name": "getOwner",
       "outputs": [
         {
           "internalType": "address",
@@ -726,6 +581,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "getState",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -800,95 +668,14 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "start",
-          "type": "uint256"
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
         },
         {
           "internalType": "uint256",
-          "name": "offset",
+          "name": "gin",
           "type": "uint256"
-        }
-      ],
-      "name": "identitiesList",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "count",
-          "type": "uint256"
-        },
-        {
-          "components": [
-            {
-              "internalType": "bytes32",
-              "name": "uniqueIdHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "ginHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "string",
-              "name": "metadata",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "createdAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "createdBy",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedBy",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct IcKYCIdentities.Identity[]",
-          "name": "identities",
-          "type": "tuple[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint8",
-          "name": "idType",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "emailHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "mobileHash",
-          "type": "bytes32"
         },
         {
           "internalType": "bytes32",
@@ -899,375 +686,21 @@
           "internalType": "bytes32",
           "name": "secret",
           "type": "bytes32"
-        },
-        {
-          "internalType": "string",
-          "name": "metadata",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "validatorId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "grrProxyAddress",
-          "type": "address"
-        }
-      ],
-      "name": "identityAdd",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "contact",
-          "type": "bytes32"
-        }
-      ],
-      "name": "identityCheckContact",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "contact",
-          "type": "bytes32"
-        }
-      ],
-      "name": "identityLookupByContact",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "bytes32",
-              "name": "uniqueIdHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "ginHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "string",
-              "name": "metadata",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "createdAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "createdBy",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedBy",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct IcKYCIdentities.Identity",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "ginHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "identityLookupByGIN",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "bytes32",
-              "name": "uniqueIdHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "ginHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "string",
-              "name": "metadata",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "createdAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "createdBy",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedBy",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct IcKYCIdentities.Identity",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "identityLookupByUniqueId",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "bytes32",
-              "name": "uniqueIdHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "ginHash",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "string",
-              "name": "metadata",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "createdAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "createdBy",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedAt",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "lastVarifiedBy",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct IcKYCIdentities.Identity",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "identityState",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "string",
-          "name": "metadata",
-          "type": "string"
-        }
-      ],
-      "name": "identityUpdateMetadata",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "info",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "operator",
-              "type": "address"
-            },
-            {
-              "internalType": "string",
-              "name": "name",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "symbol",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "data",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "bool",
-              "name": "state",
-              "type": "bool"
-            }
-          ],
-          "internalType": "struct cKYCOperatorTemplate.Operator",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "regulatorAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "apiAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "identitiesContract",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "validatorsContract",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "loginHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "secret",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "symbol",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "data",
-          "type": "string"
         },
         {
           "internalType": "uint256",
           "name": "countryCode",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "operatorAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "regulatorsProxyAddress",
+          "type": "address"
         }
       ],
       "name": "initialize",
@@ -1286,6 +719,19 @@
       "name": "initialize",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isActive",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -1403,91 +849,19 @@
     {
       "inputs": [
         {
-          "internalType": "string",
-          "name": "data",
-          "type": "string"
-        }
-      ],
-      "name": "overrideData",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "identitiesContract",
-          "type": "address"
-        }
-      ],
-      "name": "overrideIdentitiesContract",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        }
-      ],
-      "name": "overrideName",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "bytes32",
           "name": "secret",
           "type": "bytes32"
         }
       ],
       "name": "overridePassword",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
+      "outputs": [
         {
           "internalType": "bool",
-          "name": "state",
+          "name": "",
           "type": "bool"
         }
       ],
-      "name": "overrideState",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "symbol",
-          "type": "string"
-        }
-      ],
-      "name": "overrideSymbol",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validatorsContract",
-          "type": "address"
-        }
-      ],
-      "name": "overrideValidatorsContract",
-      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1552,12 +926,82 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "grrProxyAddress",
+          "type": "address"
+        }
+      ],
+      "name": "setGRRProxyAddress",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "newOwner",
           "type": "address"
         }
       ],
       "name": "setOwner",
       "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "state",
+          "type": "uint8"
+        }
+      ],
+      "name": "setState",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "isValid",
+          "type": "bool"
+        }
+      ],
+      "name": "setValidated",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "state",
+          "type": "bool"
+        }
+      ],
+      "name": "suspend",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1594,110 +1038,17 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "validatorId",
-          "type": "uint256"
+          "internalType": "bytes32",
+          "name": "ginHash",
+          "type": "bytes32"
         }
       ],
-      "name": "validatorInfo",
+      "name": "validateGINHash",
       "outputs": [
         {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "id",
-              "type": "uint256"
-            },
-            {
-              "internalType": "string",
-              "name": "name",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "data",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "regulator",
-              "type": "address"
-            },
-            {
-              "internalType": "uint8",
-              "name": "state",
-              "type": "uint8"
-            }
-          ],
-          "internalType": "struct IcKYCValidators.Validator",
+          "internalType": "bool",
           "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "start",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "offset",
-          "type": "uint256"
-        }
-      ],
-      "name": "validatorsList",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "count",
-          "type": "uint256"
-        },
-        {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "id",
-              "type": "uint256"
-            },
-            {
-              "internalType": "string",
-              "name": "name",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "data",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "regulator",
-              "type": "address"
-            },
-            {
-              "internalType": "uint8",
-              "name": "state",
-              "type": "uint8"
-            }
-          ],
-          "internalType": "struct IcKYCValidators.Validator[]",
-          "name": "validators",
-          "type": "tuple[]"
+          "type": "bool"
         }
       ],
       "stateMutability": "view",

@@ -4,20 +4,30 @@ import { AuthGuard } from './shared/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'public/login',
     pathMatch: 'full',
   },
   {
-    path: 'login',
-    loadComponent: () => import('./pages/public/login/login.page').then( m => m.LoginPage)
-  },  
-  {
-    path: 'forgot-password',
-    loadComponent: () => import('./pages/public/forgot-password/forgot-password.page').then( m => m.ForgotPasswordPage)
-  },
-  {
-    path: 'ckyc',
-    loadComponent: () => import('./pages/public/ckyc-operator/ckyc-operator.page').then( m => m.CkycOperatorPage)
+    path: 'public',
+    children: [
+      {
+        path: 'login',
+        loadComponent: () => import('./pages/public/login/login.page').then( m => m.LoginPage)
+      },  
+      {
+        path: 'forgot-password',
+        loadComponent: () => import('./pages/public/forgot-password/forgot-password.page').then( m => m.ForgotPasswordPage)
+      },
+      {
+        path: 'ckyc',
+        loadComponent: () => import('./pages/public/ckyc-operator/ckyc-operator.page').then( m => m.CkycOperatorPage)
+      },
+      {
+        path: '',
+        redirectTo: 'public/login',
+        pathMatch: 'full',
+      },
+    ]
   },
   {
     path: 'authorized',
@@ -68,17 +78,17 @@ export const routes: Routes = [
         ]
       },
       {
-        path: 'users',
+        path: 'identities',
         canActivate: [AuthGuard],
         children: [
           {
             path: 'list',
-            loadComponent: () => import('./pages/secure/users/users-list/users.page').then( m => m.UsersPage),
+            loadComponent: () => import('./pages/secure/identities/list/list.page').then( m => m.UsersPage),
             canActivate: [AuthGuard]
           },
           {
-            path: 'details',
-            loadComponent: () => import('./pages/secure/users/user-details/user-details.page').then( m => m.UserDetailsPage),
+            path: 'details/:uid',
+            loadComponent: () => import('./pages/secure/identities/details/details.page').then( m => m.UserDetailsPage),
             canActivate: [AuthGuard]
           },
           {
@@ -132,19 +142,30 @@ export const routes: Routes = [
         ]
       },
       {
-        path: 'logs',
-        loadComponent: () => import('./pages/secure/system/logs/logs.page').then( m => m.LogsPage),
-        canActivate: [AuthGuard]
-      },
-      {
-        path: 'variables',
-        loadComponent: () => import('./pages/secure/system/variables/system.page').then( m => m.SystemPage),
-        canActivate: [AuthGuard]
-      },
-      {
-        path: 'profile',
-        loadComponent: () => import('./pages/secure/system/profile/profile.page').then( m => m.ProfilePage),
-        canActivate: [AuthGuard]
+        path: 'system',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'logs',
+            loadComponent: () => import('./pages/secure/system/logs/logs.page').then( m => m.LogsPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'variables',
+            loadComponent: () => import('./pages/secure/system/variables/system.page').then( m => m.SystemPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'profile',
+            loadComponent: () => import('./pages/secure/system/profile/profile.page').then( m => m.ProfilePage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/dashboard',
+            pathMatch: 'full',
+          },          
+        ]
       },
       {
         path: '',

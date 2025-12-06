@@ -47,7 +47,7 @@ export class AuthService {
             await this.storageService.remove('contract');
             await this.storageService.remove('wallet');
             loading.dismiss();
-            this.router.navigate(['/login']);
+            this.router.navigate(['/public/login']);
           }
         }
       ]

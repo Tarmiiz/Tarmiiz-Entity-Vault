@@ -1,0 +1,293 @@
+<app-header title="Identity Detail"></app-header>
+
+<ion-content [fullscreen]="true">
+
+  <!-- breadcrumb -->
+  <div class="px-6 py-4 border-b">
+    @if (identity(); as op) {
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+          <li class="inline-flex items-center">
+            <a routerLink="/authorized/identities/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+              Identities
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+              <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ op.uniqueIdHash }}</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+    } @else {
+       <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
+    }
+  </div>
+
+  <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-4">
+    <div class="container mx-auto">
+
+      <!-- Tab Navigation -->
+      <div class="bg-white rounded-t-lg shadow-md p-2">
+        <div class="flex border-b border-gray-200">
+          <button (click)="setTab('info')"
+            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'info'"
+            [class.border-b-2]="activeTab() === 'info'"
+            [class.border-blue-600]="activeTab() === 'info'"
+            [class.bg-blue-600]="activeTab() === 'info'"
+          >
+            Information
+          </button>
+          <button (click)="setTab('holdings')"
+            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'holdings'"
+            [class.border-b-2]="activeTab() === 'holdings'"
+            [class.border-blue-600]="activeTab() === 'holdings'"
+            [class.bg-blue-600]="activeTab() === 'holdings'"
+          >
+            Holdings
+          </button>
+          <button (click)="setTab('credit')"
+            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'credit'"
+            [class.border-b-2]="activeTab() === 'credit'"
+            [class.border-blue-600]="activeTab() === 'credit'"
+            [class.bg-blue-600]="activeTab() === 'credit'"
+          >
+            Credit
+          </button>          
+          <button (click)="setTab('trxs')"
+            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'trxs'"
+            [class.border-b-2]="activeTab() === 'trxs'"
+            [class.border-blue-600]="activeTab() === 'trxs'"
+            [class.bg-blue-600]="activeTab() === 'trxs'"
+          >
+            Transactions
+          </button>          
+          <button (click)="setTab('actions')"
+            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'actions'"
+            [class.border-b-2]="activeTab() === 'actions'"
+            [class.border-blue-600]="activeTab() === 'actions'"
+            [class.bg-blue-600]="activeTab() === 'actions'"
+          >
+            Actions
+          </button>          
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="bg-white rounded-b-lg shadow-md p-2">
+
+        <!-- info tab -->
+        @if (activeTab() === 'info') {
+          @if (identity(); as v) {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
+            <div class="p-6">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-2xl font-bold text-gray-800">{{ metadata().name }}</h2>
+                </div>
+                <!-- <span 
+                  class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                  [class]="getStateClass(v.state)"
+                >
+                  {{ v.stateName }}
+                </span> -->
+              </div>
+    
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4 text-gray-700 mt-6">
+    
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Name</p>
+                  <p class="text-base text-xs">{{ metadata().name }}</p>
+                </div>
+                 <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Date of Birth</p>
+                  <p class="text-base text-xs">{{ metadata().dob * 1000 | date: 'yyyy-MM-dd' }}</p>
+                </div>
+                <div class="border-t pt-2">
+                </div>
+    
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Email</p>
+                  <p class="text-base text-xs">{{ metadata().email }}</p>
+                </div>
+                 <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Mobile</p>
+                  <p class="text-base text-xs">{{ metadata().mobile }}</p>
+                </div>
+                <div class="border-t pt-2">
+                </div>
+    
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Address</p>
+                  <p class="text-base text-xs">{{ metadata().address.street }}</p>
+                </div>
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">District</p>
+                  <p class="text-base text-xs">{{ metadata().address.district }}</p>
+                </div>
+                <div class="border-t pt-2">
+                </div>
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Governorate</p>
+                  <p class="text-base text-xs">{{ metadata().address.governorate }}</p>
+                </div>
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Country</p>
+                  <p class="text-base text-xs">{{ v.countryName }}</p>
+                </div>
+                <div class="border-t pt-2">
+                </div>
+    
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">ID Number</p>
+                  <p class="text-base text-xs">{{ metadata().idNo }}</p>
+                </div>
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">ID Type</p>
+                  <p class="text-base text-xs">{{ metadata().idTypeName }}</p>
+                </div>
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">ID Expiry</p>
+                  <p class="text-base text-xs">{{ metadata().idExpiry * 1000 | date: 'yyyy-MM-dd' }}</p>
+                </div>
+    
+                <div class="border-t pt-2 md:col-span-3">
+                  <p class="text-xs font-medium text-gray-500">UID Hash</p>
+                  <p class="text-base text-xs">{{ v.uniqueIdHash }}</p>
+                </div>
+    
+                <div class="border-t pt-2 md:col-span-3">
+                  <p class="text-xs font-medium text-gray-500">cKYC-ID Hash</p>
+                  <p class="text-base text-xs">{{ v.ginHash }}</p>
+                </div>
+    
+                <div class="border-t pt-2 md:col-span-2">
+                  <p class="text-xs font-medium text-gray-500">Created By</p>
+                  <p class="font-mono text-base text-xs">{{ v.createdBy }}</p>
+                </div>
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Created On</p>
+                  <p class="font-mono text-base text-xs">{{ v.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+                </div>
+    
+                <div class="border-t pt-2 md:col-span-2">
+                  <p class="text-xs font-medium text-gray-500">Last Varified By</p>
+                  <p class="font-mono text-base text-xs">{{ v.lastVarifiedBy }}</p>
+                </div>
+                <div class="border-t pt-2">
+                  <p class="text-xs font-medium text-gray-500">Varified On</p>
+                  <p class="font-mono text-base text-xs">{{ v.lastVarifiedAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+                </div>
+    
+                <div class="border-t pt-2 cursor-pointer" (click)="openLightbox(idFront)">
+                  <p class="text-xs font-medium text-gray-500 mb-2">ID Front</p>
+                  <img [src]="idFront" class="w-full rounded hover:opacity-80 transition-opacity" alt="ID Front">
+                </div>
+                <div class="border-t pt-2 cursor-pointer" (click)="openLightbox(idBack)">
+                  <p class="text-xs font-medium text-gray-500 mb-2">ID Back</p>
+                  <img [src]="idBack" class="w-full rounded hover:opacity-80 transition-opacity" alt="ID Back">
+                </div>
+    
+              </div>
+            </div>
+          </div>
+          } @else {
+            <div class="text-center py-12 text-gray-500">
+              <p>Loading identity details...</p>
+            </div>
+          }
+
+        }
+
+        <!-- holdings tab -->
+        @if (activeTab() === 'holdings') {
+
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 badges" dir="ltr">
+            @for (stat of stats(); track stat.title) {
+              <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4">
+                <div class="bg-blue-100 p-3 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="stat.icon" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
+                  <p class="text-1xl font-bold text-gray-800">{{ stat.value | number }}</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Assets Table -->
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges" dir="ltr" style="width: auto;">
+            <!-- <div class="px-6 py-4 bg-gray-600">
+              <h2 class="text-xl font-semibold text-white">Top Moving Assets</h2>
+            </div> -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-400">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">#</th>
+                    <th scope="col" class="px-6 py-2">Issuer</th>
+                    <th scope="col" class="px-6 py-2">Asset</th>
+                    <th scope="col" class="px-6 py-2">Symbol</th>
+                    <th scope="col" class="px-6 py-2 text-right">Volume</th>
+                    <th scope="col" class="px-6 py-2 text-right">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (asset of assets(); track asset.symbol; let i = $index) {
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                      <th scope="row" class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap">
+                        {{ i + 1 }}
+                      </th>
+                      <td class="px-6 py-2">{{ asset.issuer }}</td>
+                      <td class="px-6 py-2">{{ asset.name }}</td>
+                      <td class="px-6 py-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">
+                          {{ asset.symbol }}
+                        </span>
+                      </td>
+                      <td class="px-6 py-2 text-right font-mono">{{ asset.supply | number }}</td>
+                      <td class="px-6 py-2 text-right font-mono">{{ asset.value | number }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>          
+        }  
+      </div>
+
+    </div>
+  </main>  
+
+<!-- Lightbox Modal -->
+@if (showLightbox) {
+  <div class="fixed inset-10 z-50 flex items-center justify-center bg-black bg-opacity-90" (click)="closeLightbox()">
+    <button 
+      class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+      (click)="closeLightbox()"
+      aria-label="Close"
+    >
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+    <img 
+      [src]="lightboxImage" 
+      class="max-w-[90vw] max-h-[90vh] object-contain"
+      (click)="$event.stopPropagation()"
+      alt="ID Document"
+    >
+  </div>
+}  
+
+</ion-content>

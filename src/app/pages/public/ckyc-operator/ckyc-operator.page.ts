@@ -91,7 +91,7 @@ export class CkycOperatorPage implements OnInit {
       }
 
       loading.message = 'Generating zero-knowledge proof and registering...';
-      const result = await this.rpcService.cKYCOperatorRegister(regulatorAddress, api, name, symbol, email, password, countryCode, JSON.stringify(userData));
+      const result = await this.rpcService.cKYCOperatorRegister(regulatorAddress, api, name, symbol, email, password, JSON.stringify(userData));
 
       if (result && result.success) {
         console.log(result.contract);

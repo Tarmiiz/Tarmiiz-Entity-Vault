@@ -148,3 +148,17 @@ export class cKYCValidator {
     public stateName: string
   ) {}
 }
+
+export class cKYCIdentity {
+  constructor (
+    public uniqueIdHash: string,
+    public ginHash: string,
+    public metadata: string,
+    public countryCode: number,
+    public countryName: string,
+    public createdAt: number,
+    public createdBy: string,
+    public lastVarifiedAt: number,
+    public lastVarifiedBy: number
+  ) {}
+}

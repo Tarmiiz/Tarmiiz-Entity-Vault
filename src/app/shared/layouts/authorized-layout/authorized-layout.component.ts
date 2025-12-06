@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import {
   IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar,
-  IonTitle, IonContent, IonList, IonItem, IonIcon, IonLabel,
-  IonButtons, IonMenuButton, MenuController, IonAccordionGroup, IonAccordion } from '@ionic/angular/standalone';
+  IonContent, IonList, IonItem, IonIcon, IonLabel,
+  IonButtons, IonMenuButton, MenuController, IonAccordionGroup, IonAccordion, IonFooter } from '@ionic/angular/standalone';
 import { RouterModule } from '@angular/router';
 
 import { addIcons } from 'ionicons';
@@ -23,14 +23,13 @@ import { ModalCkycValidatorStateComponent } from "../../components/modals/modal-
   templateUrl: './authorized-layout.component.html',
   styleUrls: ['./authorized-layout.component.scss'],
   standalone: true,
-  imports: [
+  imports: [IonFooter, 
     IonAccordion, IonAccordionGroup,
     IonRouterOutlet,
     IonSplitPane,
     IonMenu,
     IonHeader,
     IonToolbar,
-    IonTitle,
     IonContent,
     IonList,
     IonItem,

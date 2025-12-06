@@ -76,10 +76,16 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
           "indexed": false,
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
+          "internalType": "address",
+          "name": "ginContract",
+          "type": "address"
         },
         {
           "indexed": false,
@@ -107,6 +113,12 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
         {
           "indexed": false,
           "internalType": "address",
@@ -566,37 +578,33 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
+          "internalType": "uint256",
+          "name": "start",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
         }
       ],
-      "name": "identityGetState",
+      "name": "identityListByOperatorCountry",
       "outputs": [
         {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "uniqueIdHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "identityInfo",
-      "outputs": [
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        },
         {
           "components": [
             {
               "internalType": "bytes32",
               "name": "uniqueIdHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "ginHash",
               "type": "bytes32"
             },
             {
@@ -628,16 +636,11 @@
               "internalType": "uint256",
               "name": "lastVarifiedBy",
               "type": "uint256"
-            },
-            {
-              "internalType": "uint8",
-              "name": "state",
-              "type": "uint8"
             }
           ],
-          "internalType": "struct IcKYCIdentities.Identity",
-          "name": "",
-          "type": "tuple"
+          "internalType": "struct IcKYCIdentities.Identity[]",
+          "name": "identities",
+          "type": "tuple[]"
         }
       ],
       "stateMutability": "view",
@@ -656,7 +659,7 @@
           "type": "uint256"
         }
       ],
-      "name": "identityListByCountry",
+      "name": "identityListByRegulatorCountry",
       "outputs": [
         {
           "internalType": "uint256",
@@ -668,6 +671,11 @@
             {
               "internalType": "bytes32",
               "name": "uniqueIdHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "ginHash",
               "type": "bytes32"
             },
             {
@@ -699,16 +707,213 @@
               "internalType": "uint256",
               "name": "lastVarifiedBy",
               "type": "uint256"
-            },
-            {
-              "internalType": "uint8",
-              "name": "state",
-              "type": "uint8"
             }
           ],
           "internalType": "struct IcKYCIdentities.Identity[]",
           "name": "identities",
           "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "contact",
+          "type": "bytes32"
+        }
+      ],
+      "name": "identityLookupByContact",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "uniqueIdHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "ginHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "metadata",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "countryCode",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "createdAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "createdBy",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastVarifiedAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastVarifiedBy",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IcKYCIdentities.Identity",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "ginHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "identityLookupByGIN",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "uniqueIdHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "ginHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "metadata",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "countryCode",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "createdAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "createdBy",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastVarifiedAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastVarifiedBy",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IcKYCIdentities.Identity",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "uniqueIdHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "identityLookupByUniqueId",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "uniqueIdHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "ginHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "metadata",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "countryCode",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "createdAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "createdBy",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastVarifiedAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastVarifiedBy",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IcKYCIdentities.Identity",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "uniqueIdHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "identityState",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -837,11 +1042,6 @@
           "internalType": "string",
           "name": "data",
           "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "countryCode",
-          "type": "uint256"
         }
       ],
       "name": "operatorAdd",
@@ -1067,11 +1267,6 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "countryCode",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
           "name": "start",
           "type": "uint256"
         },
@@ -1081,7 +1276,7 @@
           "type": "uint256"
         }
       ],
-      "name": "operatorsListByCountry",
+      "name": "operatorsListAll",
       "outputs": [
         {
           "internalType": "uint256",
@@ -1349,6 +1544,25 @@
           "internalType": "uint256",
           "name": "validatorId",
           "type": "uint256"
+        }
+      ],
+      "name": "validatorState",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "state",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "validatorId",
+          "type": "uint256"
         },
         {
           "internalType": "string",
@@ -1428,7 +1642,7 @@
           "type": "uint256"
         }
       ],
-      "name": "validatorsListAll",
+      "name": "validatorsList",
       "outputs": [
         {
           "internalType": "uint256",
@@ -1480,11 +1694,6 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "countryCode",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
           "name": "start",
           "type": "uint256"
         },
@@ -1494,7 +1703,7 @@
           "type": "uint256"
         }
       ],
-      "name": "validatorsListByCountry",
+      "name": "validatorsListAll",
       "outputs": [
         {
           "internalType": "uint256",

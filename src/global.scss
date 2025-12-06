@@ -43,7 +43,6 @@
 /* Global font */
 :root {
   --ion-font-family: 'Inter', sans-serif;
-  // --ion-font-family: 'Montserrat', sans-serif;
 }
 
 ion-content {
@@ -52,7 +51,6 @@ ion-content {
 }
 
 .page-title {
-    // font-family: 'Poppins', sans-serif;
     font-weight: 500;
     text-align: center;
     margin-top: 20px;
@@ -147,7 +145,7 @@ ion-header {
   margin-right: auto;
   
   h2 {
-    color: #332eb1;
+    // color: #332eb1;
     font-weight: 600;
     padding-left: 20px;
     text-align: center;
