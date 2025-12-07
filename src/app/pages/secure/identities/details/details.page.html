@@ -4,7 +4,7 @@
 
   <!-- breadcrumb -->
   <div class="px-6 py-4 border-b">
-    @if (identity(); as op) {
+    @if (uniqueIdHash; as op) {
       <nav class="flex" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
           <li class="inline-flex items-center">
@@ -15,7 +15,7 @@
           <li>
             <div class="flex items-center">
               <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
-              <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ op.uniqueIdHash }}</span>
+              <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ uniqueIdHash }}</span>
             </div>
           </li>
         </ol>
@@ -31,8 +31,18 @@
       <!-- Tab Navigation -->
       <div class="bg-white rounded-t-lg shadow-md p-2">
         <div class="flex border-b border-gray-200">
+
+          <button (click)="setTab('overview')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'overview'"
+            [class.border-b-2]="activeTab() === 'overview'"
+            [class.border-blue-600]="activeTab() === 'overview'"
+            [class.bg-blue-600]="activeTab() === 'overview'"
+          >
+            Overview
+          </button>
           <button (click)="setTab('info')"
-            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'info'"
             [class.border-b-2]="activeTab() === 'info'"
             [class.border-blue-600]="activeTab() === 'info'"
@@ -41,7 +51,7 @@
             Information
           </button>
           <button (click)="setTab('holdings')"
-            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'holdings'"
             [class.border-b-2]="activeTab() === 'holdings'"
             [class.border-blue-600]="activeTab() === 'holdings'"
@@ -50,7 +60,7 @@
             Holdings
           </button>
           <button (click)="setTab('credit')"
-            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'credit'"
             [class.border-b-2]="activeTab() === 'credit'"
             [class.border-blue-600]="activeTab() === 'credit'"
@@ -59,7 +69,7 @@
             Credit
           </button>          
           <button (click)="setTab('trxs')"
-            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'trxs'"
             [class.border-b-2]="activeTab() === 'trxs'"
             [class.border-blue-600]="activeTab() === 'trxs'"
@@ -68,7 +78,7 @@
             Transactions
           </button>          
           <button (click)="setTab('actions')"
-            class="px-6 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'actions'"
             [class.border-b-2]="activeTab() === 'actions'"
             [class.border-blue-600]="activeTab() === 'actions'"
@@ -81,191 +91,402 @@
 
       <!-- Tab Content -->
       <div class="bg-white rounded-b-lg shadow-md p-2">
+        @if (identity(); as v) {
 
-        <!-- info tab -->
-        @if (activeTab() === 'info') {
-          @if (identity(); as v) {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
-            <div class="p-6">
-              <div class="flex items-start justify-between mb-4">
-                <div>
-                  <h2 class="text-2xl font-bold text-gray-800">{{ metadata().name }}</h2>
+          <!-- overview tab -->
+          @if (activeTab() === 'overview') {
+            
+            <div class="space-y-8">
+              
+              <!-- Profile Summary Card -->
+              <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                <!-- <div class="flex-shrink-0">
+                  <img class="h-24 w-24 rounded-full object-cover ring-4 ring-indigo-100" src="https://picsum.photos/seed/{{v.ginHash}}/200" alt="User Avatar">
+                </div> -->
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between">
+                    <h2 class="text-3xl font-bold text-gray-800">{{ metadata().name }}</h2>
+                    <!-- <span class="px-3 py-1 text-sm font-semibold rounded-full" [class]="getStateClass(v.state)">
+                      {{ v.stateName }}
+                    </span> -->
+                  </div>
+                  <p class="text-gray-500 font-mono mt-1">{{ metadata().idNo }}</p>
+                  <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div><span class="font-semibold">Created On:</span> {{ v.createdAt * 1000 | date: 'longDate' }}</div>
+                    <div><span class="font-semibold">Last Verified:</span> {{ v.lastVarifiedAt * 1000 | date: 'longDate' }}</div>
+                    <div><span class="font-semibold">Governorate:</span> {{ metadata().address.governorate }}</div>
+                  </div>
                 </div>
-                <!-- <span 
-                  class="px-4 py-1.5 text-sm font-semibold rounded-full"
-                  [class]="getStateClass(v.state)"
-                >
-                  {{ v.stateName }}
-                </span> -->
+                <!-- <div class="flex-shrink-0">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{v.ginHash}}" alt="QR Code" class="rounded-md">
+                </div> -->
               </div>
-    
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4 text-gray-700 mt-6">
-    
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Name</p>
-                  <p class="text-base text-xs">{{ metadata().name }}</p>
+
+              <!-- At a Glance Section -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                  <p class="text-sm font-medium text-gray-500">Total Holdings Value</p>
+                  <p class="text-3xl font-bold text-gray-800 mt-1">EGP {{ 12580.50 | number:'1.2-2' }}</p>
                 </div>
-                 <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Date of Birth</p>
-                  <p class="text-base text-xs">{{ metadata().dob * 1000 | date: 'yyyy-MM-dd' }}</p>
+                <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                  <p class="text-sm font-medium text-gray-500">Credit Score</p>
+                  <p class="text-3xl font-bold text-green-600 mt-1">720</p>
                 </div>
-                <div class="border-t pt-2">
+                <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                  <p class="text-sm font-medium text-gray-500">Transactions (30d)</p>
+                  <p class="text-3xl font-bold text-gray-800 mt-1">48</p>
                 </div>
-    
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Email</p>
-                  <p class="text-base text-xs">{{ metadata().email }}</p>
+                <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                  <p class="text-sm font-medium text-gray-500">Active Assets</p>
+                  <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats()[0]?.value }}</p>
                 </div>
-                 <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Mobile</p>
-                  <p class="text-base text-xs">{{ metadata().mobile }}</p>
+              </div>
+
+              <!-- Recent Activity & Quick Actions -->
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-md border border-gray-200">
+                  <h3 class="text-lg font-semibold text-gray-800 px-6 pt-4">Recent Activity</h3>
+                  <div class="flow-root">
+                    <ul role="list" class="divide-y divide-gray-200">
+                      @for(item of recentActivity(); track $index) {
+                        <li class="px-6 py-4 flex items-center space-x-4">
+                          <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" [class.bg-red-100]="item.color === 'red'" [class.bg-green-100]="item.color === 'green'" [class.bg-blue-100]="item.color === 'blue'">
+                            @if (item.icon === 'arrow-up') { <svg class="w-5 h-5 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5v-15m0 0l-6.75 6.75M12 4.5l6.75 6.75" /></svg> }
+                            @if (item.icon === 'arrow-down') { <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" /></svg> }
+                            @if (item.icon === 'plus') { <svg class="w-5 h-5 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> }
+                            @if (item.icon === 'shopping-cart') { <svg class="w-5 h-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.328 1.09-.834l1.487-5.205a1.125 1.125 0 00-1.09-1.41H5.625l-.351-1.405a.99.99 0 00-.986-.835H2.25m3.75 12h.008v.015h-.008V15z" /></svg> }
+                          </div>
+                          <div class="flex-grow">
+                            <p class="text-sm font-medium text-gray-800">{{item.type}} <span class="text-gray-500">{{item.description}}</span></p>
+                            <p class="text-sm text-gray-500">{{item.time | date:'medium'}}</p>
+                          </div>
+                          <div class="text-sm font-semibold" [class.text-red-600]="item.value < 0" [class.text-green-600]="item.value > 0">
+                            {{ item.value | number:'1.2-2' }}
+                          </div>
+                        </li>
+                      }
+                    </ul>
+                  </div>
                 </div>
-                <div class="border-t pt-2">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                  <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                  <div class="space-y-3">
+                    <button class="w-full text-left px-4 py-3 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors flex items-center">
+                    <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
+                    </svg>
+                      Contact Identity
+                    </button>
+                    <button class="w-full text-left px-4 py-3 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg transition-colors flex items-center">
+                      <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                      Suspend Identity
+                    </button>
+                    <button class="w-full text-left px-4 py-3 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-lg transition-colors flex items-center">
+                      <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.691V5.006h-4.992v4.992h4.992z" /></svg>
+                      Trigger Re-verification
+                    </button>
+                    <button class="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center" (click)="setTab('actions')">
+                      <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0A2.25 2.25 0 013.75 7.5h16.5a2.25 2.25 0 012.25 2.25m-18.75 0h18.75" /></svg>
+                      View Actions
+                    </button>
+                  </div>
                 </div>
-    
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Address</p>
-                  <p class="text-base text-xs">{{ metadata().address.street }}</p>
-                </div>
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">District</p>
-                  <p class="text-base text-xs">{{ metadata().address.district }}</p>
-                </div>
-                <div class="border-t pt-2">
-                </div>
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Governorate</p>
-                  <p class="text-base text-xs">{{ metadata().address.governorate }}</p>
-                </div>
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Country</p>
-                  <p class="text-base text-xs">{{ v.countryName }}</p>
-                </div>
-                <div class="border-t pt-2">
-                </div>
-    
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">ID Number</p>
-                  <p class="text-base text-xs">{{ metadata().idNo }}</p>
-                </div>
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">ID Type</p>
-                  <p class="text-base text-xs">{{ metadata().idTypeName }}</p>
-                </div>
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">ID Expiry</p>
-                  <p class="text-base text-xs">{{ metadata().idExpiry * 1000 | date: 'yyyy-MM-dd' }}</p>
-                </div>
-    
-                <div class="border-t pt-2 md:col-span-3">
-                  <p class="text-xs font-medium text-gray-500">UID Hash</p>
-                  <p class="text-base text-xs">{{ v.uniqueIdHash }}</p>
-                </div>
-    
-                <div class="border-t pt-2 md:col-span-3">
-                  <p class="text-xs font-medium text-gray-500">cKYC-ID Hash</p>
-                  <p class="text-base text-xs">{{ v.ginHash }}</p>
-                </div>
-    
-                <div class="border-t pt-2 md:col-span-2">
-                  <p class="text-xs font-medium text-gray-500">Created By</p>
-                  <p class="font-mono text-base text-xs">{{ v.createdBy }}</p>
-                </div>
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Created On</p>
-                  <p class="font-mono text-base text-xs">{{ v.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
-                </div>
-    
-                <div class="border-t pt-2 md:col-span-2">
-                  <p class="text-xs font-medium text-gray-500">Last Varified By</p>
-                  <p class="font-mono text-base text-xs">{{ v.lastVarifiedBy }}</p>
-                </div>
-                <div class="border-t pt-2">
-                  <p class="text-xs font-medium text-gray-500">Varified On</p>
-                  <p class="font-mono text-base text-xs">{{ v.lastVarifiedAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
-                </div>
-    
-                <div class="border-t pt-2 cursor-pointer" (click)="openLightbox(idFront)">
-                  <p class="text-xs font-medium text-gray-500 mb-2">ID Front</p>
-                  <img [src]="idFront" class="w-full rounded hover:opacity-80 transition-opacity" alt="ID Front">
-                </div>
-                <div class="border-t pt-2 cursor-pointer" (click)="openLightbox(idBack)">
-                  <p class="text-xs font-medium text-gray-500 mb-2">ID Back</p>
-                  <img [src]="idBack" class="w-full rounded hover:opacity-80 transition-opacity" alt="ID Back">
-                </div>
-    
               </div>
             </div>
-          </div>
-          } @else {
-            <div class="text-center py-12 text-gray-500">
-              <p>Loading identity details...</p>
+
+          }
+
+          <!-- info tab -->
+          @if (activeTab() === 'info') {
+            <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+              <div class="p-4">
+                <div class="flex items-start justify-between mb-2" dir="rtl">
+                  <div>
+                    <h2 class="text-2xl font-bold text-gray-800">{{ metadata().name }}</h2>
+                  </div>
+                  <!-- <span 
+                    class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                    [class]="getStateClass(v.state)"
+                  >
+                    {{ v.stateName }}
+                  </span> -->
+                </div>
+      
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4 text-gray-700 mt-6">
+      
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Name</p>
+                    <p class="text-base text-xs">{{ metadata().name }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Date of Birth</p>
+                    <p class="text-base text-xs">{{ metadata().dob * 1000 | date: 'yyyy-MM-dd' }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                  </div>
+      
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Email</p>
+                    <p class="text-base text-xs">{{ metadata().email }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Mobile</p>
+                    <p class="text-base text-xs">{{ metadata().mobile }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                  </div>
+      
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Address</p>
+                    <p class="text-base text-xs">{{ metadata().address.street }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">District</p>
+                    <p class="text-base text-xs">{{ metadata().address.district }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Governorate</p>
+                    <p class="text-base text-xs">{{ metadata().address.governorate }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Country</p>
+                    <p class="text-base text-xs">{{ v.countryName }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                  </div>
+      
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">ID Number</p>
+                    <p class="text-base text-xs">{{ metadata().idNo }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">ID Type</p>
+                    <p class="text-base text-xs">{{ metadata().idTypeName }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">ID Expiry</p>
+                    <p class="text-base text-xs">{{ metadata().idExpiry * 1000 | date: 'yyyy-MM-dd' }}</p>
+                  </div>
+      
+                  <div class="border-t pt-2 md:col-span-3">
+                    <p class="text-xs font-medium text-gray-500">UID Hash</p>
+                    <p class="text-base text-xs">{{ v.uniqueIdHash }}</p>
+                  </div>
+      
+                  <div class="border-t pt-2 md:col-span-3">
+                    <p class="text-xs font-medium text-gray-500">cKYC-ID Hash</p>
+                    <p class="text-base text-xs">{{ v.ginHash }}</p>
+                  </div>
+      
+                  <div class="border-t pt-2 md:col-span-2">
+                    <p class="text-xs font-medium text-gray-500">Created By</p>
+                    <p class="font-mono text-base text-xs">{{ v.createdBy }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Created On</p>
+                    <p class="font-mono text-base text-xs">{{ v.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+                  </div>
+      
+                  <div class="border-t pt-2 md:col-span-2">
+                    <p class="text-xs font-medium text-gray-500">Last Varified By</p>
+                    <p class="font-mono text-base text-xs">{{ v.lastVarifiedBy }}</p>
+                  </div>
+                  <div class="border-t pt-2">
+                    <p class="text-xs font-medium text-gray-500">Varified On</p>
+                    <p class="font-mono text-base text-xs">{{ v.lastVarifiedAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+                  </div>
+      
+                  <div class="border-t pt-2 cursor-pointer" (click)="openLightbox(idFront)">
+                    <p class="text-xs font-medium text-gray-500 mb-2">ID Front</p>
+                    <img [src]="idFront" class="w-full rounded hover:opacity-80 transition-opacity" alt="ID Front">
+                  </div>
+                  <div class="border-t pt-2 cursor-pointer" (click)="openLightbox(idBack)">
+                    <p class="text-xs font-medium text-gray-500 mb-2">ID Back</p>
+                    <img [src]="idBack" class="w-full rounded hover:opacity-80 transition-opacity" alt="ID Back">
+                  </div>
+      
+                </div>
+              </div>
             </div>
           }
 
+          <!-- holdings tab -->
+          @if (activeTab() === 'holdings') {
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 badges" dir="ltr">
+              @for (stat of stats(); track stat.title) {
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4">
+                  <div class="bg-blue-100 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="stat.icon" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
+                    <p class="text-1xl font-bold text-gray-800">{{ stat.value | number}}</p>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Assets Table -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges" dir="ltr" style="width: auto;">
+              <!-- <div class="px-6 py-4 bg-gray-600">
+                <h2 class="text-xl font-semibold text-white">Top Moving Assets</h2>
+              </div> -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                  <thead class="text-xs text-gray-700 uppercase bg-gray-400">
+                    <tr>
+                      <th scope="col" class="px-6 py-2">#</th>
+                      <th scope="col" class="px-6 py-2">Issuer</th>
+                      <th scope="col" class="px-6 py-2">Asset</th>
+                      <th scope="col" class="px-6 py-2">Symbol</th>
+                      <th scope="col" class="px-6 py-2 text-right">Volume</th>
+                      <th scope="col" class="px-6 py-2 text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (asset of assets(); track asset.symbol; let i = $index) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                        <th scope="row" class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap">
+                          {{ i + 1 }}
+                        </th>
+                        <td class="px-6 py-2">{{ asset.issuer }}</td>
+                        <td class="px-6 py-2">{{ asset.name }}</td>
+                        <td class="px-6 py-2">
+                          <span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">
+                            {{ asset.symbol }}
+                          </span>
+                        </td>
+                        <td class="px-6 py-2 text-right font-mono">{{ asset.supply | number }}</td>
+                        <td class="px-6 py-2 text-right font-mono">{{ asset.value  | number: '1.2-2' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>          
+          }  
+
+          <!-- credit tab -->
+          @if (activeTab() === 'credit') {
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 badges" dir="ltr">
+              @for (stat of creditSummary(); track stat.title) {
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4">
+                  <div class="bg-blue-100 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="stat.icon" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
+                    <p class="text-1xl font-bold text-gray-800">{{ stat.value | number }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Assets Table -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges" dir="ltr" style="width: auto;">
+              <!-- <div class="px-6 py-4 bg-gray-600">
+                <h2 class="text-xl font-semibold text-white">Top Moving Assets</h2>
+              </div> -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                  <thead class="text-xs text-gray-700 uppercase bg-gray-400">
+                    <tr>
+                      <th scope="col" class="px-6 py-2">#</th>
+                      <th scope="col" class="px-6 py-2">Time</th>
+                      <th scope="col" class="px-6 py-2">Type</th>
+                      <th scope="col" class="px-6 py-2 text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (asset of creditTrx(); track asset.time; let i = $index) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                        <th scope="row" class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap">
+                          {{ i + 1 }}
+                        </th>
+                        <td class="px-6 py-2">{{ asset.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                        <td class="px-6 py-2">{{ asset.type }}</td>
+                        <td class="px-6 py-2 text-right font-mono">{{ asset.value | number: '1.2-2' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>          
+          }  
+
+          <!-- transactions tab -->
+          @if (activeTab() === 'trxs') {
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 badges" dir="ltr">
+              @for (stat of trxSummary(); track stat.title) {
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4">
+                  <div class="bg-blue-100 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="stat.icon" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
+                    <p class="text-1xl font-bold text-gray-800">{{ stat.value | number }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Transactions Table -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges" dir="ltr" style="width: auto;">
+              <!-- <div class="px-6 py-4 bg-gray-600">
+                <h2 class="text-xl font-semibold text-white">Top Moving Assets</h2>
+              </div> -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                  <thead class="text-xs text-gray-700 uppercase bg-gray-400">
+                    <tr>
+                      <th scope="col" class="px-6 py-2">Ref #</th>
+                      <th scope="col" class="px-6 py-2">Time</th>
+                      <th scope="col" class="px-6 py-2">Symbol</th>
+                      <th scope="col" class="px-6 py-2">Type</th>
+                      <th scope="col" class="px-6 py-2 text-right">Volume</th>
+                      <th scope="col" class="px-6 py-2 text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (asset of trxDetails(); track asset.time; let i = $index) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-6 py-2">{{ asset.ref }}</td>
+                        <td class="px-6 py-2">{{ asset.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                        <td class="px-6 py-2">{{ asset.symbol }}</td>
+                        <td class="px-6 py-2">{{ asset.type }}</td>
+                        <td class="px-6 py-2 text-right font-mono">{{ asset.volume | number }}</td>
+                        <td class="px-6 py-2 text-right font-mono">{{ asset.value | number: '1.2-2' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>          
+          }  
+
+        }
+        @else {
+            <div class="text-center py-12 text-gray-500">
+              <p>Loading identity details...</p>
+            </div>
         }
 
-        <!-- holdings tab -->
-        @if (activeTab() === 'holdings') {
-
-          <!-- Stats Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 badges" dir="ltr">
-            @for (stat of stats(); track stat.title) {
-              <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4">
-                <div class="bg-blue-100 p-3 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="stat.icon" />
-                  </svg>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
-                  <p class="text-1xl font-bold text-gray-800">{{ stat.value | number }}</p>
-                </div>
-              </div>
-            }
-          </div>
-
-          <!-- Assets Table -->
-          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges" dir="ltr" style="width: auto;">
-            <!-- <div class="px-6 py-4 bg-gray-600">
-              <h2 class="text-xl font-semibold text-white">Top Moving Assets</h2>
-            </div> -->
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm text-left text-gray-500">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-400">
-                  <tr>
-                    <th scope="col" class="px-6 py-2">#</th>
-                    <th scope="col" class="px-6 py-2">Issuer</th>
-                    <th scope="col" class="px-6 py-2">Asset</th>
-                    <th scope="col" class="px-6 py-2">Symbol</th>
-                    <th scope="col" class="px-6 py-2 text-right">Volume</th>
-                    <th scope="col" class="px-6 py-2 text-right">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (asset of assets(); track asset.symbol; let i = $index) {
-                    <tr class="bg-white border-b hover:bg-gray-50">
-                      <th scope="row" class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap">
-                        {{ i + 1 }}
-                      </th>
-                      <td class="px-6 py-2">{{ asset.issuer }}</td>
-                      <td class="px-6 py-2">{{ asset.name }}</td>
-                      <td class="px-6 py-2">
-                        <span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">
-                          {{ asset.symbol }}
-                        </span>
-                      </td>
-                      <td class="px-6 py-2 text-right font-mono">{{ asset.supply | number }}</td>
-                      <td class="px-6 py-2 text-right font-mono">{{ asset.value | number }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </div>          
-        }  
       </div>
-
+      
     </div>
   </main>  
 
