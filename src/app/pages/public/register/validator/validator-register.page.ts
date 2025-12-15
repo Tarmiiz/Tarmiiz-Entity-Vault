@@ -1,18 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonContent } from '@ionic/angular/standalone';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { LoadingController, AlertController } from '@ionic/angular';
 
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 
-import { RpcService } from '../../../shared/services/rpc.service';
+import { RpcService } from '../../../../shared/services/rpc.service';
 
 @Component({
-  selector: 'app-ckyc-operator',
-  templateUrl: './ckyc-operator.page.html',
-  styleUrls: ['./ckyc-operator.page.scss'],
+  selector: 'app-validator-register',
+  templateUrl: './validator-register.page.html',
+  styleUrls: ['./validator-register.page.scss'],
   standalone: true,
   imports: [ 
     IonContent, CommonModule, 
@@ -20,19 +20,17 @@ import { RpcService } from '../../../shared/services/rpc.service';
     RouterLink
   ]
 })
-export class CkycOperatorPage implements OnInit {
+export class ValidatorRegisterPage implements OnInit {
+    private fb = inject( FormBuilder);
+    private loadingController = inject( LoadingController);
+    private alertController = inject( AlertController);
+    private router = inject( Router);
+    private rpcService = inject(RpcService);
 
   formRegister!: FormGroup;
   isLoading = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private loadingController: LoadingController,
-    private alertController: AlertController,
-    private router: Router,
-
-    private rpcService: RpcService
-  ) { 
+  constructor() { 
     this.formRegister = this.fb.group({
       name: new FormControl('', [Validators.required]),
       symbol: new FormControl('', [Validators.required]),
@@ -44,8 +42,7 @@ export class CkycOperatorPage implements OnInit {
     });
   }
 
-  ngOnInit() {
-  }
+  ngOnInit() {}
 
   async showAlert(header: string, message: string) {
     const alert = await this.alertController.create({
@@ -79,8 +76,7 @@ export class CkycOperatorPage implements OnInit {
     try {
 
       // Initialize the RPC service
-      await this.rpcService.createWallet();
-      await this.rpcService.connectCKYCContract();
+      await this.rpcService.init();
 
       const regulatorAddress = environment.regulatorAddress;
       const countryCode = environment.countryCode;
@@ -91,7 +87,7 @@ export class CkycOperatorPage implements OnInit {
       }
 
       loading.message = 'Generating zero-knowledge proof and registering...';
-      const result = await this.rpcService.cKYCOperatorRegister(regulatorAddress, api, name, symbol, email, password, JSON.stringify(userData));
+      const result = await this.rpcService.validatorRegister(name, email, password, JSON.stringify(userData));
 
       if (result && result.success) {
         console.log(result.contract);

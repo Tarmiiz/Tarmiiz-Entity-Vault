@@ -7,9 +7,12 @@ import * as circomlibjs from 'circomlibjs';
 
 import { environment } from '../../../environments/environment';
 
+import cKYCProxyAbi from '../../../assets/ABIs/cKYCProxy.json';
+import cKYCOperatorTemplateAbi from '../../../assets/ABIs/cKYCOperatorTemplate.json';
 import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
+import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent } from '../models/data.model';
+import { Asset, AssetHolder, AssetPrice, AssetSupplyChange, cKYCIdentity, cKYCOperator, cKYCService, cKYCValidator, ControlEvent, Country, GlobalVariable, Key, Regulator, RegulatorData, RegulatorEvent } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -44,7 +47,7 @@ export interface AllEventsData {
 @Injectable({
   providedIn: 'root'
 })
-export class RpcService {
+export class RpcAssetsService {
 
   mF = environment.multiplyFactor;
   key: Key = new Key('', '', '');
@@ -54,8 +57,14 @@ export class RpcService {
   rpcProvider = new ethers.JsonRpcProvider(environment.rpcNode);
   wsProvider = new ethers.WebSocketProvider(environment.wsNode);
   
+  ckycProxyAddress = environment.CKYCProxyContract
+  ckycContract: any;
+  ckycOperatorContract: any;
+
   regulatorContractAddress = environment.regulatorAddress;
   regulatorContract: any;
+
+  assetContract: any;
 
   signer: any;
 
@@ -73,9 +82,9 @@ export class RpcService {
   async init(){
     await this.createWallet();
     await this.connectRegulatorContract();
-    // await this.rpcGVService.connectGlobalVariables();
-    // await this.rpcGVService.getCountriesList();
-    // await this.rpcGVService.getCategoriesList();
+    await this.rpcGVService.connectGlobalVariables();
+    await this.rpcGVService.getCountriesList();
+    await this.rpcGVService.getCategoriesList();
   }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -214,7 +223,7 @@ export class RpcService {
       await tx.wait();
 
       const authorized = await this.isAuthorized();
-      // console.log('authorized', authorized);
+      console.log('authorized', authorized);
       if(authorized) {
         this.storageService.set('contract', this.regulatorContractAddress);
         this.storageService.set('wallet', JSON.stringify(this.key));
@@ -291,6 +300,33 @@ export class RpcService {
 
   }
 
+  async assetsList() {   
+    try {
+      const result = await this.regulatorContract.listAssets(1, 100);
+      if(result) {
+        const count = Number(result[0]);
+        const addresses = result[1];
+        let assets: any[] = [];
+        if (count > 0) {
+          for (let i = 0; i < count; i++) {
+            const asset = await this.assetInfo(addresses[i]);
+            // console.log('asset', asset);
+            if(asset.result) {
+              assets.push(asset.result);
+            }
+          }
+        }
+        return { result: { count, assets }, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching assets list'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching assets list'};
+    }
+  }
+
   async callExternalParallel(address: string, callData: string) {
     try {
       await this.connectRegulatorContract();
@@ -343,117 +379,212 @@ export class RpcService {
     }
   }
 
-  async validatorsList(start: number, offset: number) {
-    try {
-      const result = await this.regulatorContract.validatorsList(start, offset);
-      if (result) {
-        
-        // check countries list
-        if (this.rpcGVService.countriesList.length === 0) {
-          await this.rpcGVService.getCountriesList();
-        }
-        
-        const count = Number(result[0]);
-        const validators = result[1].map((op: any) => {
-          console.log('result', op);
-          let parsedData = null;
-          try {
-            parsedData = JSON.parse(op.data);
-          } catch (e) {
-            console.error('Error parsing operator data:', e);
-          }
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // Asset Contract
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-          // Get country name for this operator
-          const countryCode = Number(op.countryCode);
-          const country = this.rpcGVService.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-          
-          return {
-            addess: op.validator,
-            name: op.name,
-            data: op.data,
-            email: parsedData?.email || '',
-            mobile: parsedData?.mobile || '',
-            countryCode: Number(op.countryCode),
-            countryName,
-            state: Number(op.state)
-          };
-        });
+  async connectAssetContract(address: string) {
+    try {
+      this.assetContract = new ethers.Contract(address, AssetTemplateAbi, this.signer);
+    }
+    catch (error: any) {
+      console.error('Asset connection error:', error);
+    }
+  }
+
+  async assetInfo(address: string) {
+    try {
+
+      await this.connectAssetContract(address);
+      const result = await this.assetContract.info();
+      if(result) { 
+        // const asset: Asset = new Asset(result[0], result[1], result[2], result[3], result[4], result[5], Number(result[6]), Number(result[7]), result[8], Number(result[9]), Number(result[10]), Number(result[11]), Number(result[12]), Number(result[13]));
         
-        return { result: { count, validators }, error: '' };
-      } else {
-        return { result: null, error: 'Error fetching validators list' };
+        const tokenTypeName = this.rpcGVService.globalVariables.find(variable => variable.category === 'Asset Token Type' && variable.variableId === Number(result[6]))?.name;
+        const assetTypeName = this.rpcGVService.globalVariables.find(variable => variable.category === 'Asset Type' && variable.variableId === Number(result[7]))?.name;
+        const stateName = this.rpcGVService.globalVariables.find(variable => variable.category === 'Asset State' && variable.variableId === Number(result[13]))?.name;
+
+        const asset: Asset = {
+          address: result[0],
+          name: result[1],
+          symbol: result[2],
+          issuer: result[3],
+          manager: result[4],
+          regulator: result[5],
+          tokenType: Number(result[6]),
+          tokenTypeName: tokenTypeName!,
+          assetType: Number(result[7]),
+          assetTypeName: assetTypeName!,
+          data: result[8],
+          totalSupply: Number(result[9]),
+          circulating: Number(result[10]),
+          currencyCode: Number(result[11]),
+          createdOn: Number(result[12]),
+          state: Number(result[13]),
+          stateName: stateName!
+        }
+        return { result: asset, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset info'};
       }
     }
     catch (error: any) {
-      return { result: null, error: 'Error fetching validators list: ' + error.message};
+      return { result: null, error: 'Error fetching asset info'};
     }
+
   }
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Regulator Contract: API Functions
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-  async validatorRegister(
-    name: string,
-    email: string, password: string, 
-    metadata: string
-  ) {
-
+  async assetIsSuspended(address: string) {
     try {
-      
-      // Initialize ParseProofUtils
-      await ParseProofUtils.init();
-  
-      // Convert to BigInts
-      const emailBigInt = ParseProofUtils.stringToBigInt(email);
-      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(this.globalSalt);
-  
-      // Generate hashes for contract
-      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
-      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);
-  
-      // create & encrypt user data
-      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
-      const encryptedUserData = metadata;
-
-      // create new wallet & connect to contract
-      const privkey = environment.apiPrivKey;
-      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
-
-      // register
-      const tx = await apiContract['validatorAdd'](emailHashHex, secretHex, name, encryptedUserData);
-      const receipt = await tx.wait();
-  
-      // listen to contract event
-      const eventlog = receipt.logs?.map((log: any) => apiContract.interface.parseLog(log))?.find((e: any) => e?.name === 'ValidatorEvent');
-      if (eventlog) {
-        const { sender, validator, action } = eventlog.args;
-        console.log(validator, action);
-        return {
-          success: true,
-          contract: validator,
-        };
+      const iface = new ethers.Interface(["function isSuspended() external view returns (bool)"]);
+      const callData = iface.encodeFunctionData('isSuspended', []);
+      const result = await this.callExternalStatic(address, callData);
+      if (result.success && result.data !== null) {
+        console.log('result data', result.data);
+        const decodedResult = iface.decodeFunctionResult('isSuspended', result.data);
+        console.log('decodedResult', decodedResult);
+        return { result: decodedResult[0], error: '' };
       } else {
-        console.log('No OperatorEvent event found in receipt');
-        return { success: false };
-      }      
-  
+        return { result: null, error: 'Error fetching asset suspension status' };
+      }
     }
-    catch (error) {
-      console.error(error);
-      return {
-        success: false,
-        contract: ''
-      };
+    catch (error: any) {
+      return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
+    }
+
+  }
+
+  async assetSuspend(address: string, state: boolean) {
+    try {
+      console.log('state', state);
+      const iface = new ethers.Interface(["function suspend(bool halt) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('suspend', [state]);
+      const result = await this.callExternal(address, callData);
+      console.log('result', result);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset suspension status'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
+    }
+
+  }
+
+  async assetHoldersList(address: string, start: number, offset: number) {
+    try {
+      await this.connectAssetContract(address);
+      const result = await this.assetContract.getHolders(start, offset);
+      if(result) { 
+        const holders: AssetHolder = {
+          address: result[0],
+          balance: Number(result[1])
+        }
+  
+        return { result: holders , error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset holders'};
+      }
+    }
+    catch (error: any) {
+        return { result: null, error: 'Error fetching asset holders'};
     }
   }
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Regulator Contract: Event Functions
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  async assetBalanceOf(address: string, account: string) {
+    try {
+      await this.connectAssetContract(address);
+      const result = await this.assetContract.balanceOf(account);
+      if(result) { 
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset info'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching asset info'};
+    }
+
+  }
+
+  async assetSupplyChanges(address: string, start: number, offset: number) {
+    try {
+      await this.connectAssetContract(address);
+      const result = await this.assetContract.getSupplyChanges(start, offset);
+      console.log('result', result);
+      if(result) { 
+
+        const changes: AssetSupplyChange[] = result[1].map((change: any) => ({
+          changeType: Number(change[0]),
+          changeTypeName: this.rpcGVService.globalVariables.find(variable => variable.category === 'Asset Supply Change' && variable.variableId === Number(change[0]))?.name,
+          amount: Number(change[1]),
+          timestamp: Number(change[2])
+        }))
+
+        return { result: changes , error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset supply changes'};
+      }
+    }
+    catch (error: any) {
+        return { result: null, error: 'Error fetching asset supply changes'};
+    }
+  }
+
+  async assetPriceCurrent(address: string) {
+    try {
+      await this.connectAssetContract(address);
+      const result = await this.assetContract.getCurrentPrice();
+      if(result) { 
+        const price: AssetPrice = {
+          bid: Number(ethers.formatEther(result[0])),
+          ask: Number(ethers.formatEther(result[1])),
+          timestamp: Number(result[2])
+        };
+        return { result: { price } , error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset price history'};
+      }
+    }
+    catch (error: any) {
+        return { result: null, error: 'Error fetching asset price history: ' + error};
+    }
+  }
+
+  async assetPriceHistory(address: string, start: number, offset: number) {
+    try {
+      await this.connectAssetContract(address);
+      const result = await this.assetContract.getPriceHistory(start, offset);
+      if(result) { 
+        const count = Number(result[0]);
+        const prices: AssetPrice[] = result[1].map((price: any) => ({
+          bid: Number(ethers.formatEther(price[0])),
+          ask: Number(ethers.formatEther(price[1])),
+          timestamp: Number(price[2])
+        }))
+        prices.reverse();
+        return { result: { count, prices } , error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset price history'};
+      }
+    }
+    catch (error: any) {
+        return { result: null, error: 'Error fetching asset price history: ' + error};
+    }
+  }
+
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // Regulator Contract: Event Functions
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async getControlEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<ControlEvent[]> {
     try {

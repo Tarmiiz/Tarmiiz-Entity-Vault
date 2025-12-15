@@ -60,6 +60,31 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "action",
+          "type": "string"
+        }
+      ],
+      "name": "AssetEvent",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "address",
           "name": "caller",
@@ -103,6 +128,44 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "action",
+          "type": "string"
+        }
+      ],
+      "name": "CredentialEvent",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "action",
+          "type": "string"
+        }
+      ],
+      "name": "ExternalCallEvent",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": false,
           "internalType": "uint64",
           "name": "version",
@@ -110,6 +173,25 @@
         }
       ],
       "name": "Initialized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "action",
+          "type": "string"
+        }
+      ],
+      "name": "LoginEvent",
       "type": "event"
     },
     {
@@ -142,34 +224,15 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
+          "indexed": true,
           "internalType": "address",
-          "name": "vault",
+          "name": "sender",
           "type": "address"
         },
         {
-          "indexed": false,
+          "indexed": true,
           "internalType": "address",
-          "name": "asset",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "assetEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "account",
+          "name": "validator",
           "type": "address"
         },
         {
@@ -179,26 +242,7 @@
           "type": "string"
         }
       ],
-      "name": "credentialsEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "loginEvent",
+      "name": "ValidatorEvent",
       "type": "event"
     },
     {
@@ -270,7 +314,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "vault",
+          "name": "service",
           "type": "address"
         },
         {
@@ -337,6 +381,19 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "secret",
+          "type": "bytes32"
+        }
+      ],
+      "name": "changePassword",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "commitment",
       "outputs": [
@@ -376,6 +433,32 @@
           "internalType": "string[]",
           "name": "roleNames",
           "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getAuthAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getAuthorizedUntil",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -648,7 +731,7 @@
               "type": "bool"
             }
           ],
-          "internalType": "struct GRRRegulatorTemplate.Regulator",
+          "internalType": "struct RegulatorTemplate.Regulator",
           "name": "",
           "type": "tuple"
         }
@@ -659,13 +742,36 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "initialOwner",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "apiAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "validatorsContract",
+          "type": "address"
+        },
+        {
           "internalType": "bytes32",
-          "name": "usernameHash",
+          "name": "loginHash",
           "type": "bytes32"
         },
         {
           "internalType": "bytes32",
-          "name": "commit",
+          "name": "secret",
           "type": "bytes32"
         },
         {
@@ -687,19 +793,6 @@
           "internalType": "uint256",
           "name": "countryCode",
           "type": "uint256"
-        }
-      ],
-      "name": "initialize",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "initialOwner",
-          "type": "address"
         }
       ],
       "name": "initialize",
@@ -803,7 +896,7 @@
           "type": "uint256"
         }
       ],
-      "name": "listVaults",
+      "name": "listServices",
       "outputs": [
         {
           "internalType": "uint256",
@@ -812,7 +905,7 @@
         },
         {
           "internalType": "address[]",
-          "name": "vaults",
+          "name": "services",
           "type": "address[]"
         }
       ],
@@ -843,7 +936,7 @@
         },
         {
           "internalType": "bytes",
-          "name": "_signature",
+          "name": "signature",
           "type": "bytes"
         },
         {
@@ -907,7 +1000,7 @@
       "inputs": [
         {
           "internalType": "bytes32",
-          "name": "_commitment",
+          "name": "secret",
           "type": "bytes32"
         }
       ],
@@ -966,7 +1059,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "vault",
+          "name": "service",
           "type": "address"
         },
         {
@@ -994,19 +1087,6 @@
         }
       ],
       "name": "removeRole",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "_commitment",
-          "type": "bytes32"
-        }
-      ],
-      "name": "resetPassword",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1071,6 +1151,101 @@
       "name": "unpause",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "loginHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "secret",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "data",
+          "type": "string"
+        }
+      ],
+      "name": "validatorAdd",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "start",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "validatorsList",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "validator",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "regulator",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "data",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "countryCode",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "state",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct IValidators.Validator[]",
+          "name": "validators",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {

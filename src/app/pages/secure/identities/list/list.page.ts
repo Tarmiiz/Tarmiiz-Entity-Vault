@@ -8,6 +8,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { RpcService } from '../../../../shared/services/rpc.service';
+import { RpcCKYCService } from '../../../../shared/services/rpc-ckyc.service';
 import { CryptoService } from '../../../../shared/services/crypto.service';
 
 import { cKYCIdentity } from '../../../../shared/models/data.model';
@@ -26,6 +27,7 @@ import { cKYCIdentity } from '../../../../shared/models/data.model';
 export class UsersPage implements OnInit {
   private router = inject(Router);
   private rpcService = inject(RpcService);
+  private rpcCKYCService = inject(RpcCKYCService);
   private cryptoService = inject(CryptoService);
   private loadingService = inject(LoadingService);
   private fb: FormBuilder = inject(FormBuilder);
@@ -61,7 +63,7 @@ export class UsersPage implements OnInit {
 
   async listIdentities() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.cKYCIdentitiesList(1, 10);
+    const result = await this.rpcCKYCService.cKYCIdentitiesList(1, 10);
     if(result.result) {
       this.identitiesCount = result.result.count;
       this.identities.set(result.result.identities);
@@ -85,13 +87,13 @@ export class UsersPage implements OnInit {
     this.isSearchExpanded.set(true);
     try {
       let response: any = null;
-      if (searchType === 'emailMobile') { response = await this.rpcService.cKYCIdentityLookupByContact(searchTerm); }
+      if (searchType === 'emailMobile') { response = await this.rpcCKYCService.cKYCIdentityLookupByContact(searchTerm); }
       if (searchType === 'nationalId')  { 
         const uid = '1:818:1:' + searchTerm;
         const uidHash = '0x' + await this.cryptoService.shaHash(uid);
-        response = await this.rpcService.cKYCIdentityLookupByUID(uidHash); 
+        response = await this.rpcCKYCService.cKYCIdentityLookupByUID(uidHash); 
       }
-      if (searchType === 'ckycId') { response = await this.rpcService.cKYCIdentityLookupByContact(searchTerm); }
+      if (searchType === 'ckycId') { response = await this.rpcCKYCService.cKYCIdentityLookupByContact(searchTerm); }
       if (response.result) {
         this.searchResults.set(response.result);
       }

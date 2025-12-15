@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { cKYCValidator } from '../../../models/data.model';
+import { cKYCValidator } from '../../../../../../shared/models/data.model';
 
 export interface EditValidatorData {
   name: string;

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LoadingController } from '@ionic/angular';
@@ -12,6 +12,8 @@ import {
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../shared/services/rpc.service';
+import { RpcAssetsService } from '../../../../shared/services/rpc-assets.service';
+import { RpcGVService } from '../../../../shared/services/rpc-gv.service';
 
 import { Asset } from '../../../../shared/models/data.model';
 
@@ -29,17 +31,18 @@ import { Asset } from '../../../../shared/models/data.model';
   ]
 })
 export class AssetsPage implements OnInit {
+  private loadingController = inject(LoadingController);
+  private rpcService = inject(RpcService);
+  private rpcAssetsService = inject(RpcAssetsService);
+  private rpcGVService = inject(RpcGVService);
+  private router = inject(Router);
 
   loadingAssets: boolean = false;
   assetsCount = 0;
   assets: Asset[] = [];
   emptyRows: Array<any> = Array(5).fill(null);
 
-  constructor(
-    private loadingController: LoadingController,
-    private rpcService: RpcService,
-    private router: Router
-  ) { }
+  constructor() { }
 
   ngOnInit() {
   }
@@ -55,8 +58,8 @@ export class AssetsPage implements OnInit {
       message: 'Loading data ...'
     })
     await loading.present();
-    await this.rpcService.connectGlobalVariables();
-    await this.rpcService.getGlobalVariables();
+    await this.rpcGVService.connectGlobalVariables();
+    await this.rpcGVService.getGlobalVariables();
     await this.listAssets();
     this.loadingAssets = false;
     this.loadingController.dismiss();
@@ -64,7 +67,7 @@ export class AssetsPage implements OnInit {
 
   async listAssets() {
     // Get all historical events-
-    const result = await this.rpcService.assetsList();
+    const result = await this.rpcAssetsService.assetsList();
     if(result.result) {
       this.assetsCount = result.result.count;
       this.assets = result.result.assets;

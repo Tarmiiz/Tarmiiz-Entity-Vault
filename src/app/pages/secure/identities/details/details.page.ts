@@ -10,6 +10,8 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 
 import { RpcService } from '../../../../shared/services/rpc.service';
+import { RpcGVService } from '../../../../shared/services/rpc-gv.service';
+import { RpcCKYCService } from '../../../../shared/services/rpc-ckyc.service';
 import { ApiService } from '../../../../shared/services/api.service';
 
 import { cKYCIdentity } from '../../../../shared/models/data.model';
@@ -71,6 +73,8 @@ interface Transaction {
 export class UserDetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private rpcService = inject(RpcService);
+  private rpcGVService = inject(RpcGVService);
+  private rpcCKYCService = inject(RpcCKYCService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private apiService = inject(ApiService);
@@ -156,7 +160,7 @@ export class UserDetailsPage implements OnInit {
 
   async getIdenityDetails(uid: string) {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.cKYCIdentityLookupByUID(uid);
+    const data = await this.rpcCKYCService.cKYCIdentityLookupByUID(uid);
     this.identity.set(data.result);
     // console.log('identity', this.identity());
     const metadataCID = this.identity()?.metadata || '';
@@ -165,8 +169,8 @@ export class UserDetailsPage implements OnInit {
 
       // get id type name
       const idType = this.metadata()?.idType || 0;
-      await this.rpcService.connectGlobalVariables();
-      const idTypeResult = await this.rpcService.getGlobalVariableByCategory('ID Type - Individual');      
+      await this.rpcGVService.connectGlobalVariables();
+      const idTypeResult = await this.rpcGVService.getGlobalVariableByCategory('ID Type - Individual');      
       let idTypeName = 'Unknown';
       if (idTypeResult.result) {
         const idTypeVariable = idTypeResult.result.find((v: any) => v.variableId === idType);

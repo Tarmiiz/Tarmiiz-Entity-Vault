@@ -9,9 +9,9 @@ import { HeaderComponent } from "../../../../../shared/components/header/header.
 import { RpcService } from '../../../../../shared/services/rpc.service';
 import { RpcCKYCService } from '../../../../../shared/services/rpc-ckyc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
-import { ModalcKYCValidatorAddService } from '../modals/modal-ckyc-validator-add/modal-ckyc-validator-add.service';
 
-import { cKYCValidator } from '../../../../../shared/models/data.model';
+import { cKYCService, cKYCValidator } from '../../../../../shared/models/data.model';
+import { ModalcKYCServiceAddService } from '../modals/modal-ckyc-service-add/modal-ckyc-service-add.service';
 
 @Component({
   selector: 'app-list',
@@ -29,30 +29,32 @@ export class ListPage implements OnInit {
     private rpcCKYCService = inject(RpcCKYCService);
     private router = inject(Router);
     private loadingService = inject(LoadingService);
-    private ckycValidatorAddService = inject(ModalcKYCValidatorAddService);
+    private ckycServiceAddService = inject(ModalcKYCServiceAddService);
 
-  loadingValidators: boolean = false;
+  loadingServices: boolean = false;
 
-  validatorsCount = 0
-  validators = signal<cKYCValidator[]>([]);
-  validatorsSearchTerm = signal('');
+  servicesCount = 0
+  services = signal<cKYCService[]>([]);
+  servicesSearchTerm = signal('');
 
-  constructor() { }
+  constructor(
+  ) { }
 
-  ngOnInit() {}
+  ngOnInit() {
+  }
 
 
   async ionViewWillEnter() {
-    this.validators.set([]);
-    this.validatorsCount = 0;
+    this.services.set([]);
+    this.servicesCount = 0;
   }  
 
   async ionViewDidEnter() {
-    this.loadingValidators = true;
+    this.loadingServices = true;
     // await this.rpcService.connectGlobalVariables();
     // await this.rpcService.getGlobalVariables();
-    await this.listValidators();
-    this.loadingValidators = false;
+    await this.listServives();
+    this.loadingServices = false;
   }
   
   getStateClass(stateId: number | undefined): string {
@@ -66,13 +68,13 @@ export class ListPage implements OnInit {
     }
   } 
 
-  async listValidators() {
+  async listServives() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.validatorsList(1, 10);
-    console.log('validators', result);
+    const result = await this.rpcCKYCService.cKYCServicesList(1, 10);
     if(result.result) {
-      this.validatorsCount = result.result.count;
-      this.validators.set(result.result.validators);
+      this.servicesCount = result.result.count;
+      this.services.set(result.result.services);
+      // console.log('services', this.services());
     }
     else {
       console.log(result.error);
@@ -80,38 +82,38 @@ export class ListPage implements OnInit {
     this.loadingService.hide();
   }  
 
-  viewDetails(validator: cKYCValidator) {
-    this.router.navigate(['/authorized/ckyc/validators/details/' + validator.id]);
+  viewDetails(service: cKYCService) {
+    this.router.navigate(['/authorized/ckyc/services/details/' + service.id]);
   }
 
-  filteredValidators = computed(() => {
-    const term = this.validatorsSearchTerm().toLowerCase();
-    if (!term) return this.validators();
-    return this.validators().filter(
+  filteredServices = computed(() => {
+    const term = this.servicesSearchTerm().toLowerCase();
+    if (!term) return this.services();
+    return this.services().filter(
       c => c.name.toLowerCase().includes(term) || 
       c.email.toLowerCase().includes(term) || 
       c.mobile.toLowerCase().includes(term)
     );
   });  
 
-  onValidatorsSearch(event: Event) {
-    this.validatorsSearchTerm.set((event.target as HTMLInputElement).value);
+  onServicesSearch(event: Event) {
+    this.servicesSearchTerm.set((event.target as HTMLInputElement).value);
   }  
 
   async openAddModal() {
-    const result = await this.ckycValidatorAddService.show();
+    const result = await this.ckycServiceAddService.show();
     if (result) {
-      this.loadingService.show('Adding validator...');
+      this.loadingService.show('Adding service...');
       try {
         const name = result.name;
         const data = {
           email: result.email,
           mobile: result.mobile
         };
-        await this.rpcCKYCService.cKYCValidatorAdd(name, JSON.stringify(data));
-        await this.listValidators();
+        await this.rpcCKYCService.cKYCServiceAdd(name, JSON.stringify(data), 1);
+        await this.listServives();
       } catch (error) {
-        console.error('Failed to add validator', error);
+        console.error('Failed to add service', error);
       } finally {
         this.loadingService.hide();
       }

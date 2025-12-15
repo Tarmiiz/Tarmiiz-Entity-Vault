@@ -1,0 +1,72 @@
+<app-header title="cKYC Services"></app-header>
+
+<ion-content [fullscreen]="true">
+
+  <div class="table-container">
+    
+    <!-- Search Bar -->
+    <div class="mb-6 flex items-center justify-between badges">
+      <div class="relative flex-grow">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input 
+          type="text" 
+          placeholder="Search by Name, Email, or Mobile" 
+          class="w-full bg-white border border-gray-300 text-gray-800 placeholder-gray-500 rounded-full shadow-sm py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+          [value]="servicesSearchTerm()"
+          (input)="onServicesSearch($event)"
+        />
+      </div>
+      <button (click)="openAddModal()" class="ml-4 px-3 py-2 bg-[#202a3b] text-white font-semibold rounded-full shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 flex-shrink-0">
+        Add Service
+      </button>
+    </div>
+
+    <!-- Services Table -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges">
+      <div class="overflow-x-auto rounded-lg">
+        <table class="w-full text-sm text-left text-gray-700">
+
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <tr>
+                  <th scope="col" class="px-6 py-2">#</th>
+                  <th scope="col" class="px-6 py-2">Name</th>
+                  <th scope="col" class="px-6 py-2">State</th>
+              </tr>
+          </thead>
+          <tbody>
+            @if(loadingServices) {
+
+            }
+            @else {
+              <!-- no data -->
+              @if(filteredServices().length == 0) {
+                  <tr class="bg-white border-b hover:bg-gray-50">
+                      <td class="px-6 py-2">no data</td>
+                  </tr>
+              }
+              @else {
+                  @for(service of filteredServices(); track service.id; let i = $index; let isEven = $even;) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(service)">
+                          <td class="px-6 py-2">{{ i + 1 }}</td>
+                          <td class="px-6 py-2">{{ service.name }}</td>
+                          <td class="px-6 py-4">
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
+                                {{ service.stateName }}
+                              </span>
+                          </td>
+                      </tr>
+                  }
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</ion-content>

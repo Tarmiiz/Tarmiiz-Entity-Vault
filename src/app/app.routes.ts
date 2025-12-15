@@ -19,8 +19,26 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/public/forgot-password/forgot-password.page').then( m => m.ForgotPasswordPage)
       },
       {
-        path: 'ckyc',
-        loadComponent: () => import('./pages/public/ckyc-operator/ckyc-operator.page').then( m => m.CkycOperatorPage)
+        path: 'register',
+        children: [
+          {
+            path: 'operator',
+            loadComponent: () => import('./pages/public/register/operator/ckyc-operator.page').then( m => m.CkycOperatorPage)
+          },
+          {
+            path: 'service',
+            loadComponent: () => import('./pages/public/register/service/service-register.page').then( m => m.ServiceRegisterPage)
+          },
+          {
+            path: 'validator',
+            loadComponent: () => import('./pages/public/register/validator/validator-register.page').then( m => m.ValidatorRegisterPage)
+          },
+          {
+            path: '',
+            redirectTo: 'public/login',
+            pathMatch: 'full',
+          },
+        ],
       },
       {
         path: '',
@@ -130,6 +148,22 @@ export const routes: Routes = [
               {
                 path: 'details/:id',
                 loadComponent: () => import('./pages/secure/ckyc/validators/details/details.page').then( m => m.DetailsPage),
+                canActivate: [AuthGuard]
+              },
+            ]
+          },
+          {
+            path: 'services',
+            canActivate: [AuthGuard],
+            children: [
+              {
+                path: 'list',
+                loadComponent: () => import('./pages/secure/ckyc/services/list/list.page').then( m => m.ListPage),
+                canActivate: [AuthGuard]
+              },
+              {
+                path: 'details/:id',
+                loadComponent: () => import('./pages/secure/ckyc/services/details/details.page').then( m => m.DetailsPage),
                 canActivate: [AuthGuard]
               },
             ]

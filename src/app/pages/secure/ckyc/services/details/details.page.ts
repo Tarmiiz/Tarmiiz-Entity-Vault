@@ -11,8 +11,8 @@ import { RpcCKYCService } from '../../../../../shared/services/rpc-ckyc.service'
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { cKYCValidator } from '../../../../../shared/models/data.model';
-import { ModalcKYCValidatorEditService } from '../modals/modal-ckyc-validator-edit/modal-ckyc-validator-edit.service';
-import { ModalcKYCValidatorStateService } from '../modals/modal-ckyc-validator-state.service';
+import { ModalcKYCValidatorEditService } from '../../validators/modals/modal-ckyc-validator-edit/modal-ckyc-validator-edit.service';
+import { ModalcKYCValidatorStateService } from '../../validators/modals/modal-ckyc-validator-state.service';
 
 @Component({
   selector: 'app-details',

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
@@ -8,9 +8,12 @@ import {
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../shared/services/rpc.service';
+import { RpcGVService } from '../../../../shared/services/rpc-gv.service';
+
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
 import { Country, GlobalVariable } from '../../../../shared/models/data.model';
+
 
 @Component({
   selector: 'app-system',
@@ -25,6 +28,11 @@ import { Country, GlobalVariable } from '../../../../shared/models/data.model';
 })
 
 export class SystemPage implements OnInit {
+    private loadingService = inject(LoadingService);
+    private rpcService = inject(RpcService);
+    private rpcGVService = inject(RpcGVService);
+
+
   activeTab = signal<'countries' | 'variables'>('countries');
 
   countriesSearchTerm = signal('');
@@ -38,10 +46,7 @@ export class SystemPage implements OnInit {
 
   variables: GlobalVariable[] = [];
 
-  constructor(
-    private loadingService: LoadingService,
-    private rpcService: RpcService,
-  ) { }
+  constructor() { }
 
   async ngOnInit() {
   }
@@ -50,7 +55,7 @@ export class SystemPage implements OnInit {
     this.loadingData = true;
     this.loadingService.show('Loading data...');
 
-    await this.rpcService.connectGlobalVariables();
+    await this.rpcGVService.connectGlobalVariables();
     await this.getCountries();
     await this.getVariables();
     this.loadingData = false;
@@ -58,7 +63,7 @@ export class SystemPage implements OnInit {
   }
 
   async getCountries() {
-    const data = await this.rpcService.getCountriesList();
+    const data = await this.rpcGVService.getCountriesList();
     if(data.result) {
       this.countries.set(data.result);
     }
@@ -68,7 +73,7 @@ export class SystemPage implements OnInit {
   }
 
   async getVariables() {
-    const data = await this.rpcService.getGlobalVariables();
+    const data = await this.rpcGVService.getGlobalVariables();
     if(data.result) {
       this.globalVariables.set(data.result);
     }

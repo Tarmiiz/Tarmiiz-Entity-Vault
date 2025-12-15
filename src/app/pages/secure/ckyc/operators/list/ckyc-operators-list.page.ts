@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { IonContent } from '@ionic/angular/standalone';
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../../shared/services/rpc.service';
+import { RpcCKYCService } from '../../../../../shared/services/rpc-ckyc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 
 import { cKYCOperator } from '../../../../../shared/models/data.model';
@@ -23,6 +24,10 @@ import { cKYCOperator } from '../../../../../shared/models/data.model';
   ]
 })
 export class CkycOperatorsListPage implements OnInit {
+    private rpcService = inject(RpcService);
+    private rpcCKYCService = inject(RpcCKYCService);
+    private router = inject(Router);
+    private loadingService = inject(LoadingService);
 
   loadingOperators: boolean = false;
 
@@ -33,9 +38,6 @@ export class CkycOperatorsListPage implements OnInit {
   emptyRows: Array<any> = Array(5).fill(null)
 
   constructor(
-    private rpcService: RpcService,
-    private router: Router,
-    private loadingService: LoadingService,
   ) { }
 
   ngOnInit() {
@@ -54,7 +56,7 @@ export class CkycOperatorsListPage implements OnInit {
   
   async listOperators() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.cKYCOperatorsList();
+    const result = await this.rpcCKYCService.cKYCOperatorsList();
     if(result.result) {
       this.operatorsCount = result.result.count;
       this.operators.set(result.result.operators);

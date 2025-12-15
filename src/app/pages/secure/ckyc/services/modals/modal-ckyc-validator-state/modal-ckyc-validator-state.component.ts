@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalcKYCValidatorStateService } from '../modal-ckyc-validator-state.service';
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { RpcService } from '../../../../../../shared/services/rpc.service';
 
 @Component({
   selector: 'app-modal-ckyc-validator-state',

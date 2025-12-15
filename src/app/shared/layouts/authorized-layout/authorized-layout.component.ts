@@ -6,7 +6,7 @@ import {
 import { RouterModule } from '@angular/router';
 
 import { addIcons } from 'ionicons';
-import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline, cogOutline, personCircleOutline, globeOutline, idCardOutline, fingerPrintOutline, bookOutline } from 'ionicons/icons';
+import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline, cogOutline, personCircleOutline, globeOutline, idCardOutline, fingerPrintOutline, bookOutline, snowOutline } from 'ionicons/icons';
 
 import { AuthService } from '../../services/auth.service';
 import { RpcService } from '../../services/rpc.service';
@@ -14,9 +14,10 @@ import { Regulator } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
 import { ModalcKYCOperatorEditComponent } from '../../components/modals/modal-ckyc-operator-edit/modal-ckyc-operator-edit.component';
-import { ModalcKYCValidatorAddComponent } from '../../components/modals/modal-ckyc-validator-add/modal-ckyc-validator-add.component';
-import { ModalcKYCValidatorEditComponent } from '../../components/modals/modal-ckyc-validator-edit/modal-ckyc-validator-edit.component';
-import { ModalCkycValidatorStateComponent } from "../../components/modals/modal-ckyc-validator-state/modal-ckyc-validator-state.component";
+import { ModalcKYCValidatorAddComponent } from '../../../pages/secure/ckyc/validators/modals/modal-ckyc-validator-add/modal-ckyc-validator-add.component';
+import { ModalcKYCValidatorEditComponent } from '../../../pages/secure/ckyc/validators/modals/modal-ckyc-validator-edit/modal-ckyc-validator-edit.component';
+import { ModalCkycValidatorStateComponent } from "../../../pages/secure/ckyc/validators/modals/modal-ckyc-validator-state/modal-ckyc-validator-state.component";
+import { ModalcKYCServiceAddComponent } from 'src/app/pages/secure/ckyc/services/modals/modal-ckyc-service-add/modal-ckyc-service-add.component';
 
 @Component({
   selector: 'app-authorized-layout',
@@ -43,7 +44,8 @@ import { ModalCkycValidatorStateComponent } from "../../components/modals/modal-
     ModalcKYCOperatorEditComponent,
     ModalcKYCValidatorAddComponent,
     ModalcKYCValidatorEditComponent,
-    ModalCkycValidatorStateComponent
+    ModalCkycValidatorStateComponent,
+    ModalcKYCServiceAddComponent,
 ],
 })
 export class AuthorizedLayoutComponent {
@@ -56,7 +58,7 @@ export class AuthorizedLayoutComponent {
     private rpcService: RpcService,
     
   ) {
-    addIcons({homeOutline,globeOutline,layersOutline,peopleOutline,personCircleOutline,idCardOutline,fingerPrintOutline,cogOutline,searchOutline,bookOutline,logOutOutline});
+    addIcons({homeOutline,peopleOutline,fingerPrintOutline,snowOutline,globeOutline,layersOutline,personCircleOutline,idCardOutline,cogOutline,searchOutline,bookOutline,logOutOutline});
     if(this.rpcService.regulatorInfo) this.regulatorInfo = this.rpcService.regulatorInfo;
   }
 

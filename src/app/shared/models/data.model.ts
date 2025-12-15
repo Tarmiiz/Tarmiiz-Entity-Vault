@@ -149,6 +149,21 @@ export class cKYCValidator {
   ) {}
 }
 
+export class cKYCService {
+  constructor (
+    public id: number,
+    public name: string,
+    public data: string,
+    public email: string,
+    public mobile: string,
+    public countryCode: number,
+    public countryName: string,
+    public regulator: string,
+    public state: number,
+    public stateName: string
+  ) {}
+}
+
 export class cKYCIdentity {
   constructor (
     public uniqueIdHash: string,
