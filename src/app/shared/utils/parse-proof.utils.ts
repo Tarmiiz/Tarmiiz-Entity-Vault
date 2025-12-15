@@ -1,8 +1,7 @@
 // @ts-ignore
 import * as snarkjs from 'snarkjs';
 import { ethers } from 'ethers';
-// @ts-ignore
-import * as circomlibjs from 'circomlibjs';
+import { poseidon1, poseidon3 } from 'poseidon-lite';
 
 export interface ZKProofData {
   a: [bigint, bigint];
@@ -17,29 +16,19 @@ export interface FullProof {
 }
 
 export class ParseProofUtils {
-  private static poseidon: any = null;
   private static initialized: boolean = false;
 
-  // Better initialization with error handling
   static async init(): Promise<void> {
     if (this.initialized) return;
-    
-    try {
-      this.poseidon = await circomlibjs.buildPoseidon();
-      this.initialized = true;
-    } catch (error) {
-      throw new Error(`Failed to initialize Poseidon: ${error}`);
-    }
+    this.initialized = true;
   }
 
-  // Ensure Poseidon is initialized before any operation
   private static checkInitialized(): void {
-    if (!this.initialized || !this.poseidon) {
-      throw new Error('Poseidon not initialized. Call ParseProofUtils.init() first.');
+    if (!this.initialized) {
+      throw new Error('ParseProofUtils not initialized. Call ParseProofUtils.init() first.');
     }
   }
 
-  // Better typed parseProof function
   static async parseProof(fullProof: FullProof): Promise<ZKProofData> {
     try {
       const calldata = await snarkjs.groth16.exportSolidityCallData(
@@ -73,7 +62,6 @@ export class ParseProofUtils {
     }
   }
 
-  // Original functions with better error handling
   static stringToBigInt(email: string): bigint {
     try {
       const emailBytes = ethers.toUtf8Bytes(email);
@@ -96,11 +84,10 @@ export class ParseProofUtils {
     this.checkInitialized();
     
     try {
-      const hash = this.poseidon([emailBigInt]);
-      const hashString = this.poseidon.F.toString(hash, 10);
-      const hashBigInt = BigInt(hashString);
+      // Use poseidon1 for single input
+      const hash = poseidon1([emailBigInt]);
       
-      return ethers.zeroPadValue(ethers.toBeArray(hashBigInt), 32);
+      return ethers.zeroPadValue(ethers.toBeArray(hash), 32);
     } catch (error) {
       throw new Error(`Failed to hash string for contract: ${error}`);
     }
@@ -110,11 +97,10 @@ export class ParseProofUtils {
     this.checkInitialized();
     
     try {
-      const commitment = this.poseidon([emailBigInt, passwordBigInt, salt]);
-      const commitmentString = this.poseidon.F.toString(commitment, 10);
-      const commitmentBigInt = BigInt(commitmentString);
+      // Use poseidon3 for three inputs
+      const commitment = poseidon3([emailBigInt, passwordBigInt, salt]);
       
-      return ethers.zeroPadValue(ethers.toBeArray(commitmentBigInt), 32);
+      return ethers.zeroPadValue(ethers.toBeArray(commitment), 32);
     } catch (error) {
       throw new Error(`Failed to generate commitment: ${error}`);
     }

@@ -3,7 +3,7 @@ import { Injectable, signal } from '@angular/core';
 @Injectable({
   providedIn: 'root'
 })
-export class ModalcKYCValidatorStateService {
+export class ModalValidatorStateService {
   isVisible = signal(false);
   currentState = signal<number | null>(null);
 

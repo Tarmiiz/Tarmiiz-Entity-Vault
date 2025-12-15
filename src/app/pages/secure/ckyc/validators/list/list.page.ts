@@ -7,11 +7,10 @@ import { IonContent } from '@ionic/angular/standalone';
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../../shared/services/rpc.service';
-import { RpcCKYCService } from '../../../../../shared/services/rpc-ckyc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
-import { ModalcKYCValidatorAddService } from '../modals/modal-ckyc-validator-add/modal-ckyc-validator-add.service';
+import { ModalValidatorAddService } from '../modals/modal-validator-add/modal-validator-add.service';
 
-import { cKYCValidator } from '../../../../../shared/models/data.model';
+import { Validator } from '../../../../../shared/models/data.model';
 
 @Component({
   selector: 'app-list',
@@ -26,15 +25,14 @@ import { cKYCValidator } from '../../../../../shared/models/data.model';
 })
 export class ListPage implements OnInit {
     private rpcService = inject(RpcService);
-    private rpcCKYCService = inject(RpcCKYCService);
     private router = inject(Router);
     private loadingService = inject(LoadingService);
-    private ckycValidatorAddService = inject(ModalcKYCValidatorAddService);
+    private ValidatorAddService = inject(ModalValidatorAddService);
 
   loadingValidators: boolean = false;
 
   validatorsCount = 0
-  validators = signal<cKYCValidator[]>([]);
+  validators = signal<Validator[]>([]);
   validatorsSearchTerm = signal('');
 
   constructor() { }
@@ -80,8 +78,8 @@ export class ListPage implements OnInit {
     this.loadingService.hide();
   }  
 
-  viewDetails(validator: cKYCValidator) {
-    this.router.navigate(['/authorized/ckyc/validators/details/' + validator.id]);
+  viewDetails(validator: Validator) {
+    this.router.navigate(['/authorized/ckyc/validators/details/' + validator.address]);
   }
 
   filteredValidators = computed(() => {
@@ -99,7 +97,7 @@ export class ListPage implements OnInit {
   }  
 
   async openAddModal() {
-    const result = await this.ckycValidatorAddService.show();
+    const result = await this.ValidatorAddService.show();
     if (result) {
       this.loadingService.show('Adding validator...');
       try {
@@ -108,7 +106,7 @@ export class ListPage implements OnInit {
           email: result.email,
           mobile: result.mobile
         };
-        await this.rpcCKYCService.cKYCValidatorAdd(name, JSON.stringify(data));
+        await this.rpcService.ValidatorAdd(name, JSON.stringify(data));
         await this.listValidators();
       } catch (error) {
         console.error('Failed to add validator', error);

@@ -7,7 +7,6 @@ import { IonContent } from '@ionic/angular/standalone';
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../../shared/services/rpc.service';
-import { RpcCKYCService } from '../../../../../shared/services/rpc-ckyc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 
 import { cKYCOperator } from '../../../../../shared/models/data.model';
@@ -25,7 +24,6 @@ import { cKYCOperator } from '../../../../../shared/models/data.model';
 })
 export class CkycOperatorsListPage implements OnInit {
     private rpcService = inject(RpcService);
-    private rpcCKYCService = inject(RpcCKYCService);
     private router = inject(Router);
     private loadingService = inject(LoadingService);
 
@@ -56,7 +54,7 @@ export class CkycOperatorsListPage implements OnInit {
   
   async listOperators() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcCKYCService.cKYCOperatorsList();
+    const result = await this.rpcService.cKYCOperatorsList();
     if(result.result) {
       this.operatorsCount = result.result.count;
       this.operators.set(result.result.operators);

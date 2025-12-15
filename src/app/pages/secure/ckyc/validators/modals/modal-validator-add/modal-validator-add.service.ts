@@ -9,7 +9,7 @@ export interface AddValidatorData {
 @Injectable({
   providedIn: 'root'
 })
-export class ModalcKYCValidatorAddService {
+export class ModalValidatorAddService {
   isVisible = signal(false);
 
   private resolveFn?: (value: AddValidatorData | null) => void;

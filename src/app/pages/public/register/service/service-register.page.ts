@@ -69,7 +69,7 @@ export class ServiceRegisterPage implements OnInit {
       // if (result) {
       //   this.loadingService.hide();
       //   this.alertService.show('Registration Successful', 'Your account has been created successfully.');
-      //   this.router.navigate(['/public/login']);
+      //   this.router.navigate(['/public/user/login']);
       // }
       // else {
       //   this.loadingService.hide();

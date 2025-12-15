@@ -1,18 +1,18 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { AddValidatorData, ModalcKYCValidatorAddService } from './modal-ckyc-validator-add.service';
+import { AddValidatorData, ModalValidatorAddService } from './modal-validator-add.service';
 
 @Component({
-  selector: 'app-modal-ckyc-validator-add',
-  templateUrl: './modal-ckyc-validator-add.component.html',
-  styleUrls: ['./modal-ckyc-validator-add.component.scss'],
+  selector: 'app-modal-validator-add',
+  templateUrl: './modal-validator-add.component.html',
+  styleUrls: ['./modal-validator-add.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
 })
-export class ModalcKYCValidatorAddComponent {
+export class ModalValidatorAddComponent {
 
-  addValidatorService = inject(ModalcKYCValidatorAddService);
+  addValidatorService = inject(ModalValidatorAddService);
   private fb: FormBuilder = inject(FormBuilder);
 
   addForm = this.fb.group({

@@ -8,7 +8,6 @@ import {
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../shared/services/rpc.service';
-import { RpcGVService } from '../../../../shared/services/rpc-gv.service';
 
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
@@ -30,7 +29,6 @@ import { Country, GlobalVariable } from '../../../../shared/models/data.model';
 export class SystemPage implements OnInit {
     private loadingService = inject(LoadingService);
     private rpcService = inject(RpcService);
-    private rpcGVService = inject(RpcGVService);
 
 
   activeTab = signal<'countries' | 'variables'>('countries');
@@ -55,7 +53,7 @@ export class SystemPage implements OnInit {
     this.loadingData = true;
     this.loadingService.show('Loading data...');
 
-    await this.rpcGVService.connectGlobalVariables();
+    await this.rpcService.connectGlobalVariables();
     await this.getCountries();
     await this.getVariables();
     this.loadingData = false;
@@ -63,7 +61,7 @@ export class SystemPage implements OnInit {
   }
 
   async getCountries() {
-    const data = await this.rpcGVService.getCountriesList();
+    const data = await this.rpcService.getCountriesList();
     if(data.result) {
       this.countries.set(data.result);
     }
@@ -73,7 +71,7 @@ export class SystemPage implements OnInit {
   }
 
   async getVariables() {
-    const data = await this.rpcGVService.getGlobalVariables();
+    const data = await this.rpcService.getGlobalVariables();
     if(data.result) {
       this.globalVariables.set(data.result);
     }

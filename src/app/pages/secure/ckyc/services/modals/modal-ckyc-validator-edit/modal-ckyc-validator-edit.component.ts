@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ModalcKYCValidatorEditService, EditValidatorData } from './modal-ckyc-validator-edit.service';
+import { ModalValidatorEditService, EditValidatorData } from './modal-ckyc-validator-edit.service';
 
 @Component({
   selector: 'app-modal-ckyc-validator-edit',
@@ -10,9 +10,9 @@ import { ModalcKYCValidatorEditService, EditValidatorData } from './modal-ckyc-v
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],  
 })
-export class ModalcKYCValidatorEditComponent {
+export class ModalValidatorEditComponent {
 
-  editValidatorService = inject(ModalcKYCValidatorEditService);
+  editValidatorService = inject(ModalValidatorEditService);
   private fb: FormBuilder = inject(FormBuilder);
 
   editForm = this.fb.group({

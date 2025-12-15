@@ -4,20 +4,30 @@ import { AuthGuard } from './shared/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'public/login',
+    redirectTo: 'public/user/login',
     pathMatch: 'full',
   },
   {
     path: 'public',
     children: [
       {
-        path: 'login',
-        loadComponent: () => import('./pages/public/login/login.page').then( m => m.LoginPage)
-      },  
-      {
-        path: 'forgot-password',
-        loadComponent: () => import('./pages/public/forgot-password/forgot-password.page').then( m => m.ForgotPasswordPage)
-      },
+        path: 'user',
+        children: [
+          {
+            path: 'login',
+            loadComponent: () => import('./pages/public/user/login/login.page').then( m => m.LoginPage)
+          },  
+          {
+            path: 'forgot-password',
+            loadComponent: () => import('./pages/public/user/forgot-password/forgot-password.page').then( m => m.ForgotPasswordPage)
+          },
+          {
+            path: '',
+            redirectTo: 'public/user/login',
+            pathMatch: 'full',
+          },
+        ]
+      },      
       {
         path: 'register',
         children: [
@@ -35,14 +45,14 @@ export const routes: Routes = [
           },
           {
             path: '',
-            redirectTo: 'public/login',
+            redirectTo: 'public/user/login',
             pathMatch: 'full',
           },
         ],
       },
       {
         path: '',
-        redirectTo: 'public/login',
+        redirectTo: 'public/user/login',
         pathMatch: 'full',
       },
     ]
@@ -146,7 +156,7 @@ export const routes: Routes = [
                 canActivate: [AuthGuard]
               },
               {
-                path: 'details/:id',
+                path: 'details/:address',
                 loadComponent: () => import('./pages/secure/ckyc/validators/details/details.page').then( m => m.DetailsPage),
                 canActivate: [AuthGuard]
               },

@@ -7,12 +7,11 @@ import { IonContent } from '@ionic/angular/standalone';
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../../shared/services/rpc.service';
-import { RpcCKYCService } from '../../../../../shared/services/rpc-ckyc.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
-import { cKYCValidator } from '../../../../../shared/models/data.model';
-import { ModalcKYCValidatorEditService } from '../modals/modal-ckyc-validator-edit/modal-ckyc-validator-edit.service';
-import { ModalcKYCValidatorStateService } from '../modals/modal-ckyc-validator-state.service';
+import { Validator } from '../../../../../shared/models/data.model';
+import { ModalValidatorEditService } from '../modals/modal-validator-edit/modal-validator-edit.service';
+import { ModalValidatorStateService } from '../modals/modal-validator-state/modal-validator-state.service';
 
 @Component({
   selector: 'app-details',
@@ -29,31 +28,30 @@ import { ModalcKYCValidatorStateService } from '../modals/modal-ckyc-validator-s
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private rpcService = inject(RpcService);
-  private rpcCKYCService = inject(RpcCKYCService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
-  private ckycValidatorEditService = inject(ModalcKYCValidatorEditService);
-  private ckcyValidatorStateService = inject(ModalcKYCValidatorStateService);
+  private ValidatorEditService = inject(ModalValidatorEditService);
+  private ckcyValidatorStateService = inject(ModalValidatorStateService);
 
-  validatorId = 0;
-  validator = signal<cKYCValidator | undefined>(undefined);
+  validatorAddress = '';
+  validator = signal<Validator | undefined>(undefined);
   // validatorStates = signal<Map<number, string>>(new Map());
 
   constructor() { 
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.validatorId = +id;
+    const address = this.route.snapshot.paramMap.get('address');
+    if (address) {
+      this.validatorAddress = address;
     }    
   }
 
   async ngOnInit() {
-    await this.getValidatorDetails(this.validatorId);
+    await this.getValidatorDetails(this.validatorAddress);
     // await this.getStates();
   }
 
-  async getValidatorDetails(id: number) {
+  async getValidatorDetails(address: string) {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcCKYCService.cKYCValidatorInfo(id);
+    const data = await this.rpcService.ValidatorInfo(address);
     this.validator.set(data.result?.validator);
     console.log('validator', this.validator());
     this.loadingService.hide();
@@ -89,37 +87,22 @@ export class DetailsPage implements OnInit {
     const currentValidator = this.validator();
     if (!currentValidator) return;
 
-    const result = await this.ckycValidatorEditService.show(currentValidator);
+    const result = await this.ValidatorEditService.show(currentValidator);
     
     if (result) {
       this.loadingService.show('Updating validator...');
       try {
         // Execute updates SEQUENTIALLY instead of in parallel
         if (result.name !== currentValidator.name) {
-          await this.rpcCKYCService.cKYCValidatorChangeName(currentValidator.id, result.name!);
+          await this.rpcService.ValidatorChangeName(currentValidator.address, result.name!);
         }
         
         const dataChanged = result.email !== currentValidator.email || result.mobile !== currentValidator.mobile;
         if (dataChanged) {
-          await this.rpcCKYCService.cKYCValidatorChangeData(currentValidator.id, JSON.stringify({ email: result.email!, mobile: result.mobile! }));
+          await this.rpcService.ValidatorChangeData(currentValidator.address, JSON.stringify({ email: result.email!, mobile: result.mobile! }));
         }
 
-        await this.getValidatorDetails(this.validatorId);
-
-        // const updatePromises: Promise<any>[] = [];
-
-        // if (result.name !== currentValidator.name) {
-        //   updatePromises.push(this.rpcService.cKYCValidatorChangeName(currentValidator.id, result.name!));
-        // }
-        
-        // const dataChanged = result.email !== currentValidator.email || result.mobile !== currentValidator.mobile;
-        // if (dataChanged) {
-        //   updatePromises.push(this.rpcService.cKYCValidatorChangeData(currentValidator.id, JSON.stringify({ email: result.email!, mobile: result.mobile! })));
-        // }
-
-        // await Promise.all(updatePromises);
-
-        // await this.getValidatorDetails(this.validatorId);
+        await this.getValidatorDetails(this.validatorAddress);
 
       } catch (error) {
         console.error('Failed to update validator', error);
@@ -138,8 +121,8 @@ export class DetailsPage implements OnInit {
     if (newState !== null && newState !== currentValidator.state) {
         this.loadingService.show('Changing state...');
         try {
-            await this.rpcCKYCService.cKYCValidatorChangeState(currentValidator.id, newState);
-            await this.getValidatorDetails(currentValidator.id);
+            await this.rpcService.ValidatorChangeState(currentValidator.address, newState);
+            await this.getValidatorDetails(currentValidator.address);
         } catch (error) {
             console.error('Failed to change state', error);
         } finally {

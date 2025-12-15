@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
 
 import { StorageService } from '../services/storage.service';
@@ -8,12 +8,11 @@ import { RpcService } from '../services/rpc.service';
   providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
+  private router = inject( Router);
+  private storageService = inject(StorageService);
+  private rpcService = inject(RpcService);
 
-  constructor(
-    private storageService: StorageService,
-    private router: Router,
-    private rpcService: RpcService
-  ) { }
+  constructor() { }
 
   async canActivate(
     next: ActivatedRouteSnapshot,

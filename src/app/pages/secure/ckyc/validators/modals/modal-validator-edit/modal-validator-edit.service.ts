@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { cKYCValidator } from '../../../../../../shared/models/data.model';
+import { Validator } from '../../../../../../shared/models/data.model';
 
 export interface EditValidatorData {
   name: string;
@@ -10,13 +10,13 @@ export interface EditValidatorData {
 @Injectable({
   providedIn: 'root'
 })
-export class ModalcKYCValidatorEditService {
+export class ModalValidatorEditService {
   isVisible = signal(false);
-  validator = signal<cKYCValidator | null>(null);
+  validator = signal<Validator | null>(null);
 
   private resolveFn?: (value: EditValidatorData | null) => void;
 
-  show(validator: cKYCValidator): Promise<EditValidatorData | null> {
+  show(validator: Validator): Promise<EditValidatorData | null> {
     this.validator.set(validator);
     this.isVisible.set(true);
 

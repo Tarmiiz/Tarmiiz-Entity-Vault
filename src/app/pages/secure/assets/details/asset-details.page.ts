@@ -17,7 +17,6 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { Asset, AssetPrice, AssetSupplyChange } from '../../../../shared/models/data.model';
 
 import { RpcService } from '../../../../shared/services/rpc.service';
-import { RpcAssetsService } from '../../../../shared/services/rpc-assets.service';
 
 @Component({
   selector: 'app-asset-details',
@@ -37,11 +36,10 @@ import { RpcAssetsService } from '../../../../shared/services/rpc-assets.service
 export class AssetDetailsPage implements OnInit {
   @Input() asset!: Asset | null;
 
-    private route = inject(ActivatedRoute);
-    private loadingController = inject(LoadingController);
-    private alertController = inject(AlertController);
-    private rpcService = inject(RpcService);
-    private rpcAssetsService = inject(RpcAssetsService);
+  private route = inject(ActivatedRoute);
+  private loadingController = inject(LoadingController);
+  private alertController = inject(AlertController);
+  private rpcService = inject(RpcService);
 
 
   loading: any;
@@ -83,13 +81,13 @@ export class AssetDetailsPage implements OnInit {
   }
 
   async getAssetInfo() {
-    const info = await this.rpcAssetsService.assetInfo(this.address);
+    const info = await this.rpcService.assetInfo(this.address);
     this.asset = info.result;
     console.log('asset', this.asset);
   }
 
   async checkState() {
-    const isSuspended = await this.rpcAssetsService.assetIsSuspended(this.asset!.address);
+    const isSuspended = await this.rpcService.assetIsSuspended(this.asset!.address);
     if(isSuspended.error) return;
     this.isSuspended = isSuspended.result ? 'True' : 'False';    
     console.log('isSuspended', this.isSuspended);
@@ -129,7 +127,7 @@ export class AssetDetailsPage implements OnInit {
             })
             await loading.present();
         
-            await this.rpcAssetsService.assetSuspend(this.address, data);
+            await this.rpcService.assetSuspend(this.address, data);
             await this.checkState();
         
             this.loadingController.dismiss();
@@ -181,14 +179,14 @@ export class AssetDetailsPage implements OnInit {
 
   async loadPriceData() {
     await this.showLoader();
-    const priceCurrent = await this.rpcAssetsService.assetPriceCurrent(this.address);
+    const priceCurrent = await this.rpcService.assetPriceCurrent(this.address);
     if(priceCurrent.result) {
       this.priceCurrent = priceCurrent.result.price;
     }
     else {
       console.log(priceCurrent.error);
     }
-    const pricesHistory = await this.rpcAssetsService.assetPriceHistory(this.address, 1, 10);
+    const pricesHistory = await this.rpcService.assetPriceHistory(this.address, 1, 10);
     if(pricesHistory.result) {
       this.pricesHistoryCount = pricesHistory.result.count;
       this.pricesHistory = pricesHistory.result.prices;
@@ -202,7 +200,7 @@ export class AssetDetailsPage implements OnInit {
 
   async loadSupplyData() {
     await this.showLoader();
-    const supplyChanges = await this.rpcAssetsService.assetSupplyChanges(this.address, 1, 10);
+    const supplyChanges = await this.rpcService.assetSupplyChanges(this.address, 1, 10);
     if(supplyChanges.result) {
       this.supplyChanges = supplyChanges.result;
       console.log('supplyChanges', this.supplyChanges);

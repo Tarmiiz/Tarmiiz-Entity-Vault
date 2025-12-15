@@ -7,10 +7,9 @@ import { IonContent } from '@ionic/angular/standalone';
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
 import { RpcService } from '../../../../../shared/services/rpc.service';
-import { RpcCKYCService } from '../../../../../shared/services/rpc-ckyc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 
-import { cKYCService, cKYCValidator } from '../../../../../shared/models/data.model';
+import { cKYCService, Validator } from '../../../../../shared/models/data.model';
 import { ModalcKYCServiceAddService } from '../modals/modal-ckyc-service-add/modal-ckyc-service-add.service';
 
 @Component({
@@ -26,7 +25,6 @@ import { ModalcKYCServiceAddService } from '../modals/modal-ckyc-service-add/mod
 })
 export class ListPage implements OnInit {
     private rpcService = inject(RpcService);
-    private rpcCKYCService = inject(RpcCKYCService);
     private router = inject(Router);
     private loadingService = inject(LoadingService);
     private ckycServiceAddService = inject(ModalcKYCServiceAddService);
@@ -51,9 +49,7 @@ export class ListPage implements OnInit {
 
   async ionViewDidEnter() {
     this.loadingServices = true;
-    // await this.rpcService.connectGlobalVariables();
-    // await this.rpcService.getGlobalVariables();
-    await this.listServives();
+    await this.listServices();
     this.loadingServices = false;
   }
   
@@ -68,9 +64,9 @@ export class ListPage implements OnInit {
     }
   } 
 
-  async listServives() {
+  async listServices() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcCKYCService.cKYCServicesList(1, 10);
+    const result = await this.rpcService.cKYCServicesList(1, 10);
     if(result.result) {
       this.servicesCount = result.result.count;
       this.services.set(result.result.services);
@@ -110,8 +106,8 @@ export class ListPage implements OnInit {
           email: result.email,
           mobile: result.mobile
         };
-        await this.rpcCKYCService.cKYCServiceAdd(name, JSON.stringify(data), 1);
-        await this.listServives();
+        await this.rpcService.cKYCServiceAdd(name, JSON.stringify(data), 1);
+        await this.listServices();
       } catch (error) {
         console.error('Failed to add service', error);
       } finally {

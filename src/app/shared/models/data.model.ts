@@ -134,9 +134,9 @@ export class cKYCOperator {
   ) {}
 }
 
-export class cKYCValidator {
+export class Validator {
   constructor (
-    public id: number,
+    public address: string,
     public name: string,
     public data: string,
     public email: string,

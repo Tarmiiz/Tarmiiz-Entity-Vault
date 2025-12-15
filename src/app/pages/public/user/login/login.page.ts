@@ -5,9 +5,9 @@ import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { LoadingController, AlertController } from '@ionic/angular';
 
-import { RpcService } from '../../../shared/services/rpc.service';
-import { AuthService } from '../../../shared/services/auth.service';
-import { StorageService } from '../../../shared/services/storage.service';
+import { RpcService } from '../../../../shared/services/rpc.service';
+import { AuthService } from '../../../../shared/services/auth.service';
+import { StorageService } from '../../../../shared/services/storage.service';
 
 @Component({
   selector: 'app-login',

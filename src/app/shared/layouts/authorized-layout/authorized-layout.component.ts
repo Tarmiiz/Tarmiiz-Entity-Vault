@@ -14,9 +14,9 @@ import { Regulator } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
 import { ModalcKYCOperatorEditComponent } from '../../components/modals/modal-ckyc-operator-edit/modal-ckyc-operator-edit.component';
-import { ModalcKYCValidatorAddComponent } from '../../../pages/secure/ckyc/validators/modals/modal-ckyc-validator-add/modal-ckyc-validator-add.component';
-import { ModalcKYCValidatorEditComponent } from '../../../pages/secure/ckyc/validators/modals/modal-ckyc-validator-edit/modal-ckyc-validator-edit.component';
-import { ModalCkycValidatorStateComponent } from "../../../pages/secure/ckyc/validators/modals/modal-ckyc-validator-state/modal-ckyc-validator-state.component";
+import { ModalValidatorAddComponent } from '../../../pages/secure/ckyc/validators/modals/modal-validator-add/modal-validator-add.component';
+import { ModalValidatorEditComponent } from '../../../pages/secure/ckyc/validators/modals/modal-validator-edit/modal-validator-edit.component';
+import { ModalValidatorStateComponent } from "../../../pages/secure/ckyc/validators/modals/modal-validator-state/modal-validator-state.component";
 import { ModalcKYCServiceAddComponent } from 'src/app/pages/secure/ckyc/services/modals/modal-ckyc-service-add/modal-ckyc-service-add.component';
 
 @Component({
@@ -42,9 +42,9 @@ import { ModalcKYCServiceAddComponent } from 'src/app/pages/secure/ckyc/services
     AlertComponent,
     LoadingComponent,
     ModalcKYCOperatorEditComponent,
-    ModalcKYCValidatorAddComponent,
-    ModalcKYCValidatorEditComponent,
-    ModalCkycValidatorStateComponent,
+    ModalValidatorAddComponent,
+    ModalValidatorEditComponent,
+    ModalValidatorStateComponent,
     ModalcKYCServiceAddComponent,
 ],
 })

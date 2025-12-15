@@ -1713,7 +1713,7 @@
               "type": "uint8"
             }
           ],
-          "internalType": "struct IcKYCValidators.Validator",
+          "internalType": "struct IValidators.Validator",
           "name": "",
           "type": "tuple"
         }
@@ -1774,7 +1774,7 @@
               "type": "uint8"
             }
           ],
-          "internalType": "struct IcKYCValidators.Validator[]",
+          "internalType": "struct IValidators.Validator[]",
           "name": "validators",
           "type": "tuple[]"
         }

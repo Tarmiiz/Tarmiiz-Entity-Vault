@@ -20,9 +20,9 @@
           (input)="onValidatorsSearch($event)"
         />
       </div>
-      <button (click)="openAddModal()" class="ml-4 px-3 py-2 bg-[#202a3b] text-white font-semibold rounded-full shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 flex-shrink-0">
+      <!-- <button (click)="openAddModal()" class="ml-4 px-3 py-2 bg-[#202a3b] text-white font-semibold rounded-full shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 flex-shrink-0">
         Add Validator
-      </button>
+      </button> -->
     </div>
 
     <!-- Validators Table -->
@@ -49,7 +49,7 @@
                   </tr>
               }
               @else {
-                  @for(validator of filteredValidators(); track validator.id; let i = $index; let isEven = $even;) {
+                  @for(validator of filteredValidators(); track validator.address; let i = $index; let isEven = $even;) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(validator)">
                           <td class="px-6 py-2">{{ i + 1 }}</td>
                           <td class="px-6 py-2">{{ validator.name }}</td>

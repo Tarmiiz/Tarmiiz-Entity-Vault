@@ -97,7 +97,7 @@ export class CkycOperatorPage implements OnInit {
       //   console.log(result.contract);
       //   loading.dismiss();
       //   this.showAlert('Registration Successful', 'Your account has been created successfully.');
-      //   this.router.navigate(['/public/login']);
+      //   this.router.navigate(['/public/user/login']);
       // }
       // else {
       //   loading.dismiss();

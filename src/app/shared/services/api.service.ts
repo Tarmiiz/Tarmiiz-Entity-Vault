@@ -1,14 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { CapacitorHttp } from '@capacitor/core';
-// @ts-ignore
-import * as snarkjs from 'snarkjs';
-// @ts-ignore
-import * as circomlibjs from 'circomlibjs';
 
 import { CryptoService } from './crypto.service';
 import { RpcService } from './rpc.service';
 
 import { environment } from '../../../environments/environment';
+
 import { ParseProofUtils } from '../utils/parse-proof.utils';
 
 @Injectable({

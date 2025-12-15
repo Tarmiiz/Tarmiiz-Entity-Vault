@@ -33,8 +33,8 @@ export class ValidatorRegisterPage implements OnInit {
   constructor() { 
     this.formRegister = this.fb.group({
       name: new FormControl('', [Validators.required]),
-      symbol: new FormControl('', [Validators.required]),
-      api: new FormControl('', [Validators.required]),
+      // symbol: new FormControl('', [Validators.required]),
+      // api: new FormControl('', [Validators.required]),
       mobile: new FormControl('', [Validators.required]),
       email: new FormControl('', [Validators.required, Validators.email]),
       password: new FormControl('', [Validators.required]),
@@ -93,7 +93,7 @@ export class ValidatorRegisterPage implements OnInit {
         console.log(result.contract);
         loading.dismiss();
         this.showAlert('Registration Successful', 'Your account has been created successfully.');
-        this.router.navigate(['/public/login']);
+        this.router.navigate(['/public/user/login']);
       }
       else {
         loading.dismiss();
