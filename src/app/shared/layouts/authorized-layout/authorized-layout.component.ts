@@ -17,14 +17,16 @@ import { ModalcKYCOperatorEditComponent } from '../../components/modals/modal-ck
 import { ModalValidatorAddComponent } from '../../../pages/secure/ckyc/validators/modals/modal-validator-add/modal-validator-add.component';
 import { ModalValidatorEditComponent } from '../../../pages/secure/ckyc/validators/modals/modal-validator-edit/modal-validator-edit.component';
 import { ModalValidatorStateComponent } from "../../../pages/secure/ckyc/validators/modals/modal-validator-state/modal-validator-state.component";
-import { ModalcKYCServiceAddComponent } from 'src/app/pages/secure/ckyc/services/modals/modal-ckyc-service-add/modal-ckyc-service-add.component';
+import { ModalcKYCServiceAddComponent } from '../../../pages/secure/ckyc/services/modals/modal-ckyc-service-add/modal-ckyc-service-add.component';
+import { ModalServiceStateComponent } from "../../../pages/secure/ckyc/services/modals/modal-service-state/modal-service-state.component";
+import { ModalServiceEditComponent } from "src/app/pages/secure/ckyc/services/modals/modal-service-edit/modal-service-edit.component";
 
 @Component({
   selector: 'app-authorized-layout',
   templateUrl: './authorized-layout.component.html',
   styleUrls: ['./authorized-layout.component.scss'],
   standalone: true,
-  imports: [IonFooter, 
+  imports: [IonFooter,
     IonAccordion, IonAccordionGroup,
     IonRouterOutlet,
     IonSplitPane,
@@ -45,8 +47,10 @@ import { ModalcKYCServiceAddComponent } from 'src/app/pages/secure/ckyc/services
     ModalValidatorAddComponent,
     ModalValidatorEditComponent,
     ModalValidatorStateComponent,
-    ModalcKYCServiceAddComponent,
-],
+    ModalcKYCServiceAddComponent, 
+    ModalServiceStateComponent, 
+    ModalServiceEditComponent
+  ],
 })
 export class AuthorizedLayoutComponent {
 

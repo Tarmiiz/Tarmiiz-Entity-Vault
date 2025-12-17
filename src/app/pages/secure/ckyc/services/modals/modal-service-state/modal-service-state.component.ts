@@ -2,19 +2,19 @@ import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@ang
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
-import { ModalValidatorStateService } from '../modal-ckyc-validator-state.service';
+import { ModalServiceStateService } from './modal-service-state.service';
 import { RpcService } from '../../../../../../shared/services/rpc.service';
 
 @Component({
-  selector: 'app-modal-ckyc-validator-state',
-  templateUrl: './modal-ckyc-validator-state.component.html',
-  styleUrls: ['./modal-ckyc-validator-state.component.scss'],
+  selector: 'app-modal-service-state',
+  templateUrl: './modal-service-state.component.html',
+  styleUrls: ['./modal-service-state.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],
 })
-export class ModalValidatorStateComponent {
+export class ModalServiceStateComponent {
 
-  changeStateService = inject(ModalValidatorStateService);
+  changeStateService = inject(ModalServiceStateService);
   private rpcService = inject(RpcService);
   private fb: FormBuilder = inject(FormBuilder);
 
@@ -36,7 +36,7 @@ export class ModalValidatorStateComponent {
   
   async loadStates() {
     await this.rpcService.connectGlobalVariables();
-    const data = await this.rpcService.getGlobalVariableByCategory('cKYC Validator State');
+    const data = await this.rpcService.getGlobalVariableByCategory('Account State');
     this.states.set(data.result);
   }
 

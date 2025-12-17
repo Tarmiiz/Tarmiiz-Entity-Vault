@@ -9,7 +9,7 @@ import { HeaderComponent } from "../../../../../shared/components/header/header.
 import { RpcService } from '../../../../../shared/services/rpc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 
-import { cKYCService, Validator } from '../../../../../shared/models/data.model';
+import { Service } from '../../../../../shared/models/data.model';
 import { ModalcKYCServiceAddService } from '../modals/modal-ckyc-service-add/modal-ckyc-service-add.service';
 
 @Component({
@@ -24,22 +24,20 @@ import { ModalcKYCServiceAddService } from '../modals/modal-ckyc-service-add/mod
   ]
 })
 export class ListPage implements OnInit {
-    private rpcService = inject(RpcService);
-    private router = inject(Router);
-    private loadingService = inject(LoadingService);
-    private ckycServiceAddService = inject(ModalcKYCServiceAddService);
+  private rpcService = inject(RpcService);
+  private router = inject(Router);
+  private loadingService = inject(LoadingService);
+  private ckycServiceAddService = inject(ModalcKYCServiceAddService);
 
   loadingServices: boolean = false;
 
   servicesCount = 0
-  services = signal<cKYCService[]>([]);
+  services = signal<Service[]>([]);
   servicesSearchTerm = signal('');
 
-  constructor(
-  ) { }
+  constructor() {}
 
-  ngOnInit() {
-  }
+  ngOnInit() {}
 
 
   async ionViewWillEnter() {
@@ -66,7 +64,7 @@ export class ListPage implements OnInit {
 
   async listServices() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.cKYCServicesList(1, 10);
+    const result = await this.rpcService.servicesList(1, 10);
     if(result.result) {
       this.servicesCount = result.result.count;
       this.services.set(result.result.services);
@@ -78,8 +76,8 @@ export class ListPage implements OnInit {
     this.loadingService.hide();
   }  
 
-  viewDetails(service: cKYCService) {
-    this.router.navigate(['/authorized/ckyc/services/details/' + service.id]);
+  viewDetails(service: Service) {
+    this.router.navigate(['/authorized/ckyc/services/details/' + service.address]);
   }
 
   filteredServices = computed(() => {
@@ -97,23 +95,23 @@ export class ListPage implements OnInit {
   }  
 
   async openAddModal() {
-    const result = await this.ckycServiceAddService.show();
-    if (result) {
-      this.loadingService.show('Adding service...');
-      try {
-        const name = result.name;
-        const data = {
-          email: result.email,
-          mobile: result.mobile
-        };
-        await this.rpcService.cKYCServiceAdd(name, JSON.stringify(data), 1);
-        await this.listServices();
-      } catch (error) {
-        console.error('Failed to add service', error);
-      } finally {
-        this.loadingService.hide();
-      }
-    }
+    // const result = await this.ckycServiceAddService.show();
+    // if (result) {
+    //   this.loadingService.show('Adding service...');
+    //   try {
+    //     const name = result.name;
+    //     const data = {
+    //       email: result.email,
+    //       mobile: result.mobile
+    //     };
+    //     await this.rpcService.cKYCServiceAdd(name, JSON.stringify(data), 1);
+    //     await this.listServices();
+    //   } catch (error) {
+    //     console.error('Failed to add service', error);
+    //   } finally {
+    //     this.loadingService.hide();
+    //   }
+    // }
   }
 
 }

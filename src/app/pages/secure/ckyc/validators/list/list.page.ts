@@ -8,9 +8,10 @@ import { HeaderComponent } from "../../../../../shared/components/header/header.
 
 import { RpcService } from '../../../../../shared/services/rpc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
-import { ModalValidatorAddService } from '../modals/modal-validator-add/modal-validator-add.service';
 
 import { Validator } from '../../../../../shared/models/data.model';
+
+import { ModalValidatorAddService } from '../modals/modal-validator-add/modal-validator-add.service';
 
 @Component({
   selector: 'app-list',
@@ -24,10 +25,10 @@ import { Validator } from '../../../../../shared/models/data.model';
   ]
 })
 export class ListPage implements OnInit {
-    private rpcService = inject(RpcService);
-    private router = inject(Router);
-    private loadingService = inject(LoadingService);
-    private ValidatorAddService = inject(ModalValidatorAddService);
+  private rpcService = inject(RpcService);
+  private router = inject(Router);
+  private loadingService = inject(LoadingService);
+  private ValidatorAddService = inject(ModalValidatorAddService);
 
   loadingValidators: boolean = false;
 
@@ -35,7 +36,7 @@ export class ListPage implements OnInit {
   validators = signal<Validator[]>([]);
   validatorsSearchTerm = signal('');
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit() {}
 
@@ -47,8 +48,6 @@ export class ListPage implements OnInit {
 
   async ionViewDidEnter() {
     this.loadingValidators = true;
-    // await this.rpcService.connectGlobalVariables();
-    // await this.rpcService.getGlobalVariables();
     await this.listValidators();
     this.loadingValidators = false;
   }
@@ -97,23 +96,23 @@ export class ListPage implements OnInit {
   }  
 
   async openAddModal() {
-    const result = await this.ValidatorAddService.show();
-    if (result) {
-      this.loadingService.show('Adding validator...');
-      try {
-        const name = result.name;
-        const data = {
-          email: result.email,
-          mobile: result.mobile
-        };
-        await this.rpcService.ValidatorAdd(name, JSON.stringify(data));
-        await this.listValidators();
-      } catch (error) {
-        console.error('Failed to add validator', error);
-      } finally {
-        this.loadingService.hide();
-      }
-    }
+    // const result = await this.ValidatorAddService.show();
+    // if (result) {
+    //   this.loadingService.show('Adding validator...');
+    //   try {
+    //     const name = result.name;
+    //     const data = {
+    //       email: result.email,
+    //       mobile: result.mobile
+    //     };
+    //     await this.rpcService.ValidatorAdd(name, JSON.stringify(data));
+    //     await this.listValidators();
+    //   } catch (error) {
+    //     console.error('Failed to add validator', error);
+    //   } finally {
+    //     this.loadingService.hide();
+    //   }
+    // }
   }
 
 }

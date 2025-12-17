@@ -149,16 +149,18 @@ export class Validator {
   ) {}
 }
 
-export class cKYCService {
+export class Service {
   constructor (
-    public id: number,
+    public address: string,
     public name: string,
     public data: string,
     public email: string,
     public mobile: string,
+    public website: string,
     public countryCode: number,
     public countryName: string,
     public regulator: string,
+    public validator: string,
     public state: number,
     public stateName: string
   ) {}

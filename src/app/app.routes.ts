@@ -172,7 +172,7 @@ export const routes: Routes = [
                 canActivate: [AuthGuard]
               },
               {
-                path: 'details/:id',
+                path: 'details/:address',
                 loadComponent: () => import('./pages/secure/ckyc/services/details/details.page').then( m => m.DetailsPage),
                 canActivate: [AuthGuard]
               },

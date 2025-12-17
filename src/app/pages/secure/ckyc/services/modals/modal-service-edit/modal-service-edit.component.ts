@@ -1,22 +1,23 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ModalValidatorEditService, EditValidatorData } from './modal-ckyc-validator-edit.service';
+import { ModalServiceEditService, EditServiceData } from './modal-service-edit.service';
 
 @Component({
-  selector: 'app-modal-ckyc-validator-edit',
-  templateUrl: './modal-ckyc-validator-edit.component.html',
-  styleUrls: ['./modal-ckyc-validator-edit.component.scss'],
+  selector: 'app-modal-service-edit',
+  templateUrl: './modal-service-edit.component.html',
+  styleUrls: ['./modal-service-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule],  
 })
-export class ModalValidatorEditComponent {
+export class ModalServiceEditComponent {
 
-  editValidatorService = inject(ModalValidatorEditService);
+  editServiceService = inject(ModalServiceEditService);
   private fb: FormBuilder = inject(FormBuilder);
 
   editForm = this.fb.group({
     name: ['', Validators.required],
+    website: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     mobile: ['', Validators.required],
   });
@@ -24,12 +25,13 @@ export class ModalValidatorEditComponent {
 
   constructor() {
     effect(() => {
-      const validator = this.editValidatorService.validator();
-      if (validator) {
+      const service = this.editServiceService.service();
+      if (service) {
         this.editForm.patchValue({
-          name: validator.name,
-          email: validator.email,
-          mobile: validator.mobile,
+          name: service.name,
+          website: service.website,
+          email: service.email,
+          mobile: service.mobile,
         });
       } else {
         this.editForm.reset();
@@ -40,17 +42,18 @@ export class ModalValidatorEditComponent {
   onSave(): void {
     if (this.editForm.valid) {
       const formValue = this.editForm.getRawValue();
-      const operatorData: EditValidatorData = {
+      const serviceData: EditServiceData = {
         name: formValue.name ?? '',
+        website: formValue.website ?? '',
         email: formValue.email ?? '',
         mobile: formValue.mobile ?? ''
       };
-      this.editValidatorService.confirm(operatorData);
+      this.editServiceService.confirm(serviceData);
     }
   }
 
   onCancel(): void {
-    this.editValidatorService.cancel();
+    this.editServiceService.cancel();
   }
 
 }

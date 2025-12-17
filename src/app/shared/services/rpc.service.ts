@@ -11,7 +11,7 @@ import cKYCProxyAbi from '../../../assets/ABIs/cKYCProxy.json';
 
 import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, cKYCService, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, Service, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -456,7 +456,10 @@ export class RpcService {
 
   async validatorsList(start: number, offset: number) {
     try {
-      const result = await this.regulatorContract.validatorsList(start, offset);
+      const privkey = environment.apiPrivKey;
+      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
+      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
+      const result = await apiContract['validatorsList'](start, offset);
       if (result) {
 
         // Fetch state names once for all validators
@@ -515,7 +518,7 @@ export class RpcService {
     }
   }
 
-  async ValidatorInfo(validatorAddress: string) {
+  async validatorInfo(validatorAddress: string) {
     try {
       const iface = new ethers.Interface([
         "function info() external view returns (tuple(address validator, address regulator, string name, string data, uint256 countryCode, uint8 state))"
@@ -569,6 +572,130 @@ export class RpcService {
       return { result: null, error: 'Error fetching validator info: ' + error.message};
     }
   }  
+
+  async servicesList(start: number, offset: number) {
+    try {
+      const privkey = environment.apiPrivKey;
+      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
+      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
+      const result = await apiContract['servicesList'](start, offset);
+      if (result) {
+
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        
+        const count = Number(result[0]);
+        const services = result[1].map((op: any) => {
+          console.log('result', op);
+          let parsedData = null;
+          try {
+            parsedData = JSON.parse(op.data);
+          } catch (e) {
+            console.error('Error parsing operator data:', e);
+          }
+
+          // Get state name for this validator
+          const stateId = Number(op.state);
+          let stateName = 'Unknown';
+          if (statesResult.result) {
+            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+            stateName = stateVariable?.name || 'Unknown';
+          }  
+
+
+          // Get country name for this operator
+          const countryCode = Number(op.countryCode);
+          const country = this.countriesList.find(c => c.countryCode === countryCode);
+          const countryName = country?.nameShort || 'Unknown';
+          
+          return {
+            address: op.service,
+            name: op.name,
+            data: op.data,
+            email: parsedData?.email || '',
+            mobile: parsedData?.mobile || '',
+            website: parsedData?.website || '',
+            countryCode: Number(op.countryCode),
+            countryName,
+            regulator: op.regulator,
+            validator: op.validator,
+            state: Number(op.state),
+            stateName
+          };
+        });
+        
+        return { result: { count, services }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }
+
+  async serviceInfo(serviceAddress: string) {
+    try {
+      const iface = new ethers.Interface([
+        "function info() external view returns (tuple(address service, address regulator, address validator, string name, string data, uint256 countryCode, uint8 state))"
+      ]);
+      
+      const callData = iface.encodeFunctionData('info');
+      const result = await this.callExternalStatic(serviceAddress, callData);
+      if (result.success && result.data !== null) {
+
+        
+        const decodedResult = iface.decodeFunctionResult('info', result.data);
+        const parsedData = JSON.parse(decodedResult[0][4]);
+
+        // Fetch state names once
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+        const stateId = Number(decodedResult[0][6]);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }
+
+        // get country name
+        const countryCode = Number(decodedResult[0][5]);
+        let countryName = 'Unknown';
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        countryName = country?.nameShort || 'Unknown';        
+
+        const service: Service = {
+          address: decodedResult[0][0],
+          regulator: decodedResult[0][1],
+          validator: decodedResult[0][2],
+          name: decodedResult[0][3],
+          data: decodedResult[0][4],
+          email: parsedData.email,
+          mobile: parsedData.mobile,
+          website: parsedData.website,
+          countryCode: Number(decodedResult[0][5]),
+          countryName,
+          state: Number(decodedResult[0][6]),
+          stateName
+        };
+        return { result: { service }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching service info' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching service info: ' + error.message};
+    }
+  }    
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Regulator Contract: API Functions
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -630,184 +757,62 @@ export class RpcService {
     }
   }
 
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Regulator Contract: Event Functions
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  async serviceRegister(
+    name: string,
+    email: string, password: string, 
+    metadata: string,
+    validatorAddress: string
+  ) {
 
-  async getControlEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<ControlEvent[]> {
     try {
-      const filter = this.regulatorContract.filters.ControlEvent();
-      const events = await this.regulatorContract.queryFilter(filter, fromBlock, toBlock);
+      
+      // Initialize ParseProofUtils
+      await ParseProofUtils.init();
+  
+      // Convert to BigInts
+      const emailBigInt = ParseProofUtils.stringToBigInt(email);
+      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
+      const globalSaltBigInt = BigInt(this.globalSalt);
+  
+      // Generate hashes for contract
+      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
+      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);
+  
+      // create & encrypt user data
+      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
+      const encryptedUserData = metadata;
 
-      return events.map((event: any) => ({
-        caller: event.args.caller,
-        roleHash: event.args.roleHash,
-        actionHash: event.args.actionHash,
-        role: event.args.role,
-        action: event.args.action,
-        time: event.args.time,
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
-      }));
-    } catch (error) {
-      console.error('Error fetching ControlEvent events:', error);
-      throw error;
+      // create new wallet & connect to contract
+      const privkey = environment.apiPrivKey;
+      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
+      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
+
+      // register
+      const tx = await apiContract['serviceAdd'](emailHashHex, secretHex, name, encryptedUserData, validatorAddress);
+      const receipt = await tx.wait();
+  
+      // listen to contract event
+      const eventlog = receipt.logs?.map((log: any) => apiContract.interface.parseLog(log))?.find((e: any) => e?.name === 'ValidatorEvent');
+      if (eventlog) {
+        const { sender, validator, action } = eventlog.args;
+        console.log(validator, action);
+        return {
+          success: true,
+          contract: validator,
+        };
+      } else {
+        console.log('No OperatorEvent event found in receipt');
+        return { success: false };
+      }      
+  
     }
-  }
-
-  async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<RegulatorEvent[]> {
-    try {
-      // Create filters for all event types
-      const loginFilter = this.regulatorContract.filters.loginEvent();
-      const credentialsFilter = this.regulatorContract.filters.credentialsEvent();
-      const assetFilter = this.regulatorContract.filters.assetEvent();
-
-      // Query all events
-      const [loginEvents, credentialsEvents, assetEvents] = await Promise.all([
-        this.regulatorContract.queryFilter(loginFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(assetFilter, fromBlock, toBlock)
-      ]);
-
-      // Process all events with timestamps
-      const allEvents = await Promise.all([
-        ...loginEvents.map(async (event: any) => ({
-          account: event.args.account,
-          eventType: 'Login',
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        })),
-        ...credentialsEvents.map(async (event: any) => ({
-          account: event.args.account,
-          eventType: 'Credentials',
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        })),
-        ...assetEvents.map(async (event: any) => ({
-          asset: event.args.asset,
-          eventType: 'Asset',
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        }))
-      ]);
-
-      // Sort events by block number (newest first)
-      allEvents.sort((a, b) => b.blockNumber - a.blockNumber);
-
-      return allEvents;
-    } catch (error) {
-      console.error('Error fetching contract events:', error);
-      throw error;
-    }
-  }
-
-  async getAllEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<AllEventsData> {
-    try {
-      const [controlEvents, contractEvents] = await Promise.all([
-        this.getControlEvents(fromBlock, toBlock),
-        this.getAllContractEvents(fromBlock, toBlock)
-      ]);
-
-      // Separate contract events by type
-      const loginsEvents = contractEvents.filter(event => event.eventType === 'login');
-      const credentialsEvents = contractEvents.filter(event => event.eventType === 'credentials');
-      const assetEvents = contractEvents.filter(event => event.eventType === 'asset');
-
+    catch (error) {
+      console.error(error);
       return {
-        controlEvents,
-        credentialsEvents,
-        loginsEvents,
-        assetEvents
+        success: false,
+        contract: ''
       };
-    } catch (error) {
-      console.error('Error fetching all events:', error);
-      throw error;
     }
-  }
-
-  listenToControlEvents(callback: (event: ControlEvent) => void): void {
-    const wsContract = new ethers.Contract(
-      this.regulatorContractAddress, 
-      RegulatorTemplateAbi, 
-      this.wsProvider
-    );
-
-    wsContract.on('ControlEvent', (caller, roleHash, actionHash, role, action, time, event) => {
-      callback({
-        caller,
-        roleHash,
-        actionHash,
-        role,
-        action,
-        time,
-        blockNumber: event.log.blockNumber,
-        transactionHash: event.log.transactionHash
-      });
-    });
-  }
-
-  // listenToCredentialsEvents(callback: (event: RegulatorEvent) => void): void {
-  //   const wsContract = new ethers.Contract(
-  //     this.regulatorContractAddress, 
-  //     RegulatorTemplateAbi, 
-  //     this.wsProvider
-  //   );
-
-  //   wsContract.on('credentials', (account, action, event) => {
-  //     callback({
-  //       account,
-  //       action,
-  //       blockNumber: event.log.blockNumber,
-  //       transactionHash: event.log.transactionHash
-  //     });
-  //   });
-  // }
-
-  // listenToLoginsEvents(callback: (event: RegulatorEvent) => void): void {
-  //   const wsContract = new ethers.Contract(
-  //     this.regulatorContractAddress, 
-  //     RegulatorTemplateAbi, 
-  //     this.wsProvider
-  //   );
-
-  //   wsContract.on('logins', (account, action, event) => {
-  //     callback({
-  //       account,
-  //       action,
-  //       blockNumber: event.log.blockNumber,
-  //       transactionHash: event.log.transactionHash
-  //     });
-  //   });
-  // }
-
-  async stopListening(): Promise<void> {
-    const wsContract = new ethers.Contract(
-      this.regulatorContractAddress,
-      RegulatorTemplateAbi,
-      this.wsProvider
-    );
-
-    await wsContract.removeAllListeners();
-    await this.wsProvider.removeAllListeners();
-  }
-
-  listenToNewBlocks(callback: (blockNumber: number, transactions: number, timestamp: number) => void): void {
-    this.wsProvider.on('block', async (blockNumber) => {
-      try {
-        const block = await this.rpcProvider.getBlock(blockNumber);
-        if (block) {
-          callback(blockNumber, block.transactions.length, block.timestamp);
-        }
-      } catch (error) {
-        console.error('Error fetching block data:', error);
-      }
-    });
   }
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1050,95 +1055,27 @@ export class RpcService {
   }  
 
   // Validators ------------------------------------------------------------------------------------
-  async ValidatorsList(start: number, offset: number) {
-    try {
-      const iface = new ethers.Interface([
-        "function validatorsList(uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 id, string name, string data, uint256 countryCode, address regulator, uint8 state)[] validators)"
-      ]);
-      
-      const callData = iface.encodeFunctionData('validatorsList', [start, offset]);
-      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
-      
-      if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('validatorsList', result.data);
 
-        // Fetch state names once for all validators
-        await this.connectGlobalVariables();
-        const statesResult = await this.getGlobalVariableByCategory('cKYC Validator State');
+  // async validatorAdd(name: string, data: string) {
+  //   try {
+  //     const iface = new ethers.Interface(["function validatorAdd(string memory name, string memory name) external returns (bool)"]);
+  //     const callData = iface.encodeFunctionData('validatorAdd', [name, data]);
+  //     const result = await this.callExternal(this.ckycProxyAddress, callData);
+  //     console.log('result', result);
+  //     if(result !== null) {
+  //       return { result, error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error changing operator name'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //     return { result: null, error: 'Error changing operator name: ' + error.message};
+  //   }
 
-        // check countries list
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
+  // } 
 
-        const count = Number(decodedResult[0]);
-        const validators = decodedResult[1].map((op: any) => {
-          let parsedData = null;
-          try {
-            parsedData = JSON.parse(op.data);
-          } catch (e) {
-            console.error('Error parsing operator data:', e);
-          }
-
-          // Get state name for this validator
-          const stateId = Number(op.state);
-          let stateName = 'Unknown';
-          if (statesResult.result) {
-            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-            stateName = stateVariable?.name || 'Unknown';
-          }          
-
-          // Get country name for this validator
-          const countryCode = Number(op.countryCode);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-
-          return {
-            id: Number(op.id),
-            name: op.name,
-            data: op.data,
-            email: parsedData.email,
-            mobile: parsedData.mobile,
-            countryCode: Number(op.countryCode),
-            countryName,
-            regulator: op.regulator,
-            state: Number(op.state),
-            stateName
-          }
-        });
-        
-        return { result: { count, validators }, error: '' };
-      } else {
-        return { result: null, error: 'Error fetching validators list' };
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching validators list: ' + error.message};
-    }
-  }
-
-
-
-  async ValidatorAdd(name: string, data: string) {
-    try {
-      const iface = new ethers.Interface(["function validatorAdd(string memory name, string memory name) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('validatorAdd', [name, data]);
-      const result = await this.callExternal(this.ckycProxyAddress, callData);
-      console.log('result', result);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error changing operator name'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error changing operator name: ' + error.message};
-    }
-
-  } 
-
-  async ValidatorChangeName(address: string, name: string) {
+  async validatorChangeName(address: string, name: string) {
     try {
       const iface = new ethers.Interface(["function overrideName(string memory name) external returns (bool)"]);
       const callData = iface.encodeFunctionData('overrideName', [name]);
@@ -1156,7 +1093,7 @@ export class RpcService {
 
   }   
 
-  async ValidatorChangeData(address: string, data: string) {
+  async validatorChangeData(address: string, data: string) {
     try {
       const iface = new ethers.Interface(["function overrideData(string memory data) external returns (bool)"]);
       const callData = iface.encodeFunctionData('overrideData', [data]);
@@ -1174,7 +1111,7 @@ export class RpcService {
 
   }  
   
-  async ValidatorChangeState(address: string, state: number) {
+  async validatorChangeState(address: string, state: number) {
     try {
       const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
       const callData = iface.encodeFunctionData('overrideState', [state]);
@@ -1195,152 +1132,12 @@ export class RpcService {
   // -----------------------------------------------------------------------------------------------------
 
   // Services ------------------------------------------------------------------------------------
-  async cKYCServicesList(start: number, offset: number) {
+
+  async serviceChangeName(address: string, name: string) {
     try {
-      const iface = new ethers.Interface([
-        "function servicesList(uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 id, string name, string data, uint256 countryCode, address regulator, uint8 state)[] service)"
-      ]);
-      
-      const callData = iface.encodeFunctionData('servicesList', [start, offset]);
-      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
-      
-      if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('servicesList', result.data);
-
-        // Fetch state names once for all services
-        await this.connectGlobalVariables();
-        const statesResult = await this.getGlobalVariableByCategory('cKYC Validator State');
-
-        // check countries list
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
-
-        const count = Number(decodedResult[0]);
-        const services = decodedResult[1].map((op: any) => {
-          let parsedData = null;
-          try {
-            parsedData = JSON.parse(op.data);
-          } catch (e) {
-            console.error('Error parsing operator data:', e);
-          }
-
-          // Get state name for this validator
-          const stateId = Number(op.state);
-          let stateName = 'Unknown';
-          if (statesResult.result) {
-            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-            stateName = stateVariable?.name || 'Unknown';
-          }          
-
-          // Get country name for this validator
-          const countryCode = Number(op.countryCode);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-
-          return {
-            id: Number(op.id),
-            name: op.name,
-            data: op.data,
-            email: parsedData.email,
-            mobile: parsedData.mobile,
-            countryCode: Number(op.countryCode),
-            countryName,
-            regulator: op.regulator,
-            state: Number(op.state),
-            stateName
-          }
-        });
-        
-        return { result: { count, services }, error: '' };
-      } else {
-        return { result: null, error: 'Error fetching services list' };
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching services list: ' + error.message};
-    }
-  }
-
-  async cKYCServiceInfo(id: number) {
-    try {
-      const iface = new ethers.Interface([
-        "function serviceInfo(uint256 serviceId) external view returns (tuple(uint256 id, string name, string data, uint256 countryCode, address regulator, uint8 state))"
-      ]);
-      
-      const callData = iface.encodeFunctionData('serviceInfo', [id]);
-      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
-      if (result.success && result.data !== null) {
-
-        
-        const decodedResult = iface.decodeFunctionResult('serviceInfo', result.data);
-        const parsedData = JSON.parse(decodedResult[0][2]);
-
-        // Fetch state names once
-        await this.connectGlobalVariables();
-        const statesResult = await this.getGlobalVariableByCategory('cKYC Validator State');
-        const stateId = Number(decodedResult[0][5]);
-        let stateName = 'Unknown';
-        if (statesResult.result) {
-          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-          stateName = stateVariable?.name || 'Unknown';
-        }
-
-        // get country name
-        const countryCode = Number(decodedResult[0][3]);
-        let countryName = 'Unknown';
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
-        const country = this.countriesList.find(c => c.countryCode === countryCode);
-        countryName = country?.nameShort || 'Unknown';        
-
-        const service: cKYCService = {
-          id: Number(decodedResult[0][0]),
-          name: decodedResult[0][1],
-          data: decodedResult[0][2],
-          email: parsedData.email,
-          mobile: parsedData.mobile,
-          countryCode: Number(decodedResult[0][3]),
-          countryName,
-          regulator: decodedResult[0][4],
-          state: Number(decodedResult[0][5]),
-          stateName
-        };
-        return { result: { service }, error: '' };
-      } else {
-        return { result: null, error: 'Error fetching service info' };
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching service info: ' + error.message};
-    }
-  }
-
-  async cKYCServiceAdd(name: string, data: string, validatorId: number) {
-    try {
-      const iface = new ethers.Interface(["function serviceAdd(string memory name, string memory data, uint256 validatorId) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('serviceAdd', [name, data, validatorId]);
-      const result = await this.callExternal(this.ckycProxyAddress, callData);
-      console.log('result', result);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error adding service'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error adding service: ' + error.message};
-    }
-
-  } 
-
-  async cKYCServiceChangeName(id: number, name: string) {
-    try {
-      const iface = new ethers.Interface(["function serviceUpdateName(uint256 serviceId, string memory name) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('serviceUpdateName', [id, name]);
-      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      const iface = new ethers.Interface(["function overrideName(string memory name) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideName', [name]);
+      const result = await this.callExternal(address, callData);
       if(result !== null) {
         return { result, error: ''};
       }
@@ -1354,11 +1151,11 @@ export class RpcService {
 
   }   
 
-  async cKYCServiceChangeData(id: number, data: string) {
+  async serviceChangeData(address: string, data: string) {
     try {
-      const iface = new ethers.Interface(["function serviceUpdateData(uint256 validatorId, string memory data) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('serviceUpdateData', [id, data]);
-      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      const iface = new ethers.Interface(["function overrideData(string memory data) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideData', [data]);
+      const result = await this.callExternal(address, callData);
       if(result !== null) {
         return { result, error: ''};
       }
@@ -1372,11 +1169,11 @@ export class RpcService {
 
   }  
   
-  async cKYServiceChangeState(id: number, state: number) {
+  async serviceChangeState(address: string, state: number) {
     try {
-      const iface = new ethers.Interface(["function serviceUpdateState(uint256 serviceId, uint8 state) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('serviceUpdateState', [id, state]);
-      const result = await this.callExternal(this.ckycProxyAddress, callData);
+      const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideState', [state]);
+      const result = await this.callExternal(address, callData);
       if(result !== null) {
         return { result, error: ''};
       }
@@ -1859,5 +1656,187 @@ export class RpcService {
         return { result: null, error: 'Error fetching asset price history: ' + error};
     }
   }
+
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Regulator Contract: Event Functions
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  async getControlEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<ControlEvent[]> {
+    try {
+      const filter = this.regulatorContract.filters.ControlEvent();
+      const events = await this.regulatorContract.queryFilter(filter, fromBlock, toBlock);
+
+      return events.map((event: any) => ({
+        caller: event.args.caller,
+        roleHash: event.args.roleHash,
+        actionHash: event.args.actionHash,
+        role: event.args.role,
+        action: event.args.action,
+        time: event.args.time,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      }));
+    } catch (error) {
+      console.error('Error fetching ControlEvent events:', error);
+      throw error;
+    }
+  }
+
+  async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<RegulatorEvent[]> {
+    try {
+      // Create filters for all event types
+      const loginFilter = this.regulatorContract.filters.loginEvent();
+      const credentialsFilter = this.regulatorContract.filters.credentialsEvent();
+      const assetFilter = this.regulatorContract.filters.assetEvent();
+
+      // Query all events
+      const [loginEvents, credentialsEvents, assetEvents] = await Promise.all([
+        this.regulatorContract.queryFilter(loginFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(assetFilter, fromBlock, toBlock)
+      ]);
+
+      // Process all events with timestamps
+      const allEvents = await Promise.all([
+        ...loginEvents.map(async (event: any) => ({
+          account: event.args.account,
+          eventType: 'Login',
+          action: event.args.action,
+          blockNumber: event.blockNumber,
+          transactionHash: event.transactionHash,
+          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
+        })),
+        ...credentialsEvents.map(async (event: any) => ({
+          account: event.args.account,
+          eventType: 'Credentials',
+          action: event.args.action,
+          blockNumber: event.blockNumber,
+          transactionHash: event.transactionHash,
+          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
+        })),
+        ...assetEvents.map(async (event: any) => ({
+          asset: event.args.asset,
+          eventType: 'Asset',
+          action: event.args.action,
+          blockNumber: event.blockNumber,
+          transactionHash: event.transactionHash,
+          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
+        }))
+      ]);
+
+      // Sort events by block number (newest first)
+      allEvents.sort((a, b) => b.blockNumber - a.blockNumber);
+
+      return allEvents;
+    } catch (error) {
+      console.error('Error fetching contract events:', error);
+      throw error;
+    }
+  }
+
+  async getAllEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<AllEventsData> {
+    try {
+      const [controlEvents, contractEvents] = await Promise.all([
+        this.getControlEvents(fromBlock, toBlock),
+        this.getAllContractEvents(fromBlock, toBlock)
+      ]);
+
+      // Separate contract events by type
+      const loginsEvents = contractEvents.filter(event => event.eventType === 'login');
+      const credentialsEvents = contractEvents.filter(event => event.eventType === 'credentials');
+      const assetEvents = contractEvents.filter(event => event.eventType === 'asset');
+
+      return {
+        controlEvents,
+        credentialsEvents,
+        loginsEvents,
+        assetEvents
+      };
+    } catch (error) {
+      console.error('Error fetching all events:', error);
+      throw error;
+    }
+  }
+
+  listenToControlEvents(callback: (event: ControlEvent) => void): void {
+    const wsContract = new ethers.Contract(
+      this.regulatorContractAddress, 
+      RegulatorTemplateAbi, 
+      this.wsProvider
+    );
+
+    wsContract.on('ControlEvent', (caller, roleHash, actionHash, role, action, time, event) => {
+      callback({
+        caller,
+        roleHash,
+        actionHash,
+        role,
+        action,
+        time,
+        blockNumber: event.log.blockNumber,
+        transactionHash: event.log.transactionHash
+      });
+    });
+  }
+
+  // listenToCredentialsEvents(callback: (event: RegulatorEvent) => void): void {
+  //   const wsContract = new ethers.Contract(
+  //     this.regulatorContractAddress, 
+  //     RegulatorTemplateAbi, 
+  //     this.wsProvider
+  //   );
+
+  //   wsContract.on('credentials', (account, action, event) => {
+  //     callback({
+  //       account,
+  //       action,
+  //       blockNumber: event.log.blockNumber,
+  //       transactionHash: event.log.transactionHash
+  //     });
+  //   });
+  // }
+
+  // listenToLoginsEvents(callback: (event: RegulatorEvent) => void): void {
+  //   const wsContract = new ethers.Contract(
+  //     this.regulatorContractAddress, 
+  //     RegulatorTemplateAbi, 
+  //     this.wsProvider
+  //   );
+
+  //   wsContract.on('logins', (account, action, event) => {
+  //     callback({
+  //       account,
+  //       action,
+  //       blockNumber: event.log.blockNumber,
+  //       transactionHash: event.log.transactionHash
+  //     });
+  //   });
+  // }
+
+  async stopListening(): Promise<void> {
+    const wsContract = new ethers.Contract(
+      this.regulatorContractAddress,
+      RegulatorTemplateAbi,
+      this.wsProvider
+    );
+
+    await wsContract.removeAllListeners();
+    await this.wsProvider.removeAllListeners();
+  }
+
+  listenToNewBlocks(callback: (blockNumber: number, transactions: number, timestamp: number) => void): void {
+    this.wsProvider.on('block', async (blockNumber) => {
+      try {
+        const block = await this.rpcProvider.getBlock(blockNumber);
+        if (block) {
+          callback(blockNumber, block.transactions.length, block.timestamp);
+        }
+      } catch (error) {
+        console.error('Error fetching block data:', error);
+      }
+    });
+  }
+
 
 }

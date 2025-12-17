@@ -3,29 +3,34 @@ import { CommonModule } from '@angular/common';
 import { IonContent } from '@ionic/angular/standalone';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { LoadingController, AlertController } from '@ionic/angular';
 
 import { environment } from '../../../../../environments/environment';
 
 import { RpcService } from '../../../../shared/services/rpc.service';
+import { LoadingComponent } from "../../../../shared/components/alerts/loading/loading.component";
+import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AlertComponent } from "../../../../shared/components/alerts/alert/alert.component";
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 
 @Component({
   selector: 'app-validator-register',
   templateUrl: './validator-register.page.html',
   styleUrls: ['./validator-register.page.scss'],
   standalone: true,
-  imports: [ 
-    IonContent, CommonModule, 
+  imports: [
+    IonContent, CommonModule,
     ReactiveFormsModule, FormsModule,
-    RouterLink
-  ]
+    RouterLink,
+    AlertComponent,
+    LoadingComponent
+]
 })
 export class ValidatorRegisterPage implements OnInit {
-    private fb = inject( FormBuilder);
-    private loadingController = inject( LoadingController);
-    private alertController = inject( AlertController);
-    private router = inject( Router);
-    private rpcService = inject(RpcService);
+  private fb = inject( FormBuilder);
+  private loadingService = inject(LoadingService);
+  private alertService = inject(AlertService);
+  private router = inject( Router);
+  private rpcService = inject(RpcService);
 
   formRegister!: FormGroup;
   isLoading = false;
@@ -44,34 +49,21 @@ export class ValidatorRegisterPage implements OnInit {
 
   ngOnInit() {}
 
-  async showAlert(header: string, message: string) {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons: ['OK'],
-    });
-    await alert.present();
-  }  
-
   async register() {
-
-    const { name, symbol, api, mobile, email, password, password2 } = this.formRegister.value;
     this.isLoading = true;
+    this.loadingService.show('Registering validator ...');
+    const { name, symbol, api, mobile, email, password, password2 } = this.formRegister.value;
 
     if (this.formRegister.invalid) {
-      this.showAlert('Invalid Form', 'Please fill all the required fields.');
+      this.loadingService.hide();
+      this.alertService.show('Invalid Form', 'Please fill all the required fields.');
       return;
     }
     if (this.formRegister.value.password !== this.formRegister.value.password2) {
-      this.showAlert('Passwords Mismatch', 'Passwords do not match.');
+      this.loadingService.hide();
+      this.alertService.show('Passwords Mismatch', 'Passwords do not match.');
       return;
     }    
-
-    // Show loading
-    const loading = await this.loadingController.create({
-      message: 'Connecting to Contract ...'
-    });
-    await loading.present();    
 
     try {
 
@@ -81,28 +73,28 @@ export class ValidatorRegisterPage implements OnInit {
       const regulatorAddress = environment.regulatorAddress;
       const countryCode = environment.countryCode;
 
-      const userData = {
+      const validatorData = {
         email,
         mobile
       }
 
-      loading.message = 'Generating zero-knowledge proof and registering...';
-      const result = await this.rpcService.validatorRegister(name, email, password, JSON.stringify(userData));
+      this.loadingService.show('Generating zero-knowledge proof and registering...');
+      const result = await this.rpcService.validatorRegister(name, email, password, JSON.stringify(validatorData));
 
       if (result && result.success) {
         console.log(result.contract);
-        loading.dismiss();
-        this.showAlert('Registration Successful', 'Your account has been created successfully.');
+        this.loadingService.hide();
+        this.alertService.show('Registration Successful', 'Your account has been created successfully.');
         this.router.navigate(['/public/user/login']);
       }
       else {
-        loading.dismiss();
-        this.showAlert('Registration Failed', 'Something went wrong. Please try again.');
+        this.loadingService.hide();
+        this.alertService.show('Registration Failed', 'Something went wrong. Please try again.');
       }
 
     }
     catch (error) {
-      loading.dismiss();
+        this.loadingService.hide();
     }
   }
 

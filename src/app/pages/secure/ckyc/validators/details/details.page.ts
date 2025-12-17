@@ -35,7 +35,6 @@ export class DetailsPage implements OnInit {
 
   validatorAddress = '';
   validator = signal<Validator | undefined>(undefined);
-  // validatorStates = signal<Map<number, string>>(new Map());
 
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
@@ -51,26 +50,11 @@ export class DetailsPage implements OnInit {
 
   async getValidatorDetails(address: string) {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.ValidatorInfo(address);
+    const data = await this.rpcService.validatorInfo(address);
     this.validator.set(data.result?.validator);
     console.log('validator', this.validator());
     this.loadingService.hide();
   }
-
-  // async getStates() {
-  //   this.loadingService.show('Loading data...');
-  //   await this.rpcService.connectGlobalVariables();
-  //   const data = await this.rpcService.getGlobalVariableByCategory('cKYC Validator State');
-  //   const stateMap = new Map<number, string>();
-  //   data.result.forEach((state: any) => stateMap.set(state.variableId, state.name));
-  //   this.validatorStates.set(stateMap);
-  //   this.loadingService.hide();
-  // }
-
-  // getStateName(stateId: number | undefined): string {
-  //   if (stateId === undefined) return 'Unknown';
-  //   return this.validatorStates().get(stateId) || 'Unknown';
-  // }
 
   getStateClass(stateId: number | undefined): string {
     if (stateId === undefined) return 'bg-gray-100 text-gray-800';
@@ -94,12 +78,12 @@ export class DetailsPage implements OnInit {
       try {
         // Execute updates SEQUENTIALLY instead of in parallel
         if (result.name !== currentValidator.name) {
-          await this.rpcService.ValidatorChangeName(currentValidator.address, result.name!);
+          await this.rpcService.validatorChangeName(currentValidator.address, result.name!);
         }
         
         const dataChanged = result.email !== currentValidator.email || result.mobile !== currentValidator.mobile;
         if (dataChanged) {
-          await this.rpcService.ValidatorChangeData(currentValidator.address, JSON.stringify({ email: result.email!, mobile: result.mobile! }));
+          await this.rpcService.validatorChangeData(currentValidator.address, JSON.stringify({ email: result.email!, mobile: result.mobile! }));
         }
 
         await this.getValidatorDetails(this.validatorAddress);
@@ -121,7 +105,7 @@ export class DetailsPage implements OnInit {
     if (newState !== null && newState !== currentValidator.state) {
         this.loadingService.show('Changing state...');
         try {
-            await this.rpcService.ValidatorChangeState(currentValidator.address, newState);
+            await this.rpcService.validatorChangeState(currentValidator.address, newState);
             await this.getValidatorDetails(currentValidator.address);
         } catch (error) {
             console.error('Failed to change state', error);

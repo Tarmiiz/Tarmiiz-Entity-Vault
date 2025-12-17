@@ -1,14 +1,14 @@
-<app-header title="cKYC Service Details"></app-header>
+<app-header title="Service Details"></app-header>
 
 <ion-content [fullscreen]="true">
 
   <div class="px-6 py-4 border-b">
-    @if (validator(); as op) {
+    @if (service(); as op) {
       <nav class="flex" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
           <li class="inline-flex items-center">
-            <a routerLink="/authorized/ckyc/validators/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
-              cKYC Validators
+            <a routerLink="/authorized/ckyc/services/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+              Services
             </a>
           </li>
           <li>
@@ -26,7 +26,7 @@
 
   <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
     <div class="container mx-auto">
-      @if (validator(); as v) {
+      @if (service(); as v) {
       <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-4xl mx-auto">
         <div class="p-6">
           <div class="flex items-start justify-between mb-4">
@@ -43,6 +43,10 @@
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+            <div class="border-t pt-4 md:col-span-2">
+              <p class="text-sm font-medium text-gray-500">Service Address</p>
+              <p class="font-mono text-base">{{ v.address }}</p>
+            </div>
             <div class="border-t pt-4">
               <p class="text-sm font-medium text-gray-500">Email</p>
               <p class="text-base">{{ v.email }}</p>
@@ -52,19 +56,21 @@
               <p class="text-base">{{ v.mobile }}</p>
             </div>
             <div class="border-t pt-4">
+              <p class="text-sm font-medium text-gray-500">Website</p>
+              <p class="text-base">{{ v.website }}</p>
+            </div>
+            <div class="border-t pt-4">
               <p class="text-sm font-medium text-gray-500">Country</p>
               <p class="text-base">{{ v.countryName }}</p>
             </div>
-            <div class="border-t pt-4">
+            <div class="border-t pt-4 md:col-span-2">
+              <p class="text-sm font-medium text-gray-500">Validator Address</p>
+              <p class="font-mono text-base">{{ v.validator }}</p>
             </div>
             <div class="border-t pt-4 md:col-span-2">
               <p class="text-sm font-medium text-gray-500">Regulator Address</p>
               <p class="font-mono text-base">{{ v.regulator }}</p>
             </div>
-             <!-- <div class="border-t pt-4 md:col-span-2">
-              <p class="text-sm font-medium text-gray-500">Raw Data</p>
-              <p class="text-base font-mono text-sm bg-gray-100 p-2 rounded">{{ v.data }}</p>
-            </div> -->
           </div>
           
           <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
