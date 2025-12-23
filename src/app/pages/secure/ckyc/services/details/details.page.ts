@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
@@ -27,11 +27,14 @@ import { ModalServiceEditService } from '../modals/modal-service-edit/modal-serv
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private rpcService = inject(RpcService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private ServiceEditService = inject(ModalServiceEditService);
   private ServiceStateService = inject(ModalServiceStateService);
+
+  activeTab = signal<'info' | 'subscriptions' | 'trxs' | 'actions'>('info');
 
   serviceAddress = '';
   service = signal<Service | undefined>(undefined);
@@ -43,10 +46,19 @@ export class DetailsPage implements OnInit {
     }    
   }
 
-  async ngOnInit() {
+  async ngOnInit() {}
+  
+  async ionViewWillEnter() {
     await this.getServiceDetails(this.serviceAddress);
     // await this.getStates();
   }
+
+  setTab(tab: 'info' | 'subscriptions' | 'trxs' | 'actions') {
+    this.activeTab.set(tab);
+    // if (tab === 'info') {
+    //   this.getIdenityDetails(this.uniqueIdHash);
+    // }
+  }   
 
   async getServiceDetails(address: string) {
     this.loadingService.show('Loading data...');
@@ -113,4 +125,8 @@ export class DetailsPage implements OnInit {
         }
     }    
   }
+
+  async viewValidator(validator: string) {
+    this.router.navigate(['/authorized/ckyc/validators/details/' + validator]);
+  }  
 }

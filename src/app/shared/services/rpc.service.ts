@@ -473,7 +473,7 @@ export class RpcService {
         
         const count = Number(result[0]);
         const validators = result[1].map((op: any) => {
-          console.log('result', op);
+          // console.log('result', op);
           let parsedData = null;
           try {
             parsedData = JSON.parse(op.data);
@@ -571,7 +571,34 @@ export class RpcService {
     catch (error: any) {
       return { result: null, error: 'Error fetching validator info: ' + error.message};
     }
-  }  
+  }
+
+  async validatorServicesList(validatorAddress: string,start: number, offset: number) {
+    try {
+
+     const iface = new ethers.Interface([
+        "function listServices(uint256 start, uint256 offset) external view returns (uint256 count, address[] memory services)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listServices', [start, offset]);
+      const result = await this.callExternalStatic(validatorAddress, callData);
+
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('listServices', result.data);
+
+        const count = Number(decodedResult[0]);
+        const services: string[] = decodedResult[1];
+          
+        return { result: { count, services } , error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset supply changes'};
+      }
+    }
+    catch (error: any) {
+        return { result: null, error: 'Error fetching asset supply changes'};
+    }
+  }
 
   async servicesList(start: number, offset: number) {
     try {
@@ -695,7 +722,9 @@ export class RpcService {
     catch (error: any) {
       return { result: null, error: 'Error fetching service info: ' + error.message};
     }
-  }    
+  }
+
+
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Regulator Contract: API Functions
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

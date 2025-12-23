@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
@@ -12,6 +12,7 @@ import { LoadingService } from '../../../../../shared/components/alerts/loading/
 import { Validator } from '../../../../../shared/models/data.model';
 import { ModalValidatorEditService } from '../modals/modal-validator-edit/modal-validator-edit.service';
 import { ModalValidatorStateService } from '../modals/modal-validator-state/modal-validator-state.service';
+import { sign } from 'crypto';
 
 @Component({
   selector: 'app-details',
@@ -27,32 +28,53 @@ import { ModalValidatorStateService } from '../modals/modal-validator-state/moda
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private rpcService = inject(RpcService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private ValidatorEditService = inject(ModalValidatorEditService);
   private ckcyValidatorStateService = inject(ModalValidatorStateService);
 
-  validatorAddress = '';
+  activeTab = signal<'info' | 'services' | 'actions'>('info');
+
+  validatorAddress = signal<string>('');
   validator = signal<Validator | undefined>(undefined);
+  services = signal<string[]>([]);
 
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
-      this.validatorAddress = address;
+      this.validatorAddress.set(address);
     }    
   }
 
-  async ngOnInit() {
-    await this.getValidatorDetails(this.validatorAddress);
+  async ngOnInit() {}
+
+  async ionViewWillEnter() {
+    await this.getValidatorDetails();
     // await this.getStates();
+  }  
+
+  setTab(tab: 'info' | 'services' | 'actions') {
+    this.activeTab.set(tab);
+    if (tab === 'info') this.getValidatorDetails();
+    if (tab === 'services') this.getServicesList();
+    
+  }   
+
+  async getValidatorDetails() {
+    this.loadingService.show('Loading data...');
+    const data = await this.rpcService.validatorInfo(this.validatorAddress());
+    this.validator.set(data.result?.validator);
+    // console.log('validator', this.validator());
+    this.loadingService.hide();
   }
 
-  async getValidatorDetails(address: string) {
+  async getServicesList() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.validatorInfo(address);
-    this.validator.set(data.result?.validator);
-    console.log('validator', this.validator());
+    const data = await this.rpcService.validatorServicesList(this.validatorAddress(), 1, 10);
+    if(data.result) this.services.set(data.result?.services);
+    console.log('services', this.services());
     this.loadingService.hide();
   }
 
@@ -86,7 +108,7 @@ export class DetailsPage implements OnInit {
           await this.rpcService.validatorChangeData(currentValidator.address, JSON.stringify({ email: result.email!, mobile: result.mobile! }));
         }
 
-        await this.getValidatorDetails(this.validatorAddress);
+        await this.getValidatorDetails();
 
       } catch (error) {
         console.error('Failed to update validator', error);
@@ -106,7 +128,7 @@ export class DetailsPage implements OnInit {
         this.loadingService.show('Changing state...');
         try {
             await this.rpcService.validatorChangeState(currentValidator.address, newState);
-            await this.getValidatorDetails(currentValidator.address);
+            await this.getValidatorDetails();
         } catch (error) {
             console.error('Failed to change state', error);
         } finally {
@@ -114,4 +136,9 @@ export class DetailsPage implements OnInit {
         }
     }    
   }
+
+  async viewService(service: string) {
+    this.router.navigate(['/authorized/ckyc/services/details/' + service]);
+  }
+
 }
