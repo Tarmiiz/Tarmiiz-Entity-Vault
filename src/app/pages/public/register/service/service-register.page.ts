@@ -1,6 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent } from '@ionic/angular/standalone';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 
@@ -18,7 +17,7 @@ import { LoadingComponent } from "../../../../shared/components/alerts/loading/l
   styleUrls: ['./service-register.page.scss'],
   standalone: true,
   imports: [
-    IonContent, CommonModule,
+    CommonModule,
     ReactiveFormsModule, FormsModule,
     RouterLink,
     AlertComponent,
@@ -113,7 +112,7 @@ export class ServiceRegisterPage implements OnInit {
 
       if (result) {
         this.loadingService.hide();
-        this.alertService.show('Registration Successful', 'Your account has been created successfully.');
+        await this.alertService.show('Registration Successful', 'Your account has been created successfully.');
         this.router.navigate(['/public/user/login']);
       }
       else {

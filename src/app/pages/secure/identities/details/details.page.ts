@@ -75,11 +75,12 @@ export class UserDetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private apiService = inject(ApiService);
 
-  activeTab = signal<'overview' | 'info' | 'holdings' | 'credit' | 'trxs' | 'actions' >('overview');
+  activeTab = signal<'overview' | 'info' | 'subscriptions' | 'holdings' | 'credit' | 'trxs' | 'actions' >('overview');
 
   uniqueIdHash = '';
   identity = signal<cKYCIdentity | null>(null);
   metadata = signal<any | null>(null);
+  subscriptions = signal<string[]>([]);
   idFront: string = '';
   idBack: string = '';
 
@@ -147,11 +148,9 @@ export class UserDetailsPage implements OnInit {
     await this.getIdenityDetails(this.uniqueIdHash);
   }
 
-  setTab(tab: 'overview' | 'info' | 'holdings' | 'credit' | 'trxs' | 'actions') {
+  setTab(tab: 'overview' | 'info' | 'subscriptions' | 'holdings' | 'credit' | 'trxs' | 'actions') {
     this.activeTab.set(tab);
-    // if (tab === 'info') {
-    //   this.getIdenityDetails(this.uniqueIdHash);
-    // }
+    if (tab === 'subscriptions') this.getIdenityDetails(this.uniqueIdHash);
   }  
 
   async getIdenityDetails(uid: string) {
@@ -193,6 +192,15 @@ export class UserDetailsPage implements OnInit {
     }
     this.loadingService.hide();
   }
+
+  async getSubscriptions() {
+    this.loadingService.show('Loading data...');
+    const data = await this.rpcService.cKYCIdentitySubscriptions(this.uniqueIdHash, 1, 10);
+    if(data.result) this.subscriptions.set(data.result?.subscriptions);
+    console.log('subscriptions', this.subscriptions());
+    this.loadingService.hide();
+  }
+
 
   getStateClass(stateId: number | undefined): string {
     if (stateId === undefined) return 'bg-gray-100 text-gray-800';

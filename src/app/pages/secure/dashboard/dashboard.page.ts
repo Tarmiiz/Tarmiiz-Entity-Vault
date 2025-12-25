@@ -1,14 +1,15 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LoadingController } from '@ionic/angular';
-import {
-  IonContent, IonTitle,
-} from '@ionic/angular/standalone'
+import { IonTitle } from '@ionic/angular/standalone'
+
+import { HeaderComponent } from "../../../shared/components/header/header.component";
+
+import { Regulator } from '../../../shared/models/data.model';
 
 import { RpcService } from '../../../shared/services/rpc.service';
-import { HeaderComponent } from "../../../shared/components/header/header.component";
-import { Regulator } from 'src/app/shared/models/data.model';
+import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
 
 interface StatCard {
   title: string;
@@ -28,12 +29,15 @@ interface Asset {
   styleUrls: ['./dashboard.page.scss'],
   standalone: true,
   imports: [
-    IonContent, IonTitle,
+    IonTitle,
     CommonModule, FormsModule,
     HeaderComponent,
   ]
 })
 export class DashboardPage implements OnInit {
+  private rpcService = inject(RpcService);
+  private loadingService = inject(LoadingService);
+  private alertService = inject(AlertService);
 
   regulatorInfo!: Regulator;
 
@@ -54,21 +58,15 @@ export class DashboardPage implements OnInit {
     { name: 'Real Estate Token', symbol: 'RET-01', supply: 250000 },
   ]);
 
-  constructor(
-    private loadingController: LoadingController,
-    private rpcService: RpcService,
-  ) { }
+  constructor() { }
 
   async ngOnInit() {
     // await this.rpcService.info();
   }
   
   async ionViewWillEnter() {
-    const loading = await this.loadingController.create({
-      message: 'Loading events...'
-    })
-    await loading.present();
-    
+    this.loadingService.show('Loading data ...');
+
     // Initialize current block
     try {
       this.regulatorInfo = this.rpcService.regulatorInfo;
@@ -89,7 +87,9 @@ export class DashboardPage implements OnInit {
       this.currentBlockTimestamp = timestamp;
     });
 
-    this.loadingController.dismiss();
+    await this.rpcService.operatorSet('0xBC08EDa7674EF880F19ec867fE4a1933f9bEbc9e');
+
+    this.loadingService.hide();
   }
 
   async ionViewWillLeave() {

@@ -64,7 +64,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.serviceInfo(address);
     this.service.set(data.result?.service);
-    console.log('service', this.service());
+    // console.log('service', this.service());
     this.loadingService.hide();
   }
 

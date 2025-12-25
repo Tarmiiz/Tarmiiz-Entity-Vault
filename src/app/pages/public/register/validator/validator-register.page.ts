@@ -84,8 +84,8 @@ export class ValidatorRegisterPage implements OnInit {
       if (result && result.success) {
         console.log(result.contract);
         this.loadingService.hide();
-        this.alertService.show('Registration Successful', 'Your account has been created successfully.');
-        this.router.navigate(['/public/user/login']);
+        const confirmed = await this.alertService.show('Registration Successful', 'Your account has been created successfully.');
+        if (confirmed) this.router.navigate(['/public/user/login']);
       }
       else {
         this.loadingService.hide();

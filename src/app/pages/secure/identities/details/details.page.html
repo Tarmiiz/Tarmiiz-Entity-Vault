@@ -50,6 +50,15 @@
           >
             Information
           </button>
+          <button (click)="setTab('subscriptions')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'subscriptions'"
+            [class.border-b-2]="activeTab() === 'subscriptions'"
+            [class.border-blue-600]="activeTab() === 'subscriptions'"
+            [class.bg-blue-600]="activeTab() === 'subscriptions'"
+          >
+            Subscriptions
+          </button>
           <button (click)="setTab('holdings')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'holdings'"
@@ -99,28 +108,30 @@
             <div class="space-y-8">
               
               <!-- Profile Summary Card -->
-              <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
-                <!-- <div class="flex-shrink-0">
-                  <img class="h-24 w-24 rounded-full object-cover ring-4 ring-indigo-100" src="https://picsum.photos/seed/{{v.ginHash}}/200" alt="User Avatar">
-                </div> -->
-                <div class="flex-grow">
-                  <div class="flex items-center justify-between">
-                    <h2 class="text-3xl font-bold text-gray-800">{{ metadata().name }}</h2>
-                    <!-- <span class="px-3 py-1 text-sm font-semibold rounded-full" [class]="getStateClass(v.state)">
-                      {{ v.stateName }}
-                    </span> -->
-                  </div>
-                  <p class="text-gray-500 font-mono mt-1">{{ metadata().idNo }}</p>
-                  <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                    <div><span class="font-semibold">Created On:</span> {{ v.createdAt * 1000 | date: 'longDate' }}</div>
-                    <div><span class="font-semibold">Last Verified:</span> {{ v.lastVarifiedAt * 1000 | date: 'longDate' }}</div>
-                    <div><span class="font-semibold">Governorate:</span> {{ metadata().address.governorate }}</div>
-                  </div>
-                </div>
-                <!-- <div class="flex-shrink-0">
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{v.ginHash}}" alt="QR Code" class="rounded-md">
-                </div> -->
-              </div>
+               @if(metadata()){
+                 <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                   <!-- <div class="flex-shrink-0">
+                     <img class="h-24 w-24 rounded-full object-cover ring-4 ring-indigo-100" src="https://picsum.photos/seed/{{v.ginHash}}/200" alt="User Avatar">
+                   </div> -->
+                   <div class="flex-grow">
+                     <div class="flex items-center justify-between">
+                       <h2 class="text-3xl font-bold text-gray-800">{{ metadata().name }}</h2>
+                       <!-- <span class="px-3 py-1 text-sm font-semibold rounded-full" [class]="getStateClass(v.state)">
+                         {{ v.stateName }}
+                       </span> -->
+                     </div>
+                     <p class="text-gray-500 font-mono mt-1">{{ metadata().idNo }}</p>
+                     <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                       <div><span class="font-semibold">Created On:</span> {{ v.createdAt * 1000 | date: 'longDate' }}</div>
+                       <div><span class="font-semibold">Last Verified:</span> {{ v.lastVarifiedAt * 1000 | date: 'longDate' }}</div>
+                       <div><span class="font-semibold">Governorate:</span> {{ metadata().address.governorate }}</div>
+                     </div>
+                   </div>
+                   <!-- <div class="flex-shrink-0">
+                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{v.ginHash}}" alt="QR Code" class="rounded-md">
+                   </div> -->
+                 </div>
+               }
 
               <!-- At a Glance Section -->
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -311,6 +322,36 @@
               </div>
             </div>
           }
+
+          <!-- subscriptions tab -->
+          @if (activeTab() === 'subscriptions') {
+
+            <!-- table -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges" dir="ltr" style="width: auto;">
+              <!-- <div class="px-6 py-4 bg-gray-600">
+                <h2 class="text-xl font-semibold text-white">Top Moving Assets</h2>
+              </div> -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                  <thead class="text-xs text-gray-700 uppercase bg-gray-400">
+                    <tr>
+                      <th scope="col" class="px-6 py-2">#</th>
+                      <th scope="col" class="px-6 py-2">Service Address</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (s of subscriptions(); track s; let i = $index) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-6 py-2">{{ i }}</td>
+                        <td class="px-6 py-2">{{ s }}</td>
+                      </tr>
+                    }
+
+                  </tbody>
+                </table>
+              </div>
+            </div>          
+          }  
 
           <!-- holdings tab -->
           @if (activeTab() === 'holdings') {

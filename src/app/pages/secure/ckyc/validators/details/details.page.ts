@@ -9,7 +9,7 @@ import { HeaderComponent } from "../../../../../shared/components/header/header.
 import { RpcService } from '../../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
-import { Validator } from '../../../../../shared/models/data.model';
+import { Service, Validator } from '../../../../../shared/models/data.model';
 import { ModalValidatorEditService } from '../modals/modal-validator-edit/modal-validator-edit.service';
 import { ModalValidatorStateService } from '../modals/modal-validator-state/modal-validator-state.service';
 import { sign } from 'crypto';
@@ -35,11 +35,11 @@ export class DetailsPage implements OnInit {
   private ValidatorEditService = inject(ModalValidatorEditService);
   private ckcyValidatorStateService = inject(ModalValidatorStateService);
 
-  activeTab = signal<'info' | 'services' | 'actions'>('info');
+  activeTab = signal<'info' | 'services' | 'identities' | 'actions'>('info');
 
   validatorAddress = signal<string>('');
   validator = signal<Validator | undefined>(undefined);
-  services = signal<string[]>([]);
+  services = signal<Service[]>([]);
 
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
@@ -55,7 +55,7 @@ export class DetailsPage implements OnInit {
     // await this.getStates();
   }  
 
-  setTab(tab: 'info' | 'services' | 'actions') {
+  setTab(tab: 'info' | 'services' | 'identities' | 'actions') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getValidatorDetails();
     if (tab === 'services') this.getServicesList();
@@ -74,7 +74,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.validatorServicesList(this.validatorAddress(), 1, 10);
     if(data.result) this.services.set(data.result?.services);
-    console.log('services', this.services());
+    // console.log('services', this.services());
     this.loadingService.hide();
   }
 

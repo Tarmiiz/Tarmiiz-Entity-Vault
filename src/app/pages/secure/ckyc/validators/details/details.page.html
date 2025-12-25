@@ -50,6 +50,15 @@
           >
             Services
           </button>
+          <button (click)="setTab('identities')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'identities'"
+            [class.border-b-2]="activeTab() === 'identities'"
+            [class.border-blue-600]="activeTab() === 'identities'"
+            [class.bg-blue-600]="activeTab() === 'identities'"
+          >
+            Identities
+          </button>
           <button (click)="setTab('actions')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'actions'"
@@ -132,7 +141,8 @@
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                       <tr>
                           <th scope="col" class="px-6 py-2">#</th>
-                          <th scope="col" class="px-6 py-2">Address</th>
+                          <th scope="col" class="px-6 py-2">name</th>
+                          <th scope="col" class="px-6 py-2">State</th>
                       </tr>
                   </thead>
                   <tbody>
@@ -144,9 +154,14 @@
                     }
                     @else {
                         @for(service of services(); track service; let i = $index; let isEven = $even;) {
-                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewService(service)">
+                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewService(service.address)">
                                 <td class="px-6 py-2">{{ i + 1 }}</td>
-                                <td class="px-6 py-2">{{ service }}</td>
+                                <td class="px-6 py-2">{{ service.name }}</td>
+                                <td class="px-6 py-2">
+                                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
+                                    {{ service.stateName }}
+                                  </span>
+                                </td>
                             </tr>
                         }
                     }
@@ -155,6 +170,10 @@
                 </table>
               </div>
             </div>
+          }
+
+          <!-- identities tab -->
+          @if (activeTab() === 'identities') {
           }
 
           <!-- actions tab -->

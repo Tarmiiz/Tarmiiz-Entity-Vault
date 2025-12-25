@@ -18,6 +18,7 @@ import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
+import { count } from 'rxjs';
 
 export interface LoginResult {
   success: boolean;
@@ -61,7 +62,7 @@ export class RpcService {
   wsProvider = new ethers.WebSocketProvider(environment.wsNode);
   signer: any;
   
-  globalVariableContractAddress = environment.GVProxyContract
+  globalVariableContractAddress = environment.globalVariablesProxyContract
   globalVariablesContract: any;
   globalVariablesList: GlobalVariable[] = [];
   countriesList: Country[] = [];
@@ -69,7 +70,7 @@ export class RpcService {
   regulatorContractAddress = environment.regulatorAddress;
   regulatorContract: any;
 
-  ckycProxyAddress = environment.CKYCProxyContract
+  ckycProxyAddress = environment.ckycProxyContract
   ckycContract: any;
   ckycOperatorContract: any;
   regulatorInfo!: Regulator;
@@ -402,6 +403,22 @@ export class RpcService {
 
   }
 
+  async operatorSet(address: string) {
+    try {
+      await this.connectRegulatorContract();
+      const tx = await this.regulatorContract.operatorSet(address, { gasLimit: 5000000 });
+      const receipt = await tx.wait();
+      return { result: receipt.blockNumber, error: '' };
+    }
+    catch (error: any) {
+      console.error('Full error:', error);
+      return { 
+        result: null, 
+        error: error.message || 'Error calling external contract'
+      };
+    }
+  }  
+
   async callExternalParallel(address: string, callData: string) {
     try {
       await this.connectRegulatorContract();
@@ -577,7 +594,7 @@ export class RpcService {
     try {
 
      const iface = new ethers.Interface([
-        "function listServices(uint256 start, uint256 offset) external view returns (uint256 count, address[] memory services)"
+        "function listServices(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address regulator, address validator, string name, string data, uint256 countryCode, uint8 state)[] memory services)"
       ]);
       
       const callData = iface.encodeFunctionData('listServices', [start, offset]);
@@ -585,10 +602,7 @@ export class RpcService {
 
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('listServices', result.data);
-
-        const count = Number(decodedResult[0]);
-        const services: string[] = decodedResult[1];
-          
+        const { count, services } = await this.processServicesList(decodedResult);
         return { result: { count, services } , error: ''};
       }
       else {
@@ -607,56 +621,7 @@ export class RpcService {
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
       const result = await apiContract['servicesList'](start, offset);
       if (result) {
-
-        // Fetch state names once for all validators
-        await this.connectGlobalVariables();
-        const statesResult = await this.getGlobalVariableByCategory('Account State');
-
-        // check countries list
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
-        
-        const count = Number(result[0]);
-        const services = result[1].map((op: any) => {
-          console.log('result', op);
-          let parsedData = null;
-          try {
-            parsedData = JSON.parse(op.data);
-          } catch (e) {
-            console.error('Error parsing operator data:', e);
-          }
-
-          // Get state name for this validator
-          const stateId = Number(op.state);
-          let stateName = 'Unknown';
-          if (statesResult.result) {
-            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-            stateName = stateVariable?.name || 'Unknown';
-          }  
-
-
-          // Get country name for this operator
-          const countryCode = Number(op.countryCode);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-          
-          return {
-            address: op.service,
-            name: op.name,
-            data: op.data,
-            email: parsedData?.email || '',
-            mobile: parsedData?.mobile || '',
-            website: parsedData?.website || '',
-            countryCode: Number(op.countryCode),
-            countryName,
-            regulator: op.regulator,
-            validator: op.validator,
-            state: Number(op.state),
-            stateName
-          };
-        });
-        
+        const { count, services } = await this.processServicesList(result);        
         return { result: { count, services }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -724,6 +689,58 @@ export class RpcService {
     }
   }
 
+  async processServicesList(data: any) {
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        
+        const count = Number(data[0]);
+        const services = data[1].map((op: any) => {
+          // console.log('result', op);
+          let parsedData = null;
+          try {
+            parsedData = JSON.parse(op.data);
+          } catch (e) {
+            console.error('Error parsing operator data:', e);
+          }
+
+          // Get state name for this validator
+          const stateId = Number(op.state);
+          let stateName = 'Unknown';
+          if (statesResult.result) {
+            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+            stateName = stateVariable?.name || 'Unknown';
+          }  
+
+
+          // Get country name for this operator
+          const countryCode = Number(op.countryCode);
+          const country = this.countriesList.find(c => c.countryCode === countryCode);
+          const countryName = country?.nameShort || 'Unknown';
+          
+          return {
+            address: op.service,
+            name: op.name,
+            data: op.data,
+            email: parsedData?.email || '',
+            mobile: parsedData?.mobile || '',
+            website: parsedData?.website || '',
+            countryCode: Number(op.countryCode),
+            countryName,
+            regulator: op.regulator,
+            validator: op.validator,
+            state: Number(op.state),
+            stateName
+          };
+        });
+        
+        return { count, services };    
+  }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Regulator Contract: API Functions
@@ -1453,6 +1470,33 @@ export class RpcService {
       return { result: null, error: 'Error fetching identity info: ' + error.message};
     }
   }   
+
+  async cKYCIdentitySubscriptions(uid: string, start: number, offset: number) {
+    try {
+
+     const iface = new ethers.Interface([
+        "function identitySubscriptions(bytes32 uniqueIdHash) external view returns (address[] memory subscriptions)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('identitySubscriptions', [uid]);
+      const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
+
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('identitySubscriptions', result.data);
+
+        const count = Number(decodedResult[0]);
+        const subscriptions: string[] = decodedResult[1]
+          
+        return { result: { count, subscriptions } , error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset supply changes'};
+      }
+    }
+    catch (error: any) {
+        return { result: null, error: 'Error fetching asset supply changes'};
+    }
+  }
 
 
   async assetsList() {   

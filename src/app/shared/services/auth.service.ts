@@ -1,22 +1,22 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { LoadingController, AlertController } from '@ionic/angular';
 
 import { StorageService } from './storage.service';
+import { LoadingService } from '../components/alerts/loading/loading.service';
+import { AlertService } from '../components/alerts/alert/alert.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  private loadingService = inject(LoadingService);
+  private alertService = inject(AlertService);
+  private router = inject(Router);
+  private storageService = inject(StorageService);
 
-  constructor(
-    private router: Router,
-    private loadingController: LoadingController,
-    private alertController: AlertController,
 
-    private storageService: StorageService,
-  ) {
-  }
+  constructor() {}
 
   async login() {
     // 1 hour in milliseconds
@@ -26,35 +26,14 @@ export class AuthService {
   }
 
   async logout() {
-    const alert = await this.alertController.create({
-      header: 'Logout',
-      message: 'Are you sure you want to logout?',
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-        },
-        {
-          text: 'Logout',
-          handler: async () => {
-            alert.dismiss();
-            const loading = await this.loadingController.create({
-              message: 'Logging out...'
-            });
-            await loading.present();
-        
-            await this.storageService.remove('sessionExpiry');
-            await this.storageService.remove('contract');
-            await this.storageService.remove('wallet');
-            loading.dismiss();
-            this.router.navigate(['/public/user/login']);
-          }
-        }
-      ]
-    });
-    await alert.present();
-
-
+    const confirmed =await this.alertService.show('Logout', 'Are you sure you want to logout?');
+    if(!confirmed) return;
+    this.loadingService.show('Closing session ...');
+    await this.storageService.remove('sessionExpiry');
+    await this.storageService.remove('contract');
+    await this.storageService.remove('wallet');
+    this.loadingService.hide();
+    this.router.navigate(['/public/user/login']);
 
   }
 }

@@ -1,44 +1,48 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent } from '@ionic/angular/standalone';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { LoadingController, AlertController } from '@ionic/angular';
 
 import { RpcService } from '../../../../shared/services/rpc.service';
-import { AuthService } from '../../../../shared/services/auth.service';
 import { StorageService } from '../../../../shared/services/storage.service';
+import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+import { AlertComponent } from "../../../../shared/components/alerts/alert/alert.component";
+import { LoadingComponent } from "../../../../shared/components/alerts/loading/loading.component";
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
   standalone: true,
-  imports: [ 
-    IonContent, CommonModule, 
+  imports: [
+    CommonModule,
     ReactiveFormsModule, FormsModule,
-    RouterLink
-  ]
+    RouterLink,
+    AlertComponent,
+    LoadingComponent
+]
 })
 export class LoginPage implements OnInit {
+  private loadingService = inject(LoadingService);
+  private alertService = inject(AlertService);
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private storageService = inject(StorageService);
+  private rpcService = inject(RpcService);
 
   formLogin!: FormGroup;
   isLoading = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private loadingController: LoadingController,
-    private alertController: AlertController,
-    private router: Router,
+  contractAddress = environment.regulatorAddress;
 
-    private storageService: StorageService,
-    private authService: AuthService,
-    private rpcService: RpcService
+  constructor(
   ) { 
     this.formLogin = this.fb.group({
       email: new FormControl('', [Validators.required, Validators.email]),
       password: new FormControl('', [Validators.required]),
-      contract: new FormControl('', [Validators.required])
+      contract: new FormControl(this.contractAddress, [Validators.required])
     });
   }
 
@@ -49,17 +53,12 @@ export class LoginPage implements OnInit {
   }
 
   async showAlert(header: string, message: string) {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons: ['OK']
-    });
-    await alert.present();
+      this.alertService.show(header, message);
   }
 
  async login() {
     if (!this.formLogin.valid) {
-      await this.showAlert('Invalid Form', 'Please enter a valid email and password.');
+      await this.alertService.show('Invalid Form', 'Please enter a valid email and password.');
       return;
     }
 
@@ -68,11 +67,7 @@ export class LoginPage implements OnInit {
     this.isLoading = true;
 
     // Show loading
-    const loading = await this.loadingController.create({
-      message: 'Connecting to Contract ...'
-    });
-    await loading.present();
-
+    this.loadingService.show('Connecting to Contract ...');
     try {
 
       // set regulatro contract address
@@ -81,13 +76,13 @@ export class LoginPage implements OnInit {
       // Initialize the RPC service
       await this.rpcService.init();
 
-      loading.message = 'Generating zero-knowledge proof and logging in...';
+      this.loadingService.show('Generating zero-knowledge proof and logging in...');
 
 
       // Attempt login with 1 hour session duration
       const loginResult = await this.rpcService.login(email, password, 3600);
       
-      await loading.dismiss();
+      this.loadingService.hide();
       this.isLoading = false;
 
       if (loginResult.success) {
@@ -104,7 +99,7 @@ export class LoginPage implements OnInit {
 
     } 
     catch (error: any) {
-      await loading.dismiss();
+      this.loadingService.hide();
       this.isLoading = false;
       
       console.error('Login error:', error);

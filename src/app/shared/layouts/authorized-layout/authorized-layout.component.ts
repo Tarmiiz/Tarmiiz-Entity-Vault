@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import {
   IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar,
   IonContent, IonList, IonItem, IonIcon, IonLabel,
@@ -53,15 +53,13 @@ import { ModalServiceEditComponent } from "src/app/pages/secure/ckyc/services/mo
   ],
 })
 export class AuthorizedLayoutComponent {
+  private authService = inject(AuthService);
+  private menuController = inject(MenuController);
+  private rpcService = inject(RpcService);
 
   regulatorInfo!: Regulator;
 
-  constructor(
-    private authService: AuthService,
-    private menuController: MenuController,
-    private rpcService: RpcService,
-    
-  ) {
+  constructor() {
     addIcons({homeOutline,peopleOutline,fingerPrintOutline,snowOutline,globeOutline,layersOutline,personCircleOutline,idCardOutline,cogOutline,searchOutline,bookOutline,logOutOutline});
     if(this.rpcService.regulatorInfo) this.regulatorInfo = this.rpcService.regulatorInfo;
   }
