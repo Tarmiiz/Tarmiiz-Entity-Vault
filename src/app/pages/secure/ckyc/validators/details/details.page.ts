@@ -12,7 +12,8 @@ import { LoadingService } from '../../../../../shared/components/alerts/loading/
 import { Service, Validator } from '../../../../../shared/models/data.model';
 import { ModalValidatorEditService } from '../modals/modal-validator-edit/modal-validator-edit.service';
 import { ModalValidatorStateService } from '../modals/modal-validator-state/modal-validator-state.service';
-import { sign } from 'crypto';
+
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-details',
@@ -41,6 +42,8 @@ export class DetailsPage implements OnInit {
   validator = signal<Validator | undefined>(undefined);
   services = signal<Service[]>([]);
 
+  isOwn = false;
+
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
@@ -52,7 +55,7 @@ export class DetailsPage implements OnInit {
 
   async ionViewWillEnter() {
     await this.getValidatorDetails();
-    // await this.getStates();
+    this.isOwn = this.validator()?.regulator === environment.regulatorAddress;
   }  
 
   setTab(tab: 'info' | 'services' | 'identities' | 'actions') {

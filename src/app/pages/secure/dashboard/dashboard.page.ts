@@ -87,7 +87,9 @@ export class DashboardPage implements OnInit {
       this.currentBlockTimestamp = timestamp;
     });
 
-    await this.rpcService.operatorSet('0xBC08EDa7674EF880F19ec867fE4a1933f9bEbc9e');
+    // await this.rpcService.operatorSet('0xBC08EDa7674EF880F19ec867fE4a1933f9bEbc9e');
+    const { loginHash, secret } = await this.rpcService.generateZKPData('admin@regulator3.com', '111111');
+    console.log(loginHash, secret);
 
     this.loadingService.hide();
   }

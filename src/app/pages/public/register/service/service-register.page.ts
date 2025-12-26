@@ -63,7 +63,7 @@ export class ServiceRegisterPage implements OnInit {
   }
 
   async getValidators() {
-    const result = await this.rpcService.validatorsList(1, 100);
+    const result = await this.rpcService.validatorsListOwn(1, 100);
     console.log(result);
     if (result.result && result.result.validators) {
       const validators = result.result.validators

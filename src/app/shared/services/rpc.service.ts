@@ -137,6 +137,29 @@ export class RpcService {
     }
   }
 
+  async generateZKPData(email: string, password: string) {
+    try {
+      // Initialize ParseProofUtils
+      await ParseProofUtils.init();
+  
+      // Convert to BigInts
+      const emailBigInt = ParseProofUtils.stringToBigInt(email);
+      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
+      const globalSaltBigInt = BigInt(this.globalSalt);
+  
+      // Generate hashes for contract
+      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
+      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);
+
+      // Generate login data
+      return { loginHash: emailHashHex, secret: secretHex, error: '' };
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error generating login'};
+    }
+    
+  }
+
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Global Variables
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -282,8 +305,7 @@ export class RpcService {
       const storedCommitmentString = storedCommitmentBigInt.toString();
 
       // Get emailHash for circuit using ParseProofUtils (exactly like backend)
-      const emailHashForCircuit = ParseProofUtils.hashStringForContract(emailBigInt);
-      const emailHashBigInt = BigInt(emailHashForCircuit);
+      const emailHashBigInt = BigInt(emailHashHex);
       const emailHashString = emailHashBigInt.toString();
 
       // Prepare circuit input (same structure as backend)
@@ -476,7 +498,7 @@ export class RpcService {
       const privkey = environment.apiPrivKey;
       const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
-      const result = await apiContract['validatorsList'](start, offset);
+      const result = await apiContract['validatorsListAll'](start, offset);
       if (result) {
 
         // Fetch state names once for all validators
@@ -534,6 +556,70 @@ export class RpcService {
       return { result: null, error: 'Error fetching validators list: ' + error.message};
     }
   }
+
+  async validatorsListOwn(start: number, offset: number) {
+    try {
+      const privkey = environment.apiPrivKey;
+      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
+      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
+      const result = await apiContract['validatorsListOwn'](start, offset);
+      if (result) {
+
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        
+        const count = Number(result[0]);
+        const validators = result[1].map((op: any) => {
+          // console.log('result', op);
+          let parsedData = null;
+          try {
+            parsedData = JSON.parse(op.data);
+          } catch (e) {
+            console.error('Error parsing operator data:', e);
+          }
+
+          // Get state name for this validator
+          const stateId = Number(op.state);
+          let stateName = 'Unknown';
+          if (statesResult.result) {
+            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+            stateName = stateVariable?.name || 'Unknown';
+          }  
+
+
+          // Get country name for this operator
+          const countryCode = Number(op.countryCode);
+          const country = this.countriesList.find(c => c.countryCode === countryCode);
+          const countryName = country?.nameShort || 'Unknown';
+          
+          return {
+            address: op.validator,
+            name: op.name,
+            data: op.data,
+            email: parsedData?.email || '',
+            mobile: parsedData?.mobile || '',
+            countryCode: Number(op.countryCode),
+            countryName,
+            state: Number(op.state),
+            stateName
+          };
+        });
+        
+        return { result: { count, validators }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching validators list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching validators list: ' + error.message};
+    }
+  }  
 
   async validatorInfo(validatorAddress: string) {
     try {
@@ -619,7 +705,7 @@ export class RpcService {
       const privkey = environment.apiPrivKey;
       const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
-      const result = await apiContract['servicesList'](start, offset);
+      const result = await apiContract['servicesListAll'](start, offset);
       if (result) {
         const { count, services } = await this.processServicesList(result);        
         return { result: { count, services }, error: '' };
@@ -753,18 +839,9 @@ export class RpcService {
   ) {
 
     try {
-      
-      // Initialize ParseProofUtils
-      await ParseProofUtils.init();
-  
-      // Convert to BigInts
-      const emailBigInt = ParseProofUtils.stringToBigInt(email);
-      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(this.globalSalt);
-  
-      // Generate hashes for contract
-      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
-      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);
+
+      // generate login data
+      const { loginHash, secret } = await this.generateZKPData(email, password);
   
       // create & encrypt user data
       // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
@@ -776,7 +853,7 @@ export class RpcService {
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
 
       // register
-      const tx = await apiContract['validatorAdd'](emailHashHex, secretHex, name, encryptedUserData);
+      const tx = await apiContract['validatorAdd'](loginHash, secret, name, encryptedUserData);
       const receipt = await tx.wait();
   
       // listen to contract event
@@ -812,17 +889,8 @@ export class RpcService {
 
     try {
       
-      // Initialize ParseProofUtils
-      await ParseProofUtils.init();
-  
-      // Convert to BigInts
-      const emailBigInt = ParseProofUtils.stringToBigInt(email);
-      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(this.globalSalt);
-  
-      // Generate hashes for contract
-      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
-      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);
+      // generate login data
+      const { loginHash, secret } = await this.generateZKPData(email, password);
   
       // create & encrypt user data
       // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
@@ -834,7 +902,7 @@ export class RpcService {
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
 
       // register
-      const tx = await apiContract['serviceAdd'](emailHashHex, secretHex, name, encryptedUserData, validatorAddress);
+      const tx = await apiContract['serviceAdd'](loginHash, secret, name, encryptedUserData, validatorAddress);
       const receipt = await tx.wait();
   
       // listen to contract event
@@ -1759,38 +1827,63 @@ export class RpcService {
   async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<RegulatorEvent[]> {
     try {
       // Create filters for all event types
-      const loginFilter = this.regulatorContract.filters.loginEvent();
-      const credentialsFilter = this.regulatorContract.filters.credentialsEvent();
-      const assetFilter = this.regulatorContract.filters.assetEvent();
+      const loginFilter = this.regulatorContract.filters.LoginEvent();
+      const credentialsFilter = this.regulatorContract.filters.CredentialEvent();
+      const regulatorFilter = this.regulatorContract.filters.RegulatorEvent();
+      const validatorFilter = this.regulatorContract.filters.ValidatorEvent();
+      const serviceFilter = this.regulatorContract.filters.ServiceEvent();
 
       // Query all events
-      const [loginEvents, credentialsEvents, assetEvents] = await Promise.all([
+      const [loginEvents, credentialsEvents, regulatorEvents, validatorEvents, serviceEvents] = await Promise.all([
         this.regulatorContract.queryFilter(loginFilter, fromBlock, toBlock),
         this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(assetFilter, fromBlock, toBlock)
+        this.regulatorContract.queryFilter(regulatorFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(validatorFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(serviceFilter, fromBlock, toBlock)
       ]);
 
       // Process all events with timestamps
       const allEvents = await Promise.all([
         ...loginEvents.map(async (event: any) => ({
-          account: event.args.account,
+          sender: event.args.account,
           eventType: 'Login',
+          account: '',
           action: event.args.action,
           blockNumber: event.blockNumber,
           transactionHash: event.transactionHash,
           timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
         })),
         ...credentialsEvents.map(async (event: any) => ({
-          account: event.args.account,
+          sender: event.args.account,
           eventType: 'Credentials',
+          account: '',
           action: event.args.action,
           blockNumber: event.blockNumber,
           transactionHash: event.transactionHash,
           timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
         })),
-        ...assetEvents.map(async (event: any) => ({
-          asset: event.args.asset,
-          eventType: 'Asset',
+        ...regulatorEvents.map(async (event: any) => ({
+          sender: event.args.sender,
+          eventType: 'Regulator',
+          account: '',
+          action: event.args.action,
+          blockNumber: event.blockNumber,
+          transactionHash: event.transactionHash,
+          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
+        })),
+        ...validatorEvents.map(async (event: any) => ({
+          sender: event.args.sender,
+          eventType: 'Validator',
+          account: event.args.validator,
+          action: event.args.action,
+          blockNumber: event.blockNumber,
+          transactionHash: event.transactionHash,
+          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
+        })),
+        ...serviceEvents.map(async (event: any) => ({
+          sender: event.args.sender,
+          eventType: 'Service',
+          account: event.args.validator,
           action: event.args.action,
           blockNumber: event.blockNumber,
           transactionHash: event.transactionHash,

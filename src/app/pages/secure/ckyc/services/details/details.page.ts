@@ -13,6 +13,8 @@ import { Service } from '../../../../../shared/models/data.model';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
 import { ModalServiceEditService } from '../modals/modal-service-edit/modal-service-edit.service';
 
+import { environment } from '../../../../../../environments/environment';
+
 @Component({
   selector: 'app-details',
   templateUrl: './details.page.html',
@@ -38,6 +40,7 @@ export class DetailsPage implements OnInit {
 
   serviceAddress = '';
   service = signal<Service | undefined>(undefined);
+  isOwn = false;
 
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
@@ -50,7 +53,7 @@ export class DetailsPage implements OnInit {
   
   async ionViewWillEnter() {
     await this.getServiceDetails(this.serviceAddress);
-    // await this.getStates();
+    this.isOwn = this.service()?.regulator === environment.regulatorAddress;
   }
 
   setTab(tab: 'info' | 'subscriptions' | 'trxs' | 'actions') {

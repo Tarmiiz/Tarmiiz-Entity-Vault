@@ -34,17 +34,19 @@
                   <th scope="col" class="px-6 py-2">Time</th>
                   <th scope="col" class="px-6 py-2">Event</th>
                   <th scope="col" class="px-6 py-2">Action</th>
+                  <th scope="col" class="px-6 py-2">Sender</th>
                   <th scope="col" class="px-6 py-2">Address</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody class="text-xs">
                 @for (event of loginEvents; track event.blockNumber; let i = $index; let isEven = $even) {
                   <tr class="border-b" [class.bg-gray-100]="isEven" [class.bg-white]="!isEven">
                     <td class="px-6 py-2">{{ event.blockNumber | number: '1.0-0' }}</td>
                     <td class="px-6 py-2">{{ event.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
-                    <td class="px-6 py-2 uppercase">{{ event.eventType }}</td>
-                    <td class="px-6 py-2">{{ event.action }}</td>
-                    <td class="px-6 py-2">{{ event.account }}</td>
+                    <td class="px-6 py-2 capitalize">{{ event.eventType }}</td>
+                    <td class="px-6 py-2 capitalize">{{ event.action }}</td>
+                    <td class="px-6 py-2 uppercase">{{ event.sender }}</td>
+                    <td class="px-6 py-2 uppercase">{{ event.account }}</td>
                   </tr>
                 }
               </tbody>
