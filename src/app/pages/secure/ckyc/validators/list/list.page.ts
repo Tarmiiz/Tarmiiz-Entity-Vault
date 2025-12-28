@@ -65,7 +65,7 @@ export class ListPage implements OnInit {
 
   async listValidators() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.validatorsList(1, 10);
+    const result = await this.rpcService.validatorsListAll(1, 10);
     // console.log('validators', result);
     if(result.result) {
       this.validatorsCount = result.result.count;

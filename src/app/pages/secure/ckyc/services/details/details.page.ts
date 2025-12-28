@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
@@ -11,9 +10,12 @@ import { AlertService } from '../../../../../shared/components/alerts/alert/aler
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { Service } from '../../../../../shared/models/data.model';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
+import { ModalServiceStateComponent } from "../modals/modal-service-state/modal-service-state.component";
 import { ModalServiceEditService } from '../modals/modal-service-edit/modal-service-edit.service';
+import { ModalServiceEditComponent } from "../modals/modal-service-edit/modal-service-edit.component";
 
 import { environment } from '../../../../../../environments/environment';
+
 
 @Component({
   selector: 'app-details',
@@ -21,11 +23,12 @@ import { environment } from '../../../../../../environments/environment';
   styleUrls: ['./details.page.scss'],
   standalone: true,
   imports: [
-    IonContent, 
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
-  ]
+    ModalServiceEditComponent,
+    ModalServiceStateComponent
+]
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -33,8 +36,8 @@ export class DetailsPage implements OnInit {
   private rpcService = inject(RpcService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
-  private ServiceEditService = inject(ModalServiceEditService);
-  private ServiceStateService = inject(ModalServiceStateService);
+  private serviceEditService = inject(ModalServiceEditService);
+  private serviceStateService = inject(ModalServiceStateService);
 
   activeTab = signal<'info' | 'subscriptions' | 'trxs' | 'actions'>('info');
 
@@ -86,7 +89,7 @@ export class DetailsPage implements OnInit {
     const currentService = this.service();
     if (!currentService) return;
 
-    const result = await this.ServiceEditService.show(currentService);
+    const result = await this.serviceEditService.show(currentService);
     if (result) {
       this.loadingService.show('Updating service...');
       try {
@@ -115,7 +118,7 @@ export class DetailsPage implements OnInit {
     const currentService = this.service();
     if (!currentService) return;
 
-    const newState = await this.ServiceStateService.show(currentService.state);
+    const newState = await this.serviceStateService.show(currentService.state);
     if (newState !== null && newState !== currentService.state) {
         this.loadingService.show('Changing state...');
         try {

@@ -1,4 +1,164 @@
 <app-header title="Profile"></app-header>
 
-<ion-content [fullscreen]="true">
-</ion-content>
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+    <div class="container mx-auto">
+
+      <!-- Tab Navigation -->
+      <div class="bg-white rounded-t-lg shadow-md p-2">
+        <div class="flex border-b border-gray-200">
+
+          <button (click)="setTab('info')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'info'"
+            [class.border-b-2]="activeTab() === 'info'"
+            [class.border-blue-600]="activeTab() === 'info'"
+            [class.bg-blue-600]="activeTab() === 'info'"
+          >
+            Information
+          </button>
+          <button (click)="setTab('operator')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'operator'"
+            [class.border-b-2]="activeTab() === 'operator'"
+            [class.border-blue-600]="activeTab() === 'operator'"
+            [class.bg-blue-600]="activeTab() === 'operator'"
+          >
+            cKYC Operator
+          </button>
+          <button (click)="setTab('api')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'api'"
+            [class.border-b-2]="activeTab() === 'api'"
+            [class.border-blue-600]="activeTab() === 'api'"
+            [class.bg-blue-600]="activeTab() === 'api'"
+          >
+            API
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="bg-white rounded-b-lg shadow-md p-2">
+        @if (info(); as v) {
+
+          <!-- info tab -->
+          @if (activeTab() === 'info') {
+            <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+              <div class="p-4">
+                <div class="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 class="text-3xl font-bold text-gray-800">{{ v.name }}</h2>
+                    <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
+                  </div>
+                </div>
+      
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                  <div class="border-t pt-4 md:col-span-2">
+                    <p class="text-sm font-medium text-gray-500">Contract Address</p>
+                    <p class="font-mono text-base">{{ v.address }}</p>
+                  </div>
+                  <div class="border-t pt-4">
+                    <p class="text-sm font-medium text-gray-500">Email</p>
+                    <p class="text-base">{{ v.data.email }}</p>
+                  </div>
+                  <div class="border-t pt-4">
+                    <p class="text-sm font-medium text-gray-500">Telephone</p>
+                    <p class="text-base">{{ v.data.telephone }}</p>
+                  </div>
+                  <div class="border-t pt-4 md:col-span-2">
+                    <p class="text-sm font-medium text-gray-500">Website</p>
+                    <p class="text-base">{{ v.data.website }}</p>
+                  </div>
+                  <div class="border-t pt-4 md:col-span-2">
+                    <p class="text-sm font-medium text-gray-500">Address</p>
+                    <p class="text-base">{{ v.data.address }}</p>
+                  </div>
+                  <div class="border-t pt-4 md:col-span-2">
+                    <p class="text-sm font-medium text-gray-500">Country</p>
+                    <p class="text-base">{{ v.countryName }}</p>
+                  </div>
+                </div>
+              
+                <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <button (click)="openChangeOperatorModal()" class="px-6 py-2.5 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                    Change Password
+                  </button>
+                  <button (click)="openUpdateDataModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                    Edit Data
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          }
+
+          <!-- operator tab -->
+          @if (activeTab() === 'operator') {
+            <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+              <div class="p-4">
+                <div class="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 class="text-3xl font-bold text-gray-800">cKYC Operator</h2>
+                    <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
+                  </div>
+                </div>
+      
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                  <div class="border-t pt-4 md:col-span-2">
+                    <p class="text-sm font-medium text-gray-500">Contract Address</p>
+                    <p class="font-mono text-base">{{ operator() }}</p>
+                  </div>
+                </div>
+                <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <button (click)="openChangeOperatorModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                    Change Operator
+                  </button>
+                </div>
+                
+      
+              </div>
+            </div>
+          }
+
+          <!-- api tab -->
+          @if (activeTab() === 'api') {
+            <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+              <div class="p-4">
+                <div class="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 class="text-3xl font-bold text-gray-800">API Endpoint</h2>
+                    <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
+                  </div>
+                </div>
+      
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                  <div class="border-t pt-4 md:col-span-2">
+                    <p class="text-sm font-medium text-gray-500">API Address</p>
+                    <p class="font-mono text-base">{{ api() }}</p>
+                  </div>
+                </div>
+                <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <button (click)="openChangeApiModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                    Change API
+                  </button>
+                </div>
+      
+              </div>
+            </div>
+          }
+
+        } 
+        @else {
+          <div class="text-center py-12 text-gray-500">
+            <p>Loading regulator details...</p>
+          </div>
+        }
+
+      </div>
+
+
+    </div>
+</main>
+
+<app-modal-profile-data-edit></app-modal-profile-data-edit>
+<app-modal-profile-operator-edit></app-modal-profile-operator-edit>

@@ -13,13 +13,6 @@ import { RpcService } from '../../services/rpc.service';
 import { Regulator } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
-import { ModalcKYCOperatorEditComponent } from '../../components/modals/modal-ckyc-operator-edit/modal-ckyc-operator-edit.component';
-import { ModalValidatorAddComponent } from '../../../pages/secure/ckyc/validators/modals/modal-validator-add/modal-validator-add.component';
-import { ModalValidatorEditComponent } from '../../../pages/secure/ckyc/validators/modals/modal-validator-edit/modal-validator-edit.component';
-import { ModalValidatorStateComponent } from "../../../pages/secure/ckyc/validators/modals/modal-validator-state/modal-validator-state.component";
-import { ModalcKYCServiceAddComponent } from '../../../pages/secure/ckyc/services/modals/modal-ckyc-service-add/modal-ckyc-service-add.component';
-import { ModalServiceStateComponent } from "../../../pages/secure/ckyc/services/modals/modal-service-state/modal-service-state.component";
-import { ModalServiceEditComponent } from "src/app/pages/secure/ckyc/services/modals/modal-service-edit/modal-service-edit.component";
 
 @Component({
   selector: 'app-authorized-layout',
@@ -27,7 +20,7 @@ import { ModalServiceEditComponent } from "src/app/pages/secure/ckyc/services/mo
   styleUrls: ['./authorized-layout.component.scss'],
   standalone: true,
   imports: [IonFooter,
-    IonAccordion, IonAccordionGroup,
+    // IonAccordion, IonAccordionGroup,
     IonRouterOutlet,
     IonSplitPane,
     IonMenu,
@@ -43,13 +36,6 @@ import { ModalServiceEditComponent } from "src/app/pages/secure/ckyc/services/mo
     RouterModule,
     AlertComponent,
     LoadingComponent,
-    ModalcKYCOperatorEditComponent,
-    ModalValidatorAddComponent,
-    ModalValidatorEditComponent,
-    ModalValidatorStateComponent,
-    ModalcKYCServiceAddComponent, 
-    ModalServiceStateComponent, 
-    ModalServiceEditComponent
   ],
 })
 export class AuthorizedLayoutComponent {

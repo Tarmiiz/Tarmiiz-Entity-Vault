@@ -77,8 +77,9 @@ export class LogsPage implements OnInit, OnDestroy {
   }
 
   async getLogs() {
+    const startBlock = this.currentBlock - 10000;
     // Get all historical events-
-    const allEvents = await this.rpcService.getAllContractEvents();
+    const allEvents = await this.rpcService.getAllContractEvents(startBlock);
     // console.log('Control events:', allEvents);
     this.loginEvents = allEvents;
     // console.log('Login events:', allEvents);

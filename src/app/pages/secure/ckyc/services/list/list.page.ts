@@ -10,7 +10,6 @@ import { RpcService } from '../../../../../shared/services/rpc.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 
 import { Service } from '../../../../../shared/models/data.model';
-import { ModalcKYCServiceAddService } from '../modals/modal-ckyc-service-add/modal-ckyc-service-add.service';
 
 @Component({
   selector: 'app-list',
@@ -27,7 +26,6 @@ export class ListPage implements OnInit {
   private rpcService = inject(RpcService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
-  private ckycServiceAddService = inject(ModalcKYCServiceAddService);
 
   loadingServices: boolean = false;
 
@@ -64,7 +62,7 @@ export class ListPage implements OnInit {
 
   async listServices() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.servicesList(1, 10);
+    const result = await this.rpcService.servicesListAll(1, 10);
     if(result.result) {
       this.servicesCount = result.result.count;
       this.services.set(result.result.services);

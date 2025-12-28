@@ -22,7 +22,7 @@ export class AuthGuard implements CanActivate {
     if (sessionExpiry && sessionExpiry && new Date().getTime() < +sessionExpiry) {
       await this.rpcService.setWallet();
       await this.rpcService.connectRegulatorContract()
-      await this.rpcService.info();
+      // await this.rpcService.getRegulatorInfo();
       return true;
     }
 

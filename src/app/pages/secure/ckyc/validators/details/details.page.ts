@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 
@@ -11,7 +10,9 @@ import { AlertService } from '../../../../../shared/components/alerts/alert/aler
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { Service, Validator } from '../../../../../shared/models/data.model';
 import { ModalValidatorEditService } from '../modals/modal-validator-edit/modal-validator-edit.service';
+import { ModalValidatorEditComponent } from "../modals/modal-validator-edit/modal-validator-edit.component";
 import { ModalValidatorStateService } from '../modals/modal-validator-state/modal-validator-state.service';
+import { ModalValidatorStateComponent } from "../modals/modal-validator-state/modal-validator-state.component";
 
 import { environment } from '../../../../../../environments/environment';
 
@@ -21,11 +22,12 @@ import { environment } from '../../../../../../environments/environment';
   styleUrls: ['./details.page.scss'],
   standalone: true,
   imports: [
-    IonContent, 
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
-  ]
+    ModalValidatorEditComponent,
+    ModalValidatorStateComponent
+]
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);

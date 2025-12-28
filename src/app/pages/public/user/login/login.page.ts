@@ -89,7 +89,7 @@ export class LoginPage implements OnInit {
         // save contract to storage
         this.storageService.set('contract', contract);
         // get regulator info
-        await this.rpcService.info();
+        await this.rpcService.regulatorInfoGet();
         // route to authorized pages
         this.router.navigate(['/authorized']);
       } else {

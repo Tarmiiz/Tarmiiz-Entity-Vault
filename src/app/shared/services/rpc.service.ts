@@ -11,7 +11,7 @@ import cKYCProxyAbi from '../../../assets/ABIs/cKYCProxy.json';
 
 import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, Service, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, Service, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice, RegulatorData } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -395,29 +395,110 @@ export class RpcService {
     }
   }
 
-  async info() {    
+  async regulatorInfoGet() {    
     try {
       const result = await this.regulatorContract.info();
       if(result) { 
+
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.connectGlobalVariables();
+          await this.getCountriesList();
+        }
+        // Get country name for this operator
+        const countryCode = Number(result[4]);
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        const countryName = country?.nameShort || 'Unknown';
+
         const data = JSON.parse(result[3]);
+        const regulatorData: RegulatorData = {
+          logo: data.logo,
+          email: data.email,
+          website: data.website,
+          telephone: data.telephone,
+          address: data.address
+        };
 
         this.regulatorInfo = {
           address: result[0],
           name: result[1],
           symbol: result[2],
-          data: {
-            logo: data.logo,
-            email: data.email,
-            website: data.webiste,
-            telephone: data.telephone,
-            address: data.address
-          },
-          countryCode: result[4],
+          data: regulatorData,
+          countryCode,
+          countryName,
           state: result[5]
         };
-        // console.log('this.regulatorInfo', this.regulatorInfo);
+
+        return { result: this.regulatorInfo, error: '' };
+
       }
-      return { result, error: '' };
+      else {
+        return { result: null, error: 'Error fetching info'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching info'};
+    }
+
+  }
+
+  async regulatorInfoSet(data: string) {
+    try {
+      await this.connectRegulatorContract();
+      const tx = await this.regulatorContract.changeData(data, { gasLimit: 5000000 });
+      const receipt = await tx.wait();
+      return { result: receipt.blockNumber, error: '' };
+    }
+    catch (error: any) {
+      console.error('Full error:', error);
+      return { 
+        result: null, 
+        error: error.message || 'Error calling external contract'
+      };
+    }
+  } 
+
+  async regulatorApiGet() {    
+    try {
+      const result = await this.regulatorContract.getApiAddress();
+      if(result) { 
+        return { result, error: '' };
+      }
+      else {
+        return { result: null, error: 'Error fetching info'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching info'};
+    }
+
+  }
+
+  async regulatorApiSet(address: string) {
+    try {
+      await this.connectRegulatorContract();
+      const tx = await this.regulatorContract.changeApiAddress(address, { gasLimit: 5000000 });
+      const receipt = await tx.wait();
+      return { result: receipt.blockNumber, error: '' };
+    }
+    catch (error: any) {
+      console.error('Full error:', error);
+      return { 
+        result: null, 
+        error: error.message || 'Error calling external contract'
+      };
+    }
+  }  
+
+  async operatorGet() {    
+    try {
+      const result = await this.regulatorContract.getOperator();
+      if(result) { 
+        return { result, error: '' };
+      }
+      else {
+        return { result: null, error: 'Error fetching info'};
+      }
     }
     catch (error: any) {
       return { result: null, error: 'Error fetching info'};
@@ -428,7 +509,7 @@ export class RpcService {
   async operatorSet(address: string) {
     try {
       await this.connectRegulatorContract();
-      const tx = await this.regulatorContract.operatorSet(address, { gasLimit: 5000000 });
+      const tx = await this.regulatorContract.changeOperator(address, { gasLimit: 5000000 });
       const receipt = await tx.wait();
       return { result: receipt.blockNumber, error: '' };
     }
@@ -493,12 +574,9 @@ export class RpcService {
     }
   }
 
-  async validatorsList(start: number, offset: number) {
+  async validatorsListAll(start: number, offset: number) {
     try {
-      const privkey = environment.apiPrivKey;
-      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
-      const result = await apiContract['validatorsListAll'](start, offset);
+      const result = await this.regulatorContract.validatorsListAll(start, offset);
       if (result) {
 
         // Fetch state names once for all validators
@@ -700,12 +778,9 @@ export class RpcService {
     }
   }
 
-  async servicesList(start: number, offset: number) {
+  async servicesListAll(start: number, offset: number) {
     try {
-      const privkey = environment.apiPrivKey;
-      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
-      const result = await apiContract['servicesListAll'](start, offset);
+      const result = await this.regulatorContract.servicesListAll(start, offset);
       if (result) {
         const { count, services } = await this.processServicesList(result);        
         return { result: { count, services }, error: '' };

@@ -70,6 +70,7 @@ export class Regulator {
     public symbol: string,
     public data: RegulatorData,
     public countryCode: number,
+    public countryName: string,
     public state: boolean
   ){}
 }
