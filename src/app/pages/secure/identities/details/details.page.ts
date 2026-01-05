@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
@@ -12,7 +12,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { ApiService } from '../../../../shared/services/api.service';
 
-import { cKYCIdentity } from '../../../../shared/models/data.model';
+import { cKYCIdentity, Subscription } from '../../../../shared/models/data.model';
 
 interface StatCard {
   title: string;
@@ -70,6 +70,7 @@ interface Transaction {
 })
 export class UserDetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private rpcService = inject(RpcService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
@@ -77,10 +78,10 @@ export class UserDetailsPage implements OnInit {
 
   activeTab = signal<'overview' | 'info' | 'subscriptions' | 'holdings' | 'credit' | 'trxs' | 'actions' >('overview');
 
-  uniqueIdHash = '';
+  ginHash = '';
   identity = signal<cKYCIdentity | null>(null);
   metadata = signal<any | null>(null);
-  subscriptions = signal<string[]>([]);
+  subscriptions = signal<Subscription[]>([]);
   idFront: string = '';
   idBack: string = '';
 
@@ -138,66 +139,73 @@ export class UserDetailsPage implements OnInit {
     const uid = this.route.snapshot.paramMap.get('uid');
     console.log('uid', uid);
     if (uid) {
-      this.uniqueIdHash = uid;
+      this.ginHash = uid;
     }    
   }
 
   async ngOnInit() {}
   
   async ionViewWillEnter() {
-    await this.getIdenityDetails(this.uniqueIdHash);
+    await this.getIdenityDetails();
   }
 
   setTab(tab: 'overview' | 'info' | 'subscriptions' | 'holdings' | 'credit' | 'trxs' | 'actions') {
     this.activeTab.set(tab);
-    if (tab === 'subscriptions') this.getIdenityDetails(this.uniqueIdHash);
+    if (tab === 'info') this.getIdenityDetails();
+    if (tab === 'subscriptions') this.getSubscriptions();
   }  
 
-  async getIdenityDetails(uid: string) {
+  async getIdenityDetails() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.cKYCIdentityLookupByUID(uid);
-    this.identity.set(data.result);
-    // console.log('identity', this.identity());
-    const metadataCID = this.identity()?.metadata || '';
-    if (metadataCID) {
-      this.metadata.set(await this.apiService.ipfsFetchDataMeta(metadataCID));
-
-      // get id type name
-      const idType = this.metadata()?.idType || 0;
-      await this.rpcService.connectGlobalVariables();
-      const idTypeResult = await this.rpcService.getGlobalVariableByCategory('ID Type - Individual');      
-      let idTypeName = 'Unknown';
-      if (idTypeResult.result) {
-        const idTypeVariable = idTypeResult.result.find((v: any) => v.variableId === idType);
-        idTypeName = idTypeVariable?.name || 'Unknown';
-      } 
-      this.metadata.set({...this.metadata(), idTypeName});
-
-      // get id front and back images
-      const idFrontCID = this.metadata()?.idFrontCID || '';
-      const idBackCID = this.metadata()?.idBackCID || '';
-      if (idFrontCID) {
-        const img = await this.apiService.ipfsFetchDataImage(idFrontCID);
-        if (img) {
-          this.idFront = img.src;  // Extract the src from HTMLImageElement
-        }
-      }
-      if (idBackCID) {
-        const img = await this.apiService.ipfsFetchDataImage(idBackCID);
-        if (img) {
-          this.idBack = img.src;  // Extract the src from HTMLImageElement
-        }
-      } 
-      // console.log('metadata', this.metadata());
+    const data = await this.rpcService.cKYCIdentityLookupByGIN(this.ginHash);
+    if(!data.result) {
+      this.loadingService.hide();
+      return;
     }
-    this.loadingService.hide();
+    else {
+      this.identity.set(data.result);
+      const metadataCID = this.identity()?.metadata || '';
+      if (metadataCID) {
+        this.metadata.set(await this.apiService.ipfsFetchDataMeta(metadataCID));
+  
+        // get id type name
+        const idType = this.metadata()?.idType || 0;
+        await this.rpcService.connectGlobalVariables();
+        const idTypeResult = await this.rpcService.getGlobalVariableByCategory('ID Type - Individual');      
+        let idTypeName = 'Unknown';
+        if (idTypeResult.result) {
+          const idTypeVariable = idTypeResult.result.find((v: any) => v.variableId === idType);
+          idTypeName = idTypeVariable?.name || 'Unknown';
+        } 
+        this.metadata.set({...this.metadata(), idTypeName});
+  
+        // get id front and back images
+        const idFrontCID = this.metadata()?.idFrontCID || '';
+        const idBackCID = this.metadata()?.idBackCID || '';
+        if (idFrontCID) {
+          const img = await this.apiService.ipfsFetchDataImage(idFrontCID);
+          if (img) {
+            this.idFront = img.src;  // Extract the src from HTMLImageElement
+          }
+        }
+        if (idBackCID) {
+          const img = await this.apiService.ipfsFetchDataImage(idBackCID);
+          if (img) {
+            this.idBack = img.src;  // Extract the src from HTMLImageElement
+          }
+        } 
+        // console.log('metadata', this.metadata());
+      }
+      this.loadingService.hide();
+    }
   }
 
   async getSubscriptions() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.cKYCIdentitySubscriptions(this.uniqueIdHash, 1, 10);
+    // TODO: fix getting the idetnity subscriptions
+    const data = await this.rpcService.subscribersListByIdentity(this.ginHash, 1, 10);
+    console.log('subscriptions', data);
     if(data.result) this.subscriptions.set(data.result?.subscriptions);
-    console.log('subscriptions', this.subscriptions());
     this.loadingService.hide();
   }
 
@@ -224,4 +232,7 @@ export class UserDetailsPage implements OnInit {
     this.lightboxImage = '';
   }  
 
+  async viewValidator(validator: string) {
+    this.router.navigate(['/authorized/ckyc/validators/details/' + validator]);
+  }    
 }

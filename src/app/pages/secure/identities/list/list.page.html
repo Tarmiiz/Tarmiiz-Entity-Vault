@@ -46,13 +46,13 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th scope="col" class="px-6 py-2">cKYC-ID Hash</th>
+                    <th scope="col" class="px-6 py-2">ID Hash</th>
                     <th scope="col" class="px-6 py-2">Created</th>
                   </tr>
                 </thead>
                 <tbody>
                   @if(searchResults()){
-                    <tr class="bg-white border-b last:border-b-0 hover:bg-gray-100 transition-colors cursor-pointer" (click)="viewDetails(searchResults()!)">
+                    <tr class="bg-white border-b last:border-b-0 hover:bg-gray-100 transition-colors cursor-pointer" (click)="viewDetails(searchResults()!.ginHash, '')">
                       <td class="px-6 py-2 text-xs">{{ searchResults()!.ginHash }}</td>
                       <td class="px-6 py-2 text-xs">{{ searchResults()!.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
                     </tr>
@@ -76,16 +76,17 @@
     <!-- Data Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges">
       <div class="px-6 py-4 border-b text-left">
-        <h2 class="text-sm font-semibold text-[#202a3b]">Newly Added Identities</h2>
+        <h2 class="text-sm font-semibold text-[#202a3b]">Newly Added Subscriptions</h2>
       </div>      
       <div class="overflow-x-auto rounded-lg">
         <table class="w-full text-sm text-left text-gray-700">
 
           <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
               <tr>
-                  <th scope="col" class="px-6 py-2">#</th>
-                  <th scope="col" class="px-6 py-2">cKYC-ID Hash</th>
-                  <th scope="col" class="px-6 py-2">Created</th>
+                <th scope="col" class="px-6 py-2">Created</th>
+                <th scope="col" class="px-6 py-2">Subscription</th>
+                <th scope="col" class="px-6 py-2">Service</th>
+                <!-- <th scope="col" class="px-6 py-2">#</th> -->
               </tr>
           </thead>
           <tbody>
@@ -94,17 +95,18 @@
             }
             @else {
               <!-- no data -->
-              @if(identities().length == 0) {
+              @if(subscriptions().length == 0) {
                   <tr class="bg-white border-b hover:bg-gray-50">
                       <td class="px-6 py-2">no data</td>
                   </tr>
               }
               @else {
-                  @for(identity of identities(); track identity.uniqueIdHash; let i = $index; let isEven = $even;) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(identity)">
-                          <td class="px-6 py-2 text-xs">{{ i + 1 }}</td>
-                          <td class="px-6 py-2 text-xs">{{ identity.ginHash }}</td>
-                          <td class="px-6 py-2 text-xs">{{ identity.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                  @for(subscription of subscriptions(); track subscription.subscription; let i = $index; let isEven = $even;) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails('', subscription.subscription)">
+                        <td class="px-6 py-2 text-xs">{{ subscription.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                        <td class="px-6 py-2 text-xs">{{ subscription.subscription }}</td>
+                        <td class="px-6 py-2 text-xs">{{ subscription.service }}</td>
+                          <!-- <td class="px-6 py-2 text-xs">{{ i + 1 }}</td> -->
                       </tr>
                   }
               }

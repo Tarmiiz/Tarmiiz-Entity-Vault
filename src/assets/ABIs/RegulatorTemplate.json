@@ -128,6 +128,12 @@
           "type": "address"
         },
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "destination",
+          "type": "address"
+        },
+        {
           "indexed": false,
           "internalType": "string",
           "name": "action",
@@ -192,6 +198,12 @@
           "type": "address"
         },
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "address1",
+          "type": "address"
+        },
+        {
           "indexed": false,
           "internalType": "string",
           "name": "action",
@@ -242,9 +254,9 @@
           "type": "address"
         },
         {
-          "indexed": true,
+          "indexed": false,
           "internalType": "address",
-          "name": "subscriber",
+          "name": "subscription",
           "type": "address"
         },
         {
@@ -284,6 +296,12 @@
           "internalType": "address",
           "name": "validator",
           "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "identity",
+          "type": "bytes32"
         },
         {
           "indexed": false,
@@ -1338,16 +1356,26 @@
           "type": "address"
         },
         {
-          "internalType": "address",
+          "internalType": "bytes32",
           "name": "subscriber",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "subscriberAddress",
           "type": "address"
+        },
+        {
+          "internalType": "uint8",
+          "name": "state",
+          "type": "uint8"
         }
       ],
       "name": "subscriberAdd",
       "outputs": [
         {
           "internalType": "address",
-          "name": "subscriberAddress",
+          "name": "subscription",
           "type": "address"
         }
       ],
@@ -1378,7 +1406,7 @@
           "components": [
             {
               "internalType": "address",
-              "name": "subscriber",
+              "name": "subscription",
               "type": "address"
             },
             {
@@ -1392,6 +1420,11 @@
               "type": "address"
             },
             {
+              "internalType": "address",
+              "name": "regulator",
+              "type": "address"
+            },
+            {
               "internalType": "uint256",
               "name": "createdAt",
               "type": "uint256"
@@ -1402,7 +1435,7 @@
               "type": "uint8"
             }
           ],
-          "internalType": "struct ISubscribers.Subscription[]",
+          "internalType": "struct ISubscriptions.Subscription[]",
           "name": "subscriptions",
           "type": "tuple[]"
         }
@@ -1413,9 +1446,9 @@
     {
       "inputs": [
         {
-          "internalType": "address",
+          "internalType": "bytes32",
           "name": "identity",
-          "type": "address"
+          "type": "bytes32"
         },
         {
           "internalType": "uint256",
@@ -1439,7 +1472,7 @@
           "components": [
             {
               "internalType": "address",
-              "name": "subscriber",
+              "name": "subscription",
               "type": "address"
             },
             {
@@ -1453,6 +1486,11 @@
               "type": "address"
             },
             {
+              "internalType": "address",
+              "name": "regulator",
+              "type": "address"
+            },
+            {
               "internalType": "uint256",
               "name": "createdAt",
               "type": "uint256"
@@ -1463,7 +1501,7 @@
               "type": "uint8"
             }
           ],
-          "internalType": "struct ISubscribers.Subscription[]",
+          "internalType": "struct ISubscriptions.Subscription[]",
           "name": "subscriptions",
           "type": "tuple[]"
         }
@@ -1500,7 +1538,7 @@
           "components": [
             {
               "internalType": "address",
-              "name": "subscriber",
+              "name": "subscription",
               "type": "address"
             },
             {
@@ -1514,6 +1552,11 @@
               "type": "address"
             },
             {
+              "internalType": "address",
+              "name": "regulator",
+              "type": "address"
+            },
+            {
               "internalType": "uint256",
               "name": "createdAt",
               "type": "uint256"
@@ -1524,7 +1567,7 @@
               "type": "uint8"
             }
           ],
-          "internalType": "struct ISubscribers.Subscription[]",
+          "internalType": "struct ISubscriptions.Subscription[]",
           "name": "subscriptions",
           "type": "tuple[]"
         }
@@ -1561,7 +1604,7 @@
           "components": [
             {
               "internalType": "address",
-              "name": "subscriber",
+              "name": "subscription",
               "type": "address"
             },
             {
@@ -1575,6 +1618,11 @@
               "type": "address"
             },
             {
+              "internalType": "address",
+              "name": "regulator",
+              "type": "address"
+            },
+            {
               "internalType": "uint256",
               "name": "createdAt",
               "type": "uint256"
@@ -1585,7 +1633,7 @@
               "type": "uint8"
             }
           ],
-          "internalType": "struct ISubscribers.Subscription[]",
+          "internalType": "struct ISubscriptions.Subscription[]",
           "name": "subscriptions",
           "type": "tuple[]"
         }
@@ -1655,6 +1703,59 @@
         }
       ],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "validator",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "identity",
+          "type": "bytes32"
+        }
+      ],
+      "name": "validatorIdentityAdd",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "start",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        }
+      ],
+      "name": "validatorsIdentitesListOwn",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "identities",
+          "type": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {

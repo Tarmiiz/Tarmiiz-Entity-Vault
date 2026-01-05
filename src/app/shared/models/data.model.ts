@@ -169,7 +169,7 @@ export class Service {
 
 export class cKYCIdentity {
   constructor (
-    public uniqueIdHash: string,
+    public address: string,
     public ginHash: string,
     public metadata: string,
     public countryCode: number,
@@ -177,6 +177,18 @@ export class cKYCIdentity {
     public createdAt: number,
     public createdBy: string,
     public lastVarifiedAt: number,
-    public lastVarifiedBy: number
+    public lastVarifiedBy: string
+  ) {}
+}
+
+export class Subscription {
+  constructor (
+    public subscription: string,
+    public service: string,
+    public validator: string,
+    public regulator: string,
+    public createdAt: number,
+    public state: number,
+    public stateName: string
   ) {}
 }

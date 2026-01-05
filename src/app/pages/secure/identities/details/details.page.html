@@ -4,7 +4,7 @@
 
   <!-- breadcrumb -->
   <div class="px-6 py-4 border-b">
-    @if (uniqueIdHash; as op) {
+    @if (ginHash; as op) {
       <nav class="flex" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
           <li class="inline-flex items-center">
@@ -15,7 +15,7 @@
           <li>
             <div class="flex items-center">
               <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
-              <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ uniqueIdHash }}</span>
+              <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ ginHash }}</span>
             </div>
           </li>
         </ol>
@@ -282,11 +282,6 @@
                   </div>
       
                   <div class="border-t pt-2 md:col-span-3">
-                    <p class="text-xs font-medium text-gray-500">UID Hash</p>
-                    <p class="text-base text-xs">{{ v.uniqueIdHash }}</p>
-                  </div>
-      
-                  <div class="border-t pt-2 md:col-span-3">
                     <p class="text-xs font-medium text-gray-500">cKYC-ID Hash</p>
                     <p class="text-base text-xs">{{ v.ginHash }}</p>
                   </div>
@@ -302,7 +297,7 @@
       
                   <div class="border-t pt-2 md:col-span-2">
                     <p class="text-xs font-medium text-gray-500">Last Varified By</p>
-                    <p class="font-mono text-base text-xs">{{ v.lastVarifiedBy }}</p>
+                    <p class="font-mono text-base text-xs hover:bg-gray-100 cursor-pointer transition-colors" (click)="viewValidator(v.lastVarifiedBy)">{{ v.lastVarifiedBy }}</p>
                   </div>
                   <div class="border-t pt-2">
                     <p class="text-xs font-medium text-gray-500">Varified On</p>
@@ -335,15 +330,23 @@
                 <table class="w-full text-sm text-left text-gray-500">
                   <thead class="text-xs text-gray-700 uppercase bg-gray-400">
                     <tr>
-                      <th scope="col" class="px-6 py-2">#</th>
-                      <th scope="col" class="px-6 py-2">Service Address</th>
+                      <th scope="col" class="px-6 py-2">Created</th>
+                      <th scope="col" class="px-6 py-2">Subscription</th>
+                      <th scope="col" class="px-6 py-2">Service</th>
+                      <th scope="col" class="px-6 py-2">State</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (s of subscriptions(); track s; let i = $index) {
-                      <tr class="bg-white border-b hover:bg-gray-50">
-                        <td class="px-6 py-2">{{ i }}</td>
-                        <td class="px-6 py-2">{{ s }}</td>
+                    @for (s of subscriptions(); track s; let i = $index; let isEven = $even;) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <td class="px-6 py-2 text-xs">{{ s.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                        <td class="px-6 py-2 text-xs">{{ s.subscription }}</td>
+                        <td class="px-6 py-2 text-xs">{{ s.service }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(s.state)">
+                              {{ s.stateName }}
+                            </span>
+                        </td>
                       </tr>
                     }
 

@@ -10,7 +10,7 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { CryptoService } from '../../../../shared/services/crypto.service';
 
-import { cKYCIdentity } from '../../../../shared/models/data.model';
+import { cKYCIdentity, Subscription } from '../../../../shared/models/data.model';
 
 @Component({
   selector: 'app-list',
@@ -35,6 +35,9 @@ export class UsersPage implements OnInit {
   identitiesCount = 0
   identities = signal<cKYCIdentity[]>([]);
 
+  subscriptionsCount = 0
+  subscriptions = signal<Subscription[]>([]);
+
   searchResults = signal<cKYCIdentity|null>(null);
   searchPerformed = signal(false);
   isSearchExpanded = signal(false);
@@ -49,23 +52,37 @@ export class UsersPage implements OnInit {
   ngOnInit() {}
 
   async ionViewWillEnter() {
-    this.identities.set([]);
-    this.identitiesCount = 0;
+    this.subscriptions.set([]);
+    this.subscriptionsCount = 0;
   }  
 
   async ionViewDidEnter() {
     this.loadingData = true;
-    await this.listIdentities();
+    await this.listSubscriptions();
     this.loadingData = false;
   }  
 
+  async listSubscriptions() {
+    this.loadingService.show('Loading data...');
+    const result = await this.rpcService.subscribersListAll(1, 10);
+    if(result.result) {
+      this.subscriptionsCount = result.result.count;
+      this.subscriptions.set(result.result.subscriptions);
+      console.log('validators', this.subscriptions());
+    }
+    else {
+      // console.log(result.error);
+    }
+    this.loadingService.hide();
+  }
+
   async listIdentities() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.cKYCIdentitiesList(1, 10);
+    const result = await this.rpcService.subscribersListAll(1, 10);
     if(result.result) {
       this.identitiesCount = result.result.count;
-      this.identities.set(result.result.identities);
-      // console.log('validators', this.identities());
+      this.identities.set(result.result.subscriptions);
+      console.log('validators', this.identities());
     }
     else {
       // console.log(result.error);
@@ -116,9 +133,8 @@ export class UsersPage implements OnInit {
     }
   }  
 
-  viewDetails(identity: cKYCIdentity) {
-    console.log('viewDetails', identity); 
-    this.router.navigate(['/authorized/identities/details/' + identity.uniqueIdHash]);
+  viewDetails(ginHash: string, subscription: string) {
+    this.router.navigate(['/authorized/identities/details/' + ginHash]);
     this.searchForm.reset();
   }
 

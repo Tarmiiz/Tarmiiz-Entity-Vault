@@ -42,7 +42,7 @@ export class LoginPage implements OnInit {
     this.formLogin = this.fb.group({
       email: new FormControl('', [Validators.required, Validators.email]),
       password: new FormControl('', [Validators.required]),
-      contract: new FormControl(this.contractAddress, [Validators.required])
+      // contract: new FormControl(this.contractAddress, [Validators.required])
     });
   }
 
@@ -62,7 +62,7 @@ export class LoginPage implements OnInit {
       return;
     }
 
-    const { email, password, contract } = this.formLogin.value;
+    const { email, password } = this.formLogin.value;
 
     this.isLoading = true;
 
@@ -71,7 +71,7 @@ export class LoginPage implements OnInit {
     try {
 
       // set regulatro contract address
-      this.rpcService.regulatorContractAddress = contract;
+      this.rpcService.regulatorContractAddress = this.contractAddress;
 
       // Initialize the RPC service
       await this.rpcService.init();
@@ -87,7 +87,7 @@ export class LoginPage implements OnInit {
 
       if (loginResult.success) {
         // save contract to storage
-        this.storageService.set('contract', contract);
+        this.storageService.set('contract', this.contractAddress);
         // get regulator info
         await this.rpcService.regulatorInfoGet();
         // route to authorized pages

@@ -1,0 +1,58 @@
+<app-header title="Logs"></app-header>
+
+<ion-content [fullscreen]="true">
+
+    <!-- Info Bar -->
+    <div class="bg-gray-800 text-white rounded-xl shadow-lg p-4 max-w-4xl mx-auto mb-12 block-watcher-bar">
+      <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 text-center">
+        <div class="flex-1">
+          <p class="text-sm text-gray-400 uppercase tracking-wider">Current Block</p>
+          <p class="text-1xl font-semibold mt-1">{{ currentBlock | number: '1.0-0' }}</p>
+        </div>
+        <div class="w-px h-8 bg-gray-600 hidden md:block"></div>
+        <div class="flex-1">
+          <p class="text-sm text-gray-400 uppercase tracking-wider">Trxs</p>
+          <p class="text-1xl font-semibold mt-1">{{ currentTrxs | number: '1.0-0' }}</p>
+        </div>
+        <div class="w-px h-8 bg-gray-600 hidden md:block"></div>
+        <div class="flex-1">
+          <p class="text-sm text-gray-400 uppercase tracking-wider">Created On</p>
+          <p class="text-1xl font-semibold mt-1">{{ currentBlockTimestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+        </div>
+      </div>
+    </div> 
+
+    @if(loginEvents) {
+
+        <!-- Logs Table -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges">
+          <div class="overflow-x-auto rounded-lg">
+            <table class="w-full text-sm text-left text-gray-700">
+              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <tr>
+                  <!-- <th scope="col" class="px-6 py-2">Block</th> -->
+                  <th scope="col" class="px-6 py-2">Time</th>
+                  <th scope="col" class="px-6 py-2">Event</th>
+                  <th scope="col" class="px-6 py-2">Action</th>
+                  <th scope="col" class="px-6 py-2">Sender</th>
+                  <th scope="col" class="px-6 py-2">Address</th>
+                </tr>
+              </thead>
+              <tbody class="text-xs">
+                @for (event of loginEvents; track event.blockNumber; let i = $index; let isEven = $even) {
+                  <tr class="border-b" [class.bg-gray-100]="isEven" [class.bg-white]="!isEven">
+                    <!-- <td class="px-6 py-2">{{ event.blockNumber | number: '1.0-0' }}</td> -->
+                    <td class="px-6 py-2">{{ event.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td class="px-6 py-2 capitalize">{{ event.eventType }}</td>
+                    <td class="px-6 py-2 capitalize">{{ event.action }}</td>
+                    <td class="px-6 py-2 uppercase">{{ event.sender }}</td>
+                    <td class="px-6 py-2 uppercase">{{ event.account }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+    }
+
+</ion-content>

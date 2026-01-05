@@ -85,27 +85,6 @@ export const routes: Routes = [
         ]
       },
       {
-        path: 'assets',
-        canActivate: [AuthGuard],
-        children: [
-          {
-            path: 'list',
-            loadComponent: () => import('./pages/secure/assets/list/assets.page').then( m => m.AssetsPage),
-            canActivate: [AuthGuard]
-          },
-          {
-            path: 'details/:address',
-            loadComponent: () => import('./pages/secure/assets/details/asset-details.page').then( m => m.AssetDetailsPage),
-            canActivate: [AuthGuard]
-          },
-          {
-            path: '',
-            redirectTo: '/authorized/dashboard',
-            pathMatch: 'full',
-          },          
-        ]
-      },
-      {
         path: 'identities',
         canActivate: [AuthGuard],
         children: [
@@ -136,12 +115,12 @@ export const routes: Routes = [
             children: [
               {
                 path: 'list',
-                loadComponent: () => import('./pages/secure/ckyc/operators/list/ckyc-operators-list.page').then( m => m.CkycOperatorsListPage),
+                loadComponent: () => import('./pages/secure/operators/list/ckyc-operators-list.page').then( m => m.CkycOperatorsListPage),
                 canActivate: [AuthGuard]
               },
               {
                 path: 'details/:address',
-                loadComponent: () => import('./pages/secure/ckyc/operators/details/ckyc-operator-details.page').then( m => m.CkycOperatorDetailsPage),
+                loadComponent: () => import('./pages/secure/operators/details/ckyc-operator-details.page').then( m => m.CkycOperatorDetailsPage),
                 canActivate: [AuthGuard]
               },
             ]
@@ -152,12 +131,12 @@ export const routes: Routes = [
             children: [
               {
                 path: 'list',
-                loadComponent: () => import('./pages/secure/ckyc/validators/list/list.page').then( m => m.ListPage),
+                loadComponent: () => import('./pages/secure/validators/list/list.page').then( m => m.ListPage),
                 canActivate: [AuthGuard]
               },
               {
                 path: 'details/:address',
-                loadComponent: () => import('./pages/secure/ckyc/validators/details/details.page').then( m => m.DetailsPage),
+                loadComponent: () => import('./pages/secure/validators/details/details.page').then( m => m.DetailsPage),
                 canActivate: [AuthGuard]
               },
             ]
@@ -168,12 +147,12 @@ export const routes: Routes = [
             children: [
               {
                 path: 'list',
-                loadComponent: () => import('./pages/secure/ckyc/services/list/list.page').then( m => m.ListPage),
+                loadComponent: () => import('./pages/secure/services/list/list.page').then( m => m.ListPage),
                 canActivate: [AuthGuard]
               },
               {
                 path: 'details/:address',
-                loadComponent: () => import('./pages/secure/ckyc/services/details/details.page').then( m => m.DetailsPage),
+                loadComponent: () => import('./pages/secure/services/details/details.page').then( m => m.DetailsPage),
                 canActivate: [AuthGuard]
               },
             ]
@@ -191,17 +170,17 @@ export const routes: Routes = [
         children: [
           {
             path: 'logs',
-            loadComponent: () => import('./pages/secure/system/logs/logs.page').then( m => m.LogsPage),
+            loadComponent: () => import('./pages/secure/logs/logs.page').then( m => m.LogsPage),
             canActivate: [AuthGuard]
           },
           {
             path: 'variables',
-            loadComponent: () => import('./pages/secure/system/variables/system.page').then( m => m.SystemPage),
+            loadComponent: () => import('./pages/secure/variables/system.page').then( m => m.SystemPage),
             canActivate: [AuthGuard]
           },
           {
             path: 'profile',
-            loadComponent: () => import('./pages/secure/system/profile/profile.page').then( m => m.ProfilePage),
+            loadComponent: () => import('./pages/secure/profile/profile.page').then( m => m.ProfilePage),
             canActivate: [AuthGuard]
           },
           {

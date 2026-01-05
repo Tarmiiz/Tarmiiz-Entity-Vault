@@ -5,11 +5,11 @@ import * as snarkjs from 'snarkjs';
 
 import { environment } from '../../../environments/environment';
 
-import GlobalVariablesAbi from '../../../assets/ABIs/GVProxy.json';
+import GlobalVariablesAbi from '../../../assets/ABIs/GlobalVariablesProxy.json';
 import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
 import cKYCProxyAbi from '../../../assets/ABIs/cKYCProxy.json';
 
-import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
+// import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
 import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, Service, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice, RegulatorData } from '../models/data.model';
 
@@ -62,7 +62,7 @@ export class RpcService {
   wsProvider = new ethers.WebSocketProvider(environment.wsNode);
   signer: any;
   
-  globalVariableContractAddress = environment.globalVariablesProxyContract
+  globalVariablesContractAddress = environment.globalVariablesProxyContract
   globalVariablesContract: any;
   globalVariablesList: GlobalVariable[] = [];
   countriesList: Country[] = [];
@@ -166,7 +166,7 @@ export class RpcService {
   
   async connectGlobalVariables() {
     try {
-      this.globalVariablesContract = new ethers.Contract(this.globalVariableContractAddress, GlobalVariablesAbi, this.signer);
+      this.globalVariablesContract = new ethers.Contract(this.globalVariablesContractAddress, GlobalVariablesAbi, this.signer);
     }
     catch (error: any) {
       
@@ -574,6 +574,62 @@ export class RpcService {
     }
   }
 
+//----------------------------------------------------------------------------------------------------------------------------------------
+
+  async validatorChangeName(address: string, name: string) {
+    try {
+      const iface = new ethers.Interface(["function overrideName(string memory name) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideName', [name]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing validator name'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing validator name: ' + error.message};
+    }
+
+  }   
+
+  async validatorChangeData(address: string, data: string) {
+    try {
+      const iface = new ethers.Interface(["function overrideData(string memory data) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideData', [data]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing validator data'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing validator data: ' + error.message};
+    }
+
+  }  
+  
+  async validatorChangeState(address: string, state: number) {
+    try {
+      const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideState', [state]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing validator state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing validator state: ' + error.message};
+    }
+
+  }
+
   async validatorsListAll(start: number, offset: number) {
     try {
       const result = await this.regulatorContract.validatorsListAll(start, offset);
@@ -778,6 +834,62 @@ export class RpcService {
     }
   }
 
+//----------------------------------------------------------------------------------------------------------------------------------------
+
+  async serviceChangeName(address: string, name: string) {
+    try {
+      const iface = new ethers.Interface(["function overrideName(string memory name) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideName', [name]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing service data'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing service data: ' + error.message};
+    }
+
+  }   
+
+  async serviceChangeData(address: string, data: string) {
+    try {
+      const iface = new ethers.Interface(["function overrideData(string memory data) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideData', [data]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing service data'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing service data: ' + error.message};
+    }
+
+  }  
+  
+  async serviceChangeState(address: string, state: number) {
+    try {
+      const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideState', [state]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing service state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing service state: ' + error.message};
+    }
+
+  }
+
   async servicesListAll(start: number, offset: number) {
     try {
       const result = await this.regulatorContract.servicesListAll(start, offset);
@@ -902,6 +1014,103 @@ export class RpcService {
         
         return { count, services };    
   }
+
+//----------------------------------------------------------------------------------------------------------------------------------------
+
+  async subscribersListAll(start: number, offset: number) {
+    try {
+      const result = await this.regulatorContract.subscribersListAll(start, offset);
+      if (result) {
+        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+        return { result: { count, subscriptions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }
+
+  async subscribersListByService(service: string, start: number, offset: number) {
+    try {
+      const result = await this.regulatorContract.subscribersListByService(service, start, offset);
+      if (result) {
+        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+        return { result: { count, subscriptions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }
+
+  async subscribersListByValidator(validator: string, start: number, offset: number) {
+    try {
+      const result = await this.regulatorContract.subscribersListByValidator(validator, start, offset);
+      if (result) {
+        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+        return { result: { count, subscriptions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }
+
+  async subscribersListByIdentity(identity: string, start: number, offset: number) {
+    try {
+      const result = await this.regulatorContract.subscribersListByIdentity(identity, start, offset);
+      if (result) {
+        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+        return { result: { count, subscriptions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }
+
+  async processSubscriptionsList(data: any) {
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        
+        const count = Number(data[0]);
+        const subscriptions = data[1].map((op: any) => {
+
+          // Get state name for this validator
+          const stateId = Number(op.state);
+          let stateName = 'Unknown';
+          if (statesResult.result) {
+            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+            stateName = stateVariable?.name || 'Unknown';
+          }  
+
+          return {
+            subscription: op.subscription,
+            service: op.service,
+            validator: op.validator,
+            regulator: op.regulator,  
+            state: Number(op.state),
+            stateName,
+            createdAt: Number(op.createdAt)
+          };
+        });
+        
+        return { count, subscriptions };    
+  }  
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Regulator Contract: API Functions
@@ -1243,140 +1452,6 @@ export class RpcService {
 
   }  
 
-  // Validators ------------------------------------------------------------------------------------
-
-  // async validatorAdd(name: string, data: string) {
-  //   try {
-  //     const iface = new ethers.Interface(["function validatorAdd(string memory name, string memory name) external returns (bool)"]);
-  //     const callData = iface.encodeFunctionData('validatorAdd', [name, data]);
-  //     const result = await this.callExternal(this.ckycProxyAddress, callData);
-  //     console.log('result', result);
-  //     if(result !== null) {
-  //       return { result, error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error changing operator name'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //     return { result: null, error: 'Error changing operator name: ' + error.message};
-  //   }
-
-  // } 
-
-  async validatorChangeName(address: string, name: string) {
-    try {
-      const iface = new ethers.Interface(["function overrideName(string memory name) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('overrideName', [name]);
-      const result = await this.callExternal(address, callData);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error changing validator name'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error changing validator name: ' + error.message};
-    }
-
-  }   
-
-  async validatorChangeData(address: string, data: string) {
-    try {
-      const iface = new ethers.Interface(["function overrideData(string memory data) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('overrideData', [data]);
-      const result = await this.callExternal(address, callData);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error changing validator data'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error changing validator data: ' + error.message};
-    }
-
-  }  
-  
-  async validatorChangeState(address: string, state: number) {
-    try {
-      const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('overrideState', [state]);
-      const result = await this.callExternal(address, callData);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error changing validator state'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error changing validator state: ' + error.message};
-    }
-
-  }
-
-  // -----------------------------------------------------------------------------------------------------
-
-  // Services ------------------------------------------------------------------------------------
-
-  async serviceChangeName(address: string, name: string) {
-    try {
-      const iface = new ethers.Interface(["function overrideName(string memory name) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('overrideName', [name]);
-      const result = await this.callExternal(address, callData);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error changing service data'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error changing service data: ' + error.message};
-    }
-
-  }   
-
-  async serviceChangeData(address: string, data: string) {
-    try {
-      const iface = new ethers.Interface(["function overrideData(string memory data) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('overrideData', [data]);
-      const result = await this.callExternal(address, callData);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error changing service data'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error changing service data: ' + error.message};
-    }
-
-  }  
-  
-  async serviceChangeState(address: string, state: number) {
-    try {
-      const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('overrideState', [state]);
-      const result = await this.callExternal(address, callData);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error changing service state'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error changing service state: ' + error.message};
-    }
-
-  }
-
-  // -----------------------------------------------------------------------------------------------------
 
 
   // Identity ------------------------------------------------------------------------------------
@@ -1402,7 +1477,7 @@ export class RpcService {
     try {
 
      const iface = new ethers.Interface([
-        "function identityListByRegulatorCountry(uint256 start, uint256 offset) external view returns (uint256 count, tuple(bytes32 uniqueIdHash, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, uint256 lastVarifiedBy)[] identities)"
+        "function identityListByRegulatorCountry(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address identity, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, address lastVarifiedBy)[] identities)"
       ]);
       
       const callData = iface.encodeFunctionData('identityListByRegulatorCountry', [start, offset]);
@@ -1429,7 +1504,7 @@ export class RpcService {
           const countryName = country?.nameShort || 'Unknown';
 
           return {
-            uniqueIdHash: identity.uniqueIdHash,
+            address: identity.identity,
             ginHash: identity.ginHash,
             metadata: identity.metadata,
             countryCode: Number(identity.countryCode),
@@ -1437,7 +1512,7 @@ export class RpcService {
             createdAt: Number(identity.createdAt),
             createdBy: identity.createdBy,
             lastVarifiedAt: Number(identity.lastVarifiedAt),
-            lastVarifiedBy: Number(identity.lastVarifiedBy)
+            lastVarifiedBy: identity.lastVarifiedBy
           }
 
         });
@@ -1458,39 +1533,17 @@ export class RpcService {
     try {
 
      const iface = new ethers.Interface([
-        "function identityLookupByGIN(bytes32 ginHash) external view returns (tuple(bytes32 uniqueIdHash, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, uint256 lastVarifiedBy))"
+        "function identityLookupByGIN(bytes32 ginHash) external view returns (tuple(address identity, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, address lastVarifiedBy))"
       ]);
 
       const callData = iface.encodeFunctionData('identityLookupByGIN', [ginHash]);
       const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('identityLookupByGIN', result.data);      
-        console.log('result', decodedResult[0][0]);
+        // console.log('result', decodedResult[0][0]);
 
         if (decodedResult[0][0] !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-
-          // check countries list
-          if (this.countriesList.length === 0) {
-            await this.connectGlobalVariables();
-            await this.getCountriesList();
-          }       
-    
-          // Get country name for this validator
-          const countryCode = Number(decodedResult[0][3]);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-
-          const identity: cKYCIdentity = {
-            uniqueIdHash: decodedResult[0][0],
-            ginHash: decodedResult[0][1],
-            metadata: decodedResult[0][2],
-            countryCode,
-            countryName,
-            createdAt: Number(decodedResult[0][4]),
-            createdBy: decodedResult[0][5],
-            lastVarifiedAt: Number(decodedResult[0][6]),
-            lastVarifiedBy: Number(decodedResult[0][7])
-          };
+          const identity = await this.processIdentityData(decodedResult[0]);
           return { result: identity, error: '' };
         }
         else {
@@ -1511,7 +1564,7 @@ export class RpcService {
     try {
 
      const iface = new ethers.Interface([
-        "function identityLookupByUniqueId(bytes32 uniqueIdHash) external view returns (tuple(bytes32 uniqueIdHash, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, uint256 lastVarifiedBy))"
+        "function identityLookupByUniqueId(bytes32 uniqueIdHash) external view returns (tuple(address identity, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, address lastVarifiedBy))"
       ]);
 
       const callData = iface.encodeFunctionData('identityLookupByUniqueId', [uid]);
@@ -1521,29 +1574,7 @@ export class RpcService {
         console.log('result', decodedResult[0][0]);
 
         if (decodedResult[0][0] !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-
-          // check countries list
-          if (this.countriesList.length === 0) {
-            await this.connectGlobalVariables();
-            await this.getCountriesList();
-          }       
-    
-          // Get country name for this validator
-          const countryCode = Number(decodedResult[0][3]);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-
-          const identity: cKYCIdentity = {
-            uniqueIdHash: decodedResult[0][0],
-            ginHash: decodedResult[0][1],
-            metadata: decodedResult[0][2],
-            countryCode,
-            countryName,
-            createdAt: Number(decodedResult[0][4]),
-            createdBy: decodedResult[0][5],
-            lastVarifiedAt: Number(decodedResult[0][6]),
-            lastVarifiedBy: Number(decodedResult[0][7])
-          };
+          const identity = await this.processIdentityData(decodedResult[0]);
           return { result: identity, error: '' };
         }
         else {
@@ -1565,7 +1596,7 @@ export class RpcService {
 
     const contactBytes32 = await this.stringToBytes32(contact);
      const iface = new ethers.Interface([
-        "function identityLookupByContact(bytes32 contact) external view returns (tuple(bytes32 uniqueIdHash, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, uint256 lastVarifiedBy))"
+        "function identityLookupByContact(bytes32 contact) external view returns (tuple(address identity, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, address lastVarifiedBy))"
       ]);
 
       const callData = iface.encodeFunctionData('identityLookupByContact', [contactBytes32]);
@@ -1575,29 +1606,7 @@ export class RpcService {
         console.log('result', decodedResult[0][0]);
 
         if (decodedResult[0][0] !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-
-          // check countries list
-          if (this.countriesList.length === 0) {
-            await this.connectGlobalVariables();
-            await this.getCountriesList();
-          }       
-    
-          // Get country name for this validator
-          const countryCode = Number(decodedResult[0][3]);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-
-          const identity: cKYCIdentity = {
-            uniqueIdHash: decodedResult[0][0],
-            ginHash: decodedResult[0][1],
-            metadata: decodedResult[0][2],
-            countryCode,
-            countryName,
-            createdAt: Number(decodedResult[0][4]),
-            createdBy: decodedResult[0][5],
-            lastVarifiedAt: Number(decodedResult[0][6]),
-            lastVarifiedBy: Number(decodedResult[0][7])
-          };
+          const identity = await this.processIdentityData(decodedResult[0]);
           return { result: identity, error: '' };
         }
         else {
@@ -1614,21 +1623,27 @@ export class RpcService {
     }
   }   
 
-  async cKYCIdentitySubscriptions(uid: string, start: number, offset: number) {
+  async cKYCIdentitySubscriptions(ginHash: string, start: number, offset: number) {
     try {
 
      const iface = new ethers.Interface([
-        "function identitySubscriptions(bytes32 uniqueIdHash) external view returns (address[] memory subscriptions)"
+        "function identitySubscriptions(bytes32 ginHash, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address subscription, uint256 createdAt)[] subscriptions)"
       ]);
       
-      const callData = iface.encodeFunctionData('identitySubscriptions', [uid]);
+      const callData = iface.encodeFunctionData('identitySubscriptions', [ginHash, start, offset]);
       const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
 
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('identitySubscriptions', result.data);
 
         const count = Number(decodedResult[0]);
-        const subscriptions: string[] = decodedResult[1]
+        const subscriptions = decodedResult[1].map((subscription: any) => {
+          return {
+            service: subscription[0],
+            subscription: subscription[1],
+            createdAt: Number(subscription[2])
+          };
+        })
           
         return { result: { count, subscriptions } , error: ''};
       }
@@ -1641,241 +1656,271 @@ export class RpcService {
     }
   }
 
+  async processIdentityData(data: any) {
+    // check countries list
+    if (this.countriesList.length === 0) {
+      await this.connectGlobalVariables();
+      await this.getCountriesList();
+    }       
 
-  async assetsList() {   
-    try {
-      const result = await this.regulatorContract.listAssets(1, 100);
-      if(result) {
-        const count = Number(result[0]);
-        const addresses = result[1];
-        let assets: any[] = [];
-        if (count > 0) {
-          for (let i = 0; i < count; i++) {
-            const asset = await this.assetInfo(addresses[i]);
-            // console.log('asset', asset);
-            if(asset.result) {
-              assets.push(asset.result);
-            }
-          }
-        }
-        return { result: { count, assets }, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching assets list'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching assets list'};
-    }
+    // Get country name for this validator
+    const countryCode = Number(data[3]);
+    const country = this.countriesList.find(c => c.countryCode === countryCode);
+    const countryName = country?.nameShort || 'Unknown';
+
+    const identity: cKYCIdentity = {
+      address: data[0],
+      ginHash: data[1],
+      metadata: data[2],
+      countryCode,
+      countryName,
+      createdAt: Number(data[4]),
+      createdBy: data[5],
+      lastVarifiedAt: Number(data[6]),
+      lastVarifiedBy: data[7]
+    };
+
+    return identity;
   }
 
 
+
+
+
+  
+  
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // Asset Contract
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-  async connectAssetContract(address: string) {
-    try {
-      this.assetContract = new ethers.Contract(address, AssetTemplateAbi, this.signer);
-    }
-    catch (error: any) {
-      console.error('Asset connection error:', error);
-    }
-  }
-
-  async assetInfo(address: string) {
-    try {
-
-      await this.connectAssetContract(address);
-      const result = await this.assetContract.info();
-      if(result) { 
-        // const asset: Asset = new Asset(result[0], result[1], result[2], result[3], result[4], result[5], Number(result[6]), Number(result[7]), result[8], Number(result[9]), Number(result[10]), Number(result[11]), Number(result[12]), Number(result[13]));
-        
-        const tokenTypeName = this.globalVariablesList.find(variable => variable.category === 'Asset Token Type' && variable.variableId === Number(result[6]))?.name;
-        const assetTypeName = this.globalVariablesList.find(variable => variable.category === 'Asset Type' && variable.variableId === Number(result[7]))?.name;
-        const stateName = this.globalVariablesList.find(variable => variable.category === 'Asset State' && variable.variableId === Number(result[13]))?.name;
-
-        const asset: Asset = {
-          address: result[0],
-          name: result[1],
-          symbol: result[2],
-          issuer: result[3],
-          manager: result[4],
-          regulator: result[5],
-          tokenType: Number(result[6]),
-          tokenTypeName: tokenTypeName!,
-          assetType: Number(result[7]),
-          assetTypeName: assetTypeName!,
-          data: result[8],
-          totalSupply: Number(result[9]),
-          circulating: Number(result[10]),
-          currencyCode: Number(result[11]),
-          createdOn: Number(result[12]),
-          state: Number(result[13]),
-          stateName: stateName!
-        }
-        return { result: asset, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching asset info'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching asset info'};
-    }
-
-  }
-
-  async assetIsSuspended(address: string) {
-    try {
-      const iface = new ethers.Interface(["function isSuspended() external view returns (bool)"]);
-      const callData = iface.encodeFunctionData('isSuspended', []);
-      const result = await this.callExternalStatic(address, callData);
-      if (result.success && result.data !== null) {
-        console.log('result data', result.data);
-        const decodedResult = iface.decodeFunctionResult('isSuspended', result.data);
-        console.log('decodedResult', decodedResult);
-        return { result: decodedResult[0], error: '' };
-      } else {
-        return { result: null, error: 'Error fetching asset suspension status' };
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
-    }
-
-  }
-
-  async assetSuspend(address: string, state: boolean) {
-    try {
-      console.log('state', state);
-      const iface = new ethers.Interface(["function suspend(bool halt) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('suspend', [state]);
-      const result = await this.callExternal(address, callData);
-      console.log('result', result);
-      if(result !== null) {
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching asset suspension status'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
-    }
-
-  }
-
-  async assetHoldersList(address: string, start: number, offset: number) {
-    try {
-      await this.connectAssetContract(address);
-      const result = await this.assetContract.getHolders(start, offset);
-      if(result) { 
-        const holders: AssetHolder = {
-          address: result[0],
-          balance: Number(result[1])
-        }
   
-        return { result: holders , error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching asset holders'};
-      }
-    }
-    catch (error: any) {
-        return { result: null, error: 'Error fetching asset holders'};
-    }
-  }
+  // async assetsList() {   
+  //   try {
+  //     const result = await this.regulatorContract.listAssets(1, 100);
+  //     if(result) {
+  //       const count = Number(result[0]);
+  //       const addresses = result[1];
+  //       let assets: any[] = [];
+  //       if (count > 0) {
+  //         for (let i = 0; i < count; i++) {
+  //           const asset = await this.assetInfo(addresses[i]);
+  //           // console.log('asset', asset);
+  //           if(asset.result) {
+  //             assets.push(asset.result);
+  //           }
+  //         }
+  //       }
+  //       return { result: { count, assets }, error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching assets list'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //     return { result: null, error: 'Error fetching assets list'};
+  //   }
+  // }
+  // async connectAssetContract(address: string) {
+  //   try {
+  //     this.assetContract = new ethers.Contract(address, AssetTemplateAbi, this.signer);
+  //   }
+  //   catch (error: any) {
+  //     console.error('Asset connection error:', error);
+  //   }
+  // }
 
-  async assetBalanceOf(address: string, account: string) {
-    try {
-      await this.connectAssetContract(address);
-      const result = await this.assetContract.balanceOf(account);
-      if(result) { 
-        return { result, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching asset info'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching asset info'};
-    }
+  // async assetInfo(address: string) {
+  //   try {
 
-  }
+  //     await this.connectAssetContract(address);
+  //     const result = await this.assetContract.info();
+  //     if(result) { 
+  //       // const asset: Asset = new Asset(result[0], result[1], result[2], result[3], result[4], result[5], Number(result[6]), Number(result[7]), result[8], Number(result[9]), Number(result[10]), Number(result[11]), Number(result[12]), Number(result[13]));
+        
+  //       const tokenTypeName = this.globalVariablesList.find(variable => variable.category === 'Asset Token Type' && variable.variableId === Number(result[6]))?.name;
+  //       const assetTypeName = this.globalVariablesList.find(variable => variable.category === 'Asset Type' && variable.variableId === Number(result[7]))?.name;
+  //       const stateName = this.globalVariablesList.find(variable => variable.category === 'Asset State' && variable.variableId === Number(result[13]))?.name;
 
-  async assetSupplyChanges(address: string, start: number, offset: number) {
-    try {
-      await this.connectAssetContract(address);
-      const result = await this.assetContract.getSupplyChanges(start, offset);
-      console.log('result', result);
-      if(result) { 
+  //       const asset: Asset = {
+  //         address: result[0],
+  //         name: result[1],
+  //         symbol: result[2],
+  //         issuer: result[3],
+  //         manager: result[4],
+  //         regulator: result[5],
+  //         tokenType: Number(result[6]),
+  //         tokenTypeName: tokenTypeName!,
+  //         assetType: Number(result[7]),
+  //         assetTypeName: assetTypeName!,
+  //         data: result[8],
+  //         totalSupply: Number(result[9]),
+  //         circulating: Number(result[10]),
+  //         currencyCode: Number(result[11]),
+  //         createdOn: Number(result[12]),
+  //         state: Number(result[13]),
+  //         stateName: stateName!
+  //       }
+  //       return { result: asset, error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching asset info'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //     return { result: null, error: 'Error fetching asset info'};
+  //   }
 
-        const changes: AssetSupplyChange[] = result[1].map((change: any) => ({
-          changeType: Number(change[0]),
-          changeTypeName: this.globalVariablesList.find(variable => variable.category === 'Asset Supply Change' && variable.variableId === Number(change[0]))?.name,
-          amount: Number(change[1]),
-          timestamp: Number(change[2])
-        }))
+  // }
 
-        return { result: changes , error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching asset supply changes'};
-      }
-    }
-    catch (error: any) {
-        return { result: null, error: 'Error fetching asset supply changes'};
-    }
-  }
+  // async assetIsSuspended(address: string) {
+  //   try {
+  //     const iface = new ethers.Interface(["function isSuspended() external view returns (bool)"]);
+  //     const callData = iface.encodeFunctionData('isSuspended', []);
+  //     const result = await this.callExternalStatic(address, callData);
+  //     if (result.success && result.data !== null) {
+  //       console.log('result data', result.data);
+  //       const decodedResult = iface.decodeFunctionResult('isSuspended', result.data);
+  //       console.log('decodedResult', decodedResult);
+  //       return { result: decodedResult[0], error: '' };
+  //     } else {
+  //       return { result: null, error: 'Error fetching asset suspension status' };
+  //     }
+  //   }
+  //   catch (error: any) {
+  //     return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
+  //   }
 
-  async assetPriceCurrent(address: string) {
-    try {
-      await this.connectAssetContract(address);
-      const result = await this.assetContract.getCurrentPrice();
-      if(result) { 
-        const price: AssetPrice = {
-          bid: Number(ethers.formatEther(result[0])),
-          ask: Number(ethers.formatEther(result[1])),
-          timestamp: Number(result[2])
-        };
-        return { result: { price } , error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching asset price history'};
-      }
-    }
-    catch (error: any) {
-        return { result: null, error: 'Error fetching asset price history: ' + error};
-    }
-  }
+  // }
 
-  async assetPriceHistory(address: string, start: number, offset: number) {
-    try {
-      await this.connectAssetContract(address);
-      const result = await this.assetContract.getPriceHistory(start, offset);
-      if(result) { 
-        const count = Number(result[0]);
-        const prices: AssetPrice[] = result[1].map((price: any) => ({
-          bid: Number(ethers.formatEther(price[0])),
-          ask: Number(ethers.formatEther(price[1])),
-          timestamp: Number(price[2])
-        }))
-        prices.reverse();
-        return { result: { count, prices } , error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching asset price history'};
-      }
-    }
-    catch (error: any) {
-        return { result: null, error: 'Error fetching asset price history: ' + error};
-    }
-  }
+  // async assetSuspend(address: string, state: boolean) {
+  //   try {
+  //     console.log('state', state);
+  //     const iface = new ethers.Interface(["function suspend(bool halt) external returns (bool)"]);
+  //     const callData = iface.encodeFunctionData('suspend', [state]);
+  //     const result = await this.callExternal(address, callData);
+  //     console.log('result', result);
+  //     if(result !== null) {
+  //       return { result, error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching asset suspension status'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //     return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
+  //   }
+
+  // }
+
+  // async assetHoldersList(address: string, start: number, offset: number) {
+  //   try {
+  //     await this.connectAssetContract(address);
+  //     const result = await this.assetContract.getHolders(start, offset);
+  //     if(result) { 
+  //       const holders: AssetHolder = {
+  //         address: result[0],
+  //         balance: Number(result[1])
+  //       }
+  
+  //       return { result: holders , error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching asset holders'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //       return { result: null, error: 'Error fetching asset holders'};
+  //   }
+  // }
+
+  // async assetBalanceOf(address: string, account: string) {
+  //   try {
+  //     await this.connectAssetContract(address);
+  //     const result = await this.assetContract.balanceOf(account);
+  //     if(result) { 
+  //       return { result, error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching asset info'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //     return { result: null, error: 'Error fetching asset info'};
+  //   }
+
+  // }
+
+  // async assetSupplyChanges(address: string, start: number, offset: number) {
+  //   try {
+  //     await this.connectAssetContract(address);
+  //     const result = await this.assetContract.getSupplyChanges(start, offset);
+  //     console.log('result', result);
+  //     if(result) { 
+
+  //       const changes: AssetSupplyChange[] = result[1].map((change: any) => ({
+  //         changeType: Number(change[0]),
+  //         changeTypeName: this.globalVariablesList.find(variable => variable.category === 'Asset Supply Change' && variable.variableId === Number(change[0]))?.name,
+  //         amount: Number(change[1]),
+  //         timestamp: Number(change[2])
+  //       }))
+
+  //       return { result: changes , error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching asset supply changes'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //       return { result: null, error: 'Error fetching asset supply changes'};
+  //   }
+  // }
+
+  // async assetPriceCurrent(address: string) {
+  //   try {
+  //     await this.connectAssetContract(address);
+  //     const result = await this.assetContract.getCurrentPrice();
+  //     if(result) { 
+  //       const price: AssetPrice = {
+  //         bid: Number(ethers.formatEther(result[0])),
+  //         ask: Number(ethers.formatEther(result[1])),
+  //         timestamp: Number(result[2])
+  //       };
+  //       return { result: { price } , error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching asset price history'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //       return { result: null, error: 'Error fetching asset price history: ' + error};
+  //   }
+  // }
+
+  // async assetPriceHistory(address: string, start: number, offset: number) {
+  //   try {
+  //     await this.connectAssetContract(address);
+  //     const result = await this.assetContract.getPriceHistory(start, offset);
+  //     if(result) { 
+  //       const count = Number(result[0]);
+  //       const prices: AssetPrice[] = result[1].map((price: any) => ({
+  //         bid: Number(ethers.formatEther(price[0])),
+  //         ask: Number(ethers.formatEther(price[1])),
+  //         timestamp: Number(price[2])
+  //       }))
+  //       prices.reverse();
+  //       return { result: { count, prices } , error: ''};
+  //     }
+  //     else {
+  //       return { result: null, error: 'Error fetching asset price history'};
+  //     }
+  //   }
+  //   catch (error: any) {
+  //       return { result: null, error: 'Error fetching asset price history: ' + error};
+  //   }
+  // }
 
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Regulator Contract: Event Functions
+// Event Functions
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async getControlEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<ControlEvent[]> {
