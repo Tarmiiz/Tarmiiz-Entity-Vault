@@ -62,7 +62,7 @@ export class ListPage implements OnInit {
 
   async listServices() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.servicesListAll(1, 10);
+    const result = await this.rpcService.servicesListOwn(1, 10);
     if(result.result) {
       this.servicesCount = result.result.count;
       this.services.set(result.result.services);

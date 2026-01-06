@@ -143,7 +143,7 @@
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
                         <th scope="col" class="px-6 py-2">#</th>
-                        <th scope="col" class="px-6 py-2">name</th>
+                        <th scope="col" class="px-6 py-2">Name</th>
                         <th scope="col" class="px-6 py-2">State</th>
                     </tr>
                 </thead>
@@ -176,6 +176,38 @@
 
         <!-- identities tab -->
         @if (activeTab() === 'identities') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+              <table class="w-full text-sm text-left text-gray-700">
+
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                    <tr>
+                        <th scope="col" class="px-6 py-2">Validated At</th>
+                        <th scope="col" class="px-6 py-2">ID Hash</th>
+                        <th scope="col" class="px-6 py-2">Operator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  <!-- no data -->
+                  @if(identities().length == 0) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                          <td class="px-6 py-2">no data</td>
+                      </tr>
+                  }
+                  @else {
+                      @for(identity of identities(); track identity; let i = $index; let isEven = $even;) {
+                          <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewIdentity(identity.identity)">
+                              <td class="px-6 py-2">{{ identity.validatedAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                              <td class="px-6 py-2">{{ identity.identity }}</td>
+                              <td class="px-6 py-2">{{ identity.operator }}</td>
+                          </tr>
+                      }
+                  }
+
+                </tbody>
+              </table>
+            </div>
+          </div>
         }
 
         <!-- actions tab -->

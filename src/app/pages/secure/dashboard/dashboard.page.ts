@@ -70,18 +70,10 @@ export class DashboardPage implements OnInit {
   }
   
   async ionViewWillEnter() {
-
-    // Initialize current block
-
-    // await this.rpcService.operatorSet('0xBC08EDa7674EF880F19ec867fE4a1933f9bEbc9e');
-    // const { loginHash, secret } = await this.rpcService.generateZKPData('admin@regulator3.com', '111111');
-    // console.log(loginHash, secret);
-
     await this.getStats();
     await this.getValidators();
     await this.getServices();
-    // await this.getIdentities();
-
+    await this.getIdentities();
   }
 
   async getStats(){
@@ -119,9 +111,18 @@ export class DashboardPage implements OnInit {
 
   async getServices() {
     this.loadingService.show('Loading data ...');
-    const lookup = await this.rpcService.servicesListAll(1, 10);
+    const lookup = await this.rpcService.servicesListOwn(1, 10);
     if(lookup.result) {
       this.stats()[1].value = Number(lookup.result.count);
+    }
+    this.loadingService.hide();
+  }
+
+  async getIdentities() {
+    this.loadingService.show('Loading data ...');
+    const lookup = await this.rpcService.validatorsIdentitiesListOwn(1, 10);
+    if(lookup.result) {
+      this.stats()[2].value = Number(lookup.result.count);
     }
     this.loadingService.hide();
   }

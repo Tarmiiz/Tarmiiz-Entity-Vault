@@ -17,11 +17,9 @@ export class ModalProfileOperatorEditComponent {
 
   title = signal<string | null>(null);
 
-
   editForm = this.fb.group({
     address: ['', Validators.required],
   });
-
 
   constructor() {
     effect(() => {

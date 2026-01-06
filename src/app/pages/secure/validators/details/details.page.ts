@@ -8,7 +8,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Service, Validator } from '../../../../shared/models/data.model';
+import { Service, Validator, ValidatorIdentity } from '../../../../shared/models/data.model';
 import { ModalValidatorEditService } from '../modals/modal-validator-edit/modal-validator-edit.service';
 import { ModalValidatorEditComponent } from "../modals/modal-validator-edit/modal-validator-edit.component";
 import { ModalValidatorStateService } from '../modals/modal-validator-state/modal-validator-state.service';
@@ -36,13 +36,14 @@ export class DetailsPage implements OnInit {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private ValidatorEditService = inject(ModalValidatorEditService);
-  private ckcyValidatorStateService = inject(ModalValidatorStateService);
+  private ValidatorStateService = inject(ModalValidatorStateService);
 
   activeTab = signal<'info' | 'services' | 'identities' | 'actions'>('info');
 
   validatorAddress = signal<string>('');
   validator = signal<Validator | undefined>(undefined);
   services = signal<Service[]>([]);
+  identities = signal<ValidatorIdentity[]>([]);
 
   isOwn = false;
 
@@ -60,10 +61,11 @@ export class DetailsPage implements OnInit {
     this.isOwn = this.validator()?.regulator === environment.regulatorAddress;
   }  
 
-  setTab(tab: 'info' | 'services' | 'identities' | 'actions') {
+  async setTab(tab: 'info' | 'services' | 'identities' | 'actions') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getValidatorDetails();
     if (tab === 'services') this.getServicesList();
+    if (tab === 'identities') await this.getIdentitiesList();
   }   
 
   async getValidatorDetails() {
@@ -81,6 +83,14 @@ export class DetailsPage implements OnInit {
     // console.log('services', this.services());
     this.loadingService.hide();
   }
+
+  async getIdentitiesList() {
+    this.loadingService.show('Loading data...');
+    const data = await this.rpcService.validatorIdentitiesList(this.validatorAddress(), 1, 10);
+    if(data.result) this.identities.set(data.result?.identities);
+    console.log('identities', this.identities());
+    this.loadingService.hide();
+  }  
 
   getStateClass(stateId: number | undefined): string {
     if (stateId === undefined) return 'bg-gray-100 text-gray-800';
@@ -127,7 +137,7 @@ export class DetailsPage implements OnInit {
     const currentValidator = this.validator();
     if (!currentValidator) return;
 
-    const newState = await this.ckcyValidatorStateService.show(currentValidator.state);
+    const newState = await this.ValidatorStateService.show(currentValidator.state);
     if (newState !== null && newState !== currentValidator.state) {
         this.loadingService.show('Changing state...');
         try {
@@ -145,4 +155,7 @@ export class DetailsPage implements OnInit {
     this.router.navigate(['/authorized/ckyc/services/details/' + service]);
   }
 
+  async viewIdentity(uid: string) {
+    this.router.navigate(['/authorized/identities/details/' + uid]);
+  }  
 }

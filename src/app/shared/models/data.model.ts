@@ -192,3 +192,12 @@ export class Subscription {
     public stateName: string
   ) {}
 }
+
+export class ValidatorIdentity {
+  constructor (
+    public identity: string,
+    public operator: string,
+    public data: string,
+    public validatedAt: number
+  ) {}
+}

@@ -36,9 +36,12 @@ export class ProfilePage implements OnInit {
   private profileOperatorEditService = inject(ModalProfileOperatorEditService);
   private profileDataEditService = inject(ModalProfileDataEditService);
 
-  activeTab = signal<'info' | 'operator' | 'api' >('info');
+  activeTab = signal<'info' | 'contracts' | 'api' >('info');
   info = signal<Regulator | undefined>(undefined);
   operator = signal<string>('');
+  validators = signal<string>('');
+  services = signal<string>('');
+  subscriptions = signal<string>('');
   api = signal<string>('');
 
   constructor() { }
@@ -49,10 +52,10 @@ export class ProfilePage implements OnInit {
     await this.getInfo();
   }
 
-  setTab(tab: 'info' | 'operator' | 'api' ) {
+  setTab(tab: 'info' | 'contracts' | 'api' ) {
     this.activeTab.set(tab);
     if (tab === 'info') this.getInfo();
-    if (tab === 'operator') this.getOperator();
+    if (tab === 'contracts') this.getContracts();
     if (tab === 'api') this.getApi();
   }  
 
@@ -85,28 +88,38 @@ export class ProfilePage implements OnInit {
     }    
   }  
 
-  async getOperator() {
+  async getContracts() {
     this.loadingService.show('Loading data...');
-    const opreator = await this.rpcService.operatorGet();
+    const opreator = await this.rpcService.externalContractGet('operator');
     this.operator.set(opreator.result!);
+    const validators = await this.rpcService.externalContractGet('validators');
+    this.validators.set(validators.result!);
+    const services = await this.rpcService.externalContractGet('services');
+    this.services.set(services.result!);
+    const subscriptions = await this.rpcService.externalContractGet('subscriptions');
+    this.subscriptions.set(subscriptions.result!);
     this.loadingService.hide();
   }
 
-  async openChangeOperatorModal() {
-    const currentOperator = this.operator();
+  async openChangeContractModal(name: string) {
+    let currentOperator = '';
+    if (name === 'operator') currentOperator = this.operator();
+    if (name === 'validators') currentOperator = this.validators();
+    if (name === 'services') currentOperator = this.services();
+    if (name === 'subscriptions') currentOperator = this.subscriptions();
     if (!currentOperator) return;
 
-    const result = await this.profileOperatorEditService.show('Operator', currentOperator);
+    const result = await this.profileOperatorEditService.show(name, currentOperator);
     if (result) {
-      this.loadingService.show('Updating operator...');
+      this.loadingService.show(`Updating ${name}...`);
       try {
         if (result.address !== currentOperator) {
-          await this.rpcService.operatorSet(result.address);
-          await this.getOperator();
+          await this.rpcService.externalContractSet(name, result.address);
+          await this.getContracts();
         }
       } catch (error) {
-        console.error('Failed to update operator', error);
-        this.alertService.show('Update Failed', 'There was an error updating the operator details.');
+        console.error(`Failed to update ${name}`, error);
+        this.alertService.show('Update Failed', `There was an error updating the ${name} details.`);
       } finally {
         this.loadingService.hide();
       }
@@ -115,7 +128,7 @@ export class ProfilePage implements OnInit {
 
   async getApi() {
     this.loadingService.show('Loading data...');
-    const api = await this.rpcService.regulatorApiGet();
+    const api = await this.rpcService.externalContractGet('api');
     this.api.set(api.result!);
        this.loadingService.hide();
   }
@@ -130,7 +143,7 @@ export class ProfilePage implements OnInit {
       try {
         if (result.address !== currentApi) {
           console.log('result', result);
-          await this.rpcService.regulatorApiSet(result.address);
+          await this.rpcService.externalContractSet('api', result.address);
           await this.getApi();
         }
 

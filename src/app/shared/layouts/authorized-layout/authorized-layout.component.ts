@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import {
   IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar,
-  IonContent, IonList, IonItem, IonIcon, IonLabel,
+  IonContent, IonList, IonItem, IonLabel,
   IonButtons, IonMenuButton, MenuController, IonAccordionGroup, IonAccordion, IonFooter } from '@ionic/angular/standalone';
 import { RouterModule } from '@angular/router';
 
@@ -29,7 +29,6 @@ import { LoadingComponent } from "../../components/alerts/loading/loading.compon
     IonContent,
     IonList,
     IonItem,
-    IonIcon,
     IonLabel,
     IonButtons,
     IonMenuButton,

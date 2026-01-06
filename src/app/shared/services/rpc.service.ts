@@ -19,6 +19,7 @@ import { CryptoService } from './crypto.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
 import { count } from 'rxjs';
+import { star } from 'ionicons/icons';
 
 export interface LoginResult {
   success: boolean;
@@ -458,9 +459,9 @@ export class RpcService {
     }
   } 
 
-  async regulatorApiGet() {    
+  async externalContractGet(name: string) {
     try {
-      const result = await this.regulatorContract.getApiAddress();
+      const result = await this.regulatorContract.getContractAddress(name);
       if(result) { 
         return { result, error: '' };
       }
@@ -474,42 +475,9 @@ export class RpcService {
 
   }
 
-  async regulatorApiSet(address: string) {
+  async externalContractSet(name: string, address: string) {
     try {
-      await this.connectRegulatorContract();
-      const tx = await this.regulatorContract.changeApiAddress(address, { gasLimit: 5000000 });
-      const receipt = await tx.wait();
-      return { result: receipt.blockNumber, error: '' };
-    }
-    catch (error: any) {
-      console.error('Full error:', error);
-      return { 
-        result: null, 
-        error: error.message || 'Error calling external contract'
-      };
-    }
-  }  
-
-  async operatorGet() {    
-    try {
-      const result = await this.regulatorContract.getOperator();
-      if(result) { 
-        return { result, error: '' };
-      }
-      else {
-        return { result: null, error: 'Error fetching info'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching info'};
-    }
-
-  }
-
-  async operatorSet(address: string) {
-    try {
-      await this.connectRegulatorContract();
-      const tx = await this.regulatorContract.changeOperator(address, { gasLimit: 5000000 });
+      const tx = await this.regulatorContract.changeContractAddress(name, address, { gasLimit: 5000000 });
       const receipt = await tx.wait();
       return { result: receipt.blockNumber, error: '' };
     }
@@ -632,55 +600,19 @@ export class RpcService {
 
   async validatorsListAll(start: number, offset: number) {
     try {
-      const result = await this.regulatorContract.validatorsListAll(start, offset);
-      if (result) {
 
-        // Fetch state names once for all validators
-        await this.connectGlobalVariables();
-        const statesResult = await this.getGlobalVariableByCategory('Account State');
+      const contractAddress = await this.externalContractGet('validators');
 
-        // check countries list
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
-        
-        const count = Number(result[0]);
-        const validators = result[1].map((op: any) => {
-          // console.log('result', op);
-          let parsedData = null;
-          try {
-            parsedData = JSON.parse(op.data);
-          } catch (e) {
-            console.error('Error parsing operator data:', e);
-          }
+      const iface = new ethers.Interface([
+        "function listByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address validator, address regulator, string name, string data, uint256 countryCode, uint8 state)[] validators)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listByCountry', [818, start, offset]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
 
-          // Get state name for this validator
-          const stateId = Number(op.state);
-          let stateName = 'Unknown';
-          if (statesResult.result) {
-            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-            stateName = stateVariable?.name || 'Unknown';
-          }  
-
-
-          // Get country name for this operator
-          const countryCode = Number(op.countryCode);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-          
-          return {
-            address: op.validator,
-            name: op.name,
-            data: op.data,
-            email: parsedData?.email || '',
-            mobile: parsedData?.mobile || '',
-            countryCode: Number(op.countryCode),
-            countryName,
-            state: Number(op.state),
-            stateName
-          };
-        });
-        
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('listByCountry', result.data);
+        const { count, validators } = await this.processValidatorList(decodedResult);
         return { result: { count, validators }, error: '' };
       } else {
         return { result: null, error: 'Error fetching validators list' };
@@ -698,53 +630,7 @@ export class RpcService {
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
       const result = await apiContract['validatorsListOwn'](start, offset);
       if (result) {
-
-        // Fetch state names once for all validators
-        await this.connectGlobalVariables();
-        const statesResult = await this.getGlobalVariableByCategory('Account State');
-
-        // check countries list
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
-        
-        const count = Number(result[0]);
-        const validators = result[1].map((op: any) => {
-          // console.log('result', op);
-          let parsedData = null;
-          try {
-            parsedData = JSON.parse(op.data);
-          } catch (e) {
-            console.error('Error parsing operator data:', e);
-          }
-
-          // Get state name for this validator
-          const stateId = Number(op.state);
-          let stateName = 'Unknown';
-          if (statesResult.result) {
-            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-            stateName = stateVariable?.name || 'Unknown';
-          }  
-
-
-          // Get country name for this operator
-          const countryCode = Number(op.countryCode);
-          const country = this.countriesList.find(c => c.countryCode === countryCode);
-          const countryName = country?.nameShort || 'Unknown';
-          
-          return {
-            address: op.validator,
-            name: op.name,
-            data: op.data,
-            email: parsedData?.email || '',
-            mobile: parsedData?.mobile || '',
-            countryCode: Number(op.countryCode),
-            countryName,
-            state: Number(op.state),
-            stateName
-          };
-        });
-        
+        const { count, validators } = await this.processValidatorList(result);
         return { result: { count, validators }, error: '' };
       } else {
         return { result: null, error: 'Error fetching validators list' };
@@ -753,7 +639,58 @@ export class RpcService {
     catch (error: any) {
       return { result: null, error: 'Error fetching validators list: ' + error.message};
     }
-  }  
+  }
+  
+  async processValidatorList(data: any) {
+    // Fetch state names once for all validators
+    await this.connectGlobalVariables();
+    const statesResult = await this.getGlobalVariableByCategory('Account State');
+
+    // check countries list
+    if (this.countriesList.length === 0) {
+      await this.getCountriesList();
+    }
+    
+    const count = Number(data[0]);
+    const validators = data[1].map((op: any) => {
+      // console.log('result', op);
+      let parsedData = null;
+      try {
+        parsedData = JSON.parse(op.data);
+      } catch (e) {
+        console.error('Error parsing operator data:', e);
+      }
+
+      // Get state name for this validator
+      const stateId = Number(op.state);
+      let stateName = 'Unknown';
+      if (statesResult.result) {
+        const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+        stateName = stateVariable?.name || 'Unknown';
+      }  
+
+
+      // Get country name for this operator
+      const countryCode = Number(op.countryCode);
+      const country = this.countriesList.find(c => c.countryCode === countryCode);
+      const countryName = country?.nameShort || 'Unknown';
+      
+      return {
+        address: op.validator,
+        name: op.name,
+        data: op.data,
+        email: parsedData?.email || '',
+        mobile: parsedData?.mobile || '',
+        countryCode: Number(op.countryCode),
+        countryName,
+        state: Number(op.state),
+        stateName
+      };
+    });
+
+    return { count, validators };    
+        
+  }
 
   async validatorInfo(validatorAddress: string) {
     try {
@@ -810,7 +747,7 @@ export class RpcService {
     }
   }
 
-  async validatorServicesList(validatorAddress: string,start: number, offset: number) {
+  async validatorServicesList(validatorAddress: string, start: number, offset: number) {
     try {
 
      const iface = new ethers.Interface([
@@ -833,6 +770,61 @@ export class RpcService {
         return { result: null, error: 'Error fetching asset supply changes'};
     }
   }
+
+  async validatorIdentitiesList(validatorAddress: string, start: number, offset: number) {
+    try {
+
+     const iface = new ethers.Interface([
+        "function listIdentities(uint256 start, uint256 offset) external view returns (uint256 count, tuple(bytes32 identity, address operator, string data, uint256 validatedAt)[] memory identities)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listIdentities', [start, offset]);
+      const result = await this.callExternalStatic(validatorAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('listIdentities', result.data);
+        const count = Number(decodedResult[0]);
+        const identities = decodedResult[1].map((identity: any) => {
+          return {
+            identity: identity.identity,
+            operator: identity.operator,
+            data: identity.data,
+            validatedAt: Number(identity.validatedAt)
+          };
+        });
+        return { result: { count, identities } , error: ''};
+      }
+      else {
+        return { result: null, error: 'Error fetching asset supply changes'};
+      }
+    }
+    catch (error: any) {
+        return { result: null, error: 'Error fetching asset supply changes'};
+    }
+  }
+
+  async validatorsIdentitiesListOwn(start: number, offset: number) {
+    try {
+      const contractAddress = await this.externalContractGet('validators');
+
+      const iface = new ethers.Interface([
+        "function listIdentitiesByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, bytes32[] validators)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listIdentitiesByRegulator', [start, offset]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
+      if (result) {
+        const decodedResult = iface.decodeFunctionResult('listIdentitiesByRegulator', result.data);
+        const count = Number(decodedResult[0]);
+        const identities = decodedResult[1];
+        return { result: { count, identities }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching identities list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching identities list: ' + error.message};
+    }
+  }  
 
 //----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -892,9 +884,17 @@ export class RpcService {
 
   async servicesListAll(start: number, offset: number) {
     try {
-      const result = await this.regulatorContract.servicesListAll(start, offset);
+      const contractAddress = await this.externalContractGet('services');
+      const iface = new ethers.Interface([
+        "function listByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address regulator, address validator, string name, string data, uint256 countryCode, uint8 state)[] services)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listByCountry', [818, start, offset]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
       if (result) {
-        const { count, services } = await this.processServicesList(result);        
+        const decodedResult = iface.decodeFunctionResult('listByCountry', result.data);
+
+        const { count, services } = await this.processServicesList(decodedResult);        
         return { result: { count, services }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -904,6 +904,28 @@ export class RpcService {
       return { result: null, error: 'Error fetching services list: ' + error.message};
     }
   }
+
+  async servicesListOwn(start: number, offset: number) {
+    try {
+      const contractAddress = await this.externalContractGet('services');
+      const iface = new ethers.Interface([
+        "function listByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address regulator, address validator, string name, string data, uint256 countryCode, uint8 state)[] services)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listByRegulator', [start, offset]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
+      if (result) {
+        const decodedResult = iface.decodeFunctionResult('listByRegulator', result.data);
+        const { count, services } = await this.processServicesList(decodedResult);        
+        return { result: { count, services }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }  
 
   async serviceInfo(serviceAddress: string) {
     try {
