@@ -202,7 +202,6 @@ export class UserDetailsPage implements OnInit {
 
   async getSubscriptions() {
     this.loadingService.show('Loading data...');
-    // TODO: fix getting the idetnity subscriptions
     const data = await this.rpcService.subscribersListByIdentity(this.ginHash, 1, 10);
     console.log('subscriptions', data);
     if(data.result) this.subscriptions.set(data.result?.subscriptions);
@@ -232,7 +231,12 @@ export class UserDetailsPage implements OnInit {
     this.lightboxImage = '';
   }  
 
-  async viewValidator(validator: string) {
+  async gotoValidator(validator: string) {
     this.router.navigate(['/authorized/ckyc/validators/details/' + validator]);
-  }    
+  }
+
+  async gotoSubscription(subscription: string) {
+    this.router.navigate(['/authorized/subscriptions/details/' + subscription]);
+  } 
+
 }

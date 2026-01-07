@@ -45,7 +45,7 @@ export class DetailsPage implements OnInit {
 
   serviceAddress = '';
   service = signal<Service | undefined>(undefined);
-  subscriptions = signal<Subscription[] | undefined>(undefined);
+  subscriptions = signal<Subscription[]>([]);
   isOwn = false;
 
   constructor() { 
@@ -147,7 +147,7 @@ export class DetailsPage implements OnInit {
   }  
 
   async gotoSubscriber(subscription: string) {
-    this.router.navigate(['/authorized/ckyc/validators/details/' + subscription]);
+    this.router.navigate(['/authorized/subscriptions/details/' + subscription]);
   }  
 
 }

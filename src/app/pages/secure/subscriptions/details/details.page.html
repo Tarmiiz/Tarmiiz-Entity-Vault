@@ -1,0 +1,135 @@
+<app-header title="Subscription Details"></app-header>
+
+<!-- breadcrumb -->
+<div class="px-6 py-4 border-b bg-gray-200">
+  @if (subscription(); as op) {
+    <nav class="flex" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a routerLink="/authorized/subscriptions/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+            Subscriptions
+          </a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ op.subscription }}</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+  } @else {
+      <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
+  }
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+    
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-t-lg shadow-md p-2">
+      <div class="flex border-b border-gray-200">
+
+        <button (click)="setTab('info')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'info'"
+          [class.border-b-2]="activeTab() === 'info'"
+          [class.border-blue-600]="activeTab() === 'info'"
+          [class.bg-blue-600]="activeTab() === 'info'"
+        >
+          Information
+        </button>
+        <button (click)="setTab('trxs')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'trxs'"
+          [class.border-b-2]="activeTab() === 'trxs'"
+          [class.border-blue-600]="activeTab() === 'trxs'"
+          [class.bg-blue-600]="activeTab() === 'trxs'"
+        >
+          Transactions
+        </button>          
+        <button (click)="setTab('actions')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'actions'"
+          [class.border-b-2]="activeTab() === 'actions'"
+          [class.border-blue-600]="activeTab() === 'actions'"
+          [class.bg-blue-600]="activeTab() === 'actions'"
+        >
+          Actions
+        </button>          
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="bg-white rounded-b-lg shadow-md p-2">
+      @if (subscription(); as v) {
+
+        <!-- info tab -->
+        @if (activeTab() === 'info') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-4">
+                <!-- <div>
+                  <h2 class="text-3xl font-bold text-gray-800">{{ v.subscription }}</h2>
+                </div> -->
+                <span 
+                  class="px-4 py-1.5 text-sm font-semibold rounded-full "
+                  [class]="getStateClass(v.state)"
+                >
+                  {{ v.stateName }}
+                </span>
+              </div>
+    
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Subscription Address</p>
+                  <p class="font-mono text-base">{{ v.subscription }}</p>
+                </div>
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Service Address</p>
+                  <p class="font-mono text-base hover:bg-gray-100 cursor-pointer transition-colors" (click)="gotoService(v.service)">{{ v.service }}</p>
+                </div>
+                <!-- <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Validator Address</p>
+                  <p class="font-mono text-base hover:bg-gray-100 cursor-pointer transition-colors" (click)="gotoValidator(v.validator)">{{ v.validator }}</p>
+                </div>
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Regulator Address</p>
+                  <p class="font-mono text-base">{{ v.regulator }}</p>
+                </div> -->
+              </div>
+              
+              @if(isOwn) {
+                <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                    Change State
+                  </button>
+                </div>
+              }
+    
+            </div>
+          </div>
+        }
+        
+        <!-- trxs tab -->
+        @if (activeTab() === 'trxs') {
+        }
+
+        <!-- actions tab -->
+        @if (activeTab() === 'actions') {
+        }
+
+      } 
+      @else {
+        <div class="text-center py-12 text-gray-500">
+          <p>Loading service details...</p>
+        </div>
+      }
+
+    </div>
+
+  
+  </div>
+</main>  
+
+<app-modal-subscription-state></app-modal-subscription-state>

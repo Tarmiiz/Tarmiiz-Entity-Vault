@@ -1,0 +1,29 @@
+@if (changeStateService.isVisible()) {
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          Change Service State
+        </h3>
+      </div>
+      <form [formGroup]="stateForm" (ngSubmit)="onSave()">
+        <div class="p-6">
+          <label for="state" class="block text-sm font-medium text-gray-700">New State</label>
+          <select id="state" formControlName="newState" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+            @for(state of states(); track state.variableId) {
+              <option [value]="state.variableId">{{ state.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+          <button type="button" (click)="onCancel()" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="!stateForm.valid" class="px-4 py-2 bg-[#202a3b] text-white border border-transparent rounded-md shadow-sm hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            Update State
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

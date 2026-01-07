@@ -106,6 +106,27 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'subscriptions',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/subscriptions/list/list.page').then( m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'details/:address',
+            loadComponent: () => import('./pages/secure/subscriptions/details/details.page').then( m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/dashboard',
+            pathMatch: 'full',
+          },          
+        ]
+      },
+      {
         path: 'ckyc',
         canActivate: [AuthGuard],
         children: [

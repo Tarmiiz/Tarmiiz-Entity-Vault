@@ -297,7 +297,7 @@
       
                   <div class="border-t pt-2 md:col-span-2">
                     <p class="text-xs font-medium text-gray-500">Last Varified By</p>
-                    <p class="font-mono text-base text-xs hover:bg-gray-100 cursor-pointer transition-colors" (click)="viewValidator(v.lastVarifiedBy)">{{ v.lastVarifiedBy }}</p>
+                    <p class="font-mono text-base text-xs hover:bg-gray-100 cursor-pointer transition-colors" (click)="gotoValidator(v.lastVarifiedBy)">{{ v.lastVarifiedBy }}</p>
                   </div>
                   <div class="border-t pt-2">
                     <p class="text-xs font-medium text-gray-500">Varified On</p>
@@ -338,7 +338,7 @@
                   </thead>
                   <tbody>
                     @for (s of subscriptions(); track s; let i = $index; let isEven = $even;) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscription(s.subscription)">
                         <td class="px-6 py-2 text-xs">{{ s.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
                         <td class="px-6 py-2 text-xs">{{ s.subscription }}</td>
                         <td class="px-6 py-2 text-xs">{{ s.service }}</td>

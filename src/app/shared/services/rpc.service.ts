@@ -11,7 +11,7 @@ import cKYCProxyAbi from '../../../assets/ABIs/cKYCProxy.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, Service, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice, RegulatorData } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, Service, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice, RegulatorData, Subscription } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -891,7 +891,7 @@ export class RpcService {
       
       const callData = iface.encodeFunctionData('listByCountry', [818, start, offset]);
       const result = await this.callExternalStatic(contractAddress.result, callData);
-      if (result) {
+      if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('listByCountry', result.data);
 
         const { count, services } = await this.processServicesList(decodedResult);        
@@ -914,7 +914,7 @@ export class RpcService {
       
       const callData = iface.encodeFunctionData('listByRegulator', [start, offset]);
       const result = await this.callExternalStatic(contractAddress.result, callData);
-      if (result) {
+      if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('listByRegulator', result.data);
         const { count, services } = await this.processServicesList(decodedResult);        
         return { result: { count, services }, error: '' };
@@ -936,8 +936,7 @@ export class RpcService {
       const callData = iface.encodeFunctionData('info');
       const result = await this.callExternalStatic(serviceAddress, callData);
       if (result.success && result.data !== null) {
-
-        
+       
         const decodedResult = iface.decodeFunctionResult('info', result.data);
         const parsedData = JSON.parse(decodedResult[0][4]);
 
@@ -1039,11 +1038,62 @@ export class RpcService {
 
 //----------------------------------------------------------------------------------------------------------------------------------------
 
-  async subscribersListAll(start: number, offset: number) {
+  async subscriptionInfo(subscription: string) {
     try {
-      const result = await this.regulatorContract.subscribersListAll(start, offset);
-      if (result) {
-        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+      const contractAddress = await this.externalContractGet('subscriptions');
+      const iface = new ethers.Interface([
+        "function info(address subscription) external view returns (tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state) subscription)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('info', [subscription]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('info', result.data);
+
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+
+        // Get state name for this validator
+        const stateId = Number(decodedResult[0][5]);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }  
+
+        const subscription: Subscription = {
+          subscription: decodedResult[0][0],
+          service: decodedResult[0][1],
+          validator: decodedResult[0][2],
+          regulator: decodedResult[0][3],  
+          state: stateId,
+          stateName,
+          createdAt: Number(decodedResult[0][4])
+        };
+
+        return { result: subscription, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }
+
+async subscriptionsListByRegulator(start: number, offset: number) {
+    try {
+      const contractAddress = await this.externalContractGet('subscriptions');
+      const iface = new ethers.Interface([
+        "function listByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listByRegulator', [start, offset]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('listByRegulator', result.data);
+        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
         return { result: { count, subscriptions }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -1056,9 +1106,16 @@ export class RpcService {
 
   async subscribersListByService(service: string, start: number, offset: number) {
     try {
-      const result = await this.regulatorContract.subscribersListByService(service, start, offset);
-      if (result) {
-        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+      const contractAddress = await this.externalContractGet('subscriptions');
+      const iface = new ethers.Interface([
+        "function listByService(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listByService', [service, start, offset]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('listByService', result.data);
+        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
         return { result: { count, subscriptions }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -1086,9 +1143,16 @@ export class RpcService {
 
   async subscribersListByIdentity(identity: string, start: number, offset: number) {
     try {
-      const result = await this.regulatorContract.subscribersListByIdentity(identity, start, offset);
-      if (result) {
-        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+      const contractAddress = await this.externalContractGet('subscriptions');
+      const iface = new ethers.Interface([
+        "function listByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('listByIdentity', [identity, start, offset]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('listByIdentity', result.data);
+        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
         return { result: { count, subscriptions }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -1969,15 +2033,15 @@ export class RpcService {
   async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<RegulatorEvent[]> {
     try {
       // Create filters for all event types
-      const loginFilter = this.regulatorContract.filters.LoginEvent();
+      const accessFilter = this.regulatorContract.filters.AccessEvent();
       const credentialsFilter = this.regulatorContract.filters.CredentialEvent();
       const regulatorFilter = this.regulatorContract.filters.RegulatorEvent();
       const validatorFilter = this.regulatorContract.filters.ValidatorEvent();
       const serviceFilter = this.regulatorContract.filters.ServiceEvent();
 
       // Query all events
-      const [loginEvents, credentialsEvents, regulatorEvents, validatorEvents, serviceEvents] = await Promise.all([
-        this.regulatorContract.queryFilter(loginFilter, fromBlock, toBlock),
+      const [accessEvents, credentialsEvents, regulatorEvents, validatorEvents, serviceEvents] = await Promise.all([
+        this.regulatorContract.queryFilter(accessFilter, fromBlock, toBlock),
         this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock),
         this.regulatorContract.queryFilter(regulatorFilter, fromBlock, toBlock),
         this.regulatorContract.queryFilter(validatorFilter, fromBlock, toBlock),
@@ -1986,9 +2050,9 @@ export class RpcService {
 
       // Process all events with timestamps
       const allEvents = await Promise.all([
-        ...loginEvents.map(async (event: any) => ({
+        ...accessEvents.map(async (event: any) => ({
           sender: event.args.account,
-          eventType: 'Login',
+          eventType: 'Access',
           account: '',
           action: event.args.action,
           blockNumber: event.blockNumber,

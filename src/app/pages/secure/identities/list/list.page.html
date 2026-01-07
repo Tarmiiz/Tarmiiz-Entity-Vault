@@ -152,7 +152,7 @@
             }
             @else {
                 @for(subscription of subscriptions(); track subscription.subscription; let i = $index; let isEven = $even;) {
-                    <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails('', subscription.subscription)">
+                    <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(subscription.subscription)">
                       <td class="px-6 py-2 text-xs">{{ subscription.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
                       <td class="px-6 py-2 text-xs">{{ subscription.subscription }}</td>
                       <td class="px-6 py-2 text-xs">{{ subscription.service }}</td>
