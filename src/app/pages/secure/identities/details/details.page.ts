@@ -12,7 +12,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { ApiService } from '../../../../shared/services/api.service';
 
-import { cKYCIdentity, Subscription } from '../../../../shared/models/data.model';
+import { Identity, Subscription } from '../../../../shared/models/data.model';
 
 interface StatCard {
   title: string;
@@ -79,7 +79,7 @@ export class UserDetailsPage implements OnInit {
   activeTab = signal<'overview' | 'info' | 'subscriptions' | 'holdings' | 'credit' | 'trxs' | 'actions' >('overview');
 
   ginHash = '';
-  identity = signal<cKYCIdentity | null>(null);
+  identity = signal<Identity | null>(null);
   metadata = signal<any | null>(null);
   subscriptions = signal<Subscription[]>([]);
   idFront: string = '';
@@ -137,7 +137,7 @@ export class UserDetailsPage implements OnInit {
 
   constructor() { 
     const uid = this.route.snapshot.paramMap.get('uid');
-    console.log('uid', uid);
+    // console.log('uid', uid);
     if (uid) {
       this.ginHash = uid;
     }    
@@ -203,11 +203,10 @@ export class UserDetailsPage implements OnInit {
   async getSubscriptions() {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.subscribersListByIdentity(this.ginHash, 1, 10);
-    console.log('subscriptions', data);
+    // console.log('subscriptions', data);
     if(data.result) this.subscriptions.set(data.result?.subscriptions);
     this.loadingService.hide();
   }
-
 
   getStateClass(stateId: number | undefined): string {
     if (stateId === undefined) return 'bg-gray-100 text-gray-800';
@@ -239,4 +238,46 @@ export class UserDetailsPage implements OnInit {
     this.router.navigate(['/authorized/subscriptions/details/' + subscription]);
   } 
 
+  async activateSubscriptions() {
+    const result = await this.alertService.show('Activate Subscriptions', 'Do you want to activate all subscriptions?', 'Activate');
+    if(result) {
+      await this.getSubscriptions();
+      this.loadingService.show('Activating subscriptions...');
+      const count = this.subscriptions()?.length || 0;
+      for (let i = 0; i < count; i++) {
+        this.loadingService.show(`Activating ${i+1} of ${count} subscriptions...`);
+        if(this.subscriptions()?.[i]?.state != 2) await this.rpcService.serviceChangeState(this.subscriptions()?.[i]?.subscription, 2);
+      }
+      this.loadingService.hide();
+      await this.getSubscriptions();
+    }
+
+  }
+
+  async suspendSubscriptions() {
+    const result = await this.alertService.show('Suspend Subscriptions', 'Do you want to suspend all subscriptions?', 'Suspend');
+    if(result) {
+      await this.getSubscriptions();
+      this.loadingService.show('Suspendending subscriptions...');
+      const count = this.subscriptions()?.length || 0;
+      for (let i = 0; i < count; i++) {
+        this.loadingService.show(`Suspendending ${i+1} of ${count} subscriptions...`);
+        if(this.subscriptions()?.[i]?.state == 2) await this.rpcService.serviceChangeState(this.subscriptions()?.[i]?.subscription, 3);
+      }
+      this.loadingService.hide();
+      await this.getSubscriptions();
+    }
+
+  }
+
+  async contactIdentity() {
+    // Construct the mailto: URL with the recipient, subject, and body
+    // const mailtoUrl = `mailto:${this.metadata().email}?subject=Contact%20Identity`;
+    const mailtoUrl = `mailto:${this.metadata().email}`;
+
+    // Open the URL in the default email client
+    window.open(mailtoUrl);
+  }
+
 }
+

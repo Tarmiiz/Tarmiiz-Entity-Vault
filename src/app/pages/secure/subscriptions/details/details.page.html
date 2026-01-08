@@ -69,9 +69,9 @@
           <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
-                <!-- <div>
-                  <h2 class="text-3xl font-bold text-gray-800">{{ v.subscription }}</h2>
-                </div> -->
+                <div>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ v.subscription }}</h2>
+                </div>
                 <span 
                   class="px-4 py-1.5 text-sm font-semibold rounded-full "
                   [class]="getStateClass(v.state)"
@@ -82,21 +82,17 @@
     
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Subscription Address</p>
-                  <p class="font-mono text-base">{{ v.subscription }}</p>
+                  <p class="text-sm font-medium text-gray-500">Subscriber</p>
+                  <p class="font-mono text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoIdentity(v.subscriber)">{{ v.subscriber }}</p>
                 </div>
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Service Address</p>
-                  <p class="font-mono text-base hover:bg-gray-100 cursor-pointer transition-colors" (click)="gotoService(v.service)">{{ v.service }}</p>
-                </div>
-                <!-- <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Validator Address</p>
-                  <p class="font-mono text-base hover:bg-gray-100 cursor-pointer transition-colors" (click)="gotoValidator(v.validator)">{{ v.validator }}</p>
+                  <p class="text-sm font-medium text-gray-500">Service</p>
+                  <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(v.service)">{{ v.serviceName }}</p>
                 </div>
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Regulator Address</p>
-                  <p class="font-mono text-base">{{ v.regulator }}</p>
-                </div> -->
+                  <p class="text-sm font-medium text-gray-500">Created At</p>
+                  <p class="text-base">{{ v.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                </div>
               </div>
               
               @if(isOwn) {

@@ -1,6 +1,6 @@
 <app-header title="Home"></app-header>
 
-<div class="flex-grow container mx-auto p-1 bg-gray-300">
+<div class="flex-grow container mx-auto p-1 bg-gray-300 pt-4 overflow-y-auto">
 
   @if(regulatorInfo) {
     <div>
@@ -29,7 +29,7 @@
   </div>    
 
   <!-- Stats Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 badges">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 badges">
     @for (stat of stats(); track stat.title) {
       <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:bg-indigo-100" (click)="goTo(stat.path)">
         <div class="bg-blue-100 p-3 rounded-full">

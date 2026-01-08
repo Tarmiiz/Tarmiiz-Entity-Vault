@@ -1,9 +1,6 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { 
-  IonContent, 
-} from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 
@@ -20,7 +17,6 @@ import { Country, GlobalVariable } from '../../../shared/models/data.model';
   styleUrls: ['./system.page.scss'],
   standalone: true,
   imports: [
-    IonContent, 
     CommonModule, FormsModule,
     HeaderComponent,
   ]

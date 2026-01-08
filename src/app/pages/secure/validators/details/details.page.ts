@@ -88,7 +88,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.validatorIdentitiesList(this.validatorAddress(), 1, 10);
     if(data.result) this.identities.set(data.result?.identities);
-    console.log('identities', this.identities());
+    // console.log('identities', this.identities());
     this.loadingService.hide();
   }  
 

@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { cKYCOperator } from '../../../models/data.model';
+import { Operator } from '../../../models/data.model';
 
 export interface EditOperatorData {
   name: string;
@@ -13,11 +13,11 @@ export interface EditOperatorData {
 })
 export class ModalcKYCOperatorEditService {
   isVisible = signal(false);
-  operator = signal<cKYCOperator | null>(null);
+  operator = signal<Operator | null>(null);
 
   private resolveFn?: (value: EditOperatorData | null) => void;
 
-  show(operator: cKYCOperator): Promise<EditOperatorData | null> {
+  show(operator: Operator): Promise<EditOperatorData | null> {
     this.operator.set(operator);
     this.isVisible.set(true);
 

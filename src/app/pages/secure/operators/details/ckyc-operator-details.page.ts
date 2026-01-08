@@ -10,7 +10,7 @@ import { RpcService } from '../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
-import { cKYCOperator } from '../../../../shared/models/data.model';
+import { Operator } from '../../../../shared/models/data.model';
 import { ModalcKYCOperatorEditService } from '../../../../shared/components/modals/modal-ckyc-operator-edit/modal-ckyc-operator-edit.service';
 
 @Component({
@@ -33,7 +33,7 @@ export class CkycOperatorDetailsPage implements OnInit {
     private loadingService = inject(LoadingService);
     private ckycOperatorEditService = inject(ModalcKYCOperatorEditService);
 
-  operator = signal<cKYCOperator | undefined>(undefined);
+  operator = signal<Operator | undefined>(undefined);
   address = '';
 
   constructor(

@@ -90,7 +90,7 @@ export class DetailsPage implements OnInit {
   async getSubscriptions() {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.subscribersListByService(this.serviceAddress, 1, 100);
-    this.subscriptions.set(data.result?.subscriptions);
+    this.subscriptions.set(data.result?.subscriptions || []);
     console.log('subscriptions', this.subscriptions());
     this.loadingService.hide();
   }

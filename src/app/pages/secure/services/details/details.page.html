@@ -111,13 +111,13 @@
                   <p class="text-sm font-medium text-gray-500">Country</p>
                   <p class="text-base">{{ v.countryName }}</p>
                 </div>
-                <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Validator Address</p>
-                  <p class="font-mono text-base hover:bg-gray-100 cursor-pointer transition-colors" (click)="gotoValidator(v.validator)">{{ v.validator }}</p>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Validator</p>
+                  <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoValidator(v.validator)">{{ v.validatorName }}</p>
                 </div>
-                <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Regulator Address</p>
-                  <p class="font-mono text-base">{{ v.regulator }}</p>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Regulator</p>
+                  <p class="text-base">{{ v.regulatorName }}</p>
                 </div>
               </div>
               
@@ -138,39 +138,41 @@
         
         <!-- subscriptions tab -->
         @if (activeTab() === 'subscriptions') {
-          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges" dir="ltr" style="width: auto;">
-            <table class="w-full text-sm text-left text-gray-500">
-              <thead class="text-xs text-gray-700 uppercase bg-gray-400">
-                <tr>
-                  <th scope="col" class="px-6 py-2">#</th>
-                  <th scope="col" class="px-6 py-2">Date</th>
-                  <th scope="col" class="px-6 py-2">Subscription</th>
-                  <th scope="col" class="px-6 py-2">State</th>
-                </tr>
-              </thead>
-              <tbody>
-                  <!-- no data -->
-                  @if(subscriptions() && subscriptions()!.length === 0) {
-                      <tr class="bg-white border-b hover:bg-gray-50">
-                          <td class="px-6 py-2">no data</td>
-                      </tr>
-                  }
-                  @else {
-                      @for(service of subscriptions(); track service.subscription; let i = $index; let isEven = $even;) {
-                          <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(service.subscription)">
-                              <td class="px-6 py-2">{{ i + 1 }}</td>
-                              <td class="px-6 py-2">{{ service.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
-                              <td class="px-6 py-2">{{ service.subscription }}</td>
-                              <td class="px-6 py-4">
-                                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
-                                    {{ service.stateName }}
-                                  </span>
-                              </td>
-                          </tr>
-                      }
-                  }
-              </tbody>
-            </table>
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">#</th>
+                    <th scope="col" class="px-6 py-2">Date</th>
+                    <th scope="col" class="px-6 py-2">Subscription</th>
+                    <th scope="col" class="px-6 py-2">State</th>
+                  </tr>
+                </thead>
+                <tbody  class="text-xs">
+                    <!-- no data -->
+                    @if(subscriptions() && subscriptions()!.length === 0) {
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-6 py-2">no data</td>
+                        </tr>
+                    }
+                    @else {
+                        @for(service of subscriptions(); track service.subscription; let i = $index; let isEven = $even;) {
+                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(service.subscription)">
+                                <td class="px-6 py-2">{{ i + 1 }}</td>
+                                <td class="px-6 py-2">{{ service.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                                <td class="px-6 py-2">{{ service.subscription }}</td>
+                                <td class="px-6 py-2">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
+                                      {{ service.stateName }}
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+              </table>
+            </div>
           </div>
         }
 

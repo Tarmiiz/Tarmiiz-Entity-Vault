@@ -2,7 +2,6 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
@@ -19,7 +18,6 @@ import { ModalValidatorAddService } from '../modals/modal-validator-add/modal-va
   styleUrls: ['./list.page.scss'],
   standalone: true,
   imports: [
-    IonContent, 
     CommonModule, FormsModule,
     HeaderComponent,
   ]

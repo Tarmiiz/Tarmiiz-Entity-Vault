@@ -11,7 +11,7 @@ import cKYCProxyAbi from '../../../assets/ABIs/cKYCProxy.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, cKYCOperator, Validator, Service, cKYCIdentity, Asset, AssetHolder, AssetSupplyChange, AssetPrice, RegulatorData, Subscription } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -74,7 +74,7 @@ export class RpcService {
   ckycProxyAddress = environment.ckycProxyContract
   ckycContract: any;
   ckycOperatorContract: any;
-  regulatorInfo!: Regulator;
+  regulator!: Regulator;
 
   assetContract: any;
 
@@ -420,17 +420,18 @@ export class RpcService {
           address: data.address
         };
 
-        this.regulatorInfo = {
+        this.regulator = {
           address: result[0],
           name: result[1],
           symbol: result[2],
           data: regulatorData,
           countryCode,
           countryName,
-          state: result[5]
+          state: result[5],
+          stateName: result[5] ? 'Active' : 'Inactive'
         };
 
-        return { result: this.regulatorInfo, error: '' };
+        return { result: this.regulator, error: '' };
 
       }
       else {
@@ -541,6 +542,99 @@ export class RpcService {
       return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
     }
   }
+
+  async regulatorInfo(regulatorAddress: string) {
+    try {
+      const iface = new ethers.Interface([
+        "function info() external view returns (tuple(address regulator, string name, string symbol, string data, uint256 countryCode, bool state))"
+      ]);
+      
+      const callData = iface.encodeFunctionData('info');
+      const result = await this.callExternalStatic(regulatorAddress, callData);
+      if (result.success && result.data !== null) {
+
+        
+        const decodedResult = iface.decodeFunctionResult('info', result.data);
+        const parsedData = JSON.parse(decodedResult[0][3]);
+
+        // Fetch state names once
+        await this.connectGlobalVariables();
+
+        // get country name
+        const countryCode = Number(decodedResult[0][4]);
+        let countryName = 'Unknown';
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        countryName = country?.nameShort || 'Unknown';        
+
+        const regulator: Regulator = {
+          address: decodedResult[0][0],
+          name: decodedResult[0][1],
+          symbol: decodedResult[0][2],
+          data: decodedResult[0][3],
+          countryCode,
+          countryName,
+          state: decodedResult[0][5],
+          stateName: decodedResult[0][5] ? 'Active' : 'Inactive'
+        };
+        return { result: { regulator }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching regulator info' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching regulator info: ' + error.message};
+    }
+  }  
+
+  async operatorInfo(operatorAddress: string) {
+    try {
+      const iface = new ethers.Interface([
+        "function info() external view returns (tuple(address operator, string name, string symbol, string data, uint256 countryCode, bool state))"
+      ]);
+      
+      const callData = iface.encodeFunctionData('info');
+      const result = await this.callExternalStatic(operatorAddress, callData);
+      if (result.success && result.data !== null) {
+
+        const decodedResult = iface.decodeFunctionResult('info', result.data);
+        const parsedData = JSON.parse(decodedResult[0][3]);
+
+        // Fetch state names once
+        await this.connectGlobalVariables();
+
+        // get country name
+        const countryCode = Number(decodedResult[0][4]);
+        let countryName = 'Unknown';
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        countryName = country?.nameShort || 'Unknown';        
+
+        const operator: Operator = {
+          operator: decodedResult[0][0],
+          name: decodedResult[0][1],
+          symbol: decodedResult[0][2],
+          data: decodedResult[0][3],
+          email: parsedData.email || '',
+          mobile: parsedData.mobile || '',
+          countryCode,
+          countryName,
+          state: decodedResult[0][5],
+          stateName: decodedResult[0][5] ? 'Active' : 'Inactive'
+        };
+        return { result: { operator }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching regulator info' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching regulator info: ' + error.message};
+    }
+  }  
 
 //----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -725,9 +819,18 @@ export class RpcService {
         const country = this.countriesList.find(c => c.countryCode === countryCode);
         countryName = country?.nameShort || 'Unknown';        
 
+        // get regulator name
+        const regulatorAddress = decodedResult[0][1];
+        let regulatorName = 'Unknown';
+        const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+        const regulator = regulatorsResult.result?.regulator;
+        regulatorName = regulator?.name || 'Unknown';
+        
+
         const validator: Validator = {
           address: decodedResult[0][0],
           regulator: decodedResult[0][1],
+          regulatorName,
           name: decodedResult[0][2],
           data: decodedResult[0][3],
           email: parsedData.email,
@@ -959,10 +1062,26 @@ export class RpcService {
         const country = this.countriesList.find(c => c.countryCode === countryCode);
         countryName = country?.nameShort || 'Unknown';        
 
+        // get regulator name
+        const regulatorAddress = decodedResult[0][1];
+        let regulatorName = 'Unknown';
+        const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+        const regulator = regulatorsResult.result?.regulator;
+        regulatorName = regulator?.name || 'Unknown';
+
+        // get validator name
+        const validatorAddress = decodedResult[0][2];
+        let validatorName = 'Unknown';
+        const validatorResult = await this.validatorInfo(validatorAddress);
+        const validator = validatorResult.result?.validator;
+        validatorName = validator?.name || 'Unknown';
+
         const service: Service = {
           address: decodedResult[0][0],
           regulator: decodedResult[0][1],
+          regulatorName,
           validator: decodedResult[0][2],
+          validatorName,
           name: decodedResult[0][3],
           data: decodedResult[0][4],
           email: parsedData.email,
@@ -1038,14 +1157,54 @@ export class RpcService {
 
 //----------------------------------------------------------------------------------------------------------------------------------------
 
-  async subscriptionInfo(subscription: string) {
+  async subscriptionChangeState(address: string, state: number) {
+    try {
+      const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('overrideState', [state]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing subscription state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing subscription state: ' + error.message};
+    }
+
+  }
+
+async subscriptionSubscriber(subscription: string) {
+    try {
+      const contractAddress = await this.externalContractGet('subscriptions');
+      const iface = new ethers.Interface([
+        "function getSubscriber(address subscription) external view returns (bytes32)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('getSubscriber', [subscription]);
+      const result = await this.callExternalStatic(contractAddress.result, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getSubscriber', result.data);
+        const subscriber = decodedResult[0];
+        return { result: subscriber, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching subscriber' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching subscriber: ' + error.message};
+    }
+  }
+
+  async subscriptionInfo(subscriptionAddress: string) {
     try {
       const contractAddress = await this.externalContractGet('subscriptions');
       const iface = new ethers.Interface([
         "function info(address subscription) external view returns (tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state) subscription)"
       ]);
       
-      const callData = iface.encodeFunctionData('info', [subscription]);
+      const callData = iface.encodeFunctionData('info', [subscriptionAddress]);
       const result = await this.callExternalStatic(contractAddress.result, callData);
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('info', result.data);
@@ -1060,13 +1219,42 @@ export class RpcService {
         if (statesResult.result) {
           const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
           stateName = stateVariable?.name || 'Unknown';
-        }  
+        }
+        
+        // get regulator name
+        const regulatorAddress = decodedResult[0][3];
+        let regulatorName = 'Unknown';
+        const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+        const regulator = regulatorsResult.result?.regulator;
+        regulatorName = regulator?.name || 'Unknown';
+
+        // get validator name
+        const validatorAddress = decodedResult[0][2];
+        let validatorName = 'Unknown';
+        const validatorResult = await this.validatorInfo(validatorAddress);
+        const validator = validatorResult.result?.validator;
+        validatorName = validator?.name || 'Unknown';
+        
+        // get service name
+        const serviceAddress = decodedResult[0][1];
+        let serviceName = 'Unknown';
+        const serviceResult = await this.serviceInfo(serviceAddress);
+        const service = serviceResult.result?.service;
+        serviceName = service?.name || 'Unknown';
+
+        // get subscriber
+        const subscriberResult = await this.subscriptionSubscriber(subscriptionAddress);
+        const subscriber = subscriberResult.result;
 
         const subscription: Subscription = {
           subscription: decodedResult[0][0],
-          service: decodedResult[0][1],
-          validator: decodedResult[0][2],
-          regulator: decodedResult[0][3],  
+          subscriber,
+          service: serviceAddress,
+          serviceName,
+          validator: validatorAddress,
+          validatorName,
+          regulator: regulatorAddress,
+          regulatorName,  
           state: stateId,
           stateName,
           createdAt: Number(decodedResult[0][4])
@@ -1082,7 +1270,7 @@ export class RpcService {
     }
   }
 
-async subscriptionsListByRegulator(start: number, offset: number) {
+  async subscriptionsListByRegulator(start: number, offset: number) {
     try {
       const contractAddress = await this.externalContractGet('subscriptions');
       const iface = new ethers.Interface([
@@ -1164,40 +1352,69 @@ async subscriptionsListByRegulator(start: number, offset: number) {
   }
 
   async processSubscriptionsList(data: any) {
-        // Fetch state names once for all validators
-        await this.connectGlobalVariables();
-        const statesResult = await this.getGlobalVariableByCategory('Account State');
+    // Fetch state names once for all validators
+    await this.connectGlobalVariables();
+    const statesResult = await this.getGlobalVariableByCategory('Account State');
 
-        // check countries list
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
+    // check countries list
+    if (this.countriesList.length === 0) {
+      await this.getCountriesList();
+    }
+    
+    const count = Number(data[0]);
+    
+    // Fix: Use Promise.all to await all promises from map
+    const subscriptions = await Promise.all(
+      data[1].map(async (op: any) => {
+
+        // Get state name for this validator
+        const stateId = Number(op.state);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }  
+
+        // get regulator name
+        const regulatorAddress = op.regulator;
+        let regulatorName = 'Unknown';
+        const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+        const regulator = regulatorsResult.result?.regulator;
+        regulatorName = regulator?.name || 'Unknown';
+
+        // get validator name
+        const validatorAddress = op.validator;
+        let validatorName = 'Unknown';
+        const validatorResult = await this.validatorInfo(validatorAddress);
+        const validator = validatorResult.result?.validator;
+        validatorName = validator?.name || 'Unknown';
         
-        const count = Number(data[0]);
-        const subscriptions = data[1].map((op: any) => {
+        // get service name
+        const serviceAddress = op.service;
+        let serviceName = 'Unknown';
+        const serviceResult = await this.serviceInfo(serviceAddress);
+        const service = serviceResult.result?.service;
+        serviceName = service?.name || 'Unknown';
 
-          // Get state name for this validator
-          const stateId = Number(op.state);
-          let stateName = 'Unknown';
-          if (statesResult.result) {
-            const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-            stateName = stateVariable?.name || 'Unknown';
-          }  
-
-          return {
-            subscription: op.subscription,
-            service: op.service,
-            validator: op.validator,
-            regulator: op.regulator,  
-            state: Number(op.state),
-            stateName,
-            createdAt: Number(op.createdAt)
-          };
-        });
-        
-        return { count, subscriptions };    
-  }  
-
+        return {
+          subscription: op.subscription,
+          subscriber: '',
+          service: op.service,
+          serviceName,
+          validator: op.validator,
+          validatorName,
+          regulator: op.regulator,
+          regulatorName,
+          state: Number(op.state),
+          stateName,
+          createdAt: Number(op.createdAt)
+        };
+      })
+    );
+    
+    return { count, subscriptions };    
+  }
+  
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Regulator Contract: API Functions
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1444,7 +1661,7 @@ async subscriptionsListByRegulator(start: number, offset: number) {
         const country = this.countriesList.find(c => c.countryCode === countryCode);
         countryName = country?.nameShort || 'Unknown';        
 
-        const operator: cKYCOperator = {
+        const operator: Operator = {
           operator: decodedResult[0][0],
           name: decodedResult[0][1],
           symbol: decodedResult[0][2],
@@ -1453,7 +1670,8 @@ async subscriptionsListByRegulator(start: number, offset: number) {
           mobile: parsedData.mobile,
           countryCode: Number(decodedResult[0][4]),
           countryName,
-          state: decodedResult[0][5]
+          state: decodedResult[0][5],
+          stateName: decodedResult[0][5] ? 'Active' : 'Inactive'
         };
         return { result: { operator }, error: '' };
       } else {
@@ -1540,7 +1758,8 @@ async subscriptionsListByRegulator(start: number, offset: number) {
 
 
 
-  // Identity ------------------------------------------------------------------------------------
+  // cKYCIdentity ------------------------------------------------------------------------------------
+
   async cKYCIdentityContactCheck(contact: string) {
     try {
       // Generate SHA-256 hash and convert to bytes32
@@ -1582,7 +1801,7 @@ async subscriptionsListByRegulator(start: number, offset: number) {
         }        
 
         const count = Number(decodedResult[0]);
-        const identities: cKYCIdentity[] = decodedResult[1].map((identity: any) => {
+        const identities: Identity[] = decodedResult[1].map((identity: any) => {
 
           // Get country name for this validator
           const countryCode = Number(identity.countryCode);
@@ -1626,7 +1845,6 @@ async subscriptionsListByRegulator(start: number, offset: number) {
       const result = await this.callExternalStatic(this.ckycProxyAddress, callData);
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('identityLookupByGIN', result.data);      
-        // console.log('result', decodedResult[0][0]);
 
         if (decodedResult[0][0] !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
           const identity = await this.processIdentityData(decodedResult[0]);
@@ -1754,16 +1972,33 @@ async subscriptionsListByRegulator(start: number, offset: number) {
     const country = this.countriesList.find(c => c.countryCode === countryCode);
     const countryName = country?.nameShort || 'Unknown';
 
-    const identity: cKYCIdentity = {
+    // get operator name
+    const operatorAddress = data[5];
+    let operatorName = 'Unknown';
+    const operatorResult = await this.operatorInfo(operatorAddress);
+    const operator = operatorResult.result?.operator;
+    operatorName = operator?.name || 'Unknown';
+
+    // get validator name
+    const validatorAddress = data[7];
+    let validatorName = 'Unknown';
+    const validatorResult = await this.validatorInfo(validatorAddress);
+    const validator = validatorResult.result?.validator;
+    validatorName = validator?.name || 'Unknown';
+
+
+    const identity: Identity = {
       address: data[0],
       ginHash: data[1],
       metadata: data[2],
       countryCode,
       countryName,
       createdAt: Number(data[4]),
-      createdBy: data[5],
+      createdBy: operatorAddress,
+      createdByName: operatorName,
       lastVarifiedAt: Number(data[6]),
-      lastVarifiedBy: data[7]
+      lastVarifiedBy: validatorAddress,
+      lastVarifiedByName: validatorName
     };
 
     return identity;

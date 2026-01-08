@@ -65,7 +65,7 @@ export class DetailsPage implements OnInit {
   async getSubscriptionDetails() {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.subscriptionInfo(this.subscriptionAddress);
-    console.log('service', data.result);
+    // console.log('service', data.result);
     if(data.result) this.subscription.set(data.result);
     this.loadingService.hide();
   }
@@ -105,6 +105,10 @@ export class DetailsPage implements OnInit {
 
   async gotoService(service: string) {
     this.router.navigate(['/authorized/ckyc/services/details/' + service]);
+  }  
+
+  async gotoIdentity(subscriber: string) {
+    this.router.navigate(['/authorized/identities/details/' + subscriber]);
   }  
 
 }

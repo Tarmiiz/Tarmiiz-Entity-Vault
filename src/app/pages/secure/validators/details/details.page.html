@@ -114,8 +114,8 @@
                 <div class="border-t pt-4">
                 </div>
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Regulator Address</p>
-                  <p class="font-mono text-base">{{ v.regulator }}</p>
+                  <p class="text-sm font-medium text-gray-500">Regulator</p>
+                  <p class="text-base">{{ v.regulatorName }}</p>
                 </div>
               </div>
               
@@ -136,10 +136,9 @@
 
         <!-- services tab -->
         @if (activeTab() === 'services') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
-            <div class="p-4">
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-sm text-left text-gray-700">
-
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
                         <th scope="col" class="px-6 py-2">#</th>
@@ -147,7 +146,7 @@
                         <th scope="col" class="px-6 py-2">State</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="text-xs">
                   <!-- no data -->
                   @if(services().length == 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
@@ -176,18 +175,17 @@
 
         <!-- identities tab -->
         @if (activeTab() === 'identities') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
-            <div class="p-4">
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-sm text-left text-gray-700">
-
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
                         <th scope="col" class="px-6 py-2">Validated At</th>
                         <th scope="col" class="px-6 py-2">ID Hash</th>
-                        <th scope="col" class="px-6 py-2">Operator</th>
+                        <!-- <th scope="col" class="px-6 py-2">Operator</th> -->
                     </tr>
                 </thead>
-                <tbody>
+                <tbody  class="text-xs">
                   <!-- no data -->
                   @if(identities().length == 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
@@ -199,7 +197,7 @@
                           <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewIdentity(identity.identity)">
                               <td class="px-6 py-2">{{ identity.validatedAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
                               <td class="px-6 py-2">{{ identity.identity }}</td>
-                              <td class="px-6 py-2">{{ identity.operator }}</td>
+                              <!-- <td class="px-6 py-2">{{ identity.operator }}</td> -->
                           </tr>
                       }
                   }

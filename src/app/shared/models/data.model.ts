@@ -71,57 +71,58 @@ export class Regulator {
     public data: RegulatorData,
     public countryCode: number,
     public countryName: string,
-    public state: boolean
-  ){}
-}
-
-export class Asset {
-  constructor (
-    public address: string,
-    public name: string,
-    public symbol: string,
-    public issuer: string,
-    public manager: string,
-    public regulator: string,
-    public tokenType: number,
-    public tokenTypeName: string,
-    public assetType: number,
-    public assetTypeName: string,
-    public data: string,
-    public totalSupply: number,
-    public circulating: number,
-    public currencyCode: number,
-    public createdOn: number,
-    public state: number,
+    public state: boolean,
     public stateName: string
   ){}
 }
 
-export class AssetHolder {
-  constructor (
-    public address: string,
-    public balance: number
-  ) {}
-}
+// export class Asset {
+//   constructor (
+//     public address: string,
+//     public name: string,
+//     public symbol: string,
+//     public issuer: string,
+//     public manager: string,
+//     public regulator: string,
+//     public tokenType: number,
+//     public tokenTypeName: string,
+//     public assetType: number,
+//     public assetTypeName: string,
+//     public data: string,
+//     public totalSupply: number,
+//     public circulating: number,
+//     public currencyCode: number,
+//     public createdOn: number,
+//     public state: number,
+//     public stateName: string
+//   ){}
+// }
 
-export class AssetSupplyChange {
-  constructor (
-    public changeType: number,
-    public changeTypeName: string,
-    public amount: number,
-    public timestamp: number
-  ) {}
-}
+// export class AssetHolder {
+//   constructor (
+//     public address: string,
+//     public balance: number
+//   ) {}
+// }
 
-export class AssetPrice {
-  constructor (
-    public bid: number,
-    public ask: number,
-    public timestamp: number
-  ) {}
-}
+// export class AssetSupplyChange {
+//   constructor (
+//     public changeType: number,
+//     public changeTypeName: string,
+//     public amount: number,
+//     public timestamp: number
+//   ) {}
+// }
 
-export class cKYCOperator {
+// export class AssetPrice {
+//   constructor (
+//     public bid: number,
+//     public ask: number,
+//     public timestamp: number
+//   ) {}
+// }
+
+export class Operator {
   constructor (
     public operator: string,
     public name: string,
@@ -131,7 +132,8 @@ export class cKYCOperator {
     public mobile: string,
     public countryCode: number,
     public countryName: string,
-    public state: boolean
+    public state: boolean,
+    public stateName: string
   ) {}
 }
 
@@ -145,6 +147,7 @@ export class Validator {
     public countryCode: number,
     public countryName: string,
     public regulator: string,
+    public regulatorName: string,
     public state: number,
     public stateName: string
   ) {}
@@ -161,13 +164,15 @@ export class Service {
     public countryCode: number,
     public countryName: string,
     public regulator: string,
+    public regulatorName: string,
     public validator: string,
+    public validatorName: string,
     public state: number,
     public stateName: string
   ) {}
 }
 
-export class cKYCIdentity {
+export class Identity {
   constructor (
     public address: string,
     public ginHash: string,
@@ -176,17 +181,23 @@ export class cKYCIdentity {
     public countryName: string,
     public createdAt: number,
     public createdBy: string,
+    public createdByName: string,
     public lastVarifiedAt: number,
-    public lastVarifiedBy: string
+    public lastVarifiedBy: string,
+    public lastVarifiedByName: string
   ) {}
 }
 
 export class Subscription {
   constructor (
     public subscription: string,
+    public subscriber: string,
     public service: string,
+    public serviceName: string,
     public validator: string,
+    public validatorName: string,
     public regulator: string,
+    public regulatorName: string,
     public createdAt: number,
     public state: number,
     public stateName: string

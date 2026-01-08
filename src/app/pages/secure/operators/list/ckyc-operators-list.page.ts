@@ -9,7 +9,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
-import { cKYCOperator } from '../../../../shared/models/data.model';
+import { Operator } from '../../../../shared/models/data.model';
 
 @Component({
   selector: 'app-ckyc-operators-list',
@@ -30,7 +30,7 @@ export class CkycOperatorsListPage implements OnInit {
   loadingOperators: boolean = false;
 
   operatorsCount = 0
-  operators = signal<cKYCOperator[]>([]);
+  operators = signal<Operator[]>([]);
   operatorsSearchTerm = signal('');
 
   emptyRows: Array<any> = Array(5).fill(null)
@@ -65,7 +65,7 @@ export class CkycOperatorsListPage implements OnInit {
     this.loadingService.hide();
   }  
 
-  viewDetails(operator: cKYCOperator) {
+  viewDetails(operator: Operator) {
     this.router.navigate(['/authorized/ckyc/operators/details/' + operator.operator]);
   }
 

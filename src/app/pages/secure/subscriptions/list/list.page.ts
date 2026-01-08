@@ -2,7 +2,6 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
@@ -17,7 +16,6 @@ import { Subscription } from '../../../../shared/models/data.model';
   styleUrls: ['./list.page.scss'],
   standalone: true,
   imports: [
-    IonContent, 
     CommonModule, FormsModule,
     HeaderComponent,
   ]
@@ -84,7 +82,9 @@ export class ListPage implements OnInit {
     return this.subscriptions().filter(
       c => c.subscription.toLowerCase().includes(term) || 
       c.service.toLowerCase().includes(term) || 
-      c.regulator.toLowerCase().includes(term)
+      c.regulator.toLowerCase().includes(term) ||
+      c.subscription.toLowerCase().includes(term) ||
+      c.serviceName.toLowerCase().includes(term)
     );
   });  
 

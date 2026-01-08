@@ -9,7 +9,7 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { CryptoService } from '../../../../shared/services/crypto.service';
 
-import { cKYCIdentity, Subscription, ValidatorIdentity } from '../../../../shared/models/data.model';
+import { Identity, Subscription, ValidatorIdentity } from '../../../../shared/models/data.model';
 
 interface StatCard {
   title: string;
@@ -43,7 +43,7 @@ export class UsersPage implements OnInit {
   ]);  
 
   identitiesCount = 0
-  identities = signal<cKYCIdentity[]>([]);
+  identities = signal<Identity[]>([]);
 
   validatorIdentitiesCount = 0
   validatorIdentities = signal<string[]>([]);
@@ -51,7 +51,7 @@ export class UsersPage implements OnInit {
   subscriptionsCount = 0
   subscriptions = signal<Subscription[]>([]);
 
-  searchResults = signal<cKYCIdentity|null>(null);
+  searchResults = signal<Identity|null>(null);
   searchPerformed = signal(false);
   isSearchExpanded = signal(false);
 

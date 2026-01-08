@@ -46,7 +46,7 @@ export class AuthorizedLayoutComponent {
 
   constructor() {
     addIcons({homeOutline,peopleOutline,fingerPrintOutline,snowOutline,globeOutline,layersOutline,personCircleOutline,idCardOutline,cogOutline,searchOutline,bookOutline,logOutOutline});
-    if(this.rpcService.regulatorInfo) this.regulatorInfo = this.rpcService.regulatorInfo;
+    if(this.rpcService.regulator) this.regulatorInfo = this.rpcService.regulator;
   }
 
   async closeMenuOnMobile() {
