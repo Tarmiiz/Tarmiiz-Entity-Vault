@@ -128,13 +128,13 @@ export class UsersPage implements OnInit {
     this.isSearchExpanded.set(true);
     try {
       let response: any = null;
-      if (searchType === 'emailMobile') { response = await this.rpcService.cKYCIdentityLookupByContact(searchTerm); }
+      if (searchType === 'emailMobile') { response = await this.rpcService.identityLookupByContact(searchTerm); }
       if (searchType === 'nationalId')  { 
         const uid = '1:818:1:' + searchTerm;
         const uidHash = '0x' + await this.cryptoService.shaHash(uid);
-        response = await this.rpcService.cKYCIdentityLookupByUID(uidHash); 
+        response = await this.rpcService.identityLookupByUID(uidHash); 
       }
-      if (searchType === 'ckycId') { response = await this.rpcService.cKYCIdentityLookupByContact(searchTerm); }
+      // if (searchType === 'ckycId') { response = await this.rpcService.identityLookupByContact(searchTerm); }
       if (response.result) {
         this.searchResults.set(response.result);
       }

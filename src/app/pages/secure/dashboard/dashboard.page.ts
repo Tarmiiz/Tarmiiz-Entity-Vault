@@ -104,7 +104,7 @@ export class DashboardPage implements OnInit {
 
   async getValidators() {
     this.loadingService.show('Loading data ...');
-    const lookup = await this.rpcService.validatorsListOwn(1, 10);
+    const lookup = await this.rpcService.validatorsListOwn(1, 1);
     if(lookup.result) {
       this.stats()[0].value = Number(lookup.result.count);
     }
@@ -113,7 +113,7 @@ export class DashboardPage implements OnInit {
 
   async getServices() {
     this.loadingService.show('Loading data ...');
-    const lookup = await this.rpcService.servicesListOwn(1, 10);
+    const lookup = await this.rpcService.servicesListOwn(1, 1);
     if(lookup.result) {
       this.stats()[1].value = Number(lookup.result.count);
     }
@@ -122,7 +122,7 @@ export class DashboardPage implements OnInit {
 
   async getIdentities() {
     this.loadingService.show('Loading data ...');
-    const lookup = await this.rpcService.validatorsIdentitiesListOwn(1, 10);
+    const lookup = await this.rpcService.validatorsIdentitiesListOwn(1, 1);
     if(lookup.result) {
       this.stats()[2].value = Number(lookup.result.count);
     }
@@ -131,7 +131,7 @@ export class DashboardPage implements OnInit {
 
   async getSubscriptions() {
     this.loadingService.show('Loading data ...');
-    const lookup = await this.rpcService.subscriptionsListByRegulator(1, 10);
+    const lookup = await this.rpcService.subscriptionsListByRegulator(1, 1);
     if(lookup.result) {
       this.stats()[3].value = Number(lookup.result.count);
     }

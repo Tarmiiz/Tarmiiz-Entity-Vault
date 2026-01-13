@@ -23,8 +23,19 @@
       </button> -->
     </div>
 
-    <!-- Services Count -->
-    <div class="flex items-center justify-end px-10 p-1">
+    <!-- Filters -->
+    <div class="flex items-center justify-between px-10 p-1">
+      <!-- Toggle -->
+      <label for="ToggleServices" class="inline-flex items-center space-x-4 cursor-pointer dark:text-gray-800">
+        <span class="text-xs font-medium text-gray-800 justify-end">Own</span>
+        <span class="relative">
+          <input id="ToggleServices" type="checkbox" class="hidden peer" (change)="onToggleChange($event)">
+          <div class="w-8 h-4 rounded-full shadow-inner dark:bg-gray-600 peer-checked:dark:bg-violet-600"></div>
+          <div class="absolute inset-y-0 left-0 w-2 h-2 m-1 rounded-full shadow peer-checked:right-0 peer-checked:left-auto dark:bg-gray-100"></div>
+        </span>
+        <span class="text-xs font-medium text-gray-800 justify-end">All</span>
+      </label>
+      <!-- Services Count -->
       <p class="text-xs font-medium text-gray-800 justify-end">Showing {{ filteredServices().length }} of Total {{ services().length }} Services</p>
     </div>
     
@@ -36,6 +47,9 @@
               <tr>
                   <th scope="col" class="px-6 py-2">#</th>
                   <th scope="col" class="px-6 py-2">Name</th>
+                  @if(showAllServices()){
+                    <th scope="col" class="px-6 py-2">Regulator</th>
+                  }
                   <th scope="col" class="px-6 py-2">State</th>
               </tr>
           </thead>
@@ -55,6 +69,9 @@
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(service)">
                           <td class="px-6 py-2">{{ i + 1 }}</td>
                           <td class="px-6 py-2">{{ service.name }}</td>
+                          @if(showAllServices()){
+                            <td class="px-6 py-2">{{ service.regulatorSymbol }}</td>
+                          }
                           <td class="px-6 py-2">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
                                 {{ service.stateName }}

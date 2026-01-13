@@ -148,6 +148,7 @@ export class Validator {
     public countryName: string,
     public regulator: string,
     public regulatorName: string,
+    public regulatorSymbol: string,
     public state: number,
     public stateName: string
   ) {}
@@ -165,6 +166,7 @@ export class Service {
     public countryName: string,
     public regulator: string,
     public regulatorName: string,
+    public regulatorSymbol: string,
     public validator: string,
     public validatorName: string,
     public state: number,

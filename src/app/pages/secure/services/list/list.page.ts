@@ -26,6 +26,7 @@ export class ListPage implements OnInit {
   private loadingService = inject(LoadingService);
 
   loadingServices: boolean = false;
+  showAllServices = signal(false);
 
   servicesCount = 0
   services = signal<Service[]>([]);
@@ -58,9 +59,15 @@ export class ListPage implements OnInit {
     }
   } 
 
+  async onToggleChange(event: Event) {
+    const checkbox = event.target as HTMLInputElement;
+    this.showAllServices.set(checkbox.checked);
+    await this.listServices();
+  } 
+
   async listServices() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.servicesListOwn(1, 10);
+    const result = this.showAllServices() ? await this.rpcService.servicesListAll(1, 10) : await this.rpcService.servicesListOwn(1, 10);
     if(result.result) {
       this.servicesCount = result.result.count;
       this.services.set(result.result.services);

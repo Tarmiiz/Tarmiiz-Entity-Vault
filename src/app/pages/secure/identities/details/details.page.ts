@@ -157,7 +157,7 @@ export class UserDetailsPage implements OnInit {
 
   async getIdenityDetails() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.cKYCIdentityLookupByGIN(this.ginHash);
+    const data = await this.rpcService.identityLookupByGIN(this.ginHash);
     if(!data.result) {
       this.loadingService.hide();
       return;
@@ -258,10 +258,10 @@ export class UserDetailsPage implements OnInit {
     const result = await this.alertService.show('Suspend Subscriptions', 'Do you want to suspend all subscriptions?', 'Suspend');
     if(result) {
       await this.getSubscriptions();
-      this.loadingService.show('Suspendending subscriptions...');
+      this.loadingService.show('Suspending subscriptions...');
       const count = this.subscriptions()?.length || 0;
       for (let i = 0; i < count; i++) {
-        this.loadingService.show(`Suspendending ${i+1} of ${count} subscriptions...`);
+        this.loadingService.show(`Suspending ${i+1} of ${count} subscriptions...`);
         if(this.subscriptions()?.[i]?.state == 2) await this.rpcService.serviceChangeState(this.subscriptions()?.[i]?.subscription, 3);
       }
       this.loadingService.hide();

@@ -11,7 +11,6 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
 import { Operator } from '../../../../shared/models/data.model';
-import { ModalcKYCOperatorEditService } from '../../../../shared/components/modals/modal-ckyc-operator-edit/modal-ckyc-operator-edit.service';
 
 @Component({
   selector: 'app-ckyc-operator-details',
@@ -31,7 +30,6 @@ export class CkycOperatorDetailsPage implements OnInit {
     private rpcService = inject(RpcService);
     private alertService = inject(AlertService);
     private loadingService = inject(LoadingService);
-    private ckycOperatorEditService = inject(ModalcKYCOperatorEditService);
 
   operator = signal<Operator | undefined>(undefined);
   address = '';
@@ -50,65 +48,9 @@ export class CkycOperatorDetailsPage implements OnInit {
   }
 
   async getOperatorDetails(address: string) {
-    const data = await this.rpcService.cKYCOperatorInfo(address);
+    const data = await this.rpcService.operatorInfo(address);
     this.operator.set(data.result?.operator);
   }
 
-  async changeState() {
-    const currentOperator = this.operator();
-    if (currentOperator) {
-      const confirmed = await this.alertService.show(
-        'Confirm State Change',
-        `Are you sure you want to change the state for ${currentOperator.name}?`,
-        `${currentOperator.state ? 'Deactivate' : 'Activate'}`
-      );
-
-      if (confirmed) {
-        this.loadingService.show('Changing state...');
-        const operatorAddress = this.operator()?.operator;
-        const state = !this.operator()?.state;
-        await this.rpcService.cKYCOperatorChangeState(operatorAddress!, state);
-        await this.getOperatorDetails(this.address);
-        this.loadingService.hide();
-      }
-    }
-  }  
-
-  async openEditModal() {
-    const currentOperator = this.operator();
-    if (!currentOperator) return;
-
-    const result = await this.ckycOperatorEditService.show(currentOperator);
-    
-    if (result) {
-      this.loadingService.show('Updating operator...');
-      try {
-        const updatePromises: Promise<any>[] = [];
-
-        if (result.name !== currentOperator.name) {
-          updatePromises.push(this.rpcService.cKYCOperatorChangeName(currentOperator.operator, result.name!));
-        }
-        
-        if (result.symbol !== currentOperator.symbol) {
-          updatePromises.push(this.rpcService.cKYCOperatorChangeSymbol(currentOperator.operator, result.symbol!));
-        }
-
-        const dataChanged = result.email !== currentOperator.email || result.mobile !== currentOperator.mobile;
-        if (dataChanged) {
-          updatePromises.push(this.rpcService.cKYCOperatorChangeData(currentOperator.operator, JSON.stringify({ email: result.email!, mobile: result.mobile! })));
-        }
-
-        await Promise.all(updatePromises);
-
-        await this.getOperatorDetails(currentOperator.operator);
-
-      } catch (error) {
-        console.error('Failed to update operator', error);
-        this.alertService.show('Update Failed', 'There was an error updating the operator details.');
-      } finally {
-        this.loadingService.hide();
-      }
-    }
-  }
 
 }

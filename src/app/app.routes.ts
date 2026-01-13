@@ -135,11 +135,6 @@ export const routes: Routes = [
             canActivate: [AuthGuard],
             children: [
               {
-                path: 'list',
-                loadComponent: () => import('./pages/secure/operators/list/ckyc-operators-list.page').then( m => m.CkycOperatorsListPage),
-                canActivate: [AuthGuard]
-              },
-              {
                 path: 'details/:address',
                 loadComponent: () => import('./pages/secure/operators/details/ckyc-operator-details.page').then( m => m.CkycOperatorDetailsPage),
                 canActivate: [AuthGuard]

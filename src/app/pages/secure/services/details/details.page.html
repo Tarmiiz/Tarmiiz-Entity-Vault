@@ -39,33 +39,35 @@
         >
           Information
         </button>
-        <button (click)="setTab('subscriptions')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'subscriptions'"
-          [class.border-b-2]="activeTab() === 'subscriptions'"
-          [class.border-blue-600]="activeTab() === 'subscriptions'"
-          [class.bg-blue-600]="activeTab() === 'subscriptions'"
-        >
-          Subscriptions
-        </button>
-        <button (click)="setTab('trxs')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'trxs'"
-          [class.border-b-2]="activeTab() === 'trxs'"
-          [class.border-blue-600]="activeTab() === 'trxs'"
-          [class.bg-blue-600]="activeTab() === 'trxs'"
-        >
-          Transactions
-        </button>          
-        <button (click)="setTab('actions')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'actions'"
-          [class.border-b-2]="activeTab() === 'actions'"
-          [class.border-blue-600]="activeTab() === 'actions'"
-          [class.bg-blue-600]="activeTab() === 'actions'"
-        >
-          Actions
-        </button>          
+        @if(isOwn){
+          <button (click)="setTab('subscriptions')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'subscriptions'"
+            [class.border-b-2]="activeTab() === 'subscriptions'"
+            [class.border-blue-600]="activeTab() === 'subscriptions'"
+            [class.bg-blue-600]="activeTab() === 'subscriptions'"
+          >
+            Subscriptions
+          </button>
+          <button (click)="setTab('trxs')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'trxs'"
+            [class.border-b-2]="activeTab() === 'trxs'"
+            [class.border-blue-600]="activeTab() === 'trxs'"
+            [class.bg-blue-600]="activeTab() === 'trxs'"
+          >
+            Transactions
+          </button>          
+          <button (click)="setTab('actions')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'actions'"
+            [class.border-b-2]="activeTab() === 'actions'"
+            [class.border-blue-600]="activeTab() === 'actions'"
+            [class.bg-blue-600]="activeTab() === 'actions'"
+          >
+            Logs
+          </button>          
+        }
       </div>
     </div>
 

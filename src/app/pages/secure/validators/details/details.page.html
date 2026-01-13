@@ -49,25 +49,25 @@
           >
             Services
           </button>
+          <button (click)="setTab('identities')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'identities'"
+            [class.border-b-2]="activeTab() === 'identities'"
+            [class.border-blue-600]="activeTab() === 'identities'"
+            [class.bg-blue-600]="activeTab() === 'identities'"
+          >
+            Identities
+          </button>
+          <button (click)="setTab('actions')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'actions'"
+            [class.border-b-2]="activeTab() === 'actions'"
+            [class.border-blue-600]="activeTab() === 'actions'"
+            [class.bg-blue-600]="activeTab() === 'actions'"
+          >
+            Logs
+          </button>          
         }
-        <button (click)="setTab('identities')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'identities'"
-          [class.border-b-2]="activeTab() === 'identities'"
-          [class.border-blue-600]="activeTab() === 'identities'"
-          [class.bg-blue-600]="activeTab() === 'identities'"
-        >
-          Identities
-        </button>
-        <button (click)="setTab('actions')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'actions'"
-          [class.border-b-2]="activeTab() === 'actions'"
-          [class.border-blue-600]="activeTab() === 'actions'"
-          [class.bg-blue-600]="activeTab() === 'actions'"
-        >
-          Actions
-        </button>          
       </div>
     </div>
 

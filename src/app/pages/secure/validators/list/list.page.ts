@@ -10,8 +10,6 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 
 import { Validator } from '../../../../shared/models/data.model';
 
-import { ModalValidatorAddService } from '../modals/modal-validator-add/modal-validator-add.service';
-
 @Component({
   selector: 'app-list',
   templateUrl: './list.page.html',
@@ -26,9 +24,9 @@ export class ListPage implements OnInit {
   private rpcService = inject(RpcService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
-  private ValidatorAddService = inject(ModalValidatorAddService);
 
   loadingValidators: boolean = false;
+  showAllValidators = signal(false);
 
   validatorsCount = 0
   validators = signal<Validator[]>([]);
@@ -59,11 +57,17 @@ export class ListPage implements OnInit {
       case 4: return 'bg-red-100 text-red-800';       // Deactivated
       default: return 'bg-gray-100 text-gray-800';
     }
-  } 
+  }
 
+  async onToggleChange(event: Event) {
+    const checkbox = event.target as HTMLInputElement;
+    this.showAllValidators.set(checkbox.checked);
+    await this.listValidators();
+  }  
+  
   async listValidators() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.validatorsListAll(1, 10);
+    const result = this.showAllValidators() ? await this.rpcService.validatorsListAll(1, 10) : await this.rpcService.validatorsListOwn(1, 10);
     // console.log('validators', result);
     if(result.result) {
       this.validatorsCount = result.result.count;
