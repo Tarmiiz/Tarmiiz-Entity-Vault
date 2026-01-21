@@ -1,0 +1,140 @@
+<app-header title="User Details"></app-header>
+
+<!-- breadcrumb -->
+<div class="px-6 py-4 border-b bg-gray-200">
+  @if (user(); as op) {
+    <nav class="flex" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a routerLink="/authorized/users/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+            Users
+          </a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ op.username }}</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+  } @else {
+      <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
+  }
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+    
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-t-lg shadow-md p-2">
+      <div class="flex border-b border-gray-200">
+
+        <button (click)="setTab('info')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'info'"
+          [class.border-b-2]="activeTab() === 'info'"
+          [class.border-blue-600]="activeTab() === 'info'"
+          [class.bg-blue-600]="activeTab() === 'info'"
+        >
+          Information
+        </button>
+        <button (click)="setTab('logs')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'logs'"
+          [class.border-b-2]="activeTab() === 'logs'"
+          [class.border-blue-600]="activeTab() === 'logs'"
+          [class.bg-blue-600]="activeTab() === 'logs'"
+        >
+          Logs
+        </button>          
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="bg-white rounded-b-lg shadow-md p-2">
+      @if (user(); as v) {
+
+        <!-- info tab -->
+        @if (activeTab() === 'info') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-3xl font-bold text-gray-800">{{ v.name }}</h2>
+                  <!-- <p class="text-lg text-gray-500">ID: {{ v.username }}</p> -->
+                </div>
+                <span 
+                  class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                  [class]="getStateClass(v.state)"
+                >
+                  {{ v.stateName }}
+                </span>
+              </div>
+    
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Username</p>
+                  <p class="text-base">{{ v.username }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Email</p>
+                  <p class="text-base">{{ v.email }}</p>
+                </div>
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Identity Contract</p>
+                  <p class="text-base">{{ v.did }}</p>
+                </div>
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Role</p>
+                  <p class="text-base">{{ v.roleName }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Created On</p>
+                  <p class="text-base">{{ v.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Last Modified</p>
+                  <p class="text-base">{{ v.lastModifiedAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                </div>
+              </div>
+              
+              <div class="mt-8 pt-6 border-t flex items-center justify-between space-x-3">
+                <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
+                  Edit User
+                </button>
+                <button (click)="openCredentialsModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                  Change Credentials
+                </button>
+                <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                  Change Role
+                </button>
+                <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                  Change State
+                </button>
+              </div>
+    
+            </div>
+          </div>
+        }
+        
+        <!-- logs tab -->
+        @if (activeTab() === 'logs') {
+        }
+
+      } 
+      @else {
+        <div class="text-center py-12 text-gray-500">
+          <p>Loading service details...</p>
+        </div>
+      }
+
+    </div>
+
+  
+  </div>
+</main>  
+
+<app-modal-user-edit></app-modal-user-edit>
+<app-modal-user-state></app-modal-user-state>
+<app-modal-user-edit-credentials></app-modal-user-edit-credentials>

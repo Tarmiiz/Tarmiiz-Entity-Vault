@@ -10,7 +10,7 @@ import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline
 
 import { AuthService } from '../../services/auth.service';
 import { RpcService } from '../../services/rpc.service';
-import { Regulator } from '../../models/data.model';
+import { Regulator, User } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
 
@@ -43,10 +43,16 @@ export class AuthorizedLayoutComponent {
   private rpcService = inject(RpcService);
 
   regulatorInfo!: Regulator;
+  userInfo!: User;
 
   constructor() {
-    addIcons({homeOutline,peopleOutline,fingerPrintOutline,snowOutline,globeOutline,layersOutline,personCircleOutline,idCardOutline,cogOutline,searchOutline,bookOutline,logOutOutline});
     if(this.rpcService.regulator) this.regulatorInfo = this.rpcService.regulator;
+    if(this.rpcService.user) this.userInfo = this.rpcService.user;
+  }
+  
+  async ionViewDidEnter() {
+    if(this.rpcService.regulator) this.regulatorInfo = this.rpcService.regulator;
+    if(this.rpcService.user) this.userInfo = this.rpcService.user;
   }
 
   async closeMenuOnMobile() {

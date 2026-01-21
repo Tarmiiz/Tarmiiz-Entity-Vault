@@ -62,25 +62,6 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "AccessEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
           "name": "caller",
           "type": "address"
         },
@@ -116,25 +97,6 @@
         }
       ],
       "name": "ControlEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "CredentialEvent",
       "type": "event"
     },
     {
@@ -280,6 +242,144 @@
         }
       ],
       "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "action",
+          "type": "string"
+        }
+      ],
+      "name": "UserAccess",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "role",
+          "type": "uint8"
+        }
+      ],
+      "name": "UserCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "action",
+          "type": "string"
+        }
+      ],
+      "name": "UserCredentialsChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        }
+      ],
+      "name": "UserDataChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "newRole",
+          "type": "uint8"
+        }
+      ],
+      "name": "UserRoleChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "newState",
+          "type": "uint8"
+        }
+      ],
+      "name": "UserStateChanged",
       "type": "event"
     },
     {
@@ -476,27 +576,112 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "secret",
-          "type": "bytes32"
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "userData",
+          "type": "string"
         }
       ],
-      "name": "changePassword",
-      "outputs": [],
+      "name": "changeUserData",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "commitment",
-      "outputs": [
+      "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "role",
+          "type": "uint8"
         }
       ],
-      "stateMutability": "view",
+      "name": "changeUserRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "state",
+          "type": "uint8"
+        }
+      ],
+      "name": "changeUserState",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "loginHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint8",
+          "name": "role",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "userData",
+          "type": "string"
+        },
+        {
+          "internalType": "uint8",
+          "name": "state",
+          "type": "uint8"
+        }
+      ],
+      "name": "createUser",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -532,26 +717,61 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "getAuthAddress",
-      "outputs": [
+      "inputs": [
         {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
+          "internalType": "uint256",
+          "name": "start",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
         }
       ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getAuthorizedUntil",
+      "name": "getAllUsers",
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "count",
           "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "userId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "userData",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "role",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "state",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "createdAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastModified",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct Users.User[]",
+          "name": "users",
+          "type": "tuple[]"
         }
       ],
       "stateMutability": "view",
@@ -688,34 +908,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "getRoleStats",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "totalRoles",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "totalAssignments",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string[]",
-          "name": "roleNames",
-          "type": "string[]"
-        },
-        {
-          "internalType": "uint256[]",
-          "name": "memberCounts",
-          "type": "uint256[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "address",
@@ -737,22 +929,22 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "internalType": "string[]",
-          "name": "roleNames",
-          "type": "string[]"
+          "internalType": "bytes32",
+          "name": "loginHash",
+          "type": "bytes32"
         }
       ],
-      "name": "hasAllRoles",
+      "name": "getUserCredentialsData",
       "outputs": [
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
+          "internalType": "uint256",
+          "name": "nonce",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
         }
       ],
       "stateMutability": "view",
@@ -761,22 +953,49 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "internalType": "string[]",
-          "name": "roleNames",
-          "type": "string[]"
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
         }
       ],
-      "name": "hasAnyRole",
+      "name": "getUserInfo",
       "outputs": [
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "userId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "userData",
+              "type": "string"
+            },
+            {
+              "internalType": "uint8",
+              "name": "role",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "state",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "createdAt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastModified",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct Users.User",
+          "name": "user",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",
@@ -874,6 +1093,11 @@
           "type": "address"
         },
         {
+          "internalType": "string",
+          "name": "userData",
+          "type": "string"
+        },
+        {
           "internalType": "bytes32",
           "name": "loginHash",
           "type": "bytes32"
@@ -923,19 +1147,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "isAuthorized",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "string",
@@ -978,6 +1189,11 @@
     },
     {
       "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "loginHash",
+          "type": "bytes32"
+        },
         {
           "internalType": "uint256[2]",
           "name": "a",
@@ -1022,19 +1238,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "nonce",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "string",
@@ -1043,19 +1246,6 @@
         }
       ],
       "name": "overrideName",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "secret",
-          "type": "bytes32"
-        }
-      ],
-      "name": "overridePassword",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1121,6 +1311,54 @@
       ],
       "name": "removeRole",
       "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "newLoginHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "newCommitment",
+          "type": "bytes32"
+        }
+      ],
+      "name": "resetUserCredentials",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "newCommitment",
+          "type": "bytes32"
+        }
+      ],
+      "name": "resetUserPassword",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1226,29 +1464,6 @@
           "type": "address"
         }
       ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "from",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "roleName",
-          "type": "string"
-        }
-      ],
-      "name": "transferRole",
-      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },

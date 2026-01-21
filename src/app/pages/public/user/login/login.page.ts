@@ -9,7 +9,10 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AlertComponent } from "../../../../shared/components/alerts/alert/alert.component";
 import { LoadingComponent } from "../../../../shared/components/alerts/loading/loading.component";
-import { environment } from 'src/environments/environment';
+
+import { environment } from '../../../../../environments/environment';
+
+import { CryptoService } from '../../../../shared/services/crypto.service';
 
 @Component({
   selector: 'app-login',
@@ -31,6 +34,7 @@ export class LoginPage implements OnInit {
   private router = inject(Router);
   private storageService = inject(StorageService);
   private rpcService = inject(RpcService);
+  private cryptoService = inject(CryptoService);
 
   formLogin!: FormGroup;
   isLoading = false;
@@ -40,7 +44,7 @@ export class LoginPage implements OnInit {
   constructor(
   ) { 
     this.formLogin = this.fb.group({
-      email: new FormControl('', [Validators.required, Validators.email]),
+      email: new FormControl('', [Validators.required]),
       password: new FormControl('', [Validators.required]),
       // contract: new FormControl(this.contractAddress, [Validators.required])
     });
@@ -50,10 +54,15 @@ export class LoginPage implements OnInit {
     await this.storageService.remove('sessionExpiry');
     await this.storageService.remove('contract');
     await this.storageService.remove('wallet');
-  }
-
-  async showAlert(header: string, message: string) {
-      this.alertService.show(header, message);
+    // const k = environment.aesKEY;
+    // const d = {
+    //   username: 'admin@regulator1.com',
+    //   name: 'Super Admin',
+    //   email: 'admin@regulator1.com',
+    //   did: ''
+    // };
+    // const e = await this.cryptoService.aesEncrypt(k, JSON.stringify(d));
+    // console.log(e);
   }
 
  async login() {
@@ -78,7 +87,6 @@ export class LoginPage implements OnInit {
 
       this.loadingService.show('Generating zero-knowledge proof and logging in...');
 
-
       // Attempt login with 1 hour session duration
       const loginResult = await this.rpcService.login(email, password, 3600);
       
@@ -94,7 +102,23 @@ export class LoginPage implements OnInit {
         this.router.navigate(['/authorized']);
       } else {
         console.error('Login failed:', loginResult.error);
-        await this.showAlert('Login Failed', loginResult.error || 'Unknown error occurred');
+        let errorMessage = 'An unexpected error occurred during login.';
+        if (loginResult.error) {
+          if (loginResult.error.includes('User not found')) {
+            errorMessage = 'User not found. Please check your credentials or register first.';
+          } else if (loginResult.error.includes('proof')) {
+            errorMessage = 'Failed to generate authentication proof. Please try again.';
+          } else if (loginResult.error.includes('network')) {
+            errorMessage = 'Network error. Please check your internet connection.';
+          } else if (loginResult.error.includes('Error: Assert Failed')) {
+            errorMessage = 'Login Failed. Please check your credentials.';
+          } else if (loginResult.error.includes('Error: execution reverted')) {
+            errorMessage = 'Login Failed. Please check your credentials.';
+          } else {
+            errorMessage = 'Login Failed. Please check your credentials.';
+          }
+        }
+        await this.alertService.show('Login Failed', errorMessage);
       }
 
     } 
@@ -102,10 +126,7 @@ export class LoginPage implements OnInit {
       this.loadingService.hide();
       this.isLoading = false;
       
-      console.error('Login error:', error);
-      
       let errorMessage = 'An unexpected error occurred during login.';
-      
       if (error.message) {
         if (error.message.includes('User not found')) {
           errorMessage = 'User not found. Please check your credentials or register first.';
@@ -115,12 +136,14 @@ export class LoginPage implements OnInit {
           errorMessage = 'Network error. Please check your internet connection.';
         } else if (error.message.includes('Error: Assert Failed')) {
           errorMessage = 'Login Failed. Please check your credentials.';
+        } else if (error.message.includes('Error: execution reverted')) {
+          errorMessage = 'Login Failed. Please check your credentials.';
         } else {
           errorMessage = error.message;
         }
       }
       
-      await this.showAlert('Login Error', errorMessage);
+      await this.alertService.show('Login Error', errorMessage);
     }
   }
 

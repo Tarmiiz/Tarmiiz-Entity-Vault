@@ -1,0 +1,35 @@
+@if (editUserService.isVisible()) {
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          Edit User: {{ editUserService.user()?.name }}
+        </h3>
+      </div>
+      <form [formGroup]="editForm" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4">
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+            <input type="text" id="name" formControlName="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+          </div>
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+            <input type="email" id="email" formControlName="email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+          </div>
+          <div>
+            <label for="did" class="block text-sm font-medium text-gray-700">Identity Contract</label>
+            <input type="text" id="did" formControlName="did" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+          <button type="button" (click)="onCancel()" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="!editForm.valid" class="px-4 py-2 bg-[#202a3b] text-white border border-transparent rounded-md shadow-sm hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { ethers, parseEther } from 'ethers';
+import { ethers } from 'ethers';
 // @ts-ignore
 import * as snarkjs from 'snarkjs';
 
@@ -10,15 +10,13 @@ import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User } from '../models/data.model';
 
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
-import { count } from 'rxjs';
-import { star } from 'ionicons/icons';
 
 export interface LoginResult {
   success: boolean;
@@ -71,6 +69,7 @@ export class RpcService {
   regulatorContract: any;
 
   regulator!: Regulator;
+  user!: User;
 
   assetContract: any;
 
@@ -140,22 +139,22 @@ export class RpcService {
     }
   }
 
-  async generateZKPData(email: string, password: string) {
+  async generateZKPData(username: string, password: string) {
     try {
       // Initialize ParseProofUtils
       await ParseProofUtils.init();
   
       // Convert to BigInts
-      const emailBigInt = ParseProofUtils.stringToBigInt(email);
+      const usernameBigInt = ParseProofUtils.stringToBigInt(username);
       const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
       const globalSaltBigInt = BigInt(this.globalSalt);
   
       // Generate hashes for contract
-      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
-      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);
+      const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
+      const secretHex = ParseProofUtils.generateCommitment(usernameBigInt, passwordBigInt, globalSaltBigInt);
 
       // Generate login data
-      return { loginHash: emailHashHex, secret: secretHex, error: '' };
+      return { loginHash: usernameHashHex, secret: secretHex, error: '' };
     }
     catch (error: any) {
       return { result: null, error: 'Error generating login'};
@@ -303,38 +302,37 @@ export class RpcService {
       await ParseProofUtils.init();
 
       // Convert credentials to BigInts using ParseProofUtils (same as backend)
-      const emailBigInt = ParseProofUtils.stringToBigInt(username);
+      const usernameBigInt = ParseProofUtils.stringToBigInt(username);
       const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
       const globalSaltBigInt = BigInt(this.globalSalt);
       
       // Generate contract lookup hash using ParseProofUtils
-      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
+      const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
       
       // Get nonce and stored commitment
-      const nonce = await this.regulatorContract.nonce();
-      const storedCommitmentHex = await this.regulatorContract.commitment();
+      const { nonce, commitment: storedCommitmentHex } = await this.regulatorContract.getUserCredentialsData(usernameHashHex);
       
       // Convert stored commitment to circuit format
       const storedCommitmentBigInt = BigInt(storedCommitmentHex);
       const storedCommitmentString = storedCommitmentBigInt.toString();
 
       // Get emailHash for circuit using ParseProofUtils (exactly like backend)
-      const emailHashBigInt = BigInt(emailHashHex);
-      const emailHashString = emailHashBigInt.toString();
+      const usernameHashBigInt = BigInt(usernameHashHex);
+      const usernameHashString = usernameHashBigInt.toString();
 
       // Prepare circuit input (same structure as backend)
       const circuitInput = {
         // Private inputs
-        email: emailBigInt.toString(),
+        email: usernameBigInt.toString(),
         password: passwordBigInt.toString(),
         salt: globalSaltBigInt.toString(),
         // Public inputs
-        emailHash: emailHashString,
+        emailHash: usernameHashString,
         storedCommitment: storedCommitmentString,
         nonce: nonce.toString()
       };
 
-      // Generate proof - you'll need the circuit files in your assets
+      // Generate proof
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
         circuitInput,
         "assets/zk/Login.wasm",
@@ -344,13 +342,14 @@ export class RpcService {
       // Parse proof for contract using ParseProofUtils
       const { a, b, c, input: proofInput } = await ParseProofUtils.parseProof({ proof, publicSignals });
 
-      // Sign message with new wallet (exactly like backend)
+      // Sign message with new wallet
       const message = ethers.solidityPacked(["string", "address"], ["Set owner to:", this.key.address]);
       const messageHash = ethers.keccak256(message);
       const signedMessage = await this.signer.signMessage(ethers.getBytes(messageHash));
 
-      // Submit login transaction (exactly like backend)
+      // Submit login transaction
       const tx = await this.regulatorContract.login(
+        usernameHashHex, 
         [a[0].toString(), a[1].toString()], 
         [[b[0][0].toString(), b[0][1].toString()], [b[1][0].toString(), b[1][1].toString()]], 
         [c[0].toString(), c[1].toString()], 
@@ -358,26 +357,38 @@ export class RpcService {
         signedMessage, 
         sessionDuration, 
         { gasLimit: 2000000 }
-      );
-      await tx.wait();
+      );      
+      const receipt = await tx.wait();
 
-      const authorized = await this.isAuthorized();
-      // console.log('authorized', authorized);
-      if(authorized) {
-        this.storageService.set('contract', this.regulatorContractAddress);
-        this.storageService.set('wallet', JSON.stringify(this.key));
-        this.authService.login();
-        return {
-          success: true,
-          contract: this.regulatorContractAddress
-        };
-      }
-      else {
-        return {
-          success: false,
-          contract: this.regulatorContractAddress
-        };
-      }
+      // listen to contract event
+      const eventlog = receipt.logs?.map((log: any) => this.regulatorContract.interface.parseLog(log))?.find((e: any) => e?.name === 'UserAccess');
+      if (eventlog) {
+        const { userId, action } = eventlog.args;
+
+        // get user info
+        const userInfo = await this.userInfo(Number(userId));
+        if(userInfo.result && userInfo.result.state === 2) {
+          this.user = userInfo.result;
+          this.storageService.set('contract', this.regulatorContractAddress);
+          this.storageService.set('wallet', JSON.stringify(this.key));
+          this.storageService.set('user', JSON.stringify(this.user));
+          this.authService.login();
+          return {
+            success: true,
+            contract: this.regulatorContractAddress
+          };
+        }
+        else {
+          return {
+            success: false,
+            contract: this.regulatorContractAddress
+          };
+        }
+      } else {
+        console.log('No OperatorEvent event found in receipt');
+        return { success: false };
+      }          
+
     } 
     catch (error: any) {
       console.error('Login error:', error);
@@ -648,6 +659,161 @@ export class RpcService {
       return { result: null, error: 'Error fetching regulator info: ' + error.message};
     }
   }  
+
+//----------------------------------------------------------------------------------------------------------------------------------------
+
+  async userInfo(userId: number) {    
+        console.log('userId', userId);
+
+    try {
+      const result = await this.regulatorContract.getUserInfo(userId);
+      console.log('result', result);
+      if(result) {
+
+        await this.connectGlobalVariables();
+
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+        const stateId = Number(Number(result[3]));
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }  
+
+        const rolesResult = await this.getGlobalVariableByCategory('User Role');
+        const roleId = Number(Number(result[2]));
+        let roleName = 'Unknown';
+        if (rolesResult.result) {
+          const roleVariable = rolesResult.result.find((v: any) => v.variableId === roleId);
+          roleName = roleVariable?.name || 'Unknown';
+        }
+        
+        const userData = await this.cryptoService.aesDecrypt(environment.aesKEY, result[1]);
+        const { username, name, email, did } = JSON.parse(userData);
+
+        const user: User = {
+          username,
+          name,
+          email,
+          did,
+          userId: Number(result[0]),
+          state: stateId,
+          stateName,
+          role: roleId,
+          roleName,
+          createdAt: Number(result[4]),
+          lastModifiedAt: Number(result[5])
+        }
+        return { result: user, error: '' };
+      }
+      else {
+        return { result: null, error: 'Error fetching info'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching info'};
+    }
+  }
+
+  async usersList(start: number, offset: number) {
+    try {
+      const result = await this.regulatorContract.getAllUsers(start, offset);
+      if (result) {
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+        const rolesResult = await this.getGlobalVariableByCategory('User Role');
+        const count = Number(result.count);
+        const users = result.users.map(async (user: any) => {
+          const stateId = Number(Number(user[3]));
+          const stateName = statesResult.result.find((v: any) => v.variableId === stateId)?.name || 'Unknown';
+          const roleId = Number(Number(user[2]));
+          const roleName = rolesResult.result.find((v: any) => v.variableId === roleId)?.name || 'Unknown';
+          const userData = await this.cryptoService.aesDecrypt(environment.aesKEY, user[1]);
+        const { username, name, email, did } = JSON.parse(userData);
+
+          return {
+            username,
+            name,
+            email,
+            did,
+            userId: Number(user[0]),
+            state: stateId,
+            stateName,
+            role: roleId,
+            roleName,
+            createdAt: Number(user[4]),
+            lastModifiedAt: Number(user[5])
+          };
+        })
+        return { result: { count, users: await Promise.all(users) }, error: '' };
+
+      } else {
+        return { result: null, error: 'Error fetching validators list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching validators list: ' + error.message};
+    }
+  }
+
+  async userAdd(username: string, password: string, role: number, userData: string) {
+    try {
+      // generate login data
+      const { loginHash, secret } = await this.generateZKPData(username, password);
+
+      // encrypt data
+      const encryptedUserData = await this.cryptoService.aesEncrypt(environment.aesKEY, userData);
+
+      // register
+      const tx = await this.regulatorContract.createUser(loginHash, secret, role, encryptedUserData, 1);
+      const receipt = await tx.wait();
+
+      return { result: receipt, error: '' };
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error adding new user'};
+    }
+  }
+
+  async userChangeData(userId: number, userData: string) {
+    try {
+      // encrypt data
+      const encryptedUserData = await this.cryptoService.aesEncrypt(environment.aesKEY, userData);
+
+      const tx = await this.regulatorContract.changeUserData(userId, encryptedUserData);
+      const receipt = await tx.wait();
+      return { result: receipt, error: '' };
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error adding new user'};
+    }
+  }
+
+  async userChangeCredentials(userId: number, username: string, password: string) {
+    try {
+
+      // generate login data
+      const { loginHash, secret } = await this.generateZKPData(username, password);
+
+      const tx = await this.regulatorContract.resetUserCredentials(userId, loginHash, secret);
+      const receipt = await tx.wait();
+      return { result: receipt, error: '' };
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error adding new user'};
+    }
+  }
+
+  async userChangeState(userId: number, state: number) {
+    try {
+      const tx = await this.regulatorContract.changeUserState(userId, state);
+      const receipt = await tx.wait();
+      return { result: receipt, error: '' };
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error adding new user'};
+    }
+  }
 
 //----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1653,7 +1819,7 @@ export class RpcService {
       const eventlog = receipt.logs?.map((log: any) => apiContract.interface.parseLog(log))?.find((e: any) => e?.name === 'ValidatorEvent');
       if (eventlog) {
         const { sender, validator, action } = eventlog.args;
-        console.log(validator, action);
+        // console.log(validator, action);
         return {
           success: true,
           contract: validator,
@@ -1721,237 +1887,6 @@ export class RpcService {
       };
     }
   }
-
-  
-  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  // Asset Contract
-  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  
-  // async assetsList() {   
-  //   try {
-  //     const result = await this.regulatorContract.listAssets(1, 100);
-  //     if(result) {
-  //       const count = Number(result[0]);
-  //       const addresses = result[1];
-  //       let assets: any[] = [];
-  //       if (count > 0) {
-  //         for (let i = 0; i < count; i++) {
-  //           const asset = await this.assetInfo(addresses[i]);
-  //           // console.log('asset', asset);
-  //           if(asset.result) {
-  //             assets.push(asset.result);
-  //           }
-  //         }
-  //       }
-  //       return { result: { count, assets }, error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching assets list'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //     return { result: null, error: 'Error fetching assets list'};
-  //   }
-  // }
-  // async connectAssetContract(address: string) {
-  //   try {
-  //     this.assetContract = new ethers.Contract(address, AssetTemplateAbi, this.signer);
-  //   }
-  //   catch (error: any) {
-  //     console.error('Asset connection error:', error);
-  //   }
-  // }
-
-  // async assetInfo(address: string) {
-  //   try {
-
-  //     await this.connectAssetContract(address);
-  //     const result = await this.assetContract.info();
-  //     if(result) { 
-  //       // const asset: Asset = new Asset(result[0], result[1], result[2], result[3], result[4], result[5], Number(result[6]), Number(result[7]), result[8], Number(result[9]), Number(result[10]), Number(result[11]), Number(result[12]), Number(result[13]));
-        
-  //       const tokenTypeName = this.globalVariablesList.find(variable => variable.category === 'Asset Token Type' && variable.variableId === Number(result[6]))?.name;
-  //       const assetTypeName = this.globalVariablesList.find(variable => variable.category === 'Asset Type' && variable.variableId === Number(result[7]))?.name;
-  //       const stateName = this.globalVariablesList.find(variable => variable.category === 'Asset State' && variable.variableId === Number(result[13]))?.name;
-
-  //       const asset: Asset = {
-  //         address: result[0],
-  //         name: result[1],
-  //         symbol: result[2],
-  //         issuer: result[3],
-  //         manager: result[4],
-  //         regulator: result[5],
-  //         tokenType: Number(result[6]),
-  //         tokenTypeName: tokenTypeName!,
-  //         assetType: Number(result[7]),
-  //         assetTypeName: assetTypeName!,
-  //         data: result[8],
-  //         totalSupply: Number(result[9]),
-  //         circulating: Number(result[10]),
-  //         currencyCode: Number(result[11]),
-  //         createdOn: Number(result[12]),
-  //         state: Number(result[13]),
-  //         stateName: stateName!
-  //       }
-  //       return { result: asset, error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching asset info'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //     return { result: null, error: 'Error fetching asset info'};
-  //   }
-
-  // }
-
-  // async assetIsSuspended(address: string) {
-  //   try {
-  //     const iface = new ethers.Interface(["function isSuspended() external view returns (bool)"]);
-  //     const callData = iface.encodeFunctionData('isSuspended', []);
-  //     const result = await this.callExternalStatic(address, callData);
-  //     if (result.success && result.data !== null) {
-  //       console.log('result data', result.data);
-  //       const decodedResult = iface.decodeFunctionResult('isSuspended', result.data);
-  //       console.log('decodedResult', decodedResult);
-  //       return { result: decodedResult[0], error: '' };
-  //     } else {
-  //       return { result: null, error: 'Error fetching asset suspension status' };
-  //     }
-  //   }
-  //   catch (error: any) {
-  //     return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
-  //   }
-
-  // }
-
-  // async assetSuspend(address: string, state: boolean) {
-  //   try {
-  //     console.log('state', state);
-  //     const iface = new ethers.Interface(["function suspend(bool halt) external returns (bool)"]);
-  //     const callData = iface.encodeFunctionData('suspend', [state]);
-  //     const result = await this.callExternal(address, callData);
-  //     console.log('result', result);
-  //     if(result !== null) {
-  //       return { result, error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching asset suspension status'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //     return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
-  //   }
-
-  // }
-
-  // async assetHoldersList(address: string, start: number, offset: number) {
-  //   try {
-  //     await this.connectAssetContract(address);
-  //     const result = await this.assetContract.getHolders(start, offset);
-  //     if(result) { 
-  //       const holders: AssetHolder = {
-  //         address: result[0],
-  //         balance: Number(result[1])
-  //       }
-  
-  //       return { result: holders , error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching asset holders'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //       return { result: null, error: 'Error fetching asset holders'};
-  //   }
-  // }
-
-  // async assetBalanceOf(address: string, account: string) {
-  //   try {
-  //     await this.connectAssetContract(address);
-  //     const result = await this.assetContract.balanceOf(account);
-  //     if(result) { 
-  //       return { result, error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching asset info'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //     return { result: null, error: 'Error fetching asset info'};
-  //   }
-
-  // }
-
-  // async assetSupplyChanges(address: string, start: number, offset: number) {
-  //   try {
-  //     await this.connectAssetContract(address);
-  //     const result = await this.assetContract.getSupplyChanges(start, offset);
-  //     console.log('result', result);
-  //     if(result) { 
-
-  //       const changes: AssetSupplyChange[] = result[1].map((change: any) => ({
-  //         changeType: Number(change[0]),
-  //         changeTypeName: this.globalVariablesList.find(variable => variable.category === 'Asset Supply Change' && variable.variableId === Number(change[0]))?.name,
-  //         amount: Number(change[1]),
-  //         timestamp: Number(change[2])
-  //       }))
-
-  //       return { result: changes , error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching asset supply changes'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //       return { result: null, error: 'Error fetching asset supply changes'};
-  //   }
-  // }
-
-  // async assetPriceCurrent(address: string) {
-  //   try {
-  //     await this.connectAssetContract(address);
-  //     const result = await this.assetContract.getCurrentPrice();
-  //     if(result) { 
-  //       const price: AssetPrice = {
-  //         bid: Number(ethers.formatEther(result[0])),
-  //         ask: Number(ethers.formatEther(result[1])),
-  //         timestamp: Number(result[2])
-  //       };
-  //       return { result: { price } , error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching asset price history'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //       return { result: null, error: 'Error fetching asset price history: ' + error};
-  //   }
-  // }
-
-  // async assetPriceHistory(address: string, start: number, offset: number) {
-  //   try {
-  //     await this.connectAssetContract(address);
-  //     const result = await this.assetContract.getPriceHistory(start, offset);
-  //     if(result) { 
-  //       const count = Number(result[0]);
-  //       const prices: AssetPrice[] = result[1].map((price: any) => ({
-  //         bid: Number(ethers.formatEther(price[0])),
-  //         ask: Number(ethers.formatEther(price[1])),
-  //         timestamp: Number(price[2])
-  //       }))
-  //       prices.reverse();
-  //       return { result: { count, prices } , error: ''};
-  //     }
-  //     else {
-  //       return { result: null, error: 'Error fetching asset price history'};
-  //     }
-  //   }
-  //   catch (error: any) {
-  //       return { result: null, error: 'Error fetching asset price history: ' + error};
-  //   }
-  // }
-
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Event Functions

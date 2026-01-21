@@ -1,3 +1,19 @@
+export class User {
+  constructor (
+    public userId: number,
+    public name: string,
+    public username: string,
+    public email: string,
+    public did: string,
+    public state: number,
+    public stateName: string,
+    public role: number,
+    public roleName: string,
+    public createdAt: number,
+    public lastModifiedAt: number
+  ){}
+}
+
 export class Key {
   constructor (
     public address: string,

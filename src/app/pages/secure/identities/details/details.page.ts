@@ -185,13 +185,13 @@ export class UserDetailsPage implements OnInit {
         if (idFrontCID) {
           const img = await this.apiService.ipfsFetchDataImage(idFrontCID);
           if (img) {
-            this.idFront = img.src;  // Extract the src from HTMLImageElement
+            this.idFront = img.src;
           }
         }
         if (idBackCID) {
           const img = await this.apiService.ipfsFetchDataImage(idBackCID);
           if (img) {
-            this.idBack = img.src;  // Extract the src from HTMLImageElement
+            this.idBack = img.src;
           }
         } 
         // console.log('metadata', this.metadata());

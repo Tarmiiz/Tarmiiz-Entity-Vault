@@ -32,6 +32,7 @@ export class AuthService {
     await this.storageService.remove('sessionExpiry');
     await this.storageService.remove('contract');
     await this.storageService.remove('wallet');
+    await this.storageService.remove('user');
     this.loadingService.hide();
     this.router.navigate(['/public/user/login']);
 

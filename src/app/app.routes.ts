@@ -207,6 +207,27 @@ export const routes: Routes = [
         ]
       },
       {
+        path: 'users',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/users/list/list.page').then( m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'details/:id',
+            loadComponent: () => import('./pages/secure/users/details/details.page').then( m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/dashboard',
+            pathMatch: 'full',
+          },          
+        ]
+      },
+      {
         path: '',
         redirectTo: '/authorized/dashboard',
         pathMatch: 'full',
