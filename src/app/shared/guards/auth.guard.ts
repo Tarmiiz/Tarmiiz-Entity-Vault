@@ -18,10 +18,12 @@ export class AuthGuard implements CanActivate {
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Promise<boolean | UrlTree> {
     const sessionExpiry = await this.storageService.get('sessionExpiry');
-
+    
+    
     if (sessionExpiry && sessionExpiry && new Date().getTime() < +sessionExpiry) {
       await this.rpcService.setWallet();
       await this.rpcService.connectRegulatorContract()
+      console.log('can activate', sessionExpiry);
       return true;
     }
 

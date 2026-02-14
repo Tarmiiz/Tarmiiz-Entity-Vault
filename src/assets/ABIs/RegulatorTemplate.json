@@ -179,62 +179,6 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "ServiceEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "service",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "subscription",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "SubscriptionEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": false,
           "internalType": "address",
           "name": "account",
@@ -1073,41 +1017,6 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "regulatorApiAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "validatorsContract",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "servicesContract",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "subscribersContract",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "userData",
-          "type": "string"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "loginHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "secret",
-          "type": "bytes32"
-        },
-        {
           "internalType": "string",
           "name": "name",
           "type": "string"
@@ -1126,6 +1035,31 @@
           "internalType": "uint256",
           "name": "countryCode",
           "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "adminHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "adminSecret",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "adminData",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "apiAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "validatorsContract",
+          "type": "address"
         }
       ],
       "name": "initialize",
@@ -1384,45 +1318,6 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "loginHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "secret",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "data",
-          "type": "string"
-        },
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        }
-      ],
-      "name": "serviceAdd",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "address",
           "name": "newOwner",
           "type": "address"
@@ -1430,40 +1325,6 @@
       ],
       "name": "setOwner",
       "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "service",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "subscriber",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "address",
-          "name": "subscriberAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "uint8",
-          "name": "state",
-          "type": "uint8"
-        }
-      ],
-      "name": "subscriberAdd",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "subscription",
-          "type": "address"
-        }
-      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1476,6 +1337,11 @@
     },
     {
       "inputs": [
+        {
+          "internalType": "string",
+          "name": "userData",
+          "type": "string"
+        },
         {
           "internalType": "bytes32",
           "name": "loginHash",

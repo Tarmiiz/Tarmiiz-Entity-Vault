@@ -10,9 +10,8 @@ import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset } from '../models/data.model';
 
-import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
 
@@ -46,7 +45,6 @@ export interface AllEventsData {
 })
 export class RpcService {
 
-  private authService = inject(AuthService);
   private storageService = inject(StorageService);
   private cryptoService = inject(CryptoService);
 
@@ -77,16 +75,17 @@ export class RpcService {
   validatorAddress = signal<string>('');
   serviceAddress = signal<string>('');
   subscriptionAddress = signal<string>('');
+  assetsProxyAddress = signal<string>('');
 
   constructor() {}
   
   async init(){
     await this.createWallet();
-    await this.connectRegulatorContract();
-    await this.getContracts();
     await this.connectGlobalVariables();
-    await this.getCountriesList();
-    await this.getCategoriesList();
+    await this.connectRegulatorContract();
+    // await this.getContracts();
+    // await this.getCountriesList();
+    // await this.getCategoriesList();
   }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -286,6 +285,10 @@ export class RpcService {
     this.serviceAddress.set(services.result);
     const subscriptions = await this.externalContractGet('subscriptions');
     this.subscriptionAddress.set(subscriptions.result);
+    const assetsProxy = await this.externalContractGet('assets');
+    this.assetsProxyAddress.set(assetsProxy.result);
+    // this.assetsProxyAddress.set('0x7549940ddb2a138f6337921f54abD7032f7cF1eF');
+    
   }
 
   async login(username: string, password: string, sessionDuration: number = 3600) {
@@ -364,26 +367,11 @@ export class RpcService {
       const eventlog = receipt.logs?.map((log: any) => this.regulatorContract.interface.parseLog(log))?.find((e: any) => e?.name === 'UserAccess');
       if (eventlog) {
         const { userId, action } = eventlog.args;
-
-        // get user info
-        const userInfo = await this.userInfo(Number(userId));
-        if(userInfo.result && userInfo.result.state === 2) {
-          this.user = userInfo.result;
-          this.storageService.set('contract', this.regulatorContractAddress);
-          this.storageService.set('wallet', JSON.stringify(this.key));
-          this.storageService.set('user', JSON.stringify(this.user));
-          this.authService.login();
-          return {
-            success: true,
-            contract: this.regulatorContractAddress
-          };
-        }
-        else {
-          return {
-            success: false,
-            contract: this.regulatorContractAddress
-          };
-        }
+        return {
+          success: true,
+          userId,
+          key: this.key
+        };
       } else {
         console.log('No OperatorEvent event found in receipt');
         return { success: false };
@@ -541,7 +529,7 @@ export class RpcService {
       await this.connectRegulatorContract();
       const tx = await this.regulatorContract.callExternal(address, callData, { gasLimit: 5000000 });
       const receipt = await tx.wait();
-      return { result: receipt.blockNumber, error: '' };
+      return { result: receipt, error: '' };
     }
     catch (error: any) {
       console.error('Full error:', error);
@@ -667,7 +655,6 @@ export class RpcService {
 
     try {
       const result = await this.regulatorContract.getUserInfo(userId);
-      console.log('result', result);
       if(result) {
 
         await this.connectGlobalVariables();
@@ -1183,14 +1170,13 @@ export class RpcService {
     try {
       if(!this.serviceAddress()) await this.getContracts()
       const iface = new ethers.Interface([
-        "function listByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address regulator, address validator, string name, string data, uint256 countryCode, uint8 state)[] services)"
+        "function servicesListByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, string name, string data, uint256 countryCode, uint8 verificationLevel, address regulator, address validator, uint8 state)[] services)"
       ]);
       
-      const callData = iface.encodeFunctionData('listByCountry', [818, start, offset]);
+      const callData = iface.encodeFunctionData('servicesListByCountry', [818, start, offset]);
       const result = await this.callExternalStatic(this.serviceAddress(), callData);
       if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('listByCountry', result.data);
-
+        const decodedResult = iface.decodeFunctionResult('servicesListByCountry', result.data);
         const { count, services } = await this.processServicesList(decodedResult);        
         return { result: { count, services }, error: '' };
       } else {
@@ -1204,15 +1190,15 @@ export class RpcService {
 
   async servicesListOwn(start: number, offset: number) {
     try {
-      if(!this.serviceAddress()) await this.getContracts()
+      if(!this.serviceAddress()) await this.getContracts();
       const iface = new ethers.Interface([
-        "function listByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address regulator, address validator, string name, string data, uint256 countryCode, uint8 state)[] services)"
+        "function servicesListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, string name, string data, uint256 countryCode, uint8 verificationLevel, address regulator, address validator, uint8 state)[] services)"
       ]);
       
-      const callData = iface.encodeFunctionData('listByRegulator', [start, offset]);
+      const callData = iface.encodeFunctionData('servicesListByRegulator', [start, offset]);
       const result = await this.callExternalStatic(this.serviceAddress(), callData);
       if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('listByRegulator', result.data);
+        const decodedResult = iface.decodeFunctionResult('servicesListByRegulator', result.data);
         const { count, services } = await this.processServicesList(decodedResult);        
         return { result: { count, services }, error: '' };
       } else {
@@ -1227,7 +1213,7 @@ export class RpcService {
   async serviceInfo(serviceAddress: string) {
     try {
       const iface = new ethers.Interface([
-        "function info() external view returns (tuple(address service, address regulator, address validator, string name, string data, uint256 countryCode, uint8 state))"
+        "function info() external view returns (tuple(address service, string name, string data, uint256 countryCode, uint8 verificationLevel, address regulator, address validator, uint8 state))"
       ]);
       
       const callData = iface.encodeFunctionData('info');
@@ -1235,20 +1221,28 @@ export class RpcService {
       if (result.success && result.data !== null) {
        
         const decodedResult = iface.decodeFunctionResult('info', result.data);
-        const parsedData = JSON.parse(decodedResult[0][4]);
+        const parsedData = JSON.parse(decodedResult[0][2]);
 
         // Fetch state names once
         await this.connectGlobalVariables();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
-        const stateId = Number(decodedResult[0][6]);
+        const stateId = Number(decodedResult[0][7]);
         let stateName = 'Unknown';
         if (statesResult.result) {
           const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
           stateName = stateVariable?.name || 'Unknown';
         }
 
+        const vLevel = await this.getGlobalVariableByCategory('Identity Verification Level');
+        const vLevelId = Number(decodedResult[0][4]);
+        let vLevelName = 'Unknown';
+        if (vLevel.result) {
+          const vLevelVariable = vLevel.result.find((v: any) => v.variableId === vLevelId);
+          vLevelName = vLevelVariable?.name || 'Unknown';
+        }
+
         // get country name
-        const countryCode = Number(decodedResult[0][5]);
+        const countryCode = Number(decodedResult[0][3]);
         let countryName = 'Unknown';
         if (this.countriesList.length === 0) {
           await this.getCountriesList();
@@ -1257,7 +1251,7 @@ export class RpcService {
         countryName = country?.nameShort || 'Unknown';        
 
         // get regulator name
-        const regulatorAddress = decodedResult[0][1];
+        const regulatorAddress = decodedResult[0][5];
         let regulatorName = 'Unknown';
         let regulatorSymbol = 'Unknown';
         const regulatorsResult = await this.regulatorInfo(regulatorAddress);
@@ -1266,7 +1260,7 @@ export class RpcService {
         regulatorSymbol = regulator?.symbol || 'Unknown';
 
         // get validator name
-        const validatorAddress = decodedResult[0][2];
+        const validatorAddress = decodedResult[0][6];
         let validatorName = 'Unknown';
         const validatorResult = await this.validatorInfo(validatorAddress);
         const validator = validatorResult.result?.validator;
@@ -1274,19 +1268,21 @@ export class RpcService {
 
         const service: Service = {
           address: decodedResult[0][0],
-          regulator: decodedResult[0][1],
+          regulator: regulatorAddress,
           regulatorName,
           regulatorSymbol,
-          validator: decodedResult[0][2],
+          validator: validatorAddress,
           validatorName,
-          name: decodedResult[0][3],
-          data: decodedResult[0][4],
+          verificationLevel: vLevelId,
+          verificationLevelName: vLevelName,
+          name: decodedResult[0][1],
+          data: decodedResult[0][2],
           email: parsedData.email,
           mobile: parsedData.mobile,
           website: parsedData.website,
-          countryCode: Number(decodedResult[0][5]),
+          countryCode: countryCode,
           countryName,
-          state: Number(decodedResult[0][6]),
+          state: stateId,
           stateName
         };
 
@@ -1305,6 +1301,7 @@ export class RpcService {
         // Fetch state names once for all validators
         await this.connectGlobalVariables();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
+        const vLevelResult = await this.getGlobalVariableByCategory('Identity Verification Level');
 
         // check countries list
         if (this.countriesList.length === 0) {
@@ -1329,6 +1326,13 @@ export class RpcService {
               const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
               stateName = stateVariable?.name || 'Unknown';
             }  
+
+            const vLevelId = Number(op.verificationLevel);
+            let vLevelName = 'Unknown';
+            if (vLevelResult.result) {
+              const vLevelVariable = vLevelResult.result.find((v: any) => v.variableId === vLevelId);
+              vLevelName = vLevelVariable?.name || 'Unknown';
+            }            
   
             // Get country name for this operator
             const countryCode = Number(op.countryCode);
@@ -1344,6 +1348,14 @@ export class RpcService {
             regulatorName = regulator?.name || 'Unknown';
             regulatorSymbol = regulator?.symbol || 'Unknown';
   
+
+            // get validator name
+            const validatorAddress = op.validator;
+            let validatorName = 'Unknown';
+            const validatorResult = await this.validatorInfo(validatorAddress);
+            const validator = validatorResult.result?.validator;
+            validatorName = validator?.name || 'Unknown';
+
             return {
               address: op.service,
               name: op.name,
@@ -1357,7 +1369,10 @@ export class RpcService {
               regulatorName,
               regulatorSymbol,
               validator: op.validator,
-              state: Number(op.state),
+              validatorName,
+              verificationLevel: vLevelId,
+              verificationLevelName: vLevelName,
+              state: stateId,
               stateName
             };
           })
@@ -1788,6 +1803,308 @@ export class RpcService {
   }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  async assetInfo(assetAddress: string) {
+    try {
+      const iface = new ethers.Interface([
+        "function info() external view returns (tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address regulator, bool suspended, uint8 state) asset)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('info');
+      const result = await this.callExternalStatic(assetAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('info', result.data);
+
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Asset State');
+        const tokenTypeResult = await this.getGlobalVariableByCategory('Asset Token Type');
+        const assetTypeResult = await this.getGlobalVariableByCategory('Asset Type');
+
+        // Get state name for this validator
+        const stateId = Number(decodedResult[0][14]);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }
+        
+        const tokenTypeId = Number(decodedResult[0][3]);
+        let tokenTypeName = 'Unknown';
+        if (tokenTypeResult.result) {
+          const tokenTypeVariable = tokenTypeResult.result.find((v: any) => v.variableId === tokenTypeId);
+          tokenTypeName = tokenTypeVariable?.name || 'Unknown';
+        }  
+
+        const assetTypeId = Number(decodedResult[0][4]);
+        let assetTypeName = 'Unknown';
+        if (assetTypeResult.result) {
+          const assetTypeVariable = assetTypeResult.result.find((v: any) => v.variableId === assetTypeId);
+          assetTypeName = assetTypeVariable?.name || 'Unknown';
+        }  
+
+        // Get country name for this operator
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }        
+        const countryCode = Number(decodedResult[0][8]);
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        const countryName = country?.nameShort || 'Unknown';
+        const currencyCode = country?.currencyCode || 'Unknown';
+        const currencyName = country?.currencyName || 'Unknown';
+        
+        // get regulator name
+        const regulatorAddress = decodedResult[0][12];
+        let regulatorName = 'Unknown';
+        let regulatorSymbol = 'Unknown';
+        const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+        const regulator = regulatorsResult.result?.regulator;
+        regulatorName = regulator?.name || 'Unknown';
+        regulatorSymbol = regulator?.symbol || 'Unknown';
+
+        // get issuer name
+        const issuerAddress = decodedResult[0][10];
+        let issuerName = 'Unknown';
+        const issuerResult = await this.serviceInfo(issuerAddress);
+        const issuer = issuerResult.result?.service;
+        issuerName = issuer?.name || 'Unknown';
+
+        // get manager name
+        const managerAddress = decodedResult[0][11];
+        let managerName = 'Unknown';
+        const managerResult = await this.serviceInfo(managerAddress);
+        const manager = managerResult.result?.service;
+        managerName = manager?.name || 'Unknown';
+
+        const asset: Asset = {
+          address: decodedResult[0][0],
+          name: decodedResult[0][1],
+          symbol: decodedResult[0][2],
+          tokenType: tokenTypeId,
+          tokenTypeName,
+          assetType: assetTypeId,
+          assetTypeName,
+          metadata: decodedResult[0][5],
+          totalSupply: Number(decodedResult[0][6]),
+          circulating: Number(decodedResult[0][7]),
+          countryCode: countryCode,
+          countryName,
+          currencyCode,
+          currencyName,
+          createdOn: Number(decodedResult[0][9]),
+          issuer: issuerAddress,
+          issuerName,
+          manager: managerAddress,
+          managerName,
+          regulator: regulatorAddress,
+          regulatorName,
+          regulatorSymbol,
+          suspended: decodedResult[0][13],
+          state: stateId,
+          stateName
+        };
+
+        return { result: { asset }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
+  }
+
+  async assetsListByIssuer(issuer: string, start: number, offset: number) {
+    try {
+      if(!this.assetsProxyAddress()) await this.getContracts()
+      const iface = new ethers.Interface([
+        "function getIssuerAssets(address issuer, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address regulator, bool suspended, uint8 state)[] assets)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('getIssuerAssets', [issuer, start, offset]);
+      const result = await this.callExternalStatic(this.assetsProxyAddress(), callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getIssuerAssets', result.data);
+        const { count, assets } = await this.processAssetsList(decodedResult);        
+        return { result: { count, assets }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching assets list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching assets list: ' + error.message};
+    }
+  }
+
+  async assetsListByRegulator(start: number, offset: number) {
+    try {
+      if(!this.assetsProxyAddress()) await this.getContracts()
+      const iface = new ethers.Interface([
+        "function getRegulatorAssets(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address regulator, bool suspended, uint8 state)[] assets)"
+      ]);
+      const callData = iface.encodeFunctionData('getRegulatorAssets', [start, offset]);
+      const result = await this.callExternalStatic(this.assetsProxyAddress(), callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getRegulatorAssets', result.data);
+        const { count, assets } = await this.processAssetsList(decodedResult);        
+        return { result: { count, assets }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching assets list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching assets list: ' + error.message};
+    }
+  }
+
+  async assetsListByCountry(start: number, offset: number) {
+    try {
+      if(!this.assetsProxyAddress()) await this.getContracts()
+      const iface = new ethers.Interface([
+        "function getCountryAssets(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address regulator, bool suspended, uint8 state)[] assets)"
+      ]);
+      const callData = iface.encodeFunctionData('getCountryAssets', [start, offset]);
+      const result = await this.callExternalStatic(this.assetsProxyAddress(), callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getCountryAssets', result.data);
+        const { count, assets } = await this.processAssetsList(decodedResult);        
+        return { result: { count, assets }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching assets list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching assets list: ' + error.message};
+    }
+  }
+
+  async processAssetsList(data: any) {
+        // Fetch state names once for all validators
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Asset State');
+        const tokenTypeResult = await this.getGlobalVariableByCategory('Asset Token Type');
+        const assetTypeResult = await this.getGlobalVariableByCategory('Asset Type');
+
+        // check countries list
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        
+        const count = Number(data[0]);
+        const assets = await Promise.all(
+          data[1].map(async (op: any) => {
+            // console.log('result', op);
+            let parsedData = null;
+            try {
+              parsedData = JSON.parse(op.metadata);
+            } catch (e) {
+              console.error('Error parsing operator data:', e);
+            }
+  
+            const stateId = Number(op.state);
+            let stateName = 'Unknown';
+            if (statesResult.result) {
+              const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+              stateName = stateVariable?.name || 'Unknown';
+            }  
+
+            const tokenTypeId = Number(op.tokenType);
+            let tokenTypeName = 'Unknown';
+            if (tokenTypeResult.result) {
+              const tokenTypeVariable = tokenTypeResult.result.find((v: any) => v.variableId === tokenTypeId);
+              tokenTypeName = tokenTypeVariable?.name || 'Unknown';
+            }  
+  
+            const assetTypeId = Number(op.assetType);
+            let assetTypeName = 'Unknown';
+            if (assetTypeResult.result) {
+              const assetTypeVariable = assetTypeResult.result.find((v: any) => v.variableId === assetTypeId);
+              assetTypeName = assetTypeVariable?.name || 'Unknown';
+            }  
+
+            // Get country name for this operator
+            const countryCode = Number(op.currencyCode);
+            const country = this.countriesList.find(c => c.countryCode === countryCode);
+            const countryName = country?.nameShort || 'Unknown';
+            const currencyCode = country?.currencyCode || 'Unknown';
+            const currencyName = country?.currencyName || 'Unknown';
+            
+            // get regulator name
+            const regulatorAddress = op.regulator;
+            let regulatorName = 'Unknown';
+            let regulatorSymbol = 'Unknown';
+            const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+            const regulator = regulatorsResult.result?.regulator;
+            regulatorName = regulator?.name || 'Unknown';
+            regulatorSymbol = regulator?.symbol || 'Unknown';
+  
+            // get issuer name
+            const issuerAddress = op.issuer;
+            let issuerName = 'Unknown';
+            const issuerResult = await this.serviceInfo(issuerAddress);
+            const issuer = issuerResult.result?.service;
+            issuerName = issuer?.name || 'Unknown';
+
+            // get manager name
+            const managerAddress = op.manager;
+            let managerName = 'Unknown';
+            const managerResult = await this.serviceInfo(managerAddress);
+            const manager = managerResult.result?.service;
+            managerName = manager?.name || 'Unknown';
+
+            return {
+              address: op.asset,
+              name: op.name,
+              symbol: op.symbol,
+              tokenType: tokenTypeId,
+              tokenTypeName,
+              assetType: assetTypeId,
+              assetTypeName,
+              metadata: op.metadata,
+              totalSupply: Number(op.totalSupply),
+              circulating: Number(op.circulating),
+              countryCode: countryCode,
+              countryName,
+              currencyCode,
+              currencyName,
+              createdOn: Number(op.createdOn),
+              issuer: issuerAddress,
+              issuerName,
+              manager: managerAddress,
+              managerName,
+              regulator: regulatorAddress,
+              regulatorName,
+              regulatorSymbol,
+              suspended: op.suspended,
+              state: stateId,
+              stateName
+            };
+          })
+        )
+
+        assets.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        
+        return { count, assets };    
+  }
+
+  async assetChangeState(address: string, state: number) {
+    try {
+      const iface = new ethers.Interface(["function changeState(uint8 state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('changeState', [state]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing service state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing service state: ' + error.message};
+    }
+  }  
+
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Regulator Contract: API Functions
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1804,7 +2121,13 @@ export class RpcService {
   
       // create & encrypt user data
       // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
-      const encryptedUserData = metadata;
+      const encryptedMetaata = metadata;
+
+      const userData = {
+        name: 'Super Admin',
+        email: '',
+      };
+      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));
 
       // create new wallet & connect to contract
       const privkey = environment.apiPrivKey;
@@ -1812,7 +2135,7 @@ export class RpcService {
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
 
       // register
-      const tx = await apiContract['validatorAdd'](loginHash, secret, name, encryptedUserData);
+      const tx = await apiContract['validatorAdd'](encryptedUserData, loginHash, secret, name, encryptedMetaata);
       const receipt = await tx.wait();
   
       // listen to contract event
@@ -1841,19 +2164,83 @@ export class RpcService {
 
   async serviceRegister(
     name: string,
-    email: string, password: string, 
+    admin: string, password: string, 
     metadata: string,
-    validatorAddress: string
+    vLevel: number,
+    apiAddress: string
   ) {
 
     try {
       
       // generate login data
-      const { loginHash, secret } = await this.generateZKPData(email, password);
+      const { loginHash, secret } = await this.generateZKPData(admin, password);
+      // console.log('loginHash', loginHash);
+      // console.log('secret', secret);
   
       // create & encrypt user data
       // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
-      const encryptedUserData = metadata;
+      const encryptedMetadata = metadata;
+
+      const userData = {
+        name: 'Super Admin',
+        email: '',
+      };
+      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));      
+
+      // check if service proxy address is set
+      if(!this.serviceAddress()) await this.getContracts()
+
+      const regulator = environment.regulatorAddress;
+      const operator = '0x48aF7747D327663887b815590C8844f94AEaA4e4'; //this.operatorAddress();
+      const addrZero = environment.addressZero;
+      console.log('addr', regulator, operator, addrZero);
+
+      const iface = new ethers.Interface([
+        "function serviceCreate(string memory name, string memory data, uint8 verificationLevel, uint256 countryCode, bytes32 adminHash, bytes32 adminSecret, string memory adminData, address api, address regulator, address validator, address operator) external returns (address serviceAddress)"
+      ]);
+
+      const callData = iface.encodeFunctionData('serviceCreate', [name, encryptedMetadata, vLevel, 818, loginHash, secret, encryptedUserData, apiAddress, regulator, addrZero, this.operatorAddress()]);
+      const result = await this.callExternal(this.serviceAddress(), callData);
+      if (result.result) {
+        console.log('decodedResult', result.result);
+        return {success: true, contract: result.result};
+      }
+      else {
+        return {success: false, contract: ''};
+      }
+  
+    }
+    catch (error) {
+      console.error(error);
+      return {
+        success: false,
+        contract: ''
+      };
+    }
+  }
+
+  async serviceRegister2(
+    name: string,
+    admin: string, password: string, 
+    metadata: string,
+    validatorAddress: string,
+    vLevel: number
+  ) {
+
+    try {
+      
+      // generate login data
+      const { loginHash, secret } = await this.generateZKPData(admin, password);
+  
+      // create & encrypt user data
+      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
+      const encryptedMetaata = metadata;
+
+      const userData = {
+        name: 'Super Admin',
+        email: '',
+      };
+      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));      
 
       // create new wallet & connect to contract
       const privkey = environment.apiPrivKey;
@@ -1861,7 +2248,7 @@ export class RpcService {
       const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
 
       // register
-      const tx = await apiContract['serviceAdd'](loginHash, secret, name, encryptedUserData, validatorAddress);
+      const tx = await apiContract['serviceAdd'](encryptedUserData, loginHash, secret, name, encryptedMetaata, validatorAddress, vLevel);
       const receipt = await tx.wait();
   
       // listen to contract event

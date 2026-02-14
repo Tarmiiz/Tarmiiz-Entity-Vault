@@ -5,11 +5,7 @@ import {
   IonButtons, IonMenuButton, MenuController, IonAccordionGroup, IonAccordion, IonFooter } from '@ionic/angular/standalone';
 import { RouterModule } from '@angular/router';
 
-import { addIcons } from 'ionicons';
-import { homeOutline, logOutOutline, peopleOutline, layersOutline, searchOutline, cogOutline, personCircleOutline, globeOutline, idCardOutline, fingerPrintOutline, bookOutline, snowOutline } from 'ionicons/icons';
-
 import { AuthService } from '../../services/auth.service';
-import { RpcService } from '../../services/rpc.service';
 import { Regulator, User } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
@@ -19,7 +15,8 @@ import { LoadingComponent } from "../../components/alerts/loading/loading.compon
   templateUrl: './authorized-layout.component.html',
   styleUrls: ['./authorized-layout.component.scss'],
   standalone: true,
-  imports: [IonFooter,
+  imports: [
+    IonFooter,
     // IonAccordion, IonAccordionGroup,
     IonRouterOutlet,
     IonSplitPane,
@@ -40,21 +37,19 @@ import { LoadingComponent } from "../../components/alerts/loading/loading.compon
 export class AuthorizedLayoutComponent {
   private authService = inject(AuthService);
   private menuController = inject(MenuController);
-  private rpcService = inject(RpcService);
 
   regulatorInfo!: Regulator;
   userInfo!: User;
 
-  constructor() {
-    if(this.rpcService.regulator) this.regulatorInfo = this.rpcService.regulator;
-    if(this.rpcService.user) this.userInfo = this.rpcService.user;
+  constructor() {}
+
+  ionViewWillEnter() {
+    this.regulatorInfo = this.authService.regulatorInfo;
+    this.userInfo = this.authService.userInfo;
+    // console.log('regulatorInfo', this.regulatorInfo);
+    // console.log('userInfo', this.userInfo);
   }
   
-  async ionViewDidEnter() {
-    if(this.rpcService.regulator) this.regulatorInfo = this.rpcService.regulator;
-    if(this.rpcService.user) this.userInfo = this.rpcService.user;
-  }
-
   async closeMenuOnMobile() {
     const splitPane = document.querySelector('ion-split-pane');
     const isDesktop = splitPane?.classList.contains('split-pane-visible');
@@ -66,7 +61,6 @@ export class AuthorizedLayoutComponent {
 
   async logout() {
     await this.authService.logout();
-    await this.rpcService.logout(); 
     await this.menuController.close();
   }
 }

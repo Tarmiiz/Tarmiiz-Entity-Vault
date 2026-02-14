@@ -50,6 +50,7 @@
                   @if(showAllServices()){
                     <th scope="col" class="px-6 py-2">Regulator</th>
                   }
+                  <th scope="col" class="px-6 py-2">VL</th>
                   <th scope="col" class="px-6 py-2">State</th>
               </tr>
           </thead>
@@ -72,6 +73,7 @@
                           @if(showAllServices()){
                             <td class="px-6 py-2">{{ service.regulatorSymbol }}</td>
                           }
+                          <td class="px-6 py-2">{{ service.verificationLevel }}</td>
                           <td class="px-6 py-2">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
                                 {{ service.stateName }}

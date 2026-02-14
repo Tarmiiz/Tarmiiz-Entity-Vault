@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,7 +8,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Service, Subscription } from '../../../../shared/models/data.model';
+import { Asset, Service, Subscription } from '../../../../shared/models/data.model';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
 import { ModalServiceStateComponent } from "../modals/modal-service-state/modal-service-state.component";
 import { ModalServiceEditService } from '../modals/modal-service-edit/modal-service-edit.service';
@@ -39,13 +39,14 @@ export class DetailsPage implements OnInit {
   private serviceEditService = inject(ModalServiceEditService);
   private serviceStateService = inject(ModalServiceStateService);
 
-  activeTab = signal<'info' | 'subscriptions' | 'trxs' | 'actions'>('info');
+  activeTab = signal<'info' | 'assets' | 'subscriptions' | 'trxs' | 'actions'>('info');
 
   loadingData: boolean = false;
 
   serviceAddress = '';
   service = signal<Service | undefined>(undefined);
   subscriptions = signal<Subscription[]>([]);
+  assets = signal<Asset[]>([]);
   isOwn = false;
 
   constructor() { 
@@ -62,9 +63,10 @@ export class DetailsPage implements OnInit {
     this.isOwn = this.service()?.regulator === environment.regulatorAddress;
   }
 
-  setTab(tab: 'info' | 'subscriptions' | 'trxs' | 'actions') {
+  setTab(tab: 'info' | 'assets' | 'subscriptions' | 'trxs' | 'actions') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getServiceDetails();
+    if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
   }   
 
@@ -85,6 +87,18 @@ export class DetailsPage implements OnInit {
       case 4: return 'bg-red-100 text-red-800';       // Deactivated
       default: return 'bg-gray-100 text-gray-800';
     }
+  }
+
+  async getAssets() {
+    this.loadingService.show('Loading data...');
+    const data = await this.rpcService.assetsListByIssuer(this.serviceAddress, 1, 100);
+    this.assets.set(data.result?.assets || []);
+    // console.log('assets', this.assets());
+    this.loadingService.hide();
+  }
+
+  viewAsset(asset: Asset) {
+    this.router.navigate(['/authorized/assets/details/' + asset.address]);
   }
   
   async getSubscriptions() {

@@ -36,7 +36,6 @@ export class ListPage implements OnInit {
 
   ngOnInit() {}
 
-
   async ionViewWillEnter() {
     this.services.set([]);
     this.servicesCount = 0;
@@ -67,6 +66,7 @@ export class ListPage implements OnInit {
 
   async listServices() {
     this.loadingService.show('Loading data...');
+    this.services.set([]);
     const result = this.showAllServices() ? await this.rpcService.servicesListAll(1, 10) : await this.rpcService.servicesListOwn(1, 10);
     if(result.result) {
       this.servicesCount = result.result.count;
@@ -90,32 +90,14 @@ export class ListPage implements OnInit {
       c => c.name.toLowerCase().includes(term) || 
       c.email.toLowerCase().includes(term) || 
       c.mobile.toLowerCase().includes(term) ||
-      c.address.toLowerCase().includes(term)
+      c.address.toLowerCase().includes(term) ||
+      c.regulatorName.toLowerCase().includes(term) ||
+      c.stateName.toLowerCase().includes(term)
     );
   });  
 
   onServicesSearch(event: Event) {
     this.servicesSearchTerm.set((event.target as HTMLInputElement).value);
   }  
-
-  async openAddModal() {
-    // const result = await this.ckycServiceAddService.show();
-    // if (result) {
-    //   this.loadingService.show('Adding service...');
-    //   try {
-    //     const name = result.name;
-    //     const data = {
-    //       email: result.email,
-    //       mobile: result.mobile
-    //     };
-    //     await this.rpcService.cKYCServiceAdd(name, JSON.stringify(data), 1);
-    //     await this.listServices();
-    //   } catch (error) {
-    //     console.error('Failed to add service', error);
-    //   } finally {
-    //     this.loadingService.hide();
-    //   }
-    // }
-  }
 
 }

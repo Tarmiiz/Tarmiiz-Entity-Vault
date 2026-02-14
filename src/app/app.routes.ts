@@ -68,6 +68,27 @@ export const routes: Routes = [
         canActivate: [AuthGuard]
       },
       {
+        path: 'assets',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/assets/list/list.page').then( m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'details/:address',
+            loadComponent: () => import('./pages/secure/assets/details/details.page').then( m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/dashboard',
+            pathMatch: 'full',
+          },          
+        ]
+      },
+      {
         path: 'issuers',
         loadComponent: () => import('./pages/secure/issuers/issuers-list/issuers.page').then( m => m.IssuersPage),
         canActivate: [AuthGuard],

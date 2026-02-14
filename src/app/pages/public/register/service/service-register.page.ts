@@ -35,6 +35,7 @@ export class ServiceRegisterPage implements OnInit {
   private rpcService = inject(RpcService);
 
   validators = signal<{ address: string; name: string; }[]>([]);
+  vLevels = signal<{ variableId: number; name: string; }[]>([]);
 
   constructor() { 
     this.formRegister = this.fb.group({
@@ -42,7 +43,10 @@ export class ServiceRegisterPage implements OnInit {
       website: new FormControl('', [Validators.required]),
       mobile: new FormControl('', [Validators.required]),
       email: new FormControl('', [Validators.required, Validators.email]),
-      validator: new FormControl('', [Validators.required]),
+      api: new FormControl('', [Validators.required]),
+      // validator: new FormControl('', [Validators.required]),
+      vLevel: new FormControl('', [Validators.required]),
+      admin: new FormControl('', [Validators.required]),
       password: new FormControl('', [Validators.required]),
       password2: new FormControl('', [Validators.required]),
     });    
@@ -54,7 +58,8 @@ export class ServiceRegisterPage implements OnInit {
     this.isLoading = true;
     this.loadingService.show('Loading data ...');
     await this.rpcService.init();
-    await this.getValidators();
+    // await this.getValidators();
+    await this.getLevels();
     this.loadingService.hide();
   }
 
@@ -64,7 +69,7 @@ export class ServiceRegisterPage implements OnInit {
 
   async getValidators() {
     const result = await this.rpcService.validatorsListOwn(1, 100);
-    console.log(result);
+    // console.log(result);
     if (result.result && result.result.validators) {
       const validators = result.result.validators
         .filter(({ state }: { state: number; }) => state === 2)
@@ -72,15 +77,27 @@ export class ServiceRegisterPage implements OnInit {
         address,
         name,
       }));
-      console.log(validators);
-      this.validators.set(validators);
+      // console.log(validators);
+      // Add "none" option at the top
+      this.validators.set([
+        { address: environment.addressZero, name: 'None' },
+        ...validators
+      ]);
+    }
+  }
+
+  async getLevels() {
+    const result = await this.rpcService.getGlobalVariableByCategory('Identity Verification Level');
+    console.log(result);
+    if (result.result) {
+      this.vLevels.set(result.result);
     }
   }
 
   async register() {
     this.isLoading = true;
     this.loadingService.show('Registering service ...');
-    const { name, website, mobile, email, validator, password } = this.formRegister.value;
+    const { name, website, mobile, email, api, vLevel, admin, password } = this.formRegister.value;
     
     if (this.formRegister.invalid) {
       this.loadingService.hide();
@@ -96,19 +113,17 @@ export class ServiceRegisterPage implements OnInit {
     try {
       // Initialize the RPC service
       await this.rpcService.createWallet();
-      // await this.rpcService.connectCKYCContract();
 
-      const regulatorAddress = environment.regulatorAddress;
-      const countryCode = environment.countryCode;
-
-      const serviceData = {
+      const serviceMetadata = {
         website,
         email,
         mobile
       }
 
+      console.log(name, admin, password, JSON.stringify(serviceMetadata), vLevel, api);
+
       this.loadingService.show('Generating zero-knowledge proof and registering...');
-      const result = await this.rpcService.serviceRegister(name, email, password, JSON.stringify(serviceData), validator);
+      const result = await this.rpcService.serviceRegister(name, admin, password, JSON.stringify(serviceMetadata), vLevel, api);
 
       if (result) {
         this.loadingService.hide();

@@ -3,16 +3,16 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 
-import { RpcService } from '../../../../shared/services/rpc.service';
 import { StorageService } from '../../../../shared/services/storage.service';
-import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AlertComponent } from "../../../../shared/components/alerts/alert/alert.component";
-import { LoadingComponent } from "../../../../shared/components/alerts/loading/loading.component";
+import { CryptoService } from '../../../../shared/services/crypto.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 
 import { environment } from '../../../../../environments/environment';
+import { LoadingComponent } from "src/app/shared/components/alerts/loading/loading.component";
 
-import { CryptoService } from '../../../../shared/services/crypto.service';
+
 
 @Component({
   selector: 'app-login',
@@ -28,13 +28,12 @@ import { CryptoService } from '../../../../shared/services/crypto.service';
 ]
 })
 export class LoginPage implements OnInit {
-  private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private storageService = inject(StorageService);
-  private rpcService = inject(RpcService);
   private cryptoService = inject(CryptoService);
+  private authService = inject(AuthService);  
 
   formLogin!: FormGroup;
   isLoading = false;
@@ -46,7 +45,6 @@ export class LoginPage implements OnInit {
     this.formLogin = this.fb.group({
       email: new FormControl('', [Validators.required]),
       password: new FormControl('', [Validators.required]),
-      // contract: new FormControl(this.contractAddress, [Validators.required])
     });
   }
 
@@ -54,6 +52,7 @@ export class LoginPage implements OnInit {
     await this.storageService.remove('sessionExpiry');
     await this.storageService.remove('contract');
     await this.storageService.remove('wallet');
+    await this.storageService.remove('user');
     // const k = environment.aesKEY;
     // const d = {
     //   username: 'admin@regulator1.com',
@@ -75,32 +74,15 @@ export class LoginPage implements OnInit {
 
     this.isLoading = true;
 
-    // Show loading
-    this.loadingService.show('Connecting to Contract ...');
     try {
 
-      // set regulatro contract address
-      this.rpcService.regulatorContractAddress = this.contractAddress;
-
-      // Initialize the RPC service
-      await this.rpcService.init();
-
-      this.loadingService.show('Generating zero-knowledge proof and logging in...');
-
       // Attempt login with 1 hour session duration
-      const loginResult = await this.rpcService.login(email, password, 3600);
-      
-      this.loadingService.hide();
-      this.isLoading = false;
-
+      const loginResult = await this.authService.login(email, password);
       if (loginResult.success) {
-        // save contract to storage
-        this.storageService.set('contract', this.contractAddress);
-        // get regulator info
-        await this.rpcService.regulatorInfoGet();
-        // route to authorized pages
-        this.router.navigate(['/authorized']);
-      } else {
+          // route to authorized pages
+          this.router.navigate(['/authorized']);
+      }
+      else {
         console.error('Login failed:', loginResult.error);
         let errorMessage = 'An unexpected error occurred during login.';
         if (loginResult.error) {
@@ -123,9 +105,6 @@ export class LoginPage implements OnInit {
 
     } 
     catch (error: any) {
-      this.loadingService.hide();
-      this.isLoading = false;
-      
       let errorMessage = 'An unexpected error occurred during login.';
       if (error.message) {
         if (error.message.includes('User not found')) {
@@ -144,6 +123,9 @@ export class LoginPage implements OnInit {
       }
       
       await this.alertService.show('Login Error', errorMessage);
+    }
+    finally {
+      this.isLoading = false;
     }
   }
 

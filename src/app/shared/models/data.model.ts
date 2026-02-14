@@ -30,7 +30,7 @@ export class Country {
     public alpha2Code: string,
     public alpha3Code: string,
     public currencyName: string,
-    public currencyCode: number,
+    public currencyCode: string,
     public callingCode: number,
     public countryCode: number
   ){}
@@ -180,6 +180,8 @@ export class Service {
     public website: string,
     public countryCode: number,
     public countryName: string,
+    public verificationLevel: number,
+    public verificationLevelName: string,
     public regulator: string,
     public regulatorName: string,
     public regulatorSymbol: string,
@@ -228,5 +230,35 @@ export class ValidatorIdentity {
     public operator: string,
     public data: string,
     public validatedAt: number
+  ) {}
+}
+
+export class Asset {
+  constructor (
+    public address: string,
+    public name: string,
+    public symbol: string,
+    public tokenType: number,
+    public tokenTypeName: string,
+    public assetType: number,
+    public assetTypeName: string,
+    public metadata: string,
+    public totalSupply: number,
+    public circulating: number,
+    public countryCode: number,
+    public countryName: string,
+    public currencyCode: string,
+    public currencyName: string,
+    public createdOn: number,
+    public issuer: string,
+    public issuerName: string,
+    public manager: string,
+    public managerName: string,
+    public regulator: string,
+    public regulatorName: string,
+    public regulatorSymbol: string,
+    public suspended: boolean,
+    public state: number,
+    public stateName: string
   ) {}
 }

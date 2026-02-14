@@ -41,7 +41,7 @@ export class ProfilePage implements OnInit {
   operator = signal<string>('');
   validators = signal<string>('');
   services = signal<string>('');
-  subscriptions = signal<string>('');
+  assets = signal<string>('');
   api = signal<string>('');
 
   constructor() { }
@@ -96,8 +96,8 @@ export class ProfilePage implements OnInit {
     this.validators.set(validators.result!);
     const services = await this.rpcService.externalContractGet('services');
     this.services.set(services.result!);
-    const subscriptions = await this.rpcService.externalContractGet('subscriptions');
-    this.subscriptions.set(subscriptions.result!);
+    const assets = await this.rpcService.externalContractGet('assets');
+    this.assets.set(assets.result!);
     this.loadingService.hide();
   }
 
@@ -106,7 +106,7 @@ export class ProfilePage implements OnInit {
     if (name === 'operator') currentOperator = this.operator();
     if (name === 'validators') currentOperator = this.validators();
     if (name === 'services') currentOperator = this.services();
-    if (name === 'subscriptions') currentOperator = this.subscriptions();
+    if (name === 'assets') currentOperator = this.assets();
     if (!currentOperator) return;
 
     const result = await this.profileOperatorEditService.show(name, currentOperator);

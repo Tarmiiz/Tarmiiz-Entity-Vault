@@ -1,13 +1,13 @@
-<app-header title="Service Details"></app-header>
+<app-header title="Asset Details"></app-header>
 
 <!-- breadcrumb -->
 <div class="px-6 py-4 border-b bg-gray-200">
-  @if (service(); as op) {
+  @if (asset(); as op) {
     <nav class="flex" aria-label="Breadcrumb">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
         <li class="inline-flex items-center">
-          <a routerLink="/authorized/ckyc/services/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
-            Services
+          <a routerLink="/authorized/assets/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+            Assets
           </a>
         </li>
         <li>
@@ -39,24 +39,24 @@
         >
           Information
         </button>
-        <button (click)="setTab('assets')"
+        <button (click)="setTab('price')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'assets'"
-          [class.border-b-2]="activeTab() === 'assets'"
-          [class.border-blue-600]="activeTab() === 'assets'"
-          [class.bg-blue-600]="activeTab() === 'assets'"
+          [class.text-white]="activeTab() === 'price'"
+          [class.border-b-2]="activeTab() === 'price'"
+          [class.border-blue-600]="activeTab() === 'price'"
+          [class.bg-blue-600]="activeTab() === 'price'"
         >
-          Assets
+          Price
         </button>
         @if(isOwn){
-          <button (click)="setTab('subscriptions')"
+          <button (click)="setTab('holders')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-            [class.text-white]="activeTab() === 'subscriptions'"
-            [class.border-b-2]="activeTab() === 'subscriptions'"
-            [class.border-blue-600]="activeTab() === 'subscriptions'"
-            [class.bg-blue-600]="activeTab() === 'subscriptions'"
+            [class.text-white]="activeTab() === 'holders'"
+            [class.border-b-2]="activeTab() === 'holders'"
+            [class.border-blue-600]="activeTab() === 'holders'"
+            [class.bg-blue-600]="activeTab() === 'holders'"
           >
-            Subscriptions
+            Holders
           </button>
           <button (click)="setTab('trxs')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -82,7 +82,7 @@
 
     <!-- Tab Content -->
     <div class="bg-white rounded-b-lg shadow-md p-2">
-      @if (service(); as v) {
+      @if (asset(); as v) {
 
         <!-- info tab -->
         @if (activeTab() === 'info') {
@@ -90,7 +90,7 @@
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
-                  <h2 class="text-3xl font-bold text-gray-800">{{ v.name }}</h2>
+                  <h2 class="text-3xl font-bold text-gray-800">{{ v.name }} [{{ v.symbol }}]</h2>
                   <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
                 </div>
                 <span 
@@ -103,44 +103,48 @@
     
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Service Address</p>
+                  <p class="text-sm font-medium text-gray-500">Asset Address</p>
                   <p class="font-mono text-base">{{ v.address }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Email</p>
-                  <p class="text-base">{{ v.email }}</p>
+                  <p class="text-sm font-medium text-gray-500">Issuer</p>
+                  <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoLink(v.issuer)">{{ v.issuerName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Mobile</p>
-                  <p class="text-base">{{ v.mobile }}</p>
+                  <p class="text-sm font-medium text-gray-500">Manager</p>
+                  <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoLink(v.manager)">{{ v.managerName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Website</p>
-                  <p class="text-base">{{ v.website }}</p>
+                  <p class="text-sm font-medium text-gray-500">Circulating</p>
+                  <p class="text-base">{{ v.circulating | number: '1.0-0'  }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Total Supply</p>
+                  <p class="text-base">{{ v.totalSupply | number: '1.0-0' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Currency</p>
+                  <p class="text-base">{{ v.currencyName }} ({{ v.currencyCode }})</p>
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Country</p>
                   <p class="text-base">{{ v.countryName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Verification Level</p>
-                  <p class="text-base">{{ v.verificationLevelName }}</p>
+                  <p class="text-sm font-medium text-gray-500">Token Type</p>
+                  <p class="text-base">{{ v.tokenTypeName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Validator</p>
-                  <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoValidator(v.validator)">{{ v.validatorName }}</p>
-                </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Regulator</p>
-                  <p class="text-base">{{ v.regulatorName }}</p>
+                  <p class="text-sm font-medium text-gray-500">Asset Type</p>
+                  <p class="text-base">{{ v.assetTypeName }}</p>
                 </div>
               </div>
               
               @if(isOwn) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
+                  <!-- <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
                     Edit
-                  </button>
+                  </button> -->
                   <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
                     Change State
                   </button>
@@ -150,53 +154,9 @@
             </div>
           </div>
         }
-        
-        <!-- assets tab -->
-        @if (activeTab() === 'assets') {
-          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
-                  <tr>
-                    <th scope="col" class="px-6 py-2">#</th>
-                    <th scope="col" class="px-6 py-2">Name</th>
-                    <th scope="col" class="px-6 py-2">Symbol</th>
-                    <th scope="col" class="px-6 py-2">Type</th>
-                    <th scope="col" class="px-6 py-2">Regulator</th>
-                    <th scope="col" class="px-6 py-2">State</th>
-                  </tr>
-                </thead>
-                <tbody  class="text-xs">
-                    <!-- no data -->
-                    @if(assets() && assets()!.length === 0) {
-                        <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-6 py-2">no data</td>
-                        </tr>
-                    }
-                    @else {
-                      @for(data of assets(); track data.address; let i = $index; let isEven = $even;) {
-                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewAsset(data)">
-                          <td class="px-6 py-2">{{ i + 1 }}</td>
-                          <td class="px-6 py-2">{{ data.name }}</td>
-                          <td class="px-6 py-2">{{ data.symbol }}</td>
-                          <td class="px-6 py-2">{{ data.assetTypeName }}</td>
-                          <td class="px-6 py-2">{{ data.regulatorSymbol }}</td>
-                          <td class="px-6 py-2">
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(data.state)">
-                              {{ data.stateName }}
-                            </span>
-                          </td>
-                        </tr>
-                      }
-                    }
-                </tbody>
-              </table>
-            </div>
-          </div>
-        }
 
-        <!-- subscriptions tab -->
-        @if (activeTab() === 'subscriptions') {
+        <!-- price tab -->
+        @if (activeTab() === 'price') {
           <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-sm text-left text-gray-700">
@@ -204,13 +164,13 @@
                   <tr>
                     <th scope="col" class="px-6 py-2">#</th>
                     <th scope="col" class="px-6 py-2">Date</th>
-                    <th scope="col" class="px-6 py-2">Subscription</th>
-                    <th scope="col" class="px-6 py-2">State</th>
+                    <th scope="col" class="px-6 py-2">Bid</th>
+                    <th scope="col" class="px-6 py-2">Ask</th>
                   </tr>
                 </thead>
                 <tbody  class="text-xs">
                     <!-- no data -->
-                    @if(subscriptions() && subscriptions()!.length === 0) {
+                    <!-- @if(subscriptions() && subscriptions()!.length === 0) {
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td class="px-6 py-2">no data</td>
                         </tr>
@@ -228,7 +188,45 @@
                                 </td>
                             </tr>
                         }
+                    } -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }        
+
+        <!-- holders tab -->
+        @if (activeTab() === 'holders') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">Holder</th>
+                    <th scope="col" class="px-6 py-2">Balance</th>
+                  </tr>
+                </thead>
+                <tbody  class="text-xs">
+                    <!-- no data -->
+                    <!-- @if(subscriptions() && subscriptions()!.length === 0) {
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-6 py-2">no data</td>
+                        </tr>
                     }
+                    @else {
+                        @for(service of subscriptions(); track service.subscription; let i = $index; let isEven = $even;) {
+                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(service.subscription)">
+                                <td class="px-6 py-2">{{ i + 1 }}</td>
+                                <td class="px-6 py-2">{{ service.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                                <td class="px-6 py-2">{{ service.subscription }}</td>
+                                <td class="px-6 py-2">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
+                                      {{ service.stateName }}
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    } -->
                 </tbody>
               </table>
             </div>
@@ -256,5 +254,4 @@
   </div>
 </main>  
 
-<app-modal-service-edit></app-modal-service-edit>
-<app-modal-service-state></app-modal-service-state>
+<app-modal-asset-state></app-modal-asset-state>
