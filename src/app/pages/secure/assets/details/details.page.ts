@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,9 +8,9 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Asset } from '../../../../shared/models/data.model';
+import { Asset, AssetPrice } from '../../../../shared/models/data.model';
 import { ModalAssetStateService } from '../modals/modal-asset-state/modal-asset-state.service';
-import { ModalAssetStateComponent } from "../modals/modal-asset-state/modal-asset-state.component"; 
+import { ModalAssetStateComponent } from "../modals/modal-asset-state/modal-asset-state.component";
 
 import { environment } from '../../../../../environments/environment';
 
@@ -35,6 +35,8 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private assetStateService = inject(ModalAssetStateService);
 
+  @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
+
   activeTab = signal<'info' | 'price' | 'holders' | 'trxs' | 'actions'>('info');
 
   loadingData: boolean = false;
@@ -43,15 +45,19 @@ export class DetailsPage implements OnInit {
   asset = signal<Asset | undefined>(undefined);
   isOwn = false;
 
-  constructor() { 
+  priceHistory = signal<AssetPrice[]>([]);
+
+  private chartInstance: any = null;
+
+  constructor() {
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
       this.assetAddress = address;
-    }    
+    }
   }
 
   async ngOnInit() {}
-  
+
   async ionViewWillEnter() {
     await this.getAssetDetails();
     this.isOwn = this.asset()?.regulator === environment.regulatorAddress;
@@ -60,53 +66,163 @@ export class DetailsPage implements OnInit {
   setTab(tab: 'info' | 'price' | 'holders' | 'trxs' | 'actions') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
-    // if (tab === 'subscriptions') this.getSubscriptions();
-  }   
+    if (tab === 'price') this.getPriceHistory(1, 10);
+  }
 
   async getAssetDetails() {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.assetInfo(this.assetAddress);
     this.asset.set(data.result?.asset);
-    // console.log('asset', this.asset());
     this.loadingService.hide();
   }
 
   getStateClass(stateId: number | undefined): string {
     if (stateId === undefined) return 'bg-gray-100 text-gray-800';
-    switch(stateId) {
-      case 1: return 'bg-yellow-100 text-yellow-800'; // Initiated
-      case 2: return 'bg-green-100 text-green-800';   // Active
-      case 3: return 'bg-orange-100 text-orange-800'; // Suspended
-      case 4: return 'bg-red-100 text-red-800';       // Deactivated
+    switch (stateId) {
+      case 1: return 'bg-yellow-100 text-yellow-800';
+      case 2: return 'bg-green-100 text-green-800';
+      case 3: return 'bg-orange-100 text-orange-800';
+      case 4: return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }
- 
-  async openChangeStateModal(){
+
+  async openChangeStateModal() {
     const currentAsset = this.asset();
     if (!currentAsset) return;
 
     const newState = await this.assetStateService.show(currentAsset.state);
     if (newState !== null && newState !== currentAsset.state) {
-        this.loadingService.show('Changing state...');
-        try {
-            const setState = newState === 2 ? false : true;
-            await this.rpcService.assetChangeState(currentAsset.address, newState);
-            await this.getAssetDetails();
-        } catch (error) {
-            console.error('Failed to change state', error);
-        } finally {
-            this.loadingService.hide();
-        }
-    }    
+      this.loadingService.show('Changing state...');
+      try {
+        const setState = newState == 2 ? false : true;
+        await this.rpcService.assetChangeState(currentAsset.address, newState);
+        await this.rpcService.assetChangeSuspension(currentAsset.address, setState);
+        await this.getAssetDetails();
+      } catch (error) {
+        console.error('Failed to change state', error);
+      } finally {
+        this.loadingService.hide();
+      }
+    }
   }
 
   async gotoLink(address: string) {
     this.router.navigate(['/authorized/ckyc/services/details/' + address]);
-  }  
+  }
 
   async gotoSubscriber(subscription: string) {
     this.router.navigate(['/authorized/subscriptions/details/' + subscription]);
-  }  
+  }
 
+  async getPriceHistory(start: number, offset: number) {
+    this.loadingService.show('Loading data...');
+    const priceHistoryInfo = await this.rpcService.assetPriceHistory(this.assetAddress, start, offset);
+    this.priceHistory.set(priceHistoryInfo.result?.history);
+    this.loadingService.hide();
+
+    // Wait for Angular to render the canvas before drawing
+    setTimeout(() => this.renderChart(), 50);
+  }
+
+  private async renderChart() {
+    const history = this.priceHistory();
+    if (!history || history.length === 0) return;
+
+    const { Chart, registerables } = await import('chart.js');
+    Chart.register(...registerables);
+
+    const canvas = this.priceChartRef?.nativeElement;
+    if (!canvas) return;
+
+    // Destroy previous chart instance before creating a new one
+    if (this.chartInstance) {
+      this.chartInstance.destroy();
+      this.chartInstance = null;
+    }
+
+    const sorted = [...history].sort((a, b) => a.timestamp - b.timestamp);
+
+    const labels = sorted.map(p =>
+      new Date(p.timestamp * 1000).toLocaleDateString('en-GB', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    );
+    const bidData = sorted.map(p => p.bid);
+    const askData = sorted.map(p => p.ask);
+
+    this.chartInstance = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Bid',
+            data: bidData,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.08)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#4f46e5',
+            fill: true,
+            tension: 0.4,
+          },
+          {
+            label: 'Ask',
+            data: askData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#10b981',
+            fill: true,
+            tension: 0.4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              padding: 20,
+              font: { size: 12, weight: 'bold' }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+            titleColor: '#f9fafb',
+            bodyColor: '#d1d5db',
+            padding: 12,
+            cornerRadius: 8,
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(4)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { font: { size: 11 }, maxRotation: 45 }
+          },
+          y: {
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: {
+              font: { size: 11 },
+              callback: (value) => Number(value).toFixed(4)
+            }
+          }
+        }
+      }
+    });
+  }
 }

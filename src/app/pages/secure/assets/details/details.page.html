@@ -157,42 +157,54 @@
 
         <!-- price tab -->
         @if (activeTab() === 'price') {
-          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
-                  <tr>
-                    <th scope="col" class="px-6 py-2">#</th>
-                    <th scope="col" class="px-6 py-2">Date</th>
-                    <th scope="col" class="px-6 py-2">Bid</th>
-                    <th scope="col" class="px-6 py-2">Ask</th>
-                  </tr>
-                </thead>
-                <tbody  class="text-xs">
-                    <!-- no data -->
-                    <!-- @if(subscriptions() && subscriptions()!.length === 0) {
-                        <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-6 py-2">no data</td>
-                        </tr>
-                    }
-                    @else {
-                        @for(service of subscriptions(); track service.subscription; let i = $index; let isEven = $even;) {
-                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(service.subscription)">
-                                <td class="px-6 py-2">{{ i + 1 }}</td>
-                                <td class="px-6 py-2">{{ service.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
-                                <td class="px-6 py-2">{{ service.subscription }}</td>
-                                <td class="px-6 py-2">
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
-                                      {{ service.stateName }}
-                                    </span>
-                                </td>
-                            </tr>
-                        }
-                    } -->
-                </tbody>
-              </table>
+
+          <!-- chart card -->
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <!-- <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Price History Chart</h3> -->
+            @if (priceHistory() && priceHistory()!.length > 0) {
+              <div class="relative h-72">
+                <canvas #priceChart></canvas>
+              </div>
+            } @else {
+              <div class="flex items-center justify-center h-40 text-gray-400 text-sm">
+                No price data available to chart.
+              </div>
+            }
+
+            <!-- price history table -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-6">
+              <div class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm text-left text-gray-700">
+                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                    <tr>
+                      <th scope="col" class="px-6 py-2">Date</th>
+                      <th scope="col" class="px-6 py-2">Bid</th>
+                      <th scope="col" class="px-6 py-2">Ask</th>
+                    </tr>
+                  </thead>
+                  <tbody  class="text-xs">
+                      <!-- no data -->
+                      @if(priceHistory() && priceHistory()!.length === 0) {
+                          <tr class="bg-white border-b hover:bg-gray-50">
+                              <td class="px-6 py-2">no data</td>
+                          </tr>
+                      }
+                      @else {
+                          @for(price of priceHistory(); track price.timestamp; let i = $index; let isEven = $even;) {
+                              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                                  <td class="px-6 py-2">{{ price.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                                  <td class="px-6 py-2">{{ price.bid | number: '1.4-4' }}</td>
+                                  <td class="px-6 py-2">{{ price.ask | number: '1.4-4' }}</td>
+                              </tr>
+                          }
+                      }
+                  </tbody>
+                </table>
+              </div>
             </div>
+
           </div>
+
         }        
 
         <!-- holders tab -->

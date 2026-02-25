@@ -262,3 +262,11 @@ export class Asset {
     public stateName: string
   ) {}
 }
+
+export class AssetPrice {
+  constructor (
+    public bid: number,
+    public ask: number,
+    public timestamp: number
+  ) {}
+}

@@ -25,7 +25,7 @@ export class AuthService {
   
   constructor() {
     this.storageService.get('user').then((value) => this.userInfo = JSON.parse(value!) || {});
-    console.log('auth service');
+    // console.log('auth service');
   }
   
   async login(username: string, password: string) {

@@ -10,7 +10,7 @@ import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetPrice } from '../models/data.model';
 
 import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
@@ -551,7 +551,7 @@ export class RpcService {
       };
     }
     catch (error: any) {
-      return { result: null, error: 'Error fetching asset suspension status: ' + error.message};
+      return { result: null, error: 'Error external call: ' + error.message};
     }
   }
 
@@ -1944,6 +1944,7 @@ export class RpcService {
       ]);
       const callData = iface.encodeFunctionData('getRegulatorAssets', [start, offset]);
       const result = await this.callExternalStatic(this.assetsProxyAddress(), callData);
+      console.log(result)
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('getRegulatorAssets', result.data);
         const { count, assets } = await this.processAssetsList(decodedResult);        
@@ -2096,13 +2097,59 @@ export class RpcService {
         return { result, error: ''};
       }
       else {
-        return { result: null, error: 'Error changing service state'};
+        return { result: null, error: 'Error changing asset state'};
       }
     }
     catch (error: any) {
-      return { result: null, error: 'Error changing service state: ' + error.message};
+      return { result: null, error: 'Error changing asset state: ' + error.message};
     }
   }  
+
+  async assetChangeSuspension(address: string, state: boolean) {
+    try {
+      console.log('state', state);
+      const iface = new ethers.Interface(["function regulatorSuspend(bool suspend) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('regulatorSuspend', [state]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing asset suspsension state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing asset suspsension state: ' + error.message};
+    }
+  }   
+
+  async assetPriceHistory(address: string, start: number, offset: number) {
+    try {
+      if(!this.assetsProxyAddress()) await this.getContracts()
+      const iface = new ethers.Interface([
+        "function getPriceHistory(uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 bid, uint256 ask, uint256 timestamp)[] history)"
+      ]);
+      const callData = iface.encodeFunctionData('getPriceHistory', [start, offset]);
+      const result = await this.callExternalStatic(address, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getPriceHistory', result.data);
+        const count = decodedResult[0];
+        const history = decodedResult[1].map((op: AssetPrice) => {
+            return {
+                bid: Number(ethers.formatEther(op.bid)),
+                ask: Number(ethers.formatEther(op.ask)),
+                timestamp: Number(op.timestamp)
+            };
+        });        
+        return { result: { count, history }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching assets list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching assets list: ' + error.message};
+    }
+  }
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Regulator Contract: API Functions
