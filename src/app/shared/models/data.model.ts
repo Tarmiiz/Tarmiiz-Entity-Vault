@@ -170,6 +170,24 @@ export class Validator {
   ) {}
 }
 
+export class Entity {
+  constructor (
+    public address: string,
+    public name: string,
+    public metadata: string,
+    public email: string,
+    public mobile: string,
+    public website: string,
+    public countryCode: number,
+    public countryName: string,
+    public regulator: string,
+    public regulatorName: string,
+    public regulatorSymbol: string,
+    public state: number,
+    public stateName: string
+  ) {}
+}
+
 export class Service {
   constructor (
     public address: string,

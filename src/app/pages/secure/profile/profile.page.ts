@@ -40,7 +40,7 @@ export class ProfilePage implements OnInit {
   info = signal<Regulator | undefined>(undefined);
   operator = signal<string>('');
   validators = signal<string>('');
-  services = signal<string>('');
+  entities = signal<string>('');
   assets = signal<string>('');
   api = signal<string>('');
 
@@ -94,8 +94,8 @@ export class ProfilePage implements OnInit {
     this.operator.set(opreator.result!);
     const validators = await this.rpcService.externalContractGet('validators');
     this.validators.set(validators.result!);
-    const services = await this.rpcService.externalContractGet('services');
-    this.services.set(services.result!);
+    const entities = await this.rpcService.externalContractGet('entities');
+    this.entities.set(entities.result!);
     const assets = await this.rpcService.externalContractGet('assets');
     this.assets.set(assets.result!);
     this.loadingService.hide();
@@ -105,7 +105,7 @@ export class ProfilePage implements OnInit {
     let currentOperator = '';
     if (name === 'operator') currentOperator = this.operator();
     if (name === 'validators') currentOperator = this.validators();
-    if (name === 'services') currentOperator = this.services();
+    if (name === 'entities') currentOperator = this.entities();
     if (name === 'assets') currentOperator = this.assets();
     if (!currentOperator) return;
 

@@ -32,6 +32,10 @@ export const routes: Routes = [
         path: 'register',
         children: [
           {
+            path: 'entity',
+            loadComponent: () => import('./pages/public/register/entity/entity-register.page').then( m => m.EntityRegisterPage)
+          },          
+          {
             path: 'operator',
             loadComponent: () => import('./pages/public/register/operator/ckyc-operator.page').then( m => m.CkycOperatorPage)
           },
@@ -145,6 +149,22 @@ export const routes: Routes = [
             redirectTo: '/authorized/dashboard',
             pathMatch: 'full',
           },          
+        ]
+      },
+      {
+        path: 'entities',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/entities/list/list.page').then( m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'details/:address',
+            loadComponent: () => import('./pages/secure/entities/details/details.page').then( m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
         ]
       },
       {

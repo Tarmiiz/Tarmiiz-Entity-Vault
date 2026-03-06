@@ -10,7 +10,7 @@ import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetPrice } from '../models/data.model';
+import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetPrice, Entity } from '../models/data.model';
 
 import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
@@ -73,6 +73,7 @@ export class RpcService {
 
   operatorAddress = signal<string>('');
   validatorAddress = signal<string>('');
+  entitiesAddress = signal<string>('');
   serviceAddress = signal<string>('');
   subscriptionAddress = signal<string>('');
   assetsProxyAddress = signal<string>('');
@@ -281,8 +282,8 @@ export class RpcService {
     this.operatorAddress.set(operator.result);
     const validators = await this.externalContractGet('validators');
     this.validatorAddress.set(validators.result);
-    const services = await this.externalContractGet('services');
-    this.serviceAddress.set(services.result);
+    const entities = await this.externalContractGet('entities');
+    this.entitiesAddress.set(entities.result);
     const subscriptions = await this.externalContractGet('subscriptions');
     this.subscriptionAddress.set(subscriptions.result);
     const assetsProxy = await this.externalContractGet('assets');
@@ -1109,6 +1110,260 @@ export class RpcService {
       return { result: null, error: 'Error fetching identities list: ' + error.message};
     }
   }  
+
+//----------------------------------------------------------------------------------------------------------------------------------------
+
+  async entityRegister(
+    name: string,
+    admin: string, password: string, 
+    metadata: string,
+    apiAddress: string
+  ) {
+
+    try {
+      
+      // generate login data
+      const { loginHash, secret } = await this.generateZKPData(admin, password);
+  
+      // create & encrypt user data
+      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
+      const encryptedMetadata = metadata;
+
+      const userData = {
+        name: 'Super Admin',
+        email: '',
+      };
+      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));      
+
+      await this.connectRegulatorContract();
+
+      // check if service proxy address is set
+      if(!this.entitiesAddress()) await this.getContracts()
+      console.log(this.entitiesAddress())
+
+      const regulator = environment.regulatorAddress;
+
+      const iface = new ethers.Interface([
+        "function entityCreate(string memory name, string memory metadata, uint256 countryCode, bytes32 adminHash, bytes32 adminSecret, string memory adminData, address apiAddress, address regulatorAddress) external returns (address entityAddress)"
+      ]);
+
+      const callData = iface.encodeFunctionData('entityCreate', [name, encryptedMetadata, 818, loginHash, secret, encryptedUserData, apiAddress, regulator]);
+      const result = await this.callExternal(this.entitiesAddress(), callData);
+      if (result.result) {
+        console.log('decodedResult', result.result);
+        return {success: true, contract: result.result};
+      }
+      else {
+        return {success: false, contract: ''};
+      }
+  
+    }
+    catch (error) {
+      console.error(error);
+      return {
+        success: false,
+        contract: ''
+      };
+    }
+  }
+
+
+  async entityChangeState(address: string, state: number) {
+    try {
+      const iface = new ethers.Interface(["function setState(uint8 state) external returns (bool)"]);
+      const callData = iface.encodeFunctionData('setState', [state]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error changing entity state'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error changing entity state: ' + error.message};
+    }
+
+  }
+
+  async entitiesListAll(start: number, offset: number) {
+    try {
+      if(!this.entitiesAddress()) await this.getContracts();
+      const iface = new ethers.Interface([
+        "function entitiesListByCountry(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address entity, string name, string metadata, uint256 countryCode, address regulator, uint8 state)[] entities)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('entitiesListByCountry', [start, offset]);
+      const result = await this.callExternalStatic(this.entitiesAddress(), callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('entitiesListByCountry', result.data);
+        const { count, entities } = await this.processEntitiesList(decodedResult);        
+        return { result: { count, entities }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching entities list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching entities list: ' + error.message};
+    }
+  }
+
+  async entitiesListOwn(start: number, offset: number) {
+    try {
+      if(!this.entitiesAddress()) await this.getContracts();
+      const iface = new ethers.Interface([
+        "function entitiesListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address entity, string name, string metadata, uint256 countryCode, address regulator, uint8 state)[] entities)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('entitiesListByRegulator', [start, offset]);
+      const result = await this.callExternalStatic(this.entitiesAddress(), callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('entitiesListByRegulator', result.data);
+        const { count, entities } = await this.processEntitiesList(decodedResult);        
+        return { result: { count, entities }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching entities list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching entities list: ' + error.message};
+    }
+  }  
+
+  async entityInfo(entityAddress: string) {
+    try {
+      const iface = new ethers.Interface([
+        "function info() external view returns (tuple(address entity, string name, string metadata, uint256 countryCode, address regulator, uint8 state))"
+      ]);
+      
+      const callData = iface.encodeFunctionData('info');
+      const result = await this.callExternalStatic(entityAddress, callData);
+      if (result.success && result.data !== null) {
+       
+        const decodedResult = iface.decodeFunctionResult('info', result.data);
+        const parsedData = JSON.parse(decodedResult[0][2]);
+
+        // Fetch state names once
+        await this.connectGlobalVariables();
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+        const stateId = Number(decodedResult[0][5]);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }
+
+        // get country name
+        const countryCode = Number(decodedResult[0][3]);
+        let countryName = 'Unknown';
+        if (this.countriesList.length === 0) {
+          await this.getCountriesList();
+        }
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        countryName = country?.nameShort || 'Unknown';        
+
+        // get regulator name
+        const regulatorAddress = decodedResult[0][4];
+        let regulatorName = 'Unknown';
+        let regulatorSymbol = 'Unknown';
+        const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+        const regulator = regulatorsResult.result?.regulator;
+        regulatorName = regulator?.name || 'Unknown';
+        regulatorSymbol = regulator?.symbol || 'Unknown';
+
+        const entity: Entity = {
+          address: decodedResult[0][0],
+          name: decodedResult[0][1],
+          metadata: decodedResult[0][2],
+          email: parsedData.email,
+          mobile: parsedData.mobile,
+          website: parsedData.website,
+          countryCode: countryCode,
+          countryName,
+          regulator: regulatorAddress,
+          regulatorName,
+          regulatorSymbol,
+          state: stateId,
+          stateName
+        };
+
+
+        return { result: { entity }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching entity info' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching entity info: ' + error.message};
+    }
+  }
+
+  async processEntitiesList(data: any) {
+    // Fetch state names once for all validators
+    await this.connectGlobalVariables();
+    const statesResult = await this.getGlobalVariableByCategory('Account State');
+
+    // check countries list
+    if (this.countriesList.length === 0) {
+      await this.getCountriesList();
+    }
+        
+    const count = Number(data[0]);
+    const entities = await Promise.all(
+      data[1].map(async (op: any) => {
+        let parsedData = null;
+        try {
+          parsedData = JSON.parse(op.metadata);
+        } catch (e) {
+          console.error('Error parsing operator data:', e);
+        }
+
+        // Get state name for this validator
+        const stateId = Number(op.state);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }  
+
+        // Get country name for this operator
+        const countryCode = Number(op.countryCode);
+        const country = this.countriesList.find(c => c.countryCode === countryCode);
+        const countryName = country?.nameShort || 'Unknown';
+        
+        // get regulator name
+        const regulatorAddress = op.regulator;
+        let regulatorName = 'Unknown';
+        let regulatorSymbol = 'Unknown';
+        const regulatorsResult = await this.regulatorInfo(regulatorAddress);
+        const regulator = regulatorsResult.result?.regulator;
+        regulatorName = regulator?.name || 'Unknown';
+        regulatorSymbol = regulator?.symbol || 'Unknown';
+
+
+        return {
+          address: op.entity,
+          name: op.name,
+          data: op.metadata,
+          email: parsedData?.email || '',
+          mobile: parsedData?.mobile || '',
+          website: parsedData?.website || '',
+          countryCode: Number(op.countryCode),
+          countryName,
+          regulator: op.regulator,
+          regulatorName,
+          regulatorSymbol,
+          state: stateId,
+          stateName
+        };
+      })
+    )
+
+    entities.sort((a: any, b: any) => a.name.localeCompare(b.name));
+    
+    return { count, entities };    
+
+  }
 
 //----------------------------------------------------------------------------------------------------------------------------------------
 
