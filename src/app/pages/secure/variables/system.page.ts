@@ -49,7 +49,7 @@ export class SystemPage implements OnInit {
     this.loadingData = true;
     this.loadingService.show('Loading data...');
 
-    await this.rpcService.connectGlobalVariables();
+    await this.rpcService.connectVariablesProxyContract();
     await this.getCountries();
     await this.getVariables();
     this.loadingData = false;

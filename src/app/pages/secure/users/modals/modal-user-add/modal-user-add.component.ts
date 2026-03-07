@@ -43,7 +43,7 @@ export class ModalUserAddComponent {
   }
 
   async loadRoles() {
-    await this.rpcService.connectGlobalVariables();
+    await this.rpcService.connectVariablesProxyContract();
     const data = await this.rpcService.getGlobalVariableByCategory('User Role');
     this.roles.set(data.result);
   }  

@@ -35,10 +35,12 @@ export class ModalEntityStateComponent {
   }
   
   async loadStates() {
-    await this.rpcService.connectGlobalVariables();
+    await this.rpcService.connectVariablesProxyContract();
     const data = await this.rpcService.getGlobalVariableByCategory('Account State');
-    this.states.set(data.result);
+    const excludedIds = [1];
+    this.states.set(data.result.filter((item: any) => !excludedIds.includes(item.variableId)));
   }
+
 
   onSave(): void {
     if (this.stateForm.valid) {

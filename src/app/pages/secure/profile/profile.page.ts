@@ -38,10 +38,11 @@ export class ProfilePage implements OnInit {
 
   activeTab = signal<'info' | 'contracts' | 'api' >('info');
   info = signal<Regulator | undefined>(undefined);
-  operator = signal<string>('');
-  validators = signal<string>('');
+  // operator = signal<string>('');
+  // validators = signal<string>('');
   entities = signal<string>('');
   assets = signal<string>('');
+  identities = signal<string>('');
   api = signal<string>('');
 
   constructor() { }
@@ -65,6 +66,8 @@ export class ProfilePage implements OnInit {
     this.info.set(info.result!);
     this.loadingService.hide();
   }
+
+  async openChangePasswordModal(password: string) {}
 
   async openUpdateDataModal() {
     const currentData = this.info()!.data;
@@ -90,40 +93,13 @@ export class ProfilePage implements OnInit {
 
   async getContracts() {
     this.loadingService.show('Loading data...');
-    const opreator = await this.rpcService.externalContractGet('operator');
-    this.operator.set(opreator.result!);
-    const validators = await this.rpcService.externalContractGet('validators');
-    this.validators.set(validators.result!);
-    const entities = await this.rpcService.externalContractGet('entities');
+    const entities = await this.rpcService.getContractAddress('EntitiesProxy');
     this.entities.set(entities.result!);
-    const assets = await this.rpcService.externalContractGet('assets');
+    const assets = await this.rpcService.externalContractGet('AssetsProxy');
     this.assets.set(assets.result!);
+    const identities = await this.rpcService.externalContractGet('IdentitiesProxy');
+    this.identities.set(identities.result!);
     this.loadingService.hide();
-  }
-
-  async openChangeContractModal(name: string) {
-    let currentOperator = '';
-    if (name === 'operator') currentOperator = this.operator();
-    if (name === 'validators') currentOperator = this.validators();
-    if (name === 'entities') currentOperator = this.entities();
-    if (name === 'assets') currentOperator = this.assets();
-    if (!currentOperator) return;
-
-    const result = await this.profileOperatorEditService.show(name, currentOperator);
-    if (result) {
-      this.loadingService.show(`Updating ${name}...`);
-      try {
-        if (result.address !== currentOperator) {
-          await this.rpcService.externalContractSet(name, result.address);
-          await this.getContracts();
-        }
-      } catch (error) {
-        console.error(`Failed to update ${name}`, error);
-        this.alertService.show('Update Failed', `There was an error updating the ${name} details.`);
-      } finally {
-        this.loadingService.hide();
-      }
-    }    
   }
 
   async getApi() {

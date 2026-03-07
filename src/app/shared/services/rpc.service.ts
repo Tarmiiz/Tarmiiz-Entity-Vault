@@ -16,6 +16,7 @@ import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
+import { register } from 'module';
 
 export interface LoginResult {
   success: boolean;
@@ -58,8 +59,8 @@ export class RpcService {
   wsProvider = new ethers.WebSocketProvider(environment.wsNode);
   signer: any;
   
-  globalVariablesContractAddress = environment.globalVariablesProxyContract
-  globalVariablesContract: any;
+  variablesProxyContractAddress = environment.globalVariablesProxyContract
+  variablesProxyContract: any;
   globalVariablesList: GlobalVariable[] = [];
   countriesList: Country[] = [];
 
@@ -82,7 +83,7 @@ export class RpcService {
   
   async init(){
     await this.createWallet();
-    await this.connectGlobalVariables();
+    await this.connectVariablesProxyContract();
     await this.connectRegulatorContract();
     // await this.getContracts();
     // await this.getCountriesList();
@@ -166,9 +167,9 @@ export class RpcService {
 // Global Variables
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   
-  async connectGlobalVariables() {
+  async connectVariablesProxyContract() {
     try {
-      this.globalVariablesContract = new ethers.Contract(this.globalVariablesContractAddress, GlobalVariablesAbi, this.signer);
+      this.variablesProxyContract = new ethers.Contract(this.variablesProxyContractAddress, GlobalVariablesAbi, this.signer);
     }
     catch (error: any) {
       
@@ -177,7 +178,7 @@ export class RpcService {
 
   async getCountriesList() {
     try {
-      const result = await this.globalVariablesContract.countriesList();
+      const result = await this.variablesProxyContract.countriesList();
       this.countriesList = result.map((country: any) => ({ 
         countryId: Number(country[0]), 
         nameShort: country[1],
@@ -198,7 +199,7 @@ export class RpcService {
 
   async getCategoriesList() {
     try {
-      const result = await this.globalVariablesContract.variableCategoriesList();
+      const result = await this.variablesProxyContract.variableCategoriesList();
       return { result, error: ''};
     }
     catch (error: any) {
@@ -237,7 +238,7 @@ export class RpcService {
 
   async getGlobalVariableByCategory(category: string) {
     try {
-      const result = await this.globalVariablesContract.variablesListByCategory(category);
+      const result = await this.variablesProxyContract.variablesListByCategory(category);
       if(result) {
         const variables = result.map((variable: any) => ({
           variableId: Number(variable[0]),
@@ -257,13 +258,23 @@ export class RpcService {
 
   async getSystemVariableById(category: string, id: number) {
     try {
-      const result = await this.globalVariablesContract.sysvarById(category, id);
+      const result = await this.variablesProxyContract.sysvarById(category, id);
         return { result, error: ''};
     }
     catch (error: any) {
       return { result: null, error: 'Error fetching assets list'};
     }
   }
+
+  async getContractAddress(contract: string) {
+    try {
+      const result = await this.variablesProxyContract.contractGetAddress(contract);
+      return { result, error: ''};
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching countries list'};
+    }
+  } 
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // Regulator Contract
@@ -275,21 +286,6 @@ export class RpcService {
     }
     catch (error: any) {
     }
-  }
-
-  async getContracts() {
-    const operator = await this.externalContractGet('operator');
-    this.operatorAddress.set(operator.result);
-    const validators = await this.externalContractGet('validators');
-    this.validatorAddress.set(validators.result);
-    const entities = await this.externalContractGet('entities');
-    this.entitiesAddress.set(entities.result);
-    const subscriptions = await this.externalContractGet('subscriptions');
-    this.subscriptionAddress.set(subscriptions.result);
-    const assetsProxy = await this.externalContractGet('assets');
-    this.assetsProxyAddress.set(assetsProxy.result);
-    // this.assetsProxyAddress.set('0x7549940ddb2a138f6337921f54abD7032f7cF1eF');
-    
   }
 
   async login(username: string, password: string, sessionDuration: number = 3600) {
@@ -416,7 +412,7 @@ export class RpcService {
 
         // check countries list
         if (this.countriesList.length === 0) {
-          await this.connectGlobalVariables();
+          await this.connectVariablesProxyContract();
           await this.getCountriesList();
         }
         // Get country name for this operator
@@ -571,7 +567,7 @@ export class RpcService {
         const parsedData = JSON.parse(decodedResult[0][3]);
 
         // Fetch state names once
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
 
         // get country name
         const countryCode = Number(decodedResult[0][4]);
@@ -616,7 +612,7 @@ export class RpcService {
         const parsedData = JSON.parse(decodedResult[0][3]);
 
         // Fetch state names once
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
 
         // get country name
         const countryCode = Number(decodedResult[0][4]);
@@ -658,7 +654,7 @@ export class RpcService {
       const result = await this.regulatorContract.getUserInfo(userId);
       if(result) {
 
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
 
         const statesResult = await this.getGlobalVariableByCategory('Account State');
         const stateId = Number(Number(result[3]));
@@ -707,7 +703,7 @@ export class RpcService {
     try {
       const result = await this.regulatorContract.getAllUsers(start, offset);
       if (result) {
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
         const rolesResult = await this.getGlobalVariableByCategory('User Role');
         const count = Number(result.count);
@@ -861,7 +857,7 @@ export class RpcService {
 
   async validatorsListAll(start: number, offset: number) {
     try {
-      if(!this.validatorAddress()) await this.getContracts()
+      if(!this.validatorAddress()) await this.getContractAddress('RegulatorsProxy');
       const iface = new ethers.Interface([
         "function listByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address validator, address regulator, string name, string data, uint256 countryCode, uint8 state)[] validators)"
       ]);
@@ -902,7 +898,7 @@ export class RpcService {
   
   async processValidatorList(data: any) {
     // Fetch state names once for all validators
-    await this.connectGlobalVariables();
+    await this.connectVariablesProxyContract();
     const statesResult = await this.getGlobalVariableByCategory('Account State');
 
     // check countries list
@@ -982,7 +978,7 @@ export class RpcService {
         const parsedData = JSON.parse(decodedResult[0][3]);
 
         // Fetch state names once
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
         const stateId = Number(decodedResult[0][5]);
         let stateName = 'Unknown';
@@ -1113,60 +1109,50 @@ export class RpcService {
 
 //----------------------------------------------------------------------------------------------------------------------------------------
 
-  async entityRegister(
-    name: string,
-    admin: string, password: string, 
-    metadata: string,
-    apiAddress: string
-  ) {
-
+  async entityRegister(name: string, admin: string, password: string, metadata: string, apiAddress: string) {
     try {
-      
-      // generate login data
       const { loginHash, secret } = await this.generateZKPData(admin, password);
-  
-      // create & encrypt user data
-      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
-      const encryptedMetadata = metadata;
 
-      const userData = {
-        name: 'Super Admin',
-        email: '',
-      };
-      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));      
+      const userData = { name: 'Super Admin', email: '' };
+      const encryptedUserData = await this.cryptoService.aesEncrypt(
+        environment.aesKEY, 
+        JSON.stringify(userData)
+      );
 
-      await this.connectRegulatorContract();
-
-      // check if service proxy address is set
-      if(!this.entitiesAddress()) await this.getContracts()
-      console.log(this.entitiesAddress())
-
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
       const regulator = environment.regulatorAddress;
+
+      // ✅ Local contract instance — never touches this.regulatorContract
+      const apiSigner = new ethers.Wallet(environment.apiPrivKey, this.rpcProvider);
+      const regulatorAsApi = new ethers.Contract(
+        this.regulatorContractAddress,
+        RegulatorTemplateAbi,
+        apiSigner   // msg.sender will be apiAddress → passes onlyAuthorizedOrAPI
+      );
 
       const iface = new ethers.Interface([
         "function entityCreate(string memory name, string memory metadata, uint256 countryCode, bytes32 adminHash, bytes32 adminSecret, string memory adminData, address apiAddress, address regulatorAddress) external returns (address entityAddress)"
       ]);
 
-      const callData = iface.encodeFunctionData('entityCreate', [name, encryptedMetadata, 818, loginHash, secret, encryptedUserData, apiAddress, regulator]);
-      const result = await this.callExternal(this.entitiesAddress(), callData);
-      if (result.result) {
-        console.log('decodedResult', result.result);
-        return {success: true, contract: result.result};
+      const callData = iface.encodeFunctionData('entityCreate', [
+        name, metadata, 818, loginHash, secret, encryptedUserData, apiAddress, regulator
+      ]);
+
+      // ✅ Direct call — no re-entrant connectRegulatorContract()
+      const tx = await regulatorAsApi['callExternal'](contractAddress, callData, { gasLimit: 5000000 });
+      const receipt = await tx.wait();
+
+      if (receipt?.status === 1) {
+        return { success: true, contract: receipt };
       }
-      else {
-        return {success: false, contract: ''};
-      }
-  
-    }
-    catch (error) {
+      return { success: false, contract: '' };
+
+    } catch (error) {
       console.error(error);
-      return {
-        success: false,
-        contract: ''
-      };
+      return { success: false, contract: '' };
     }
   }
-
 
   async entityChangeState(address: string, state: number) {
     try {
@@ -1188,13 +1174,14 @@ export class RpcService {
 
   async entitiesListAll(start: number, offset: number) {
     try {
-      if(!this.entitiesAddress()) await this.getContracts();
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
         "function entitiesListByCountry(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address entity, string name, string metadata, uint256 countryCode, address regulator, uint8 state)[] entities)"
       ]);
       
       const callData = iface.encodeFunctionData('entitiesListByCountry', [start, offset]);
-      const result = await this.callExternalStatic(this.entitiesAddress(), callData);
+      const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('entitiesListByCountry', result.data);
         const { count, entities } = await this.processEntitiesList(decodedResult);        
@@ -1210,13 +1197,14 @@ export class RpcService {
 
   async entitiesListOwn(start: number, offset: number) {
     try {
-      if(!this.entitiesAddress()) await this.getContracts();
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
         "function entitiesListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address entity, string name, string metadata, uint256 countryCode, address regulator, uint8 state)[] entities)"
       ]);
       
       const callData = iface.encodeFunctionData('entitiesListByRegulator', [start, offset]);
-      const result = await this.callExternalStatic(this.entitiesAddress(), callData);
+      const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('entitiesListByRegulator', result.data);
         const { count, entities } = await this.processEntitiesList(decodedResult);        
@@ -1244,7 +1232,7 @@ export class RpcService {
         const parsedData = JSON.parse(decodedResult[0][2]);
 
         // Fetch state names once
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
         const stateId = Number(decodedResult[0][5]);
         let stateName = 'Unknown';
@@ -1300,7 +1288,7 @@ export class RpcService {
 
   async processEntitiesList(data: any) {
     // Fetch state names once for all validators
-    await this.connectGlobalVariables();
+    await this.connectVariablesProxyContract();
     const statesResult = await this.getGlobalVariableByCategory('Account State');
 
     // check countries list
@@ -1423,7 +1411,7 @@ export class RpcService {
 
   async servicesListAll(start: number, offset: number) {
     try {
-      if(!this.serviceAddress()) await this.getContracts()
+      if(!this.serviceAddress()) await this.getContractAddress('EntitiesProxy');
       const iface = new ethers.Interface([
         "function servicesListByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, string name, string data, uint256 countryCode, uint8 verificationLevel, address regulator, address validator, uint8 state)[] services)"
       ]);
@@ -1445,7 +1433,7 @@ export class RpcService {
 
   async servicesListOwn(start: number, offset: number) {
     try {
-      if(!this.serviceAddress()) await this.getContracts();
+      if(!this.serviceAddress()) await this.getContractAddress('EntitiesProxy');
       const iface = new ethers.Interface([
         "function servicesListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, string name, string data, uint256 countryCode, uint8 verificationLevel, address regulator, address validator, uint8 state)[] services)"
       ]);
@@ -1479,7 +1467,7 @@ export class RpcService {
         const parsedData = JSON.parse(decodedResult[0][2]);
 
         // Fetch state names once
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
         const stateId = Number(decodedResult[0][7]);
         let stateName = 'Unknown';
@@ -1554,7 +1542,7 @@ export class RpcService {
 
   async processServicesList(data: any) {
         // Fetch state names once for all validators
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
         const vLevelResult = await this.getGlobalVariableByCategory('Identity Verification Level');
 
@@ -1693,7 +1681,7 @@ export class RpcService {
         const decodedResult = iface.decodeFunctionResult('info', result.data);
 
         // Fetch state names once for all validators
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
 
         // Get state name for this validator
@@ -1755,7 +1743,7 @@ export class RpcService {
 
   async subscriptionsListByRegulator(start: number, offset: number) {
     try {
-      if(!this.subscriptionAddress()) await this.getContracts()
+      if(!this.subscriptionAddress()) await this.getContractAddress('EntitiesProxy');
       const iface = new ethers.Interface([
         "function listByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
       ]);
@@ -1777,7 +1765,7 @@ export class RpcService {
 
   async subscribersListByService(service: string, start: number, offset: number) {
     try {
-      if(!this.subscriptionAddress()) await this.getContracts()
+      if(!this.subscriptionAddress()) await this.getContractAddress('EntitiesProxy');
       const iface = new ethers.Interface([
         "function listByService(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
       ]);
@@ -1814,7 +1802,7 @@ export class RpcService {
 
   async subscribersListByIdentity(identity: string, start: number, offset: number) {
     try {
-      if(!this.subscriptionAddress()) await this.getContracts()
+      if(!this.subscriptionAddress()) await this.getContractAddress('EntitiesProxy');
       const iface = new ethers.Interface([
         "function listByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
       ]);
@@ -1836,7 +1824,7 @@ export class RpcService {
 
   async processSubscriptionsList(data: any) {
     // Fetch state names once for all validators
-    await this.connectGlobalVariables();
+    await this.connectVariablesProxyContract();
     const statesResult = await this.getGlobalVariableByCategory('Account State');
 
     // check countries list
@@ -1922,7 +1910,7 @@ export class RpcService {
 
   async identityLookupByGIN(ginHash: string) {
     try {
-      if(!this.operatorAddress()) await this.getContracts()
+      if(!this.operatorAddress()) await this.getContractAddress('IdentitiesProxy');
       const iface = new ethers.Interface([
         "function identityLookupByGIN(bytes32 ginHash) external view returns (tuple(address identity, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, address lastVarifiedBy))"
       ]);
@@ -1952,7 +1940,7 @@ export class RpcService {
 
   async identityLookupByUID(uid: string) {
     try {
-      if(!this.operatorAddress()) await this.getContracts()
+      if(!this.operatorAddress()) await this.getContractAddress('IdentitiesProxy');
       const iface = new ethers.Interface([
         "function identityLookupByUniqueId(bytes32 uniqueIdHash) external view returns (tuple(address identity, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, address lastVarifiedBy))"
       ]);
@@ -1983,7 +1971,7 @@ export class RpcService {
 
   async identityLookupByContact(contact: string) {
     try {
-      if(!this.operatorAddress()) await this.getContracts()
+      if(!this.operatorAddress()) await this.getContractAddress('IdentitiesProxy');
       const contactBytes32 = await this.stringToBytes32(contact);
       const iface = new ethers.Interface([
         "function identityLookupByContact(bytes32 contact) external view returns (tuple(address identity, bytes32 ginHash, string metadata, uint256 countryCode, uint256 createdAt, address createdBy, uint256 lastVarifiedAt, address lastVarifiedBy))"
@@ -2016,7 +2004,7 @@ export class RpcService {
   async processIdentityData(data: any) {
     // check countries list
     if (this.countriesList.length === 0) {
-      await this.connectGlobalVariables();
+      await this.connectVariablesProxyContract();
       await this.getCountriesList();
     }       
 
@@ -2071,7 +2059,7 @@ export class RpcService {
         const decodedResult = iface.decodeFunctionResult('info', result.data);
 
         // Fetch state names once for all validators
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Asset State');
         const tokenTypeResult = await this.getGlobalVariableByCategory('Asset Token Type');
         const assetTypeResult = await this.getGlobalVariableByCategory('Asset Type');
@@ -2171,7 +2159,7 @@ export class RpcService {
 
   async assetsListByIssuer(issuer: string, start: number, offset: number) {
     try {
-      if(!this.assetsProxyAddress()) await this.getContracts()
+      if(!this.assetsProxyAddress()) await this.getContractAddress('AssetsProxy');
       const iface = new ethers.Interface([
         "function getIssuerAssets(address issuer, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address regulator, bool suspended, uint8 state)[] assets)"
       ]);
@@ -2193,7 +2181,7 @@ export class RpcService {
 
   async assetsListByRegulator(start: number, offset: number) {
     try {
-      if(!this.assetsProxyAddress()) await this.getContracts()
+      if(!this.assetsProxyAddress()) await this.getContractAddress('AssetsProxy');
       const iface = new ethers.Interface([
         "function getRegulatorAssets(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address regulator, bool suspended, uint8 state)[] assets)"
       ]);
@@ -2215,7 +2203,7 @@ export class RpcService {
 
   async assetsListByCountry(start: number, offset: number) {
     try {
-      if(!this.assetsProxyAddress()) await this.getContracts()
+      if(!this.assetsProxyAddress()) await this.getContractAddress('AssetsProxy');
       const iface = new ethers.Interface([
         "function getCountryAssets(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address regulator, bool suspended, uint8 state)[] assets)"
       ]);
@@ -2236,7 +2224,7 @@ export class RpcService {
 
   async processAssetsList(data: any) {
         // Fetch state names once for all validators
-        await this.connectGlobalVariables();
+        await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Asset State');
         const tokenTypeResult = await this.getGlobalVariableByCategory('Asset Token Type');
         const assetTypeResult = await this.getGlobalVariableByCategory('Asset Type');
@@ -2380,7 +2368,7 @@ export class RpcService {
 
   async assetPriceHistory(address: string, start: number, offset: number) {
     try {
-      if(!this.assetsProxyAddress()) await this.getContracts()
+      if(!this.assetsProxyAddress()) await this.getContractAddress('AssetsProxy');
       const iface = new ethers.Interface([
         "function getPriceHistory(uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 bid, uint256 ask, uint256 timestamp)[] history)"
       ]);
@@ -2490,7 +2478,7 @@ export class RpcService {
       const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));      
 
       // check if service proxy address is set
-      if(!this.serviceAddress()) await this.getContracts()
+      if(!this.serviceAddress()) await this.getContractAddress('EntitiesProxy');
 
       const regulator = environment.regulatorAddress;
       const operator = '0x48aF7747D327663887b815590C8844f94AEaA4e4'; //this.operatorAddress();

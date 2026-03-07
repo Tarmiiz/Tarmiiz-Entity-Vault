@@ -89,8 +89,6 @@ export class EntityRegisterPage implements OnInit {
         mobile
       }
 
-      console.log(name, admin, password, JSON.stringify(serviceMetadata), api);
-
       this.loadingService.show('Generating zero-knowledge proof and registering...');
       const result = await this.rpcService.entityRegister(name, admin, password, JSON.stringify(serviceMetadata), api);
 

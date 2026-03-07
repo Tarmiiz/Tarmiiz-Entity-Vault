@@ -35,7 +35,7 @@ export class ModalValidatorStateComponent {
   }
   
   async loadStates() {
-    await this.rpcService.connectGlobalVariables();
+    await this.rpcService.connectVariablesProxyContract();
     const data = await this.rpcService.getGlobalVariableByCategory('cKYC Validator State');
     this.states.set(data.result);
   }

@@ -170,7 +170,7 @@ export class UserDetailsPage implements OnInit {
   
         // get id type name
         const idType = this.metadata()?.idType || 0;
-        await this.rpcService.connectGlobalVariables();
+        await this.rpcService.connectVariablesProxyContract();
         const idTypeResult = await this.rpcService.getGlobalVariableByCategory('ID Type - Individual');      
         let idTypeName = 'Unknown';
         if (idTypeResult.result) {

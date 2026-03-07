@@ -67,6 +67,7 @@ export class ListPage implements OnInit {
   async listEntities() {
     this.loadingService.show('Loading data...');
     this.entities.set([]);
+    await this.rpcService.connectVariablesProxyContract();
     const result = this.showAllEntities() ? await this.rpcService.entitiesListAll(1, 10) : await this.rpcService.entitiesListOwn(1, 10);
     if(result.result) {
       this.entitiesCount = result.result.count;

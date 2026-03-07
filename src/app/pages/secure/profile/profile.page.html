@@ -79,9 +79,9 @@
             </div>
           
             <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-              <button (click)="openChangeContractModal('password')" class="px-6 py-2.5 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+              <!-- <button (click)="openChangePasswordModal('password')" class="px-6 py-2.5 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
                 Change Password
-              </button>
+              </button> -->
               <button (click)="openUpdateDataModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
                 Edit Data
               </button>
@@ -94,55 +94,32 @@
       <!-- contracts tab -->
       @if (activeTab() === 'contracts') {
         <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
-          <div class="p-4">
-            <div class="flex items-start justify-between mb-4">
-              <div>
-                <h2 class="text-3xl font-bold text-gray-800">Contracts</h2>
-                <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
-              </div>
-            </div>
-  
-            <div class="grid grid-cols-3 md:grid-cols-3 gap-x-8 gap-y-4 text-gray-700 mt-6">
-              <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">Operator Contract</p>
-                <p class="font-mono text-base">{{ operator() }}</p>
-              </div>
-              <div class="border-t pt-4 md:col-span-1">
-                <button (click)="openChangeContractModal('operator')" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                  Change
-                </button>
-              </div>
-              <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">Validators Contract</p>
-                <p class="font-mono text-base">{{ validators() }}</p>
-              </div>
-              <div class="border-t pt-4 md:col-span-1">
-                <button (click)="openChangeContractModal('validators')" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                  Change
-                </button>
-              </div>
-              <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">Entities Registry Contract</p>
-                <p class="font-mono text-base">{{ entities() }}</p>
-              </div>
-              <div class="border-t pt-4 md:col-span-1">
-                <button (click)="openChangeContractModal('entities')" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                  Change
-                </button>
-              </div>
-              <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">Assets Registry Contract</p>
-                <p class="font-mono text-base">{{ assets() }}</p>
-              </div>
-              <div class="border-t pt-4 md:col-span-1">
-                <button (click)="openChangeContractModal('assets')" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                  Change
-                </button>
-              </div>
-            </div>
-            
-  
-          </div>
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto rounded-lg">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <tr>
+                  <th scope="col" class="px-6 py-2">Contract</th>
+                  <th scope="col" class="px-6 py-2">Address</th>
+              </tr>
+          </thead>
+          <tbody class="text-xs">
+            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors">
+              <td class="px-6 py-2">Entities</td>
+              <td class="px-6 py-2">{{ entities() }}</td>
+            </tr>
+            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors">
+              <td class="px-6 py-2">Assets</td>
+              <td class="px-6 py-2">{{ assets() }}</td>
+            </tr>
+            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors">
+              <td class="px-6 py-2">Identities</td>
+              <td class="px-6 py-2">{{ identities() }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
         </div>
       }
 
