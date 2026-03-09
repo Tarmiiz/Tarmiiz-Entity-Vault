@@ -108,7 +108,11 @@ export class DetailsPage implements OnInit {
   }
 
   async gotoLink(address: string) {
-    this.router.navigate(['/authorized/ckyc/services/details/' + address]);
+    this.router.navigate(['/authorized/entities/details/' + address]);
+  }
+
+  async gotoService(address: string) {
+    this.router.navigate(['/authorized/services/details/' + address]);
   }
 
   async gotoSubscriber(subscription: string) {

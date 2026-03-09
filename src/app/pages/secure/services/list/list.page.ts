@@ -80,7 +80,7 @@ export class ListPage implements OnInit {
   }  
 
   viewDetails(service: Service) {
-    this.router.navigate(['/authorized/ckyc/services/details/' + service.address]);
+    this.router.navigate(['/authorized/services/details/' + service.address]);
   }
 
   filteredServices = computed(() => {

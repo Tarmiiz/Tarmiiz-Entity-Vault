@@ -231,7 +231,7 @@ export class UserDetailsPage implements OnInit {
   }  
 
   async gotoValidator(validator: string) {
-    this.router.navigate(['/authorized/ckyc/validators/details/' + validator]);
+    this.router.navigate(['/authorized/validators/details/' + validator]);
   }
 
   async gotoSubscription(subscription: string) {

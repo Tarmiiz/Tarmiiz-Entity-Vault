@@ -89,15 +89,18 @@ export class DetailsPage implements OnInit {
     }
   }
 
+  async gotoEntity(address: string) {
+    this.router.navigate(['/authorized/entities/details/' + address]);
+  }
+
   async getAssets() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.assetsListByIssuer(this.serviceAddress, 1, 100);
+    const data = await this.rpcService.assetsListByService(this.serviceAddress, 1, 100);
     this.assets.set(data.result?.assets || []);
-    // console.log('assets', this.assets());
     this.loadingService.hide();
   }
 
-  viewAsset(asset: Asset) {
+  gotoAsset(asset: Asset) {
     this.router.navigate(['/authorized/assets/details/' + asset.address]);
   }
   
@@ -157,7 +160,7 @@ export class DetailsPage implements OnInit {
   }
 
   async gotoValidator(validator: string) {
-    this.router.navigate(['/authorized/ckyc/validators/details/' + validator]);
+    this.router.navigate(['/authorized/validators/details/' + validator]);
   }  
 
   async gotoSubscriber(subscription: string) {

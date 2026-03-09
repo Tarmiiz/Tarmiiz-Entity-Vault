@@ -22,10 +22,16 @@ export class AuthService {
   userInfo!: User;
 
   regulatorContractAddress = environment.regulatorAddress;
-  
+
+  private _ready: Promise<void>;
+
   constructor() {
-    this.storageService.get('user').then((value) => this.userInfo = JSON.parse(value!) || {});
+    this._ready = this.storageService.get('user').then((value) => { this.userInfo = JSON.parse(value!) || {}; });
     // console.log('auth service');
+  }
+
+  ready(): Promise<void> {
+    return this._ready;
   }
   
   async login(username: string, password: string) {

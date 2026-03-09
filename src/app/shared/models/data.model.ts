@@ -191,8 +191,11 @@ export class Entity {
 export class Service {
   constructor (
     public address: string,
+    public entity: string,
+    public entityName: string,
     public name: string,
-    public data: string,
+    public metadata: string,
+    public description: string,
     public email: string,
     public mobile: string,
     public website: string,
@@ -203,8 +206,6 @@ export class Service {
     public regulator: string,
     public regulatorName: string,
     public regulatorSymbol: string,
-    public validator: string,
-    public validatorName: string,
     public state: number,
     public stateName: string
   ) {}
@@ -251,6 +252,13 @@ export class ValidatorIdentity {
   ) {}
 }
 
+export class AssetService {
+  constructor (
+    public service: string,
+    public serviceName: string
+  ) {}
+}
+
 export class Asset {
   constructor (
     public address: string,
@@ -268,6 +276,7 @@ export class Asset {
     public currencyCode: string,
     public currencyName: string,
     public createdOn: number,
+    public services: AssetService[],
     public issuer: string,
     public issuerName: string,
     public manager: string,

@@ -8,7 +8,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Asset, Entity, Subscription } from '../../../../shared/models/data.model';
+import { Asset, Entity, Service, Subscription } from '../../../../shared/models/data.model';
 import { ModalEntityStateService } from '../modals/modal-entity-state/modal-entity-state.service';
 import { ModalEntityStateComponent } from "../modals/modal-entity-state/modal-entity-state.component";
 import { ModalEntityEditService } from '../modals/modal-entity-edit/modal-entity-edit.service';
@@ -39,13 +39,14 @@ export class DetailsPage implements OnInit {
   private entityEditService = inject(ModalEntityEditService);
   private serviceStateService = inject(ModalEntityStateService);
 
-  activeTab = signal<'info' | 'services' | 'assets' | 'subscriptions' | 'trxs' | 'actions'>('info');
+  activeTab = signal<'info' | 'services' | 'assets' | 'actions'>('info');
 
   loadingData: boolean = false;
 
   entityAddress = '';
   entity = signal<Entity | undefined>(undefined);
   subscriptions = signal<Subscription[]>([]);
+  services = signal<Service[]>([]);
   assets = signal<Asset[]>([]);
   isOwn = false;
 
@@ -59,18 +60,18 @@ export class DetailsPage implements OnInit {
   async ngOnInit() {}
   
   async ionViewWillEnter() {
-    await this.getServiceDetails();
+    await this.getEntityDetails();
     this.isOwn = this.entity()?.regulator === environment.regulatorAddress;
   }
 
-  setTab(tab: 'info' | 'services' | 'assets' | 'subscriptions' | 'trxs' | 'actions') {
+  setTab(tab: 'info' | 'services' | 'assets' | 'actions') {
     this.activeTab.set(tab);
-    if (tab === 'info') this.getServiceDetails();
+    if (tab === 'info') this.getEntityDetails();
+    if (tab === 'services') this.getServices();
     if (tab === 'assets') this.getAssets();
-    if (tab === 'subscriptions') this.getSubscriptions();
   }   
 
-  async getServiceDetails() {
+  async getEntityDetails() {
     this.loadingService.show('Loading data...');
     const data = await this.rpcService.entityInfo(this.entityAddress);
     this.entity.set(data.result?.entity);
@@ -88,6 +89,18 @@ export class DetailsPage implements OnInit {
       default: return 'bg-gray-100 text-gray-800';
     }
   }
+
+  async getServices() {
+    this.loadingService.show('Loading data...');
+    const data = await this.rpcService.servicesListEntity(this.entityAddress, 1, 100);
+    this.services.set(data.result?.services || []);
+    // console.log('assets', this.services());
+    this.loadingService.hide();
+  }
+
+  viewService(service: Service) {
+    this.router.navigate(['/authorized/services/details/' + service.address]);
+  }  
 
   async getAssets() {
     this.loadingService.show('Loading data...');
@@ -127,7 +140,7 @@ export class DetailsPage implements OnInit {
           await this.rpcService.serviceChangeData(currentService.address, JSON.stringify({ email: result.email!, mobile: result.mobile!, website: result.website! }));
         }
 
-        await this.getServiceDetails();
+        await this.getEntityDetails();
 
       } catch (error) {
         console.error('Failed to update service', error);
@@ -147,7 +160,7 @@ export class DetailsPage implements OnInit {
         this.loadingService.show('Changing state...');
         try {
             await this.rpcService.entityChangeState(currentService.address, newState);
-            await this.getServiceDetails();
+            await this.getEntityDetails();
         } catch (error) {
             console.error('Failed to change state', error);
         } finally {

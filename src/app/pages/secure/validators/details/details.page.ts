@@ -152,7 +152,7 @@ export class DetailsPage implements OnInit {
   }
 
   async viewService(service: string) {
-    this.router.navigate(['/authorized/ckyc/services/details/' + service]);
+    this.router.navigate(['/authorized/services/details/' + service]);
   }
 
   async viewIdentity(uid: string) {

@@ -100,11 +100,11 @@ export class DetailsPage implements OnInit {
   }
 
   async gotoValidator(validator: string) {
-    this.router.navigate(['/authorized/ckyc/validators/details/' + validator]);
+    this.router.navigate(['/authorized/validators/details/' + validator]);
   }  
 
   async gotoService(service: string) {
-    this.router.navigate(['/authorized/ckyc/services/details/' + service]);
+    this.router.navigate(['/authorized/services/details/' + service]);
   }  
 
   async gotoIdentity(subscriber: string) {

@@ -80,7 +80,7 @@ export class ListPage implements OnInit {
   }  
 
   viewDetails(validator: Validator) {
-    this.router.navigate(['/authorized/ckyc/validators/details/' + validator.address]);
+    this.router.navigate(['/authorized/validators/details/' + validator.address]);
   }
 
   filteredValidators = computed(() => {
