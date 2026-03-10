@@ -73,23 +73,15 @@ export class LogsPage implements OnInit, OnDestroy {
   }
 
   async getLogs() {
-    const startBlock = this.currentBlock - 10000;
-    // Get all historical events-
-    const allEvents = await this.rpcService.getAllContractEvents(startBlock);
-    // console.log('Control events:', allEvents);
-    this.loginEvents = allEvents;
-    // console.log('Login events:', allEvents);
-
-    // Get events from last 1000 blocks
-    // const currentBlock = await this.rpcService.rpcProvider.getBlockNumber();
-    // const recentEvents = await this.rpcService.getControlEvents(currentBlock - 1000, 'latest');
-
-    // // Listen to real-time login events
-    // this.rpcService.listenToLoginsEvents((event) => {
-    //   console.log('New login event:', event.account, event.action);
-    // });
-
-    // // Stop listening when component is destroyed
-    // await this.rpcService.stopListening();
+    try {
+      const startBlock = Math.max(0, this.currentBlock - 1000);
+      console.log(`Fetching logs from block ${startBlock} to latest (currentBlock: ${this.currentBlock})`);
+      const allEvents = await this.rpcService.getAllContractEvents(startBlock);
+      console.log(`Fetched ${allEvents.length} events:`, allEvents);
+      this.loginEvents = allEvents;
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      this.loginEvents = [];
+    }
   }
 }

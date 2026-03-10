@@ -61,6 +61,7 @@ export class ControlEvent {
 export class RegulatorEvent {
   constructor (
       public eventType: string,
+      public sender: string,
       public account: string,
       public action: string,
       public blockNumber: number,

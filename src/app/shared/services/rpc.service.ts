@@ -2663,36 +2663,26 @@ export class RpcService {
 
   async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<RegulatorEvent[]> {
     try {
-      // Create filters for all event types
-      const accessFilter = this.regulatorContract.filters.AccessEvent();
-      const credentialsFilter = this.regulatorContract.filters.CredentialEvent();
+      // Create filters for all event types present in the ABI
+      const controlFilter = this.regulatorContract.filters.ControlEvent();
       const regulatorFilter = this.regulatorContract.filters.RegulatorEvent();
       const validatorFilter = this.regulatorContract.filters.ValidatorEvent();
-      const serviceFilter = this.regulatorContract.filters.ServiceEvent();
+      const credentialsFilter = this.regulatorContract.filters.UserCredentialsChanged();
 
       // Query all events
-      const [accessEvents, credentialsEvents, regulatorEvents, validatorEvents, serviceEvents] = await Promise.all([
-        this.regulatorContract.queryFilter(accessFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock),
+      const [controlEvents, regulatorEvents, validatorEvents, credentialsEvents] = await Promise.all([
+        this.regulatorContract.queryFilter(controlFilter, fromBlock, toBlock),
         this.regulatorContract.queryFilter(regulatorFilter, fromBlock, toBlock),
         this.regulatorContract.queryFilter(validatorFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(serviceFilter, fromBlock, toBlock)
+        this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock)
       ]);
+      console.log('Raw event counts — Control:', controlEvents.length, 'Regulator:', regulatorEvents.length, 'Validator:', validatorEvents.length, 'Credentials:', credentialsEvents.length);
 
       // Process all events with timestamps
       const allEvents = await Promise.all([
-        ...accessEvents.map(async (event: any) => ({
-          sender: event.args.account,
-          eventType: 'Access',
-          account: '',
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        })),
-        ...credentialsEvents.map(async (event: any) => ({
-          sender: event.args.account,
-          eventType: 'Credentials',
+        ...controlEvents.map(async (event: any) => ({
+          sender: event.args.caller,
+          eventType: 'Control',
           account: '',
           action: event.args.action,
           blockNumber: event.blockNumber,
@@ -2702,7 +2692,7 @@ export class RpcService {
         ...regulatorEvents.map(async (event: any) => ({
           sender: event.args.sender,
           eventType: 'Regulator',
-          account: '',
+          account: event.args.account,
           action: event.args.action,
           blockNumber: event.blockNumber,
           transactionHash: event.transactionHash,
@@ -2717,10 +2707,10 @@ export class RpcService {
           transactionHash: event.transactionHash,
           timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
         })),
-        ...serviceEvents.map(async (event: any) => ({
+        ...credentialsEvents.map(async (event: any) => ({
           sender: event.args.sender,
-          eventType: 'Service',
-          account: event.args.validator,
+          eventType: 'Credentials',
+          account: event.args.userId.toString(),
           action: event.args.action,
           blockNumber: event.blockNumber,
           transactionHash: event.transactionHash,
