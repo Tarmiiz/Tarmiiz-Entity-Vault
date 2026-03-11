@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -46,6 +46,13 @@ export class DetailsPage implements OnInit {
   isOwn = false;
 
   priceHistory = signal<AssetPrice[]>([]);
+  pricePage = signal(0);
+  readonly pricePageSize = 5;
+  pagedPriceHistory = computed(() => {
+    const start = this.pricePage() * this.pricePageSize;
+    return this.priceHistory().slice(start, start + this.pricePageSize);
+  });
+  totalPricePages = computed(() => Math.ceil(this.priceHistory().length / this.pricePageSize));
 
   private chartInstance: any = null;
 
@@ -66,7 +73,7 @@ export class DetailsPage implements OnInit {
   setTab(tab: 'info' | 'price' | 'holders' | 'trxs' | 'actions') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
-    if (tab === 'price') this.getPriceHistory(1, 10);
+    if (tab === 'price') this.getPriceHistory(1, 100);
   }
 
   async getAssetDetails() {
@@ -123,6 +130,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show('Loading data...');
     const priceHistoryInfo = await this.rpcService.assetPriceHistory(this.assetAddress, start, offset);
     this.priceHistory.set(priceHistoryInfo.result?.history);
+    this.pricePage.set(0);
     this.loadingService.hide();
 
     // Wait for Angular to render the canvas before drawing

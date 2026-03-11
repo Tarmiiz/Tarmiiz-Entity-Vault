@@ -6,6 +6,7 @@ import { HeaderComponent } from "../../../shared/components/header/header.compon
 
 import { RpcService } from '../../../shared/services/rpc.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
+import { LogEvent } from '../../../shared/models/data.model';
 
 @Component({
   selector: 'app-logs',
@@ -22,7 +23,7 @@ export class LogsPage implements OnInit, OnDestroy {
   currentBlock: number = 0;
   currentTrxs: number = 0;
   currentBlockTimestamp: number = 0;
-  loginEvents: any[] = [];
+  loginEvents: LogEvent[] = [];
   loadingEvents: boolean = false;
 
   emptyRows: Array<any> = Array(5).fill(null);

@@ -327,37 +327,6 @@
       "type": "event"
     },
     {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bytes32",
-          "name": "identity",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "ValidatorEvent",
-      "type": "event"
-    },
-    {
       "inputs": [],
       "name": "ADD_ACTION",
       "outputs": [
@@ -1006,7 +975,7 @@
               "type": "bool"
             }
           ],
-          "internalType": "struct RegulatorTemplate.Regulator",
+          "internalType": "struct IRegulatorTemplate.Regulator",
           "name": "",
           "type": "tuple"
         }
@@ -1055,11 +1024,6 @@
           "internalType": "address",
           "name": "apiAddress",
           "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "validatorsContract",
-          "type": "address"
         }
       ],
       "name": "initialize",
@@ -1078,6 +1042,19 @@
       "name": "initialize",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isAuthorized",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -1174,38 +1151,12 @@
     {
       "inputs": [
         {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
+          "internalType": "bytes32",
+          "name": "secret",
+          "type": "bytes32"
         }
       ],
-      "name": "overrideName",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "state",
-          "type": "bool"
-        }
-      ],
-      "name": "overrideState",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "symbol",
-          "type": "string"
-        }
-      ],
-      "name": "overrideSymbol",
+      "name": "overridePassword",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1333,135 +1284,6 @@
       "name": "unpause",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "userData",
-          "type": "string"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "loginHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "secret",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "data",
-          "type": "string"
-        }
-      ],
-      "name": "validatorAdd",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "identity",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "string",
-          "name": "data",
-          "type": "string"
-        }
-      ],
-      "name": "validatorIdentityAdd",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "start",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "offset",
-          "type": "uint256"
-        }
-      ],
-      "name": "validatorsListOwn",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "count",
-          "type": "uint256"
-        },
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "validator",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "regulator",
-              "type": "address"
-            },
-            {
-              "internalType": "string",
-              "name": "name",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "data",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "countryCode",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint8",
-              "name": "state",
-              "type": "uint8"
-            }
-          ],
-          "internalType": "struct IValidators.Validator[]",
-          "name": "validators",
-          "type": "tuple[]"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {

@@ -45,29 +45,19 @@ export class GlobalVariable {
   ){}
 }
 
-export class ControlEvent {
+export class LogEvent {
   constructor (
-    public caller: string,
-    public roleHash: string,
-    public actionHash: string,
-    public role: string,
-    public action: string,
-    public time: number,
+    public eventName: string,       // ABI event name: 'ControlEvent', 'UserCreated', etc.
     public blockNumber: number,
-    public transactionHash: string
+    public transactionHash: string,
+    public timestamp: number,
+    public sender: string,          // primary address (caller / sender / account)
+    public target: string,          // secondary identifier (address1 / destination / userId)
+    public action: string,          // action string or derived description
+    public role: string = '',       // ControlEvent: role name
+    public roleHash: string = '',   // ControlEvent: role hash
+    public actionHash: string = ''  // ControlEvent: action hash
   ) {}
-}
-
-export class RegulatorEvent {
-  constructor (
-      public eventType: string,
-      public sender: string,
-      public account: string,
-      public action: string,
-      public blockNumber: number,
-      public transactionHash: string,
-      public timestamp: number
-  ){}
 }
 
 export class RegulatorData {

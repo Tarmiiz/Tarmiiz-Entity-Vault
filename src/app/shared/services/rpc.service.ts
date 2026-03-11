@@ -10,7 +10,7 @@ import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { ControlEvent, Key, Regulator, RegulatorEvent, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetService, AssetPrice, Entity } from '../models/data.model';
+import { LogEvent, Key, Regulator, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetService, AssetPrice, Entity } from '../models/data.model';
 
 import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
@@ -34,10 +34,10 @@ export interface ZKProofData {
 }
 
 export interface AllEventsData {
-  controlEvents: ControlEvent[];
-  credentialsEvents: RegulatorEvent[];
-  loginsEvents: RegulatorEvent[];
-  assetEvents?: RegulatorEvent[];
+  controlEvents: LogEvent[];
+  credentialsEvents: LogEvent[];
+  loginsEvents: LogEvent[];
+  assetEvents?: LogEvent[];
 }
 
 
@@ -2640,82 +2640,141 @@ export class RpcService {
 // Event Functions
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-  async getControlEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<ControlEvent[]> {
+  async getControlEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<LogEvent[]> {
     try {
       const filter = this.regulatorContract.filters.ControlEvent();
       const events = await this.regulatorContract.queryFilter(filter, fromBlock, toBlock);
 
-      return events.map((event: any) => ({
-        caller: event.args.caller,
-        roleHash: event.args.roleHash,
-        actionHash: event.args.actionHash,
-        role: event.args.role,
-        action: event.args.action,
-        time: event.args.time,
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
-      }));
+      return await Promise.all(events.map(async (event: any) => new LogEvent(
+        'ControlEvent',
+        event.blockNumber,
+        event.transactionHash,
+        (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+        event.args.caller,
+        '',
+        event.args.action,
+        event.args.role,
+        event.args.roleHash,
+        event.args.actionHash
+      )));
     } catch (error) {
       console.error('Error fetching ControlEvent events:', error);
       throw error;
     }
   }
 
-  async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<RegulatorEvent[]> {
+  async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<LogEvent[]> {
     try {
       // Create filters for all event types present in the ABI
       const controlFilter = this.regulatorContract.filters.ControlEvent();
       const regulatorFilter = this.regulatorContract.filters.RegulatorEvent();
-      const validatorFilter = this.regulatorContract.filters.ValidatorEvent();
+      const externalCallFilter = this.regulatorContract.filters.ExternalCallEvent();
+      const userAccessFilter = this.regulatorContract.filters.UserAccess();
+      const userCreatedFilter = this.regulatorContract.filters.UserCreated();
       const credentialsFilter = this.regulatorContract.filters.UserCredentialsChanged();
+      const userDataFilter = this.regulatorContract.filters.UserDataChanged();
+      const userRoleFilter = this.regulatorContract.filters.UserRoleChanged();
+      const userStateFilter = this.regulatorContract.filters.UserStateChanged();
 
       // Query all events
-      const [controlEvents, regulatorEvents, validatorEvents, credentialsEvents] = await Promise.all([
+      const [controlEvents, regulatorEvents, externalCallEvents, userAccessEvents, userCreatedEvents, credentialsEvents, userDataEvents, userRoleEvents, userStateEvents] = await Promise.all([
         this.regulatorContract.queryFilter(controlFilter, fromBlock, toBlock),
         this.regulatorContract.queryFilter(regulatorFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(validatorFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock)
+        this.regulatorContract.queryFilter(externalCallFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(userAccessFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(userCreatedFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(userDataFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(userRoleFilter, fromBlock, toBlock),
+        this.regulatorContract.queryFilter(userStateFilter, fromBlock, toBlock)
       ]);
-      console.log('Raw event counts — Control:', controlEvents.length, 'Regulator:', regulatorEvents.length, 'Validator:', validatorEvents.length, 'Credentials:', credentialsEvents.length);
 
       // Process all events with timestamps
       const allEvents = await Promise.all([
-        ...controlEvents.map(async (event: any) => ({
-          sender: event.args.caller,
-          eventType: 'Control',
-          account: '',
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        })),
-        ...regulatorEvents.map(async (event: any) => ({
-          sender: event.args.sender,
-          eventType: 'Regulator',
-          account: event.args.account,
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        })),
-        ...validatorEvents.map(async (event: any) => ({
-          sender: event.args.sender,
-          eventType: 'Validator',
-          account: event.args.validator,
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        })),
-        ...credentialsEvents.map(async (event: any) => ({
-          sender: event.args.sender,
-          eventType: 'Credentials',
-          account: event.args.userId.toString(),
-          action: event.args.action,
-          blockNumber: event.blockNumber,
-          transactionHash: event.transactionHash,
-          timestamp: (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0
-        }))
+        ...controlEvents.map(async (event: any) => new LogEvent(
+          'ControlEvent',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.caller,
+          '',
+          event.args.action,
+          event.args.role,
+          event.args.roleHash,
+          event.args.actionHash
+        )),
+        ...regulatorEvents.map(async (event: any) => new LogEvent(
+          'RegulatorEvent',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.sender,
+          event.args.address1,
+          event.args.action
+        )),
+        ...externalCallEvents.map(async (event: any) => new LogEvent(
+          'ExternalCallEvent',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.account,
+          event.args.destination,
+          event.args.action
+        )),
+        ...userAccessEvents.map(async (event: any) => new LogEvent(
+          'UserAccess',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          '',
+          event.args.userId.toString(),
+          event.args.action
+        )),
+        ...userCreatedEvents.map(async (event: any) => new LogEvent(
+          'UserCreated',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.sender,
+          event.args.userId.toString(),
+          `Role: ${event.args.role}`
+        )),
+        ...credentialsEvents.map(async (event: any) => new LogEvent(
+          'UserCredentialsChanged',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.sender,
+          event.args.userId.toString(),
+          event.args.action
+        )),
+        ...userDataEvents.map(async (event: any) => new LogEvent(
+          'UserDataChanged',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.sender,
+          event.args.userId.toString(),
+          'Data changed'
+        )),
+        ...userRoleEvents.map(async (event: any) => new LogEvent(
+          'UserRoleChanged',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.sender,
+          event.args.userId.toString(),
+          `Role changed to: ${event.args.newRole}`
+        )),
+        ...userStateEvents.map(async (event: any) => new LogEvent(
+          'UserStateChanged',
+          event.blockNumber,
+          event.transactionHash,
+          (await this.rpcProvider.getBlock(event.blockNumber))?.timestamp || 0,
+          event.args.sender,
+          event.args.userId.toString(),
+          `State changed to: ${event.args.newState}`
+        ))
       ]);
 
       // Sort events by block number (newest first)
@@ -2736,9 +2795,9 @@ export class RpcService {
       ]);
 
       // Separate contract events by type
-      const loginsEvents = contractEvents.filter(event => event.eventType === 'login');
-      const credentialsEvents = contractEvents.filter(event => event.eventType === 'credentials');
-      const assetEvents = contractEvents.filter(event => event.eventType === 'asset');
+      const loginsEvents = contractEvents.filter(event => event.eventName === 'UserAccess');
+      const credentialsEvents = contractEvents.filter(event => event.eventName === 'Credentials');
+      const assetEvents = contractEvents.filter(event => event.eventName === 'Regulator');
 
       return {
         controlEvents,
@@ -2752,24 +2811,26 @@ export class RpcService {
     }
   }
 
-  listenToControlEvents(callback: (event: ControlEvent) => void): void {
+  listenToControlEvents(callback: (event: LogEvent) => void): void {
     const wsContract = new ethers.Contract(
-      this.regulatorContractAddress, 
-      RegulatorTemplateAbi, 
+      this.regulatorContractAddress,
+      RegulatorTemplateAbi,
       this.wsProvider
     );
 
     wsContract.on('ControlEvent', (caller, roleHash, actionHash, role, action, time, event) => {
-      callback({
+      callback(new LogEvent(
+        'ControlEvent',
+        event.log.blockNumber,
+        event.log.transactionHash,
+        Number(time),
         caller,
-        roleHash,
-        actionHash,
-        role,
+        '',
         action,
-        time,
-        blockNumber: event.log.blockNumber,
-        transactionHash: event.log.transactionHash
-      });
+        role,
+        roleHash,
+        actionHash
+      ));
     });
   }
 

@@ -203,7 +203,7 @@
                           </tr>
                       }
                       @else {
-                          @for(price of priceHistory(); track price.timestamp; let i = $index; let isEven = $even;) {
+                          @for(price of pagedPriceHistory(); track price.timestamp; let i = $index; let isEven = $even;) {
                               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                                   <td class="px-6 py-2">{{ price.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
                                   <td class="px-6 py-2">{{ price.bid | number: '1.6-6' }}</td>
@@ -214,6 +214,22 @@
                   </tbody>
                 </table>
               </div>
+              <!-- pagination -->
+              @if (totalPricePages() > 1) {
+                <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-600">
+                  <span>Page {{ pricePage() + 1 }} of {{ totalPricePages() }}</span>
+                  <div class="flex gap-2">
+                    <button (click)="pricePage.set(pricePage() - 1)" [disabled]="pricePage() === 0"
+                      class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                      Prev
+                    </button>
+                    <button (click)="pricePage.set(pricePage() + 1)" [disabled]="pricePage() >= totalPricePages() - 1"
+                      class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                      Next
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
 
           </div>
