@@ -38,7 +38,7 @@ export class LoginPage implements OnInit {
   formLogin!: FormGroup;
   isLoading = false;
 
-  contractAddress = environment.regulatorAddress;
+  contractAddress = environment.entityAddress;
 
   constructor(
   ) { 

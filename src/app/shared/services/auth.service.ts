@@ -5,7 +5,7 @@ import { StorageService } from './storage.service';
 import { RpcService } from './rpc.service';
 import { LoadingService } from '../components/alerts/loading/loading.service';
 import { AlertService } from '../components/alerts/alert/alert.service';
-import { Regulator, User } from '../models/data.model';
+import { Entity, User } from '../models/data.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -18,10 +18,10 @@ export class AuthService {
   private storageService = inject(StorageService);
   private rpcService = inject(RpcService);
 
-  regulatorInfo!: Regulator;
+  entityInfo!: Entity;
   userInfo!: User;
 
-  regulatorContractAddress = environment.regulatorAddress;
+  entityContractAddress = environment.entityAddress;
 
   private _ready: Promise<void>;
 
@@ -40,7 +40,7 @@ export class AuthService {
       this.loadingService.show('Connecting to Contract ...');
   
       // set regulatro contract address
-      this.rpcService.regulatorContractAddress = this.regulatorContractAddress;
+      this.rpcService.entityContractAddress = this.entityContractAddress;
 
       // Initialize the RPC service
       await this.rpcService.init();
@@ -65,7 +65,7 @@ export class AuthService {
 
           // set storage variables
           await this.storageService.set('sessionExpiry', expiryTime.toString());
-          this.storageService.set('contract', this.regulatorContractAddress);
+          this.storageService.set('contract', this.entityContractAddress);
           this.storageService.set('user', JSON.stringify(this.userInfo));
           this.storageService.set('wallet', key);
 

@@ -60,28 +60,6 @@ export class LogEvent {
   ) {}
 }
 
-export class RegulatorData {
-  constructor (
-    public logo: string,
-    public email: string,
-    public website: string,
-    public telephone: string,
-    public address: string
-  ){}
-}
-
-export class Regulator {
-  constructor (
-    public address: string,
-    public name: string,
-    public symbol: string,
-    public data: RegulatorData,
-    public countryCode: number,
-    public countryName: string,
-    public state: boolean,
-    public stateName: string
-  ){}
-}
 
 // export class Asset {
 //   constructor (

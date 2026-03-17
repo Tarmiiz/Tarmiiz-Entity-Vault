@@ -1,6 +1,4 @@
 import { Injectable, signal } from '@angular/core';
-import { RegulatorData } from '../../../../shared/models/data.model';
-
 export interface EditProfileData {
   address: string;
   website: string;
@@ -13,12 +11,12 @@ export interface EditProfileData {
 })
 export class ModalProfileDataEditService {
   isVisible = signal(false);
-  regulatorData = signal<RegulatorData | null>(null);
+  profileData = signal<EditProfileData | null>(null);
 
   private resolveFn?: (value: EditProfileData | null) => void;
 
-  show(regulatorData: RegulatorData): Promise<EditProfileData | null> {
-    this.regulatorData.set(regulatorData);
+  show(profileData: EditProfileData): Promise<EditProfileData | null> {
+    this.profileData.set(profileData);
     this.isVisible.set(true);
 
     return new Promise<EditProfileData | null>((resolve) => {

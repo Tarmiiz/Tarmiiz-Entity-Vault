@@ -90,7 +90,7 @@ export class DetailsPage implements OnInit {
 
   async ionViewWillEnter() {
     await this.getAssetDetails();
-    this.isOwn = this.asset()?.regulator === environment.regulatorAddress;
+    this.isOwn = this.asset()?.regulator === environment.entityAddress;
   }
 
   setTab(tab: 'info' | 'price' | 'holders' | 'trxs' | 'actions') {

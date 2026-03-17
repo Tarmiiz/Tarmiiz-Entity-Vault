@@ -1,4 +1,4 @@
-<app-header title="Profile"></app-header>
+<app-header title="Entity Profile"></app-header>
 
 <div class="flex-grow container mx-auto p-8 bg-gray-300 pt-8 overflow-y-auto">
 
@@ -14,15 +14,6 @@
         [class.bg-blue-600]="activeTab() === 'info'"
       >
         Information
-      </button>
-      <button (click)="setTab('contracts')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'contracts'"
-        [class.border-b-2]="activeTab() === 'contracts'"
-        [class.border-blue-600]="activeTab() === 'contracts'"
-        [class.bg-blue-600]="activeTab() === 'contracts'"
-      >
-        Contracts
       </button>
       <button (click)="setTab('api')"
         class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -47,10 +38,16 @@
             <div class="flex items-start justify-between mb-4">
               <div>
                 <h2 class="text-3xl font-bold text-gray-800">{{ v.name }}</h2>
-                <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
               </div>
+              <span class="px-3 py-1 text-sm font-semibold rounded-full"
+                [class.bg-green-100]="v.stateName === 'Active'"
+                [class.text-green-800]="v.stateName === 'Active'"
+                [class.bg-red-100]="v.stateName !== 'Active'"
+                [class.text-red-800]="v.stateName !== 'Active'">
+                {{ v.stateName }}
+              </span>
             </div>
-  
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
               <div class="border-t pt-4 md:col-span-2">
                 <p class="text-sm font-medium text-gray-500">Contract Address</p>
@@ -58,68 +55,27 @@
               </div>
               <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">Email</p>
-                <p class="text-base">{{ v.data.email }}</p>
+                <p class="text-base">{{ v.email }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Telephone</p>
-                <p class="text-base">{{ v.data.telephone }}</p>
+                <p class="text-sm font-medium text-gray-500">Mobile</p>
+                <p class="text-base">{{ v.mobile }}</p>
               </div>
               <div class="border-t pt-4 md:col-span-2">
                 <p class="text-sm font-medium text-gray-500">Website</p>
-                <p class="text-base">{{ v.data.website }}</p>
+                <p class="text-base">{{ v.website }}</p>
               </div>
-              <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">Address</p>
-                <p class="text-base">{{ v.data.address }}</p>
-              </div>
-              <div class="border-t pt-4 md:col-span-2">
+              <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">Country</p>
                 <p class="text-base">{{ v.countryName }}</p>
               </div>
-            </div>
-          
-            <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-              <!-- <button (click)="openChangePasswordModal('password')" class="px-6 py-2.5 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                Change Password
-              </button> -->
-              <button (click)="openUpdateDataModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                Edit Data
-              </button>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Regulator</p>
+                <p class="font-mono text-sm">{{ v.regulator }}</p>
+              </div>
             </div>
 
           </div>
-        </div>
-      }
-
-      <!-- contracts tab -->
-      @if (activeTab() === 'contracts') {
-        <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-      <div class="overflow-x-auto rounded-lg">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
-              <tr>
-                  <th scope="col" class="px-6 py-2">Contract</th>
-                  <th scope="col" class="px-6 py-2">Address</th>
-              </tr>
-          </thead>
-          <tbody class="text-xs">
-            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors">
-              <td class="px-6 py-2">Entities</td>
-              <td class="px-6 py-2">{{ entities() }}</td>
-            </tr>
-            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors">
-              <td class="px-6 py-2">Assets</td>
-              <td class="px-6 py-2">{{ assets() }}</td>
-            </tr>
-            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors">
-              <td class="px-6 py-2">Identities</td>
-              <td class="px-6 py-2">{{ identities() }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
         </div>
       }
 
@@ -128,12 +84,9 @@
         <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
           <div class="p-4">
             <div class="flex items-start justify-between mb-4">
-              <div>
-                <h2 class="text-3xl font-bold text-gray-800">API Endpoint</h2>
-                <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
-              </div>
+              <h2 class="text-3xl font-bold text-gray-800">API Endpoint</h2>
             </div>
-  
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
               <div class="border-t pt-4 md:col-span-2">
                 <p class="text-sm font-medium text-gray-500">API Address</p>
@@ -145,15 +98,15 @@
                 Change API
               </button>
             </div>
-  
+
           </div>
         </div>
       }
 
-    } 
+    }
     @else {
       <div class="text-center py-12 text-gray-500">
-        <p>Loading regulator details...</p>
+        <p>Loading entity details...</p>
       </div>
     }
 
@@ -161,5 +114,4 @@
 
 </div>
 
-<app-modal-profile-data-edit></app-modal-profile-data-edit>
 <app-modal-profile-operator-edit></app-modal-profile-operator-edit>

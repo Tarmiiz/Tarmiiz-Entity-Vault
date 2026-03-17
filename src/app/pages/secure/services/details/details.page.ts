@@ -73,7 +73,7 @@ export class DetailsPage implements OnInit {
   
   async ionViewWillEnter() {
     await this.getServiceDetails();
-    this.isOwn = this.service()?.regulator === environment.regulatorAddress;
+    this.isOwn = this.service()?.regulator === environment.entityAddress;
   }
 
   setTab(tab: 'info' | 'assets' | 'subscriptions' | 'trxs' | 'actions') {

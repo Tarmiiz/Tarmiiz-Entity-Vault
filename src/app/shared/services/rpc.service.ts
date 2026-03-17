@@ -6,11 +6,11 @@ import * as snarkjs from 'snarkjs';
 import { environment } from '../../../environments/environment';
 
 import GlobalVariablesAbi from '../../../assets/ABIs/GlobalVariablesProxy.json';
-import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
+import EntityTemplateAbi from '../../../assets/ABIs/EntityTemplate.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { LogEvent, Key, Regulator, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetService, AssetHolder, AssetPrice, AssetTransaction, Entity, SubscriptionHolding } from '../models/data.model';
+import { LogEvent, Key, Country, GlobalVariable, Operator, Validator, Service, Identity, Subscription, User, Asset, AssetService, AssetHolder, AssetPrice, AssetTransaction, Entity, SubscriptionHolding } from '../models/data.model';
 
 import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
@@ -64,10 +64,9 @@ export class RpcService {
   globalVariablesList: GlobalVariable[] = [];
   countriesList: Country[] = [];
 
-  regulatorContractAddress = environment.regulatorAddress;
-  regulatorContract: any;
+  entityContractAddress = environment.entityAddress;
+  entityContract: any;
 
-  regulator!: Regulator;
   user!: User;
 
   assetContract: any;
@@ -84,7 +83,7 @@ export class RpcService {
   async init(){
     await this.createWallet();
     await this.connectVariablesProxyContract();
-    await this.connectRegulatorContract();
+    await this.connectEntityContract();
     // await this.getContracts();
     // await this.getCountriesList();
     // await this.getCategoriesList();
@@ -123,7 +122,7 @@ export class RpcService {
       this.key = JSON.parse(wallet!);
       this.signer = new ethers.Wallet(this.key.privateKey, this.rpcProvider);
       const contract = await this.storageService.get('contract');
-      if(contract) { this.regulatorContractAddress = contract; }
+      if(contract) { this.entityContractAddress = contract; }
     }
     catch (error: any) {
     }
@@ -280,9 +279,9 @@ export class RpcService {
   // Regulator Contract
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-  async connectRegulatorContract() {
+  async connectEntityContract() {
     try {
-      this.regulatorContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, this.signer);
+      this.entityContract = new ethers.Contract(this.entityContractAddress, EntityTemplateAbi, this.signer);
     }
     catch (error: any) {
     }
@@ -310,7 +309,7 @@ export class RpcService {
       const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
       
       // Get nonce and stored commitment
-      const { nonce, commitment: storedCommitmentHex } = await this.regulatorContract.getUserCredentialsData(usernameHashHex);
+      const { nonce, commitment: storedCommitmentHex } = await this.entityContract.getUserCredentialsData(usernameHashHex);
       
       // Convert stored commitment to circuit format
       const storedCommitmentBigInt = BigInt(storedCommitmentHex);
@@ -348,7 +347,7 @@ export class RpcService {
       const signedMessage = await this.signer.signMessage(ethers.getBytes(messageHash));
 
       // Submit login transaction
-      const tx = await this.regulatorContract.login(
+      const tx = await this.entityContract.login(
         usernameHashHex, 
         [a[0].toString(), a[1].toString()], 
         [[b[0][0].toString(), b[0][1].toString()], [b[1][0].toString(), b[1][1].toString()]], 
@@ -361,7 +360,7 @@ export class RpcService {
       const receipt = await tx.wait();
 
       // listen to contract event
-      const eventlog = receipt.logs?.map((log: any) => this.regulatorContract.interface.parseLog(log))?.find((e: any) => e?.name === 'UserAccess');
+      const eventlog = receipt.logs?.map((log: any) => this.entityContract.interface.parseLog(log))?.find((e: any) => e?.name === 'UserAccess');
       if (eventlog) {
         const { userId, action } = eventlog.args;
         return {
@@ -386,7 +385,7 @@ export class RpcService {
 
   async logout() {    
     try {
-      const tx = await this.regulatorContract.logout();
+      const tx = await this.entityContract.logout();
       const receipt = await tx.wait();
       return { result: receipt, error: '' };
     }
@@ -397,7 +396,7 @@ export class RpcService {
 
   async isAuthorized() {    
     try {
-      const result = await this.regulatorContract.isAuthorized();
+      const result = await this.entityContract.isAuthorized();
       return { result, error: '' };
     }
     catch (error: any) {
@@ -405,42 +404,49 @@ export class RpcService {
     }
   }
 
-  async regulatorInfoGet() {    
+  async entityInfoGet() {
     try {
-      const result = await this.regulatorContract.info();
-      if(result) { 
+      const result = await this.entityContract.info();
+      if(result) {
 
         // check countries list
         if (this.countriesList.length === 0) {
           await this.connectVariablesProxyContract();
           await this.getCountriesList();
         }
-        // Get country name for this operator
-        const countryCode = Number(result[4]);
+
+        // EntityTemplate.info() returns: (address entity, string name, string metadata, uint256 countryCode, address regulator, uint8 state)
+        const countryCode = Number(result[3]);
         const country = this.countriesList.find(c => c.countryCode === countryCode);
         const countryName = country?.nameShort || 'Unknown';
 
-        const data = JSON.parse(result[3]);
-        const regulatorData: RegulatorData = {
-          logo: data.logo,
-          email: data.email,
-          website: data.website,
-          telephone: data.telephone,
-          address: data.address
-        };
+        const parsedData = JSON.parse(result[2]);
 
-        this.regulator = {
+        const statesResult = await this.getGlobalVariableByCategory('Account State');
+        const stateId = Number(result[5]);
+        let stateName = 'Unknown';
+        if (statesResult.result) {
+          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
+          stateName = stateVariable?.name || 'Unknown';
+        }
+
+        const entity: Entity = {
           address: result[0],
           name: result[1],
-          symbol: result[2],
-          data: regulatorData,
+          metadata: result[2],
+          email: parsedData.email || '',
+          mobile: parsedData.mobile || '',
+          website: parsedData.website || '',
           countryCode,
           countryName,
-          state: result[5],
-          stateName: result[5] ? 'Active' : 'Inactive'
+          regulator: result[4],
+          regulatorName: '',
+          regulatorSymbol: '',
+          state: stateId,
+          stateName
         };
 
-        return { result: this.regulator, error: '' };
+        return { result: entity, error: '' };
 
       }
       else {
@@ -453,10 +459,10 @@ export class RpcService {
 
   }
 
-  async regulatorInfoSet(data: string) {
+  async entityInfoSet(data: string) {
     try {
-      await this.connectRegulatorContract();
-      const tx = await this.regulatorContract.changeData(data, { gasLimit: 5000000 });
+      await this.connectEntityContract();
+      const tx = await this.entityContract.changeData(data, { gasLimit: 5000000 });
       const receipt = await tx.wait();
       return { result: receipt.blockNumber, error: '' };
     }
@@ -471,7 +477,7 @@ export class RpcService {
 
   async externalContractGet(name: string) {
     try {
-      const result = await this.regulatorContract.getContractAddress(name);
+      const result = await this.entityContract.getContractAddress(name);
       if(result) { 
         return { result, error: '' };
       }
@@ -487,7 +493,7 @@ export class RpcService {
 
   async externalContractSet(name: string, address: string) {
     try {
-      const tx = await this.regulatorContract.changeContractAddress(name, address, { gasLimit: 5000000 });
+      const tx = await this.entityContract.changeContractAddress(name, address, { gasLimit: 5000000 });
       const receipt = await tx.wait();
       return { result: receipt.blockNumber, error: '' };
     }
@@ -502,10 +508,10 @@ export class RpcService {
 
   async callExternalParallel(address: string, callData: string) {
     try {
-      await this.connectRegulatorContract();
+      await this.connectEntityContract();
       // Get and increment nonce manually
       const nonce = await this.signer.getNonce();
-      const tx = await this.regulatorContract.callExternal(address, callData, { 
+      const tx = await this.entityContract.callExternal(address, callData, { 
         gasLimit: 5000000,
         nonce: nonce  // Explicitly set nonce
       });
@@ -523,8 +529,8 @@ export class RpcService {
   
   async callExternal(address: string, callData: string) {
     try {
-      await this.connectRegulatorContract();
-      const tx = await this.regulatorContract.callExternal(address, callData, { gasLimit: 5000000 });
+      await this.connectEntityContract();
+      const tx = await this.entityContract.callExternal(address, callData, { gasLimit: 5000000 });
       const receipt = await tx.wait();
       return { result: receipt, error: '' };
     }
@@ -539,8 +545,8 @@ export class RpcService {
 
   async callExternalStatic(address: string, callData: string) {
     try {
-      await this.connectRegulatorContract();
-      const result = await this.regulatorContract.callExternal.staticCall(address, callData);
+      await this.connectEntityContract();
+      const result = await this.entityContract.callExternal.staticCall(address, callData);
       return { 
         success: result[0], 
         data: result[1],
@@ -578,7 +584,7 @@ export class RpcService {
         const country = this.countriesList.find(c => c.countryCode === countryCode);
         countryName = country?.nameShort || 'Unknown';        
 
-        const regulator: Regulator = {
+        const regulator = {
           address: decodedResult[0][0],
           name: decodedResult[0][1],
           symbol: decodedResult[0][2],
@@ -649,7 +655,7 @@ export class RpcService {
 
   async userInfo(userId: number) {    
     try {
-      const result = await this.regulatorContract.getUserInfo(userId);
+      const result = await this.entityContract.getUserInfo(userId);
       if(result) {
 
         await this.connectVariablesProxyContract();
@@ -699,7 +705,7 @@ export class RpcService {
 
   async usersList(start: number, offset: number) {
     try {
-      const result = await this.regulatorContract.getAllUsers(start, offset);
+      const result = await this.entityContract.getAllUsers(start, offset);
       if (result) {
         await this.connectVariablesProxyContract();
         const statesResult = await this.getGlobalVariableByCategory('Account State');
@@ -747,7 +753,7 @@ export class RpcService {
       const encryptedUserData = await this.cryptoService.aesEncrypt(environment.aesKEY, userData);
 
       // register
-      const tx = await this.regulatorContract.createUser(loginHash, secret, role, encryptedUserData, 1);
+      const tx = await this.entityContract.createUser(loginHash, secret, role, encryptedUserData, 1);
       const receipt = await tx.wait();
 
       return { result: receipt, error: '' };
@@ -762,7 +768,7 @@ export class RpcService {
       // encrypt data
       const encryptedUserData = await this.cryptoService.aesEncrypt(environment.aesKEY, userData);
 
-      const tx = await this.regulatorContract.changeUserData(userId, encryptedUserData);
+      const tx = await this.entityContract.changeUserData(userId, encryptedUserData);
       const receipt = await tx.wait();
       return { result: receipt, error: '' };
     }
@@ -777,7 +783,7 @@ export class RpcService {
       // generate login data
       const { loginHash, secret } = await this.generateZKPData(username, password);
 
-      const tx = await this.regulatorContract.resetUserCredentials(userId, loginHash, secret);
+      const tx = await this.entityContract.resetUserCredentials(userId, loginHash, secret);
       const receipt = await tx.wait();
       return { result: receipt, error: '' };
     }
@@ -788,7 +794,7 @@ export class RpcService {
 
   async userChangeState(userId: number, state: number) {
     try {
-      const tx = await this.regulatorContract.changeUserState(userId, state);
+      const tx = await this.entityContract.changeUserState(userId, state);
       const receipt = await tx.wait();
       return { result: receipt, error: '' };
     }
@@ -880,7 +886,7 @@ export class RpcService {
     try {
       const privkey = environment.apiPrivKey;
       const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
+      const apiContract = new ethers.Contract(this.entityContractAddress, EntityTemplateAbi, apiSigner);
       const result = await apiContract['validatorsListOwn'](start, offset);
       if (result) {
         const { count, validators } = await this.processValidatorList(result);
@@ -1119,13 +1125,13 @@ export class RpcService {
 
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
-      const regulator = environment.regulatorAddress;
+      const regulator = environment.entityAddress;
 
-      // ✅ Local contract instance — never touches this.regulatorContract
+      // ✅ Local contract instance — never touches this.entityContract
       const apiSigner = new ethers.Wallet(environment.apiPrivKey, this.rpcProvider);
       const regulatorAsApi = new ethers.Contract(
-        this.regulatorContractAddress,
-        RegulatorTemplateAbi,
+        this.entityContractAddress,
+        EntityTemplateAbi,
         apiSigner   // msg.sender will be apiAddress → passes onlyAuthorizedOrAPI
       );
 
@@ -1137,7 +1143,7 @@ export class RpcService {
         name, metadata, 818, loginHash, secret, encryptedUserData, apiAddress, regulator
       ]);
 
-      // ✅ Direct call — no re-entrant connectRegulatorContract()
+      // ✅ Direct call — no re-entrant connectEntityContract()
       const tx = await regulatorAsApi['callExternal'](contractAddress, callData, { gasLimit: 5000000 });
       const receipt = await tx.wait();
 
@@ -1984,7 +1990,7 @@ export class RpcService {
       const contactHash = ethers.zeroPadValue(hashHex, 32);
       console.log('contactHash', contactHash);
       
-      const result = await this.regulatorContract.identityCheckContact(contactHash);
+      const result = await this.entityContract.identityCheckContact(contactHash);
       console.log('result', result);
       return { result , error: ''};
     }
@@ -2846,7 +2852,7 @@ export class RpcService {
       // create new wallet & connect to contract
       const privkey = environment.apiPrivKey;
       const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
+      const apiContract = new ethers.Contract(this.entityContractAddress, EntityTemplateAbi, apiSigner);
 
       // register
       const tx = await apiContract['validatorAdd'](encryptedUserData, loginHash, secret, name, encryptedMetaata);
@@ -2904,7 +2910,7 @@ export class RpcService {
       // check if service proxy address is set
       if(!this.serviceAddress()) await this.getContractAddress('EntitiesProxy');
 
-      const regulator = environment.regulatorAddress;
+      const regulator = environment.entityAddress;
       const operator = '0x48aF7747D327663887b815590C8844f94AEaA4e4'; //this.operatorAddress();
       const addrZero = environment.addressZero;
       console.log('addr', regulator, operator, addrZero);
@@ -2959,7 +2965,7 @@ export class RpcService {
       // create new wallet & connect to contract
       const privkey = environment.apiPrivKey;
       const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.regulatorContractAddress, RegulatorTemplateAbi, apiSigner);
+      const apiContract = new ethers.Contract(this.entityContractAddress, EntityTemplateAbi, apiSigner);
 
       // register
       const tx = await apiContract['serviceAdd'](encryptedUserData, loginHash, secret, name, encryptedMetaata, validatorAddress, vLevel);
@@ -2995,8 +3001,8 @@ export class RpcService {
 
   async getControlEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<LogEvent[]> {
     try {
-      const filter = this.regulatorContract.filters.ControlEvent();
-      const events = await this.regulatorContract.queryFilter(filter, fromBlock, toBlock);
+      const filter = this.entityContract.filters.ControlEvent();
+      const events = await this.entityContract.queryFilter(filter, fromBlock, toBlock);
 
       return await Promise.all(events.map(async (event: any) => new LogEvent(
         'ControlEvent',
@@ -3019,27 +3025,27 @@ export class RpcService {
   async getAllContractEvents(fromBlock: number | string = 0, toBlock: number | string = 'latest'): Promise<LogEvent[]> {
     try {
       // Create filters for all event types present in the ABI
-      const controlFilter = this.regulatorContract.filters.ControlEvent();
-      const regulatorFilter = this.regulatorContract.filters.RegulatorEvent();
-      const externalCallFilter = this.regulatorContract.filters.ExternalCallEvent();
-      const userAccessFilter = this.regulatorContract.filters.UserAccess();
-      const userCreatedFilter = this.regulatorContract.filters.UserCreated();
-      const credentialsFilter = this.regulatorContract.filters.UserCredentialsChanged();
-      const userDataFilter = this.regulatorContract.filters.UserDataChanged();
-      const userRoleFilter = this.regulatorContract.filters.UserRoleChanged();
-      const userStateFilter = this.regulatorContract.filters.UserStateChanged();
+      const controlFilter = this.entityContract.filters.ControlEvent();
+      const regulatorFilter = this.entityContract.filters.RegulatorEvent();
+      const externalCallFilter = this.entityContract.filters.ExternalCallEvent();
+      const userAccessFilter = this.entityContract.filters.UserAccess();
+      const userCreatedFilter = this.entityContract.filters.UserCreated();
+      const credentialsFilter = this.entityContract.filters.UserCredentialsChanged();
+      const userDataFilter = this.entityContract.filters.UserDataChanged();
+      const userRoleFilter = this.entityContract.filters.UserRoleChanged();
+      const userStateFilter = this.entityContract.filters.UserStateChanged();
 
       // Query all events
       const [controlEvents, regulatorEvents, externalCallEvents, userAccessEvents, userCreatedEvents, credentialsEvents, userDataEvents, userRoleEvents, userStateEvents] = await Promise.all([
-        this.regulatorContract.queryFilter(controlFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(regulatorFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(externalCallFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(userAccessFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(userCreatedFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(credentialsFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(userDataFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(userRoleFilter, fromBlock, toBlock),
-        this.regulatorContract.queryFilter(userStateFilter, fromBlock, toBlock)
+        this.entityContract.queryFilter(controlFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(regulatorFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(externalCallFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(userAccessFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(userCreatedFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(credentialsFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(userDataFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(userRoleFilter, fromBlock, toBlock),
+        this.entityContract.queryFilter(userStateFilter, fromBlock, toBlock)
       ]);
 
       // Process all events with timestamps
@@ -3166,8 +3172,8 @@ export class RpcService {
 
   listenToControlEvents(callback: (event: LogEvent) => void): void {
     const wsContract = new ethers.Contract(
-      this.regulatorContractAddress,
-      RegulatorTemplateAbi,
+      this.entityContractAddress,
+      EntityTemplateAbi,
       this.wsProvider
     );
 
@@ -3189,8 +3195,8 @@ export class RpcService {
 
   // listenToCredentialsEvents(callback: (event: RegulatorEvent) => void): void {
   //   const wsContract = new ethers.Contract(
-  //     this.regulatorContractAddress, 
-  //     RegulatorTemplateAbi, 
+  //     this.entityContractAddress, 
+  //     EntityTemplateAbi, 
   //     this.wsProvider
   //   );
 
@@ -3206,8 +3212,8 @@ export class RpcService {
 
   // listenToLoginsEvents(callback: (event: RegulatorEvent) => void): void {
   //   const wsContract = new ethers.Contract(
-  //     this.regulatorContractAddress, 
-  //     RegulatorTemplateAbi, 
+  //     this.entityContractAddress, 
+  //     EntityTemplateAbi, 
   //     this.wsProvider
   //   );
 
@@ -3223,8 +3229,8 @@ export class RpcService {
 
   async stopListening(): Promise<void> {
     const wsContract = new ethers.Contract(
-      this.regulatorContractAddress,
-      RegulatorTemplateAbi,
+      this.entityContractAddress,
+      EntityTemplateAbi,
       this.wsProvider
     );
 

@@ -61,7 +61,7 @@ export class DetailsPage implements OnInit {
   
   async ionViewWillEnter() {
     await this.getEntityDetails();
-    this.isOwn = this.entity()?.regulator === environment.regulatorAddress;
+    this.isOwn = this.entity()?.regulator === environment.entityAddress;
   }
 
   setTab(tab: 'info' | 'services' | 'assets' | 'actions') {

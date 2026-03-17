@@ -5,7 +5,7 @@ import { IonTitle } from '@ionic/angular/standalone'
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 
-import { Asset, Regulator, User } from '../../../shared/models/data.model';
+import { Asset, Entity, User } from '../../../shared/models/data.model';
 
 import { RpcService } from '../../../shared/services/rpc.service';
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
@@ -37,7 +37,7 @@ export class DashboardPage implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
 
-  regulatorInfo!: Regulator;
+  entityInfo!: Entity;
   userInfo!: User;
 
   currentBlock: number = 0;
@@ -90,7 +90,7 @@ export class DashboardPage implements OnInit {
 
   async getStats(){
     try {
-      this.regulatorInfo = this.rpcService.regulator;
+      // this.entityInfo = await this.rpcService.entityInfoGet();
       const blockNumber = await this.rpcService.rpcProvider.getBlockNumber();
       const block = await this.rpcService.rpcProvider.getBlock(blockNumber);
       if (block) {

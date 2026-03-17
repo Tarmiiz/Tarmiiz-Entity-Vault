@@ -6,7 +6,7 @@ import {
 import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
-import { Regulator, User } from '../../models/data.model';
+import { Entity, User } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
 
@@ -38,13 +38,13 @@ export class AuthorizedLayoutComponent {
   private authService = inject(AuthService);
   private menuController = inject(MenuController);
 
-  regulatorInfo!: Regulator;
+  entityInfo!: Entity;
   userInfo!: User;
 
   constructor() {}
 
   ionViewWillEnter() {
-    this.regulatorInfo = this.authService.regulatorInfo;
+    this.entityInfo = this.authService.entityInfo;
     this.userInfo = this.authService.userInfo;
     // console.log('regulatorInfo', this.regulatorInfo);
     // console.log('userInfo', this.userInfo);
