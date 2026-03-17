@@ -74,4 +74,5 @@ Thumbs.db
 /src/environments
 /old
 /.vscode
+/.claude
 CLAUDE.md

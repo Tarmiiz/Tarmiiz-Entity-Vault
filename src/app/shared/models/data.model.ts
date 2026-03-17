@@ -221,11 +221,15 @@ export class Identity {
 export class Subscription {
   constructor (
     public subscription: string,
-    public subscriber: string,
+    public entity: string,
+    public entityName: string,
     public service: string,
     public serviceName: string,
     public validator: string,
     public validatorName: string,
+    public validatorData: string,
+    public validatorTrxNo: string,
+    public validatorTrxTime: number,
     public regulator: string,
     public regulatorName: string,
     public createdAt: number,
@@ -247,6 +251,25 @@ export class AssetService {
   constructor (
     public service: string,
     public serviceName: string
+  ) {}
+}
+
+export class AssetHolder {
+  constructor (
+    public holder: string,
+    public balance: number,
+    public cost: number
+  ) {}
+}
+
+export class SubscriptionHolding {
+  constructor (
+    public asset: string,
+    public assetName: string,
+    public assetSymbol: string,
+    public balance: number,
+    public cost: number,
+    public currentBid: number
   ) {}
 }
 
@@ -286,5 +309,29 @@ export class AssetPrice {
     public bid: number,
     public ask: number,
     public timestamp: number
+  ) {}
+}
+
+export class AssetTransaction {
+  constructor (
+    public trxId: number,
+    public serviceTrxId: number,
+    public trxType: string,
+    public sender: string,
+    public manager: string,
+    public managerName: string,
+    public service: string,
+    public serviceName: string,
+    public asset: string,
+    public assetName: string,
+    public assetSymbol: string,
+    public from: string,
+    public to: string,
+    public tokens: number,
+    public price: number,
+    public totalPrice: number,
+    public data: string,
+    public trxRefNo: string,
+    public time: number
   ) {}
 }

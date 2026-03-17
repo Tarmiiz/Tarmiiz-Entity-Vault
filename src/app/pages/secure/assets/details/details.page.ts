@@ -8,9 +8,11 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Asset, AssetPrice } from '../../../../shared/models/data.model';
+import { Asset, AssetHolder, AssetPrice, AssetTransaction } from '../../../../shared/models/data.model';
 import { ModalAssetStateService } from '../modals/modal-asset-state/modal-asset-state.service';
 import { ModalAssetStateComponent } from "../modals/modal-asset-state/modal-asset-state.component";
+import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
+import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 
 import { environment } from '../../../../../environments/environment';
 
@@ -24,7 +26,8 @@ import { environment } from '../../../../../environments/environment';
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
-    ModalAssetStateComponent
+    ModalAssetStateComponent,
+    ModalTransactionInfoComponent
   ]
 })
 export class DetailsPage implements OnInit {
@@ -34,6 +37,7 @@ export class DetailsPage implements OnInit {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private assetStateService = inject(ModalAssetStateService);
+  trxInfoService = inject(ModalTransactionInfoService);
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -56,6 +60,25 @@ export class DetailsPage implements OnInit {
 
   private chartInstance: any = null;
 
+  holders = signal<AssetHolder[]>([]);
+  currentBid = signal<number>(0);
+  holderPage = signal(0);
+  readonly holderPageSize = 10;
+  pagedHolders = computed(() => {
+    const start = this.holderPage() * this.holderPageSize;
+    return this.holders().slice(start, start + this.holderPageSize);
+  });
+  totalHolderPages = computed(() => Math.ceil(this.holders().length / this.holderPageSize));
+
+  transactions = signal<AssetTransaction[]>([]);
+  trxPage = signal(0);
+  readonly trxPageSize = 10;
+  pagedTransactions = computed(() => {
+    const start = this.trxPage() * this.trxPageSize;
+    return this.transactions().slice(start, start + this.trxPageSize);
+  });
+  totalTrxPages = computed(() => Math.ceil(this.transactions().length / this.trxPageSize));
+
   constructor() {
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
@@ -74,6 +97,8 @@ export class DetailsPage implements OnInit {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
     if (tab === 'price') this.getPriceHistory(1, 100);
+    if (tab === 'holders') this.getHolders(1, 500);
+    if (tab === 'trxs') this.getTransactions(1, 100);
   }
 
   async getAssetDetails() {
@@ -81,6 +106,14 @@ export class DetailsPage implements OnInit {
     const data = await this.rpcService.assetInfo(this.assetAddress);
     this.asset.set(data.result?.asset);
     this.loadingService.hide();
+  }
+
+  getTrxTypeClass(trxType: string): string {
+    switch (trxType) {
+      case 'Subscribe': return 'bg-green-100 text-green-800';
+      case 'Redeem':    return 'bg-orange-100 text-orange-800';
+      default:          return 'bg-gray-100 text-gray-800';
+    }
   }
 
   getStateClass(stateId: number | undefined): string {
@@ -237,4 +270,24 @@ export class DetailsPage implements OnInit {
       }
     });
   }
+
+  async getHolders(start: number, offset: number) {
+    this.loadingService.show('Loading data...');
+    const [data, priceData] = await Promise.all([
+      this.rpcService.assetHolders(this.assetAddress, start, offset),
+      this.rpcService.assetCurrentPrice(this.assetAddress)
+    ]);
+    if (data.result?.holders) this.holders.set(data.result.holders);
+    if (priceData.result?.price) this.currentBid.set(priceData.result.price.bid);
+    this.holderPage.set(0);
+    this.loadingService.hide();
+  }
+
+  async getTransactions(start: number, offset: number) {
+    this.loadingService.show('Loading data...');
+    const data = await this.rpcService.assetTransactionsByAsset(this.assetAddress, start, offset);
+    if (data.result?.transactions) this.transactions.set(data.result?.transactions);
+    this.trxPage.set(0);
+    this.loadingService.hide();
+  }  
 }

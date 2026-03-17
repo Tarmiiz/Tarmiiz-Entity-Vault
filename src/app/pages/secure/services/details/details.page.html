@@ -209,6 +209,7 @@
                     <th scope="col" class="px-6 py-2">#</th>
                     <th scope="col" class="px-6 py-2">Date</th>
                     <th scope="col" class="px-6 py-2">Subscription</th>
+                    <th scope="col" class="px-6 py-2">Entity</th>
                     <th scope="col" class="px-6 py-2">State</th>
                   </tr>
                 </thead>
@@ -225,6 +226,7 @@
                                 <td class="px-6 py-2">{{ i + 1 }}</td>
                                 <td class="px-6 py-2">{{ service.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
                                 <td class="px-6 py-2">{{ service.subscription }}</td>
+                                <td class="px-6 py-2">{{ service.entityName }}</td>
                                 <td class="px-6 py-2">
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
                                       {{ service.stateName }}
@@ -241,6 +243,56 @@
 
         <!-- trxs tab -->
         @if (activeTab() === 'trxs') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-6">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">Date</th>
+                    <th scope="col" class="px-6 py-2">Type</th>
+                    <th scope="col" class="px-6 py-2">Asset</th>
+                    <th scope="col" class="px-6 py-2 text-right">Tokens</th>
+                    <th scope="col" class="px-6 py-2 text-right">Nav</th>
+                    <th scope="col" class="px-6 py-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                    @if(transactions().length === 0) {
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td colspan="6" class="px-6 py-2">no data</td>
+                        </tr>
+                    }
+                    @else {
+                        @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
+                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
+                                <td class="px-6 py-2">{{ trx.time * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                                <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
+                                <td class="px-6 py-2">{{ trx.asset }}</td>
+                                <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
+                                <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
+                                <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+              </table>
+            </div>
+            @if (totalTrxPages() > 1) {
+              <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-600">
+                <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
+                <div class="flex gap-2">
+                  <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
+                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                    Prev
+                  </button>
+                  <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
+                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                    Next
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
         }
 
         <!-- actions tab -->
@@ -262,3 +314,4 @@
 
 <app-modal-service-edit></app-modal-service-edit>
 <app-modal-service-state></app-modal-service-state>
+<app-modal-transaction-info></app-modal-transaction-info>

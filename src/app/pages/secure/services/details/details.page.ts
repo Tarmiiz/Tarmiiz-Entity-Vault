@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,11 +8,13 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Asset, Service, Subscription } from '../../../../shared/models/data.model';
+import { Asset, AssetTransaction, Service, Subscription } from '../../../../shared/models/data.model';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
 import { ModalServiceStateComponent } from "../modals/modal-service-state/modal-service-state.component";
 import { ModalServiceEditService } from '../modals/modal-service-edit/modal-service-edit.service';
 import { ModalServiceEditComponent } from "../modals/modal-service-edit/modal-service-edit.component";
+import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
+import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 
 import { environment } from '../../../../../environments/environment';
 
@@ -27,7 +29,8 @@ import { environment } from '../../../../../environments/environment';
     HeaderComponent,
     RouterLink,
     ModalServiceEditComponent,
-    ModalServiceStateComponent
+    ModalServiceStateComponent,
+    ModalTransactionInfoComponent
 ]
 })
 export class DetailsPage implements OnInit {
@@ -38,6 +41,7 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private serviceEditService = inject(ModalServiceEditService);
   private serviceStateService = inject(ModalServiceStateService);
+  trxInfoService = inject(ModalTransactionInfoService);
 
   activeTab = signal<'info' | 'assets' | 'subscriptions' | 'trxs' | 'actions'>('info');
 
@@ -48,6 +52,15 @@ export class DetailsPage implements OnInit {
   subscriptions = signal<Subscription[]>([]);
   assets = signal<Asset[]>([]);
   isOwn = false;
+
+  transactions = signal<AssetTransaction[]>([]);
+  trxPage = signal(0);
+  readonly trxPageSize = 10;
+  pagedTransactions = computed(() => {
+    const start = this.trxPage() * this.trxPageSize;
+    return this.transactions().slice(start, start + this.trxPageSize);
+  });
+  totalTrxPages = computed(() => Math.ceil(this.transactions().length / this.trxPageSize));
 
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
@@ -68,6 +81,7 @@ export class DetailsPage implements OnInit {
     if (tab === 'info') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
+    if (tab === 'trxs') this.getTransactions(1, 100);
   }   
 
   async getServiceDetails() {
@@ -165,6 +179,22 @@ export class DetailsPage implements OnInit {
 
   async gotoSubscriber(subscription: string) {
     this.router.navigate(['/authorized/subscriptions/details/' + subscription]);
-  }  
+  }
+
+  getTrxTypeClass(trxType: string): string {
+    switch (trxType) {
+      case 'Subscribe': return 'bg-green-100 text-green-800';
+      case 'Redeem':    return 'bg-orange-100 text-orange-800';
+      default:          return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  async getTransactions(start: number, offset: number) {
+    this.loadingService.show('Loading data...');
+    const data = await this.rpcService.assetTransactionsByService(this.serviceAddress, start, offset);
+    if (data.result?.transactions) this.transactions.set(data.result.transactions);
+    this.trxPage.set(0);
+    this.loadingService.hide();
+  }
 
 }

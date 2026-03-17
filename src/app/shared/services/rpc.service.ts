@@ -10,7 +10,7 @@ import RegulatorTemplateAbi from '../../../assets/ABIs/RegulatorTemplate.json';
 
 // import AssetTemplateAbi from '../../../assets/ABIs/GARBasicTokenTemplate.json';
 
-import { LogEvent, Key, Regulator, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetService, AssetPrice, Entity } from '../models/data.model';
+import { LogEvent, Key, Regulator, Country, GlobalVariable, Operator, Validator, Service, Identity, RegulatorData, Subscription, User, Asset, AssetService, AssetHolder, AssetPrice, AssetTransaction, Entity, SubscriptionHolding } from '../models/data.model';
 
 import { StorageService } from './storage.service';
 import { CryptoService } from './crypto.service';
@@ -648,8 +648,6 @@ export class RpcService {
 //----------------------------------------------------------------------------------------------------------------------------------------
 
   async userInfo(userId: number) {    
-        console.log('userId', userId);
-
     try {
       const result = await this.regulatorContract.getUserInfo(userId);
       if(result) {
@@ -1657,8 +1655,8 @@ export class RpcService {
 
   async subscriptionChangeState(address: string, state: number) {
     try {
-      const iface = new ethers.Interface(["function overrideState(uint8 state) external returns (bool)"]);
-      const callData = iface.encodeFunctionData('overrideState', [state]);
+      const iface = new ethers.Interface(["function updateState(uint8 state) external"]);
+      const callData = iface.encodeFunctionData('updateState', [state]);
       const result = await this.callExternal(address, callData);
       if(result !== null) {
         return { result, error: ''};
@@ -1697,13 +1695,12 @@ export class RpcService {
 
   async subscriptionInfo(subscriptionAddress: string) {
     try {
-      const contractAddress = await this.externalContractGet('subscriptions');
       const iface = new ethers.Interface([
-        "function info(address subscription) external view returns (tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state) subscription)"
+        "function info() external view returns (tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state) subscription)"
       ]);
       
-      const callData = iface.encodeFunctionData('info', [subscriptionAddress]);
-      const result = await this.callExternalStatic(contractAddress.result, callData);
+      const callData = iface.encodeFunctionData('info', []);
+      const result = await this.callExternalStatic(subscriptionAddress, callData);
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('info', result.data);
 
@@ -1712,7 +1709,7 @@ export class RpcService {
         const statesResult = await this.getGlobalVariableByCategory('Account State');
 
         // Get state name for this validator
-        const stateId = Number(decodedResult[0][5]);
+        const stateId = Number(decodedResult[0].state);
         let stateName = 'Unknown';
         if (statesResult.result) {
           const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
@@ -1720,42 +1717,56 @@ export class RpcService {
         }
         
         // get regulator name
-        const regulatorAddress = decodedResult[0][3];
+        const regulatorAddress = decodedResult[0].regulator;
         let regulatorName = 'Unknown';
         const regulatorsResult = await this.regulatorInfo(regulatorAddress);
         const regulator = regulatorsResult.result?.regulator;
         regulatorName = regulator?.name || 'Unknown';
 
-        // get validator name
-        const validatorAddress = decodedResult[0][2];
-        let validatorName = 'Unknown';
-        const validatorResult = await this.validatorInfo(validatorAddress);
-        const validator = validatorResult.result?.validator;
-        validatorName = validator?.name || 'Unknown';
-        
+        // get entity name
+        const entityAddress = decodedResult[0].entity;
+        let entityName = 'Unknown';
+        const entityResult = await this.entityInfo(entityAddress);
+        const entity = entityResult.result?.entity;
+        entityName = entity?.name || 'Unknown';        
+
         // get service name
-        const serviceAddress = decodedResult[0][1];
+        const serviceAddress = decodedResult[0].service;
         let serviceName = 'Unknown';
         const serviceResult = await this.serviceInfo(serviceAddress);
         const service = serviceResult.result?.service;
         serviceName = service?.name || 'Unknown';
 
+        // get validator name
+        const validatorAddress = decodedResult[0].validator;
+        let validatorName = 'Unknown';
+        const validatorResult = await this.validatorInfo(validatorAddress);
+        const validator = validatorResult.result?.validator;
+        validatorName = validator?.name || 'Unknown';
+
         // get subscriber
         const subscriberResult = await this.subscriptionSubscriber(subscriptionAddress);
         const subscriber = subscriberResult.result;
 
+        let parsedValidatorData: any = {};
+        try { parsedValidatorData = JSON.parse(decodedResult[0].validatorData) || {}; } catch (e) {}
+
         const subscription: Subscription = {
-          subscription: decodedResult[0][0],
-          subscriber,
+          subscription: decodedResult[0].subscription,
+          entity: entityAddress,
+          entityName,
           service: serviceAddress,
           serviceName,
           validator: validatorAddress,
           validatorName,
+          validatorData: parsedValidatorData,
+          validatorTrxNo: parsedValidatorData.trxRefNo || '',
+          validatorTrxTime: Number(parsedValidatorData.trxTime) || 0,
           regulator: regulatorAddress,
-          regulatorName,  
+          regulatorName,
           state: stateId,
           stateName,
-          createdAt: Number(decodedResult[0][4])
+          createdAt: Number(decodedResult[0].createdAt)
         };
 
         return { result: subscription, error: '' };
@@ -1770,15 +1781,16 @@ export class RpcService {
 
   async subscriptionsListByRegulator(start: number, offset: number) {
     try {
-      if(!this.subscriptionAddress()) await this.getContractAddress('EntitiesProxy');
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function listByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+        "function subscriptionsListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
       ]);
       
-      const callData = iface.encodeFunctionData('listByRegulator', [start, offset]);
-      const result = await this.callExternalStatic(this.subscriptionAddress(), callData);
+      const callData = iface.encodeFunctionData('subscriptionsListByRegulator', [start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('listByRegulator', result.data);
+        const decodedResult = iface.decodeFunctionResult('subscriptionsListByRegulator', result.data);
         const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
         return { result: { count, subscriptions }, error: '' };
       } else {
@@ -1792,15 +1804,16 @@ export class RpcService {
 
   async subscribersListByService(service: string, start: number, offset: number) {
     try {
-      if(!this.subscriptionAddress()) await this.getContractAddress('EntitiesProxy');
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function listByService(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+        "function subscriptionsListByService(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
       ]);
       
-      const callData = iface.encodeFunctionData('listByService', [service, start, offset]);
-      const result = await this.callExternalStatic(this.subscriptionAddress(), callData);
+      const callData = iface.encodeFunctionData('subscriptionsListByService', [service, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('listByService', result.data);
+        const decodedResult = iface.decodeFunctionResult('subscriptionsListByService', result.data);
         const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
         return { result: { count, subscriptions }, error: '' };
       } else {
@@ -1814,9 +1827,17 @@ export class RpcService {
 
   async subscribersListByValidator(validator: string, start: number, offset: number) {
     try {
-      const result = await this.regulatorContract.subscribersListByValidator(validator, start, offset);
-      if (result) {
-        const { count, subscriptions } = await this.processSubscriptionsList(result);        
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function subscriptionsListByValidator(address validator, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('subscriptionsListByValidator', [validator, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('subscriptionsListByValidator', result.data);
+        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
         return { result: { count, subscriptions }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -1829,16 +1850,17 @@ export class RpcService {
 
   async subscribersListByIdentity(identity: string, start: number, offset: number) {
     try {
-      if(!this.subscriptionAddress()) await this.getContractAddress('EntitiesProxy');
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function listByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address service, address validator, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+        "function subscriptionsListByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
       ]);
-      
-      const callData = iface.encodeFunctionData('listByIdentity', [identity, start, offset]);
-      const result = await this.callExternalStatic(this.subscriptionAddress(), callData);
+
+      const callData = iface.encodeFunctionData('subscriptionsListByIdentity', [identity, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('listByIdentity', result.data);
-        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
+        const decodedResult = iface.decodeFunctionResult('subscriptionsListByIdentity', result.data);
+        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);
         return { result: { count, subscriptions }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -1880,13 +1902,13 @@ export class RpcService {
         const regulator = regulatorsResult.result?.regulator;
         regulatorName = regulator?.name || 'Unknown';
 
-        // get validator name
-        const validatorAddress = op.validator;
-        let validatorName = 'Unknown';
-        const validatorResult = await this.validatorInfo(validatorAddress);
-        const validator = validatorResult.result?.validator;
-        validatorName = validator?.name || 'Unknown';
-        
+        // get entity name
+        const entityAddress = op.entity;
+        let entityName = 'Unknown';
+        const entityResult = await this.entityInfo(entityAddress);
+        const entity = entityResult.result?.entity;
+        entityName = entity?.name || 'Unknown';
+
         // get service name
         const serviceAddress = op.service;
         let serviceName = 'Unknown';
@@ -1894,16 +1916,30 @@ export class RpcService {
         const service = serviceResult.result?.service;
         serviceName = service?.name || 'Unknown';
 
+        // get validator name
+        const validatorAddress = op.validator;
+        let validatorName = 'Unknown';
+        const validatorResult = await this.validatorInfo(validatorAddress);
+        const validator = validatorResult.result?.validator;
+        validatorName = validator?.name || 'Unknown';
+
+        let parsedValidatorData: any = {};
+        try { parsedValidatorData = JSON.parse(op.validatorData) || {}; } catch (e) {}
+
         return {
           subscription: op.subscription,
-          subscriber: '',
-          service: op.service,
+          entity: entityAddress,
+          entityName,
+          service: serviceAddress,
           serviceName,
-          validator: op.validator,
+          validator: validatorAddress,
           validatorName,
-          regulator: op.regulator,
+          validatorData: parsedValidatorData,
+          validatorTrxNo: parsedValidatorData.trxRefNo || '',
+          validatorTrxTime: Number(parsedValidatorData.trxTime) || 0,
+          regulator: regulatorAddress,
           regulatorName,
-          state: Number(op.state),
+          state: stateId,
           stateName,
           createdAt: Number(op.createdAt)
         };
@@ -1913,6 +1949,29 @@ export class RpcService {
     subscriptions.sort((a: any, b: any) => b.createdAt - a.createdAt);
     
     return { count, subscriptions };    
+  }
+
+  async subscriptionGetIdentityHash(subscriptionAddress: string) {
+    try {
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function subscriptionGetSubscriber(address subscription) external view returns (bytes32)"
+      ]);
+      
+      const callData = iface.encodeFunctionData('subscriptionGetSubscriber', [subscriptionAddress]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('subscriptionGetSubscriber', result.data);
+        const didHash = decodedResult[0];
+        return { result: didHash, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching services list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching services list: ' + error.message};
+    }
   }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2163,8 +2222,8 @@ export class RpcService {
           assetType: assetTypeId,
           assetTypeName,
           metadata: decodedResult[0].metadata,
-          totalSupply: Number(decodedResult[0].totalSupply),
-          circulating: Number(decodedResult[0].circulating),
+          totalSupply: Number(ethers.formatEther(decodedResult[0].totalSupply)),
+          circulating: Number(ethers.formatEther(decodedResult[0].circulating)),
           countryCode: countryCode,
           countryName,
           currencyCode,
@@ -2437,6 +2496,30 @@ export class RpcService {
     }
   }   
 
+  async assetCurrentPrice(address: string) {
+    try {
+      const iface = new ethers.Interface([
+        "function getPrice() external view returns (tuple(uint256 bid, uint256 ask, uint256 timestamp) price)"
+      ]);
+      const callData = iface.encodeFunctionData('getPrice', []);
+      const result = await this.callExternalStatic(address, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getPrice', result.data);
+        const price: AssetPrice = {
+          bid: Number(ethers.formatEther(decodedResult[0].bid)),
+          ask: Number(ethers.formatEther(decodedResult[0].ask)),
+          timestamp: Number(decodedResult[0].timestamp)
+        };
+        return { result: { price }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching current price' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching current price: ' + error.message };
+    }
+  }
+
   async assetPriceHistory(address: string, start: number, offset: number) {
     try {
       if(!this.assetsProxyAddress()) await this.getContractAddress('AssetsProxy');
@@ -2454,7 +2537,7 @@ export class RpcService {
                 ask: Number(ethers.formatEther(op.ask)),
                 timestamp: Number(op.timestamp)
             };
-        });        
+        });
         return { result: { count, history }, error: '' };
       } else {
         return { result: null, error: 'Error fetching assets list' };
@@ -2463,6 +2546,276 @@ export class RpcService {
     catch (error: any) {
       return { result: null, error: 'Error fetching assets list: ' + error.message};
     }
+  }
+
+  async assetHolders(address: string, start: number, offset: number) {
+    try {
+      const iface = new ethers.Interface([
+        "function getHolders(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address holder, uint256 balance, uint256 cost)[] holders)"
+      ]);
+      const callData = iface.encodeFunctionData('getHolders', [start, offset]);
+      const result = await this.callExternalStatic(address, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getHolders', result.data);
+        const count = Number(decodedResult[0]);
+        const holders: AssetHolder[] = decodedResult[1].map((op: any) => {
+          return {
+            holder: op.holder,
+            balance: Number(ethers.formatEther(op.balance)),
+            cost: Number(ethers.formatEther(op.cost))
+          };
+        });
+        holders.sort((a, b) => b.balance - a.balance);
+        return { result: { count, holders }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching holders list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching holders list: ' + error.message};
+    }
+  }
+
+  async assetHoldingsBySubscription(subscriptionAddress: string, start: number, offset: number) {
+    try {
+      const iface = new ethers.Interface([
+        "function getHoldings(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, uint256 balance, uint256 cost)[] holdings)"
+      ]);
+      const callData = iface.encodeFunctionData('getHoldings', [start, offset]);
+      const result = await this.callExternalStatic(subscriptionAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getHoldings', result.data);
+        const count = Number(decodedResult[0]);
+        const holdings: SubscriptionHolding[] = await Promise.all(
+          decodedResult[1].map(async (op: any) => {
+            const assetResult = await this.assetInfo(op.asset);
+            const asset = assetResult.result?.asset;
+            const priceResult = await this.assetCurrentPrice(op.asset);
+            const currentBid = priceResult.result?.price?.bid ?? 0;
+            return {
+              asset: op.asset,
+              assetName: asset?.name ?? 'Unknown',
+              assetSymbol: asset?.symbol ?? '',
+              balance: Number(ethers.formatEther(op.balance)),
+              cost: Number(ethers.formatEther(op.cost)),
+              currentBid
+            };
+          })
+        );
+        holdings.sort((a, b) => b.balance - a.balance);
+        return { result: { count, holdings }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching holdings list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching holdings list: ' + error.message};
+    }
+  }
+
+  async assetTransactions(start: number, offset: number) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function getTransactions(uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 trxId, uint256 serviceTrxId, address sender, address manager, address service, address asset, address from, address to, uint256 tokens, uint256 price, string data, uint256 time)[] transactions)"
+      ]);
+
+      const callData = iface.encodeFunctionData('getTransactions', [start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getTransactions', result.data);
+        const { count, transactions } = await this.processTransactionsList(decodedResult);
+        return { result: { count, transactions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching transactions list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching transactions list: ' + error.message};
+    }
+  }
+
+  async assetTransactionsByAsset(asset: string, start: number, offset: number) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function getTransactionsByAsset(address asset, uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 trxId, uint256 serviceTrxId, address sender, address manager, address service, address asset, address from, address to, uint256 tokens, uint256 price, string data, uint256 time)[] transactions)"
+      ]);
+
+      const callData = iface.encodeFunctionData('getTransactionsByAsset', [asset, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getTransactionsByAsset', result.data);
+        const { count, transactions } = await this.processTransactionsList(decodedResult);
+        return { result: { count, transactions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching transactions list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching transactions list: ' + error.message};
+    }
+  }
+
+  async assetTransactionsByAccount(account: string, start: number, offset: number) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function getTransactionsBySubscription(address account, uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 trxId, uint256 serviceTrxId, address sender, address manager, address service, address asset, address from, address to, uint256 tokens, uint256 price, string data, uint256 time)[] transactions)"
+      ]);
+
+      const callData = iface.encodeFunctionData('getTransactionsBySubscription', [account, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getTransactionsBySubscription', result.data);
+        const { count, transactions } = await this.processTransactionsList(decodedResult);
+        return { result: { count, transactions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching transactions list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching transactions list: ' + error.message};
+    }
+  }
+
+  async assetTransactionInfo(trxId: number) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function getTransactionInfo(uint256 trxId) external view returns (tuple(uint256 trxId, uint256 serviceTrxId, address sender, address manager, address service, address asset, address from, address to, uint256 tokens, uint256 price, string data, uint256 time) transaction)"
+      ]);
+
+      const callData = iface.encodeFunctionData('getTransactionInfo', [trxId]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getTransactionInfo', result.data);
+        const { transactions } = await this.processTransactionsList([1n, [decodedResult[0]]]);
+        const transaction: AssetTransaction = transactions[0];
+        return { result: { transaction }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching transaction info' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching transaction info: ' + error.message};
+    }
+  }
+
+  async assetTransactionsByService(service: string, start: number, offset: number) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function getTransactionsByService(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(uint256 trxId, uint256 serviceTrxId, address sender, address manager, address service, address asset, address from, address to, uint256 tokens, uint256 price, string data, uint256 time)[] transactions)"
+      ]);
+
+      const callData = iface.encodeFunctionData('getTransactionsByService', [service, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getTransactionsByService', result.data);
+        const { count, transactions } = await this.processTransactionsList(decodedResult);
+        return { result: { count, transactions }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching transactions list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching transactions list: ' + error.message};
+    }
+  }
+
+  async assetTransactionInfoByService(service: string, serviceTrxId: number) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function getTransactionInfoByService(address service, uint256 serviceTrxId) external view returns (tuple(uint256 trxId, uint256 serviceTrxId, address sender, address manager, address service, address asset, address from, address to, uint256 tokens, uint256 price, string data, uint256 time) transaction)"
+      ]);
+
+      const callData = iface.encodeFunctionData('getTransactionInfoByService', [service, serviceTrxId]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getTransactionInfoByService', result.data);
+        const { transactions } = await this.processTransactionsList([1n, [decodedResult[0]]]);
+        const transaction: AssetTransaction = transactions[0];
+        return { result: { transaction }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching transaction info' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching transaction info: ' + error.message};
+    }
+  }
+
+  async processTransactionsList(data: any) {
+    const count = Number(data[0]);
+    const transactions: AssetTransaction[] = await Promise.all(
+      data[1].map(async (op: any) => {
+
+        // get manager name
+        const managerAddress = op.manager;
+        let managerName = 'Unknown';
+        const managerResult = await this.entityInfo(managerAddress);
+        const manager = managerResult.result?.entity;
+        managerName = manager?.name || 'Unknown';
+
+        // get service name
+        const serviceAddress = op.service;
+        let serviceName = 'Unknown';
+        const serviceResult = await this.serviceInfo(serviceAddress);
+        const service = serviceResult.result?.service;
+        serviceName = service?.name || 'Unknown';
+
+        // get asset name
+        const assetAddress = op.asset;
+        let assetName = 'Unknown';
+        let assetSymbol = '';
+        const assetResult = await this.assetInfo(assetAddress);
+        const asset = assetResult.result?.asset;
+        assetName = asset?.name || 'Unknown';
+        assetSymbol = asset?.symbol || '';
+
+        let trxRefNo = '';
+        try {
+          trxRefNo = JSON.parse(op.data).trxRefNo || '';
+        } catch (e) {
+          console.error('Error parsing transaction data:', e);
+        }
+
+        let trxType = 'Transfer';
+        if (op.from === op.asset) trxType = 'Subscribe';
+        else if (op.to === op.asset) trxType = 'Redeem';
+
+        return {
+          trxId: Number(op.trxId),
+          serviceTrxId: Number(op.serviceTrxId),
+          trxType,
+          sender: op.sender,
+          manager: managerAddress,
+          managerName,
+          service: serviceAddress,
+          serviceName,
+          asset: op.asset,
+          assetName,
+          assetSymbol,
+          from: op.from,
+          to: op.to,
+          tokens: Number(ethers.formatEther(op.tokens)),
+          price: Number(ethers.formatEther(op.price)),
+          totalPrice: Number(ethers.formatEther(op.tokens)) * Number(ethers.formatEther(op.price)),
+          data: op.data,
+          trxRefNo,
+          time: Number(op.time)
+        };
+      })
+    );
+    return { count, transactions };
   }
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

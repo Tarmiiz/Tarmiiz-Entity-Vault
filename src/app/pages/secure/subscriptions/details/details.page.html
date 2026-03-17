@@ -39,6 +39,15 @@
         >
           Information
         </button>
+        <button (click)="setTab('holdings')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'holdings'"
+          [class.border-b-2]="activeTab() === 'holdings'"
+          [class.border-blue-600]="activeTab() === 'holdings'"
+          [class.bg-blue-600]="activeTab() === 'holdings'"
+        >
+          Holdings
+        </button>
         <button (click)="setTab('trxs')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'trxs'"
@@ -47,7 +56,7 @@
           [class.bg-blue-600]="activeTab() === 'trxs'"
         >
           Transactions
-        </button>          
+        </button>
         <button (click)="setTab('actions')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'actions'"
@@ -81,17 +90,33 @@
               </div>
     
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
-                <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Subscriber</p>
-                  <p class="font-mono text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoIdentity(v.subscriber)">{{ v.subscriber }}</p>
+                <div class="border-t pt-4 col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Identity Hash</p>
+                  <p class="text-base font-mono text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoIdentity(didHash)">{{ didHash }}</p>
                 </div>
-                <div class="border-t pt-4 md:col-span-2">
+                <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Service</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(v.service)">{{ v.serviceName }}</p>
                 </div>
-                <div class="border-t pt-4 md:col-span-2">
+                <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Created At</p>
                   <p class="text-base">{{ v.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Validator</p>
+                  <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(v.validator)">{{ v.validatorName }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Validator Trx. # / Time</p>
+                  <p class="text-base">{{ v.validatorTrxNo }} - {{ v.validatorTrxTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss'}}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Regulator</p>
+                  <p class="text-base">{{ v.regulatorName }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Entity</p>
+                  <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoEntity(v.entity)">{{ v.entityName }}</p>
                 </div>
               </div>
               
@@ -107,8 +132,107 @@
           </div>
         }
         
+        <!-- holdings tab -->
+        @if (activeTab() === 'holdings') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">Asset</th>
+                    <th scope="col" class="px-6 py-2 text-right">Balance</th>
+                    <th scope="col" class="px-6 py-2 text-right">Cost</th>
+                    <th scope="col" class="px-6 py-2 text-right">Value</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if (holdings().length === 0) {
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                      <td colspan="4" class="px-6 py-2">no data</td>
+                    </tr>
+                  } @else {
+                    @for (h of pagedHoldings(); track h.asset; let isEven = $even) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoAsset(h.asset)">
+                        <td class="px-6 py-2">{{ h.assetName }}@if(h.assetSymbol){<span class="text-gray-400 ml-1">({{ h.assetSymbol }})</span>}</td>
+                        <td class="px-6 py-2 text-right">{{ h.balance | number: '1.0-2' }}</td>
+                        <td class="px-6 py-2 text-right">{{ h.cost | number: '1.6-6' }}</td>
+                        <td class="px-6 py-2 text-right">{{ h.balance * h.currentBid | number: '1.6-6' }}</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            @if (totalHoldingPages() > 1) {
+              <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-600">
+                <span>Page {{ holdingPage() + 1 }} of {{ totalHoldingPages() }}</span>
+                <div class="flex gap-2">
+                  <button (click)="holdingPage.set(holdingPage() - 1)" [disabled]="holdingPage() === 0"
+                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                    Prev
+                  </button>
+                  <button (click)="holdingPage.set(holdingPage() + 1)" [disabled]="holdingPage() >= totalHoldingPages() - 1"
+                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                    Next
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
         <!-- trxs tab -->
         @if (activeTab() === 'trxs') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-6">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">Date</th>
+                    <th scope="col" class="px-6 py-2">Type</th>
+                    <th scope="col" class="px-6 py-2">Asset</th>
+                    <th scope="col" class="px-6 py-2 text-right">Tokens</th>
+                    <th scope="col" class="px-6 py-2 text-right">Nav</th>
+                    <th scope="col" class="px-6 py-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if(transactions().length === 0) {
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                      <td colspan="6" class="px-6 py-2">no data</td>
+                    </tr>
+                  }
+                  @else {
+                    @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
+                        <td class="px-6 py-2">{{ trx.time * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                        <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
+                        <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){<span class="text-gray-400 ml-1">({{ trx.assetSymbol }})</span>}</td>
+                        <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
+                        <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
+                        <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            @if (totalTrxPages() > 1) {
+              <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-600">
+                <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
+                <div class="flex gap-2">
+                  <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
+                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                    Prev
+                  </button>
+                  <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
+                    class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                    Next
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
         }
 
         <!-- actions tab -->
@@ -129,3 +253,4 @@
 </main>  
 
 <app-modal-subscription-state></app-modal-subscription-state>
+<app-modal-transaction-info></app-modal-transaction-info>

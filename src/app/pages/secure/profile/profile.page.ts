@@ -95,9 +95,9 @@ export class ProfilePage implements OnInit {
     this.loadingService.show('Loading data...');
     const entities = await this.rpcService.getContractAddress('EntitiesProxy');
     this.entities.set(entities.result!);
-    const assets = await this.rpcService.externalContractGet('AssetsProxy');
+    const assets = await this.rpcService.getContractAddress('AssetsProxy');
     this.assets.set(assets.result!);
-    const identities = await this.rpcService.externalContractGet('IdentitiesProxy');
+    const identities = await this.rpcService.getContractAddress('IdentitiesProxy');
     this.identities.set(identities.result!);
     this.loadingService.hide();
   }
