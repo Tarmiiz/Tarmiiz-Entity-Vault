@@ -1441,14 +1441,14 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function servicesListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, uint8 state)[] services)"
+        "function servicesListBySender(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, uint8 state)[] services)"
       ]);
-      
-      const callData = iface.encodeFunctionData('servicesListByRegulator', [start, offset]);
+
+      const callData = iface.encodeFunctionData('servicesListBySender', [start, offset]);
       const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('servicesListByRegulator', result.data);
-        const { count, services } = await this.processServicesList(decodedResult);        
+        const decodedResult = iface.decodeFunctionResult('servicesListBySender', result.data);
+        const { count, services } = await this.processServicesList(decodedResult);
         return { result: { count, services }, error: '' };
       } else {
         return { result: null, error: 'Error fetching services list' };
@@ -1548,12 +1548,12 @@ export class RpcService {
           regulatorSymbol,
           verificationLevel: vLevelId,
           verificationLevelName: vLevelName,
-          name: decodedResult[0][2],
-          metadata: decodedResult[0][3],
-          description: parsedData.description,
-          email: parsedData.email,
-          mobile: parsedData.mobile,
-          website: parsedData.website,
+          name: decodedResult[0].name,
+          metadata: decodedResult[0].metadata,
+          description: parsedData?.description || '',
+          email: parsedData?.email || '',
+          mobile: parsedData?.mobile || '',
+          website: parsedData?.website || '',
           countryCode: countryCode,
           countryName,
           state: stateId,
@@ -2882,9 +2882,29 @@ export class RpcService {
     }
   }
 
+  async serviceCreate(name: string, metadata: string, verificationLevel: number, countryCode: number, regulator: string) {
+    try {
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function serviceCreate(string memory name, string memory metadata, uint8 verificationLevel, uint256 countryCode, address regulator) external returns (address serviceAddress)"
+      ]);
+      const callData = iface.encodeFunctionData('serviceCreate', [name, metadata, verificationLevel, countryCode, regulator]);
+      const result = await this.callExternal(contractAddress, callData);
+      if (result.result) {
+        return { success: true, error: '' };
+      } else {
+        return { success: false, error: result.error };
+      }
+    }
+    catch (error: any) {
+      return { success: false, error: error.message || 'Error creating service' };
+    }
+  }
+
   async serviceRegister(
     name: string,
-    admin: string, password: string, 
+    admin: string, password: string,
     metadata: string,
     vLevel: number,
     apiAddress: string

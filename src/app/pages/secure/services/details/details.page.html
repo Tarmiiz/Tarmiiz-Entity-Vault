@@ -130,21 +130,18 @@
                   <p class="text-sm font-medium text-gray-500">Verification Level</p>
                   <p class="text-base">{{ v.verificationLevelName }}</p>
                 </div>
-                <div class="border-t pt-4">
+                <!-- <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Entity</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoEntity(v.entity)">{{ v.entityName }}</p>
-                </div>
+                </div> -->
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Regulator</p>
                   <p class="text-base">{{ v.regulatorName }}</p>
                 </div>
               </div>
               
-              @if(isOwn) {
+              @if(isRegulator) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <!-- <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
-                    Edit
-                  </button> -->
                   <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
                     Change State
                   </button>

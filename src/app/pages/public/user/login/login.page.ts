@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { StorageService } from '../../../../shared/services/storage.service';
@@ -22,7 +22,6 @@ import { LoadingComponent } from "src/app/shared/components/alerts/loading/loadi
   imports: [
     CommonModule,
     ReactiveFormsModule, FormsModule,
-    RouterLink,
     AlertComponent,
     LoadingComponent
 ]

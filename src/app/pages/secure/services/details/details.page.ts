@@ -52,6 +52,7 @@ export class DetailsPage implements OnInit {
   subscriptions = signal<Subscription[]>([]);
   assets = signal<Asset[]>([]);
   isOwn = false;
+  isRegulator = false;
 
   transactions = signal<AssetTransaction[]>([]);
   trxPage = signal(0);
@@ -73,7 +74,8 @@ export class DetailsPage implements OnInit {
   
   async ionViewWillEnter() {
     await this.getServiceDetails();
-    this.isOwn = this.service()?.regulator === environment.entityAddress;
+    this.isOwn = this.service()?.entity === environment.entityAddress;
+    this.isRegulator = this.service()?.regulator === environment.entityAddress;
   }
 
   setTab(tab: 'info' | 'assets' | 'subscriptions' | 'trxs' | 'actions') {

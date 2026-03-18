@@ -7,8 +7,12 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+import { ModalServiceAddService } from '../modals/modal-service-add/modal-service-add.service';
+import { ModalServiceAddComponent } from '../modals/modal-service-add/modal-service-add.component';
 
 import { Service } from '../../../../shared/models/data.model';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-list',
@@ -18,12 +22,15 @@ import { Service } from '../../../../shared/models/data.model';
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
+    ModalServiceAddComponent,
   ]
 })
 export class ListPage implements OnInit {
   private rpcService = inject(RpcService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
+  private alertService = inject(AlertService);
+  private serviceAddService = inject(ModalServiceAddService);
 
   loadingServices: boolean = false;
   showAllServices = signal(false);
@@ -78,6 +85,32 @@ export class ListPage implements OnInit {
     }
     this.loadingService.hide();
   }  
+
+  async openAddModal() {
+    const data = await this.serviceAddService.show();
+    if (!data) return;
+
+    this.loadingService.show('Creating service...');
+    try {
+      const metadata = JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile });
+      const result = await this.rpcService.serviceCreate(
+        data.name,
+        metadata,
+        data.verificationLevel,
+        environment.countryCode,
+        data.regulator
+      );
+      if (result.success) {
+        await this.listServices();
+      } else {
+        this.alertService.show('Error', 'Failed to create service.');
+      }
+    } catch (error) {
+      this.alertService.show('Error', 'An unexpected error occurred.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
 
   viewDetails(service: Service) {
     this.router.navigate(['/authorized/services/details/' + service.address]);
