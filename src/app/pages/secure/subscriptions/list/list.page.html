@@ -60,9 +60,16 @@
                           <td class="px-6 py-2">{{ subscription.entityName }}</td>
                           <td class="px-6 py-2">{{ subscription.serviceName }}</td>
                           <td class="px-6 py-2">
-                              <span class="px-3 py-1 font-semibold rounded-full" [class]="getStateClass(subscription.state)">
+                            <div class="flex items-center gap-1.5">
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(subscription.state)">
                                 {{ subscription.stateName }}
                               </span>
+                              @if (subscription.suspended) {
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                  Suspended
+                                </span>
+                              }
+                            </div>
                           </td>
                       </tr>
                   }

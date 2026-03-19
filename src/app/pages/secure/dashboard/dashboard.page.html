@@ -32,7 +32,7 @@
       </div>    
     
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12 badges">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 badges">
         @for (stat of stats(); track stat.title) {
           <div class="p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:bg-indigo-100" [class]="stat.loading ? 'bg-blue-50 animate-pulse' : 'bg-white'" (click)="goTo(stat.path)">
             <div class="bg-blue-100 p-3 rounded-full">

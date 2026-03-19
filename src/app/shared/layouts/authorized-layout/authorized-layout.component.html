@@ -11,6 +11,14 @@
     <ion-content>
       <ion-list lines="none">
 
+        <!-- home/dashboard -->
+        <ion-item button routerLink="/authorized/dashboard" routerDirection="root" (click)="closeMenuOnMobile()">
+          <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4 12 8-8 8 8M6 10.5V19a.5.5 0 0 0 .5.5h3v-3.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V19.5h3a.5.5 0 0 0 .5-.5v-8.5"/>
+          </svg>
+          <ion-label>Home</ion-label>
+        </ion-item>
+
         <!-- services -->
         <ion-item button routerLink="/authorized/services/list" routerDirection="root" (click)="closeMenuOnMobile()">
           <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">

@@ -175,6 +175,7 @@ export class Service {
     public regulator: string,
     public regulatorName: string,
     public regulatorSymbol: string,
+    public suspended: boolean,
     public state: number,
     public stateName: string
   ) {}
@@ -211,6 +212,7 @@ export class Subscription {
     public regulator: string,
     public regulatorName: string,
     public createdAt: number,
+    public suspended: boolean,
     public state: number,
     public stateName: string
   ) {}

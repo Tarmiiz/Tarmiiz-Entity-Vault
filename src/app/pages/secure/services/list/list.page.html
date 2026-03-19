@@ -1,11 +1,11 @@
 <app-header title="Services"></app-header>
 <app-modal-service-add></app-modal-service-add>
 
-<div class="flex-grow container mx-auto p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow container mx-auto p-4 bg-gray-300 pt-4 overflow-y-auto">
   
     <!-- Search Bar -->
-    <div class="mb-6 flex items-center justify-between badges">
-      <div class="relative flex-grow">
+    <!-- <div class="mb-6 flex items-center justify-between badges">
+      <div class="relative grow">
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -19,7 +19,7 @@
           (input)="onServicesSearch($event)"
         />
       </div>
-    </div>
+    </div> -->
 
     <!-- Add Service -->
     <div class="flex justify-end mb-2">
@@ -32,13 +32,13 @@
     <div class="flex items-center justify-between px-10 p-1">
       <!-- Toggle -->
       <label for="ToggleServices" class="inline-flex items-center space-x-4 cursor-pointer dark:text-gray-800">
-        <span class="text-xs font-medium text-gray-800 justify-end">Own</span>
+        <!-- <span class="text-xs font-medium text-gray-800 justify-end">Own</span>
         <span class="relative">
           <input id="ToggleServices" type="checkbox" class="hidden peer" (change)="onToggleChange($event)">
           <div class="w-8 h-4 rounded-full shadow-inner dark:bg-gray-600 peer-checked:dark:bg-violet-600"></div>
           <div class="absolute inset-y-0 left-0 w-2 h-2 m-1 rounded-full shadow peer-checked:right-0 peer-checked:left-auto dark:bg-gray-100"></div>
         </span>
-        <span class="text-xs font-medium text-gray-800 justify-end">All</span>
+        <span class="text-xs font-medium text-gray-800 justify-end">All</span> -->
       </label>
       <!-- Services Count -->
       <p class="text-xs font-medium text-gray-800 justify-end">Showing {{ filteredServices().length }} of Total {{ services().length }} Services</p>
@@ -80,9 +80,16 @@
                             <td class="px-6 py-2">{{ service.regulatorSymbol }}</td>
                           }
                           <td class="px-6 py-2">
+                            <div class="flex items-center gap-1.5">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
                                 {{ service.stateName }}
                               </span>
+                              @if (service.suspended) {
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                  Suspended
+                                </span>
+                              }
+                            </div>
                           </td>
                       </tr>
                   }

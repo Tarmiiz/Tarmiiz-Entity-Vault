@@ -60,7 +60,7 @@ export class ListPage implements OnInit {
 
   async listSubscriptions() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.subscriptionsListByRegulator(1, 10);
+    const result = await this.rpcService.subscriptionsListAllByEntity(1, 1000);
     if(result.result) {
       this.subscriptionsCount = result.result.count;
       this.subscriptions.set(result.result.subscriptions);

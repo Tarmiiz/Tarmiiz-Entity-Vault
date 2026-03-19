@@ -90,7 +90,7 @@ export class DetailsPage implements OnInit {
 
   async ionViewWillEnter() {
     await this.getAssetDetails();
-    this.isOwn = this.asset()?.regulator === environment.entityAddress;
+    this.isOwn = this.asset()?.manager === environment.entityAddress;
   }
 
   setTab(tab: 'info' | 'price' | 'holders' | 'trxs' | 'actions') {
@@ -135,9 +135,7 @@ export class DetailsPage implements OnInit {
     if (newState !== null && newState !== currentAsset.state) {
       this.loadingService.show('Changing state...');
       try {
-        const setState = newState == 2 ? false : true;
         await this.rpcService.assetChangeState(currentAsset.address, newState);
-        await this.rpcService.assetChangeSuspension(currentAsset.address, setState);
         await this.getAssetDetails();
       } catch (error) {
         console.error('Failed to change state', error);

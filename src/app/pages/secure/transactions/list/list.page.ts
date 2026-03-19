@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 import { RpcService } from '../../../../shared/services/rpc.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
+import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 import { AssetTransaction } from '../../../../shared/models/data.model';
 
 @Component({
@@ -15,11 +17,13 @@ import { AssetTransaction } from '../../../../shared/models/data.model';
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
+    ModalTransactionInfoComponent,
   ]
 })
 export class ListPage implements OnInit {
   private rpcService = inject(RpcService);
   private loadingService = inject(LoadingService);
+  private modalTransactionInfoService = inject(ModalTransactionInfoService);
 
   transactions = signal<AssetTransaction[]>([]);
   totalCount = signal<number>(0);
@@ -30,7 +34,7 @@ export class ListPage implements OnInit {
 
   async ngOnInit() {}
 
-  async ionViewWillEnter() {
+  async ionViewDidEnter() {
     await this.load();
   }
 
@@ -42,6 +46,10 @@ export class ListPage implements OnInit {
       this.totalCount.set(result.result.count);
     }
     this.loadingService.hide();
+  }
+
+  viewDetails(trx: AssetTransaction): void {
+    this.modalTransactionInfoService.show(trx);
   }
 
   formatDate(timestamp: number): string {

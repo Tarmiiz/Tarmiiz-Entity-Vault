@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalServiceAddService, AddServiceData } from './modal-service-add.service';
 import { RpcService } from '../../../../../shared/services/rpc.service';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-modal-service-add',
@@ -19,6 +20,7 @@ export class ModalServiceAddComponent {
   private fb = inject(FormBuilder);
 
   verificationLevels = signal<{ variableId: number; name: string }[]>([]);
+  regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
 
   addForm = this.fb.group({
     name: ['', Validators.required],
@@ -32,6 +34,7 @@ export class ModalServiceAddComponent {
 
   constructor() {
     this.loadVerificationLevels();
+    this.loadRegulators();
   }
 
   async loadVerificationLevels() {
@@ -39,6 +42,13 @@ export class ModalServiceAddComponent {
     const data = await this.rpcService.getGlobalVariableByCategory('Identity Verification Level');
     if (data.result) {
       this.verificationLevels.set(data.result);
+    }
+  }
+
+  async loadRegulators() {
+    const data = await this.rpcService.regulatorsListByCountry(environment.countryCode, 1, 100);
+    if (data.result) {
+      this.regulators.set(data.result.regulators.filter((r: any) => r.state));
     }
   }
 

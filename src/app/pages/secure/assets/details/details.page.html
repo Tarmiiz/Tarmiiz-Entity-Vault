@@ -93,12 +93,19 @@
                   <h2 class="text-3xl font-bold text-gray-800">{{ v.name }} [{{ v.symbol }}]</h2>
                   <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
                 </div>
-                <span 
-                  class="px-4 py-1.5 text-sm font-semibold rounded-full"
-                  [class]="getStateClass(v.state)"
-                >
-                  {{ v.stateName }}
-                </span>
+                <div class="flex items-center gap-2">
+                  @if (v.suspended) {
+                    <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">
+                      Suspended
+                    </span>
+                  }
+                  <span
+                    class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                    [class]="getStateClass(v.state)"
+                  >
+                    {{ v.stateName }}
+                  </span>
+                </div>
               </div>
     
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
@@ -247,12 +254,14 @@
                     <th scope="col" class="px-6 py-2 text-right">Balance</th>
                     <th scope="col" class="px-6 py-2 text-right">Cost</th>
                     <th scope="col" class="px-6 py-2 text-right">Value</th>
+                    <th scope="col" class="px-6 py-2 text-right">P/L</th>
+                    <th scope="col" class="px-6 py-2 text-right">P/L %</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                     @if(holders().length === 0) {
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td colspan="4" class="px-6 py-2">no data</td>
+                            <td colspan="6" class="px-6 py-2">no data</td>
                         </tr>
                     }
                     @else {
@@ -262,6 +271,22 @@
                                 <td class="px-6 py-2 text-right">{{ h.balance | number: '1.0-2' }}</td>
                                 <td class="px-6 py-2 text-right">{{ h.cost | number: '1.6-6' }}</td>
                                 <td class="px-6 py-2 text-right">{{ h.balance * currentBid() | number: '1.6-6' }}</td>
+                                <td class="px-6 py-2 text-right font-semibold"
+                                    [class.text-green-600]="(h.balance * currentBid() - h.cost) > 0"
+                                    [class.text-red-600]="(h.balance * currentBid() - h.cost) < 0"
+                                    [class.text-gray-500]="(h.balance * currentBid() - h.cost) === 0">
+                                  {{ h.balance * currentBid() - h.cost | number: '1.6-6' }}
+                                </td>
+                                <td class="px-6 py-2 text-right font-semibold"
+                                    [class.text-green-600]="(h.balance * currentBid() - h.cost) > 0"
+                                    [class.text-red-600]="(h.balance * currentBid() - h.cost) < 0"
+                                    [class.text-gray-500]="(h.balance * currentBid() - h.cost) === 0">
+                                  @if (h.cost > 0) {
+                                    {{ (h.balance * currentBid() - h.cost) / h.cost * 100 | number: '1.2-2' }}%
+                                  } @else {
+                                    —
+                                  }
+                                </td>
                             </tr>
                         }
                     }

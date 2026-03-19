@@ -2,64 +2,24 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="94.832436mm"
-   height="28.760801mm"
-   viewBox="0 0 94.832437 28.760802"
+   width="94.631142mm"
+   height="26.164305mm"
+   viewBox="0 0 94.631143 26.164305"
    version="1.1"
    id="svg427"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
-   sodipodi:docname="tarmiiz - base.svg"
-   inkscape:export-filename="tarmiiz - logo - full - white.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview429"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
-     showgrid="false"
-     inkscape:zoom="0.38183765"
-     inkscape:cx="463.54779"
-     inkscape:cy="344.3872"
-     inkscape:window-width="1280"
-     inkscape:window-height="730"
-     inkscape:window-x="-6"
-     inkscape:window-y="-6"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="layer1"
-     showguides="true">
-    <inkscape:grid
-       type="xygrid"
-       id="grid723" />
-  </sodipodi:namedview>
   <defs
      id="defs424" />
   <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
      id="layer1"
      transform="translate(597.19713,-475.57457)">
     <g
        id="g1-4-2"
-       transform="translate(1.6108257,446.25296)"
-       inkscape:export-filename="Tarmiiz Vault Entity White.svg"
-       inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96">
+       transform="translate(1.6108257,446.25296)">
       <g
          id="g1155-4-2-9-4-8-0"
-         transform="translate(-620.94014,3.803153)"
-         inkscape:export-filename="tarmiiz - vault - black.svg"
-         inkscape:export-xdpi="96"
-         inkscape:export-ydpi="96">
+         transform="translate(-620.94014,3.803153)">
         <rect
            x="22.132189"
            width="16.933332"
@@ -68,10 +28,7 @@
            fill="#332eae"
            id="rect157-0-4-5-8-8-6"
            y="25.518406"
-           style="stroke-width:0.264583"
-           inkscape:export-filename="tarmiiz openAPI 358x119.svg"
-           inkscape:export-xdpi="96"
-           inkscape:export-ydpi="96" />
+           style="stroke-width:0.264583" />
         <rect
            width="2.6458333"
            height="2.6458333"
@@ -195,14 +152,13 @@
       <text
          xml:space="preserve"
          style="font-size:11.2889px;font-family:Anta;-inkscape-font-specification:Anta;text-align:center;text-anchor:middle;fill:#b3b3b3;stroke-width:0.0352777;stroke-linecap:square;stroke-miterlimit:0"
-         x="-533.29279"
+         x="-520.58307"
          y="55.37302"
          id="text879-76-1-4-1-6-9"><tspan
-           sodipodi:role="line"
            id="tspan877-7-7-8-6-8-3"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.2889px;font-family:'Avenir LT Std';-inkscape-font-specification:'Avenir LT Std';fill:#b3b3b3;stroke-width:0.0352778"
-           x="-533.29279"
-           y="55.37302">entity vault</tspan></text>
+           x="-520.58307"
+           y="55.37302">eVault</tspan></text>
     </g>
   </g>
 </svg>

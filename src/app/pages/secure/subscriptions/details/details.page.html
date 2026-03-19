@@ -81,19 +81,26 @@
                 <div>
                   <h2 class="text-1xl font-bold text-gray-800">{{ v.subscription }}</h2>
                 </div>
-                <span 
-                  class="px-4 py-1.5 text-sm font-semibold rounded-full "
-                  [class]="getStateClass(v.state)"
-                >
-                  {{ v.stateName }}
-                </span>
+                <div class="flex items-center gap-2">
+                  @if (v.suspended) {
+                    <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">
+                      Suspended
+                    </span>
+                  }
+                  <span
+                    class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                    [class]="getStateClass(v.state)"
+                  >
+                    {{ v.stateName }}
+                  </span>
+                </div>
               </div>
     
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
-                <div class="border-t pt-4 col-span-2">
+                <!-- <div class="border-t pt-4 col-span-2">
                   <p class="text-sm font-medium text-gray-500">Identity Hash</p>
                   <p class="text-base font-mono text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoIdentity(didHash)">{{ didHash }}</p>
-                </div>
+                </div> -->
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Service</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(v.service)">{{ v.serviceName }}</p>
@@ -143,12 +150,14 @@
                     <th scope="col" class="px-6 py-2 text-right">Balance</th>
                     <th scope="col" class="px-6 py-2 text-right">Cost</th>
                     <th scope="col" class="px-6 py-2 text-right">Value</th>
+                    <th scope="col" class="px-6 py-2 text-right">P/L</th>
+                    <th scope="col" class="px-6 py-2 text-right">P/L %</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (holdings().length === 0) {
                     <tr class="bg-white border-b hover:bg-gray-50">
-                      <td colspan="4" class="px-6 py-2">no data</td>
+                      <td colspan="6" class="px-6 py-2">no data</td>
                     </tr>
                   } @else {
                     @for (h of pagedHoldings(); track h.asset; let isEven = $even) {
@@ -157,6 +166,22 @@
                         <td class="px-6 py-2 text-right">{{ h.balance | number: '1.0-2' }}</td>
                         <td class="px-6 py-2 text-right">{{ h.cost | number: '1.6-6' }}</td>
                         <td class="px-6 py-2 text-right">{{ h.balance * h.currentBid | number: '1.6-6' }}</td>
+                        <td class="px-6 py-2 text-right font-semibold"
+                            [class.text-green-600]="(h.balance * h.currentBid - h.cost) > 0"
+                            [class.text-red-600]="(h.balance * h.currentBid - h.cost) < 0"
+                            [class.text-gray-500]="(h.balance * h.currentBid - h.cost) === 0">
+                          {{ h.balance * h.currentBid - h.cost | number: '1.6-6' }}
+                        </td>
+                        <td class="px-6 py-2 text-right font-semibold"
+                            [class.text-green-600]="(h.balance * h.currentBid - h.cost) > 0"
+                            [class.text-red-600]="(h.balance * h.currentBid - h.cost) < 0"
+                            [class.text-gray-500]="(h.balance * h.currentBid - h.cost) === 0">
+                          @if (h.cost > 0) {
+                            {{ (h.balance * h.currentBid - h.cost) / h.cost * 100 | number: '1.2-2' }}%
+                          } @else {
+                            —
+                          }
+                        </td>
                       </tr>
                     }
                   }

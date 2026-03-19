@@ -93,12 +93,19 @@
                   <h2 class="text-3xl font-bold text-gray-800">{{ v.name }}</h2>
                   <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
                 </div>
-                <span 
-                  class="px-4 py-1.5 text-sm font-semibold rounded-full"
-                  [class]="getStateClass(v.state)"
-                >
-                  {{ v.stateName }}
-                </span>
+                <div class="flex items-center gap-2">
+                  @if (v.suspended) {
+                    <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">
+                      Suspended
+                    </span>
+                  }
+                  <span
+                    class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                    [class]="getStateClass(v.state)"
+                  >
+                    {{ v.stateName }}
+                  </span>
+                </div>
               </div>
     
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
@@ -140,7 +147,7 @@
                 </div>
               </div>
               
-              @if(isRegulator) {
+              @if(isOwn) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
                   <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
                     Change State
@@ -162,8 +169,8 @@
                     <th scope="col" class="px-6 py-2">#</th>
                     <th scope="col" class="px-6 py-2">Name</th>
                     <th scope="col" class="px-6 py-2">Symbol</th>
+                    <th scope="col" class="px-6 py-2">Issuer</th>
                     <th scope="col" class="px-6 py-2">Type</th>
-                    <th scope="col" class="px-6 py-2">Regulator</th>
                     <th scope="col" class="px-6 py-2">State</th>
                   </tr>
                 </thead>
@@ -180,12 +187,19 @@
                           <td class="px-6 py-2">{{ i + 1 }}</td>
                           <td class="px-6 py-2">{{ data.name }}</td>
                           <td class="px-6 py-2">{{ data.symbol }}</td>
+                          <td class="px-6 py-2">{{ data.issuerName }}</td>
                           <td class="px-6 py-2">{{ data.assetTypeName }}</td>
-                          <td class="px-6 py-2">{{ data.regulatorSymbol }}</td>
                           <td class="px-6 py-2">
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(data.state)">
-                              {{ data.stateName }}
-                            </span>
+                            <div class="flex items-center gap-1.5">
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(data.state)">
+                                {{ data.stateName }}
+                              </span>
+                              @if (data.suspended) {
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                  Suspended
+                                </span>
+                              }
+                            </div>
                           </td>
                         </tr>
                       }
@@ -218,16 +232,23 @@
                         </tr>
                     }
                     @else {
-                        @for(service of subscriptions(); track service.subscription; let i = $index; let isEven = $even;) {
-                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(service.subscription)">
+                        @for(sub of subscriptions(); track sub.subscription; let i = $index; let isEven = $even;) {
+                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(sub.subscription)">
                                 <td class="px-6 py-2">{{ i + 1 }}</td>
-                                <td class="px-6 py-2">{{ service.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
-                                <td class="px-6 py-2">{{ service.subscription }}</td>
-                                <td class="px-6 py-2">{{ service.entityName }}</td>
+                                <td class="px-6 py-2">{{ sub.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                                <td class="px-6 py-2">{{ sub.subscription }}</td>
+                                <td class="px-6 py-2">{{ sub.entityName }}</td>
                                 <td class="px-6 py-2">
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
-                                      {{ service.stateName }}
+                                  <div class="flex items-center gap-1.5">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(sub.state)">
+                                      {{ sub.stateName }}
                                     </span>
+                                    @if (sub.suspended) {
+                                      <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                        Suspended
+                                      </span>
+                                    }
+                                  </div>
                                 </td>
                             </tr>
                         }

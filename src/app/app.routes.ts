@@ -4,7 +4,7 @@ import { AuthGuard } from './shared/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'public/user/login',
+    redirectTo: 'authorized/dashboard',
     pathMatch: 'full',
   },
   {
@@ -36,6 +36,12 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layouts/authorized-layout/authorized-layout.component').then(m => m.AuthorizedLayoutComponent),
     canActivate: [AuthGuard],
     children: [
+      // dashboard
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./pages/secure/dashboard/dashboard.page').then(m => m.DashboardPage),
+        canActivate: [AuthGuard]
+      },
       // services
       {
         path: 'services',
@@ -160,7 +166,7 @@ export const routes: Routes = [
       },
       {
         path: '',
-        redirectTo: '/authorized/services/list',
+        redirectTo: '/authorized/dashboard',
         pathMatch: 'full',
       },
     ]

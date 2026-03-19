@@ -1,13 +1,29 @@
-@if (addServiceService.isVisible()) {
+@if (addAssetService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add New Service</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add New Asset</h3>
       </div>
       <form [formGroup]="addForm" (ngSubmit)="onSave()">
         <div class="p-6 space-y-4">
           <div>
-            <input type="text" placeholder="Service Name *" formControlName="name"
+            <input type="text" placeholder="Owner Address *" formControlName="owner"
+              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+          </div>
+          <div>
+            <input type="text" placeholder="Issuer Address *" formControlName="issuer"
+              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+          </div>
+          <div>
+            <input type="text" placeholder="Manager Address *" formControlName="manager"
+              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+          </div>
+          <div>
+            <input type="text" placeholder="Asset Name *" formControlName="name"
+              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+          </div>
+          <div>
+            <input type="text" placeholder="Symbol *" formControlName="symbol"
               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
           <div>
@@ -15,23 +31,20 @@
               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none"></textarea>
           </div>
           <div>
-            <input type="text" placeholder="Website *" formControlName="website"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <input type="email" placeholder="Email *" formControlName="email"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <input type="tel" placeholder="Mobile *" formControlName="mobile"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <select formControlName="verificationLevel"
+            <select formControlName="service"
               class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-              <option value="" disabled selected hidden style="color:gray">Verification Level *</option>
-              @for (level of verificationLevels(); track level.variableId) {
-                <option [value]="level.variableId">{{ level.name }}</option>
+              <option value="" disabled selected hidden style="color:gray">Service *</option>
+              @for (svc of services(); track svc.address) {
+                <option [value]="svc.address">{{ svc.name }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <select formControlName="currency" (change)="onCurrencyChange($event)"
+              class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+              <option value="" disabled selected hidden style="color:gray">Currency *</option>
+              @for (country of countries(); track country.countryCode) {
+                <option [value]="country.countryCode">{{ country.nameShort }} ({{ country.currencyCode }})</option>
               }
             </select>
           </div>
@@ -52,7 +65,7 @@
           </button>
           <button type="submit" [disabled]="addForm.invalid"
             class="px-4 py-2 bg-[#202a3b] text-white border border-transparent rounded-md shadow-sm hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-            Add Service
+            Add Asset
           </button>
         </div>
       </form>

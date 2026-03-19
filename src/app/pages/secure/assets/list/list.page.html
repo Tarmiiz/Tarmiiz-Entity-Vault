@@ -1,45 +1,24 @@
 <app-header title="Assets"></app-header>
+<app-modal-asset-add></app-modal-asset-add>
 
-<div class="flex-grow container mx-auto p-4 bg-gray-300 pt-4 overflow-y-auto">
-  
-    <!-- Search Bar -->
-    <div class="mb-6 flex items-center justify-between badges">
-      <div class="relative flex-grow">
-        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <input 
-          type="text" 
-          placeholder="Search by Name, Email, or Mobile" 
-          class="w-full bg-white border border-gray-300 text-gray-800 placeholder-gray-500 rounded-full shadow-sm py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-          [value]="assetsSearchTerm()"
-          (input)="onAssetsSearch($event)"
-        />
-      </div>
-      <!-- <button (click)="openAddModal()" class="ml-4 px-3 py-2 bg-[#202a3b] text-white font-semibold rounded-full shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 flex-shrink-0">
-        Add Service
-      </button> -->
+<div class="grow container mx-auto p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+    <!-- Add Asset -->
+    <div class="flex justify-end mb-2">
+      <button (click)="openAddModal()" class="px-4 py-2 bg-[#202a3b] text-white text-sm font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+        + Add Asset
+      </button>
     </div>
 
     <!-- Filters -->
     <div class="flex items-center justify-between px-10 p-1">
-      <!-- Toggle -->
-      <label for="ToggleAssets" class="inline-flex items-center space-x-4 cursor-pointer dark:text-gray-800">
-        <span class="text-xs font-medium text-gray-800 justify-end">Own</span>
-        <span class="relative">
-          <input id="ToggleAssets" type="checkbox" class="hidden peer" (change)="onToggleChange($event)">
-          <div class="w-8 h-4 rounded-full shadow-inner dark:bg-gray-600 peer-checked:dark:bg-violet-600"></div>
-          <div class="absolute inset-y-0 left-0 w-2 h-2 m-1 rounded-full shadow peer-checked:right-0 peer-checked:left-auto dark:bg-gray-100"></div>
-        </span>
-        <span class="text-xs font-medium text-gray-800 justify-end">All</span>
+      <label class="inline-flex items-center space-x-4 cursor-pointer dark:text-gray-800">
       </label>
-      <!-- Services Count -->
-      <p class="text-xs font-medium text-gray-800 justify-end">Showing {{ filteredAssets().length }} of Total {{ assets().length }} Services</p>
+      <!-- Assets Count -->
+      <p class="text-xs font-medium text-gray-800 justify-end">Showing {{ assets().length }} Assets</p>
     </div>
-    
-    <!-- Services Table -->
+
+    <!-- Assets Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
       <div class="overflow-x-auto rounded-lg">
         <table class="w-full text-sm text-left text-gray-700">
@@ -48,11 +27,8 @@
                   <th scope="col" class="px-6 py-2">#</th>
                   <th scope="col" class="px-6 py-2">Name</th>
                   <th scope="col" class="px-6 py-2">Symbol</th>
-                  <th scope="col" class="px-6 py-2">Issuer</th>
+                  <th scope="col" class="px-6 py-2">Service</th>
                   <th scope="col" class="px-6 py-2">Type</th>
-                  @if(showAllAssets()){
-                    <th scope="col" class="px-6 py-2">Regulator</th>
-                  }
                   <th scope="col" class="px-6 py-2">State</th>
               </tr>
           </thead>
@@ -62,26 +38,30 @@
             }
             @else {
               <!-- no data -->
-              @if(filteredAssets().length == 0) {
+              @if(assets().length == 0) {
                   <tr class="bg-white border-b hover:bg-gray-50">
                       <td class="px-6 py-2">no data</td>
                   </tr>
               }
               @else {
-                @for(data of filteredAssets(); track data.address; let i = $index; let isEven = $even;) {
+                @for(data of assets(); track data.address; let i = $index; let isEven = $even;) {
                     <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(data)">
                         <td class="px-6 py-2">{{ i + 1 }}</td>
                         <td class="px-6 py-2">{{ data.name }}</td>
                         <td class="px-6 py-2">{{ data.symbol }}</td>
-                        <td class="px-6 py-2">{{ data.issuerName }}</td>
+                        <td class="px-6 py-2">{{ data.services.length > 0 ? data.services[0].serviceName : 'None' }}</td>
                         <td class="px-6 py-2">{{ data.assetTypeName }}</td>
-                        @if(showAllAssets()){
-                          <td class="px-6 py-2">{{ data.regulatorSymbol }}</td>
-                        }
                         <td class="px-6 py-2">
+                          <div class="flex items-center gap-1.5">
                             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(data.state)">
                               {{ data.stateName }}
                             </span>
+                            @if (data.suspended) {
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                Suspended
+                              </span>
+                            }
+                          </div>
                         </td>
                     </tr>
                 }

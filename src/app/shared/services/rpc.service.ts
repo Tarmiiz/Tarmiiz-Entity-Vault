@@ -604,6 +604,34 @@ export class RpcService {
     }
   }  
 
+  async regulatorsListByCountry(countryCode: number, start: number, offset: number) {
+    try {
+      const contractInfo = await this.getContractAddress('RegulatorsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function listRegulatorsByCountry(uint256 countryCode, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address regulator, string name, string symbol, string data, uint256 countryCode, bool state)[] regulators)"
+      ]);
+      const callData = iface.encodeFunctionData('listRegulatorsByCountry', [countryCode, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('listRegulatorsByCountry', result.data);
+        const count = Number(decodedResult[0]);
+        const regulators = Array.from(decodedResult[1]).map((r: any) => ({
+          address: r.regulator,
+          name: r.name,
+          symbol: r.symbol,
+          state: r.state,
+        }));
+        return { result: { count, regulators }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching regulators list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching regulators list: ' + error.message };
+    }
+  }
+
   async operatorInfo(operatorAddress: string) {
     try {
       const iface = new ethers.Interface([
@@ -1413,12 +1441,30 @@ export class RpcService {
 
   }
 
+  async serviceSuspend(address: string, suspended: boolean) {
+    try {
+      const iface = new ethers.Interface(["function setSuspended(bool suspended) external"]);
+      const callData = iface.encodeFunctionData('setSuspended', [suspended]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error updating service suspended status'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error updating service suspended status: ' + error.message};
+    }
+
+  }
+
   async servicesListAll(start: number, offset: number) {
     try {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function servicesListByCountry(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, uint8 state)[] services)"
+        "function servicesListByCountry(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, bool suspended, uint8 state)[] services)"
       ]);
 
       const callData = iface.encodeFunctionData('servicesListByCountry', [start, offset]);
@@ -1441,7 +1487,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function servicesListBySender(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, uint8 state)[] services)"
+        "function servicesListBySender(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, bool suspended, uint8 state)[] services)"
       ]);
 
       const callData = iface.encodeFunctionData('servicesListBySender', [start, offset]);
@@ -1464,7 +1510,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function servicesListByEntity(address entity, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, uint8 state)[] services)"
+        "function servicesListByEntity(address entity, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, bool suspended, uint8 state)[] services)"
       ]);
       
       const callData = iface.encodeFunctionData('servicesListByEntity', [entity, start, offset]);
@@ -1485,7 +1531,7 @@ export class RpcService {
   async serviceInfo(serviceAddress: string) {
     try {
       const iface = new ethers.Interface([
-        "function info() external view returns (tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, uint8 state))"
+        "function info() external view returns (tuple(address service, address entity, string name, string metadata, uint256 countryCode, uint8 verificationLevel, address regulator, bool suspended, uint8 state))"
       ]);
       
       const callData = iface.encodeFunctionData('info');
@@ -1556,6 +1602,7 @@ export class RpcService {
           website: parsedData?.website || '',
           countryCode: countryCode,
           countryName,
+          suspended: decodedResult[0].suspended,
           state: stateId,
           stateName
         };
@@ -1646,6 +1693,7 @@ export class RpcService {
               regulatorSymbol,
               verificationLevel: vLevelId,
               verificationLevelName: vLevelName,
+              suspended: op.suspended,
               state: stateId,
               stateName
             };
@@ -1661,8 +1709,8 @@ export class RpcService {
 
   async subscriptionChangeState(address: string, state: number) {
     try {
-      const iface = new ethers.Interface(["function updateState(uint8 state) external"]);
-      const callData = iface.encodeFunctionData('updateState', [state]);
+      const iface = new ethers.Interface(["function setState(uint8 state) external"]);
+      const callData = iface.encodeFunctionData('setState', [state]);
       const result = await this.callExternal(address, callData);
       if(result !== null) {
         return { result, error: ''};
@@ -1673,6 +1721,24 @@ export class RpcService {
     }
     catch (error: any) {
       return { result: null, error: 'Error changing subscription state: ' + error.message};
+    }
+
+  }
+
+  async subscriptionSuspend(address: string, suspended: boolean) {
+    try {
+      const iface = new ethers.Interface(["function setSuspended(bool suspended) external"]);
+      const callData = iface.encodeFunctionData('setSuspended', [suspended]);
+      const result = await this.callExternal(address, callData);
+      if(result !== null) {
+        return { result, error: ''};
+      }
+      else {
+        return { result: null, error: 'Error updating subscription suspended status'};
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error updating subscription suspended status: ' + error.message};
     }
 
   }
@@ -1702,7 +1768,7 @@ export class RpcService {
   async subscriptionInfo(subscriptionAddress: string) {
     try {
       const iface = new ethers.Interface([
-        "function info() external view returns (tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state) subscription)"
+        "function info() external view returns (tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state) subscription)"
       ]);
       
       const callData = iface.encodeFunctionData('info', []);
@@ -1770,9 +1836,10 @@ export class RpcService {
           validatorTrxTime: Number(parsedValidatorData.trxTime) || 0,
           regulator: regulatorAddress,
           regulatorName,
+          createdAt: Number(decodedResult[0].createdAt),
+          suspended: decodedResult[0].suspended,
           state: stateId,
-          stateName,
-          createdAt: Number(decodedResult[0].createdAt)
+          stateName
         };
 
         return { result: subscription, error: '' };
@@ -1790,7 +1857,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+        "function subscriptionsListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
       
       const callData = iface.encodeFunctionData('subscriptionsListByRegulator', [start, offset]);
@@ -1813,21 +1880,53 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByService(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+        "function subscriptionsListByEntity(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
-      
-      const callData = iface.encodeFunctionData('subscriptionsListByService', [service, start, offset]);
+
+      const callData = iface.encodeFunctionData('subscriptionsListByEntity', [service, start, offset]);
       const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('subscriptionsListByService', result.data);
-        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);        
+        const decodedResult = iface.decodeFunctionResult('subscriptionsListByEntity', result.data);
+        const { count, subscriptions } = await this.processSubscriptionsList(decodedResult);
         return { result: { count, subscriptions }, error: '' };
       } else {
-        return { result: null, error: 'Error fetching services list' };
+        return { result: null, error: 'Error fetching subscriptions list' };
       }
     }
     catch (error: any) {
-      return { result: null, error: 'Error fetching services list: ' + error.message};
+      return { result: null, error: 'Error fetching subscriptions list: ' + error.message};
+    }
+  }
+
+  async subscriptionsListAllByEntity(_start: number, _offset: number) {
+    try {
+      const servicesResult = await this.servicesListOwn(1, 1000);
+      if (!servicesResult.result) {
+        return { result: null, error: servicesResult.error };
+      }
+
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function subscriptionsListByEntity(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
+      ]);
+
+      const allRaw: any[] = [];
+      for (const svc of servicesResult.result.services) {
+        const callData = iface.encodeFunctionData('subscriptionsListByEntity', [svc.address, 1, 1000]);
+        const result = await this.callExternalStatic(contractAddress, callData);
+        if (result.success && result.data !== null) {
+          const decoded = iface.decodeFunctionResult('subscriptionsListByEntity', result.data);
+          allRaw.push(...decoded[1]);
+        }
+      }
+
+      const fakeDecoded = [allRaw.length, allRaw];
+      const { count, subscriptions } = await this.processSubscriptionsList(fakeDecoded);
+      return { result: { count, subscriptions }, error: '' };
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching subscriptions list: ' + error.message};
     }
   }
 
@@ -1836,7 +1935,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByValidator(address validator, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+        "function subscriptionsListByValidator(address validator, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
       
       const callData = iface.encodeFunctionData('subscriptionsListByValidator', [validator, start, offset]);
@@ -1859,7 +1958,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, uint8 state)[] subscriptions)"
+        "function subscriptionsListByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
 
       const callData = iface.encodeFunctionData('subscriptionsListByIdentity', [identity, start, offset]);
@@ -1945,9 +2044,10 @@ export class RpcService {
           validatorTrxTime: Number(parsedValidatorData.trxTime) || 0,
           regulator: regulatorAddress,
           regulatorName,
+          createdAt: Number(op.createdAt),
+          suspended: op.suspended,
           state: stateId,
-          stateName,
-          createdAt: Number(op.createdAt)
+          stateName
         };
       })
     );
@@ -2281,23 +2381,16 @@ export class RpcService {
     }
   }
 
-  async assetsListByService(service: string, start: number, offset: number) {
+  async assetsListByService(service: string, _start: number, _offset: number) {
     try {
-      const contractInfo = await this.getContractAddress('AssetsProxy');
-      const contractAddress = contractInfo.result;
-      const iface = new ethers.Interface([
-        "function getServiceAssets(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address[] services, address regulator, bool suspended, uint8 state)[] assets)"
-      ]);
-      const callData = iface.encodeFunctionData('getServiceAssets', [service, start, offset]);
-      const result = await this.callExternalStatic(contractAddress, callData);
-      // console.log(result)
-      if (result.success && result.data !== null) {
-        const decodedResult = iface.decodeFunctionResult('getServiceAssets', result.data);
-        const { count, assets } = await this.processAssetsList(decodedResult);        
-        return { result: { count, assets }, error: '' };
-      } else {
-        return { result: null, error: 'Error fetching assets list' };
+      const allAssets = await this.assetsListOwn(1, 1000);
+      if (!allAssets.result) {
+        return { result: null, error: allAssets.error };
       }
+      const filtered = allAssets.result.assets.filter((a: Asset) =>
+        a.services.some((s: AssetService) => s.service.toLowerCase() === service.toLowerCase())
+      );
+      return { result: { count: filtered.length, assets: filtered }, error: '' };
     }
     catch (error: any) {
       return { result: null, error: 'Error fetching assets list: ' + error.message};
@@ -2467,6 +2560,48 @@ export class RpcService {
         return { count, assets };    
   }
 
+  async assetsListOwn(start: number, offset: number) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function getAssets(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, string name, string symbol, uint8 tokenType, uint8 assetType, string metadata, uint256 totalSupply, uint256 circulating, uint256 currencyCode, uint256 createdOn, address issuer, address manager, address[] services, address regulator, bool suspended, uint8 state)[] assets)"
+      ]);
+      const callData = iface.encodeFunctionData('getAssets', [start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
+      if (result.success && result.data !== null) {
+        const decodedResult = iface.decodeFunctionResult('getAssets', result.data);
+        const { count, assets } = await this.processAssetsList(decodedResult);
+        return { result: { count, assets }, error: '' };
+      } else {
+        return { result: null, error: 'Error fetching assets list' };
+      }
+    }
+    catch (error: any) {
+      return { result: null, error: 'Error fetching assets list: ' + error.message };
+    }
+  }
+
+  async assetCreate(owner: string, service: string, issuer: string, manager: string, name: string, symbol: string, metadata: string, currency: number, regulator: string) {
+    try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function createMMFToken(address owner, address service, address issuer, address manager, string memory name, string memory symbol, string memory metadata, uint256 currencyCode, address regulatorAddress) external returns (address tokenContractAddress)"
+      ]);
+      const callData = iface.encodeFunctionData('createMMFToken', [owner, service, issuer, manager, name, symbol, metadata, currency, regulator]);
+      const result = await this.callExternal(contractAddress, callData);
+      if (result.result) {
+        return { success: true, error: '' };
+      } else {
+        return { success: false, error: result.error };
+      }
+    }
+    catch (error: any) {
+      return { success: false, error: error.message || 'Error creating asset' };
+    }
+  }
+
   async assetChangeState(address: string, state: number) {
     try {
       const iface = new ethers.Interface(["function changeState(uint8 state) external returns (bool)"]);
@@ -2584,11 +2719,13 @@ export class RpcService {
 
   async assetHoldingsBySubscription(subscriptionAddress: string, start: number, offset: number) {
     try {
+      const contractInfo = await this.getContractAddress('AssetsProxy');
+      const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function getHoldings(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, uint256 balance, uint256 cost)[] holdings)"
+        "function getHoldings(address holder, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address asset, uint256 balance, uint256 cost)[] holdings)"
       ]);
-      const callData = iface.encodeFunctionData('getHoldings', [start, offset]);
-      const result = await this.callExternalStatic(subscriptionAddress, callData);
+      const callData = iface.encodeFunctionData('getHoldings', [subscriptionAddress, start, offset]);
+      const result = await this.callExternalStatic(contractAddress, callData);
       if (result.success && result.data !== null) {
         const decodedResult = iface.decodeFunctionResult('getHoldings', result.data);
         const count = Number(decodedResult[0]);
