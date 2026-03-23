@@ -17,7 +17,7 @@
         <div class="w-px h-8 bg-gray-600 hidden md:block"></div>
         <div class="flex-1">
           <p class="text-sm text-gray-400 uppercase tracking-wider">Created On</p>
-          <p class="text-1xl font-semibold mt-1">{{ currentBlockTimestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+          <p class="text-1xl font-semibold mt-1">{{ currentBlockTimestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
         </div>
       </div>
     </div> 
@@ -42,7 +42,7 @@
                 @for (event of loginEvents; track i; let i = $index; let isEven = $even) {
                   <tr class="border-b" [class.bg-gray-100]="isEven" [class.bg-white]="!isEven">
                     <!-- <td class="px-6 py-2">{{ event.blockNumber | number: '1.0-0' }}</td> -->
-                    <td class="px-6 py-2">{{ event.timestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td class="px-6 py-2">{{ event.timestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td class="px-6 py-2 capitalize">{{ event.eventName }}</td>
                     <td class="px-6 py-2 capitalize">{{ event.action }}</td>
                     <td class="px-6 py-2 uppercase">{{ event.sender }}</td>

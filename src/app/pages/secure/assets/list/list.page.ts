@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -35,6 +35,27 @@ export class ListPage implements OnInit {
 
   assetsCount = 0;
   assets = signal<Asset[]>([]);
+
+  filterType = signal<string>('');
+  filterState = signal<string>('');
+
+  uniqueTypes = computed(() =>
+    [...new Set(this.assets().map(a => a.assetTypeName).filter(Boolean))].sort()
+  );
+
+  filteredAssets = computed(() => {
+    const type = this.filterType();
+    const state = this.filterState();
+    return this.assets().filter(a =>
+      (!type || a.assetTypeName === type) &&
+      (!state || String(a.state) === state)
+    );
+  });
+
+  clearFilters() {
+    this.filterType.set('');
+    this.filterState.set('');
+  }
 
   constructor() {}
 

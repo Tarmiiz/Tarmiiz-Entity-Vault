@@ -102,7 +102,14 @@
         </div>
 
         <!-- footer -->
-        <div class="px-6 py-4 bg-gray-50 flex justify-end rounded-b-2xl">
+        <div class="px-6 py-4 bg-gray-50 flex justify-between items-center rounded-b-2xl">
+          <button type="button" (click)="exportPdf()"
+            class="flex items-center gap-1.5 px-4 py-2 bg-gray-700 text-white text-sm rounded-md shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+            </svg>
+            Export PDF
+          </button>
           <button type="button" (click)="onClose()" class="px-4 py-2 bg-[#202a3b] text-white border border-transparent rounded-md shadow-sm hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             Close
           </button>

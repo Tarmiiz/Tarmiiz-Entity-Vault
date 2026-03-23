@@ -29,7 +29,14 @@ export class ListPage implements OnInit {
 
   subscriptionsCount = 0
   subscriptions = signal<Subscription[]>([]);
-  subscriptionsSearchTerm = signal('');
+
+  filterService = signal<string>('');
+  filterState = signal<string>('');
+
+  uniqueServices = computed(() =>
+    [...new Map(this.subscriptions().map(s => [s.service, s.serviceName])).entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+  );
 
   constructor() {}
 
@@ -77,19 +84,17 @@ export class ListPage implements OnInit {
   }
 
   filteredSubscriptions = computed(() => {
-    const term = this.subscriptionsSearchTerm().toLowerCase();
-    if (!term) return this.subscriptions();
-    return this.subscriptions().filter(
-      c => c.subscription.toLowerCase().includes(term) || 
-      c.service.toLowerCase().includes(term) || 
-      c.regulator.toLowerCase().includes(term) ||
-      c.subscription.toLowerCase().includes(term) ||
-      c.serviceName.toLowerCase().includes(term)
+    const service = this.filterService();
+    const state = this.filterState();
+    return this.subscriptions().filter(s =>
+      (!service || s.service === service) &&
+      (!state || String(s.state) === state)
     );
-  });  
+  });
 
-  onSubscriptionsSearch(event: Event) {
-    this.subscriptionsSearchTerm.set((event.target as HTMLInputElement).value);
-  }  
+  clearFilters() {
+    this.filterService.set('');
+    this.filterState.set('');
+  }
 
 }

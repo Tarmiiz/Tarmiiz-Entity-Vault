@@ -14,7 +14,6 @@ import { ModalAssetStateComponent } from "../modals/modal-asset-state/modal-asse
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 
-import { environment } from '../../../../../environments/environment';
 
 
 @Component({
@@ -41,14 +40,12 @@ export class DetailsPage implements OnInit {
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
-  activeTab = signal<'info' | 'price' | 'holders' | 'trxs' | 'actions'>('info');
+  activeTab = signal<'overview' | 'info' | 'price' | 'holders' | 'trxs'>('overview');
 
   loadingData: boolean = false;
 
   assetAddress = '';
   asset = signal<Asset | undefined>(undefined);
-  isOwn = false;
-
   priceHistory = signal<AssetPrice[]>([]);
   pricePage = signal(0);
   readonly pricePageSize = 5;
@@ -79,6 +76,26 @@ export class DetailsPage implements OnInit {
   });
   totalTrxPages = computed(() => Math.ceil(this.transactions().length / this.trxPageSize));
 
+  // overview computed signals
+  latestPrice = computed(() => {
+    const h = this.priceHistory();
+    if (!h || h.length === 0) return null;
+    return [...h].sort((a, b) => b.timestamp - a.timestamp)[0];
+  });
+  subscribeCount = computed(() => this.transactions().filter(t => t.trxType === 'Subscribe').length);
+  redeemCount = computed(() => this.transactions().filter(t => t.trxType === 'Redeem').length);
+  lastTrx = computed(() => {
+    const t = this.transactions();
+    if (!t || t.length === 0) return null;
+    return [...t].sort((a, b) => b.time - a.time)[0];
+  });
+  marketValue = computed(() => {
+    const asset = this.asset();
+    const lp = this.latestPrice();
+    if (!asset || !lp || lp.bid === 0) return null;
+    return asset.circulating * lp.bid;
+  });
+
   constructor() {
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
@@ -89,11 +106,16 @@ export class DetailsPage implements OnInit {
   async ngOnInit() {}
 
   async ionViewWillEnter() {
+    this.activeTab.set('overview');
     await this.getAssetDetails();
-    this.isOwn = this.asset()?.manager === environment.entityAddress;
+    await Promise.all([
+      this.getPriceHistory(1, 100),
+      this.getHolders(1, 500),
+      this.getTransactions(1, 100),
+    ]);
   }
 
-  setTab(tab: 'info' | 'price' | 'holders' | 'trxs' | 'actions') {
+  setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
     if (tab === 'price') this.getPriceHistory(1, 100);

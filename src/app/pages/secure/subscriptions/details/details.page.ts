@@ -14,7 +14,6 @@ import { ModalSubscriptionStateComponent } from "../modals/modal-subscription-st
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 
-import { environment } from '../../../../../environments/environment';
 
 
 @Component({
@@ -39,15 +38,13 @@ export class DetailsPage implements OnInit {
   private subscriptionStateService = inject(ModalSubscriptionStateService);
   trxInfoService = inject(ModalTransactionInfoService);
 
-  activeTab = signal<'info' | 'holdings' | 'trxs' | 'actions'>('info');
+  activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs'>('overview');
 
   loadingData: boolean = false;
 
   subscriptionAddress = '';
   subscription = signal<Subscription | undefined>(undefined);
   didHash = '';
-  isOwn = false;
-
   holdings = signal<SubscriptionHolding[]>([]);
   holdingPage = signal(0);
   readonly holdingPageSize = 10;
@@ -66,6 +63,22 @@ export class DetailsPage implements OnInit {
   });
   totalTrxPages = computed(() => Math.ceil(this.transactions().length / this.trxPageSize));
 
+  // overview computed signals
+  totalPortfolioValue = computed(() => this.holdings().reduce((sum, h) => sum + h.balance * h.currentBid, 0));
+  totalCostBasis = computed(() => this.holdings().reduce((sum, h) => sum + h.cost, 0));
+  totalPL = computed(() => this.totalPortfolioValue() - this.totalCostBasis());
+  totalPLPct = computed(() => {
+    const cost = this.totalCostBasis();
+    return cost > 0 ? (this.totalPL() / cost) * 100 : null;
+  });
+  subscribeCount = computed(() => this.transactions().filter(t => t.trxType === 'Subscribe').length);
+  redeemCount = computed(() => this.transactions().filter(t => t.trxType === 'Redeem').length);
+  lastTrx = computed(() => {
+    const t = this.transactions();
+    if (!t || t.length === 0) return null;
+    return [...t].sort((a, b) => b.time - a.time)[0];
+  });
+
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
@@ -76,11 +89,15 @@ export class DetailsPage implements OnInit {
   async ngOnInit() {}
   
   async ionViewWillEnter() {
+    this.activeTab.set('overview');
     await this.getSubscriptionDetails();
-    this.isOwn = this.subscription()?.regulator === environment.entityAddress;
+    await Promise.all([
+      this.getHoldings(1, 500),
+      this.getTransactions(1, 100),
+    ]);
   }
 
-  setTab(tab: 'info' | 'holdings' | 'trxs' | 'actions') {
+  setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getSubscriptionDetails();
     if (tab === 'holdings') this.getHoldings(1, 500);

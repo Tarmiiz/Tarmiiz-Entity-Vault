@@ -39,6 +39,18 @@ export class ListPage implements OnInit {
   services = signal<Service[]>([]);
   servicesSearchTerm = signal('');
 
+  filterState = signal<string>('');
+  filterVerificationLevel = signal<string>('');
+
+  uniqueVerificationLevels = computed(() =>
+    [...new Map(this.services().map(s => [s.verificationLevel, s.verificationLevelName])).entries()].sort((a, b) => Number(a[0]) - Number(b[0]))
+  );
+
+  clearFilters() {
+    this.filterState.set('');
+    this.filterVerificationLevel.set('');
+  }
+
   constructor() {}
 
   ngOnInit() {}
@@ -117,15 +129,11 @@ export class ListPage implements OnInit {
   }
 
   filteredServices = computed(() => {
-    const term = this.servicesSearchTerm().toLowerCase();
-    if (!term) return this.services();
-    return this.services().filter(
-      c => c.name.toLowerCase().includes(term) || 
-      c.email.toLowerCase().includes(term) || 
-      c.mobile.toLowerCase().includes(term) ||
-      c.address.toLowerCase().includes(term) ||
-      c.regulatorName.toLowerCase().includes(term) ||
-      c.stateName.toLowerCase().includes(term)
+    const state = this.filterState();
+    const level = this.filterVerificationLevel();
+    return this.services().filter(s =>
+      (!state || String(s.state) === state) &&
+      (!level || String(s.verificationLevel) === level)
     );
   });  
 

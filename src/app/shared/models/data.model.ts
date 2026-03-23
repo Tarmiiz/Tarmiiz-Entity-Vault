@@ -307,6 +307,7 @@ export class AssetTransaction {
     public assetSymbol: string,
     public from: string,
     public to: string,
+    public subscription: string,
     public tokens: number,
     public price: number,
     public totalPrice: number,

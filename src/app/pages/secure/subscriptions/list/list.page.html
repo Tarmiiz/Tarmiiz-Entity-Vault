@@ -2,31 +2,38 @@
 
 <div class="flex-grow container mx-auto p-4 bg-gray-300 pt-4 overflow-y-auto">
     
-    <!-- Search Bar -->
-    <div class="mb-6 flex items-center justify-between badges">
-      <div class="relative flex-grow">
-        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <input 
-          type="text" 
-          placeholder="Search by Subscription or Service" 
-          class="w-full bg-white border border-gray-300 text-gray-800 placeholder-gray-500 rounded-full shadow-sm py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-          [value]="subscriptionsSearchTerm()"
-          (input)="onSubscriptionsSearch($event)"
-        />
+  <!-- Filters -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Service</label>
+        <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+          <option value="">All</option>
+          @for (s of uniqueServices(); track s[0]) {
+            <option [value]="s[0]">{{ s[1] }}</option>
+          }
+        </select>
       </div>
-      <!-- <button (click)="openAddModal()" class="ml-4 px-3 py-2 bg-[#202a3b] text-white font-semibold rounded-full shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 flex-shrink-0">
-        Add Service
-      </button> -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">State</label>
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <option value="">All</option>
+          <option value="1">Initiated</option>
+          <option value="2">Active</option>
+          <option value="3">Suspended</option>
+          <option value="4">Deactivated</option>
+        </select>
+      </div>
+      <div class="flex flex-col justify-end">
+        <button (click)="clearFilters()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Clear
+        </button>
+      </div>
     </div>
-
-    <!-- Services Count -->
-    <div class="flex items-center justify-end px-10 p-1">
-      <p class="text-xs font-medium text-gray-800 justify-end">Showing {{ filteredSubscriptions().length }} of Total {{ subscriptions().length }} Subscriptions</p>
-    </div>    
+  </div>
 
     <!-- Services Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -36,7 +43,6 @@
               <tr>
                   <th scope="col" class="px-6 py-2">Created</th>
                   <th scope="col" class="px-6 py-2">Subscription</th>
-                  <th scope="col" class="px-6 py-2">Entity</th>
                   <th scope="col" class="px-6 py-2">Service</th>
                   <th scope="col" class="px-6 py-2">State</th>
               </tr>
@@ -55,9 +61,8 @@
               @else {
                   @for(subscription of filteredSubscriptions(); track subscription.subscription; let i = $index; let isEven = $even;) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(subscription)">
-                          <td class="px-6 py-2">{{ subscription.createdAt * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                          <td class="px-6 py-2">{{ subscription.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2">{{ subscription.subscription }}</td>
-                          <td class="px-6 py-2">{{ subscription.entityName }}</td>
                           <td class="px-6 py-2">{{ subscription.serviceName }}</td>
                           <td class="px-6 py-2">
                             <div class="flex items-center gap-1.5">
@@ -77,6 +82,9 @@
             }
           </tbody>
         </table>
+      </div>
+      <div class="flex items-center px-4 py-2 border-t">
+        <p class="text-xs font-medium text-gray-800">Showing {{ filteredSubscriptions().length }} of Total {{ subscriptions().length }} Subscriptions</p>
       </div>
     </div>
 

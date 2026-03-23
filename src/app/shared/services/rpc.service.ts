@@ -276,7 +276,7 @@ export class RpcService {
   } 
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  // Regulator Contract
+  // Entity Contract
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async connectEntityContract() {
@@ -403,6 +403,10 @@ export class RpcService {
       return { result: null, error: 'Error checking authorization'};
     }
   }
+
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // Entity Info
+  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async entityInfoGet() {
     try {
@@ -558,6 +562,10 @@ export class RpcService {
     }
   }
 
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Regulator Info
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
   async regulatorInfo(regulatorAddress: string) {
     try {
       const iface = new ethers.Interface([
@@ -632,54 +640,9 @@ export class RpcService {
     }
   }
 
-  async operatorInfo(operatorAddress: string) {
-    try {
-      const iface = new ethers.Interface([
-        "function info() external view returns (tuple(address operator, string name, string symbol, string data, uint256 countryCode, bool state))"
-      ]);
-      
-      const callData = iface.encodeFunctionData('info');
-      const result = await this.callExternalStatic(operatorAddress, callData);
-      if (result.success && result.data !== null) {
-
-        const decodedResult = iface.decodeFunctionResult('info', result.data);
-        const parsedData = JSON.parse(decodedResult[0][3]);
-
-        // Fetch state names once
-        await this.connectVariablesProxyContract();
-
-        // get country name
-        const countryCode = Number(decodedResult[0][4]);
-        let countryName = 'Unknown';
-        if (this.countriesList.length === 0) {
-          await this.getCountriesList();
-        }
-        const country = this.countriesList.find(c => c.countryCode === countryCode);
-        countryName = country?.nameShort || 'Unknown';        
-
-        const operator: Operator = {
-          operator: decodedResult[0][0],
-          name: decodedResult[0][1],
-          symbol: decodedResult[0][2],
-          data: decodedResult[0][3],
-          email: parsedData.email || '',
-          mobile: parsedData.mobile || '',
-          countryCode,
-          countryName,
-          state: decodedResult[0][5],
-          stateName: decodedResult[0][5] ? 'Active' : 'Inactive'
-        };
-        return { result: { operator }, error: '' };
-      } else {
-        return { result: null, error: 'Error fetching regulator info' };
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching regulator info: ' + error.message};
-    }
-  }  
-
-//----------------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// User Info
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async userInfo(userId: number) {    
     try {
@@ -831,7 +794,9 @@ export class RpcService {
     }
   }
 
-//----------------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Validator Info
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async validatorChangeName(address: string, name: string) {
     try {
@@ -1139,7 +1104,9 @@ export class RpcService {
     }
   }  
 
-//----------------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Entity Info
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async entityRegister(name: string, admin: string, password: string, metadata: string, apiAddress: string) {
     try {
@@ -1385,7 +1352,29 @@ export class RpcService {
 
   }
 
-//----------------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Service Info
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  async serviceCreate(name: string, metadata: string, verificationLevel: number, countryCode: number, regulator: string) {
+    try {
+      const contractInfo = await this.getContractAddress('EntitiesProxy');
+      const contractAddress = contractInfo.result;
+      const iface = new ethers.Interface([
+        "function serviceCreate(string memory name, string memory metadata, uint8 verificationLevel, uint256 countryCode, address regulator) external returns (address serviceAddress)"
+      ]);
+      const callData = iface.encodeFunctionData('serviceCreate', [name, metadata, verificationLevel, countryCode, regulator]);
+      const result = await this.callExternal(contractAddress, callData);
+      if (result.result) {
+        return { success: true, error: '' };
+      } else {
+        return { success: false, error: result.error };
+      }
+    }
+    catch (error: any) {
+      return { success: false, error: error.message || 'Error creating service' };
+    }
+  }
 
   async serviceChangeName(address: string, name: string) {
     try {
@@ -1705,7 +1694,9 @@ export class RpcService {
         return { count, services };    
   }
 
-//----------------------------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Subscription Info
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async subscriptionChangeState(address: string, state: number) {
     try {
@@ -2081,6 +2072,8 @@ export class RpcService {
   }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Identity Info
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async identityContactCheck(contact: string) {
     try {
@@ -2208,9 +2201,9 @@ export class RpcService {
     // get operator name
     const operatorAddress = data[5];
     let operatorName = 'Unknown';
-    const operatorResult = await this.operatorInfo(operatorAddress);
-    const operator = operatorResult.result?.operator;
-    operatorName = operator?.name || 'Unknown';
+    // const operatorResult = await this.operatorInfo(operatorAddress);
+    // const operator = operatorResult.result?.operator;
+    // operatorName = operator?.name || 'Unknown';
 
     // get validator name
     const validatorAddress = data[7];
@@ -2237,6 +2230,8 @@ export class RpcService {
     return identity;
   }
 
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Asset Info
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   async assetInfo(assetAddress: string) {
@@ -2533,8 +2528,8 @@ export class RpcService {
               assetType: assetTypeId,
               assetTypeName,
               metadata: op.metadata,
-              totalSupply: Number(op.totalSupply),
-              circulating: Number(op.circulating),
+              totalSupply: Number(ethers.formatEther(op.totalSupply)),
+              circulating: Number(ethers.formatEther(op.circulating)),
               countryCode: countryCode,
               countryName,
               currencyCode,
@@ -2932,8 +2927,9 @@ export class RpcService {
         }
 
         let trxType = 'Transfer';
-        if (op.from === op.asset) trxType = 'Subscribe';
-        else if (op.to === op.asset) trxType = 'Redeem';
+        let subscription = '';
+        if (op.from === op.asset) { trxType = 'Subscribe'; subscription = op.to; }
+        else if (op.to === op.asset) { trxType = 'Redeem'; subscription = op.from; }
 
         return {
           trxId: Number(op.trxId),
@@ -2949,6 +2945,7 @@ export class RpcService {
           assetSymbol,
           from: op.from,
           to: op.to,
+          subscription,
           tokens: Number(ethers.formatEther(op.tokens)),
           price: Number(ethers.formatEther(op.price)),
           totalPrice: Number(ethers.formatEther(op.tokens)) * Number(ethers.formatEther(op.price)),
@@ -2959,197 +2956,6 @@ export class RpcService {
       })
     );
     return { count, transactions };
-  }
-
-  // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Regulator Contract: API Functions
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-  async validatorRegister(
-    name: string,
-    email: string, password: string, 
-    metadata: string
-  ) {
-
-    try {
-
-      // generate login data
-      const { loginHash, secret } = await this.generateZKPData(email, password);
-  
-      // create & encrypt user data
-      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
-      const encryptedMetaata = metadata;
-
-      const userData = {
-        name: 'Super Admin',
-        email: '',
-      };
-      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));
-
-      // create new wallet & connect to contract
-      const privkey = environment.apiPrivKey;
-      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.entityContractAddress, EntityTemplateAbi, apiSigner);
-
-      // register
-      const tx = await apiContract['validatorAdd'](encryptedUserData, loginHash, secret, name, encryptedMetaata);
-      const receipt = await tx.wait();
-  
-      // listen to contract event
-      const eventlog = receipt.logs?.map((log: any) => apiContract.interface.parseLog(log))?.find((e: any) => e?.name === 'ValidatorEvent');
-      if (eventlog) {
-        const { sender, validator, action } = eventlog.args;
-        // console.log(validator, action);
-        return {
-          success: true,
-          contract: validator,
-        };
-      } else {
-        console.log('No OperatorEvent event found in receipt');
-        return { success: false };
-      }      
-  
-    }
-    catch (error) {
-      console.error(error);
-      return {
-        success: false,
-        contract: ''
-      };
-    }
-  }
-
-  async serviceCreate(name: string, metadata: string, verificationLevel: number, countryCode: number, regulator: string) {
-    try {
-      const contractInfo = await this.getContractAddress('EntitiesProxy');
-      const contractAddress = contractInfo.result;
-      const iface = new ethers.Interface([
-        "function serviceCreate(string memory name, string memory metadata, uint8 verificationLevel, uint256 countryCode, address regulator) external returns (address serviceAddress)"
-      ]);
-      const callData = iface.encodeFunctionData('serviceCreate', [name, metadata, verificationLevel, countryCode, regulator]);
-      const result = await this.callExternal(contractAddress, callData);
-      if (result.result) {
-        return { success: true, error: '' };
-      } else {
-        return { success: false, error: result.error };
-      }
-    }
-    catch (error: any) {
-      return { success: false, error: error.message || 'Error creating service' };
-    }
-  }
-
-  async serviceRegister(
-    name: string,
-    admin: string, password: string,
-    metadata: string,
-    vLevel: number,
-    apiAddress: string
-  ) {
-
-    try {
-      
-      // generate login data
-      const { loginHash, secret } = await this.generateZKPData(admin, password);
-      // console.log('loginHash', loginHash);
-      // console.log('secret', secret);
-  
-      // create & encrypt user data
-      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
-      const encryptedMetadata = metadata;
-
-      const userData = {
-        name: 'Super Admin',
-        email: '',
-      };
-      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));      
-
-      // check if service proxy address is set
-      if(!this.serviceAddress()) await this.getContractAddress('EntitiesProxy');
-
-      const regulator = environment.entityAddress;
-      const operator = '0x48aF7747D327663887b815590C8844f94AEaA4e4'; //this.operatorAddress();
-      const addrZero = environment.addressZero;
-      console.log('addr', regulator, operator, addrZero);
-
-      const iface = new ethers.Interface([
-        "function serviceCreate(string memory name, string memory data, uint8 verificationLevel, uint256 countryCode, bytes32 adminHash, bytes32 adminSecret, string memory adminData, address api, address regulator, address validator, address operator) external returns (address serviceAddress)"
-      ]);
-
-      const callData = iface.encodeFunctionData('serviceCreate', [name, encryptedMetadata, vLevel, 818, loginHash, secret, encryptedUserData, apiAddress, regulator, addrZero, this.operatorAddress()]);
-      const result = await this.callExternal(this.serviceAddress(), callData);
-      if (result.result) {
-        console.log('decodedResult', result.result);
-        return {success: true, contract: result.result};
-      }
-      else {
-        return {success: false, contract: ''};
-      }
-  
-    }
-    catch (error) {
-      console.error(error);
-      return {
-        success: false,
-        contract: ''
-      };
-    }
-  }
-
-  async serviceRegister2(
-    name: string,
-    admin: string, password: string, 
-    metadata: string,
-    validatorAddress: string,
-    vLevel: number
-  ) {
-
-    try {
-      
-      // generate login data
-      const { loginHash, secret } = await this.generateZKPData(admin, password);
-  
-      // create & encrypt user data
-      // const encryptedUserData = crypto.aesEncrypt(clientIp, process.env.ADMIN_KEY, JSON.stringify(metadata));
-      const encryptedMetaata = metadata;
-
-      const userData = {
-        name: 'Super Admin',
-        email: '',
-      };
-      const encryptedUserData = this.cryptoService.aesEncrypt(environment.aesKEY, JSON.stringify(userData));      
-
-      // create new wallet & connect to contract
-      const privkey = environment.apiPrivKey;
-      const apiSigner = new ethers.Wallet(privkey, this.rpcProvider);
-      const apiContract = new ethers.Contract(this.entityContractAddress, EntityTemplateAbi, apiSigner);
-
-      // register
-      const tx = await apiContract['serviceAdd'](encryptedUserData, loginHash, secret, name, encryptedMetaata, validatorAddress, vLevel);
-      const receipt = await tx.wait();
-  
-      // listen to contract event
-      const eventlog = receipt.logs?.map((log: any) => apiContract.interface.parseLog(log))?.find((e: any) => e?.name === 'ValidatorEvent');
-      if (eventlog) {
-        const { sender, validator, action } = eventlog.args;
-        console.log(validator, action);
-        return {
-          success: true,
-          contract: validator,
-        };
-      } else {
-        console.log('No OperatorEvent event found in receipt');
-        return { success: false };
-      }      
-  
-    }
-    catch (error) {
-      console.error(error);
-      return {
-        success: false,
-        contract: ''
-      };
-    }
   }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -3393,6 +3199,12 @@ export class RpcService {
 
     await wsContract.removeAllListeners();
     await this.wsProvider.removeAllListeners();
+  }
+
+  listenToAssetTransactions(callback: () => void): () => void {
+    const listener = () => callback();
+    this.wsProvider.on('block', listener);
+    return () => this.wsProvider.off('block', listener);
   }
 
   listenToNewBlocks(callback: (blockNumber: number, transactions: number, timestamp: number) => void): void {

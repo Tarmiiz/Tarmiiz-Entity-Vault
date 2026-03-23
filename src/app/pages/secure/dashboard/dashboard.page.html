@@ -1,4 +1,5 @@
 <app-header title="Home"></app-header>
+<app-modal-transaction-info></app-modal-transaction-info>
 
 <div class="flex-grow container mx-auto p-1 bg-gray-300 pt-4 overflow-y-auto">
 
@@ -26,13 +27,13 @@
           <div class="w-px h-8 bg-gray-600 hidden md:block"></div>
           <div class="flex-1">
             <p class="text-sm text-gray-400 uppercase tracking-wider">Created On</p>
-            <p class="text-1xl font-semibold mt-1">{{ currentBlockTimestamp * 1000 | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+            <p class="text-1xl font-semibold mt-1">{{ currentBlockTimestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
           </div>
         </div>
       </div>    
     
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 badges">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 badges">
         @for (stat of stats(); track stat.title) {
           <div class="p-6 rounded-xl shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:bg-indigo-100" [class]="stat.loading ? 'bg-blue-50 animate-pulse' : 'bg-white'" (click)="goTo(stat.path)">
             <div class="bg-blue-100 p-3 rounded-full">
@@ -55,6 +56,133 @@
         }
       </div>
     
+      <!-- Latest Transactions -->
+      <div [class]="transactionsLoading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
+        <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+          <h2 class="text-xl font-semibold text-white">Latest Transactions</h2>
+          @if (transactionsLoading()) {
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          } @else {
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/transactions/list')">View all →</button>
+          }
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+              <tr>
+                <th class="px-4 py-2">Time</th>
+                <th class="px-4 py-2">Type</th>
+                <th class="px-4 py-2">Asset</th>
+                <th class="px-4 py-2">Service</th>
+                <th class="px-4 py-2 text-right">Tokens</th>
+                <th class="px-4 py-2 text-right">Price</th>
+                <th class="px-4 py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (transactionsLoading()) {
+                @for (i of [1,2,3,4,5]; track i) {
+                  <tr class="border-b">
+                    <td colspan="7" class="px-4 py-3">
+                      <div class="h-3 bg-gray-200 rounded w-full"></div>
+                    </td>
+                  </tr>
+                }
+              } @else if (latestTransactions().length === 0) {
+                <tr>
+                  <td colspan="7" class="px-4 py-4 text-center text-gray-400">No transactions found</td>
+                </tr>
+              } @else {
+                @for (t of latestTransactions(); track t.trxId) {
+                  <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="viewDetails(t)">
+                    <td class="px-4 py-2 whitespace-nowrap font-mono text-xs">{{ utils.formatDate(t.time) }}</td>
+                    <td class="px-4 py-2">
+                      <span class="px-2 py-0.5 rounded text-xs font-semibold"
+                        [class.bg-green-100]="t.trxType === 'Subscribe'"
+                        [class.text-green-800]="t.trxType === 'Subscribe'"
+                        [class.bg-red-100]="t.trxType === 'Redeem'"
+                        [class.text-red-800]="t.trxType === 'Redeem'"
+                        [class.bg-blue-100]="t.trxType === 'Transfer'"
+                        [class.text-blue-800]="t.trxType === 'Transfer'">
+                        {{ t.trxType }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-2">{{ t.assetName }} <span class="text-gray-400">({{ t.assetSymbol }})</span></td>
+                    <td class="px-4 py-2">{{ t.serviceName }}</td>
+                    <td class="px-4 py-2 text-right font-mono">{{ t.tokens | number:'1.0-0' }}</td>
+                    <td class="px-4 py-2 text-right font-mono">{{ t.price | number:'1.6-6' }}</td>
+                    <td class="px-4 py-2 text-right font-mono">{{ t.totalPrice | number:'1.6-6' }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Latest Subscriptions -->
+      <div [class]="subscriptionsLoading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
+        <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+          <h2 class="text-xl font-semibold text-white">Latest Subscriptions</h2>
+          @if (subscriptionsLoading()) {
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          } @else {
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/subscriptions/list')">View all →</button>
+          }
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+              <tr>
+                <th class="px-4 py-2">Created</th>
+                <th class="px-4 py-2">Subscription</th>
+                <th class="px-4 py-2">Service</th>
+                <th class="px-4 py-2">Validator</th>
+                <th class="px-4 py-2">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (subscriptionsLoading()) {
+                @for (i of [1,2,3,4,5]; track i) {
+                  <tr class="border-b">
+                    <td colspan="5" class="px-4 py-3">
+                      <div class="h-3 bg-gray-200 rounded w-full"></div>
+                    </td>
+                  </tr>
+                }
+              } @else if (latestSubscriptions().length === 0) {
+                <tr>
+                  <td colspan="5" class="px-4 py-4 text-center text-gray-400">No subscriptions found</td>
+                </tr>
+              } @else {
+                @for (s of latestSubscriptions(); track s.subscription) {
+                  <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/subscriptions/details/' + s.subscription)">
+                    <td class="px-4 py-2 whitespace-nowrap font-mono text-xs">{{ utils.formatDate(s.createdAt) }}</td>
+                    <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ s.subscription }}</td>
+                    <td class="px-4 py-2">{{ s.serviceName }}</td>
+                    <td class="px-4 py-2">{{ s.validatorName }}</td>
+                    <td class="px-4 py-2">
+                      <div class="flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getStateClass(s.state)">{{ s.stateName }}</span>
+                        @if (s.suspended) {
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Assets Table -->
       <!-- <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden badges">
         <div class="px-6 py-4 bg-gray-600">
