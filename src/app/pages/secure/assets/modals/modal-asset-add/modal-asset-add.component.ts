@@ -37,36 +37,34 @@ export class ModalAssetAddComponent {
 
   constructor() {
     this.loadServices();
-    this.loadCountries();
+    this.loadCountriesAndRegulators();
   }
 
   async loadServices() {
-    const data = await this.rpcService.servicesListOwn(1, 100);
+    const data = await this.rpcService.servicesListOwn(1, 50);
     if (data.result) {
       this.services.set(data.result.services.map((s: any) => ({ address: s.address, name: s.name })));
     }
   }
 
-  async loadCountries() {
+  async loadCountriesAndRegulators() {
     await this.rpcService.connectVariablesProxyContract();
-    const data = await this.rpcService.getCountriesList();
-    if (data.result) {
-      this.countries.set(data.result.map((c: any) => ({
+    const [countriesData, entityData] = await Promise.all([
+      this.rpcService.getCountriesList(),
+      this.rpcService.entityInfoGet(),
+    ]);
+    if (countriesData.result) {
+      this.countries.set(countriesData.result.map((c: any) => ({
         countryCode: c.countryCode,
         nameShort: c.nameShort,
         currencyCode: c.currencyCode,
       })));
     }
-  }
-
-  async onCurrencyChange(event: Event) {
-    const countryCode = Number((event.target as HTMLSelectElement).value);
-    this.regulators.set([]);
-    this.addForm.patchValue({ regulator: '' });
-    if (!countryCode) return;
-    const data = await this.rpcService.regulatorsListByCountry(countryCode, 1, 100);
-    if (data.result) {
-      this.regulators.set(data.result.regulators.filter((r: any) => r.state));
+    if (entityData?.result) {
+      const regulatorsData = await this.rpcService.regulatorsListByCountry(entityData.result.countryCode, 1, 100);
+      if (regulatorsData.result) {
+        this.regulators.set(regulatorsData.result.regulators.filter((r: any) => r.state));
+      }
     }
   }
 

@@ -92,16 +92,16 @@ export class DetailsPage implements OnInit {
     this.activeTab.set('overview');
     await this.getSubscriptionDetails();
     await Promise.all([
-      this.getHoldings(1, 500),
-      this.getTransactions(1, 100),
+      this.getHoldings(1, 50),
+      this.getTransactions(1, 50),
     ]);
   }
 
   setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getSubscriptionDetails();
-    if (tab === 'holdings') this.getHoldings(1, 500);
-    if (tab === 'trxs') this.getTransactions(1, 100);
+    if (tab === 'holdings') this.getHoldings(1, 50);
+    if (tab === 'trxs') this.getTransactions(1, 50);
   }
 
   async getSubscriptionDetails() {

@@ -2376,9 +2376,9 @@ export class RpcService {
     }
   }
 
-  async assetsListByService(service: string, _start: number, _offset: number) {
+  async assetsListByService(service: string, start: number, offset: number) {
     try {
-      const allAssets = await this.assetsListOwn(1, 1000);
+      const allAssets = await this.assetsListOwn(start, offset);
       if (!allAssets.result) {
         return { result: null, error: allAssets.error };
       }

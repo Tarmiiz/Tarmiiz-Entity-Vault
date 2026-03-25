@@ -113,7 +113,7 @@ export class DetailsPage implements OnInit {
     await Promise.all([
       this.getAssets(),
       this.getSubscriptions(),
-      this.getTransactions(1, 100),
+      this.getTransactions(1, 50),
     ]);
   }
 
@@ -122,7 +122,7 @@ export class DetailsPage implements OnInit {
     if (tab === 'info') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
-    if (tab === 'trxs') this.getTransactions(1, 100);
+    if (tab === 'trxs') this.getTransactions(1, 50);
   }   
 
   async getServiceDetails() {
@@ -150,7 +150,7 @@ export class DetailsPage implements OnInit {
 
   async getAssets() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.assetsListByService(this.serviceAddress, 1, 100);
+    const data = await this.rpcService.assetsListByService(this.serviceAddress, 1, 50);
     this.assets.set(data.result?.assets || []);
     this.loadingService.hide();
   }
@@ -161,7 +161,7 @@ export class DetailsPage implements OnInit {
   
   async getSubscriptions() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.subscribersListByService(this.serviceAddress, 1, 100);
+    const data = await this.rpcService.subscribersListByService(this.serviceAddress, 1, 50);
     this.subscriptions.set(data.result?.subscriptions || []);
     console.log('subscriptions', this.subscriptions());
     this.loadingService.hide();
