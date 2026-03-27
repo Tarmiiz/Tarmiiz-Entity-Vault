@@ -346,6 +346,55 @@
 
         <!-- holders tab -->
         @if (activeTab() === 'holders') {
+          <div class="space-y-3">
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+              <div class="flex flex-wrap gap-2 items-end">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Holder Address</label>
+                  <input type="text" [ngModel]="filterHolder()" (ngModelChange)="filterHolder.set($event); holderPage.set(0)"
+                    placeholder="Search by address..."
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Balance</label>
+                  <div class="flex items-center gap-1">
+                    <select [ngModel]="filterBalanceOp()" (ngModelChange)="filterBalanceOp.set($event); holderPage.set(0)"
+                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                      <option value="">Any</option>
+                      <option value="gt">&gt;</option>
+                      <option value="lt">&lt;</option>
+                    </select>
+                    <input type="number" min="0" [ngModel]="filterBalanceAmt()" (ngModelChange)="filterBalanceAmt.set($event === '' || $event === null ? null : +$event); holderPage.set(0)"
+                      placeholder="Amount"
+                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+                  </div>
+                </div>
+                <div class="flex flex-col justify-end">
+                  <button (click)="clearHolderFilter()"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    Clear
+                  </button>
+                </div>
+                <div class="flex gap-2 ml-auto">
+                  <button (click)="exportHoldersExcel()"
+                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export Excel
+                  </button>
+                  <button (click)="exportHoldersPdf()"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
           <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-sm text-left text-gray-700">
@@ -360,7 +409,7 @@
                   </tr>
                 </thead>
                 <tbody class="text-xs">
-                    @if(holders().length === 0) {
+                    @if(filteredHolders().length === 0) {
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td colspan="6" class="px-6 py-2">no data</td>
                         </tr>
@@ -395,7 +444,7 @@
               </table>
             </div>
             <div class="flex items-center justify-between px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ pagedHolders().length }} of {{ holders().length }} Holders</p>
+              <p class="text-xs font-medium text-gray-800">Showing {{ pagedHolders().length }} of {{ filteredHolders().length }} Holders</p>
               @if (totalHolderPages() > 1) {
                 <div class="flex items-center gap-3 text-xs text-gray-600">
                   <span>Page {{ holderPage() + 1 }} of {{ totalHolderPages() }}</span>
@@ -413,10 +462,84 @@
               }
             </div>
           </div>
+          </div>
         }
 
         <!-- trxs tab -->
         @if (activeTab() === 'trxs') {
+          <div class="space-y-3">
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+              <div class="flex flex-wrap gap-2 items-end">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Type</label>
+                  <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <option value="">All</option>
+                    <option value="Subscribe">Subscribe</option>
+                    <option value="Redeem">Redeem</option>
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Service</label>
+                  <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event); trxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+                    <option value="">All</option>
+                    @for (svc of uniqueServices(); track svc[0]) {
+                      <option [value]="svc[0]">{{ svc[1] }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Subscription</label>
+                  <select [ngModel]="filterSubscription()" (ngModelChange)="filterSubscription.set($event); trxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44">
+                    <option value="">All</option>
+                    @for (sub of uniqueSubscriptions(); track sub) {
+                      <option [value]="sub">{{ sub }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Tokens</label>
+                  <div class="flex items-center gap-1">
+                    <select [ngModel]="filterTokensOp()" (ngModelChange)="filterTokensOp.set($event); trxPage.set(0)"
+                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                      <option value="">Any</option>
+                      <option value="gt">&gt;</option>
+                      <option value="lt">&lt;</option>
+                    </select>
+                    <input type="number" min="0" [ngModel]="filterTokensAmt()" (ngModelChange)="filterTokensAmt.set($event === '' || $event === null ? null : +$event); trxPage.set(0)"
+                      placeholder="Amount"
+                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
+                  </div>
+                </div>
+                <div class="flex flex-col justify-end">
+                  <button (click)="clearFilters()"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    Clear
+                  </button>
+                </div>
+                <div class="flex gap-2 ml-auto">
+                  <button (click)="exportExcel()"
+                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export Excel
+                  </button>
+                  <button (click)="exportPdf()"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table -->
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div class="overflow-x-auto rounded-lg">
                 <table class="w-full text-sm text-left text-gray-700">
@@ -425,34 +548,36 @@
                       <th scope="col" class="px-6 py-2">Date</th>
                       <th scope="col" class="px-6 py-2">Type</th>
                       <th scope="col" class="px-6 py-2">Service</th>
+                      <th scope="col" class="px-6 py-2">Subscription</th>
                       <th scope="col" class="px-6 py-2 text-right">Tokens</th>
                       <th scope="col" class="px-6 py-2 text-right">Nav</th>
                       <th scope="col" class="px-6 py-2 text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
-                      @if(transactions().length === 0) {
-                          <tr class="bg-white border-b hover:bg-gray-50">
-                              <td colspan="6" class="px-6 py-2">no data</td>
-                          </tr>
+                    @if(filteredTransactions().length === 0) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                        <td colspan="7" class="px-6 py-2 text-center text-gray-400">No transactions found</td>
+                      </tr>
+                    }
+                    @else {
+                      @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
+                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
+                          <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
+                          <td class="px-6 py-2">{{ trx.serviceName }}</td>
+                          <td class="px-6 py-2 font-mono text-xs">{{ trx.subscription }}</td>
+                          <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
+                          <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
+                          <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
+                        </tr>
                       }
-                      @else {
-                          @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
-                              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
-                                  <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                                  <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
-                                  <td class="px-6 py-2">{{ trx.serviceName }}</td>
-                                  <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
-                                  <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
-                                  <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
-                              </tr>
-                          }
-                      }
+                    }
                   </tbody>
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedTransactions().length }} of {{ transactions().length }} Transactions</p>
+                <p class="text-xs font-medium text-gray-800">Showing {{ pagedTransactions().length }} of {{ filteredTransactions().length }} Transactions</p>
                 @if (totalTrxPages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
                     <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
@@ -470,6 +595,7 @@
                 }
               </div>
             </div>
+          </div>
         }
 
 

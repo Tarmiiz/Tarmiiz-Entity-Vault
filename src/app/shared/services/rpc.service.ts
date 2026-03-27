@@ -1759,7 +1759,7 @@ export class RpcService {
   async subscriptionInfo(subscriptionAddress: string) {
     try {
       const iface = new ethers.Interface([
-        "function info() external view returns (tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state) subscription)"
+        "function info() external view returns (tuple(address subscription, address entity, address service, tuple(address validator, uint256 verificationId, uint256 timestamp) validatorInfo, address regulator, uint256 createdAt, bool suspended, uint8 state) subscription)"
       ]);
       
       const callData = iface.encodeFunctionData('info', []);
@@ -1801,18 +1801,11 @@ export class RpcService {
         serviceName = service?.name || 'Unknown';
 
         // get validator name
-        const validatorAddress = decodedResult[0].validator;
+        const validatorAddress = decodedResult[0].validatorInfo.validator;
         let validatorName = 'Unknown';
         const validatorResult = await this.validatorInfo(validatorAddress);
         const validator = validatorResult.result?.validator;
         validatorName = validator?.name || 'Unknown';
-
-        // get subscriber
-        const subscriberResult = await this.subscriptionSubscriber(subscriptionAddress);
-        const subscriber = subscriberResult.result;
-
-        let parsedValidatorData: any = {};
-        try { parsedValidatorData = JSON.parse(decodedResult[0].validatorData) || {}; } catch (e) {}
 
         const subscription: Subscription = {
           subscription: decodedResult[0].subscription,
@@ -1822,9 +1815,8 @@ export class RpcService {
           serviceName,
           validator: validatorAddress,
           validatorName,
-          validatorData: parsedValidatorData,
-          validatorTrxNo: parsedValidatorData.trxRefNo || '',
-          validatorTrxTime: Number(parsedValidatorData.trxTime) || 0,
+          validatorVerificationId: Number(decodedResult[0].validatorInfo.verificationId),
+          validatorTimestamp: Number(decodedResult[0].validatorInfo.timestamp),
           regulator: regulatorAddress,
           regulatorName,
           createdAt: Number(decodedResult[0].createdAt),
@@ -1848,7 +1840,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
+        "function subscriptionsListByRegulator(uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, tuple(address validator, uint256 verificationId, uint256 timestamp) validatorInfo, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
       
       const callData = iface.encodeFunctionData('subscriptionsListByRegulator', [start, offset]);
@@ -1871,7 +1863,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByEntity(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
+        "function subscriptionsListByEntity(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, tuple(address validator, uint256 verificationId, uint256 timestamp) validatorInfo, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
 
       const callData = iface.encodeFunctionData('subscriptionsListByEntity', [service, start, offset]);
@@ -1899,7 +1891,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByEntity(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
+        "function subscriptionsListByEntity(address service, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, tuple(address validator, uint256 verificationId, uint256 timestamp) validatorInfo, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
 
       const allRaw: any[] = [];
@@ -1926,7 +1918,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByValidator(address validator, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
+        "function subscriptionsListByValidator(address validator, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, tuple(address validator, uint256 verificationId, uint256 timestamp) validatorInfo, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
       
       const callData = iface.encodeFunctionData('subscriptionsListByValidator', [validator, start, offset]);
@@ -1949,7 +1941,7 @@ export class RpcService {
       const contractInfo = await this.getContractAddress('EntitiesProxy');
       const contractAddress = contractInfo.result;
       const iface = new ethers.Interface([
-        "function subscriptionsListByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, address validator, string validatorData, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
+        "function subscriptionsListByIdentity(bytes32 subscriber, uint256 start, uint256 offset) external view returns (uint256 count, tuple(address subscription, address entity, address service, tuple(address validator, uint256 verificationId, uint256 timestamp) validatorInfo, address regulator, uint256 createdAt, bool suspended, uint8 state)[] subscriptions)"
       ]);
 
       const callData = iface.encodeFunctionData('subscriptionsListByIdentity', [identity, start, offset]);
@@ -2013,14 +2005,11 @@ export class RpcService {
         serviceName = service?.name || 'Unknown';
 
         // get validator name
-        const validatorAddress = op.validator;
+        const validatorAddress = op.validatorInfo.validator;
         let validatorName = 'Unknown';
         const validatorResult = await this.validatorInfo(validatorAddress);
         const validator = validatorResult.result?.validator;
         validatorName = validator?.name || 'Unknown';
-
-        let parsedValidatorData: any = {};
-        try { parsedValidatorData = JSON.parse(op.validatorData) || {}; } catch (e) {}
 
         return {
           subscription: op.subscription,
@@ -2030,9 +2019,8 @@ export class RpcService {
           serviceName,
           validator: validatorAddress,
           validatorName,
-          validatorData: parsedValidatorData,
-          validatorTrxNo: parsedValidatorData.trxRefNo || '',
-          validatorTrxTime: Number(parsedValidatorData.trxTime) || 0,
+          validatorVerificationId: Number(op.validatorInfo.verificationId),
+          validatorTimestamp: Number(op.validatorInfo.timestamp),
           regulator: regulatorAddress,
           regulatorName,
           createdAt: Number(op.createdAt),

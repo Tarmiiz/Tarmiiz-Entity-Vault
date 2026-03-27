@@ -59,6 +59,50 @@ export class DetailsPage implements OnInit {
   trxPage = signal(0);
   readonly trxPageSize = 10;
 
+  // assets tab filter + pagination
+  filterAssetName = signal<string>('');
+  filterAssetState = signal<string>('');
+  assetPage = signal(0);
+  readonly assetPageSize = 10;
+  uniqueAssetStates = computed(() =>
+    [...new Set(this.assets().map(a => a.stateName).filter(Boolean))].sort()
+  );
+  filteredAssets = computed(() => {
+    const name = this.filterAssetName().toLowerCase().trim();
+    const state = this.filterAssetState();
+    return this.assets().filter(a =>
+      (!name || a.name.toLowerCase().includes(name) || a.symbol.toLowerCase().includes(name)) &&
+      (!state || a.stateName === state)
+    );
+  });
+  pagedAssets = computed(() => {
+    const start = this.assetPage() * this.assetPageSize;
+    return this.filteredAssets().slice(start, start + this.assetPageSize);
+  });
+  totalAssetPages = computed(() => Math.ceil(this.filteredAssets().length / this.assetPageSize));
+
+  // subscriptions tab filter + pagination
+  filterSubAddress = signal<string>('');
+  filterSubState = signal<string>('');
+  subPage = signal(0);
+  readonly subPageSize = 10;
+  uniqueSubStates = computed(() =>
+    [...new Set(this.subscriptions().map(s => s.stateName).filter(Boolean))].sort()
+  );
+  filteredSubscriptions = computed(() => {
+    const addr = this.filterSubAddress().toLowerCase().trim();
+    const state = this.filterSubState();
+    return this.subscriptions().filter(s =>
+      (!addr || s.subscription.toLowerCase().includes(addr)) &&
+      (!state || s.stateName === state)
+    );
+  });
+  pagedSubscriptions = computed(() => {
+    const start = this.subPage() * this.subPageSize;
+    return this.filteredSubscriptions().slice(start, start + this.subPageSize);
+  });
+  totalSubPages = computed(() => Math.ceil(this.filteredSubscriptions().length / this.subPageSize));
+
   filterTrxType = signal<string>('');
   filterTrxAsset = signal<string>('');
   filterTrxSubscription = signal<string>('');
@@ -236,6 +280,144 @@ export class DetailsPage implements OnInit {
     if (data.result?.transactions) this.transactions.set(data.result.transactions);
     this.trxPage.set(0);
     this.loadingService.hide();
+  }
+
+  clearAssetFilters() {
+    this.filterAssetName.set('');
+    this.filterAssetState.set('');
+    this.assetPage.set(0);
+  }
+
+  exportAssetsExcel() {
+    const svcName = this.service()?.name ?? 'service';
+    const rows = this.filteredAssets().map(a => ({
+      'Name': a.name,
+      'Symbol': a.symbol,
+      'Issuer': a.issuerName,
+      'Type': a.assetTypeName,
+      'State': a.stateName,
+      'Suspended': a.suspended ? 'Yes' : 'No',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Assets');
+    const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    XLSX.writeFile(wb, `assets_${svcName}_${stamp}.xlsx`);
+  }
+
+  exportAssetsPdf() {
+    const svcName = this.service()?.name ?? 'Service';
+    const assetsList = this.filteredAssets();
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pad = 14;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Assets — ${svcName}`, pad, 15);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
+
+    const filterParts = [
+      `Name: ${this.filterAssetName() || 'None'}`,
+      `State: ${this.filterAssetState() || 'None'}`,
+    ];
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Filters: ${filterParts.join('  |  ')}`, pad, 27);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 34,
+      margin: { left: pad, right: pad },
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [74, 85, 104] },
+      head: [[
+        { content: '#' },
+        { content: 'Name' },
+        { content: 'Symbol' },
+        { content: 'Issuer' },
+        { content: 'Type' },
+        { content: 'State' },
+      ]],
+      body: assetsList.map((a, i) => [
+        i + 1,
+        a.name,
+        a.symbol,
+        a.issuerName,
+        a.assetTypeName,
+        a.suspended ? `${a.stateName} (Suspended)` : a.stateName,
+      ]),
+    });
+
+    const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    doc.save(`assets_${svcName}_${stamp}.pdf`);
+  }
+
+  clearSubFilters() {
+    this.filterSubAddress.set('');
+    this.filterSubState.set('');
+    this.subPage.set(0);
+  }
+
+  exportSubsExcel() {
+    const svcName = this.service()?.name ?? 'service';
+    const rows = this.filteredSubscriptions().map(s => ({
+      'Date': this.utils.formatDate(s.createdAt),
+      'Subscription': s.subscription,
+      'State': s.stateName,
+      'Suspended': s.suspended ? 'Yes' : 'No',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Subscriptions');
+    const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    XLSX.writeFile(wb, `subscriptions_${svcName}_${stamp}.xlsx`);
+  }
+
+  exportSubsPdf() {
+    const svcName = this.service()?.name ?? 'Service';
+    const subs = this.filteredSubscriptions();
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pad = 14;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Subscriptions — ${svcName}`, pad, 15);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
+
+    const filterParts = [
+      `Address: ${this.filterSubAddress() || 'None'}`,
+      `State: ${this.filterSubState() || 'None'}`,
+    ];
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Filters: ${filterParts.join('  |  ')}`, pad, 27);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 34,
+      margin: { left: pad, right: pad },
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [74, 85, 104] },
+      head: [[
+        { content: '#' },
+        { content: 'Date' },
+        { content: 'Subscription' },
+        { content: 'State' },
+      ]],
+      body: subs.map((s, i) => [
+        i + 1,
+        this.utils.formatDate(s.createdAt),
+        s.subscription,
+        s.suspended ? `${s.stateName} (Suspended)` : s.stateName,
+      ]),
+    });
+
+    const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    doc.save(`subscriptions_${svcName}_${stamp}.pdf`);
   }
 
   clearTrxFilters() {

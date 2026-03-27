@@ -27,13 +27,51 @@
           <option value="4">Deactivated</option>
         </select>
       </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Service</label>
+        <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+          <option value="">All</option>
+          @for (s of uniqueServices(); track s[0]) {
+            <option [value]="s[0]">{{ s[1] }}</option>
+          }
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Circulating</label>
+        <div class="flex items-center gap-1">
+          <select [ngModel]="filterCirculatingOp()" (ngModelChange)="filterCirculatingOp.set($event)"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option value="">Any</option>
+            <option value="gt">&gt;</option>
+            <option value="lt">&lt;</option>
+          </select>
+          <input type="number" min="0" [ngModel]="filterCirculatingAmt()" (ngModelChange)="filterCirculatingAmt.set($event === '' || $event === null ? null : +$event)"
+            placeholder="Amount"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+        </div>
+      </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           Clear
         </button>
       </div>
-      <div class="flex ml-auto items-end">
+      <div class="flex ml-auto items-end gap-2">
+        <button (click)="exportExcel()"
+          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+          </svg>
+          Export Excel
+        </button>
+        <button (click)="exportPdf()"
+          class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+          </svg>
+          Export PDF
+        </button>
         <button (click)="openAddModal()"
           class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
           + Add Asset
