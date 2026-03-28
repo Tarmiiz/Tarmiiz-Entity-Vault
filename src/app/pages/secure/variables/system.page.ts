@@ -4,8 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../shared/services/rpc.service';
-
+import { ApiService } from '../../../shared/services/api.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 
 import { Country, GlobalVariable } from '../../../shared/models/data.model';
@@ -24,7 +23,7 @@ import { Country, GlobalVariable } from '../../../shared/models/data.model';
 
 export class SystemPage implements OnInit {
     private loadingService = inject(LoadingService);
-    private rpcService = inject(RpcService);
+    private apiService = inject(ApiService);
 
 
   activeTab = signal<'countries' | 'variables'>('countries');
@@ -48,32 +47,29 @@ export class SystemPage implements OnInit {
   async ionViewDidEnter() {
     this.loadingData = true;
     this.loadingService.show('Loading data...');
-
-    await this.rpcService.connectVariablesProxyContract();
-    await this.getCountries();
-    await this.getVariables();
+    await Promise.all([this.getCountries(), this.getVariables()]);
     this.loadingData = false;
     this.loadingService.hide();
   }
 
   async getCountries() {
-    const data = await this.rpcService.getCountriesList();
-    if(data.result) {
-      this.countries.set(data.result);
-    }
-    else {
-      this.countries.set([]);
-    }
+    const data = await this.apiService.vaultGetCountries();
+    this.countries.set(data?.map((c: any) => ({
+      countryCode: c.country_code,
+      nameShort: c.name_short,
+      nameFull: c.name_full,
+      currencyCode: c.currency_code,
+      currencyName: c.currency_name,
+    })) ?? []);
   }
 
   async getVariables() {
-    const data = await this.rpcService.getGlobalVariables();
-    if(data.result) {
-      this.globalVariables.set(data.result);
-    }
-    else {
-      this.globalVariables.set([]);
-    }
+    const data = await this.apiService.vaultGetGlobalVariables();
+    this.globalVariables.set(data?.map((v: any) => ({
+      variableId: v.variable_id,
+      category: v.category,
+      name: v.name,
+    })) ?? []);
   }
 
   filteredCountries = computed(() => {

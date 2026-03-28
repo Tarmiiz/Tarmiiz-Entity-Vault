@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
@@ -36,7 +36,7 @@ import { ModalTransactionInfoComponent } from '../../../../shared/components/mod
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private subscriptionStateService = inject(ModalSubscriptionStateService);
@@ -162,13 +162,74 @@ export class DetailsPage implements OnInit {
     if (tab === 'trxs') this.getTransactions(1, 50);
   }
 
+  private readonly stateNames: Record<number, string> = {
+    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
+  };
+
+  private mapVaultSubscription(raw: any): Subscription {
+    return {
+      subscription: raw.address,
+      entity: raw.entity ?? '',
+      entityName: raw.entity_name ?? '',
+      service: raw.service ?? '',
+      serviceName: raw.service_name ?? raw.service ?? '',
+      validator: raw.validator ?? '',
+      validatorName: raw.validator_name ?? '',
+      validatorVerificationId: raw.validator_level ?? 0,
+      validatorTimestamp: raw.validator_trx_ts ?? 0,
+      regulator: raw.regulator ?? '',
+      regulatorName: raw.regulator_name ?? '',
+      createdAt: raw.created_at ?? 0,
+      suspended: raw.suspended === true || raw.suspended === 1,
+      state: raw.state ?? 0,
+      stateName: raw.account_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+    } as Subscription;
+  }
+
+  private mapVaultHolding(raw: any): SubscriptionHolding {
+    return {
+      asset: raw.asset ?? '',
+      assetName: raw.asset_name ?? '',
+      assetSymbol: raw.asset_symbol ?? '',
+      balance: raw.balance ?? 0,
+      cost: raw.cost ?? 0,
+      currentBid: raw.current_bid ?? 0,
+    } as SubscriptionHolding;
+  }
+
+  private mapVaultTransaction(raw: any): AssetTransaction {
+    let trxRefNo = '';
+    if (raw.data && typeof raw.data === 'object') { trxRefNo = raw.data.trxRefNo || ''; }
+    return {
+      trxId: raw.id,
+      serviceTrxId: raw.service_trx_id ?? 0,
+      trxType: raw.type ? (raw.type.charAt(0).toUpperCase() + raw.type.slice(1)) : 'Transfer',
+      sender: raw.sender ?? '',
+      manager: raw.manager ?? '',
+      managerName: raw.manager_name ?? raw.manager ?? '',
+      service: raw.service ?? '',
+      serviceName: raw.service_name ?? raw.service ?? '',
+      asset: raw.asset ?? '',
+      assetName: raw.asset_name ?? raw.asset ?? '',
+      assetSymbol: raw.asset_symbol ?? '',
+      from: raw.from_addr ?? '',
+      to: raw.to_addr ?? '',
+      subscription: raw.subscription ?? '',
+      tokens: raw.tokens ?? 0,
+      price: raw.price ?? 0,
+      totalPrice: raw.total ?? 0,
+      data: typeof raw.data === 'string' ? raw.data : JSON.stringify(raw.data ?? {}),
+      trxRefNo,
+      time: raw.time ?? 0,
+    } as AssetTransaction;
+  }
+
   async getSubscriptionDetails() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.subscriptionInfo(this.subscriptionAddress);
-    // console.log('service', data.result);
-    if(data.result) this.subscription.set(data.result);
-    const didInfo = await this.rpcService.subscriptionGetIdentityHash(this.subscriptionAddress);
-    if(didInfo.result) this.didHash = didInfo.result;
+    const raw = await this.apiService.vaultGetSubscription(this.subscriptionAddress);
+    if (raw) this.subscription.set(this.mapVaultSubscription(raw));
+    const didHash = await this.apiService.vaultGetSubscriptionIdentityHash(this.subscriptionAddress);
+    if (didHash) this.didHash = didHash;
     this.loadingService.hide();
   }
 
@@ -191,14 +252,20 @@ export class DetailsPage implements OnInit {
     if (newState !== null && newState !== currentService.state) {
         this.loadingService.show('Changing state...');
         try {
-            await this.rpcService.subscriptionChangeState(currentService.subscription, newState);
-            await this.getSubscriptionDetails();
+            const result = await this.apiService.vaultUpdateSubscriptionState(currentService.subscription, newState);
+            if (result) {
+                this.subscription.update(sub => sub ? {
+                    ...sub,
+                    state: newState,
+                    stateName: this.stateNames[newState] ?? String(newState),
+                } : sub);
+            }
         } catch (error) {
             console.error('Failed to change state', error);
         } finally {
             this.loadingService.hide();
         }
-    }    
+    }
   }
 
   getTrxTypeClass(trxType: string): string {
@@ -211,8 +278,8 @@ export class DetailsPage implements OnInit {
 
   async getHoldings(start: number, offset: number) {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.assetHoldingsBySubscription(this.subscriptionAddress, start, offset);
-    if (data.result?.holdings) this.holdings.set(data.result.holdings);
+    const data = await this.apiService.vaultGetSubscriptionHoldings(this.subscriptionAddress, start - 1, offset);
+    if (data?.holdings) this.holdings.set(data.holdings.map((h: any) => this.mapVaultHolding(h)));
     this.holdingPage.set(0);
     this.loadingService.hide();
   }
@@ -223,8 +290,8 @@ export class DetailsPage implements OnInit {
 
   async getTransactions(start: number, offset: number) {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.assetTransactionsByAccount(this.subscriptionAddress, start, offset);
-    if (data.result?.transactions) this.transactions.set(data.result.transactions);
+    const data = await this.apiService.vaultGetTransactions({ subscription: this.subscriptionAddress }, start - 1, offset);
+    if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
     this.trxPage.set(0);
     this.loadingService.hide();
   }

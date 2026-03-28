@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
@@ -36,7 +36,7 @@ import { ModalTransactionInfoComponent } from '../../../../shared/components/mod
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private assetStateService = inject(ModalAssetStateService);
@@ -178,10 +178,83 @@ export class DetailsPage implements OnInit {
     if (tab === 'trxs') this.getTransactions(1, 50);
   }
 
+  private readonly stateNames: Record<number, string> = {
+    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
+  };
+
+  private mapVaultAsset(raw: any): Asset {
+    return {
+      address: raw.address,
+      name: raw.name,
+      symbol: raw.symbol,
+      tokenType: raw.token_type ?? 0,
+      tokenTypeName: raw.token_type_name ?? String(raw.token_type ?? ''),
+      assetType: raw.asset_type ?? 0,
+      assetTypeName: raw.asset_type_name ?? String(raw.asset_type ?? ''),
+      metadata: typeof raw.metadata === 'object' ? JSON.stringify(raw.metadata ?? {}) : (raw.metadata ?? ''),
+      totalSupply: raw.total_supply ?? 0,
+      circulating: raw.circulating ?? 0,
+      countryCode: 0,
+      countryName: raw.country_name ?? '',
+      currencyCode: raw.currency_code ?? '',
+      currencyName: raw.currency_name ?? '',
+      createdOn: raw.created_on ?? 0,
+      services: (raw.services ?? []).map((s: string) => ({ service: s, serviceName: s })),
+      issuer: raw.issuer ?? '',
+      issuerName: raw.issuer_name ?? raw.issuer ?? '',
+      manager: raw.manager ?? '',
+      managerName: raw.manager_name ?? raw.manager ?? '',
+      regulator: raw.regulator ?? '',
+      regulatorName: raw.regulator_name ?? '',
+      regulatorSymbol: '',
+      suspended: raw.suspended === true || raw.suspended === 1,
+      state: raw.state ?? 0,
+      stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+    };
+  }
+
+  private mapVaultTransaction(raw: any): AssetTransaction {
+    let trxRefNo = '';
+    if (raw.data && typeof raw.data === 'object') {
+      trxRefNo = raw.data.trxRefNo || '';
+    }
+    return {
+      trxId: raw.id,
+      serviceTrxId: raw.service_trx_id ?? 0,
+      trxType: raw.type ? (raw.type.charAt(0).toUpperCase() + raw.type.slice(1)) : 'Transfer',
+      sender: raw.sender ?? '',
+      manager: raw.manager ?? '',
+      managerName: raw.manager_name ?? raw.manager ?? '',
+      service: raw.service ?? '',
+      serviceName: raw.service_name ?? raw.service ?? '',
+      asset: raw.asset ?? '',
+      assetName: raw.asset_name ?? raw.asset ?? '',
+      assetSymbol: raw.asset_symbol ?? '',
+      from: raw.from_addr ?? '',
+      to: raw.to_addr ?? '',
+      subscription: raw.subscription ?? '',
+      tokens: raw.tokens ?? 0,
+      price: raw.price ?? 0,
+      totalPrice: raw.total ?? 0,
+      data: typeof raw.data === 'string' ? raw.data : JSON.stringify(raw.data ?? {}),
+      trxRefNo,
+      time: raw.time ?? 0,
+    };
+  }
+
   async getAssetDetails() {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.assetInfo(this.assetAddress);
-    this.asset.set(data.result?.asset);
+    const [raw, services] = await Promise.all([
+      this.apiService.vaultGetAsset(this.assetAddress),
+      this.apiService.vaultGetAssetServices(this.assetAddress),
+    ]);
+    if (raw) {
+      const asset = this.mapVaultAsset(raw);
+      if (services) {
+        asset.services = services.map((s: any) => ({ service: s.service, serviceName: s.service_name ?? s.service }));
+      }
+      this.asset.set(asset);
+    }
     this.loadingService.hide();
   }
 
@@ -212,7 +285,7 @@ export class DetailsPage implements OnInit {
     if (newState !== null && newState !== currentAsset.state) {
       this.loadingService.show('Changing state...');
       try {
-        await this.rpcService.assetChangeState(currentAsset.address, newState);
+        await this.apiService.vaultUpdateAssetState(currentAsset.address, newState);
         await this.getAssetDetails();
       } catch (error) {
         console.error('Failed to change state', error);
@@ -236,8 +309,8 @@ export class DetailsPage implements OnInit {
 
   async getPriceHistory(start: number, offset: number) {
     this.loadingService.show('Loading data...');
-    const priceHistoryInfo = await this.rpcService.assetPriceHistory(this.assetAddress, start, offset);
-    this.priceHistory.set(priceHistoryInfo.result?.history);
+    const data = await this.apiService.vaultGetAssetPriceHistory(this.assetAddress, start - 1, offset);
+    this.priceHistory.set(data?.history ?? []);
     this.pricePage.set(0);
     this.loadingService.hide();
 
@@ -348,20 +421,20 @@ export class DetailsPage implements OnInit {
 
   async getHolders(start: number, offset: number) {
     this.loadingService.show('Loading data...');
-    const [data, priceData] = await Promise.all([
-      this.rpcService.assetHolders(this.assetAddress, start, offset),
-      this.rpcService.assetCurrentPrice(this.assetAddress)
+    const [holdersData, priceData] = await Promise.all([
+      this.apiService.vaultGetAssetHolders(this.assetAddress, start - 1, offset),
+      this.apiService.vaultGetAssetPrice(this.assetAddress),
     ]);
-    if (data.result?.holders) this.holders.set(data.result.holders);
-    if (priceData.result?.price) this.currentBid.set(priceData.result.price.bid);
+    if (holdersData?.holders) this.holders.set(holdersData.holders);
+    if (priceData?.bid) this.currentBid.set(priceData.bid);
     this.holderPage.set(0);
     this.loadingService.hide();
   }
 
   async getTransactions(start: number, offset: number) {
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.assetTransactionsByAsset(this.assetAddress, start, offset);
-    if (data.result?.transactions) this.transactions.set(data.result?.transactions);
+    const data = await this.apiService.vaultGetTransactions({ asset: this.assetAddress }, start - 1, offset);
+    if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
     this.trxPage.set(0);
     this.loadingService.hide();
   }

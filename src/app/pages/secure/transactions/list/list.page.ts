@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, inject, computed } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import jsPDF from 'jspdf';
@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
@@ -24,8 +24,8 @@ import { AssetTransaction } from '../../../../shared/models/data.model';
     ModalTransactionInfoComponent,
   ]
 })
-export class ListPage implements OnInit, OnDestroy {
-  private rpcService = inject(RpcService);
+export class ListPage implements OnInit {
+  private apiService = inject(ApiService);
   utils = inject(UtilsService);
   private loadingService = inject(LoadingService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
@@ -34,8 +34,6 @@ export class ListPage implements OnInit, OnDestroy {
   totalCount = signal<number>(0);
   start = 1;
   pageSize = 20;
-
-  private unsubscribeBlocks: (() => void) | null = null;
 
   filterType = signal<string>('');
   filterAsset = signal<string>('');
@@ -70,36 +68,47 @@ export class ListPage implements OnInit, OnDestroy {
     );
   });
 
+  private mapVaultTransaction(raw: any): AssetTransaction {
+    let trxRefNo = '';
+    if (raw.data && typeof raw.data === 'object') { trxRefNo = raw.data.trxRefNo || ''; }
+    return {
+      trxId: raw.id,
+      serviceTrxId: raw.service_trx_id ?? 0,
+      trxType: raw.type ? (raw.type.charAt(0).toUpperCase() + raw.type.slice(1)) : 'Transfer',
+      sender: raw.sender ?? '',
+      manager: raw.manager ?? '',
+      managerName: raw.manager_name ?? raw.manager ?? '',
+      service: raw.service ?? '',
+      serviceName: raw.service_name ?? raw.service ?? '',
+      asset: raw.asset ?? '',
+      assetName: raw.asset_name ?? raw.asset ?? '',
+      assetSymbol: raw.asset_symbol ?? '',
+      from: raw.from_addr ?? '',
+      to: raw.to_addr ?? '',
+      subscription: raw.subscription ?? '',
+      tokens: raw.tokens ?? 0,
+      price: raw.price ?? 0,
+      totalPrice: raw.total ?? 0,
+      data: typeof raw.data === 'string' ? raw.data : JSON.stringify(raw.data ?? {}),
+      trxRefNo,
+      time: raw.time ?? 0,
+    } as AssetTransaction;
+  }
+
   constructor() {}
 
   async ngOnInit() {}
 
   async ionViewDidEnter() {
     await this.load();
-    this.unsubscribeBlocks = this.rpcService.listenToAssetTransactions(async () => {
-      const result = await this.rpcService.assetTransactions(this.start, this.pageSize);
-      if (result.result && result.result.count !== this.totalCount()) {
-        this.transactions.set(result.result.transactions);
-        this.totalCount.set(result.result.count);
-      }
-    });
-  }
-
-  ionViewWillLeave() {
-    this.unsubscribeBlocks?.();
-    this.unsubscribeBlocks = null;
-  }
-
-  ngOnDestroy() {
-    this.unsubscribeBlocks?.();
   }
 
   async load() {
     this.loadingService.show('Loading transactions...');
-    const result = await this.rpcService.assetTransactions(this.start, this.pageSize);
-    if (result.result) {
-      this.transactions.set(result.result.transactions);
-      this.totalCount.set(result.result.count);
+    const result = await this.apiService.vaultGetTransactions(undefined, this.start - 1, this.pageSize);
+    if (result) {
+      this.transactions.set(result.transactions.map((t: any) => this.mapVaultTransaction(t)));
+      this.totalCount.set(result.count);
     }
     this.loadingService.hide();
   }
@@ -233,6 +242,15 @@ export class ListPage implements OnInit, OnDestroy {
     const now = new Date();
     const stamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `transactions_${stamp}.xlsx`);
+  }
+
+  getTrxTypeClass(type: string): string {
+    switch (type) {
+      case 'Subscribe': return 'bg-green-100 text-green-800';
+      case 'Redeem':    return 'bg-red-100 text-red-800';
+      case 'Transfer':  return 'bg-blue-100 text-blue-800';
+      default:          return 'bg-gray-100 text-gray-800';
+    }
   }
 
   viewDetails(trx: AssetTransaction): void {

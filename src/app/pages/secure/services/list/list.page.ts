@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
@@ -30,7 +30,7 @@ import { environment } from '../../../../../environments/environment';
   ]
 })
 export class ListPage implements OnInit {
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
@@ -88,20 +88,45 @@ export class ListPage implements OnInit {
     await this.listServices();
   } 
 
+  private readonly stateNames: Record<number, string> = {
+    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
+  };
+
+  private mapVaultService(raw: any): Service {
+    const meta = typeof raw.metadata === 'object' && raw.metadata !== null ? raw.metadata : {};
+    return {
+      address: raw.address,
+      entity: raw.entity ?? '',
+      entityName: raw.entity_name ?? raw.entity ?? '',
+      name: raw.name,
+      metadata: typeof raw.metadata === 'object' ? JSON.stringify(raw.metadata ?? {}) : (raw.metadata ?? ''),
+      description: meta.description ?? '',
+      email: meta.email ?? '',
+      mobile: meta.mobile ?? '',
+      website: meta.website ?? '',
+      countryCode: raw.country_code ?? 0,
+      countryName: raw.country_name ?? '',
+      verificationLevel: raw.verification_level ?? 0,
+      verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
+      regulator: raw.regulator ?? '',
+      regulatorName: raw.regulator_name ?? '',
+      regulatorSymbol: '',
+      suspended: raw.suspended === true || raw.suspended === 1,
+      state: raw.state ?? 0,
+      stateName: raw.state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+    } as Service;
+  }
+
   async listServices() {
     this.loadingService.show('Loading data...');
     this.services.set([]);
-    const result = this.showAllServices() ? await this.rpcService.servicesListAll(1, 10) : await this.rpcService.servicesListOwn(1, 10);
-    if(result.result) {
-      this.servicesCount = result.result.count;
-      this.services.set(result.result.services);
-      // console.log('services', this.services());
-    }
-    else {
-      console.log(result.error);
+    const result = await this.apiService.vaultGetServices(0, 500);
+    if (result) {
+      this.servicesCount = result.count;
+      this.services.set(result.services.map((s: any) => this.mapVaultService(s)));
     }
     this.loadingService.hide();
-  }  
+  }
 
   async openAddModal() {
     const data = await this.serviceAddService.show();
@@ -109,15 +134,14 @@ export class ListPage implements OnInit {
 
     this.loadingService.show('Creating service...');
     try {
-      const metadata = JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile });
-      const result = await this.rpcService.serviceCreate(
-        data.name,
-        metadata,
-        data.verificationLevel,
-        environment.countryCode,
-        data.regulator
-      );
-      if (result.success) {
+      const result = await this.apiService.vaultCreateService({
+        name: data.name,
+        metadata: JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile }),
+        verification_level: data.verificationLevel,
+        country_code: environment.countryCode,
+        regulator: data.regulator,
+      });
+      if (result) {
         await this.listServices();
       } else {
         this.alertService.show('Error', 'Failed to create service.');

@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
 
 import { StorageService } from '../services/storage.service';
-import { RpcService } from '../services/rpc.service';
+import { EthersService } from '../services/ethers.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +10,7 @@ import { RpcService } from '../services/rpc.service';
 export class AuthGuard implements CanActivate {
   private router = inject( Router);
   private storageService = inject(StorageService);
-  private rpcService = inject(RpcService);
+  private ethersService = inject(EthersService);
 
   constructor() { }
 
@@ -21,9 +21,9 @@ export class AuthGuard implements CanActivate {
     
     
     if (sessionExpiry && sessionExpiry && new Date().getTime() < +sessionExpiry) {
-      await this.rpcService.setWallet();
-      await this.rpcService.connectVariablesProxyContract();
-      await this.rpcService.connectEntityContract();
+      await this.ethersService.setWallet();
+      await this.ethersService.connectVariablesProxyContract();
+      await this.ethersService.connectEntityContract();
       // console.log('can activate', sessionExpiry);
       return true;
     }

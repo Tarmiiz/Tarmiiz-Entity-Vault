@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalUserAddService, AddUserData } from './modal-user-add.service';
 
-import { RpcService } from '../../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../../shared/services/api.service';
 import { LoadingService } from 'src/app/shared/components/alerts/loading/loading.service';
 import { AlertService } from 'src/app/shared/components/alerts/alert/alert.service';
 
@@ -18,7 +18,7 @@ import { AlertService } from 'src/app/shared/components/alerts/alert/alert.servi
 export class ModalUserAddComponent {
 
   addUserService = inject(ModalUserAddService);
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private fb: FormBuilder = inject(FormBuilder);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
@@ -27,7 +27,7 @@ export class ModalUserAddComponent {
 
   addForm = this.fb.group({
     name: ['', Validators.required],
-    email: ['', Validators.required, Validators.email],
+    email: ['', [Validators.required, Validators.email]],
     did: [''],
     username: ['', Validators.required],
     password: ['', Validators.required],
@@ -43,9 +43,10 @@ export class ModalUserAddComponent {
   }
 
   async loadRoles() {
-    await this.rpcService.connectVariablesProxyContract();
-    const data = await this.rpcService.getGlobalVariableByCategory('User Role');
-    this.roles.set(data.result);
+    const data = await this.apiService.vaultGetGlobalVariablesByCategory('User Role');
+    if (data) {
+      this.roles.set(data.map((item: any) => ({ variableId: item.variable_id, name: item.name })));
+    }
   }  
 
   onSave(): void {

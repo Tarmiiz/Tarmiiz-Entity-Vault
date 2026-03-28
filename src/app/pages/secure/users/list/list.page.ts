@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
 import { User } from '../../../../shared/models/data.model';
@@ -25,7 +25,7 @@ import { ModalUserAddService } from '../modals/modal-user-add/modal-user-add.ser
 ]
 })
 export class ListPage implements OnInit {
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private userAddService = inject(ModalUserAddService);
@@ -65,14 +65,10 @@ export class ListPage implements OnInit {
 
   async listUsers() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.usersList(1, 10);
-    if(result.result) {
-      this.usersCount = result.result.count;
-      this.users.set(result.result.users);
-      // console.log('users', this.users());
-    }
-    else {
-      console.log(result.error);
+    const result = await this.apiService.vaultGetUsers(0, 100);
+    if (result) {
+      this.usersCount = result.count;
+      this.users.set(result.users);
     }
     this.loadingService.hide();
   }  
@@ -102,13 +98,14 @@ export class ListPage implements OnInit {
     if (result) {
       this.loadingService.show('Adding new user...');
       try {
-        const data = {
+        await this.apiService.vaultCreateUser({
           name: result.name,
           email: result.email,
           username: result.username,
-          did: result.did
-        };
-        await this.rpcService.userAdd(result.username, result.password, Number(result.role), JSON.stringify(data));
+          password: result.password,
+          role: Number(result.role),
+          did: result.did,
+        });
         await this.listUsers();
         this.loadingService.hide();
       } catch (error) {

@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { CapacitorHttp } from '@capacitor/core';
 
 import { CryptoService } from './crypto.service';
-import { RpcService } from './rpc.service';
+import { EthersService } from './ethers.service';
 
 import { environment } from '../../../environments/environment';
 
@@ -14,11 +14,299 @@ import { ParseProofUtils } from '../utils/parse-proof.utils';
 export class ApiService {
 
   private cryptoService = inject(CryptoService);
-  private rpcService = inject(RpcService);
+  private ethersService = inject(EthersService);
 
   apiURL = environment.apiURL;
+  vaultToken = environment.vaultToken;
 
   globalSalt = environment.globalSalt;
+
+  // ─── Vault helpers ────────────────────────────────────────────────────────────
+
+  private async vaultGet(path: string, params?: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/vault' + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        params,
+      });
+      if (response.data?.type !== 'success') return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  private async vaultPost(path: string, body: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/vault' + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        data: body,
+      });
+      if (response.data?.type !== 'success') return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  private async vaultPut(path: string, body: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'PUT',
+        url: this.apiURL + '/vault' + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        data: body,
+      });
+      if (response.data?.type !== 'success') return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  // ─── Vault — Assets ───────────────────────────────────────────────────────────
+
+  async vaultGetAssets(start = 0, offset = 50, service?: string) {
+    const params: Record<string, any> = { start, offset };
+    if (service) params['service'] = service;
+    const data = await this.vaultGet('/assets', params);
+    return data ? { count: data.count, assets: data.assets } : null;
+  }
+
+  async vaultGetAsset(address: string) {
+    const data = await this.vaultGet('/assets/' + address);
+    return data?.asset ?? null;
+  }
+
+  async vaultGetAssetPrice(address: string) {
+    const data = await this.vaultGet('/assets/' + address + '/price');
+    return data?.price ?? null;
+  }
+
+  async vaultGetAssetPriceHistory(address: string, start = 0, offset = 50) {
+    const data = await this.vaultGet('/assets/' + address + '/price/history', { start, offset });
+    return data ? { count: data.count, history: data.history } : null;
+  }
+
+  async vaultGetAssetServices(address: string) {
+    const data = await this.vaultGet('/assets/' + address + '/services');
+    return data?.services ?? null;
+  }
+
+  async vaultGetAssetHolders(address: string, start = 0, offset = 500) {
+    const data = await this.vaultGet('/assets/' + address + '/holders', { start, offset });
+    return data ? { count: data.count, holders: data.holders } : null;
+  }
+
+  // ─── Vault — Transactions ─────────────────────────────────────────────────────
+
+  async vaultGetTransactions(filters?: { asset?: string; service?: string; subscription?: string }, start = 0, offset = 50) {
+    const params: Record<string, any> = { start, offset };
+    if (filters?.asset) params['asset'] = filters.asset;
+    if (filters?.service) params['service'] = filters.service;
+    if (filters?.subscription) params['subscription'] = filters.subscription;
+    const data = await this.vaultGet('/transactions', params);
+    return data ? { count: data.count, transactions: data.transactions } : null;
+  }
+
+  async vaultGetTransaction(id: number) {
+    const data = await this.vaultGet('/transactions/' + id);
+    return data?.transaction ?? null;
+  }
+
+  // ─── Vault — Services ─────────────────────────────────────────────────────────
+
+  async vaultGetServices(start = 0, offset = 50) {
+    const data = await this.vaultGet('/services', { start, offset });
+    return data ? { count: data.count, services: data.services } : null;
+  }
+
+  async vaultGetService(address: string) {
+    const data = await this.vaultGet('/services/' + address);
+    return data?.service ?? null;
+  }
+
+  // ─── Vault — Subscriptions ────────────────────────────────────────────────────
+
+  async vaultGetSubscriptions(service?: string, start = 0, offset = 50) {
+    const params: Record<string, any> = { start, offset };
+    if (service) params['service'] = service;
+    const data = await this.vaultGet('/subscriptions', params);
+    return data ? { count: data.count, subscriptions: data.subscriptions } : null;
+  }
+
+  async vaultGetSubscription(address: string) {
+    const data = await this.vaultGet('/subscriptions/' + address);
+    return data?.subscription ?? null;
+  }
+
+  async vaultGetSubscriptionHoldings(address: string, start = 0, offset = 500) {
+    const data = await this.vaultGet('/subscriptions/' + address + '/holdings', { start, offset });
+    return data ? { count: data.count, holdings: data.holdings } : null;
+  }
+
+  // ─── Vault — Dashboard ───────────────────────────────────────────────────────
+
+  async vaultGetDashboardSummary() {
+    const data = await this.vaultGet('/dashboard/summary');
+    return data ?? null;
+  }
+
+  // ─── Vault — Sync ─────────────────────────────────────────────────────────────
+
+  async vaultGetSyncStatus() {
+    const data = await this.vaultGet('/sync/status');
+    return data?.status ?? null;
+  }
+
+  // ─── Vault — Asset writes ─────────────────────────────────────────────────────
+
+  async vaultCreateAsset(body: Record<string, any>) {
+    const data = await this.vaultPost('/assets', body);
+    return data ?? null;
+  }
+
+  async vaultUpdateAssetState(address: string, state: number) {
+    const data = await this.vaultPut('/assets/' + address + '/state', { state });
+    return data ?? null;
+  }
+
+  // ─── Vault — Service writes ───────────────────────────────────────────────────
+
+  async vaultCreateService(body: Record<string, any>) {
+    const data = await this.vaultPost('/services', body);
+    return data ?? null;
+  }
+
+  async vaultUpdateServiceName(address: string, name: string) {
+    const data = await this.vaultPut('/services/' + address + '/name', { name });
+    return data ?? null;
+  }
+
+  async vaultUpdateServiceData(address: string, body: Record<string, any>) {
+    const data = await this.vaultPut('/services/' + address + '/data', body);
+    return data ?? null;
+  }
+
+  async vaultUpdateServiceState(address: string, state: number) {
+    const data = await this.vaultPut('/services/' + address + '/state', { state });
+    return data ?? null;
+  }
+
+  // ─── Vault — Subscription writes ─────────────────────────────────────────────
+
+  async vaultUpdateSubscriptionState(address: string, state: number) {
+    const data = await this.vaultPut('/subscriptions/' + address + '/state', { state });
+    return data ?? null;
+  }
+
+  async vaultGetSubscriptionIdentityHash(address: string) {
+    const data = await this.vaultGet('/subscriptions/' + address + '/identity-hash');
+    return data?.identityHash ?? null;
+  }
+
+  // ─── Vault — Users ────────────────────────────────────────────────────────────
+
+  async vaultGetUsers(start = 0, offset = 50) {
+    const data = await this.vaultGet('/users', { start, offset });
+    return data ? { count: data.count, users: data.users } : null;
+  }
+
+  async vaultGetUser(id: string) {
+    const data = await this.vaultGet('/users/' + id);
+    return data?.user ?? null;
+  }
+
+  async vaultCreateUser(body: Record<string, any>) {
+    const data = await this.vaultPost('/users', body);
+    return data ?? null;
+  }
+
+  async vaultUpdateUserData(id: string, body: Record<string, any>) {
+    const data = await this.vaultPut('/users/' + id + '/data', body);
+    return data ?? null;
+  }
+
+  async vaultUpdateUserState(id: string, state: number) {
+    const data = await this.vaultPut('/users/' + id + '/state', { state });
+    return data ?? null;
+  }
+
+  async vaultUpdateUserCredentials(id: string, body: Record<string, any>) {
+    const data = await this.vaultPut('/users/' + id + '/credentials', body);
+    return data ?? null;
+  }
+
+  // ─── Vault — Reference data ───────────────────────────────────────────────────
+
+  async vaultGetServicesOwn(start = 0, offset = 50) {
+    const data = await this.vaultGet('/services/own', { start, offset });
+    return data ? { count: data.count, services: data.services } : null;
+  }
+
+  async vaultGetCountries() {
+    const data = await this.vaultGet('/countries');
+    return data?.countries ?? null;
+  }
+
+  async vaultGetGlobalVariables() {
+    const data = await this.vaultGet('/global-variables');
+    return data?.variables ?? null;
+  }
+
+  async vaultGetGlobalVariablesByCategory(category: string) {
+    const data = await this.vaultGet('/global-variables', { category });
+    return data?.variables ?? null;
+  }
+
+  async vaultGetRegulatorsByCountry(countryCode: string, start = 0, offset = 100) {
+    const data = await this.vaultGet('/regulators/' + countryCode, { start, offset });
+    return data?.regulators ?? null;
+  }
+
+  // ─── Vault — Entity auth ──────────────────────────────────────────────────────
+
+  async entityLogin(username: string, password: string, sessionDuration: number) {
+    const payload = await this.ethersService.createLoginPayload(username, password, sessionDuration);
+    if (!payload) return { success: false, error: 'Proof generation failed' };
+    const { key, ...rest } = payload;
+    const data = await this.vaultPost('/entity/login', { ...rest, privateKey: key.privateKey });
+    if (!data) return { success: false, error: 'Login API call failed' };
+    return { success: true, userId: data.userId, key };
+  }
+
+  async entityLogout() {
+    const data = await this.vaultPost('/entity/logout', {});
+    return data ?? null;
+  }
+
+  async vaultGetEntityInfo() {
+    const data = await this.vaultGet('/entity/info');
+    return data?.entity ?? null;
+  }
+
+  async vaultGetExternalContract(name: string) {
+    const data = await this.vaultGet('/entity/external-contract/' + name);
+    return data?.address ?? null;
+  }
+
+  async vaultSetExternalContract(name: string, address: string) {
+    const data = await this.vaultPut('/entity/external-contract/' + name, { address });
+    return data ?? null;
+  }
 
   async identityContactCheck(email: string, mobile: string) {
     try {

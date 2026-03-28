@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { User } from '../../../../shared/models/data.model';
@@ -35,7 +35,7 @@ import { ModalUserCredentialsService } from '../modals/modal-user-edit-credentia
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private userEditService = inject(ModalUserEditService);
@@ -68,11 +68,9 @@ export class DetailsPage implements OnInit {
   }   
 
   async getUserDetails() {
-    console.log('userId', this.userId());
     this.loadingService.show('Loading data...');
-    const data = await this.rpcService.userInfo(this.userId());
-    this.user.set(data.result!);
-    console.log('user', this.user());
+    const data = await this.apiService.vaultGetUser(String(this.userId()));
+    if (data) this.user.set(data);
     this.loadingService.hide();
   }
 
@@ -97,13 +95,12 @@ export class DetailsPage implements OnInit {
       // console.log('result', result);
       if (result) {
         this.loadingService.show('Updating user...');
-        const data = {
+        await this.apiService.vaultUpdateUserData(String(currentUser.userId), {
           name: result.name,
           email: result.email,
           username: this.user()!.username,
-          did: result.did
-        };
-        await this.rpcService.userChangeData(currentUser.userId, JSON.stringify(data));
+          did: result.did,
+        });
         await this.getUserDetails();
       }
     } catch (error) {
@@ -122,7 +119,7 @@ export class DetailsPage implements OnInit {
     if (newState !== null && newState !== currentUser.state) {
         this.loadingService.show('Changing state...');
         try {
-            await this.rpcService.userChangeState(currentUser.userId, newState);
+            await this.apiService.vaultUpdateUserState(String(currentUser.userId), newState);
             await this.getUserDetails();
         } catch (error) {
             console.error('Failed to change state', error);
@@ -147,17 +144,19 @@ export class DetailsPage implements OnInit {
           username: result.username,
           password: result.password
         };
-        await this.rpcService.userChangeCredentials(currentUser.userId, data.username, data.password );
+        await this.apiService.vaultUpdateUserCredentials(String(currentUser.userId), {
+          username: data.username,
+          password: data.password,
+        });
 
         // update data
         this.loadingService.show('Updating user data...');
-        const userData = {
+        await this.apiService.vaultUpdateUserData(String(currentUser.userId), {
           name: currentUser.name,
-          email: currentUser!.email,
+          email: currentUser.email,
           username: data.username,
-          did: currentUser!.did
-        };
-        await this.rpcService.userChangeData(currentUser.userId, JSON.stringify(userData));
+          did: currentUser.did,
+        });
 
         this.loadingService.show('Reloading user info...');
         await this.getUserDetails();

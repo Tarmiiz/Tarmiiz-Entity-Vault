@@ -2,7 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { StorageService } from './storage.service';
-import { RpcService } from './rpc.service';
+import { EthersService } from './ethers.service';
+import { ApiService } from './api.service';
 import { LoadingService } from '../components/alerts/loading/loading.service';
 import { AlertService } from '../components/alerts/alert/alert.service';
 import { Entity, User } from '../models/data.model';
@@ -16,7 +17,8 @@ export class AuthService {
   private alertService = inject(AlertService);
   private router = inject(Router);
   private storageService = inject(StorageService);
-  private rpcService = inject(RpcService);
+  private ethersService = inject(EthersService);
+  private apiService = inject(ApiService);
 
   entityInfo!: Entity;
   userInfo!: User;
@@ -38,12 +40,12 @@ export class AuthService {
     try {
 
       this.loadingService.show('Connecting to Contract ...');
-  
-      // set regulatro contract address
-      this.rpcService.entityContractAddress = this.entityContractAddress;
 
-      // Initialize the RPC service
-      await this.rpcService.init();
+      // set entity contract address
+      this.ethersService.entityContractAddress = this.entityContractAddress;
+
+      // Initialize the ethers service
+      await this.ethersService.init();
 
       // 1 hour in milliseconds
       const SESSION_DURATION = 60 * 60 * 1000;
@@ -51,7 +53,7 @@ export class AuthService {
 
       // Attempt login with 1 hour session duration
       this.loadingService.show('Generating zero-knowledge proof and logging in...');
-      const loginResult = await this.rpcService.login(username, password, SESSION_DURATION);
+      const loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
       if (loginResult.success && loginResult.userId && loginResult.key) {
 
         // set temporary wallet
@@ -59,7 +61,7 @@ export class AuthService {
 
         // get user info
         const userId = Number(loginResult.userId);
-        const userInfo = await this.rpcService.userInfo(userId);
+        const userInfo = await this.ethersService.userInfo(userId);
         if(userInfo.result && userInfo.result.state === 2) {
           this.userInfo = userInfo.result;
 
@@ -101,7 +103,7 @@ export class AuthService {
     await this.storageService.remove('contract');
     await this.storageService.remove('wallet');
     await this.storageService.remove('user');
-    await this.rpcService.logout(); 
+    await this.apiService.entityLogout();
     this.loadingService.hide();
     this.router.navigate(['/public/user/login']);
   }

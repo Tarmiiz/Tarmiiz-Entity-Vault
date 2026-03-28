@@ -1,13 +1,13 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonTitle } from '@ionic/angular/standalone'
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 
-import { Asset, AssetTransaction, Subscription, User } from '../../../shared/models/data.model';
+import { AssetTransaction, Subscription, User } from '../../../shared/models/data.model';
 
-import { RpcService } from '../../../shared/services/rpc.service';
+import { ApiService } from '../../../shared/services/api.service';
 import { UtilsService } from '../../../shared/services/utils.service';
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
 import { Router } from '@angular/router';
@@ -23,6 +23,41 @@ interface StatCard {
   loading: boolean;
 }
 
+interface DashboardKpis {
+  totalAum: number;
+  activeInvestors: number;
+  pendingKyc: number;
+  netFlow30d: number;
+  netFlowTokens30d: number;
+}
+
+interface WeeklyActivityPoint {
+  week: string;
+  subscribeTokens: number; redeemTokens: number;
+  subscribeValue: number;  redeemValue: number;
+}
+
+interface AumByAsset {
+  address: string; name: string; symbol: string;
+  aum: number; circulating: number; bid: number;
+}
+
+
+interface TopAsset {
+  address: string; name: string; symbol: string;
+  circulating: number; bid: number; ask: number;
+  aum: number; price_ts: number; previousBid: number; state: number;
+}
+
+interface DashboardSummary {
+  kpis: DashboardKpis;
+  charts: {
+    weeklyActivity: WeeklyActivityPoint[];
+    aumByAsset: AumByAsset[];
+  };
+  topAssets: TopAsset[];
+}
+
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.page.html',
@@ -36,7 +71,7 @@ interface StatCard {
   ]
 })
 export class DashboardPage implements OnInit {
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   utils = inject(UtilsService);
   private alertService = inject(AlertService);
   private router = inject(Router);
@@ -45,19 +80,13 @@ export class DashboardPage implements OnInit {
 
   userInfo!: User;
 
-  currentBlock: number = 0;
-  currentTrxs: number = 0;
-  currentBlockTimestamp: number = 0;
+  lastSynced: number = 0;
 
-  assetsCount = 0
-  assets = signal<Asset[]>([]);
   latestTransactions = signal<AssetTransaction[]>([]);
   transactionsLoading = signal(true);
-  private unsubscribeTransactions: (() => void) | null = null;
 
   latestSubscriptions = signal<Subscription[]>([]);
   subscriptionsLoading = signal(true);
-  private unsubscribeSubscriptions: (() => void) | null = null;
 
   stats = signal<StatCard[]>([
     { title: 'Total Services', value: 0, path: '/authorized/services/list', loading: true, icon: 'M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Zm16 14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2ZM4 13a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6Zm16-2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6Z' },
@@ -65,6 +94,25 @@ export class DashboardPage implements OnInit {
     { title: 'Total Subscriptions', value: 0, path: '/authorized/subscriptions/list', loading: true, icon: 'M7 6H5m2 3H5m2 3H5m2 3H5m2 3H5m11-1a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2M7 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm8 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z' },
     { title: 'Total Transactions', value: 0, path: '/authorized/transactions/list', loading: true, icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3Z' },
   ]);
+
+  // ─── Dashboard summary (charts + KPIs) ───────────────────────────────────────
+
+  @ViewChild('activityChart') activityChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('aumChart')      aumChartRef!:      ElementRef<HTMLCanvasElement>;
+
+  private activityChartInstance: any = null;
+  private aumChartInstance:      any = null;
+
+  dashboardSummary  = signal<DashboardSummary | null>(null);
+  summaryLoading    = signal(true);
+
+  totalAum         = computed(() => this.dashboardSummary()?.kpis.totalAum ?? 0);
+  activeInvestors  = computed(() => this.dashboardSummary()?.kpis.activeInvestors ?? 0);
+  pendingKyc       = computed(() => this.dashboardSummary()?.kpis.pendingKyc ?? 0);
+  netFlow30d       = computed(() => this.dashboardSummary()?.kpis.netFlow30d ?? 0);
+  topAssets       = computed(() => this.dashboardSummary()?.topAssets ?? []);
+  weeklyActivity  = computed(() => this.dashboardSummary()?.charts.weeklyActivity ?? []);
+  aumByAsset      = computed(() => this.dashboardSummary()?.charts.aumByAsset ?? []);
 
   constructor() { }
 
@@ -82,33 +130,68 @@ export class DashboardPage implements OnInit {
 
   async ionViewWillEnter() {
     await this.loadPageData();
-    this.unsubscribeTransactions = this.rpcService.listenToAssetTransactions(async () => {
-      const result = await this.rpcService.assetTransactions(1, 5);
-      if (result.result && result.result.count !== this.stats()[3].value) {
-        this.stats.update(cards => cards.map((c, i) => i === 3 ? { ...c, value: Number(result.result!.count) } : c));
-        this.latestTransactions.set(result.result.transactions);
-      }
-    });
-    this.unsubscribeSubscriptions = this.rpcService.listenToAssetTransactions(async () => {
-      const result = await this.rpcService.subscriptionsListAllByEntity(1, 1000);
-      if (result.result && result.result.count !== this.stats()[2].value) {
-        this.stats.update(cards => cards.map((c, i) => i === 2 ? { ...c, value: Number(result.result!.count) } : c));
-        this.latestSubscriptions.set([...result.result.subscriptions].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5));
-      }
-    });
+  }
+
+  private readonly stateNames: Record<number, string> = {
+    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
+  };
+
+  private mapVaultSubscription(raw: any): Subscription {
+    return {
+      subscription: raw.address,
+      entity: raw.entity ?? '',
+      entityName: raw.entity_name ?? '',
+      service: raw.service ?? '',
+      serviceName: raw.service_name ?? raw.service ?? '',
+      validator: raw.validator ?? '',
+      validatorName: raw.validator_name ?? '',
+      validatorVerificationId: raw.validator_level ?? 0,
+      validatorTimestamp: raw.validator_trx_ts ?? 0,
+      regulator: raw.regulator ?? '',
+      regulatorName: raw.regulator_name ?? '',
+      createdAt: raw.created_at ?? 0,
+      suspended: raw.suspended === true || raw.suspended === 1,
+      state: raw.state ?? 0,
+      stateName: raw.account_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+    } as Subscription;
+  }
+
+  private mapVaultTransaction(raw: any): AssetTransaction {
+    let trxRefNo = '';
+    if (raw.data && typeof raw.data === 'object') { trxRefNo = raw.data.trxRefNo || ''; }
+    return {
+      trxId: raw.id,
+      serviceTrxId: raw.service_trx_id ?? 0,
+      trxType: raw.type ? (raw.type.charAt(0).toUpperCase() + raw.type.slice(1)) : 'Transfer',
+      sender: raw.sender ?? '',
+      manager: raw.manager ?? '',
+      managerName: raw.manager_name ?? raw.manager ?? '',
+      service: raw.service ?? '',
+      serviceName: raw.service_name ?? raw.service ?? '',
+      asset: raw.asset ?? '',
+      assetName: raw.asset_name ?? raw.asset ?? '',
+      assetSymbol: raw.asset_symbol ?? '',
+      from: raw.from_addr ?? '',
+      to: raw.to_addr ?? '',
+      subscription: raw.subscription ?? '',
+      tokens: raw.tokens ?? 0,
+      price: raw.price ?? 0,
+      totalPrice: raw.total ?? 0,
+      data: typeof raw.data === 'string' ? raw.data : JSON.stringify(raw.data ?? {}),
+      trxRefNo,
+      time: raw.time ?? 0,
+    } as AssetTransaction;
   }
 
   private async loadPageData() {
     await this.authService.ready();
     this.userInfo = this.authService.userInfo;
-    if(!this.userInfo) this.router.navigate(['/public/user/login']);
+    if (!this.userInfo) this.router.navigate(['/public/user/login']);
     else {
-      if(this.userInfo.role !== 1) {
-        // await this.getValidators();
+      if (this.userInfo.role !== 1) {
         await Promise.all([
           this.getStats(),
-          this.getServices(),
-          this.getAssets(),
+          this.getDashboardSummary(),
           this.getSubscriptions(),
           this.getTransactions(),
         ]);
@@ -116,52 +199,26 @@ export class DashboardPage implements OnInit {
     }
   }
 
-  async getStats(){
-    try {
-      // this.entityInfo = await this.rpcService.entityInfoGet();
-      const blockNumber = await this.rpcService.rpcProvider.getBlockNumber();
-      const block = await this.rpcService.rpcProvider.getBlock(blockNumber);
-      if (block) {
-        this.currentBlock = blockNumber;
-        this.currentTrxs = block.transactions.length;
-        this.currentBlockTimestamp = block.timestamp;
-      }
-    } catch (error) {
-      console.error('Error fetching initial block:', error);
+  async getStats() {
+    const status = await this.apiService.vaultGetSyncStatus();
+    if (status) {
+      this.lastSynced = status.lastSync ? Number(status.lastSync) : 0;
+      this.stats.update(cards => [
+        { ...cards[0], value: status.serviceCount, loading: false },
+        { ...cards[1], value: status.assetCount,   loading: false },
+        { ...cards[2], value: status.subCount,     loading: false },
+        { ...cards[3], value: status.trxCount,     loading: false },
+      ]);
+    } else {
+      this.stats.update(cards => cards.map(c => ({ ...c, loading: false })));
     }
-
-    this.rpcService.listenToNewBlocks((blockNumber, transactions, timestamp) => {
-      this.currentBlock = blockNumber;
-      this.currentTrxs = transactions;
-      this.currentBlockTimestamp = timestamp;
-    });
-  }
-
-  private setCardLoading(index: number, loading: boolean) {
-    this.stats.update(cards => cards.map((c, i) => i === index ? { ...c, loading } : c));
-  }
-
-  async getServices() {
-    this.setCardLoading(0, true);
-    const lookup = await this.rpcService.servicesListOwn(1, 1);
-    this.stats.update(cards => cards.map((c, i) => i === 0 ? { ...c, value: lookup.result ? Number(lookup.result.count) : c.value, loading: false } : c));
-  }
-
-  async getAssets() {
-    this.setCardLoading(1, true);
-    const lookup = await this.rpcService.assetsListOwn(1, 1);
-    this.stats.update(cards => cards.map((c, i) => i === 1 ? { ...c, value: lookup.result ? Number(lookup.result.count) : c.value, loading: false } : c));
   }
 
   async getSubscriptions() {
-    this.setCardLoading(2, true);
     this.subscriptionsLoading.set(true);
-    const lookup = await this.rpcService.subscriptionsListAllByEntity(1, 1000);
-    if (lookup.result) {
-      this.stats.update(cards => cards.map((c, i) => i === 2 ? { ...c, value: Number(lookup.result!.count), loading: false } : c));
-      this.latestSubscriptions.set([...lookup.result.subscriptions].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5));
-    } else {
-      this.stats.update(cards => cards.map((c, i) => i === 2 ? { ...c, loading: false } : c));
+    const result = await this.apiService.vaultGetSubscriptions(undefined, 0, 5);
+    if (result?.subscriptions) {
+      this.latestSubscriptions.set(result.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
     }
     this.subscriptionsLoading.set(false);
   }
@@ -176,29 +233,92 @@ export class DashboardPage implements OnInit {
     }
   }
 
+  getTrxTypeClass(type: string): string {
+    switch (type) {
+      case 'Subscribe': return 'bg-green-100 text-green-800';
+      case 'Redeem':    return 'bg-red-100 text-red-800';
+      case 'Transfer':  return 'bg-blue-100 text-blue-800';
+      default:          return 'bg-gray-100 text-gray-800';
+    }
+  }
+
   async getTransactions() {
-    this.setCardLoading(3, true);
     this.transactionsLoading.set(true);
-    const lookup = await this.rpcService.assetTransactions(1, 5);
-    if (lookup.result) {
-      this.stats.update(cards => cards.map((c, i) => i === 3 ? { ...c, value: Number(lookup.result!.count), loading: false } : c));
-      this.latestTransactions.set(lookup.result.transactions);
-    } else {
-      this.stats.update(cards => cards.map((c, i) => i === 3 ? { ...c, loading: false } : c));
+    const result = await this.apiService.vaultGetTransactions(undefined, 0, 5);
+    if (result?.transactions) {
+      this.latestTransactions.set(result.transactions.map((t: any) => this.mapVaultTransaction(t)));
     }
     this.transactionsLoading.set(false);
   }
 
-  // async getValidators() {
-  //   const lookup = await this.rpcService.validatorsListOwn(1, 1);
-  // }
+  async getDashboardSummary() {
+    this.summaryLoading.set(true);
+    const result = await this.apiService.vaultGetDashboardSummary();
+    if (result) {
+      this.dashboardSummary.set(result as DashboardSummary);
+    }
+    this.summaryLoading.set(false);
+    // Canvases are now in the DOM (loading state hidden) — safe to render
+    setTimeout(() => this.renderAllCharts(), 50);
+  }
+
+  private async renderAllCharts() {
+    const { Chart, registerables } = await import('chart.js') as any;
+    Chart.register(...registerables);
+    this.renderActivityChart(Chart);
+    this.renderAumChart(Chart);
+  }
+
+  private renderActivityChart(Chart: any) {
+    if (!this.activityChartRef?.nativeElement) return;
+    this.activityChartInstance?.destroy();
+    const data = this.weeklyActivity();
+    this.activityChartInstance = new Chart(this.activityChartRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels: data.map((d: WeeklyActivityPoint) => d.week),
+        datasets: [
+          { type: 'bar', label: 'Subscribe (tokens)', data: data.map((d: WeeklyActivityPoint) => d.subscribeTokens), backgroundColor: 'rgba(52,211,153,0.7)', barPercentage: 0.4, yAxisID: 'y' },
+          { type: 'bar', label: 'Subscribe (value)',  data: data.map((d: WeeklyActivityPoint) => d.subscribeValue),  backgroundColor: 'rgba(5,150,105,0.8)',  barPercentage: 0.4, yAxisID: 'y1' },
+          { type: 'bar', label: 'Redeem (tokens)',    data: data.map((d: WeeklyActivityPoint) => d.redeemTokens),    backgroundColor: 'rgba(252,165,165,0.7)', barPercentage: 0.4, yAxisID: 'y' },
+          { type: 'bar', label: 'Redeem (value)',     data: data.map((d: WeeklyActivityPoint) => d.redeemValue),     backgroundColor: 'rgba(185,28,28,0.8)',  barPercentage: 0.4, yAxisID: 'y1' },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y:  { beginAtZero: true, position: 'left',  title: { display: true, text: 'Tokens' } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Value' } },
+        },
+      },
+    });
+  }
+
+  private renderAumChart(Chart: any) {
+    if (!this.aumChartRef?.nativeElement) return;
+    this.aumChartInstance?.destroy();
+    const data = this.aumByAsset();
+    const colors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#14b8a6', '#fb923c'];
+    this.aumChartInstance = new Chart(this.aumChartRef.nativeElement, {
+      type: 'doughnut',
+      data: {
+        labels: data.map((d: AumByAsset) => d.symbol),
+        datasets: [{ data: data.map((d: AumByAsset) => d.aum), backgroundColor: colors }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: { legend: { position: 'right' } },
+      },
+    });
+  }
 
 
-  async ionViewWillLeave() {
-    this.rpcService.stopListening();
-    this.unsubscribeTransactions?.();
-    this.unsubscribeTransactions = null;
-    this.unsubscribeSubscriptions?.();
-    this.unsubscribeSubscriptions = null;
+  priceChange(asset: TopAsset): number {
+    if (!asset.previousBid || asset.previousBid === 0) return 0;
+    return ((asset.bid - asset.previousBid) / asset.previousBid) * 100;
   }
 }

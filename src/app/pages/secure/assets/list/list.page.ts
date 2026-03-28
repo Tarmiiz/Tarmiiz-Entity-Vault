@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
@@ -29,7 +29,7 @@ import { Asset } from '../../../../shared/models/data.model';
   ]
 })
 export class ListPage implements OnInit {
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
@@ -108,15 +108,62 @@ export class ListPage implements OnInit {
     }
   }
 
+  private readonly stateNames: Record<number, string> = {
+    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
+  };
+
+  private mapVaultAsset(raw: any): Asset {
+    return {
+      address: raw.address,
+      name: raw.name,
+      symbol: raw.symbol,
+      tokenType: raw.token_type ?? 0,
+      tokenTypeName: raw.token_type_name ?? String(raw.token_type ?? ''),
+      assetType: raw.asset_type ?? 0,
+      assetTypeName: raw.asset_type_name ?? String(raw.asset_type ?? ''),
+      metadata: typeof raw.metadata === 'object' ? JSON.stringify(raw.metadata ?? {}) : (raw.metadata ?? ''),
+      totalSupply: raw.total_supply ?? 0,
+      circulating: raw.circulating ?? 0,
+      countryCode: 0,
+      countryName: raw.country_name ?? '',
+      currencyCode: raw.currency_code ?? '',
+      currencyName: raw.currency_name ?? '',
+      createdOn: raw.created_on ?? 0,
+      services: (raw.services ?? []).map((s: string) => ({ service: s, serviceName: s })),
+      issuer: raw.issuer ?? '',
+      issuerName: raw.issuer_name ?? raw.issuer ?? '',
+      manager: raw.manager ?? '',
+      managerName: raw.manager_name ?? raw.manager ?? '',
+      regulator: raw.regulator ?? '',
+      regulatorName: raw.regulator_name ?? '',
+      regulatorSymbol: '',
+      suspended: raw.suspended === true || raw.suspended === 1,
+      state: raw.state ?? 0,
+      stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+    };
+  }
+
   async listAssets() {
     this.loadingService.show('Loading data...');
     this.assets.set([]);
-    const result = await this.rpcService.assetsListOwn(1, 10);
-    if (result.result) {
-      this.assetsCount = result.result.count;
-      this.assets.set(result.result.assets);
-    } else {
-      console.log(result.error);
+    const [result, servicesResult] = await Promise.all([
+      this.apiService.vaultGetAssets(0, 500),
+      this.apiService.vaultGetServices(0, 500),
+    ]);
+    const serviceNames: Record<string, string> = {};
+    for (const s of (servicesResult?.services ?? [])) {
+      serviceNames[s.address] = s.name;
+    }
+    if (result) {
+      this.assetsCount = result.count;
+      this.assets.set(result.assets.map((a: any) => {
+        const asset = this.mapVaultAsset(a);
+        asset.services = asset.services.map(s => ({
+          service: s.service,
+          serviceName: serviceNames[s.service] ?? s.service,
+        }));
+        return asset;
+      }));
     }
     this.loadingService.hide();
   }
@@ -127,19 +174,18 @@ export class ListPage implements OnInit {
 
     this.loadingService.show('Creating asset...');
     try {
-      const metadata = JSON.stringify({ description: data.description });
-      const result = await this.rpcService.assetCreate(
-        data.owner,
-        data.service,
-        data.issuer,
-        data.manager,
-        data.name,
-        data.symbol,
-        metadata,
-        data.currency,
-        data.regulator
-      );
-      if (result.success) {
+      const result = await this.apiService.vaultCreateAsset({
+        owner: data.owner,
+        service: data.service,
+        issuer: data.issuer,
+        manager: data.manager,
+        name: data.name,
+        symbol: data.symbol,
+        metadata: JSON.stringify({ description: data.description }),
+        currency: data.currency,
+        regulator: data.regulator,
+      });
+      if (result) {
         await this.listAssets();
       } else {
         this.alertService.show('Error', 'Failed to create asset.');

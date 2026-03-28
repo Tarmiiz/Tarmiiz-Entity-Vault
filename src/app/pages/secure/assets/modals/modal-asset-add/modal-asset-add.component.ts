@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalAssetAddService, AddAssetData } from './modal-asset-add.service';
-import { RpcService } from '../../../../../shared/services/rpc.service';
-import { environment } from '../../../../../../environments/environment';
+import { ApiService } from '../../../../../shared/services/api.service';
 
 @Component({
   selector: 'app-modal-asset-add',
@@ -16,7 +15,7 @@ import { environment } from '../../../../../../environments/environment';
 export class ModalAssetAddComponent {
 
   addAssetService = inject(ModalAssetAddService);
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
 
   services = signal<{ address: string; name: string }[]>([]);
@@ -41,29 +40,32 @@ export class ModalAssetAddComponent {
   }
 
   async loadServices() {
-    const data = await this.rpcService.servicesListOwn(1, 50);
-    if (data.result) {
-      this.services.set(data.result.services.map((s: any) => ({ address: s.address, name: s.name })));
+    const data = await this.apiService.vaultGetServicesOwn(0, 50);
+    if (data?.services) {
+      this.services.set(data.services.map((s: any) => ({ address: s.address, name: s.name })));
     }
   }
 
   async loadCountriesAndRegulators() {
-    await this.rpcService.connectVariablesProxyContract();
-    const [countriesData, entityData] = await Promise.all([
-      this.rpcService.getCountriesList(),
-      this.rpcService.entityInfoGet(),
+    const [countries, entity] = await Promise.all([
+      this.apiService.vaultGetCountries(),
+      this.apiService.vaultGetEntityInfo(),
     ]);
-    if (countriesData.result) {
-      this.countries.set(countriesData.result.map((c: any) => ({
-        countryCode: c.countryCode,
-        nameShort: c.nameShort,
-        currencyCode: c.currencyCode,
+    if (countries) {
+      this.countries.set(countries.map((c: any) => ({
+        countryCode: c.country_code,
+        nameShort: c.name_short,
+        currencyCode: c.currency_code,
       })));
     }
-    if (entityData?.result) {
-      const regulatorsData = await this.rpcService.regulatorsListByCountry(entityData.result.countryCode, 1, 100);
-      if (regulatorsData.result) {
-        this.regulators.set(regulatorsData.result.regulators.filter((r: any) => r.state));
+    if (entity) {
+      const regulators = await this.apiService.vaultGetRegulatorsByCountry(String(entity.country_code), 0, 100);
+      if (regulators) {
+        this.regulators.set(regulators.filter((r: any) => r.state).map((r: any) => ({
+          address: r.address,
+          name: r.name,
+          symbol: r.symbol,
+        })));
       }
     }
   }

@@ -84,16 +84,17 @@ export class LoginPage implements OnInit {
       else {
         console.error('Login failed:', loginResult.error);
         let errorMessage = 'An unexpected error occurred during login.';
-        if (loginResult.error) {
-          if (loginResult.error.includes('User not found')) {
+        const errStr = String(loginResult.error ?? '');
+        if (errStr) {
+          if (errStr.includes('User not found')) {
             errorMessage = 'User not found. Please check your credentials or register first.';
-          } else if (loginResult.error.includes('proof')) {
+          } else if (errStr.includes('proof')) {
             errorMessage = 'Failed to generate authentication proof. Please try again.';
-          } else if (loginResult.error.includes('network')) {
+          } else if (errStr.includes('network')) {
             errorMessage = 'Network error. Please check your internet connection.';
-          } else if (loginResult.error.includes('Error: Assert Failed')) {
+          } else if (errStr.includes('Error: Assert Failed')) {
             errorMessage = 'Login Failed. Please check your credentials.';
-          } else if (loginResult.error.includes('Error: execution reverted')) {
+          } else if (errStr.includes('Error: execution reverted')) {
             errorMessage = 'Login Failed. Please check your credentials.';
           } else {
             errorMessage = 'Login Failed. Please check your credentials.';

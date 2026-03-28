@@ -1,9 +1,9 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalServiceAddService, AddServiceData } from './modal-service-add.service';
-import { RpcService } from '../../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../../shared/services/api.service';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({
@@ -16,7 +16,7 @@ import { environment } from '../../../../../../environments/environment';
 export class ModalServiceAddComponent {
 
   addServiceService = inject(ModalServiceAddService);
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
 
   verificationLevels = signal<{ variableId: number; name: string }[]>([]);
@@ -33,22 +33,29 @@ export class ModalServiceAddComponent {
   });
 
   constructor() {
-    this.loadVerificationLevels();
-    this.loadRegulators();
+    effect(() => {
+      if (this.addServiceService.isVisible()) {
+        this.loadVerificationLevels();
+        this.loadRegulators();
+      }
+    });
   }
 
   async loadVerificationLevels() {
-    await this.rpcService.connectVariablesProxyContract();
-    const data = await this.rpcService.getGlobalVariableByCategory('Identity Verification Level');
-    if (data.result) {
-      this.verificationLevels.set(data.result);
+    const data = await this.apiService.vaultGetGlobalVariables();
+    if (data) {
+      this.verificationLevels.set(
+        data
+          .filter((item: any) => item.category === 'Identity Verification Level')
+          .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
+      );
     }
   }
 
   async loadRegulators() {
-    const data = await this.rpcService.regulatorsListByCountry(environment.countryCode, 1, 100);
-    if (data.result) {
-      this.regulators.set(data.result.regulators.filter((r: any) => r.state));
+    const data = await this.apiService.vaultGetRegulatorsByCountry(String(environment.countryCode), 0, 100);
+    if (data) {
+      this.regulators.set(data.filter((r: any) => r.state).map((r: any) => ({ address: r.address, name: r.name, symbol: r.symbol })));
     }
   }
 

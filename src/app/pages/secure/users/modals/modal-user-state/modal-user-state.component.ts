@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalUserStateService } from './modal-user-state.service';
-import { RpcService } from '../../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../../shared/services/api.service';
 
 @Component({
   selector: 'app-modal-user-state',
@@ -15,7 +15,7 @@ import { RpcService } from '../../../../../shared/services/rpc.service';
 export class ModalUserStateComponent {
 
   changeStateService = inject(ModalUserStateService);
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private fb: FormBuilder = inject(FormBuilder);
 
   states = signal<{ variableId: number; name: string; }[]>([]);
@@ -25,7 +25,11 @@ export class ModalUserStateComponent {
   });
 
   constructor() {
-    this.loadStates();
+    effect(() => {
+      if (this.changeStateService.isVisible()) {
+        this.loadStates();
+      }
+    });
     effect(() => {
       const currentState = this.changeStateService.currentState();
       if (currentState !== null) {
@@ -35,10 +39,15 @@ export class ModalUserStateComponent {
   }
   
   async loadStates() {
-    await this.rpcService.connectVariablesProxyContract();
-    const data = await this.rpcService.getGlobalVariableByCategory('Account State');
+    const data = await this.apiService.vaultGetGlobalVariables();
     const excludedIds = [1];
-    this.states.set(data.result.filter((item: any) => !excludedIds.includes(item.variableId)));
+    if (data) {
+      this.states.set(
+        data
+          .filter((item: any) => item.category === 'Account State' && !excludedIds.includes(item.variable_id))
+          .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
+      );
+    }
   }
 
   onSave(): void {

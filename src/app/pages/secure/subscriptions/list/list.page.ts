@@ -8,7 +8,7 @@ import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../../shared/services/rpc.service';
+import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 
@@ -25,7 +25,7 @@ import { Subscription } from '../../../../shared/models/data.model';
   ]
 })
 export class ListPage implements OnInit {
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   utils = inject(UtilsService);
@@ -70,19 +70,39 @@ export class ListPage implements OnInit {
     }
   } 
 
+  private readonly stateNames: Record<number, string> = {
+    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
+  };
+
+  private mapVaultSubscription(raw: any): Subscription {
+    return {
+      subscription: raw.address,
+      entity: raw.entity ?? '',
+      entityName: raw.entity_name ?? '',
+      service: raw.service ?? '',
+      serviceName: raw.service_name ?? raw.service ?? '',
+      validator: raw.validator ?? '',
+      validatorName: raw.validator_name ?? '',
+      validatorVerificationId: raw.validator_level ?? 0,
+      validatorTimestamp: raw.validator_trx_ts ?? 0,
+      regulator: raw.regulator ?? '',
+      regulatorName: raw.regulator_name ?? '',
+      createdAt: raw.created_at ?? 0,
+      suspended: raw.suspended === true || raw.suspended === 1,
+      state: raw.state ?? 0,
+      stateName: raw.account_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+    } as Subscription;
+  }
+
   async listSubscriptions() {
     this.loadingService.show('Loading data...');
-    const result = await this.rpcService.subscriptionsListAllByEntity(1, 1000);
-    if(result.result) {
-      this.subscriptionsCount = result.result.count;
-      this.subscriptions.set(result.result.subscriptions);
-      // console.log('services', this.subscriptions());
-    }
-    else {
-      console.log(result.error);
+    const result = await this.apiService.vaultGetSubscriptions(undefined, 0, 1000);
+    if (result) {
+      this.subscriptionsCount = result.count;
+      this.subscriptions.set(result.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
     }
     this.loadingService.hide();
-  }  
+  }
 
   viewDetails(subscription: Subscription) {
     this.router.navigate(['/authorized/subscriptions/details/' + subscription.subscription]);

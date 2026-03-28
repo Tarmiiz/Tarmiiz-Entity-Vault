@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 
-import { RpcService } from '../../../shared/services/rpc.service';
+import { ApiService } from '../../../shared/services/api.service';
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 
@@ -25,7 +25,7 @@ import { ModalProfileOperatorEditComponent } from "./modal-profile-operator-edit
   ]
 })
 export class ProfilePage implements OnInit {
-  private rpcService = inject(RpcService);
+  private apiService = inject(ApiService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private profileOperatorEditService = inject(ModalProfileOperatorEditService);
@@ -50,15 +50,15 @@ export class ProfilePage implements OnInit {
 
   async getInfo() {
     this.loadingService.show('Loading data...');
-    const info = await this.rpcService.entityInfoGet();
-    this.info.set(info.result ?? undefined);
+    const info = await this.apiService.vaultGetEntityInfo();
+    this.info.set(info ?? undefined);
     this.loadingService.hide();
   }
 
   async getApi() {
     this.loadingService.show('Loading data...');
-    const api = await this.rpcService.externalContractGet('api');
-    this.api.set(api.result!);
+    const api = await this.apiService.vaultGetExternalContract('api');
+    this.api.set(api ?? '');
     this.loadingService.hide();
   }
 
@@ -71,7 +71,7 @@ export class ProfilePage implements OnInit {
       this.loadingService.show('Updating api...');
       try {
         if (result.address !== currentApi) {
-          await this.rpcService.externalContractSet('api', result.address);
+          await this.apiService.vaultSetExternalContract('api', result.address);
           await this.getApi();
         }
       } catch (error) {
