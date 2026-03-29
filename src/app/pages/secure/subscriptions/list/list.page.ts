@@ -6,9 +6,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+import { Subscription as RxSubscription } from 'rxjs';
+
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
+import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 
@@ -26,6 +29,7 @@ import { Subscription } from '../../../../shared/models/data.model';
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
+  private socketService = inject(SocketService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   utils = inject(UtilsService);
@@ -43,20 +47,27 @@ export class ListPage implements OnInit {
       .sort((a, b) => a[1].localeCompare(b[1]))
   );
 
+  private _socketSub: RxSubscription | null = null;
+
   constructor() {}
 
   ngOnInit() {}
 
-
   async ionViewWillEnter() {
     this.subscriptions.set([]);
     this.subscriptionsCount = 0;
-  }  
+  }
 
   async ionViewDidEnter() {
     this.loadingServices = true;
     await this.listSubscriptions();
     this.loadingServices = false;
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listSubscriptions());
+  }
+
+  ionViewWillLeave() {
+    this._socketSub?.unsubscribe();
+    this._socketSub = null;
   }
   
   getStateClass(stateId: number | undefined): string {

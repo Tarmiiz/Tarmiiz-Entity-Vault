@@ -6,9 +6,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+import { Subscription } from 'rxjs';
+
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
+import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
@@ -30,6 +33,7 @@ import { Asset } from '../../../../shared/models/data.model';
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
+  private socketService = inject(SocketService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
@@ -82,6 +86,8 @@ export class ListPage implements OnInit {
     this.filterCirculatingAmt.set(null);
   }
 
+  private _socketSub: Subscription | null = null;
+
   constructor() {}
 
   ngOnInit() {}
@@ -95,6 +101,12 @@ export class ListPage implements OnInit {
     this.loadingData = true;
     await this.listAssets();
     this.loadingData = false;
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listAssets());
+  }
+
+  ionViewWillLeave() {
+    this._socketSub?.unsubscribe();
+    this._socketSub = null;
   }
 
   getStateClass(stateId: number | undefined): string {

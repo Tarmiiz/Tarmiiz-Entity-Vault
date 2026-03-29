@@ -6,11 +6,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+import { Subscription } from 'rxjs';
+
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { SocketService } from '../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { Asset, AssetHolder, AssetPrice, AssetTransaction } from '../../../../shared/models/data.model';
 import { ModalAssetStateService } from '../modals/modal-asset-state/modal-asset-state.service';
@@ -42,6 +45,9 @@ export class DetailsPage implements OnInit {
   private assetStateService = inject(ModalAssetStateService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
+  private socketService = inject(SocketService);
+
+  private _socketSub: Subscription | null = null;
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -162,6 +168,16 @@ export class DetailsPage implements OnInit {
 
   async ionViewWillEnter() {
     this.activeTab.set('overview');
+    await this.reload();
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload());
+  }
+
+  ionViewWillLeave() {
+    this._socketSub?.unsubscribe();
+    this._socketSub = null;
+  }
+
+  private async reload() {
     await this.getAssetDetails();
     await Promise.all([
       this.getPriceHistory(1, 50),

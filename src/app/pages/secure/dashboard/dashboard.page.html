@@ -28,7 +28,8 @@
           </div>
           <div class="flex gap-8">
             <div class="text-center">
-              <p class="text-xs text-indigo-300 uppercase tracking-wider">30-Day Net Flow</p>
+              <p class="text-xs text-indigo-300 uppercase tracking-wider">Net Inflow (30d)</p>
+              <p class="text-xs text-indigo-400">Subscribe − Redeem value</p>
               @if (summaryLoading()) {
                 <div class="h-4 bg-indigo-500 rounded w-20 mt-1 animate-pulse"></div>
               } @else {
@@ -38,8 +39,12 @@
               }
             </div>
             <div class="text-center">
-              <p class="text-xs text-indigo-300 uppercase tracking-wider">Last Synced</p>
-              <p class="text-sm font-medium mt-1 text-indigo-200">{{ lastSynced ? (lastSynced * 1000 | date:'dd/MM HH:mm') : '—' }}</p>
+              <p class="text-xs text-indigo-300 uppercase tracking-wider">Status</p>
+              <div class="flex items-center justify-center gap-1.5 mt-1">
+                <span class="w-2 h-2 rounded-full" [class]="socketService.connected() ? 'bg-green-400' : 'bg-red-400'"></span>
+                <span class="text-sm font-medium text-indigo-200">{{ socketService.connected() ? 'Live' : 'Offline' }}</span>
+              </div>
+              <p class="text-xs text-indigo-300 mt-1">{{ lastUpdated() ? (lastUpdated()! | date:'HH:mm:ss') : '—' }}</p>
             </div>
           </div>
         </div>

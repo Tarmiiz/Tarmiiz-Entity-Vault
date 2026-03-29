@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { Subscription } from 'rxjs';
+
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
@@ -16,6 +18,7 @@ import { ModalUserEditComponent } from "../modals/modal-user-edit/modal-user-edi
 
 import { ModalUserEditCredentialsComponent } from "../modals/modal-user-edit-credentials/modal-user-edit-credentials.component";
 import { ModalUserCredentialsService } from '../modals/modal-user-edit-credentials/modal-user-edit-credentials.service';
+import { SocketService } from '../../../../shared/services/socket.service';
 
 
 @Component({
@@ -41,6 +44,9 @@ export class DetailsPage implements OnInit {
   private userEditService = inject(ModalUserEditService);
   private userStateService = inject(ModalUserStateService);
   private userCredentialsService = inject(ModalUserCredentialsService);
+  private socketService = inject(SocketService);
+
+  private _socketSub: Subscription | null = null;
 
   activeTab = signal<'info' | 'logs'>('info');
 
@@ -57,9 +63,14 @@ export class DetailsPage implements OnInit {
     const userId = this.route.snapshot.paramMap.get('id');
     if (userId) {
       this.userId.set(Number(userId));
-    }    
+    }
     await this.getUserDetails();
-    // console.log('service', this.user());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.getUserDetails());
+  }
+
+  ionViewWillLeave() {
+    this._socketSub?.unsubscribe();
+    this._socketSub = null;
   }
 
   setTab(tab: 'info' | 'logs') {

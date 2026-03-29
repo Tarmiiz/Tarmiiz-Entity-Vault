@@ -6,6 +6,7 @@ import {
 import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
+import { SocketService } from '../../services/socket.service';
 import { Entity, User } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
@@ -36,12 +37,15 @@ import { LoadingComponent } from "../../components/alerts/loading/loading.compon
 })
 export class AuthorizedLayoutComponent {
   private authService = inject(AuthService);
+  private socketService = inject(SocketService);
   private menuController = inject(MenuController);
 
   entityInfo!: Entity;
   userInfo!: User;
 
-  constructor() {}
+  constructor() {
+    this.socketService.connect();
+  }
 
   ionViewWillEnter() {
     this.entityInfo = this.authService.entityInfo;

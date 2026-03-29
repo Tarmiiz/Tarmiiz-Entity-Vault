@@ -4,8 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { IonTitle } from '@ionic/angular/standalone'
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
+import { SocketService } from '../../../shared/services/socket.service';
 
 import { AssetTransaction, Subscription, User } from '../../../shared/models/data.model';
+
+import { Subscription as RxSubscription } from 'rxjs';
 
 import { ApiService } from '../../../shared/services/api.service';
 import { UtilsService } from '../../../shared/services/utils.service';
@@ -76,6 +79,7 @@ export class DashboardPage implements OnInit {
   private alertService = inject(AlertService);
   private router = inject(Router);
   private authService = inject(AuthService);
+  socketService = inject(SocketService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
 
   userInfo!: User;
@@ -105,6 +109,7 @@ export class DashboardPage implements OnInit {
 
   dashboardSummary  = signal<DashboardSummary | null>(null);
   summaryLoading    = signal(true);
+  lastUpdated       = signal<Date | null>(null);
 
   totalAum         = computed(() => this.dashboardSummary()?.kpis.totalAum ?? 0);
   activeInvestors  = computed(() => this.dashboardSummary()?.kpis.activeInvestors ?? 0);
@@ -114,11 +119,11 @@ export class DashboardPage implements OnInit {
   weeklyActivity  = computed(() => this.dashboardSummary()?.charts.weeklyActivity ?? []);
   aumByAsset      = computed(() => this.dashboardSummary()?.charts.aumByAsset ?? []);
 
+  private _socketSub: RxSubscription | null = null;
+
   constructor() { }
 
-  async ngOnInit() {
-    await this.loadPageData();
-  }
+  async ngOnInit() { }
 
   async goTo(path: string) {
     this.router.navigate([path]);
@@ -130,6 +135,12 @@ export class DashboardPage implements OnInit {
 
   async ionViewWillEnter() {
     await this.loadPageData();
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.loadPageData());
+  }
+
+  ionViewWillLeave() {
+    this._socketSub?.unsubscribe();
+    this._socketSub = null;
   }
 
   private readonly stateNames: Record<number, string> = {
@@ -195,6 +206,7 @@ export class DashboardPage implements OnInit {
           this.getSubscriptions(),
           this.getTransactions(),
         ]);
+        this.lastUpdated.set(new Date());
       }
     }
   }

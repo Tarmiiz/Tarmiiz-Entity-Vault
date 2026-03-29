@@ -6,6 +6,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+import { Subscription as RxSubscription } from 'rxjs';
+
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
@@ -17,6 +19,7 @@ import { ModalSubscriptionStateService } from '../modals/modal-subscription-stat
 import { ModalSubscriptionStateComponent } from "../modals/modal-subscription-state/modal-subscription-state.component";
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
+import { SocketService } from '../../../../shared/services/socket.service';
 
 
 
@@ -42,6 +45,9 @@ export class DetailsPage implements OnInit {
   private subscriptionStateService = inject(ModalSubscriptionStateService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
+  private socketService = inject(SocketService);
+
+  private _socketSub: RxSubscription | null = null;
 
   activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs'>('overview');
 
@@ -148,6 +154,16 @@ export class DetailsPage implements OnInit {
   
   async ionViewWillEnter() {
     this.activeTab.set('overview');
+    await this.reload();
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload());
+  }
+
+  ionViewWillLeave() {
+    this._socketSub?.unsubscribe();
+    this._socketSub = null;
+  }
+
+  private async reload() {
     await this.getSubscriptionDetails();
     await Promise.all([
       this.getHoldings(1, 50),

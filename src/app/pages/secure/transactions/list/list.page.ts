@@ -5,8 +5,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+import { Subscription } from 'rxjs';
+
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../shared/services/api.service';
+import { SocketService } from '../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
@@ -26,6 +29,7 @@ import { AssetTransaction } from '../../../../shared/models/data.model';
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
+  private socketService = inject(SocketService);
   utils = inject(UtilsService);
   private loadingService = inject(LoadingService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
@@ -95,12 +99,20 @@ export class ListPage implements OnInit {
     } as AssetTransaction;
   }
 
+  private _socketSub: Subscription | null = null;
+
   constructor() {}
 
   async ngOnInit() {}
 
   async ionViewDidEnter() {
     await this.load();
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.load());
+  }
+
+  ionViewWillLeave() {
+    this._socketSub?.unsubscribe();
+    this._socketSub = null;
   }
 
   async load() {

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { StorageService } from './storage.service';
 import { EthersService } from './ethers.service';
 import { ApiService } from './api.service';
+import { SocketService } from './socket.service';
 import { LoadingService } from '../components/alerts/loading/loading.service';
 import { AlertService } from '../components/alerts/alert/alert.service';
 import { Entity, User } from '../models/data.model';
@@ -19,6 +20,7 @@ export class AuthService {
   private storageService = inject(StorageService);
   private ethersService = inject(EthersService);
   private apiService = inject(ApiService);
+  private socketService = inject(SocketService);
 
   entityInfo!: Entity;
   userInfo!: User;
@@ -71,8 +73,8 @@ export class AuthService {
           this.storageService.set('user', JSON.stringify(this.userInfo));
           this.storageService.set('wallet', key);
 
-          // get regulator info
-          // await this.rpcService.regulatorInfoGet();
+          // connect real-time socket
+          this.socketService.connect();
 
           return { success: true, error: '' };
         
@@ -99,6 +101,7 @@ export class AuthService {
     const confirmed =await this.alertService.show('Logout', 'Are you sure you want to logout?');
     if(!confirmed) return;
     this.loadingService.show('Closing session ...');
+    this.socketService.disconnect();
     await this.storageService.remove('sessionExpiry');
     await this.storageService.remove('contract');
     await this.storageService.remove('wallet');
