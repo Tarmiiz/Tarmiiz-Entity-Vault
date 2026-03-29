@@ -81,7 +81,7 @@ export const routes: Routes = [
           },
           {
             path: '',
-            redirectTo: '/authorized/services/list',
+            redirectTo: '/authorized/assets/list',
             pathMatch: 'full',
           },
         ]
@@ -103,7 +103,7 @@ export const routes: Routes = [
           },
           {
             path: '',
-            redirectTo: '/authorized/services/list',
+            redirectTo: '/authorized/subscriptions/list',
             pathMatch: 'full',
           },
         ]
@@ -120,7 +120,7 @@ export const routes: Routes = [
           },
           {
             path: '',
-            redirectTo: '/authorized/services/list',
+            redirectTo: '/authorized/transactions/list',
             pathMatch: 'full',
           },
         ]
@@ -137,7 +137,7 @@ export const routes: Routes = [
           },
           {
             path: '',
-            redirectTo: '/authorized/services/list',
+            redirectTo: '/authorized/dashboard',
             pathMatch: 'full',
           },
         ]
@@ -159,7 +159,7 @@ export const routes: Routes = [
           },
           {
             path: '',
-            redirectTo: '/authorized/services/list',
+            redirectTo: '/authorized/users/list',
             pathMatch: 'full',
           },
         ]

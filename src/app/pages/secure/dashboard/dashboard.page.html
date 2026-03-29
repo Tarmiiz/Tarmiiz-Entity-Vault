@@ -1,13 +1,9 @@
-<app-header title="Home"></app-header>
+<app-header title="Home" [userInfo]="userInfo"></app-header>
 <app-modal-transaction-info></app-modal-transaction-info>
 
-<div class="flex-grow container mx-auto p-1 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow container mx-auto p-1 bg-gray-300 pt-4 overflow-y-auto">
 
   @if(userInfo) {
-
-    <div>
-      <ion-title class="page-title text-gray-900">Welcome: {{ userInfo.name }}</ion-title>
-    </div>
 
     <!-- non-admin view -->
     @if(userInfo.role != 1) {
@@ -51,7 +47,7 @@
       </div>
 
       <!-- Stats Cards (6 cards) -->
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 badges">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 badges">
         @for (stat of stats(); track stat.title) {
           <div class="p-4 rounded-xl shadow-md border border-gray-200 flex flex-col cursor-pointer hover:bg-indigo-50 transition-colors" [class]="stat.loading ? 'bg-blue-50 animate-pulse' : 'bg-white'" (click)="goTo(stat.path)">
             <p class="text-xs font-medium text-gray-500 mb-1">{{ stat.title }}</p>
@@ -78,7 +74,7 @@
           }
         </div>
         <!-- Pending KYC card -->
-        <div class="p-4 rounded-xl shadow-md border border-orange-200 flex flex-col cursor-pointer hover:bg-orange-50 transition-colors" [class]="summaryLoading() ? 'bg-orange-50 animate-pulse' : 'bg-white'">
+        <!-- <div class="p-4 rounded-xl shadow-md border border-orange-200 flex flex-col cursor-pointer hover:bg-orange-50 transition-colors" [class]="summaryLoading() ? 'bg-orange-50 animate-pulse' : 'bg-white'">
           <p class="text-xs font-medium text-gray-500 mb-1">Pending KYC</p>
           @if (summaryLoading()) {
             <svg class="animate-spin h-5 w-5 text-orange-500 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -88,7 +84,7 @@
           } @else {
             <p class="text-xl font-bold" [class]="pendingKyc() > 0 ? 'text-orange-600' : 'text-gray-800'">{{ pendingKyc() | number }}</p>
           }
-        </div>
+        </div> -->
       </div>
 
       <!-- Chart Row 1: Activity chart (full width) — bars for tokens, lines for value -->

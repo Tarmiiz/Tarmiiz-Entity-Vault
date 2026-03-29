@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import {
   IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar,
   IonContent, IonList, IonItem, IonLabel,
-  IonButtons, IonMenuButton, MenuController, IonAccordionGroup, IonAccordion, IonFooter } from '@ionic/angular/standalone';
+  IonButtons, IonMenuButton, MenuController } from '@ionic/angular/standalone';
 import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
@@ -17,8 +17,6 @@ import { LoadingComponent } from "../../components/alerts/loading/loading.compon
   styleUrls: ['./authorized-layout.component.scss'],
   standalone: true,
   imports: [
-    IonFooter,
-    // IonAccordion, IonAccordionGroup,
     IonRouterOutlet,
     IonSplitPane,
     IonMenu,

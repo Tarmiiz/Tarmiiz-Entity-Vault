@@ -1,7 +1,6 @@
 import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonTitle } from '@ionic/angular/standalone'
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 import { SocketService } from '../../../shared/services/socket.service';
@@ -67,7 +66,6 @@ interface DashboardSummary {
   styleUrls: ['./dashboard.page.scss'],
   standalone: true,
   imports: [
-    IonTitle,
     CommonModule, FormsModule,
     HeaderComponent,
     ModalTransactionInfoComponent,
