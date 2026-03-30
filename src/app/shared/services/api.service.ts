@@ -245,6 +245,16 @@ export class ApiService {
     return data ?? null;
   }
 
+  async vaultUpdateUserRole(id: string, role: number) {
+    const data = await this.vaultPut('/users/' + id + '/role', { role });
+    return data ?? null;
+  }
+
+  async vaultUpdateUserPassword(id: string, username: string, password: string) {
+    const data = await this.vaultPut('/users/' + id + '/password', { username, password });
+    return data ?? null;
+  }
+
   async vaultUpdateUserCredentials(id: string, body: Record<string, any>) {
     const data = await this.vaultPut('/users/' + id + '/credentials', body);
     return data ?? null;
@@ -296,6 +306,11 @@ export class ApiService {
   async vaultGetEntityInfo() {
     const data = await this.vaultGet('/entity/info');
     return data?.entity ?? null;
+  }
+
+  async vaultUpdateEntityMetadata(metadata: Record<string, any>) {
+    const data = await this.vaultPut('/entity/metadata', { metadata });
+    return data ?? null;
   }
 
   async vaultGetExternalContract(name: string) {

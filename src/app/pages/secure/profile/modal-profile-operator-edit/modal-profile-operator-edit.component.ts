@@ -16,6 +16,8 @@ export class ModalProfileOperatorEditComponent {
   private fb: FormBuilder = inject(FormBuilder);
 
   title = signal<string | null>(null);
+  confirming = signal(false);
+  pendingAddress = signal<string>('');
 
   editForm = this.fb.group({
     address: ['', Validators.required],
@@ -29,23 +31,28 @@ export class ModalProfileOperatorEditComponent {
       }
       const service = this.editProfileOperatorEditService.operator();
       if (service) {
-        this.editForm.patchValue({
-          address: service
-        });
+        this.editForm.patchValue({ address: service });
+        this.confirming.set(false);
       } else {
         this.editForm.reset();
+        this.confirming.set(false);
       }
     });
   }
 
   onSave(): void {
     if (this.editForm.valid) {
-      const formValue = this.editForm.getRawValue();
-      const operatorData: EditOperatorData = {
-        address: formValue.address ?? ''
-      };
-      this.editProfileOperatorEditService.confirm(operatorData);
+      this.pendingAddress.set(this.editForm.getRawValue().address ?? '');
+      this.confirming.set(true);
     }
+  }
+
+  onConfirm(): void {
+    this.editProfileOperatorEditService.confirm({ address: this.pendingAddress() });
+  }
+
+  onBack(): void {
+    this.confirming.set(false);
   }
 
   onCancel(): void {

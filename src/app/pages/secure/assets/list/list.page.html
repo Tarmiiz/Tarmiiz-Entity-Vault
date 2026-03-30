@@ -72,10 +72,12 @@
           </svg>
           Export PDF
         </button>
-        <button (click)="openAddModal()"
-          class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
-          + Add Asset
-        </button>
+        @if(userInfo && userInfo.role !== 3) {
+          <button (click)="openAddModal()"
+            class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+            + Add Asset
+          </button>
+        }
       </div>
     </div>
   </div>

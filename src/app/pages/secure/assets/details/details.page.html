@@ -261,14 +261,16 @@
                 </div>
               </div>
               
-              <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                <!-- <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
-                  Edit
-                </button> -->
-                <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                  Change State
-                </button>
-              </div>
+              @if(userInfo && userInfo.role !== 3) {
+                <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <!-- <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
+                    Edit
+                  </button> -->
+                  <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                    Change State
+                  </button>
+                </div>
+              }
     
             </div>
           </div>

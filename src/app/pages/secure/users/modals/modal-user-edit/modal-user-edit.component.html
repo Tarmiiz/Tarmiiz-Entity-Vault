@@ -22,10 +22,10 @@
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-          <button type="button" (click)="onCancel()" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             Cancel
           </button>
-          <button type="submit" [disabled]="!editForm.valid" class="px-4 py-2 bg-[#202a3b] text-white border border-transparent rounded-md shadow-sm hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="submit" [disabled]="!editForm.valid" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Save Changes
           </button>
         </div>

@@ -18,7 +18,8 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { ModalServiceAddService } from '../modals/modal-service-add/modal-service-add.service';
 import { ModalServiceAddComponent } from '../modals/modal-service-add/modal-service-add.component';
 
-import { Service } from '../../../../shared/models/data.model';
+import { Service, User } from '../../../../shared/models/data.model';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -40,7 +41,9 @@ export class ListPage implements OnInit {
   private alertService = inject(AlertService);
   private serviceAddService = inject(ModalServiceAddService);
   private utils = inject(UtilsService);
+  private authService = inject(AuthService);
 
+  userInfo!: User;
   loadingServices: boolean = false;
   showAllServices = signal(false);
 
@@ -67,6 +70,7 @@ export class ListPage implements OnInit {
   ngOnInit() {}
 
   async ionViewWillEnter() {
+    this.userInfo = this.authService.userInfo;
     this.services.set([]);
     this.servicesCount = 0;
   }

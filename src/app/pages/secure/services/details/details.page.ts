@@ -14,7 +14,8 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Asset, AssetTransaction, Service, Subscription } from '../../../../shared/models/data.model';
+import { Asset, AssetTransaction, Service, Subscription, User } from '../../../../shared/models/data.model';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
 import { ModalServiceStateComponent } from "../modals/modal-service-state/modal-service-state.component";
 import { ModalServiceEditService } from '../modals/modal-service-edit/modal-service-edit.service';
@@ -50,7 +51,9 @@ export class DetailsPage implements OnInit {
   private serviceStateService = inject(ModalServiceStateService);
   trxInfoService = inject(ModalTransactionInfoService);
   private socketService = inject(SocketService);
+  private authService = inject(AuthService);
 
+  userInfo!: User;
   private _socketSub: RxSubscription | null = null;
 
   activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs'>('overview');
@@ -158,6 +161,7 @@ export class DetailsPage implements OnInit {
   async ngOnInit() {}
   
   async ionViewWillEnter() {
+    this.userInfo = this.authService.userInfo;
     this.activeTab.set('overview');
     await this.reload();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload());

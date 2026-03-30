@@ -18,6 +18,8 @@ import { ModalUserEditComponent } from "../modals/modal-user-edit/modal-user-edi
 
 import { ModalUserEditCredentialsComponent } from "../modals/modal-user-edit-credentials/modal-user-edit-credentials.component";
 import { ModalUserCredentialsService } from '../modals/modal-user-edit-credentials/modal-user-edit-credentials.service';
+import { ModalUserRoleComponent } from '../modals/modal-user-role/modal-user-role.component';
+import { ModalUserRoleService } from '../modals/modal-user-role/modal-user-role.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 
 
@@ -32,7 +34,8 @@ import { SocketService } from '../../../../shared/services/socket.service';
     RouterLink,
     ModalUserEditComponent,
     ModalUserStateComponent,
-    ModalUserEditCredentialsComponent
+    ModalUserEditCredentialsComponent,
+    ModalUserRoleComponent,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -44,11 +47,18 @@ export class DetailsPage implements OnInit {
   private userEditService = inject(ModalUserEditService);
   private userStateService = inject(ModalUserStateService);
   private userCredentialsService = inject(ModalUserCredentialsService);
+  private userRoleService = inject(ModalUserRoleService);
   private socketService = inject(SocketService);
 
   private _socketSub: Subscription | null = null;
+  private _isBusy = false;
 
-  activeTab = signal<'info' | 'logs'>('info');
+  private readonly stateNames: Record<number, string> = {
+    1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated'
+  };
+  private readonly roleNames: Record<number, string> = {
+    1: 'Admin', 2: 'Executive', 3: 'Viewer'
+  };
 
   loadingData: boolean = false;
 
@@ -65,7 +75,9 @@ export class DetailsPage implements OnInit {
       this.userId.set(Number(userId));
     }
     await this.getUserDetails();
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.getUserDetails());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => {
+      if (!this._isBusy) this.getUserDetails();
+    });
   }
 
   ionViewWillLeave() {
@@ -73,15 +85,14 @@ export class DetailsPage implements OnInit {
     this._socketSub = null;
   }
 
-  setTab(tab: 'info' | 'logs') {
-    this.activeTab.set(tab);
-    if (tab === 'info') this.getUserDetails();
-  }   
-
   async getUserDetails() {
     this.loadingService.show('Loading data...');
     const data = await this.apiService.vaultGetUser(String(this.userId()));
-    if (data) this.user.set(data);
+    if (data) this.user.set({
+      ...data,
+      stateName: this.stateNames[data.state] ?? String(data.state ?? ''),
+      roleName:  this.roleNames[data.role]   ?? String(data.role  ?? ''),
+    });
     this.loadingService.hide();
   }
 
@@ -101,82 +112,110 @@ export class DetailsPage implements OnInit {
     const currentUser = this.user();
     if (!currentUser) return;
 
+    const result = await this.userEditService.show(currentUser);
+    if (!result) return;
+
+    this._isBusy = true;
     try {
-      const result = await this.userEditService.show(currentUser);
-      // console.log('result', result);
-      if (result) {
-        this.loadingService.show('Updating user...');
-        await this.apiService.vaultUpdateUserData(String(currentUser.userId), {
-          name: result.name,
-          email: result.email,
-          username: this.user()!.username,
-          did: result.did,
-        });
-        await this.getUserDetails();
-      }
+      this.loadingService.show('Updating user...');
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await this.apiService.vaultUpdateUserData(String(currentUser.userId), {
+        name: result.name,
+        email: result.email,
+        username: currentUser.username,
+        did: result.did,
+      });
     } catch (error) {
       console.error('Failed to update user', error);
       this.alertService.show('Update Failed', 'There was an error updating the user details.');
     } finally {
+      this._isBusy = false;
       this.loadingService.hide();
+      await this.getUserDetails();
     }
   }
 
-  async openChangeStateModal(){
+  async openChangeStateModal() {
     const currentUser = this.user();
     if (!currentUser) return;
 
     const newState = await this.userStateService.show(currentUser.state);
-    if (newState !== null && newState !== currentUser.state) {
-        this.loadingService.show('Changing state...');
-        try {
-            await this.apiService.vaultUpdateUserState(String(currentUser.userId), newState);
-            await this.getUserDetails();
-        } catch (error) {
-            console.error('Failed to change state', error);
-        } finally {
-            this.loadingService.hide();
-        }
-    }    
+    if (newState === null || newState === currentUser.state) return;
+
+    this._isBusy = true;
+    try {
+      this.loadingService.show('Changing state...');
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await this.apiService.vaultUpdateUserState(String(currentUser.userId), newState);
+    } catch (error) {
+      console.error('Failed to change state', error);
+    } finally {
+      this._isBusy = false;
+      this.loadingService.hide();
+      await this.getUserDetails();
+    }
+  }
+
+  async openChangeRoleModal() {
+    const currentUser = this.user();
+    if (!currentUser) return;
+
+    const newRole = await this.userRoleService.show(currentUser.role);
+    if (newRole === null || newRole === currentUser.role) return;
+
+    this._isBusy = true;
+    try {
+      this.loadingService.show('Changing role...');
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await this.apiService.vaultUpdateUserRole(String(currentUser.userId), newRole);
+    } catch (error) {
+      console.error('Failed to change role', error);
+    } finally {
+      this._isBusy = false;
+      this.loadingService.hide();
+      await this.getUserDetails();
+    }
   }
 
   async openCredentialsModal() {
     const currentUser = this.user();
     if (!currentUser) return;
 
+    const result = await this.userCredentialsService.show(currentUser);
+    if (!result) return;
 
+    this._isBusy = true;
     try {
-      const result = await this.userCredentialsService.show(currentUser);
-      if (result) {
-        
-        // update credentials
-        this.loadingService.show('Updating user credentials...');
-        const data = {
-          username: result.username,
-          password: result.password
-        };
-        await this.apiService.vaultUpdateUserCredentials(String(currentUser.userId), {
-          username: data.username,
-          password: data.password,
-        });
+      this.loadingService.show('Updating user credentials...');
+      await new Promise(resolve => setTimeout(resolve, 0));
 
-        // update data
+      if (result.username === null) {
+        // password-only change
+        const pwResult = await this.apiService.vaultUpdateUserPassword(String(currentUser.userId), currentUser.username, result.password);
+        if (!pwResult) throw new Error('Failed to update password');
+      } else {
+        // full credentials change (username + password)
+        const credResult = await this.apiService.vaultUpdateUserCredentials(String(currentUser.userId), {
+          username: result.username,
+          password: result.password,
+        });
+        if (!credResult) throw new Error('Failed to update credentials');
+
         this.loadingService.show('Updating user data...');
         await this.apiService.vaultUpdateUserData(String(currentUser.userId), {
           name: currentUser.name,
           email: currentUser.email,
-          username: data.username,
+          username: result.username,
           did: currentUser.did,
         });
-
-        this.loadingService.show('Reloading user info...');
-        await this.getUserDetails();
       }
     } catch (error) {
       console.error('Failed to update user', error);
-      this.alertService.show('Update Failed', 'There was an error updating the user details.');
+      this.alertService.show('Update Failed', 'There was an error updating the user credentials.');
     } finally {
+      this._isBusy = false;
       this.loadingService.hide();
+      await this.getUserDetails();
     }
   }
 }

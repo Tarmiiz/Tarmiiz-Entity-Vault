@@ -1,0 +1,88 @@
+<app-header title="My Profile"></app-header>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto max-w-2xl space-y-6">
+
+    @if(userInfo) {
+
+      <!-- Profile info card -->
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 bg-[#202a3b]">
+          <h2 class="text-lg font-semibold text-white">Profile Details</h2>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700">
+          <div class="border-t pt-4">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Name</p>
+            <p class="text-base font-semibold text-gray-800 mt-1">{{ userInfo.name }}</p>
+          </div>
+          <div class="border-t pt-4">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Username</p>
+            <p class="text-base font-mono text-gray-800 mt-1">{{ userInfo.username }}</p>
+          </div>
+          <div class="border-t pt-4">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</p>
+            <p class="text-base text-gray-800 mt-1">{{ userInfo.email }}</p>
+          </div>
+          <div class="border-t pt-4">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Role</p>
+            <p class="text-base text-gray-800 mt-1">{{ userInfo.roleName }}</p>
+          </div>
+          <div class="border-t pt-4">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</p>
+            <span class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(userInfo.state)">
+              {{ userInfo.stateName }}
+            </span>
+          </div>
+          <div class="border-t pt-4">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Member Since</p>
+            <p class="text-base text-gray-800 mt-1">{{ userInfo.createdAt * 1000 | date:'dd/MM/yyyy' }}</p>
+          </div>
+        </div>
+        <div class="px-6 pb-6 flex justify-end">
+          <button (click)="toggleCredentialsForm()"
+            class="px-5 py-2 rounded-lg bg-[#202a3b] text-white text-sm font-semibold hover:bg-[#2c3648] transition-colors">
+            {{ showCredentialsForm() ? 'Cancel' : 'Change Credentials' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Change credentials form -->
+      @if(showCredentialsForm()) {
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 border-b bg-gray-50">
+            <h3 class="text-base font-semibold text-gray-700">Update Login Credentials</h3>
+          </div>
+          <form [formGroup]="credentialsForm" (ngSubmit)="saveCredentials()" class="p-6 space-y-4">
+            <div>
+              <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+              <input type="text" autocomplete="username" id="username" formControlName="username"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+            </div>
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700">New Password</label>
+              <input type="password" autocomplete="new-password" id="password" formControlName="password"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+            </div>
+            <div>
+              <label for="password2" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+              <input type="password" autocomplete="new-password" id="password2" formControlName="password2"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+            </div>
+            <div class="flex justify-end pt-2">
+              <button type="submit" [disabled]="!credentialsForm.valid"
+                class="px-6 py-2 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+    } @else {
+      <div class="flex items-center justify-center py-20">
+        <p class="text-gray-400">Loading profile...</p>
+      </div>
+    }
+
+  </div>
+</main>

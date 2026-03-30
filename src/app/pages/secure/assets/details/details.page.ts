@@ -15,7 +15,8 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
-import { Asset, AssetHolder, AssetPrice, AssetTransaction } from '../../../../shared/models/data.model';
+import { Asset, AssetHolder, AssetPrice, AssetTransaction, User } from '../../../../shared/models/data.model';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { ModalAssetStateService } from '../modals/modal-asset-state/modal-asset-state.service';
 import { ModalAssetStateComponent } from "../modals/modal-asset-state/modal-asset-state.component";
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
@@ -46,7 +47,9 @@ export class DetailsPage implements OnInit {
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
+  private authService = inject(AuthService);
 
+  userInfo!: User;
   private _socketSub: Subscription | null = null;
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
@@ -167,6 +170,7 @@ export class DetailsPage implements OnInit {
   async ngOnInit() {}
 
   async ionViewWillEnter() {
+    this.userInfo = this.authService.userInfo;
     this.activeTab.set('overview');
     await this.reload();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload());

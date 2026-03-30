@@ -38,18 +38,11 @@ export class AuthorizedLayoutComponent {
   private socketService = inject(SocketService);
   private menuController = inject(MenuController);
 
-  entityInfo!: Entity;
-  userInfo!: User;
+  get entityInfo(): Entity { return this.authService.entityInfo; }
+  get userInfo(): User { return this.authService.userInfo; }
 
   constructor() {
     this.socketService.connect();
-  }
-
-  ionViewWillEnter() {
-    this.entityInfo = this.authService.entityInfo;
-    this.userInfo = this.authService.userInfo;
-    // console.log('regulatorInfo', this.regulatorInfo);
-    // console.log('userInfo', this.userInfo);
   }
   
   async closeMenuOnMobile() {

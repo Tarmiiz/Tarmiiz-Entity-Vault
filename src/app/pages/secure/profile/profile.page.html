@@ -71,8 +71,15 @@
               </div>
               <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">Regulator</p>
-                <p class="font-mono text-sm">{{ v.regulator }}</p>
+                <p class="text-base">{{ v.regulatorName }}</p>
+                <p class="font-mono text-xs text-gray-400">{{ v.regulator }}</p>
               </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t flex justify-end">
+              <button (click)="openEditMetadataModal()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                Edit Details
+              </button>
             </div>
 
           </div>
@@ -94,7 +101,7 @@
               </div>
             </div>
             <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-              <button (click)="openChangeApiModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+              <button (click)="openChangeApiModal()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
                 Change API
               </button>
             </div>
@@ -115,3 +122,4 @@
 </div>
 
 <app-modal-profile-operator-edit></app-modal-profile-operator-edit>
+<app-modal-profile-metadata-edit></app-modal-profile-metadata-edit>

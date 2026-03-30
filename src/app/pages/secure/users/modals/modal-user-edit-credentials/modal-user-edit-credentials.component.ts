@@ -17,42 +17,55 @@ export class ModalUserEditCredentialsComponent {
   editUserCredentialsService = inject(ModalUserCredentialsService);
   private fb: FormBuilder = inject(FormBuilder);
 
+  mode: 'password' | 'full' = 'password';
+
   editForm = this.fb.group({
-    username: ['', Validators.required],
+    username: [''],
     password: ['', Validators.required],
     password2: ['', Validators.required],
   });
-
 
   constructor() {
     effect(() => {
       const user = this.editUserCredentialsService.user();
       if (user) {
-        this.editForm.patchValue({
-          username: user.username,
-          password: '',
-          password2: '',
-        });
+        this.mode = 'password';
+        this.editForm.patchValue({ username: '', password: '', password2: '' });
       } else {
         this.editForm.reset();
       }
     });
   }
 
+  setMode(mode: 'password' | 'full'): void {
+    this.mode = mode;
+    this.editForm.patchValue({ username: '', password: '', password2: '' });
+  }
+
   onSave(): void {
     if (this.editForm.value.password !== this.editForm.value.password2) {
       this.alertService.show('Passwords Mismatch', 'Passwords do not match.');
       return;
-    }  
-
-    if (this.editForm.valid) {
-      const formValue = this.editForm.getRawValue();
-      const userData: CredentialsUserData = {
-        username: formValue.username ?? '',
-        password: formValue.password ?? '',
-      };
-      this.editUserCredentialsService.confirm(userData);
     }
+
+    if (this.mode === 'full') {
+      const currentUsername = this.editUserCredentialsService.user()?.username ?? '';
+      const newUsername = this.editForm.value.username ?? '';
+      if (!newUsername) {
+        this.alertService.show('Invalid Username', 'Please enter a new username.');
+        return;
+      }
+      if (newUsername === currentUsername) {
+        this.alertService.show('Invalid Username', 'The new username must be different from the current one.');
+        return;
+      }
+    }
+
+    const formValue = this.editForm.getRawValue();
+    this.editUserCredentialsService.confirm({
+      username: this.mode === 'full' ? (formValue.username ?? '') : null,
+      password: formValue.password ?? '',
+    });
   }
 
   onCancel(): void {

@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { User } from '../../../../../shared/models/data.model';
 
 export interface CredentialsUserData {
-  username: string;
+  username: string | null; // null = password-only change
   password: string;
 }
 

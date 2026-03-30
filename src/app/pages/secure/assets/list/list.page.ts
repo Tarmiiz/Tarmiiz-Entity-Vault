@@ -18,7 +18,8 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { ModalAssetAddService } from '../modals/modal-asset-add/modal-asset-add.service';
 import { ModalAssetAddComponent } from '../modals/modal-asset-add/modal-asset-add.component';
 
-import { Asset } from '../../../../shared/models/data.model';
+import { Asset, User } from '../../../../shared/models/data.model';
+import { AuthService } from '../../../../shared/services/auth.service';
 
 @Component({
   selector: 'app-list',
@@ -39,7 +40,9 @@ export class ListPage implements OnInit {
   private alertService = inject(AlertService);
   private assetAddService = inject(ModalAssetAddService);
   private utils = inject(UtilsService);
+  private authService = inject(AuthService);
 
+  userInfo!: User;
   loadingData: boolean = false;
 
   assetsCount = 0;
@@ -93,6 +96,7 @@ export class ListPage implements OnInit {
   ngOnInit() {}
 
   async ionViewWillEnter() {
+    this.userInfo = this.authService.userInfo;
     this.assets.set([]);
     this.assetsCount = 0;
   }

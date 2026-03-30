@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './shared/guards/auth.guard';
+import { RoleGuard } from './shared/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -40,12 +41,14 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./pages/secure/dashboard/dashboard.page').then(m => m.DashboardPage),
-        canActivate: [AuthGuard]
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [1, 2, 3] }
       },
       // services
       {
         path: 'services',
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2, 3] },
         children: [
           {
             path: 'list',
@@ -67,7 +70,8 @@ export const routes: Routes = [
       // assets
       {
         path: 'assets',
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2, 3] },
         children: [
           {
             path: 'list',
@@ -89,7 +93,8 @@ export const routes: Routes = [
       // subscriptions
       {
         path: 'subscriptions',
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2, 3] },
         children: [
           {
             path: 'list',
@@ -111,7 +116,8 @@ export const routes: Routes = [
       // transactions
       {
         path: 'transactions',
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2, 3] },
         children: [
           {
             path: 'list',
@@ -133,7 +139,8 @@ export const routes: Routes = [
           {
             path: 'profile',
             loadComponent: () => import('./pages/secure/profile/profile.page').then( m => m.ProfilePage),
-            canActivate: [AuthGuard]
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] }
           },
           {
             path: '',
@@ -142,7 +149,7 @@ export const routes: Routes = [
           },
         ]
       },
-      // users (admin only)
+      // users
       {
         path: 'users',
         canActivate: [AuthGuard],
@@ -150,12 +157,20 @@ export const routes: Routes = [
           {
             path: 'list',
             loadComponent: () => import('./pages/secure/users/list/list.page').then( m => m.ListPage),
-            canActivate: [AuthGuard]
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] }
           },
           {
             path: 'details/:id',
             loadComponent: () => import('./pages/secure/users/details/details.page').then( m => m.DetailsPage),
-            canActivate: [AuthGuard]
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] }
+          },
+          {
+            path: 'my-profile',
+            loadComponent: () => import('./pages/secure/users/my-profile/my-profile.page').then( m => m.MyProfilePage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [2, 3] }
           },
           {
             path: '',

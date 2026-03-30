@@ -12,6 +12,8 @@ import { Entity } from '../../../shared/models/data.model';
 
 import { ModalProfileOperatorEditService } from './modal-profile-operator-edit/modal-profile-operator-edit.service';
 import { ModalProfileOperatorEditComponent } from "./modal-profile-operator-edit/modal-profile-operator-edit.component";
+import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit/modal-profile-metadata-edit.service';
+import { ModalProfileMetadataEditComponent } from './modal-profile-metadata-edit/modal-profile-metadata-edit.component';
 
 @Component({
   selector: 'app-profile',
@@ -22,6 +24,7 @@ import { ModalProfileOperatorEditComponent } from "./modal-profile-operator-edit
     CommonModule, FormsModule,
     HeaderComponent,
     ModalProfileOperatorEditComponent,
+    ModalProfileMetadataEditComponent,
   ]
 })
 export class ProfilePage implements OnInit {
@@ -29,6 +32,7 @@ export class ProfilePage implements OnInit {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private profileOperatorEditService = inject(ModalProfileOperatorEditService);
+  private metadataEditService = inject(ModalProfileMetadataEditService);
 
   activeTab = signal<'info' | 'api'>('info');
   info = signal<Entity | undefined>(undefined);
@@ -62,24 +66,46 @@ export class ProfilePage implements OnInit {
     this.loadingService.hide();
   }
 
+  async openEditMetadataModal() {
+    const current = this.info();
+    if (!current) return;
+
+    const result = await this.metadataEditService.show({
+      email:   current.email   ?? '',
+      mobile:  current.mobile  ?? '',
+      website: current.website ?? '',
+    });
+    if (!result) return;
+
+    try {
+      this.loadingService.show('Updating details...');
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await this.apiService.vaultUpdateEntityMetadata(result);
+      await this.getInfo();
+    } catch (error) {
+      console.error('Failed to update details', error);
+      this.alertService.show('Update Failed', 'There was an error updating the entity details.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
   async openChangeApiModal() {
     const currentApi = this.api();
-    if (!currentApi) return;
 
     const result = await this.profileOperatorEditService.show('API', currentApi);
-    if (result) {
-      this.loadingService.show('Updating api...');
-      try {
-        if (result.address !== currentApi) {
-          await this.apiService.vaultSetExternalContract('api', result.address);
-          await this.getApi();
-        }
-      } catch (error) {
-        console.error('Failed to update api', error);
-        this.alertService.show('Update Failed', 'There was an error updating the api details.');
-      } finally {
-        this.loadingService.hide();
-      }
+    if (!result) return;
+
+    try {
+      this.loadingService.show('Updating API address...');
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await this.apiService.vaultSetExternalContract('api', result.address);
+      await this.getApi();
+    } catch (error) {
+      console.error('Failed to update api', error);
+      this.alertService.show('Update Failed', 'There was an error updating the API address.');
+    } finally {
+      this.loadingService.hide();
     }
   }
 
