@@ -4,7 +4,6 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalServiceAddService, AddServiceData } from './modal-service-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
-import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-modal-service-add',
@@ -53,7 +52,9 @@ export class ModalServiceAddComponent {
   }
 
   async loadRegulators() {
-    const data = await this.apiService.vaultGetRegulatorsByCountry(String(environment.countryCode), 0, 100);
+    const entityInfo = await this.apiService.vaultGetEntityInfo();
+    const countryCode = String((entityInfo as any)?.country_code ?? '');
+    const data = await this.apiService.vaultGetRegulatorsByCountry(countryCode, 0, 100);
     if (data) {
       this.regulators.set(data.filter((r: any) => r.state).map((r: any) => ({ address: r.address, name: r.name, symbol: r.symbol })));
     }

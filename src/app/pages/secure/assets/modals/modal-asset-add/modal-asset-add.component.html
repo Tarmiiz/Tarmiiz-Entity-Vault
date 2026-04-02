@@ -5,7 +5,7 @@
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Add New Asset</h3>
       </div>
       <form [formGroup]="addForm" (ngSubmit)="onSave()">
-        <div class="p-6 space-y-4">
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
             <input type="text" placeholder="Owner Address *" formControlName="owner"
               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
@@ -26,6 +26,30 @@
             <input type="text" placeholder="Symbol *" formControlName="symbol"
               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
+          <div>
+            <select formControlName="tokenType"
+              class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+              <option value="" disabled selected hidden style="color:gray">Token Type *</option>
+              @for (tt of tokenTypes(); track tt.id) {
+                <option value="{{ tt.id }}">{{ tt.name }}</option>
+              }
+            </select>
+          </div>
+          @if (isBasicToken) {
+            <div>
+              <select formControlName="assetType"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="" disabled selected hidden style="color:gray">Asset Type *</option>
+                @for (at of assetTypes(); track at.id) {
+                  <option [value]="at.id">{{ at.name }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <input type="number" placeholder="Initial Supply *" formControlName="initialSupply" min="0"
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+            </div>
+          }
           <div>
             <textarea placeholder="Description *" formControlName="description" rows="3"
               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none"></textarea>
@@ -57,14 +81,19 @@
               }
             </select>
           </div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="creditSettlement" formControlName="creditSettlement"
+              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <label for="creditSettlement" class="text-sm text-gray-700">Credit Settlement</label>
+          </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()"
-            class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             Cancel
           </button>
           <button type="submit" [disabled]="addForm.invalid"
-            class="px-4 py-2 bg-[#202a3b] text-white border border-transparent rounded-md shadow-sm hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Add Asset
           </button>
         </div>

@@ -67,18 +67,25 @@ export class DetailsPage implements OnInit {
   filterHoldingAsset = signal<string>('');
   filterHoldingBalanceOp = signal<'' | 'gt' | 'lt'>('');
   filterHoldingBalanceAmt = signal<number | null>(null);
+  filterHoldingCurrency = signal<string>('');
 
   uniqueHoldingAssets = computed(() =>
     [...new Map(this.holdings().map(h => [h.asset, `${h.assetName} (${h.assetSymbol})`])).entries()]
       .sort((a, b) => a[1].localeCompare(b[1]))
   );
 
+  uniqueHoldingCurrencies = computed(() =>
+    [...new Set(this.holdings().map(h => h.currencyCode).filter(Boolean))].sort()
+  );
+
   filteredHoldings = computed(() => {
     const asset = this.filterHoldingAsset();
+    const currency = this.filterHoldingCurrency();
     const op = this.filterHoldingBalanceOp();
     const amt = this.filterHoldingBalanceAmt();
     return this.holdings().filter(h => {
       if (asset && h.asset !== asset) return false;
+      if (currency && h.currencyCode !== currency) return false;
       if (op && amt !== null) {
         if (op === 'gt' && h.balance <= amt) return false;
         if (op === 'lt' && h.balance >= amt) return false;
@@ -102,24 +109,36 @@ export class DetailsPage implements OnInit {
   filterAsset = signal<string>('');
   filterTokensOp = signal<'' | 'gt' | 'lt'>('');
   filterTokensAmt = signal<number | null>(null);
+  filterStartDate = signal<string>('');
+  filterEndDate = signal<string>('');
+  filterCurrency = signal<string>('');
 
   uniqueAssets = computed(() =>
     [...new Map(this.transactions().map(t => [t.asset, `${t.assetName} (${t.assetSymbol})`])).entries()]
       .sort((a, b) => a[1].localeCompare(b[1]))
   );
 
+  uniqueCurrencies = computed(() =>
+    [...new Set(this.transactions().map(t => t.currencyCode).filter(Boolean))].sort()
+  );
+
   filteredTransactions = computed(() => {
     const type = this.filterType();
     const asset = this.filterAsset();
+    const currency = this.filterCurrency();
     const op = this.filterTokensOp();
     const amt = this.filterTokensAmt();
+    const startTs = this.filterStartDate() ? Math.floor(new Date(this.filterStartDate()).getTime() / 1000) : 0;
+    const endTs   = this.filterEndDate()   ? Math.floor(new Date(this.filterEndDate()).getTime()   / 1000) + 86399 : Infinity;
     return this.transactions().filter(t => {
       if (type && t.trxType !== type) return false;
       if (asset && t.asset !== asset) return false;
+      if (currency && t.currencyCode !== currency) return false;
       if (op && amt !== null) {
         if (op === 'gt' && t.tokens <= amt) return false;
         if (op === 'lt' && t.tokens >= amt) return false;
       }
+      if (t.time < startTs || t.time > endTs) return false;
       return true;
     });
   });
@@ -137,6 +156,25 @@ export class DetailsPage implements OnInit {
   totalPLPct = computed(() => {
     const cost = this.totalCostBasis();
     return cost > 0 ? (this.totalPL() / cost) * 100 : null;
+  });
+
+  holdingsByCurrency = computed(() => {
+    const map = new Map<string, { marketValue: number; cost: number }>();
+    for (const h of this.holdings()) {
+      const cc = h.currencyCode || '—';
+      const existing = map.get(cc) ?? { marketValue: 0, cost: 0 };
+      map.set(cc, {
+        marketValue: existing.marketValue + h.balance * h.currentBid,
+        cost: existing.cost + h.cost,
+      });
+    }
+    return [...map.entries()].map(([cc, v]) => ({
+      currencyCode: cc,
+      marketValue: v.marketValue,
+      cost: v.cost,
+      pl: v.marketValue - v.cost,
+      plPct: v.cost > 0 ? (v.marketValue - v.cost) / v.cost * 100 : null,
+    }));
   });
   subscribeCount = computed(() => this.transactions().filter(t => t.trxType === 'Subscribe').length);
   redeemCount = computed(() => this.transactions().filter(t => t.trxType === 'Redeem').length);
@@ -170,16 +208,16 @@ export class DetailsPage implements OnInit {
   private async reload() {
     await this.getSubscriptionDetails();
     await Promise.all([
-      this.getHoldings(1, 50),
-      this.getTransactions(1, 50),
+      this.getHoldings(1, 500),
+      this.getTransactions(1, 500),
     ]);
   }
 
   setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getSubscriptionDetails();
-    if (tab === 'holdings') this.getHoldings(1, 50);
-    if (tab === 'trxs') this.getTransactions(1, 50);
+    if (tab === 'holdings') this.getHoldings(1, 500);
+    if (tab === 'trxs') this.getTransactions(1, 500);
   }
 
   private readonly stateNames: Record<number, string> = {
@@ -211,6 +249,7 @@ export class DetailsPage implements OnInit {
       asset: raw.asset ?? '',
       assetName: raw.asset_name ?? '',
       assetSymbol: raw.asset_symbol ?? '',
+      currencyCode: raw.currency_code ?? '',
       balance: raw.balance ?? 0,
       cost: raw.cost ?? 0,
       currentBid: raw.current_bid ?? 0,
@@ -232,6 +271,7 @@ export class DetailsPage implements OnInit {
       asset: raw.asset ?? '',
       assetName: raw.asset_name ?? raw.asset ?? '',
       assetSymbol: raw.asset_symbol ?? '',
+      currencyCode: raw.currency_code ?? '',
       from: raw.from_addr ?? '',
       to: raw.to_addr ?? '',
       subscription: raw.subscription ?? '',
@@ -330,6 +370,7 @@ export class DetailsPage implements OnInit {
 
   clearHoldingFilters() {
     this.filterHoldingAsset.set('');
+    this.filterHoldingCurrency.set('');
     this.filterHoldingBalanceOp.set('');
     this.filterHoldingBalanceAmt.set(null);
     this.holdingPage.set(0);
@@ -338,8 +379,11 @@ export class DetailsPage implements OnInit {
   clearFilters() {
     this.filterType.set('');
     this.filterAsset.set('');
+    this.filterCurrency.set('');
     this.filterTokensOp.set('');
     this.filterTokensAmt.set(null);
+    this.filterStartDate.set('');
+    this.filterEndDate.set('');
     this.trxPage.set(0);
   }
 
@@ -368,6 +412,8 @@ export class DetailsPage implements OnInit {
       `Type: ${this.filterType() || 'None'}`,
       `Asset: ${assetLabel}`,
       `Tokens: ${tokensLabel}`,
+      `From: ${this.filterStartDate() || 'None'}`,
+      `To: ${this.filterEndDate() || 'None'}`,
     ];
     doc.setFontSize(8);
     doc.setTextColor(100);
@@ -410,6 +456,7 @@ export class DetailsPage implements OnInit {
       headStyles: { fillColor: [74, 85, 104] },
       columnStyles: {
         0: { cellWidth: 10 },
+        4: { halign: 'center' },
         5: { halign: 'right' },
         6: { halign: 'right' },
         7: { halign: 'right' },
@@ -419,15 +466,17 @@ export class DetailsPage implements OnInit {
         { content: 'Time' },
         { content: 'Type' },
         { content: 'Asset' },
-        { content: 'Tokens', styles: { halign: 'right' } },
-        { content: 'Price', styles: { halign: 'right' } },
-        { content: 'Total', styles: { halign: 'right' } },
+        { content: 'Currency', styles: { halign: 'center' } },
+        { content: 'Tokens',   styles: { halign: 'right'  } },
+        { content: 'Price',    styles: { halign: 'right'  } },
+        { content: 'Total',    styles: { halign: 'right'  } },
       ]],
       body: txs.map((t, i) => [
         i + 1,
         this.utils.formatDate(t.time),
         t.trxType,
         `${t.assetName} (${t.assetSymbol})`,
+        t.currencyCode,
         this.utils.formatTokens(t.tokens),
         this.utils.formatPrice(t.price),
         this.utils.formatPrice(t.totalPrice),
@@ -474,14 +523,15 @@ export class DetailsPage implements OnInit {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
       columnStyles: {
-        1: { halign: 'right' },
         2: { halign: 'right' },
         3: { halign: 'right' },
         4: { halign: 'right' },
         5: { halign: 'right' },
+        6: { halign: 'right' },
       },
       head: [[
         { content: 'Asset' },
+        { content: 'Currency' },
         { content: 'Balance', styles: { halign: 'right' } },
         { content: 'Cost', styles: { halign: 'right' } },
         { content: 'Value', styles: { halign: 'right' } },
@@ -494,6 +544,7 @@ export class DetailsPage implements OnInit {
         const plPct = h.cost > 0 ? (pl / h.cost * 100).toFixed(2) + '%' : '—';
         return [
           `${h.assetName}${h.assetSymbol ? ` (${h.assetSymbol})` : ''}`,
+          h.currencyCode,
           this.utils.formatTokens(h.balance),
           this.utils.formatPrice(h.cost),
           this.utils.formatPrice(value),
@@ -513,6 +564,7 @@ export class DetailsPage implements OnInit {
       const pl = value - h.cost;
       return {
         'Asset': `${h.assetName}${h.assetSymbol ? ` (${h.assetSymbol})` : ''}`,
+        'Currency': h.currencyCode,
         'Balance': h.balance,
         'Cost': h.cost,
         'Value': value,
@@ -535,6 +587,7 @@ export class DetailsPage implements OnInit {
       'Type': t.trxType,
       'Asset': `${t.assetName} (${t.assetSymbol})`,
       'Tokens': t.tokens,
+      'Currency': t.currencyCode,
       'Price': t.price,
       'Total': t.totalPrice,
     }));

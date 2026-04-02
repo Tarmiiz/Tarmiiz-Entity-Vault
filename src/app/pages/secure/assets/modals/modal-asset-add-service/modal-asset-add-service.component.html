@@ -1,0 +1,64 @@
+@if (addServiceModal.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          Add Service
+        </h3>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <!-- Address input + lookup -->
+        <div>
+          <label for="serviceAddress" class="block text-sm font-medium text-gray-700">Service Address</label>
+          <div class="mt-1 flex gap-2">
+            <input
+              id="serviceAddress"
+              type="text"
+              [formControl]="$any(addressForm.get('address'))"
+              placeholder="0x..."
+              class="flex-1 block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 font-mono text-black"
+            />
+            <button
+              type="button"
+              (click)="onLookup()"
+              [disabled]="!addressForm.get('address')?.value || isLooking()"
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {{ isLooking() ? 'Looking up...' : 'Look Up' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Error message -->
+        @if (lookupError()) {
+          <p class="text-sm text-red-600">{{ lookupError() }}</p>
+        }
+
+        <!-- Service preview -->
+        @if (lookedUpService(); as svc) {
+          <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-2">
+            <p class="text-xs font-semibold uppercase tracking-widest text-gray-400">Service Found</p>
+            <p class="text-base font-semibold text-gray-800">{{ svc.name }}</p>
+            <p class="text-xs font-mono text-gray-500 break-all">{{ svc.address }}</p>
+            <span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ svc.stateName }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
+        <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="onConfirm()"
+          [disabled]="!lookedUpService()"
+          class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Add Service
+        </button>
+      </div>
+    </div>
+  </div>
+}

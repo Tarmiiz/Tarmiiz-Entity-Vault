@@ -41,12 +41,14 @@
           Clear
         </button>
       </div>
+      @if (userInfo && userInfo.role === 1) {
       <div class="flex ml-auto items-end">
         <button (click)="openAddModal()"
           class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
           + Add User
         </button>
       </div>
+      }
     </div>
   </div>
 

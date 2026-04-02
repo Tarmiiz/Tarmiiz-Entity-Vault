@@ -20,7 +20,6 @@ import { ModalServiceAddComponent } from '../modals/modal-service-add/modal-serv
 
 import { Service, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
-import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-list',
@@ -150,11 +149,12 @@ export class ListPage implements OnInit {
 
     this.loadingService.show('Creating service...');
     try {
+      const entityInfo = await this.apiService.vaultGetEntityInfo();
       const result = await this.apiService.vaultCreateService({
         name: data.name,
         metadata: JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile }),
         verification_level: data.verificationLevel,
-        country_code: environment.countryCode,
+        country_code: (entityInfo as any)?.country_code ?? 0,
         regulator: data.regulator,
       });
       if (result) {

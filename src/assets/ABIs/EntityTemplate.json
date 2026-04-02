@@ -105,7 +105,13 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "account",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "destination",
           "type": "address"
         },
         {
@@ -135,6 +141,25 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "metadata",
+          "type": "string"
+        }
+      ],
+      "name": "MetadataChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": false,
           "internalType": "address",
           "name": "account",
@@ -150,55 +175,17 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "regulator",
+          "name": "caller",
           "type": "address"
         },
         {
           "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
+          "internalType": "uint8",
+          "name": "newState",
+          "type": "uint8"
         }
       ],
-      "name": "RegulatorEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "ServiceEvent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "action",
-          "type": "string"
-        }
-      ],
-      "name": "SubscriberEvent",
+      "name": "StateChanged",
       "type": "event"
     },
     {
@@ -1214,6 +1201,30 @@
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "userId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "newCommitment",
+          "type": "bytes32"
+        }
+      ],
+      "name": "resetUserPasswordById",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "string",
           "name": "roleName",
           "type": "string"
@@ -1239,6 +1250,19 @@
         }
       ],
       "name": "setAPIAddress",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "metadata",
+          "type": "string"
+        }
+      ],
+      "name": "setMetadata",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

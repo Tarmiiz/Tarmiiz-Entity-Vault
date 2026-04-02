@@ -9,7 +9,6 @@ import { AlertComponent } from "../../../../shared/components/alerts/alert/alert
 import { CryptoService } from '../../../../shared/services/crypto.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 
-import { environment } from '../../../../../environments/environment';
 import { LoadingComponent } from "src/app/shared/components/alerts/loading/loading.component";
 
 
@@ -36,8 +35,6 @@ export class LoginPage implements OnInit {
 
   formLogin!: FormGroup;
   isLoading = false;
-
-  contractAddress = environment.entityAddress;
 
   constructor(
   ) { 

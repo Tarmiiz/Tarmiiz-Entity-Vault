@@ -46,6 +46,26 @@
           }
         </select>
       </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Currency</label>
+        <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <option value="">All</option>
+          @for (c of uniqueCurrencies(); track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">From</label>
+        <input type="date" [ngModel]="filterStartDate()" (ngModelChange)="filterStartDate.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">To</label>
+        <input type="date" [ngModel]="filterEndDate()" (ngModelChange)="filterEndDate.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+      </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
@@ -81,18 +101,19 @@
             <th scope="col" class="px-4 py-2">Asset</th>
             <th scope="col" class="px-4 py-2">Service</th>
             <th scope="col" class="px-4 py-2">Subscription</th>
-            <th scope="col" class="px-4 py-2">Tokens</th>
-            <th scope="col" class="px-4 py-2">Price</th>
-            <th scope="col" class="px-4 py-2">Total</th>
+            <th scope="col" class="px-4 py-2 text-center">Currency</th>
+            <th scope="col" class="px-4 py-2 text-right">Tokens</th>
+            <th scope="col" class="px-4 py-2 text-right">Price</th>
+            <th scope="col" class="px-4 py-2 text-right">Total</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filteredTransactions().length === 0) {
             <tr>
-              <td colspan="8" class="px-4 py-8 text-center text-gray-400">No transactions found</td>
+              <td colspan="9" class="px-4 py-8 text-center text-gray-400">No transactions found</td>
             </tr>
           }
-          @for (t of filteredTransactions(); track t.trxId) {
+          @for (t of pagedTransactions(); track t.trxId) {
             <tr class="border-b hover:bg-gray-100 transition-colors cursor-pointer" (click)="viewDetails(t)">
               <td class="px-4 py-2">{{ utils.formatDate(t.time) }}</td>
               <td class="px-4 py-2">
@@ -101,6 +122,7 @@
               <td class="px-4 py-2">{{ t.assetName }} ({{ t.assetSymbol }})</td>
               <td class="px-4 py-2">{{ t.serviceName }}</td>
               <td class="px-4 py-2">{{ t.subscription }}</td>
+              <td class="px-4 py-2 text-center">{{ t.currencyCode }}</td>
               <td class="px-4 py-2 text-right">{{ t.tokens | number:'1.0-0' }}</td>
               <td class="px-4 py-2 text-right">{{ t.price | number:'1.6-6' }}</td>
               <td class="px-4 py-2 text-right">{{ t.totalPrice | number:'1.6-6' }}</td>
@@ -110,8 +132,23 @@
       </table>
     </div>
 
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ filteredTransactions().length }} of Total {{ totalCount() }} Transactions</p>
+    <div class="flex items-center justify-between px-4 py-2 border-t">
+      <p class="text-xs font-medium text-gray-800">Showing {{ pagedTransactions().length }} of {{ filteredTransactions().length }} Transactions ({{ totalCount() }} total)</p>
+      @if (totalPages() > 1) {
+        <div class="flex items-center gap-3 text-xs text-gray-600">
+          <span>Page {{ page() + 1 }} of {{ totalPages() }}</span>
+          <div class="flex gap-2">
+            <button (click)="page.set(page() - 1)" [disabled]="page() === 0"
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              Prev
+            </button>
+            <button (click)="page.set(page() + 1)" [disabled]="page() >= totalPages() - 1"
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              Next
+            </button>
+          </div>
+        </div>
+      }
     </div>
   </div>
 

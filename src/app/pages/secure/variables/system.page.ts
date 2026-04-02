@@ -20,11 +20,9 @@ import { Country, GlobalVariable } from '../../../shared/models/data.model';
     HeaderComponent,
   ]
 })
-
 export class SystemPage implements OnInit {
-    private loadingService = inject(LoadingService);
-    private apiService = inject(ApiService);
-
+  private loadingService = inject(LoadingService);
+  private apiService = inject(ApiService);
 
   activeTab = signal<'countries' | 'variables'>('countries');
 
@@ -37,13 +35,10 @@ export class SystemPage implements OnInit {
   loadingData = false;
   emptyRows: Array<any> = Array(5).fill(null);
 
-  variables: GlobalVariable[] = [];
+  constructor() {}
 
-  constructor() { }
+  async ngOnInit() {}
 
-  async ngOnInit() {
-  }
-  
   async ionViewDidEnter() {
     this.loadingData = true;
     this.loadingService.show('Loading data...');
@@ -54,46 +49,41 @@ export class SystemPage implements OnInit {
 
   async getCountries() {
     const data = await this.apiService.vaultGetCountries();
-    this.countries.set(data?.map((c: any) => ({
-      countryCode: c.country_code,
-      nameShort: c.name_short,
-      nameFull: c.name_full,
-      currencyCode: c.currency_code,
-      currencyName: c.currency_name,
-    })) ?? []);
+    this.countries.set(data?.map((c: any) => new Country(
+      c.country_id, c.name_short, c.name_full, c.alpha2_code, c.alpha3_code,
+      c.currency_name, c.currency_code, c.calling_code, c.country_code
+    )) ?? []);
   }
 
   async getVariables() {
     const data = await this.apiService.vaultGetGlobalVariables();
-    this.globalVariables.set(data?.map((v: any) => ({
-      variableId: v.variable_id,
-      category: v.category,
-      name: v.name,
-    })) ?? []);
+    this.globalVariables.set(data?.map((v: any) => new GlobalVariable(
+      v.category, v.variable_id, v.name, v.visible
+    )) ?? []);
   }
 
   filteredCountries = computed(() => {
     const term = this.countriesSearchTerm().toLowerCase();
     if (!term) return this.countries();
-    return this.countries().filter(c => c.nameShort.toLowerCase().includes(term) || c.nameFull.toLowerCase().includes(term));
+    return this.countries().filter(c =>
+      c.nameShort.toLowerCase().includes(term) ||
+      c.nameFull.toLowerCase().includes(term) ||
+      c.alpha2Code.toLowerCase().includes(term) ||
+      c.alpha3Code.toLowerCase().includes(term) ||
+      c.currencyName.toLowerCase().includes(term) ||
+      c.currencyCode.toLowerCase().includes(term)
+    );
   });
 
   filteredVariables = computed(() => {
     const term = this.variablesSearchTerm().toLowerCase();
     if (!term) return this.globalVariables();
-    return this.globalVariables().filter(v => v.category.toLowerCase().includes(term));
+    return this.globalVariables().filter(v =>
+      v.category.toLowerCase().includes(term) || v.name.toLowerCase().includes(term)
+    );
   });
-  
+
   setTab(tab: 'countries' | 'variables') {
     this.activeTab.set(tab);
   }
-
-  onCountriesSearch(event: Event) {
-    this.countriesSearchTerm.set((event.target as HTMLInputElement).value);
-  }
-
-  onVariablesSearch(event: Event) {
-    this.variablesSearchTerm.set((event.target as HTMLInputElement).value);
-  }
-
 }

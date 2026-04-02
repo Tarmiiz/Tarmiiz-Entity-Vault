@@ -8,7 +8,6 @@ import { SocketService } from './socket.service';
 import { LoadingService } from '../components/alerts/loading/loading.service';
 import { AlertService } from '../components/alerts/alert/alert.service';
 import { Entity, User } from '../models/data.model';
-import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -24,8 +23,6 @@ export class AuthService {
 
   entityInfo!: Entity;
   userInfo!: User;
-
-  entityContractAddress = environment.entityAddress;
 
   private _ready: Promise<void>;
 
@@ -43,10 +40,12 @@ export class AuthService {
 
       this.loadingService.show('Connecting to Contract ...');
 
-      // set entity contract address
-      this.ethersService.entityContractAddress = this.entityContractAddress;
+      // Fetch blockchain config from API
+      const config = await this.apiService.vaultGetConfig();
+      if (!config) return { success: false, error: 'Failed to fetch configuration' };
 
-      // Initialize the ethers service
+      // Configure ethers with blockchain addresses and initialize
+      this.ethersService.configure(config.rpcNode, config.entityContract, config.globalVariablesProxyContract);
       await this.ethersService.init();
 
       // 1 hour in milliseconds
@@ -69,7 +68,9 @@ export class AuthService {
 
           // set storage variables
           await this.storageService.set('sessionExpiry', expiryTime.toString());
-          this.storageService.set('contract', this.entityContractAddress);
+          this.storageService.set('rpcNode', config.rpcNode);
+          this.storageService.set('variablesProxyContract', config.globalVariablesProxyContract);
+          this.storageService.set('contract', config.entityContract);
           this.storageService.set('user', JSON.stringify(this.userInfo));
           this.storageService.set('wallet', key);
 
@@ -103,6 +104,8 @@ export class AuthService {
     this.loadingService.show('Closing session ...');
     this.socketService.disconnect();
     await this.storageService.remove('sessionExpiry');
+    await this.storageService.remove('rpcNode');
+    await this.storageService.remove('variablesProxyContract');
     await this.storageService.remove('contract');
     await this.storageService.remove('wallet');
     await this.storageService.remove('user');

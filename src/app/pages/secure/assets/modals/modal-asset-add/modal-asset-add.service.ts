@@ -10,6 +10,10 @@ export interface AddAssetData {
   service: string;
   currency: number;
   regulator: string;
+  tokenType: number;
+  assetType?: number;
+  initialSupply?: number;
+  creditSettlement: boolean;
 }
 
 @Injectable({

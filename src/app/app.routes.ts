@@ -179,6 +179,24 @@ export const routes: Routes = [
           },
         ]
       },
+      // variables
+      {
+        path: 'variables',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [1, 2, 3] },
+        children: [
+          {
+            path: 'system',
+            loadComponent: () => import('./pages/secure/variables/system.page').then(m => m.SystemPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/variables/system',
+            pathMatch: 'full',
+          },
+        ]
+      },
       {
         path: '',
         redirectTo: '/authorized/dashboard',

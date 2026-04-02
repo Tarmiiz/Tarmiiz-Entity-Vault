@@ -115,6 +115,9 @@ export class DetailsPage implements OnInit {
   filterTrxType = signal<string>('');
   filterTrxAsset = signal<string>('');
   filterTrxSubscription = signal<string>('');
+  filterTrxStartDate = signal<string>('');
+  filterTrxEndDate = signal<string>('');
+  filterTrxCurrency = signal<string>('');
 
   uniqueTrxAssets = computed(() =>
     [...new Map(this.transactions().map(t => [t.asset, `${t.assetName} (${t.assetSymbol})`])).entries()]
@@ -125,14 +128,23 @@ export class DetailsPage implements OnInit {
     [...new Set(this.transactions().filter(t => t.subscription).map(t => t.subscription))].sort()
   );
 
+  uniqueTrxCurrencies = computed(() =>
+    [...new Set(this.transactions().map(t => t.currencyCode).filter(Boolean))].sort()
+  );
+
   filteredTrxs = computed(() => {
     const type = this.filterTrxType();
     const asset = this.filterTrxAsset();
     const sub = this.filterTrxSubscription();
+    const currency = this.filterTrxCurrency();
+    const startTs = this.filterTrxStartDate() ? Math.floor(new Date(this.filterTrxStartDate()).getTime() / 1000) : 0;
+    const endTs   = this.filterTrxEndDate()   ? Math.floor(new Date(this.filterTrxEndDate()).getTime()   / 1000) + 86399 : Infinity;
     return this.transactions().filter(t =>
       (!type || t.trxType === type) &&
       (!asset || t.asset === asset) &&
-      (!sub || t.subscription === sub)
+      (!sub || t.subscription === sub) &&
+      (!currency || t.currencyCode === currency) &&
+      t.time >= startTs && t.time <= endTs
     );
   });
 
@@ -177,7 +189,7 @@ export class DetailsPage implements OnInit {
     await Promise.all([
       this.getAssets(),
       this.getSubscriptions(),
-      this.getTransactions(1, 50),
+      this.getTransactions(1, 500),
     ]);
   }
 
@@ -186,7 +198,7 @@ export class DetailsPage implements OnInit {
     if (tab === 'info') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
-    if (tab === 'trxs') this.getTransactions(1, 50);
+    if (tab === 'trxs') this.getTransactions(1, 500);
   }   
 
   private readonly stateNames: Record<number, string> = {
@@ -284,6 +296,7 @@ export class DetailsPage implements OnInit {
       asset: raw.asset ?? '',
       assetName: raw.asset_name ?? raw.asset ?? '',
       assetSymbol: raw.asset_symbol ?? '',
+      currencyCode: raw.currency_code ?? '',
       from: raw.from_addr ?? '',
       to: raw.to_addr ?? '',
       subscription: raw.subscription ?? '',
@@ -549,6 +562,9 @@ export class DetailsPage implements OnInit {
     this.filterTrxType.set('');
     this.filterTrxAsset.set('');
     this.filterTrxSubscription.set('');
+    this.filterTrxCurrency.set('');
+    this.filterTrxStartDate.set('');
+    this.filterTrxEndDate.set('');
     this.trxPage.set(0);
   }
 
@@ -560,6 +576,7 @@ export class DetailsPage implements OnInit {
       'Asset': `${t.assetName} (${t.assetSymbol})`,
       'Subscription': t.subscription,
       'Tokens': t.tokens,
+      'Currency': t.currencyCode,
       'Price': t.price,
       'Total': t.totalPrice,
     }));
@@ -592,6 +609,8 @@ export class DetailsPage implements OnInit {
       `Type: ${this.filterTrxType() || 'None'}`,
       `Asset: ${assetLabel}`,
       `Subscription: ${this.filterTrxSubscription() || 'None'}`,
+      `From: ${this.filterTrxStartDate() || 'None'}`,
+      `To: ${this.filterTrxEndDate() || 'None'}`,
     ];
     doc.setFontSize(8);
     doc.setTextColor(100);
@@ -628,16 +647,17 @@ export class DetailsPage implements OnInit {
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      columnStyles: { 0: { cellWidth: 10 }, 5: { halign: 'right' }, 6: { halign: 'right' }, 7: { halign: 'right' } },
+      columnStyles: { 0: { cellWidth: 10 }, 5: { halign: 'center' }, 6: { halign: 'right' }, 7: { halign: 'right' }, 8: { halign: 'right' } },
       head: [[
         { content: '#' },
         { content: 'Time' },
         { content: 'Type' },
         { content: 'Asset' },
         { content: 'Subscription' },
-        { content: 'Tokens', styles: { halign: 'right' } },
-        { content: 'Price',  styles: { halign: 'right' } },
-        { content: 'Total',  styles: { halign: 'right' } },
+        { content: 'Currency', styles: { halign: 'center' } },
+        { content: 'Tokens',   styles: { halign: 'right'  } },
+        { content: 'Price',    styles: { halign: 'right'  } },
+        { content: 'Total',    styles: { halign: 'right'  } },
       ]],
       body: txs.map((t, i) => [
         i + 1,
@@ -645,6 +665,7 @@ export class DetailsPage implements OnInit {
         t.trxType,
         `${t.assetName} (${t.assetSymbol})`,
         t.subscription,
+        t.currencyCode,
         this.utils.formatTokens(t.tokens),
         this.utils.formatPrice(t.price),
         this.utils.formatPrice(t.totalPrice),

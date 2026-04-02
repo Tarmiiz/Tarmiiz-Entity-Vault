@@ -21,6 +21,22 @@ export class ApiService {
 
   globalSalt = environment.globalSalt;
 
+  // ─── Vault — Config (unauthenticated) ────────────────────────────────────────
+
+  async vaultGetConfig(): Promise<{ rpcNode: string; entityContract: string; globalVariablesProxyContract: string } | null> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/vault/config',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data?.type !== 'success') return null;
+      return response.data.config ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   // ─── Vault helpers ────────────────────────────────────────────────────────────
 
   private async vaultGet(path: string, params?: Record<string, any>) {
@@ -51,6 +67,23 @@ export class ApiService {
           'Authorization': 'Bearer ' + this.vaultToken,
         },
         data: body,
+      });
+      if (response.data?.type !== 'success') return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  private async vaultDelete(path: string) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'DELETE',
+        url: this.apiURL + '/vault' + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
       });
       if (response.data?.type !== 'success') return null;
       return response.data;
@@ -113,11 +146,13 @@ export class ApiService {
 
   // ─── Vault — Transactions ─────────────────────────────────────────────────────
 
-  async vaultGetTransactions(filters?: { asset?: string; service?: string; subscription?: string }, start = 0, offset = 50) {
+  async vaultGetTransactions(filters?: { asset?: string; service?: string; subscription?: string; startTime?: number; endTime?: number }, start = 0, offset = 50) {
     const params: Record<string, any> = { start, offset };
     if (filters?.asset) params['asset'] = filters.asset;
     if (filters?.service) params['service'] = filters.service;
     if (filters?.subscription) params['subscription'] = filters.subscription;
+    if (filters?.startTime) params['startTime'] = filters.startTime;
+    if (filters?.endTime) params['endTime'] = filters.endTime;
     const data = await this.vaultGet('/transactions', params);
     return data ? { count: data.count, transactions: data.transactions } : null;
   }
@@ -174,13 +209,35 @@ export class ApiService {
 
   // ─── Vault — Asset writes ─────────────────────────────────────────────────────
 
-  async vaultCreateAsset(body: Record<string, any>) {
-    const data = await this.vaultPost('/assets', body);
-    return data ?? null;
+  async vaultCreateAsset(body: Record<string, any>): Promise<{ type: string; error?: string; address?: string } | null> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/vault/assets',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        data: body,
+      });
+      return response.data ?? null;
+    } catch {
+      return null;
+    }
   }
 
   async vaultUpdateAssetState(address: string, state: number) {
     const data = await this.vaultPut('/assets/' + address + '/state', { state });
+    return data ?? null;
+  }
+
+  async vaultAddAssetService(assetAddress: string, serviceAddress: string) {
+    const data = await this.vaultPost('/assets/' + assetAddress + '/services', { service: serviceAddress });
+    return data ?? null;
+  }
+
+  async vaultRemoveAssetService(assetAddress: string, serviceAddress: string) {
+    const data = await this.vaultDelete('/assets/' + assetAddress + '/services/' + serviceAddress);
     return data ?? null;
   }
 
@@ -278,7 +335,7 @@ export class ApiService {
   }
 
   async vaultGetGlobalVariablesByCategory(category: string) {
-    const data = await this.vaultGet('/global-variables', { category });
+    const data = await this.vaultGet('/global-variables/' + encodeURIComponent(category));
     return data?.variables ?? null;
   }
 
@@ -320,6 +377,42 @@ export class ApiService {
 
   async vaultSetExternalContract(name: string, address: string) {
     const data = await this.vaultPut('/entity/external-contract/' + name, { address });
+    return data ?? null;
+  }
+
+  // ─── Vault — Global controller ────────────────────────────────────────────────
+
+  async vaultGetGlobalCountries(search?: string) {
+    const params: Record<string, any> = {};
+    if (search) params['search'] = search;
+    const data = await this.vaultGet('/global/countries', params);
+    return data ? { count: data.count as number, countries: data.countries as any[] } : null;
+  }
+
+  async vaultGetGlobalCountry(id: number) {
+    const data = await this.vaultGet('/global/countries/' + id);
+    return data?.country ?? null;
+  }
+
+  async vaultGetGlobalCategories() {
+    const data = await this.vaultGet('/global/categories');
+    return data ? { count: data.count as number, categories: data.categories as string[] } : null;
+  }
+
+  async vaultGetGlobalVariablesList(category: string, visibleOnly?: boolean) {
+    const params: Record<string, any> = { category };
+    if (visibleOnly !== undefined) params['visible'] = String(visibleOnly);
+    const data = await this.vaultGet('/global/variables', params);
+    return data ? { count: data.count as number, variables: data.variables as any[] } : null;
+  }
+
+  async vaultGetGlobalSyncStatus() {
+    const data = await this.vaultGet('/global/sync/status');
+    return data ?? null;
+  }
+
+  async vaultTriggerGlobalSync() {
+    const data = await this.vaultPost('/global/sync/trigger', {});
     return data ?? null;
   }
 

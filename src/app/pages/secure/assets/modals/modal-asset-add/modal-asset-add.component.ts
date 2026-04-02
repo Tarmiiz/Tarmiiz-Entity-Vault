@@ -21,6 +21,8 @@ export class ModalAssetAddComponent {
   services = signal<{ address: string; name: string }[]>([]);
   countries = signal<{ countryCode: number; nameShort: string; currencyCode: string }[]>([]);
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
+  tokenTypes = signal<{ id: number; name: string }[]>([]);
+  assetTypes = signal<{ id: number; name: string }[]>([]);
 
   addForm = this.fb.group({
     owner: ['', Validators.required],
@@ -28,15 +30,40 @@ export class ModalAssetAddComponent {
     manager: ['', Validators.required],
     name: ['', Validators.required],
     symbol: ['', Validators.required],
+    tokenType: ['', Validators.required],
+    assetType: [''],
+    initialSupply: [''],
     description: ['', Validators.required],
     service: ['', Validators.required],
     currency: ['', Validators.required],
     regulator: ['', Validators.required],
+    creditSettlement: [false],
   });
+
+  get isBasicToken(): boolean {
+    return this.addForm.get('tokenType')?.value === '1';
+  }
 
   constructor() {
     this.loadServices();
     this.loadCountriesAndRegulators();
+    this.loadTokenAndAssetTypes();
+
+    this.addForm.get('tokenType')!.valueChanges.subscribe(val => {
+      const assetTypeCtrl = this.addForm.get('assetType')!;
+      const initialSupplyCtrl = this.addForm.get('initialSupply')!;
+      if (val === '1') {
+        assetTypeCtrl.setValidators(Validators.required);
+        initialSupplyCtrl.setValidators([Validators.required, Validators.min(0)]);
+      } else {
+        assetTypeCtrl.clearValidators();
+        initialSupplyCtrl.clearValidators();
+        assetTypeCtrl.setValue('');
+        initialSupplyCtrl.setValue('');
+      }
+      assetTypeCtrl.updateValueAndValidity();
+      initialSupplyCtrl.updateValueAndValidity();
+    });
   }
 
   async loadServices() {
@@ -70,10 +97,24 @@ export class ModalAssetAddComponent {
     }
   }
 
+  async loadTokenAndAssetTypes() {
+    const [tokenTypesRaw, assetTypesRaw] = await Promise.all([
+      this.apiService.vaultGetGlobalVariablesByCategory('Asset Token Type'),
+      this.apiService.vaultGetGlobalVariablesByCategory('Asset Type'),
+    ]);
+    if (tokenTypesRaw) {
+      this.tokenTypes.set(tokenTypesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
+    }
+    if (assetTypesRaw) {
+      this.assetTypes.set(assetTypesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
+    }
+  }
+
   onSave(): void {
     if (this.addForm.invalid) return;
 
     const formValue = this.addForm.getRawValue();
+    const tokenType = Number(formValue.tokenType);
     const data: AddAssetData = {
       owner: formValue.owner ?? '',
       issuer: formValue.issuer ?? '',
@@ -84,6 +125,12 @@ export class ModalAssetAddComponent {
       service: formValue.service ?? '',
       currency: Number(formValue.currency),
       regulator: formValue.regulator ?? '',
+      tokenType,
+      creditSettlement: formValue.creditSettlement === true,
+      ...(tokenType === 1 ? {
+        assetType: Number(formValue.assetType),
+        initialSupply: Number(formValue.initialSupply),
+      } : {}),
     };
     this.addAssetService.confirm(data);
   }

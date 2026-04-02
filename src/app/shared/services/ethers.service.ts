@@ -28,16 +28,22 @@ export class EthersService {
 
   globalSalt = environment.globalSalt;
 
-  rpcProvider = new ethers.JsonRpcProvider(environment.rpcNode);
+  rpcProvider: any;
   signer: any;
 
-  variablesProxyContractAddress = environment.globalVariablesProxyContract;
+  variablesProxyContractAddress = '';
   variablesProxyContract: any;
 
-  entityContractAddress = environment.entityAddress;
+  entityContractAddress = '';
   entityContract: any;
 
   constructor() {}
+
+  configure(rpcNode: string, entityContract: string, variablesProxyContract: string) {
+    this.rpcProvider = new ethers.JsonRpcProvider(rpcNode);
+    this.entityContractAddress = entityContract;
+    this.variablesProxyContractAddress = variablesProxyContract;
+  }
 
   async init() {
     await this.createWallet();
@@ -64,11 +70,15 @@ export class EthersService {
 
   async setWallet() {
     try {
+      const rpcNode = await this.storageService.get('rpcNode');
+      if (rpcNode) { this.rpcProvider = new ethers.JsonRpcProvider(rpcNode); }
+      const variablesProxy = await this.storageService.get('variablesProxyContract');
+      if (variablesProxy) { this.variablesProxyContractAddress = variablesProxy; }
+      const contract = await this.storageService.get('contract');
+      if (contract) { this.entityContractAddress = contract; }
       const wallet = await this.storageService.get('wallet');
       this.key = JSON.parse(wallet!);
       this.signer = new ethers.Wallet(this.key.privateKey, this.rpcProvider);
-      const contract = await this.storageService.get('contract');
-      if(contract) { this.entityContractAddress = contract; }
     }
     catch (error: any) {
     }
@@ -214,8 +224,11 @@ export class EthersService {
           roleName = roleVariable?.name || 'Unknown';
         }
 
-        const userData = await this.cryptoService.aesDecrypt(environment.aesKEY, result[1]);
-        const { username, name, email, did } = JSON.parse(userData);
+        let username = '', name = '', email = '', did = '';
+        try {
+          const userData = await this.cryptoService.aesDecrypt(environment.aesKEY, result[1]);
+          ({ username, name, email, did } = JSON.parse(userData));
+        } catch (_) {}
 
         const user: User = {
           username,

@@ -246,6 +246,7 @@ export class SubscriptionHolding {
     public asset: string,
     public assetName: string,
     public assetSymbol: string,
+    public currencyCode: string,
     public balance: number,
     public cost: number,
     public currentBid: number
@@ -278,6 +279,7 @@ export class Asset {
     public regulatorName: string,
     public regulatorSymbol: string,
     public suspended: boolean,
+    public creditSettlement: boolean,
     public state: number,
     public stateName: string
   ) {}
@@ -304,6 +306,7 @@ export class AssetTransaction {
     public asset: string,
     public assetName: string,
     public assetSymbol: string,
+    public currencyCode: string,
     public from: string,
     public to: string,
     public subscription: string,

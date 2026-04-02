@@ -9,7 +9,7 @@
     <ion-buttons slot="end" class="pt-2">
       @if (userInfo) {
         <ion-label class="text-indigo-300">
-          Welcome, {{ userInfo.name }}
+          Welcome, {{ userInfo.name || userInfo.username || 'Admin' }}
         </ion-label>
       }
       <ion-button [routerLink]="profileRoute" routerDirection="root" fill="clear" class="p-0">

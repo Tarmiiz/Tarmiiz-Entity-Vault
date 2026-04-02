@@ -7,6 +7,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 
 import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 
 import { User } from '../../../../shared/models/data.model';
 
@@ -28,8 +29,10 @@ export class ListPage implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
+  private authService = inject(AuthService);
   private userAddService = inject(ModalUserAddService);
 
+  userInfo!: User;
   loadingData: boolean = false;
 
   usersCount = 0
@@ -52,6 +55,7 @@ export class ListPage implements OnInit {
 
 
   async ionViewWillEnter() {
+    this.userInfo = this.authService.userInfo;
     this.users.set([]);
     this.usersCount = 0;
   }  
@@ -100,7 +104,9 @@ export class ListPage implements OnInit {
       if (state && String(u.state) !== state) return false;
       if (term  && !u.name.toLowerCase().includes(term) &&
                    !u.username.toLowerCase().includes(term) &&
-                   !u.email.toLowerCase().includes(term)) return false;
+                   !(u.email?.toLowerCase().includes(term)) &&
+                   !(u.stateName?.toLowerCase().includes(term)) &&
+                   !(u.roleName?.toLowerCase().includes(term))) return false;
       return true;
     });
   });
@@ -113,7 +119,6 @@ export class ListPage implements OnInit {
 
   async openAddModal() {
     const result = await this.userAddService.show();
-    console.log('result', result);
     if (result) {
       this.loadingService.show('Adding new user...');
       try {

@@ -215,7 +215,7 @@
               
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                  <button (click)="openChangeStateModal()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
                     Change State
                   </button>
                 </div>
@@ -324,11 +324,11 @@
                     <span>Page {{ assetPage() + 1 }} of {{ totalAssetPages() }}</span>
                     <div class="flex gap-2">
                       <button (click)="assetPage.set(assetPage() - 1)" [disabled]="assetPage() === 0"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Prev
                       </button>
                       <button (click)="assetPage.set(assetPage() + 1)" [disabled]="assetPage() >= totalAssetPages() - 1"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Next
                       </button>
                     </div>
@@ -434,11 +434,11 @@
                     <span>Page {{ subPage() + 1 }} of {{ totalSubPages() }}</span>
                     <div class="flex gap-2">
                       <button (click)="subPage.set(subPage() - 1)" [disabled]="subPage() === 0"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Prev
                       </button>
                       <button (click)="subPage.set(subPage() + 1)" [disabled]="subPage() >= totalSubPages() - 1"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Next
                       </button>
                     </div>
@@ -485,6 +485,26 @@
                   }
                 </select>
               </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-gray-500">Currency</label>
+                <select [ngModel]="filterTrxCurrency()" (ngModelChange)="filterTrxCurrency.set($event); trxPage.set(0)"
+                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                  <option value="">All</option>
+                  @for (c of uniqueTrxCurrencies(); track c) {
+                    <option [value]="c">{{ c }}</option>
+                  }
+                </select>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-gray-500">From</label>
+                <input type="date" [ngModel]="filterTrxStartDate()" (ngModelChange)="filterTrxStartDate.set($event); trxPage.set(0)"
+                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-gray-500">To</label>
+                <input type="date" [ngModel]="filterTrxEndDate()" (ngModelChange)="filterTrxEndDate.set($event); trxPage.set(0)"
+                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              </div>
               <div class="flex flex-col justify-end">
                 <button (click)="clearTrxFilters()"
                   class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
@@ -518,15 +538,16 @@
                     <th scope="col" class="px-6 py-2">Date</th>
                     <th scope="col" class="px-6 py-2">Type</th>
                     <th scope="col" class="px-6 py-2">Asset</th>
+                    <th scope="col" class="px-6 py-2 text-center">Currency</th>
                     <th scope="col" class="px-6 py-2 text-right">Tokens</th>
-                    <th scope="col" class="px-6 py-2 text-right">Nav</th>
+                    <th scope="col" class="px-6 py-2 text-right">Price</th>
                     <th scope="col" class="px-6 py-2 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                     @if(transactions().length === 0) {
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td colspan="6" class="px-6 py-2">no data</td>
+                            <td colspan="7" class="px-6 py-2">no data</td>
                         </tr>
                     }
                     @else {
@@ -534,7 +555,8 @@
                             <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
                                 <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                                 <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
-                                <td class="px-6 py-2">{{ trx.asset }}</td>
+                                <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){<span class="text-gray-400 ml-1">({{ trx.assetSymbol }})</span>}</td>
+                                <td class="px-6 py-2 text-center">{{ trx.currencyCode }}</td>
                                 <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
                                 <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
                                 <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
@@ -551,11 +573,11 @@
                   <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
                   <div class="flex gap-2">
                     <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
-                      class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       Prev
                     </button>
                     <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
-                      class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       Next
                     </button>
                   </div>

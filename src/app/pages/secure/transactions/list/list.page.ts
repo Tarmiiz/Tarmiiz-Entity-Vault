@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, computed } from '@angular/core';
+import { Component, OnInit, signal, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import jsPDF from 'jspdf';
@@ -36,13 +36,17 @@ export class ListPage implements OnInit {
 
   transactions = signal<AssetTransaction[]>([]);
   totalCount = signal<number>(0);
-  start = 1;
-  pageSize = 20;
+
+  page = signal(0);
+  readonly trxPageSize = 20;
 
   filterType = signal<string>('');
   filterAsset = signal<string>('');
   filterService = signal<string>('');
   filterSubscription = signal<string>('');
+  filterStartDate = signal<string>('');
+  filterEndDate = signal<string>('');
+  filterCurrency = signal<string>('');
 
   uniqueAssets = computed(() =>
     [...new Map(this.transactions().map(t => [t.asset, `${t.assetName} (${t.assetSymbol})`])).entries()]
@@ -59,16 +63,32 @@ export class ListPage implements OnInit {
       .sort()
   );
 
+  uniqueCurrencies = computed(() =>
+    [...new Set(this.transactions().map(t => t.currencyCode).filter(Boolean))].sort()
+  );
+
+  pagedTransactions = computed(() => {
+    const p = this.page();
+    return this.filteredTransactions().slice(p * this.trxPageSize, (p + 1) * this.trxPageSize);
+  });
+
+  totalPages = computed(() => Math.max(1, Math.ceil(this.filteredTransactions().length / this.trxPageSize)));
+
   filteredTransactions = computed(() => {
     const type = this.filterType();
     const asset = this.filterAsset();
     const service = this.filterService();
     const subscription = this.filterSubscription();
+    const currency = this.filterCurrency();
+    const startTs = this.filterStartDate() ? Math.floor(new Date(this.filterStartDate()).getTime() / 1000) : 0;
+    const endTs   = this.filterEndDate()   ? Math.floor(new Date(this.filterEndDate()).getTime()   / 1000) + 86399 : Infinity;
     return this.transactions().filter(t =>
       (!type || t.trxType === type) &&
       (!asset || t.asset === asset) &&
       (!service || t.service === service) &&
-      (!subscription || t.subscription === subscription)
+      (!subscription || t.subscription === subscription) &&
+      (!currency || t.currencyCode === currency) &&
+      t.time >= startTs && t.time <= endTs
     );
   });
 
@@ -87,6 +107,7 @@ export class ListPage implements OnInit {
       asset: raw.asset ?? '',
       assetName: raw.asset_name ?? raw.asset ?? '',
       assetSymbol: raw.asset_symbol ?? '',
+      currencyCode: raw.currency_code ?? '',
       from: raw.from_addr ?? '',
       to: raw.to_addr ?? '',
       subscription: raw.subscription ?? '',
@@ -101,7 +122,12 @@ export class ListPage implements OnInit {
 
   private _socketSub: Subscription | null = null;
 
-  constructor() {}
+  constructor() {
+    effect(() => {
+      this.filteredTransactions();
+      this.page.set(0);
+    });
+  }
 
   async ngOnInit() {}
 
@@ -117,7 +143,7 @@ export class ListPage implements OnInit {
 
   async load() {
     this.loadingService.show('Loading transactions...');
-    const result = await this.apiService.vaultGetTransactions(undefined, this.start - 1, this.pageSize);
+    const result = await this.apiService.vaultGetTransactions(undefined, 0, 500);
     if (result) {
       this.transactions.set(result.transactions.map((t: any) => this.mapVaultTransaction(t)));
       this.totalCount.set(result.count);
@@ -130,6 +156,9 @@ export class ListPage implements OnInit {
     this.filterAsset.set('');
     this.filterService.set('');
     this.filterSubscription.set('');
+    this.filterCurrency.set('');
+    this.filterStartDate.set('');
+    this.filterEndDate.set('');
   }
 
   exportPdf() {
@@ -157,6 +186,9 @@ export class ListPage implements OnInit {
       `Asset: ${assetLabel}`,
       `Service: ${serviceLabel}`,
       `Subscription: ${this.filterSubscription() || 'None'}`,
+      `Currency: ${this.filterCurrency() || 'None'}`,
+      `From: ${this.filterStartDate() || 'None'}`,
+      `To: ${this.filterEndDate() || 'None'}`,
     ];
     doc.setFontSize(8);
     doc.setTextColor(100);
@@ -203,9 +235,10 @@ export class ListPage implements OnInit {
       headStyles: { fillColor: [74, 85, 104] },
       columnStyles: {
         0: { cellWidth: 10 },              // #
-        6: { halign: 'right' },            // Tokens
-        7: { halign: 'right' },            // Price
-        8: { halign: 'right' },            // Total
+        6: { halign: 'center' },           // Currency
+        7: { halign: 'right' },            // Tokens
+        8: { halign: 'right' },            // Price
+        9: { halign: 'right' },            // Total
       },
       head: [[
         { content: '#' },
@@ -214,9 +247,10 @@ export class ListPage implements OnInit {
         { content: 'Asset' },
         { content: 'Service' },
         { content: 'Subscription' },
-        { content: 'Tokens', styles: { halign: 'right' } },
-        { content: 'Price',  styles: { halign: 'right' } },
-        { content: 'Total',  styles: { halign: 'right' } },
+        { content: 'Currency', styles: { halign: 'center' } },
+        { content: 'Tokens',   styles: { halign: 'right'  } },
+        { content: 'Price',    styles: { halign: 'right'  } },
+        { content: 'Total',    styles: { halign: 'right'  } },
       ]],
       body: txs.map((t, i) => [
         i + 1,
@@ -225,6 +259,7 @@ export class ListPage implements OnInit {
         `${t.assetName} (${t.assetSymbol})`,
         t.serviceName,
         t.subscription,
+        t.currencyCode,
         this.utils.formatTokens(t.tokens),
         this.utils.formatPrice(t.price),
         this.utils.formatPrice(t.totalPrice),
@@ -243,6 +278,7 @@ export class ListPage implements OnInit {
       'Service': t.serviceName,
       'Subscription': t.subscription,
       'Tokens': t.tokens,
+      'Currency': t.currencyCode,
       'Price': t.price,
       'Total': t.totalPrice,
     }));

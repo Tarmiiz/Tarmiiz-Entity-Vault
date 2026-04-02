@@ -215,9 +215,19 @@
                   <p class="font-mono text-base">{{ v.address }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Services</p>
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-sm font-medium text-gray-500">Services</p>
+                    @if (userInfo && userInfo.role !== 3) {
+                      <button (click)="openAddServiceModal()" class="text-sm text-indigo-700 hover:text-indigo-900 font-medium">+ Add</button>
+                    }
+                  </div>
                   @for (svc of v.services; track svc.service) {
-                    <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(svc.service)">{{ svc.serviceName }}</p>
+                    <div class="flex items-center justify-between group">
+                      <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(svc.service)">{{ svc.serviceName }}</p>
+                      @if (userInfo && userInfo.role !== 3) {
+                        <button (click)="removeService(svc.service)" class="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2">Remove</button>
+                      }
+                    </div>
                   }
                   @if (v.services.length === 0) {
                     <p class="text-base text-gray-400">None</p>
@@ -266,7 +276,7 @@
                   <!-- <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
                     Edit
                   </button> -->
-                  <button (click)="openChangeStateModal()" class="px-6 py-2.5 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                  <button (click)="openChangeStateModal()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
                     Change State
                   </button>
                 </div>
@@ -329,11 +339,11 @@
                     <span>Page {{ pricePage() + 1 }} of {{ totalPricePages() }}</span>
                     <div class="flex gap-2">
                       <button (click)="pricePage.set(pricePage() - 1)" [disabled]="pricePage() === 0"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Prev
                       </button>
                       <button (click)="pricePage.set(pricePage() + 1)" [disabled]="pricePage() >= totalPricePages() - 1"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Next
                       </button>
                     </div>
@@ -452,11 +462,11 @@
                   <span>Page {{ holderPage() + 1 }} of {{ totalHolderPages() }}</span>
                   <div class="flex gap-2">
                     <button (click)="holderPage.set(holderPage() - 1)" [disabled]="holderPage() === 0"
-                      class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       Prev
                     </button>
                     <button (click)="holderPage.set(holderPage() + 1)" [disabled]="holderPage() >= totalHolderPages() - 1"
-                      class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       Next
                     </button>
                   </div>
@@ -503,6 +513,16 @@
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); trxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <option value="">All</option>
+                    @for (c of uniqueCurrencies(); track c) {
+                      <option [value]="c">{{ c }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">Tokens</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterTokensOp()" (ngModelChange)="filterTokensOp.set($event); trxPage.set(0)"
@@ -515,6 +535,16 @@
                       placeholder="Amount"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">From</label>
+                  <input type="date" [ngModel]="filterStartDate()" (ngModelChange)="filterStartDate.set($event); trxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">To</label>
+                  <input type="date" [ngModel]="filterEndDate()" (ngModelChange)="filterEndDate.set($event); trxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearFilters()"
@@ -551,15 +581,16 @@
                       <th scope="col" class="px-6 py-2">Type</th>
                       <th scope="col" class="px-6 py-2">Service</th>
                       <th scope="col" class="px-6 py-2">Subscription</th>
+                      <th scope="col" class="px-6 py-2 text-center">Currency</th>
                       <th scope="col" class="px-6 py-2 text-right">Tokens</th>
-                      <th scope="col" class="px-6 py-2 text-right">Nav</th>
+                      <th scope="col" class="px-6 py-2 text-right">Price</th>
                       <th scope="col" class="px-6 py-2 text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredTransactions().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="7" class="px-6 py-2 text-center text-gray-400">No transactions found</td>
+                        <td colspan="8" class="px-6 py-2 text-center text-gray-400">No transactions found</td>
                       </tr>
                     }
                     @else {
@@ -569,6 +600,7 @@
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
                           <td class="px-6 py-2">{{ trx.serviceName }}</td>
                           <td class="px-6 py-2 font-mono text-xs">{{ trx.subscription }}</td>
+                          <td class="px-6 py-2 text-center">{{ trx.currencyCode }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
@@ -585,11 +617,11 @@
                     <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
                     <div class="flex gap-2">
                       <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Prev
                       </button>
                       <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
-                        class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         Next
                       </button>
                     </div>
@@ -615,4 +647,5 @@
 </main>  
 
 <app-modal-asset-state></app-modal-asset-state>
+<app-modal-asset-add-service></app-modal-asset-add-service>
 <app-modal-transaction-info></app-modal-transaction-info>

@@ -19,6 +19,8 @@ import { Asset, AssetHolder, AssetPrice, AssetTransaction, User } from '../../..
 import { AuthService } from '../../../../shared/services/auth.service';
 import { ModalAssetStateService } from '../modals/modal-asset-state/modal-asset-state.service';
 import { ModalAssetStateComponent } from "../modals/modal-asset-state/modal-asset-state.component";
+import { ModalAssetAddServiceService } from '../modals/modal-asset-add-service/modal-asset-add-service.service';
+import { ModalAssetAddServiceComponent } from '../modals/modal-asset-add-service/modal-asset-add-service.component';
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 
@@ -34,6 +36,7 @@ import { ModalTransactionInfoComponent } from '../../../../shared/components/mod
     HeaderComponent,
     RouterLink,
     ModalAssetStateComponent,
+    ModalAssetAddServiceComponent,
     ModalTransactionInfoComponent
   ]
 })
@@ -44,6 +47,7 @@ export class DetailsPage implements OnInit {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private assetStateService = inject(ModalAssetStateService);
+  addServiceModal = inject(ModalAssetAddServiceService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
@@ -107,6 +111,9 @@ export class DetailsPage implements OnInit {
   filterService = signal<string>('');
   filterTokensOp = signal<'' | 'gt' | 'lt'>('');
   filterTokensAmt = signal<number | null>(null);
+  filterStartDate = signal<string>('');
+  filterEndDate = signal<string>('');
+  filterCurrency = signal<string>('');
 
   uniqueSubscriptions = computed(() =>
     [...new Set(this.transactions().filter(t => t.subscription).map(t => t.subscription))].sort()
@@ -115,21 +122,29 @@ export class DetailsPage implements OnInit {
     [...new Map(this.transactions().map(t => [t.service, t.serviceName])).entries()]
       .sort((a, b) => a[1].localeCompare(b[1]))
   );
+  uniqueCurrencies = computed(() =>
+    [...new Set(this.transactions().map(t => t.currencyCode).filter(Boolean))].sort()
+  );
 
   filteredTransactions = computed(() => {
     const type = this.filterType();
     const subscription = this.filterSubscription();
     const service = this.filterService();
+    const currency = this.filterCurrency();
     const op = this.filterTokensOp();
     const amt = this.filterTokensAmt();
+    const startTs = this.filterStartDate() ? Math.floor(new Date(this.filterStartDate()).getTime() / 1000) : 0;
+    const endTs   = this.filterEndDate()   ? Math.floor(new Date(this.filterEndDate()).getTime()   / 1000) + 86399 : Infinity;
     return this.transactions().filter(t => {
       if (type && t.trxType !== type) return false;
       if (subscription && t.subscription !== subscription) return false;
       if (service && t.service !== service) return false;
+      if (currency && t.currencyCode !== currency) return false;
       if (op && amt !== null) {
         if (op === 'gt' && t.tokens <= amt) return false;
         if (op === 'lt' && t.tokens >= amt) return false;
       }
+      if (t.time < startTs || t.time > endTs) return false;
       return true;
     });
   });
@@ -184,18 +199,18 @@ export class DetailsPage implements OnInit {
   private async reload() {
     await this.getAssetDetails();
     await Promise.all([
-      this.getPriceHistory(1, 50),
+      this.getPriceHistory(1, 500),
       this.getHolders(1, 500),
-      this.getTransactions(1, 50),
+      this.getTransactions(1, 500),
     ]);
   }
 
   setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
-    if (tab === 'price') this.getPriceHistory(1, 50);
+    if (tab === 'price') this.getPriceHistory(1, 500);
     if (tab === 'holders') this.getHolders(1, 500);
-    if (tab === 'trxs') this.getTransactions(1, 50);
+    if (tab === 'trxs') this.getTransactions(1, 500);
   }
 
   private readonly stateNames: Record<number, string> = {
@@ -216,7 +231,7 @@ export class DetailsPage implements OnInit {
       circulating: raw.circulating ?? 0,
       countryCode: 0,
       countryName: raw.country_name ?? '',
-      currencyCode: raw.currency_code ?? '',
+      currencyCode: raw.currency_code_iso ?? '',
       currencyName: raw.currency_name ?? '',
       createdOn: raw.created_on ?? 0,
       services: (raw.services ?? []).map((s: string) => ({ service: s, serviceName: s })),
@@ -228,6 +243,7 @@ export class DetailsPage implements OnInit {
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
       suspended: raw.suspended === true || raw.suspended === 1,
+      creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
       stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
     };
@@ -250,6 +266,7 @@ export class DetailsPage implements OnInit {
       asset: raw.asset ?? '',
       assetName: raw.asset_name ?? raw.asset ?? '',
       assetSymbol: raw.asset_symbol ?? '',
+      currencyCode: raw.currency_code ?? '',
       from: raw.from_addr ?? '',
       to: raw.to_addr ?? '',
       subscription: raw.subscription ?? '',
@@ -312,6 +329,39 @@ export class DetailsPage implements OnInit {
       } finally {
         this.loadingService.hide();
       }
+    }
+  }
+
+  async openAddServiceModal() {
+    const asset = this.asset();
+    if (!asset) return;
+    const selected = await this.addServiceModal.show(asset.services.map(s => s.service));
+    if (selected) {
+      this.loadingService.show('Adding service...');
+      try {
+        await this.apiService.vaultAddAssetService(this.assetAddress, selected);
+        await this.getAssetDetails();
+      } finally {
+        this.loadingService.hide();
+      }
+    }
+  }
+
+  async removeService(serviceAddress: string) {
+    const svc = this.asset()?.services.find(s => s.service === serviceAddress);
+    const label = svc?.serviceName ?? serviceAddress;
+    const confirmed = await this.alertService.show(
+      'Remove Service',
+      `Are you sure you want to remove "${label}" from this asset?`,
+      'Remove'
+    );
+    if (!confirmed) return;
+    this.loadingService.show('Removing service...');
+    try {
+      await this.apiService.vaultRemoveAssetService(this.assetAddress, serviceAddress);
+      await this.getAssetDetails();
+    } finally {
+      this.loadingService.hide();
     }
   }
 
@@ -463,8 +513,11 @@ export class DetailsPage implements OnInit {
     this.filterType.set('');
     this.filterSubscription.set('');
     this.filterService.set('');
+    this.filterCurrency.set('');
     this.filterTokensOp.set('');
     this.filterTokensAmt.set(null);
+    this.filterStartDate.set('');
+    this.filterEndDate.set('');
     this.trxPage.set(0);
   }
 
@@ -584,6 +637,8 @@ export class DetailsPage implements OnInit {
       `Service: ${svcLabel}`,
       `Subscription: ${this.filterSubscription() || 'None'}`,
       `Tokens: ${tokensLabel}`,
+      `From: ${this.filterStartDate() || 'None'}`,
+      `To: ${this.filterEndDate() || 'None'}`,
     ];
     doc.setFontSize(8);
     doc.setTextColor(100);
@@ -626,6 +681,7 @@ export class DetailsPage implements OnInit {
       headStyles: { fillColor: [74, 85, 104] },
       columnStyles: {
         0: { cellWidth: 10 },
+        5: { halign: 'center' },
         6: { halign: 'right' },
         7: { halign: 'right' },
         8: { halign: 'right' },
@@ -636,6 +692,7 @@ export class DetailsPage implements OnInit {
         { content: 'Type' },
         { content: 'Service' },
         { content: 'Subscription', styles: { halign: 'center' } },
+        { content: 'Currency', styles: { halign: 'center' } },
         { content: 'Tokens', styles: { halign: 'right' } },
         { content: 'Price', styles: { halign: 'right' } },
         { content: 'Total', styles: { halign: 'right' } },
@@ -646,6 +703,7 @@ export class DetailsPage implements OnInit {
         t.trxType,
         t.serviceName,
         t.subscription,
+        t.currencyCode,
         this.utils.formatTokens(t.tokens),
         this.utils.formatPrice(t.price),
         this.utils.formatPrice(t.totalPrice),

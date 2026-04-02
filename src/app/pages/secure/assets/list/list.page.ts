@@ -51,6 +51,7 @@ export class ListPage implements OnInit {
   filterType = signal<string>('');
   filterState = signal<string>('');
   filterService = signal<string>('');
+  filterCurrency = signal<string>('');
   filterCirculatingOp = signal<'' | 'gt' | 'lt'>('');
   filterCirculatingAmt = signal<number | null>(null);
 
@@ -63,16 +64,22 @@ export class ListPage implements OnInit {
     ).entries()].sort((a, b) => a[1].localeCompare(b[1]))
   );
 
+  uniqueCurrencies = computed(() =>
+    [...new Set(this.assets().map(a => a.currencyCode).filter(Boolean))].sort()
+  );
+
   filteredAssets = computed(() => {
     const type = this.filterType();
     const state = this.filterState();
     const service = this.filterService();
+    const currency = this.filterCurrency();
     const op = this.filterCirculatingOp();
     const amt = this.filterCirculatingAmt();
     return this.assets().filter(a => {
       if (type && a.assetTypeName !== type) return false;
       if (state && String(a.state) !== state) return false;
       if (service && !a.services.some(s => s.service === service)) return false;
+      if (currency && a.currencyCode !== currency) return false;
       if (op && amt !== null) {
         if (op === 'gt' && a.circulating <= amt) return false;
         if (op === 'lt' && a.circulating >= amt) return false;
@@ -85,6 +92,7 @@ export class ListPage implements OnInit {
     this.filterType.set('');
     this.filterState.set('');
     this.filterService.set('');
+    this.filterCurrency.set('');
     this.filterCirculatingOp.set('');
     this.filterCirculatingAmt.set(null);
   }
@@ -142,7 +150,7 @@ export class ListPage implements OnInit {
       circulating: raw.circulating ?? 0,
       countryCode: 0,
       countryName: raw.country_name ?? '',
-      currencyCode: raw.currency_code ?? '',
+      currencyCode: raw.currency_code_iso ?? '',
       currencyName: raw.currency_name ?? '',
       createdOn: raw.created_on ?? 0,
       services: (raw.services ?? []).map((s: string) => ({ service: s, serviceName: s })),
@@ -154,6 +162,7 @@ export class ListPage implements OnInit {
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
       suspended: raw.suspended === true || raw.suspended === 1,
+      creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
       stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
     };
@@ -200,11 +209,14 @@ export class ListPage implements OnInit {
         metadata: JSON.stringify({ description: data.description }),
         currency: data.currency,
         regulator: data.regulator,
+        tokenType: data.tokenType,
+        creditSettlement: data.creditSettlement,
+        ...(data.tokenType === 1 ? { assetType: data.assetType, initialSupply: data.initialSupply } : {}),
       });
-      if (result) {
+      if (result?.type === 'success') {
         await this.listAssets();
       } else {
-        this.alertService.show('Error', 'Failed to create asset.');
+        this.alertService.show('Error', result?.error || 'Failed to create asset.');
       }
     } catch (error) {
       this.alertService.show('Error', 'An unexpected error occurred.');
@@ -221,6 +233,7 @@ export class ListPage implements OnInit {
     const rows = this.filteredAssets().map(a => ({
       'Name': a.name,
       'Symbol': a.symbol,
+      'Currency': a.currencyCode,
       'Service': a.services.length > 0 ? a.services[0].serviceName : 'None',
       'Type': a.assetTypeName,
       'Circulating': a.circulating,
@@ -256,6 +269,7 @@ export class ListPage implements OnInit {
       `Type: ${this.filterType() || 'None'}`,
       `State: ${this.filterState() || 'None'}`,
       `Service: ${svcLabel}`,
+      `Currency: ${this.filterCurrency() || 'None'}`,
       `Circulating: ${circLabel}`,
     ];
     doc.setFontSize(8);
@@ -268,12 +282,13 @@ export class ListPage implements OnInit {
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      columnStyles: { 5: { halign: 'right' } },
-      head: [[ '#', 'Name', 'Symbol', 'Service', 'Type', { content: 'Circulating', styles: { halign: 'right' } }, 'State' ]],
+      columnStyles: { 6: { halign: 'right' } },
+      head: [[ '#', 'Name', 'Symbol', 'Currency', 'Service', 'Type', { content: 'Circulating', styles: { halign: 'right' } }, 'State' ]],
       body: assets.map((a, i) => [
         i + 1,
         a.name,
         a.symbol,
+        a.currencyCode,
         a.services.length > 0 ? a.services[0].serviceName : 'None',
         a.assetTypeName,
         this.utils.formatTokens(a.circulating),
