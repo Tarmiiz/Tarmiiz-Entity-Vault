@@ -1,25 +1,35 @@
-import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, effect, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalServiceEditService, EditServiceData } from './modal-service-edit.service';
+import { ApiService } from '../../../../../shared/services/api.service';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 @Component({
   selector: 'app-modal-service-edit',
   templateUrl: './modal-service-edit.component.html',
   styleUrls: ['./modal-service-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],  
+  imports: [CommonModule, ReactiveFormsModule],
 })
 export class ModalServiceEditComponent {
 
   editServiceService = inject(ModalServiceEditService);
   private fb: FormBuilder = inject(FormBuilder);
+  private apiService = inject(ApiService);
+
+  validators = signal<{ address: string; name: string; validationLevel: number; state: number }[]>([]);
+  paymentProcessors = signal<{ address: string; name: string; serviceLevel: number; state: number }[]>([]);
+  isTokenIssuer = computed(() => this.editServiceService.service()?.serviceType === 1);
 
   editForm = this.fb.group({
     name: ['', Validators.required],
     website: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     mobile: ['', Validators.required],
+    validator: [''],
+    paymentProcessor: [''],
   });
 
 
@@ -27,16 +37,39 @@ export class ModalServiceEditComponent {
     effect(() => {
       const service = this.editServiceService.service();
       if (service) {
+        const validatorValue = (service.validator && service.validator !== ZERO_ADDRESS) ? service.validator : '';
+        const paymentProcessorValue = (service.paymentProcessor && service.paymentProcessor !== ZERO_ADDRESS) ? service.paymentProcessor : '';
         this.editForm.patchValue({
           name: service.name,
           website: service.website,
           email: service.email,
           mobile: service.mobile,
+          validator: validatorValue,
+          paymentProcessor: paymentProcessorValue,
         });
+        if (service.serviceType === 1) {
+          this.loadValidators();
+          this.loadPaymentProcessors();
+        }
       } else {
         this.editForm.reset();
       }
     });
+  }
+
+  async loadValidators() {
+    const data = await this.apiService.vaultGetValidators(1, 50);
+    if (data?.validators) {
+      const level = this.editServiceService.service()?.verificationLevel ?? 0;
+      this.validators.set(data.validators.filter((v: any) => v.state === 2 && v.validationLevel >= level));
+    }
+  }
+
+  async loadPaymentProcessors() {
+    const data = await this.apiService.vaultGetPaymentProcessors(1, 50);
+    if (data?.paymentProcessors) {
+      this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2));
+    }
   }
 
   onSave(): void {
@@ -46,7 +79,9 @@ export class ModalServiceEditComponent {
         name: formValue.name ?? '',
         website: formValue.website ?? '',
         email: formValue.email ?? '',
-        mobile: formValue.mobile ?? ''
+        mobile: formValue.mobile ?? '',
+        validator: formValue.validator ?? '',
+        paymentProcessor: formValue.paymentProcessor ?? '',
       };
       this.editServiceService.confirm(serviceData);
     }

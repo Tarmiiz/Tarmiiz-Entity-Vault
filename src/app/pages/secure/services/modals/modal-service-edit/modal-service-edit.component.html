@@ -24,6 +24,28 @@
             <label for="mobile" class="block text-sm font-medium text-gray-700">Mobile</label>
             <input type="tel" id="mobile" formControlName="mobile" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
+          @if (isTokenIssuer()) {
+            <div>
+              <label for="validator" class="block text-sm font-medium text-gray-700">Validator</label>
+              <select id="validator" formControlName="validator"
+                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="">None</option>
+                @for (v of validators(); track v.address) {
+                  <option [value]="v.address">{{ v.name || v.address }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">Payment Processor</label>
+              <select id="paymentProcessor" formControlName="paymentProcessor"
+                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="">None</option>
+                @for (cs of paymentProcessors(); track cs.address) {
+                  <option [value]="cs.address">{{ cs.name || cs.address }}</option>
+                }
+              </select>
+            </div>
+          }
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">

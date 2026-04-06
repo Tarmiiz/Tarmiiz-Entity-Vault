@@ -48,6 +48,15 @@
         >
           Information
         </button>
+        <button (click)="setTab('services')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'services'"
+          [class.border-b-2]="activeTab() === 'services'"
+          [class.border-blue-600]="activeTab() === 'services'"
+          [class.bg-blue-600]="activeTab() === 'services'"
+        >
+          Services
+        </button>
         <button (click)="setTab('price')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'price'"
@@ -100,6 +109,9 @@
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ v.stateName }}</span>
                 </div>
               </div>
+              @if (suspensionReason()) {
+                <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+              }
 
               <!-- Supply & Market row -->
               <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -208,38 +220,35 @@
                   </span>
                 </div>
               </div>
-    
+              @if (suspensionReason()) {
+                <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+              }
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4 md:col-span-2">
                   <p class="text-sm font-medium text-gray-500">Asset Address</p>
                   <p class="font-mono text-base">{{ v.address }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <div class="flex items-center justify-between mb-1">
-                    <p class="text-sm font-medium text-gray-500">Services</p>
-                    @if (userInfo && userInfo.role !== 3) {
-                      <button (click)="openAddServiceModal()" class="text-sm text-indigo-700 hover:text-indigo-900 font-medium">+ Add</button>
-                    }
-                  </div>
-                  @for (svc of v.services; track svc.service) {
-                    <div class="flex items-center justify-between group">
-                      <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(svc.service)">{{ svc.serviceName }}</p>
-                      @if (userInfo && userInfo.role !== 3) {
-                        <button (click)="removeService(svc.service)" class="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity ml-2">Remove</button>
-                      }
-                    </div>
-                  }
-                  @if (v.services.length === 0) {
-                    <p class="text-base text-gray-400">None</p>
-                  }
+                  <p class="text-sm font-medium text-gray-500">Services</p>
+                  <p class="text-base">
+                    {{ v.services.length }} service{{ v.services.length !== 1 ? 's' : '' }} assigned
+                    <button (click)="setTab('services')" class="text-indigo-600 hover:text-indigo-800 text-sm ml-2">View all &rarr;</button>
+                  </p>
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Issuer</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoLink(v.issuer)">{{ v.issuerName }}</p>
+                  @if (v.issuer) {
+                    <p class="font-mono text-xs text-gray-400">{{ v.issuer }}</p>
+                  }
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Manager</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoLink(v.manager)">{{ v.managerName }}</p>
+                  @if (v.manager) {
+                    <p class="font-mono text-xs text-gray-400">{{ v.manager }}</p>
+                  }
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Created On</p>
@@ -276,7 +285,8 @@
                   <!-- <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
                     Edit
                   </button> -->
-                  <button (click)="openChangeStateModal()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                  <button (click)="openChangeStateModal()" [disabled]="!entityActive"
+                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
                     Change State
                   </button>
                 </div>
@@ -632,8 +642,67 @@
           </div>
         }
 
+        <!-- services tab -->
+        @if (activeTab() === 'services') {
+          <div class="bg-white rounded-b-lg shadow-md border border-gray-200 overflow-hidden">
+            @if (asset(); as v) {
+              <div class="flex items-center justify-between p-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-800">Services</h3>
+                @if (userInfo && userInfo.role !== 3) {
+                  <button (click)="openAddServiceModal()" [disabled]="!entityActive"
+                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
+                    + Add Service
+                  </button>
+                }
+              </div>
+              @if (v.services.length === 0) {
+                <p class="text-gray-400 py-8 text-center">No services assigned to this asset.</p>
+              } @else {
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm text-left text-gray-700">
+                    <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                      <tr>
+                        <th scope="col" class="px-6 py-2">Service</th>
+                        <th scope="col" class="px-6 py-2">Address</th>
+                        <th scope="col" class="px-6 py-2">State</th>
+                        @if (userInfo && userInfo.role !== 3) {
+                          <th scope="col" class="px-6 py-2 w-12"></th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody class="text-xs">
+                      @for (svc of v.services; track svc.service; let isEven = $even) {
+                        <tr class="border-b hover:bg-gray-50 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                          <td class="px-6 py-3">
+                            <span class="text-indigo-800 hover:text-indigo-600 cursor-pointer font-medium" (click)="gotoService(svc.service)">{{ svc.serviceName }}</span>
+                          </td>
+                          <td class="px-6 py-3 font-mono text-xs text-gray-500">{{ svc.service }}</td>
+                          <td class="px-6 py-3">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full" [ngClass]="getServiceStateClass(svc.state)">
+                              {{ serviceStateNames[svc.state] || 'Unknown' }}
+                            </span>
+                          </td>
+                          @if (userInfo && userInfo.role !== 3) {
+                            <td class="px-6 py-3">
+                              <button (click)="openServiceStateModal(svc.service, svc.serviceName, svc.state)"
+                                [disabled]="!entityActive"
+                                class="text-gray-400 hover:text-indigo-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="Change state">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                              </button>
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            }
+          </div>
+        }
 
-      } 
+      }
       @else {
         <div class="text-center py-12 text-gray-500">
           <p>Loading service details...</p>
@@ -648,4 +717,5 @@
 
 <app-modal-asset-state></app-modal-asset-state>
 <app-modal-asset-add-service></app-modal-asset-add-service>
+<app-modal-asset-service-state></app-modal-asset-service-state>
 <app-modal-transaction-info></app-modal-transaction-info>

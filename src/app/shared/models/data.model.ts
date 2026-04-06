@@ -22,6 +22,17 @@ export class Key {
   ){}
 }
 
+export class SignerKey {
+  constructor (
+    public id: number,
+    public address: string,
+    public description: string,
+    public state: number,
+    public stateName: string,
+    public createdAt: number
+  ){}
+}
+
 export class Country {
   constructor (
     public countryId: number,
@@ -172,12 +183,26 @@ export class Service {
     public countryName: string,
     public verificationLevel: number,
     public verificationLevelName: string,
+    public serviceType: number,
+    public serviceTypeName: string,
     public regulator: string,
     public regulatorName: string,
     public regulatorSymbol: string,
+    public validator: string,
+    public paymentProcessor: string,
     public suspended: boolean,
     public state: number,
     public stateName: string
+  ) {}
+}
+
+export class PaymentProcessor {
+  constructor (
+    public address: string,
+    public serviceLevel: number,
+    public state: number,
+    public regulator: string,
+    public countryCode: number
   ) {}
 }
 
@@ -229,7 +254,9 @@ export class ValidatorIdentity {
 export class AssetService {
   constructor (
     public service: string,
-    public serviceName: string
+    public serviceName: string,
+    public state: number = 0,
+    public stateName: string = ''
   ) {}
 }
 

@@ -1,0 +1,49 @@
+import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+
+import { ModalAssetServiceStateService } from './modal-asset-service-state.service';
+
+@Component({
+  selector: 'app-modal-asset-service-state',
+  templateUrl: './modal-asset-service-state.component.html',
+  styleUrls: ['./modal-asset-service-state.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, ReactiveFormsModule],
+})
+export class ModalAssetServiceStateComponent {
+
+  stateService = inject(ModalAssetServiceStateService);
+  private fb = inject(FormBuilder);
+
+  readonly states = [
+    { value: 1, label: 'Pending' },
+    { value: 3, label: 'Suspended' },
+    { value: 4, label: 'Exit Only' },
+    { value: 5, label: 'Deactivated' },
+  ];
+
+  stateForm = this.fb.group({
+    newState: [null as number | null, Validators.required],
+  });
+
+  constructor() {
+    effect(() => {
+      const ctx = this.stateService.context();
+      if (ctx !== null) {
+        this.stateForm.get('newState')?.setValue(ctx.currentState);
+      }
+    });
+  }
+
+  onSave(): void {
+    const newState = this.stateForm.get('newState')?.value;
+    if (newState !== null && newState !== undefined) {
+      this.stateService.confirm(newState);
+    }
+  }
+
+  onCancel(): void {
+    this.stateService.cancel();
+  }
+}

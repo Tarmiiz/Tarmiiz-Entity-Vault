@@ -87,6 +87,9 @@
                 <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ v.stateName }}</span>
               </div>
             </div>
+            @if (suspensionReason()) {
+              <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+            }
 
             <!-- Portfolio summary -->
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
@@ -189,7 +192,10 @@
                   </span>
                 </div>
               </div>
-    
+              @if (suspensionReason()) {
+                <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+              }
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <!-- <div class="border-t pt-4 col-span-2">
                   <p class="text-sm font-medium text-gray-500">Identity Hash</p>
@@ -223,7 +229,8 @@
               
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <button (click)="openChangeStateModal()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                  <button (click)="openChangeStateModal()" [disabled]="!entityActive"
+                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
                     Change State
                   </button>
                 </div>

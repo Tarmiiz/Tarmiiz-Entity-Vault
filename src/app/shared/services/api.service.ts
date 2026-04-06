@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, Injector } from '@angular/core';
 import { CapacitorHttp } from '@capacitor/core';
 
 import { CryptoService } from './crypto.service';
@@ -15,6 +15,21 @@ export class ApiService {
 
   private cryptoService = inject(CryptoService);
   private ethersService = inject(EthersService);
+  private injector = inject(Injector);
+
+  private get authService(): import('./auth.service').AuthService {
+    // Lazy resolution to avoid circular dependency (AuthService → ApiService)
+    const { AuthService } = require('./auth.service');
+    return this.injector.get(AuthService);
+  }
+
+  private formatReason(reason: string): string {
+    const user = this.authService.userInfo;
+    if (user?.userId) {
+      return `[userId:${user.userId}|${user.name || ''}] ${reason}`;
+    }
+    return reason;
+  }
 
   apiURL = environment.apiURL;
   vaultToken = environment.vaultToken;
@@ -110,6 +125,79 @@ export class ApiService {
     }
   }
 
+  // ─── Authenticated (non-vault) helpers ─────────────────────────────────────────
+
+  private async authGet(path: string, params?: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        params,
+      });
+      if (response.status >= 300 || response.data?.error) return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  private async authPost(path: string, body: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        data: body,
+      });
+      if (response.status >= 300 || response.data?.error) return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  private async authPut(path: string, body: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'PUT',
+        url: this.apiURL + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        data: body,
+      });
+      if (response.status >= 300 || response.data?.error) return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
+  private async authDelete(path: string) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'DELETE',
+        url: this.apiURL + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+      });
+      if (response.status >= 300 || response.data?.error) return null;
+      return response.data;
+    } catch {
+      return null;
+    }
+  }
+
   // ─── Vault — Assets ───────────────────────────────────────────────────────────
 
   async vaultGetAssets(start = 0, offset = 50, service?: string) {
@@ -117,6 +205,11 @@ export class ApiService {
     if (service) params['service'] = service;
     const data = await this.vaultGet('/assets', params);
     return data ? { count: data.count, assets: data.assets } : null;
+  }
+
+  async vaultCheckSymbol(currencyCode: number, symbol: string): Promise<boolean | null> {
+    const data = await this.vaultGet('/assets/check-symbol', { currencyCode: String(currencyCode), symbol });
+    return data?.exists ?? null;
   }
 
   async vaultGetAsset(address: string) {
@@ -193,6 +286,17 @@ export class ApiService {
     return data ? { count: data.count, holdings: data.holdings } : null;
   }
 
+  // ─── Vault — State Change Logs ──────────────────────────────────────────────
+
+  async vaultGetStateChangeLogs(address: string, start = 1, offset = 50) {
+    return this.vaultGet(`/state-logs/${address}?start=${start}&offset=${offset}`);
+  }
+  async vaultGetAllStateChangeLogs(start = 1, offset = 50, type?: string) {
+    let url = `/state-logs?start=${start}&offset=${offset}`;
+    if (type) url += `&type=${type}`;
+    return this.vaultGet(url);
+  }
+
   // ─── Vault — Dashboard ───────────────────────────────────────────────────────
 
   async vaultGetDashboardSummary() {
@@ -226,8 +330,8 @@ export class ApiService {
     }
   }
 
-  async vaultUpdateAssetState(address: string, state: number) {
-    const data = await this.vaultPut('/assets/' + address + '/state', { state });
+  async vaultUpdateAssetState(address: string, state: number, reason = '') {
+    const data = await this.vaultPut('/assets/' + address + '/state', { state, reason: this.formatReason(reason) });
     return data ?? null;
   }
 
@@ -238,6 +342,11 @@ export class ApiService {
 
   async vaultRemoveAssetService(assetAddress: string, serviceAddress: string) {
     const data = await this.vaultDelete('/assets/' + assetAddress + '/services/' + serviceAddress);
+    return data ?? null;
+  }
+
+  async vaultSetAssetServiceState(assetAddress: string, serviceAddress: string, state: number) {
+    const data = await this.vaultPut('/assets/' + assetAddress + '/services/' + serviceAddress + '/state', { state });
     return data ?? null;
   }
 
@@ -258,15 +367,37 @@ export class ApiService {
     return data ?? null;
   }
 
-  async vaultUpdateServiceState(address: string, state: number) {
-    const data = await this.vaultPut('/services/' + address + '/state', { state });
+  async vaultUpdateServiceState(address: string, state: number, reason = '') {
+    const data = await this.vaultPut('/services/' + address + '/state', { state, reason: this.formatReason(reason) });
     return data ?? null;
+  }
+
+  async vaultSetServiceValidator(address: string, validator: string) {
+    const data = await this.vaultPut('/services/' + address + '/validator', { validator });
+    return data ?? null;
+  }
+
+  async vaultSetServicePaymentProcessor(address: string, paymentProcessor: string) {
+    const data = await this.vaultPut('/services/' + address + '/payment-processor', { payment_processor: paymentProcessor });
+    return data ?? null;
+  }
+
+  // ─── Vault — Validators & Payment Processors ─────────────────────────────────
+
+  async vaultGetValidators(start = 1, offset = 50) {
+    const data = await this.vaultGet('/validators', { start, offset });
+    return data ? { count: data.count, validators: data.validators } : null;
+  }
+
+  async vaultGetPaymentProcessors(start = 1, offset = 50) {
+    const data = await this.vaultGet('/payment-processors', { start, offset });
+    return data ? { count: data.count, paymentProcessors: data.paymentProcessors } : null;
   }
 
   // ─── Vault — Subscription writes ─────────────────────────────────────────────
 
-  async vaultUpdateSubscriptionState(address: string, state: number) {
-    const data = await this.vaultPut('/subscriptions/' + address + '/state', { state });
+  async vaultUpdateSubscriptionState(address: string, state: number, reason = '') {
+    const data = await this.vaultPut('/subscriptions/' + address + '/state', { state, reason: this.formatReason(reason) });
     return data ?? null;
   }
 
@@ -378,6 +509,82 @@ export class ApiService {
   async vaultSetExternalContract(name: string, address: string) {
     const data = await this.vaultPut('/entity/external-contract/' + name, { address });
     return data ?? null;
+  }
+
+  // ─── Signer Keys ──────────────────────────────────────────────────────────────
+
+  async signerKeyGenerate(description?: string) {
+    return await this.authPost('/signer-keys/generate', { description: description || '' });
+  }
+
+  async signerKeyList(start = 1, offset = 50) {
+    return await this.authGet('/signer-keys', { start: String(start), offset: String(offset) });
+  }
+
+  async signerKeyGet(id: string) {
+    return await this.authGet('/signer-keys/' + id);
+  }
+
+  async signerKeyUpdate(id: string, description: string) {
+    return await this.authPut('/signer-keys/' + id, { description });
+  }
+
+  async signerKeyChangeState(id: string, state: number) {
+    return await this.authPut('/signer-keys/' + id + '/state', { state });
+  }
+
+  async signerKeyRemove(id: string) {
+    return await this.authDelete('/signer-keys/' + id);
+  }
+
+  // ─── Regulator Document Submissions ───────────────────────────────────────────
+
+  async regulatorDocumentSign(documentId: string, regulatorAddress: string, keyId: string, docHash: string) {
+    return await this.authPost('/regulator/documents/' + documentId + '/sign', { regulatorAddress, keyId, docHash });
+  }
+
+  async regulatorSubmissionsList(regulatorAddress: string, start = 1, offset = 50) {
+    return await this.authGet('/regulator/submissions', { regulatorAddress, start: String(start), offset: String(offset) });
+  }
+
+  // ─── Transaction Operations ───────────────────────────────────────────────────
+
+  async transactionSubscribe(body: Record<string, any>) {
+    return await this.authPost('/transactions/subscribe', body);
+  }
+
+  async transactionRedeem(body: Record<string, any>) {
+    return await this.authPost('/transactions/redeem', body);
+  }
+
+  // ─── eKYC ─────────────────────────────────────────────────────────────────────
+
+  async ekycTransactionInquiry(transactionId: string) {
+    return await this.authGet('/ekyc/transaction', { transactionId });
+  }
+
+  async ekycFetchImages(transactionId: string, isCropped = false) {
+    return await this.authGet('/ekyc/images', { transactionId, isCropped: String(isCropped) });
+  }
+
+  async ekycVerifyNID(idFrontFile: File, idBackFile: File) {
+    try {
+      const formData = new FormData();
+      formData.append('idFront', idFrontFile);
+      formData.append('idBack', idBackFile);
+
+      const response = await fetch(this.apiURL + '/ekyc/nid/verify', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + this.vaultToken },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (!response.ok || data?.error) return null;
+      return data;
+    } catch {
+      return null;
+    }
   }
 
   // ─── Vault — Global controller ────────────────────────────────────────────────

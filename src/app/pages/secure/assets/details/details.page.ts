@@ -23,6 +23,8 @@ import { ModalAssetAddServiceService } from '../modals/modal-asset-add-service/m
 import { ModalAssetAddServiceComponent } from '../modals/modal-asset-add-service/modal-asset-add-service.component';
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
+import { ModalAssetServiceStateService } from '../modals/modal-asset-service-state/modal-asset-service-state.service';
+import { ModalAssetServiceStateComponent } from '../modals/modal-asset-service-state/modal-asset-service-state.component';
 
 
 
@@ -37,7 +39,8 @@ import { ModalTransactionInfoComponent } from '../../../../shared/components/mod
     RouterLink,
     ModalAssetStateComponent,
     ModalAssetAddServiceComponent,
-    ModalTransactionInfoComponent
+    ModalTransactionInfoComponent,
+    ModalAssetServiceStateComponent
   ]
 })
 export class DetailsPage implements OnInit {
@@ -48,22 +51,25 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private assetStateService = inject(ModalAssetStateService);
   addServiceModal = inject(ModalAssetAddServiceService);
+  private serviceStateModal = inject(ModalAssetServiceStateService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
 
   userInfo!: User;
+  get entityActive() { return this.authService.entityActive(); }
   private _socketSub: Subscription | null = null;
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
-  activeTab = signal<'overview' | 'info' | 'price' | 'holders' | 'trxs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services'>('overview');
 
   loadingData: boolean = false;
 
   assetAddress = '';
   asset = signal<Asset | undefined>(undefined);
+  suspensionReason = signal<string>('');
   priceHistory = signal<AssetPrice[]>([]);
   pricePage = signal(0);
   readonly pricePageSize = 5;
@@ -205,9 +211,10 @@ export class DetailsPage implements OnInit {
     ]);
   }
 
-  setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs') {
+  setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
+    if (tab === 'services') this.getAssetDetails();
     if (tab === 'price') this.getPriceHistory(1, 500);
     if (tab === 'holders') this.getHolders(1, 500);
     if (tab === 'trxs') this.getTransactions(1, 500);
@@ -215,6 +222,10 @@ export class DetailsPage implements OnInit {
 
   private readonly stateNames: Record<number, string> = {
     0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
+  };
+
+  readonly serviceStateNames: Record<number, string> = {
+    0: 'Unknown', 1: 'Pending', 2: 'Active', 3: 'Suspended', 4: 'Exit Only', 5: 'Deactivated',
   };
 
   private mapVaultAsset(raw: any): Asset {
@@ -234,7 +245,7 @@ export class DetailsPage implements OnInit {
       currencyCode: raw.currency_code_iso ?? '',
       currencyName: raw.currency_name ?? '',
       createdOn: raw.created_on ?? 0,
-      services: (raw.services ?? []).map((s: string) => ({ service: s, serviceName: s })),
+      services: (raw.services ?? []).map((s: string) => ({ service: s, serviceName: s, state: 0, stateName: '' })),
       issuer: raw.issuer ?? '',
       issuerName: raw.issuer_name ?? raw.issuer ?? '',
       manager: raw.manager ?? '',
@@ -288,9 +299,22 @@ export class DetailsPage implements OnInit {
     if (raw) {
       const asset = this.mapVaultAsset(raw);
       if (services) {
-        asset.services = services.map((s: any) => ({ service: s.service, serviceName: s.service_name ?? s.service }));
+        asset.services = services.map((s: any) => ({
+          service: s.service,
+          serviceName: s.service_name ?? s.service,
+          state: s.state ?? 0,
+          stateName: s.state_name ?? this.serviceStateNames[s.state] ?? 'Unknown',
+        }));
       }
       this.asset.set(asset);
+      if (asset.suspended) {
+        const logs = await this.apiService.vaultGetStateChangeLogs(asset.address, 1, 1);
+        if (logs?.logs?.length > 0) {
+          this.suspensionReason.set(logs.logs[0].reason || '');
+        }
+      } else {
+        this.suspensionReason.set('');
+      }
     }
     this.loadingService.hide();
   }
@@ -311,6 +335,31 @@ export class DetailsPage implements OnInit {
       case 3: return 'bg-orange-100 text-orange-800';
       case 4: return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getServiceStateClass(state: number): string {
+    switch (state) {
+      case 1: return 'bg-yellow-100 text-yellow-800';
+      case 2: return 'bg-green-100 text-green-800';
+      case 3: return 'bg-orange-100 text-orange-800';
+      case 4: return 'bg-red-100 text-red-800';
+      case 5: return 'bg-gray-200 text-gray-600';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  async openServiceStateModal(serviceAddress: string, serviceName: string, currentState: number) {
+    const newState = await this.serviceStateModal.show({ serviceAddress, serviceName, currentState });
+    if (newState === null || newState === currentState) return;
+    this.loadingService.show('Updating service state...');
+    try {
+      await this.apiService.vaultSetAssetServiceState(this.assetAddress, serviceAddress, newState);
+      await this.getAssetDetails();
+    } catch (error) {
+      console.error('Failed to change service state', error);
+    } finally {
+      this.loadingService.hide();
     }
   }
 

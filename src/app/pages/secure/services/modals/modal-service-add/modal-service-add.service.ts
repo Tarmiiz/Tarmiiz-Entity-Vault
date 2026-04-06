@@ -7,7 +7,10 @@ export interface AddServiceData {
   email: string;
   mobile: string;
   verificationLevel: number;
+  serviceType: number;
   regulator: string;
+  validator: string;
+  paymentProcessor: string;
 }
 
 @Injectable({

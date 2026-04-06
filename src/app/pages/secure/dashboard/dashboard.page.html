@@ -1,12 +1,25 @@
 <app-header title="Home"></app-header>
 <app-modal-transaction-info></app-modal-transaction-info>
 
-<div class="grow container mx-auto p-1 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
 
   @if(userInfo) {
 
     <!-- non-admin view -->
     @if(userInfo.role != 1) {
+
+      <!-- Entity inactive warning -->
+      @if (!entityActive) {
+        <div class="rounded-xl shadow-md border border-red-300 bg-red-50 p-4 mb-6 flex items-center gap-3 badges">
+          <svg class="w-6 h-6 text-red-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div>
+            <p class="text-sm font-semibold text-red-800">Entity is {{ entityStateName || 'not active' }}</p>
+            <p class="text-xs text-red-600">All management actions are restricted. Contact your regulator to restore active status.</p>
+          </div>
+        </div>
+      }
 
       <!-- AUM Banner -->
       <div class="rounded-xl shadow-md border border-indigo-200 bg-linear-to-r from-indigo-600 to-indigo-800 text-white p-5 mb-6 badges">

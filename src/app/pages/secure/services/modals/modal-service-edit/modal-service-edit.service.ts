@@ -6,6 +6,8 @@ export interface EditServiceData {
   website: string;
   email: string;
   mobile: string;
+  validator: string;
+  paymentProcessor: string;
 }
 
 @Injectable({

@@ -3,6 +3,7 @@ import {
   IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonButton, IonLabel } from '@ionic/angular/standalone';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { AlertService } from '../alerts/alert/alert.service';
 import { MenuController } from '@ionic/angular/standalone';
 
 @Component({
@@ -20,6 +21,20 @@ export class HeaderComponent  implements OnInit {
   get userInfo() {
     return this.authService.userInfo;
   }
+
+  get entityActive() {
+    return this.authService.entityActive();
+  }
+
+  get entityStateName() {
+    return this.authService.entityInfo?.stateName ?? '';
+  }
+
+  get entityStateReason() {
+    return this.authService.entityStateReason();
+  }
+
+  private alertService = inject(AlertService);
   private menuController = inject(MenuController);
 
   get profileRoute(): string {
@@ -32,6 +47,10 @@ export class HeaderComponent  implements OnInit {
   constructor() {}
 
   ngOnInit() {}
+
+  showReasonAlert() {
+    this.alertService.show('State Change Reason', this.entityStateReason || 'No reason provided.', 'OK', 'max-w-3xl');
+  }
 
   async logout() {
     await this.authService.logout();

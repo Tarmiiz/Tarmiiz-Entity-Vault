@@ -43,6 +43,7 @@ export class ListPage implements OnInit {
   private authService = inject(AuthService);
 
   userInfo!: User;
+  get entityActive() { return this.authService.entityActive(); }
   loadingServices: boolean = false;
   showAllServices = signal(false);
 
@@ -123,9 +124,13 @@ export class ListPage implements OnInit {
       countryName: raw.country_name ?? '',
       verificationLevel: raw.verification_level ?? 0,
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
+      serviceType: raw.service_type ?? 0,
+      serviceTypeName: raw.service_type_name ?? '',
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
+      validator: raw.validator ?? '',
+      paymentProcessor: raw.payment_processor ?? '',
       suspended: raw.suspended === true || raw.suspended === 1,
       state: raw.state ?? 0,
       stateName: raw.state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
@@ -154,8 +159,11 @@ export class ListPage implements OnInit {
         name: data.name,
         metadata: JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile }),
         verification_level: data.verificationLevel,
+        service_type: data.serviceType,
         country_code: (entityInfo as any)?.country_code ?? 0,
         regulator: data.regulator,
+        validator: data.validator || '',
+        payment_processor: data.paymentProcessor || '',
       });
       if (result) {
         await this.listServices();

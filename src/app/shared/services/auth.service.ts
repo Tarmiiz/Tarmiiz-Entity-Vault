@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { StorageService } from './storage.service';
@@ -23,6 +23,14 @@ export class AuthService {
 
   entityInfo!: Entity;
   userInfo!: User;
+
+  /** Reactive signal for entity active state — updated on login and via refreshEntityState() */
+  entityActive = signal(true);
+  entityStateReason = signal('');
+
+  get isEntityActive(): boolean {
+    return this.entityInfo?.state === 2;
+  }
 
   private _ready: Promise<void>;
 
@@ -66,6 +74,14 @@ export class AuthService {
         if(userInfo.result && userInfo.result.state === 2) {
           this.userInfo = userInfo.result;
 
+          // check entity state — block login if entity is not active
+          const entityData = await this.apiService.vaultGetEntityInfo();
+          if (!entityData || entityData.state !== 2) {
+            return { success: false, error: 'Entity is suspended or deactivated. Contact your regulator.' };
+          }
+          this.entityInfo = entityData;
+          this.entityActive.set(entityData.state === 2);
+
           // set storage variables
           await this.storageService.set('sessionExpiry', expiryTime.toString());
           this.storageService.set('rpcNode', config.rpcNode);
@@ -77,25 +93,43 @@ export class AuthService {
           // connect real-time socket
           this.socketService.connect();
 
+          // keep loading spinner visible — the dashboard will hide it after loading
+          this.loadingService.show('Loading dashboard...');
           return { success: true, error: '' };
-        
+
         }
         else {
+          this.loadingService.hide();
           return { success: false, error: userInfo.error };
-        }        
+        }
       }
       else {
+          this.loadingService.hide();
           return { success: false, error: loginResult.error };
-      }        
+      }
 
     }
     catch (error) {
+          this.loadingService.hide();
           return { success: false, error: error };
     }
-    finally {
-      this.loadingService.hide();
-    }
 
+  }
+
+  async refreshEntityState() {
+    try {
+      const entityData = await this.apiService.vaultGetEntityInfo();
+      if (entityData) {
+        this.entityInfo = entityData;
+        this.entityActive.set(entityData.state === 2);
+        if (entityData.state !== 2 && entityData.address) {
+          const logs = await this.apiService.vaultGetStateChangeLogs(entityData.address, 1, 1);
+          this.entityStateReason.set(logs?.logs?.[0]?.reason || '');
+        } else {
+          this.entityStateReason.set('');
+        }
+      }
+    } catch (_) { /* silent — entity state will remain stale until next refresh */ }
   }
 
   async logout() {

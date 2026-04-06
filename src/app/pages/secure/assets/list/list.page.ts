@@ -43,6 +43,7 @@ export class ListPage implements OnInit {
   private authService = inject(AuthService);
 
   userInfo!: User;
+  get entityActive() { return this.authService.entityActive(); }
   loadingData: boolean = false;
 
   assetsCount = 0;
@@ -184,7 +185,7 @@ export class ListPage implements OnInit {
       this.assets.set(result.assets.map((a: any) => {
         const asset = this.mapVaultAsset(a);
         asset.services = asset.services.map(s => ({
-          service: s.service,
+          ...s,
           serviceName: serviceNames[s.service] ?? s.service,
         }));
         return asset;

@@ -22,6 +22,10 @@ import { ModalServiceEditService } from '../modals/modal-service-edit/modal-serv
 import { ModalServiceEditComponent } from "../modals/modal-service-edit/modal-service-edit.component";
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
+import { ModalServiceValidatorService } from '../modals/modal-service-validator/modal-service-validator.service';
+import { ModalServiceValidatorComponent } from '../modals/modal-service-validator/modal-service-validator.component';
+import { ModalServicePaymentProcessorService } from '../modals/modal-service-payment-processor/modal-service-payment-processor.service';
+import { ModalServicePaymentProcessorComponent } from '../modals/modal-service-payment-processor/modal-service-payment-processor.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 
 
@@ -37,7 +41,9 @@ import { SocketService } from '../../../../shared/services/socket.service';
     RouterLink,
     ModalServiceEditComponent,
     ModalServiceStateComponent,
-    ModalTransactionInfoComponent
+    ModalTransactionInfoComponent,
+    ModalServiceValidatorComponent,
+    ModalServicePaymentProcessorComponent
 ]
 })
 export class DetailsPage implements OnInit {
@@ -50,10 +56,13 @@ export class DetailsPage implements OnInit {
   private serviceEditService = inject(ModalServiceEditService);
   private serviceStateService = inject(ModalServiceStateService);
   trxInfoService = inject(ModalTransactionInfoService);
+  private validatorModalService = inject(ModalServiceValidatorService);
+  private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
 
   userInfo!: User;
+  get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
   activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs'>('overview');
@@ -62,6 +71,10 @@ export class DetailsPage implements OnInit {
 
   serviceAddress = '';
   service = signal<Service | undefined>(undefined);
+  isTokenIssuer = computed(() => this.service()?.serviceType === 1);
+  suspensionReason = signal<string>('');
+  validatorName = signal<string>('');
+  paymentProcessorName = signal<string>('');
   subscriptions = signal<Subscription[]>([]);
   assets = signal<Asset[]>([]);
   transactions = signal<AssetTransaction[]>([]);
@@ -221,9 +234,13 @@ export class DetailsPage implements OnInit {
       countryName: raw.country_name ?? '',
       verificationLevel: raw.verification_level ?? 0,
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
+      serviceType: raw.service_type ?? 0,
+      serviceTypeName: raw.service_type_name ?? '',
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
+      validator: raw.validator ?? '',
+      paymentProcessor: raw.payment_processor ?? '',
       suspended: raw.suspended === true || raw.suspended === 1,
       state: raw.state ?? 0,
       stateName: raw.state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
@@ -312,8 +329,45 @@ export class DetailsPage implements OnInit {
   async getServiceDetails() {
     this.loadingService.show('Loading data...');
     const raw = await this.apiService.vaultGetService(this.serviceAddress);
-    if (raw) this.service.set(this.mapVaultService(raw));
+    if (raw) {
+      const service = this.mapVaultService(raw);
+      this.service.set(service);
+      this.resolveLinkedNames(raw.validator, raw.payment_processor);
+      if (service.suspended) {
+        const logs = await this.apiService.vaultGetStateChangeLogs(service.address, 1, 1);
+        if (logs?.logs?.length > 0) {
+          this.suspensionReason.set(logs.logs[0].reason || '');
+        }
+      } else {
+        this.suspensionReason.set('');
+      }
+    }
     this.loadingService.hide();
+  }
+
+  private async resolveLinkedNames(validator: string, paymentProcessor: string) {
+    const zeroAddr = '0x0000000000000000000000000000000000000000';
+    this.validatorName.set('');
+    this.paymentProcessorName.set('');
+
+    const promises: Promise<void>[] = [];
+    if (validator && validator !== zeroAddr) {
+      promises.push(
+        this.apiService.vaultGetValidators(1, 50).then(data => {
+          const match = data?.validators?.find((v: any) => v.address.toLowerCase() === validator.toLowerCase());
+          if (match?.name) this.validatorName.set(match.name);
+        })
+      );
+    }
+    if (paymentProcessor && paymentProcessor !== zeroAddr) {
+      promises.push(
+        this.apiService.vaultGetPaymentProcessors(1, 50).then(data => {
+          const match = data?.paymentProcessors?.find((s: any) => s.address.toLowerCase() === paymentProcessor.toLowerCase());
+          if (match?.name) this.paymentProcessorName.set(match.name);
+        })
+      );
+    }
+    await Promise.all(promises);
   }
 
   getStateClass(stateId: number | undefined): string {
@@ -367,6 +421,19 @@ export class DetailsPage implements OnInit {
           await this.apiService.vaultUpdateServiceData(currentService.address, { email: result.email!, mobile: result.mobile!, website: result.website! });
         }
 
+        // Normalize current values: treat zero address and empty string as equivalent
+        const zeroAddr = '0x0000000000000000000000000000000000000000';
+        const currentValidator = (currentService.validator && currentService.validator !== zeroAddr) ? currentService.validator : '';
+        const currentPaymentProcessor = (currentService.paymentProcessor && currentService.paymentProcessor !== zeroAddr) ? currentService.paymentProcessor : '';
+
+        if (result.validator !== currentValidator) {
+          await this.apiService.vaultSetServiceValidator(currentService.address, result.validator || '');
+        }
+
+        if (result.paymentProcessor !== currentPaymentProcessor) {
+          await this.apiService.vaultSetServicePaymentProcessor(currentService.address, result.paymentProcessor || '');
+        }
+
         await this.getServiceDetails();
 
       } catch (error) {
@@ -396,9 +463,55 @@ export class DetailsPage implements OnInit {
     }    
   }
 
+  async openChangeValidatorModal() {
+    const currentService = this.service();
+    if (!currentService) return;
+
+    const newValidator = await this.validatorModalService.show(currentService.validator, currentService.verificationLevel);
+    if (newValidator === null) return;
+
+    const zeroAddr = '0x0000000000000000000000000000000000000000';
+    const currentNormalized = (currentService.validator && currentService.validator !== zeroAddr) ? currentService.validator : '';
+    if (newValidator === currentNormalized) return;
+
+    this.loadingService.show('Updating validator...');
+    try {
+      await this.apiService.vaultSetServiceValidator(currentService.address, newValidator);
+      await this.getServiceDetails();
+    } catch (error) {
+      console.error('Failed to change validator', error);
+      this.alertService.show('Update Failed', 'There was an error updating the validator.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async openChangePaymentProcessorModal() {
+    const currentService = this.service();
+    if (!currentService) return;
+
+    const newPaymentProcessor = await this.paymentProcessorModalService.show(currentService.paymentProcessor);
+    if (newPaymentProcessor === null) return;
+
+    const zeroAddr = '0x0000000000000000000000000000000000000000';
+    const currentNormalized = (currentService.paymentProcessor && currentService.paymentProcessor !== zeroAddr) ? currentService.paymentProcessor : '';
+    if (newPaymentProcessor === currentNormalized) return;
+
+    this.loadingService.show('Updating payment processor...');
+    try {
+      await this.apiService.vaultSetServicePaymentProcessor(currentService.address, newPaymentProcessor);
+      await this.getServiceDetails();
+    } catch (error) {
+      console.error('Failed to change payment processor', error);
+      this.alertService.show('Update Failed', 'There was an error updating the payment processor.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
   async gotoValidator(validator: string) {
     this.router.navigate(['/authorized/validators/details/' + validator]);
-  }  
+  }
 
   async gotoSubscriber(subscription: string) {
     this.router.navigate(['/authorized/subscriptions/details/' + subscription]);

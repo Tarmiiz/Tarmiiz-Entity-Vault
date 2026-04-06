@@ -50,6 +50,7 @@ export class DetailsPage implements OnInit {
   private authService = inject(AuthService);
 
   userInfo!: User;
+  get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
   activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs'>('overview');
@@ -58,6 +59,7 @@ export class DetailsPage implements OnInit {
 
   subscriptionAddress = '';
   subscription = signal<Subscription | undefined>(undefined);
+  suspensionReason = signal<string>('');
   didHash = '';
   holdings = signal<SubscriptionHolding[]>([]);
   holdingPage = signal(0);
@@ -287,7 +289,18 @@ export class DetailsPage implements OnInit {
   async getSubscriptionDetails() {
     this.loadingService.show('Loading data...');
     const raw = await this.apiService.vaultGetSubscription(this.subscriptionAddress);
-    if (raw) this.subscription.set(this.mapVaultSubscription(raw));
+    if (raw) {
+      const subscription = this.mapVaultSubscription(raw);
+      this.subscription.set(subscription);
+      if (subscription.suspended) {
+        const logs = await this.apiService.vaultGetStateChangeLogs(subscription.subscription, 1, 1);
+        if (logs?.logs?.length > 0) {
+          this.suspensionReason.set(logs.logs[0].reason || '');
+        }
+      } else {
+        this.suspensionReason.set('');
+      }
+    }
     const didHash = await this.apiService.vaultGetSubscriptionIdentityHash(this.subscriptionAddress);
     if (didHash) this.didHash = didHash;
     this.loadingService.hide();

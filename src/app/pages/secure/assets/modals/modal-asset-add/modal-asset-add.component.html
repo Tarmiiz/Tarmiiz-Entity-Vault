@@ -1,103 +1,322 @@
 @if (addAssetService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
       <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Add New Asset</h3>
+        <p class="text-xs text-gray-400 mt-1">Step {{ currentStep() }} of {{ totalSteps }} — {{ stepLabels[currentStep() - 1] }}</p>
       </div>
-      <form [formGroup]="addForm" (ngSubmit)="onSave()">
-        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          <div>
-            <input type="text" placeholder="Owner Address *" formControlName="owner"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
-          </div>
-          <div>
-            <input type="text" placeholder="Issuer Address *" formControlName="issuer"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
-          </div>
-          <div>
-            <input type="text" placeholder="Manager Address *" formControlName="manager"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
-          </div>
-          <div>
-            <input type="text" placeholder="Asset Name *" formControlName="name"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <input type="text" placeholder="Symbol *" formControlName="symbol"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <select formControlName="tokenType"
-              class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-              <option value="" disabled selected hidden style="color:gray">Token Type *</option>
-              @for (tt of tokenTypes(); track tt.id) {
-                <option value="{{ tt.id }}">{{ tt.name }}</option>
+
+      <!-- Step Indicator -->
+      <div class="flex items-center justify-center gap-1 px-6 py-4 bg-gray-50 border-b">
+        @for (step of [1,2,3,4,5]; track step) {
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
+              [class]="step < currentStep()
+                ? 'bg-green-500 text-white'
+                : step === currentStep()
+                  ? 'bg-[#202a3b] text-white'
+                  : 'bg-gray-200 text-gray-400'">
+              @if (step < currentStep()) {
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              } @else {
+                {{ step }}
               }
-            </select>
+            </div>
+            @if (step < 5) {
+              <div class="w-6 h-0.5 mx-0.5" [class]="step < currentStep() ? 'bg-green-500' : 'bg-gray-200'"></div>
+            }
           </div>
-          @if (isBasicToken) {
+        }
+      </div>
+
+      <form [formGroup]="addForm" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+
+          <!-- Step 1: Token Type -->
+          @if (currentStep() === 1) {
+            <p class="text-sm text-gray-500 mb-2">Select the type of token you want to create.</p>
             <div>
-              <select formControlName="assetType"
+              <label class="block text-xs font-medium text-gray-500 mb-1">Token Type</label>
+              <select formControlName="tokenType"
                 class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="" disabled selected hidden style="color:gray">Asset Type *</option>
-                @for (at of assetTypes(); track at.id) {
-                  <option [value]="at.id">{{ at.name }}</option>
+                <option value="" disabled selected hidden>Select token type...</option>
+                @for (tt of tokenTypes(); track tt.id) {
+                  <option value="{{ tt.id }}">{{ tt.name }}</option>
+                }
+              </select>
+            </div>
+            @if (isFixedSupply) {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Asset Type</label>
+                <select formControlName="assetType"
+                  class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                  <option value="" disabled selected hidden>Select asset type...</option>
+                  @for (at of assetTypes(); track at.id) {
+                    <option [value]="at.id">{{ at.name }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Initial Supply</label>
+                <input type="number" placeholder="0" formControlName="initialSupply" min="0"
+                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              </div>
+            }
+          }
+
+          <!-- Step 2: Identity -->
+          @if (currentStep() === 2) {
+            <p class="text-sm text-gray-500 mb-2">Define the asset's name, symbol, and description.</p>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Asset Name</label>
+              <input type="text" placeholder="e.g. My Token" formControlName="name"
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Symbol</label>
+              <input type="text" placeholder="e.g. MYTKN" formControlName="symbol"
+                (input)="onSymbolChange()"
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              @if (symbolAvailable() === true) {
+                <p class="text-xs text-green-600 mt-1 flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  Symbol is available
+                </p>
+              }
+              @if (symbolAvailable() === false) {
+                <p class="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                  Symbol is already in use
+                </p>
+              }
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+              <textarea placeholder="Describe this asset..." formControlName="description" rows="3"
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none"></textarea>
+            </div>
+          }
+
+          <!-- Step 3: Service & Currency -->
+          @if (currentStep() === 3) {
+            <p class="text-sm text-gray-500 mb-2">Select which service will host this asset and its denomination currency.</p>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Service</label>
+              <select formControlName="service"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="" disabled selected hidden>Select a service...</option>
+                @for (svc of services(); track svc.address) {
+                  <option [value]="svc.address">{{ svc.name }}</option>
                 }
               </select>
             </div>
             <div>
-              <input type="number" placeholder="Initial Supply *" formControlName="initialSupply" min="0"
-                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              <label class="block text-xs font-medium text-gray-500 mb-1">Currency</label>
+              <select formControlName="currency"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="" disabled selected hidden>Select a currency...</option>
+                @for (country of countries(); track country.countryCode) {
+                  <option [value]="country.countryCode">{{ country.nameShort }} ({{ country.currencyCode }})</option>
+                }
+              </select>
             </div>
           }
-          <div>
-            <textarea placeholder="Description *" formControlName="description" rows="3"
-              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none"></textarea>
-          </div>
-          <div>
-            <select formControlName="service"
-              class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-              <option value="" disabled selected hidden style="color:gray">Service *</option>
-              @for (svc of services(); track svc.address) {
-                <option [value]="svc.address">{{ svc.name }}</option>
+
+          <!-- Step 4: Roles & Compliance -->
+          @if (currentStep() === 4) {
+            <p class="text-sm text-gray-500 mb-2">Set the governance addresses, regulator, and credit settlement option.</p>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Owner Address</label>
+              <input type="text" placeholder="0x..." formControlName="owner"
+                (blur)="resolveAddress('owner')" (input)="ownerName.set('')"
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+              @if (ownerName()) {
+                <p class="text-xs text-indigo-600 mt-1">{{ ownerName() }}</p>
               }
-            </select>
-          </div>
-          <div>
-            <select formControlName="currency"
-              class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-              <option value="" disabled selected hidden style="color:gray">Currency *</option>
-              @for (country of countries(); track country.countryCode) {
-                <option [value]="country.countryCode">{{ country.nameShort }} ({{ country.currencyCode }})</option>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Issuer Address</label>
+              <input type="text" placeholder="0x..." formControlName="issuer"
+                (blur)="resolveAddress('issuer')" (input)="issuerName.set('')"
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+              @if (issuerName()) {
+                <p class="text-xs text-indigo-600 mt-1">{{ issuerName() }}</p>
               }
-            </select>
-          </div>
-          <div>
-            <select formControlName="regulator"
-              class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-              <option value="" disabled selected hidden style="color:gray">Regulator *</option>
-              @for (reg of regulators(); track reg.address) {
-                <option [value]="reg.address">{{ reg.name }} ({{ reg.symbol }})</option>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Manager Address</label>
+              <input type="text" placeholder="0x..." formControlName="manager"
+                (blur)="resolveAddress('manager')" (input)="managerName.set('')"
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+              @if (managerName()) {
+                <p class="text-xs text-indigo-600 mt-1">{{ managerName() }}</p>
               }
-            </select>
-          </div>
-          <div class="flex items-center gap-2">
-            <input type="checkbox" id="creditSettlement" formControlName="creditSettlement"
-              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            <label for="creditSettlement" class="text-sm text-gray-700">Credit Settlement</label>
-          </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Regulator</label>
+              <select formControlName="regulator"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="" disabled selected hidden>Select a regulator...</option>
+                @for (reg of regulators(); track reg.address) {
+                  <option [value]="reg.address">{{ reg.name }} ({{ reg.symbol }})</option>
+                }
+              </select>
+            </div>
+            <div class="pt-2">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="creditSettlement" formControlName="creditSettlement"
+                  [attr.disabled]="selectedServiceHasPaymentProcessor ? null : true"
+                  class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-40">
+                <label for="creditSettlement" class="text-sm" [class]="selectedServiceHasPaymentProcessor ? 'text-gray-700' : 'text-gray-400'">Enable Credit Settlement</label>
+              </div>
+              @if (!selectedServiceHasPaymentProcessor) {
+                <p class="text-xs text-gray-400 mt-1">The selected service does not have a payment processor configured.</p>
+              }
+            </div>
+          }
+
+          <!-- Step 5: Review -->
+          @if (currentStep() === 5) {
+            <p class="text-sm text-gray-500 mb-4">Review the details below before creating the asset.</p>
+
+            <!-- Token Configuration -->
+            <div class="mb-4">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Token Configuration</h4>
+              <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Token Type</span>
+                  <span class="text-black font-medium">{{ getTokenTypeName() }}</span>
+                </div>
+                @if (isFixedSupply) {
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Asset Type</span>
+                    <span class="text-black font-medium">{{ getAssetTypeName() }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Initial Supply</span>
+                    <span class="text-black font-medium">{{ utils.formatTokens(+(addForm.get('initialSupply')?.value ?? 0)) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Identity -->
+            <div class="mb-4">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Identity</h4>
+              <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Name</span>
+                  <span class="text-black font-medium">{{ addForm.get('name')?.value }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Symbol</span>
+                  <span class="text-black font-medium">{{ addForm.get('symbol')?.value }}</span>
+                </div>
+                <div class="flex justify-between items-start">
+                  <span class="text-gray-500 shrink-0">Description</span>
+                  <span class="text-black font-medium text-right ml-4">{{ addForm.get('description')?.value }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Service & Currency -->
+            <div class="mb-4">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Service & Currency</h4>
+              <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Service</span>
+                  <span class="text-black font-medium">{{ getServiceName() }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Currency</span>
+                  <span class="text-black font-medium">{{ getCurrencyDisplay() }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Roles & Compliance -->
+            <div class="mb-4">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Roles & Compliance</h4>
+              <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500">Owner</span>
+                  <div class="text-right ml-4">
+                    <span class="text-black font-mono text-xs truncate block max-w-[280px]">{{ addForm.get('owner')?.value }}</span>
+                    @if (ownerName()) { <span class="text-indigo-600 text-xs">{{ ownerName() }}</span> }
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500">Issuer</span>
+                  <div class="text-right ml-4">
+                    <span class="text-black font-mono text-xs truncate block max-w-[280px]">{{ addForm.get('issuer')?.value }}</span>
+                    @if (issuerName()) { <span class="text-indigo-600 text-xs">{{ issuerName() }}</span> }
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500">Manager</span>
+                  <div class="text-right ml-4">
+                    <span class="text-black font-mono text-xs truncate block max-w-[280px]">{{ addForm.get('manager')?.value }}</span>
+                    @if (managerName()) { <span class="text-indigo-600 text-xs">{{ managerName() }}</span> }
+                  </div>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Regulator</span>
+                  <span class="text-black font-medium">{{ getRegulatorDisplay() }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Credit Settlement</span>
+                  <span class="font-medium" [class]="addForm.get('creditSettlement')?.value ? 'text-green-600' : 'text-gray-400'">
+                    {{ addForm.get('creditSettlement')?.value ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confirmation checkbox -->
+            <div class="flex items-start gap-2 mt-2">
+              <input type="checkbox" id="reviewConfirmed" [checked]="reviewConfirmed()"
+                (change)="reviewConfirmed.set($any($event.target).checked)"
+                class="h-4 w-4 mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+              <label for="reviewConfirmed" class="text-xs text-gray-600">
+                I have carefully reviewed all asset details and confirm they are correct.
+              </label>
+            </div>
+          }
+
         </div>
-        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-          <button type="button" (click)="onCancel()"
-            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
-          </button>
-          <button type="submit" [disabled]="addForm.invalid"
-            class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Add Asset
-          </button>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-gray-50 flex justify-between rounded-b-xl">
+          <div>
+            @if (currentStep() > 1) {
+              <button type="button" (click)="prevStep()"
+                class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                Back
+              </button>
+            }
+          </div>
+          <div class="flex space-x-3">
+            <button type="button" (click)="onCancel()"
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+              Cancel
+            </button>
+            @if (currentStep() < totalSteps) {
+              <button type="button" (click)="nextStep()" [disabled]="!isCurrentStepValid()"
+                class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Next
+              </button>
+            } @else {
+              <button type="submit" [disabled]="addForm.invalid || !reviewConfirmed()"
+                class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Create Asset
+              </button>
+            }
+          </div>
         </div>
       </form>
+
     </div>
   </div>
 }

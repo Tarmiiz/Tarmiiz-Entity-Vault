@@ -12,6 +12,7 @@ import { Subscription as RxSubscription } from 'rxjs';
 import { ApiService } from '../../../shared/services/api.service';
 import { UtilsService } from '../../../shared/services/utils.service';
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
+import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/shared/services/auth.service';
 import { ModalTransactionInfoService } from '../../../shared/components/modal-transaction-info/modal-transaction-info.service';
@@ -75,12 +76,16 @@ export class DashboardPage implements OnInit {
   private apiService = inject(ApiService);
   utils = inject(UtilsService);
   private alertService = inject(AlertService);
+  private loadingService = inject(LoadingService);
   private router = inject(Router);
   private authService = inject(AuthService);
   socketService = inject(SocketService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
 
   userInfo!: User;
+
+  get entityActive() { return this.authService.entityActive(); }
+  get entityStateName() { return this.authService.entityInfo?.stateName ?? ''; }
 
   lastSynced: number = 0;
 
@@ -197,6 +202,7 @@ export class DashboardPage implements OnInit {
     this.userInfo = this.authService.userInfo;
     if (!this.userInfo) this.router.navigate(['/public/user/login']);
     else {
+      this.authService.refreshEntityState();
       if (this.userInfo.role !== 1) {
         await Promise.all([
           this.getStats(),
@@ -206,6 +212,7 @@ export class DashboardPage implements OnInit {
         ]);
         this.lastUpdated.set(new Date());
       }
+      this.loadingService.hide();
     }
   }
 

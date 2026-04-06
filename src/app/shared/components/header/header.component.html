@@ -24,4 +24,17 @@
       </ion-button>
   </ion-buttons>
   </ion-toolbar>
+  @if (!entityActive) {
+    <div class="bg-red-600 text-white text-xs font-semibold py-1.5 px-4">
+      <div class="flex items-center justify-center gap-2">
+        <span>Entity is {{ entityStateName || 'not active' }} — actions are restricted. Contact your regulator.</span>
+        @if (entityStateReason) {
+          <button (click)="showReasonAlert()"
+            class="underline text-red-100 hover:text-white text-xs font-medium">
+            Show reason
+          </button>
+        }
+      </div>
+    </div>
+  }
 </ion-header>

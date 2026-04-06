@@ -8,13 +8,15 @@ export class AlertService {
   title = signal('');
   message = signal('');
   confirmText = signal('OK');
+  maxWidth = signal('max-w-md');
 
   private resolveFn?: (value: boolean) => void;
 
-  show(title: string, message: string, confirmText = 'OK'): Promise<boolean> {
+  show(title: string, message: string, confirmText = 'OK', maxWidth = 'max-w-md'): Promise<boolean> {
     this.title.set(title);
     this.message.set(message);
     this.confirmText.set(confirmText);
+    this.maxWidth.set(maxWidth);
     this.isVisible.set(true);
 
     return new Promise<boolean>((resolve) => {
