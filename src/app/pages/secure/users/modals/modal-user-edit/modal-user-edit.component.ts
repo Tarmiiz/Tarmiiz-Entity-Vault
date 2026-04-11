@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalUserEditService, EditUserData } from './modal-user-edit.service';
 
@@ -8,7 +8,7 @@ import { ModalUserEditService, EditUserData } from './modal-user-edit.service';
   templateUrl: './modal-user-edit.component.html',
   styleUrls: ['./modal-user-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],  
+  imports: [ReactiveFormsModule],  
 })
 export class ModalUserEditComponent {
 

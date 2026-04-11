@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalProfileOperatorEditService, EditOperatorData } from './modal-profile-operator-edit.service';
 
@@ -8,7 +8,7 @@ import { ModalProfileOperatorEditService, EditOperatorData } from './modal-profi
   templateUrl: './modal-profile-operator-edit.component.html',
   styleUrls: ['./modal-profile-operator-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],  
+  imports: [ReactiveFormsModule],  
 })
 export class ModalProfileOperatorEditComponent {
 

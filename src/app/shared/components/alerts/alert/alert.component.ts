@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AlertService } from './alert.service';
 
 @Component({
@@ -8,7 +8,7 @@ import { AlertService } from './alert.service';
   styleUrls: ['./alert.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
 })
 export class AlertComponent {
 

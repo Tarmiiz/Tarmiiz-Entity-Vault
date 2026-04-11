@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -20,7 +20,7 @@ import { ModalUserAddService } from '../modals/modal-user-add/modal-user-add.ser
   styleUrls: ['./list.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    FormsModule,
     HeaderComponent,
     ModalUserAddComponent
 ]

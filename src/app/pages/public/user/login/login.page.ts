@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 
@@ -19,8 +19,8 @@ import { LoadingComponent } from "src/app/shared/components/alerts/loading/loadi
   styleUrls: ['./login.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,
-    ReactiveFormsModule, FormsModule,
+    ReactiveFormsModule,
+    FormsModule,
     AlertComponent,
     LoadingComponent
 ]

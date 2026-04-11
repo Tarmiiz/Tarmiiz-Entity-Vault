@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit.service';
 
@@ -7,7 +7,7 @@ import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit.s
   selector: 'app-modal-profile-metadata-edit',
   templateUrl: './modal-profile-metadata-edit.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
 })
 export class ModalProfileMetadataEditComponent {
   editService = inject(ModalProfileMetadataEditService);

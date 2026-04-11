@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
@@ -21,11 +21,11 @@ import { ModalProfileMetadataEditComponent } from './modal-profile-metadata-edit
   styleUrls: ['./profile.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    FormsModule,
     HeaderComponent,
     ModalProfileOperatorEditComponent,
-    ModalProfileMetadataEditComponent,
-  ]
+    ModalProfileMetadataEditComponent
+]
 })
 export class ProfilePage implements OnInit {
   private apiService = inject(ApiService);

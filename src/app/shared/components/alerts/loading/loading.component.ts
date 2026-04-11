@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { LoadingService } from './loading.service';
 
 @Component({
@@ -7,7 +7,7 @@ import { LoadingService } from './loading.service';
   templateUrl: './loading.component.html',
   styleUrls: ['./loading.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [],
 })
 export class LoadingComponent {
 

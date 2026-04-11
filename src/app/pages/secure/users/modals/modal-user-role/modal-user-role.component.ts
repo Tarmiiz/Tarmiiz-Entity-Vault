@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalUserRoleService } from './modal-user-role.service';
@@ -9,7 +9,7 @@ import { ModalUserRoleService } from './modal-user-role.service';
   templateUrl: './modal-user-role.component.html',
   styleUrls: ['./modal-user-role.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
 })
 export class ModalUserRoleComponent {
 

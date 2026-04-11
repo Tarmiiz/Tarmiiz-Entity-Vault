@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import jsPDF from 'jspdf';
@@ -28,10 +28,10 @@ import { AuditService } from '../../../../shared/services/audit.service';
   styleUrls: ['./list.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    FormsModule,
     HeaderComponent,
-    ModalServiceAddComponent,
-  ]
+    ModalServiceAddComponent
+]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);

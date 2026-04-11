@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
 import { ModalServiceValidatorService } from './modal-service-validator.service';
@@ -10,7 +10,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-service-validator.component.html',
   styleUrls: ['./modal-service-validator.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
 })
 export class ModalServiceValidatorComponent {
 

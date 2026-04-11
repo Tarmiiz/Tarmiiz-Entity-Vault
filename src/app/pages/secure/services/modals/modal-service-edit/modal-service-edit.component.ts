@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalServiceEditService, EditServiceData } from './modal-service-edit.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -11,7 +11,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   templateUrl: './modal-service-edit.component.html',
   styleUrls: ['./modal-service-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
 })
 export class ModalServiceEditComponent {
 

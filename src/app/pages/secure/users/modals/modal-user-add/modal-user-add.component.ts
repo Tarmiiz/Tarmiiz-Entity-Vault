@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalUserAddService, AddUserData } from './modal-user-add.service';
@@ -12,7 +12,7 @@ import { AlertService } from 'src/app/shared/components/alerts/alert/alert.servi
   templateUrl: './modal-user-add.component.html',
   styleUrls: ['./modal-user-add.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
 })
 export class ModalUserAddComponent {
 

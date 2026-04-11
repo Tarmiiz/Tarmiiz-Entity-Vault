@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalAssetStateService } from './modal-asset-state.service';
@@ -10,7 +10,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-asset-state.component.html',
   styleUrls: ['./modal-asset-state.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
 })
 export class ModalAssetStateComponent {
 

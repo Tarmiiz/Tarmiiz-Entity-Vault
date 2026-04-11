@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalUserCredentialsService, CredentialsUserData } from './modal-user-edit-credentials.service';
 import { AlertService } from 'src/app/shared/components/alerts/alert/alert.service';
@@ -9,7 +9,7 @@ import { AlertService } from 'src/app/shared/components/alerts/alert/alert.servi
   templateUrl: './modal-user-edit-credentials.component.html',
   styleUrls: ['./modal-user-edit-credentials.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],  
+  imports: [ReactiveFormsModule],  
 })
 export class ModalUserEditCredentialsComponent {
   private alertService = inject(AlertService);
