@@ -14,13 +14,14 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
-import { AssetTransaction, Subscription, SubscriptionHolding, User } from '../../../../shared/models/data.model';
+import { AssetTransaction, CreditBalance, CreditTransaction, Subscription, SubscriptionHolding, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { ModalSubscriptionStateService } from '../modals/modal-subscription-state/modal-subscription-state.service';
 import { ModalSubscriptionStateComponent } from "../modals/modal-subscription-state/modal-subscription-state.component";
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 import { SocketService } from '../../../../shared/services/socket.service';
+import { AuditService } from '../../../../shared/services/audit.service';
 
 
 
@@ -48,12 +49,13 @@ export class DetailsPage implements OnInit {
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
+  private auditService = inject(AuditService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs' | 'credit'>('overview');
 
   loadingData: boolean = false;
 
@@ -186,6 +188,50 @@ export class DetailsPage implements OnInit {
     return [...t].sort((a, b) => b.time - a.time)[0];
   });
 
+  // credit tab state
+  creditBalances = signal<CreditBalance[]>([]);
+  creditTransactions = signal<CreditTransaction[]>([]);
+  creditTrxPage = signal(0);
+  readonly creditTrxPageSize = 10;
+
+  filterCreditType = signal<string>('');
+  filterCreditCurrency = signal<string>('');
+  filterCreditAmountOp = signal<'' | 'gt' | 'lt'>('');
+  filterCreditAmountVal = signal<number | null>(null);
+  filterCreditStartDate = signal<string>('');
+  filterCreditEndDate = signal<string>('');
+
+  activeCreditBalances = computed(() => this.creditBalances().filter(b => b.balance > 0));
+
+  uniqueCreditCurrencies = computed(() =>
+    [...new Set(this.creditTransactions().map(t => t.currencySymbol).filter(Boolean))].sort()
+  );
+
+  filteredCreditTransactions = computed(() => {
+    const type = this.filterCreditType();
+    const currency = this.filterCreditCurrency();
+    const op = this.filterCreditAmountOp();
+    const amt = this.filterCreditAmountVal();
+    const startTs = this.filterCreditStartDate() ? Math.floor(new Date(this.filterCreditStartDate()).getTime() / 1000) : 0;
+    const endTs   = this.filterCreditEndDate()   ? Math.floor(new Date(this.filterCreditEndDate()).getTime()   / 1000) + 86399 : Infinity;
+    return this.creditTransactions().filter(t => {
+      if (type && t.trxTypeName !== type) return false;
+      if (currency && t.currencySymbol !== currency) return false;
+      if (op && amt !== null) {
+        if (op === 'gt' && t.amount <= amt) return false;
+        if (op === 'lt' && t.amount >= amt) return false;
+      }
+      if (t.startTime < startTs || t.startTime > endTs) return false;
+      return true;
+    });
+  });
+
+  pagedCreditTransactions = computed(() => {
+    const start = this.creditTrxPage() * this.creditTrxPageSize;
+    return this.filteredCreditTransactions().slice(start, start + this.creditTrxPageSize);
+  });
+  totalCreditTrxPages = computed(() => Math.ceil(this.filteredCreditTransactions().length / this.creditTrxPageSize));
+
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
@@ -212,14 +258,16 @@ export class DetailsPage implements OnInit {
     await Promise.all([
       this.getHoldings(1, 500),
       this.getTransactions(1, 500),
+      this.getCreditBalances(),
     ]);
   }
 
-  setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs') {
+  setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs' | 'credit') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getSubscriptionDetails();
     if (tab === 'holdings') this.getHoldings(1, 500);
     if (tab === 'trxs') this.getTransactions(1, 500);
+    if (tab === 'credit') this.getCreditData();
   }
 
   private readonly stateNames: Record<number, string> = {
@@ -235,7 +283,7 @@ export class DetailsPage implements OnInit {
       serviceName: raw.service_name ?? raw.service ?? '',
       validator: raw.validator ?? '',
       validatorName: raw.validator_name ?? '',
-      validatorVerificationId: raw.validator_level ?? 0,
+      validatorVerificationId: Number(raw.validator_trx_ref ?? 0),
       validatorTimestamp: raw.validator_trx_ts ?? 0,
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
@@ -321,16 +369,16 @@ export class DetailsPage implements OnInit {
     const currentService = this.subscription();
     if (!currentService) return;
 
-    const newState = await this.subscriptionStateService.show(currentService.state);
-    if (newState !== null && newState !== currentService.state) {
+    const modalResult = await this.subscriptionStateService.show(currentService.state);
+    if (modalResult !== null && modalResult.state !== currentService.state) {
         this.loadingService.show('Changing state...');
         try {
-            const result = await this.apiService.vaultUpdateSubscriptionState(currentService.subscription, newState);
+            const result = await this.apiService.vaultUpdateSubscriptionState(currentService.subscription, modalResult.state, modalResult.reason);
             if (result) {
                 this.subscription.update(sub => sub ? {
                     ...sub,
-                    state: newState,
-                    stateName: this.stateNames[newState] ?? String(newState),
+                    state: modalResult.state,
+                    stateName: this.stateNames[modalResult.state] ?? String(modalResult.state),
                 } : sub);
             }
         } catch (error) {
@@ -498,6 +546,7 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`subscription_transactions_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'subscription_transactions');
   }
 
   exportHoldingsPdf() {
@@ -569,6 +618,7 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`subscription_holdings_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'subscription_holdings');
   }
 
   exportHoldingsExcel() {
@@ -592,6 +642,7 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `subscription_holdings_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'subscription_holdings');
   }
 
   exportExcel() {
@@ -612,6 +663,175 @@ export class DetailsPage implements OnInit {
     const now = new Date();
     const stamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `subscription_transactions_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'subscription_transactions');
+  }
+
+  // ─── Credit ─────────────────────────────────────────────────────────────────
+
+  private readonly creditTrxTypeNames: Record<number, string> = {
+    1: 'Deposit', 2: 'Withdraw', 3: 'Transfer', 4: 'Withhold',
+  };
+  private readonly creditTrxStateNames: Record<number, string> = {
+    1: 'Initiated', 2: 'Success', 3: 'Failed', 4: 'Cancelled',
+  };
+
+  private mapCreditTransaction(raw: any): CreditTransaction {
+    return {
+      trxId: raw.trxId ?? 0,
+      service: raw.service ?? '',
+      from: raw.from ?? '',
+      to: raw.to ?? '',
+      trxType: raw.trxType ?? 0,
+      trxTypeName: this.creditTrxTypeNames[raw.trxType] ?? String(raw.trxType),
+      currencyCode: raw.currencyCode ?? 0,
+      currencySymbol: raw.currencySymbol ?? '',
+      amount: raw.amount ?? 0,
+      trxData: raw.trxData ?? '',
+      trxState: raw.trxState ?? 0,
+      trxStateName: this.creditTrxStateNames[raw.trxState] ?? String(raw.trxState),
+      startTime: raw.startTime ?? 0,
+      updateTime: raw.updateTime ?? 0,
+    } as CreditTransaction;
+  }
+
+  async getCreditBalances() {
+    const balances = await this.apiService.vaultGetSubscriptionCreditBalance(this.subscriptionAddress);
+    if (balances) this.creditBalances.set(balances);
+  }
+
+  async getCreditData() {
+    this.loadingService.show('Loading credit data...');
+    const [, trxData] = await Promise.all([
+      this.getCreditBalances(),
+      this.apiService.vaultGetSubscriptionCreditTransactions(this.subscriptionAddress, 1, 500),
+    ]);
+    if (trxData?.transactions) {
+      const mapped = trxData.transactions.map((t: any) => this.mapCreditTransaction(t));
+      mapped.sort((a: CreditTransaction, b: CreditTransaction) => b.startTime - a.startTime);
+      this.creditTransactions.set(mapped);
+    }
+    this.creditTrxPage.set(0);
+    this.loadingService.hide();
+  }
+
+  clearCreditFilters() {
+    this.filterCreditType.set('');
+    this.filterCreditCurrency.set('');
+    this.filterCreditAmountOp.set('');
+    this.filterCreditAmountVal.set(null);
+    this.filterCreditStartDate.set('');
+    this.filterCreditEndDate.set('');
+    this.creditTrxPage.set(0);
+  }
+
+  getCreditTrxTypeClass(trxType: number): string {
+    switch (trxType) {
+      case 1: return 'bg-green-100 text-green-800';
+      case 2: return 'bg-orange-100 text-orange-800';
+      case 3: return 'bg-blue-100 text-blue-800';
+      case 4: return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getCreditTrxStateClass(state: number): string {
+    switch (state) {
+      case 1: return 'bg-yellow-100 text-yellow-800';
+      case 2: return 'bg-green-100 text-green-800';
+      case 3: return 'bg-red-100 text-red-800';
+      case 4: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  exportCreditPdf() {
+    const txs = this.filteredCreditTransactions();
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pad = 14;
+
+    const sub = this.subscription();
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Credit Transactions - ${sub?.subscription ?? ''}`, pad, 15);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
+
+    // Balances summary table
+    const balances = this.creditBalances();
+    if (balances.length > 0) {
+      autoTable(doc, {
+        startY: 28,
+        margin: { left: pad, right: pad },
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [74, 85, 104] },
+        columnStyles: { 1: { halign: 'right' } },
+        head: [[
+          { content: 'Currency' },
+          { content: 'Balance', styles: { halign: 'right' } },
+        ]],
+        body: balances.map(b => [
+          `${b.currencyName} (${b.currencySymbol})`,
+          this.utils.formatPrice(b.balance),
+        ]),
+      });
+    }
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 6 : 28,
+      margin: { left: pad, right: pad },
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [74, 85, 104] },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        4: { halign: 'right' },
+      },
+      head: [[
+        { content: '#' },
+        { content: 'Date' },
+        { content: 'Type' },
+        { content: 'Currency' },
+        { content: 'Amount', styles: { halign: 'right' } },
+        { content: 'State' },
+      ]],
+      body: txs.map((t, i) => [
+        i + 1,
+        this.utils.formatDate(t.startTime),
+        t.trxTypeName,
+        t.currencySymbol,
+        this.utils.formatPrice(t.amount),
+        t.trxStateName,
+      ]),
+    });
+
+    const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    doc.save(`subscription_credit_transactions_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'subscription_credit');
+  }
+
+  exportCreditExcel() {
+    const rows = this.filteredCreditTransactions().map(t => ({
+      'Date': this.utils.formatDate(t.startTime),
+      'Type': t.trxTypeName,
+      'Currency': t.currencySymbol,
+      'Amount': t.amount,
+      'State': t.trxStateName,
+      'From': t.from,
+      'To': t.to,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Credit Transactions');
+
+    const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    XLSX.writeFile(wb, `subscription_credit_transactions_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'subscription_credit');
+  }
+
+  viewTransactionDetails(trx: AssetTransaction): void {
+    this.trxInfoService.show(trx);
+    this.auditService.logView('transaction', { trxId: trx.trxId, trxType: trx.trxType });
   }
 
 }

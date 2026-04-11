@@ -20,6 +20,7 @@ import { ModalServiceAddComponent } from '../modals/modal-service-add/modal-serv
 
 import { Service, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { AuditService } from '../../../../shared/services/audit.service';
 
 @Component({
   selector: 'app-list',
@@ -41,6 +42,7 @@ export class ListPage implements OnInit {
   private serviceAddService = inject(ModalServiceAddService);
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
+  private auditService = inject(AuditService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -207,6 +209,7 @@ export class ListPage implements OnInit {
     XLSX.utils.book_append_sheet(wb, ws, 'Services');
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `services_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'services');
   }
 
   exportPdf() {
@@ -248,6 +251,7 @@ export class ListPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`services_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'services');
   }
 
 }

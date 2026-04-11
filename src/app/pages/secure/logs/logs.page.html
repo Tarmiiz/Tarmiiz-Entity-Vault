@@ -1,58 +1,175 @@
-<app-header title="Logs"></app-header>
+<app-header title="Audit Logs"></app-header>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
-    <!-- Info Bar -->
-    <div class="bg-gray-800 text-white rounded-xl shadow-lg p-4 max-w-4xl mx-auto mb-12 block-watcher-bar">
-      <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 text-center">
-        <div class="flex-1">
-          <p class="text-sm text-gray-400 uppercase tracking-wider">Current Block</p>
-          <p class="text-1xl font-semibold mt-1">{{ currentBlock | number: '1.0-0' }}</p>
-        </div>
-        <div class="w-px h-8 bg-gray-600 hidden md:block"></div>
-        <div class="flex-1">
-          <p class="text-sm text-gray-400 uppercase tracking-wider">Trxs</p>
-          <p class="text-1xl font-semibold mt-1">{{ currentTrxs | number: '1.0-0' }}</p>
-        </div>
-        <div class="w-px h-8 bg-gray-600 hidden md:block"></div>
-        <div class="flex-1">
-          <p class="text-sm text-gray-400 uppercase tracking-wider">Created On</p>
-          <p class="text-1xl font-semibold mt-1">{{ currentBlockTimestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-        </div>
-      </div>
-    </div> 
-
-    @if(loginEvents) {
-
-        <!-- Logs Table -->
-        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div class="overflow-x-auto rounded-lg">
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
-                <tr>
-                  <!-- <th scope="col" class="px-6 py-2">Block</th> -->
-                  <th scope="col" class="px-6 py-2">Time</th>
-                  <th scope="col" class="px-6 py-2">Event</th>
-                  <th scope="col" class="px-6 py-2">Action</th>
-                  <th scope="col" class="px-6 py-2">Sender</th>
-                  <th scope="col" class="px-6 py-2">Address</th>
-                </tr>
-              </thead>
-              <tbody class="text-xs">
-                @for (event of loginEvents; track i; let i = $index; let isEven = $even) {
-                  <tr class="border-b" [class.bg-gray-100]="isEven" [class.bg-white]="!isEven">
-                    <!-- <td class="px-6 py-2">{{ event.blockNumber | number: '1.0-0' }}</td> -->
-                    <td class="px-6 py-2">{{ event.timestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                    <td class="px-6 py-2 capitalize">{{ event.eventName }}</td>
-                    <td class="px-6 py-2 capitalize">{{ event.action }}</td>
-                    <td class="px-6 py-2 uppercase">{{ event.sender }}</td>
-                    <td class="px-6 py-2 uppercase">{{ event.target }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-    }
-
+  <!-- Tab Switcher -->
+  <div class="flex space-x-2 mb-4 max-w-6xl mx-auto">
+    <button (click)="switchTab('state')"
+      class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+      [class.bg-gray-800]="activeTab() === 'state'" [class.text-white]="activeTab() === 'state'"
+      [class.bg-white]="activeTab() !== 'state'" [class.text-gray-700]="activeTab() !== 'state'">
+      State Change Logs
+    </button>
+    <button (click)="switchTab('activity')"
+      class="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+      [class.bg-gray-800]="activeTab() === 'activity'" [class.text-white]="activeTab() === 'activity'"
+      [class.bg-white]="activeTab() !== 'activity'" [class.text-gray-700]="activeTab() !== 'activity'">
+      Activity Logs
+    </button>
   </div>
+
+  <!-- ═══ State Change Logs Tab ═══ -->
+  @if (activeTab() === 'state') {
+
+    <!-- Filter -->
+    <div class="mb-4 max-w-6xl mx-auto flex items-center space-x-3">
+      <label class="text-xs font-medium text-gray-600 uppercase">Type</label>
+      <select [(ngModel)]="stateTypeFilter" (ngModelChange)="onStateTypeChange()"
+        class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-white">
+        <option value="">All</option>
+        @for (t of stateTypes; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+      <span class="text-xs text-gray-500 ml-auto">{{ stateTotal() }} total</span>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden max-w-6xl mx-auto">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">Time</th>
+              <th class="px-4 py-2">Type</th>
+              <th class="px-4 py-2">Action</th>
+              <th class="px-4 py-2">New Value</th>
+              <th class="px-4 py-2">Reason</th>
+              <th class="px-4 py-2">User</th>
+              <th class="px-4 py-2">IP</th>
+              <th class="px-4 py-2">Tx Hash</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            @for (log of stateLogs(); track log.id; let isEven = $even) {
+              <tr class="border-b" [class.bg-gray-50]="isEven" [class.bg-white]="!isEven">
+                <td class="px-4 py-2 whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
+                <td class="px-4 py-2 capitalize">{{ log.type }}</td>
+                <td class="px-4 py-2 capitalize">{{ formatAction(log.action) }}</td>
+                <td class="px-4 py-2" [title]="log.new_value">{{ truncate(log.new_value) }}</td>
+                <td class="px-4 py-2" [title]="log.reason">{{ truncate(log.reason) }}</td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                  @if (log.user_name) {
+                    {{ log.user_name }}
+                    <span class="text-gray-400">(#{{ log.user_id }})</span>
+                  } @else if (log.user_id) {
+                    #{{ log.user_id }}
+                  } @else {
+                    <span class="text-gray-400">-</span>
+                  }
+                </td>
+                <td class="px-4 py-2">{{ log.client_ip || '-' }}</td>
+                <td class="px-4 py-2 font-mono" [title]="log.tx_hash">{{ truncate(log.tx_hash, 12) }}</td>
+              </tr>
+            }
+            @if (stateLogs().length === 0) {
+              <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">No state change logs found</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-between items-center px-4 py-3 bg-gray-50 border-t">
+        <button (click)="statePrevPage()" [disabled]="statePage() === 0"
+          class="px-3 py-1 text-xs rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-40">
+          Previous
+        </button>
+        <span class="text-xs text-gray-500">
+          Page {{ statePage() + 1 }} of {{ (stateTotal() / pageSize | number: '1.0-0') || 1 }}
+        </span>
+        <button (click)="stateNextPage()" [disabled]="(statePage() + 1) * pageSize >= stateTotal()"
+          class="px-3 py-1 text-xs rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-40">
+          Next
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ Activity Logs Tab ═══ -->
+  @if (activeTab() === 'activity') {
+
+    <!-- Filter -->
+    <div class="mb-4 max-w-6xl mx-auto flex items-center space-x-3">
+      <label class="text-xs font-medium text-gray-600 uppercase">Category</label>
+      <select [(ngModel)]="activityCategoryFilter" (ngModelChange)="onActivityCategoryChange()"
+        class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-white">
+        <option value="">All</option>
+        @for (c of activityCategories; track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
+      <span class="text-xs text-gray-500 ml-auto">{{ activityTotal() }} total</span>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden max-w-6xl mx-auto">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">Time</th>
+              <th class="px-4 py-2">Category</th>
+              <th class="px-4 py-2">Action</th>
+              <th class="px-4 py-2">Target</th>
+              <th class="px-4 py-2">Details</th>
+              <th class="px-4 py-2">User</th>
+              <th class="px-4 py-2">IP</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            @for (log of activityLogs(); track log.id; let isEven = $even) {
+              <tr class="border-b" [class.bg-gray-50]="isEven" [class.bg-white]="!isEven">
+                <td class="px-4 py-2 whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
+                <td class="px-4 py-2 capitalize">{{ log.category }}</td>
+                <td class="px-4 py-2 capitalize">{{ formatAction(log.action) }}</td>
+                <td class="px-4 py-2" [title]="log.target">{{ truncate(log.target, 40) }}</td>
+                <td class="px-4 py-2" [title]="log.details">{{ truncate(log.details, 30) }}</td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                  @if (log.user_name) {
+                    {{ log.user_name }}
+                    <span class="text-gray-400">(#{{ log.user_id }})</span>
+                  } @else if (log.user_id) {
+                    #{{ log.user_id }}
+                  } @else {
+                    <span class="text-gray-400">-</span>
+                  }
+                </td>
+                <td class="px-4 py-2">{{ log.client_ip || '-' }}</td>
+              </tr>
+            }
+            @if (activityLogs().length === 0) {
+              <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">No activity logs found</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-between items-center px-4 py-3 bg-gray-50 border-t">
+        <button (click)="activityPrevPage()" [disabled]="activityPage() === 0"
+          class="px-3 py-1 text-xs rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-40">
+          Previous
+        </button>
+        <span class="text-xs text-gray-500">
+          Page {{ activityPage() + 1 }} of {{ (activityTotal() / pageSize | number: '1.0-0') || 1 }}
+        </span>
+        <button (click)="activityNextPage()" [disabled]="(activityPage() + 1) * pageSize >= activityTotal()"
+          class="px-3 py-1 text-xs rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-40">
+          Next
+        </button>
+      </div>
+    </div>
+  }
+
+</div>

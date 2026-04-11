@@ -17,6 +17,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { ModalAssetAddService } from '../modals/modal-asset-add/modal-asset-add.service';
 import { ModalAssetAddComponent } from '../modals/modal-asset-add/modal-asset-add.component';
+import { AuditService } from '../../../../shared/services/audit.service';
 
 import { Asset, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
@@ -41,6 +42,7 @@ export class ListPage implements OnInit {
   private assetAddService = inject(ModalAssetAddService);
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
+  private auditService = inject(AuditService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -246,6 +248,7 @@ export class ListPage implements OnInit {
     XLSX.utils.book_append_sheet(wb, ws, 'Assets');
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `assets_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'assets');
   }
 
   exportPdf() {
@@ -299,5 +302,6 @@ export class ListPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`assets_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'assets');
   }
 }

@@ -27,6 +27,7 @@ import { ModalServiceValidatorComponent } from '../modals/modal-service-validato
 import { ModalServicePaymentProcessorService } from '../modals/modal-service-payment-processor/modal-service-payment-processor.service';
 import { ModalServicePaymentProcessorComponent } from '../modals/modal-service-payment-processor/modal-service-payment-processor.component';
 import { SocketService } from '../../../../shared/services/socket.service';
+import { AuditService } from '../../../../shared/services/audit.service';
 
 
 
@@ -60,6 +61,7 @@ export class DetailsPage implements OnInit {
   private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
+  private auditService = inject(AuditService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -449,11 +451,11 @@ export class DetailsPage implements OnInit {
     const currentService = this.service();
     if (!currentService) return;
 
-    const newState = await this.serviceStateService.show(currentService.state);
-    if (newState !== null && newState !== currentService.state) {
+    const result = await this.serviceStateService.show(currentService.state);
+    if (result !== null && result.state !== currentService.state) {
         this.loadingService.show('Changing state...');
         try {
-            await this.apiService.vaultUpdateServiceState(currentService.address, newState);
+            await this.apiService.vaultUpdateServiceState(currentService.address, result.state, result.reason);
             await this.getServiceDetails();
         } catch (error) {
             console.error('Failed to change state', error);
@@ -554,6 +556,7 @@ export class DetailsPage implements OnInit {
     XLSX.utils.book_append_sheet(wb, ws, 'Assets');
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `assets_${svcName}_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'service_assets');
   }
 
   exportAssetsPdf() {
@@ -603,6 +606,7 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`assets_${svcName}_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'service_assets');
   }
 
   clearSubFilters() {
@@ -624,6 +628,7 @@ export class DetailsPage implements OnInit {
     XLSX.utils.book_append_sheet(wb, ws, 'Subscriptions');
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `subscriptions_${svcName}_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'service_subscriptions');
   }
 
   exportSubsPdf() {
@@ -669,6 +674,7 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`subscriptions_${svcName}_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'service_subscriptions');
   }
 
   clearTrxFilters() {
@@ -698,6 +704,7 @@ export class DetailsPage implements OnInit {
     XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `transactions_${svcName}_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'service_transactions');
   }
 
   exportTrxPdf() {
@@ -787,6 +794,12 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`transactions_${svcName}_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'service_transactions');
+  }
+
+  openTransactionInfo(trx: AssetTransaction) {
+    this.trxInfoService.show(trx);
+    this.auditService.logView('transaction', { id: trx.trxId });
   }
 
 }

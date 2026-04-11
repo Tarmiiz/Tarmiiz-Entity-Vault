@@ -25,6 +25,7 @@ import { ModalTransactionInfoService } from '../../../../shared/components/modal
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 import { ModalAssetServiceStateService } from '../modals/modal-asset-service-state/modal-asset-service-state.service';
 import { ModalAssetServiceStateComponent } from '../modals/modal-asset-service-state/modal-asset-service-state.component';
+import { AuditService } from '../../../../shared/services/audit.service';
 
 
 
@@ -56,6 +57,7 @@ export class DetailsPage implements OnInit {
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
+  private auditService = inject(AuditService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -350,11 +352,11 @@ export class DetailsPage implements OnInit {
   }
 
   async openServiceStateModal(serviceAddress: string, serviceName: string, currentState: number) {
-    const newState = await this.serviceStateModal.show({ serviceAddress, serviceName, currentState });
-    if (newState === null || newState === currentState) return;
+    const result = await this.serviceStateModal.show({ serviceAddress, serviceName, currentState });
+    if (result === null || result.state === currentState) return;
     this.loadingService.show('Updating service state...');
     try {
-      await this.apiService.vaultSetAssetServiceState(this.assetAddress, serviceAddress, newState);
+      await this.apiService.vaultSetAssetServiceState(this.assetAddress, serviceAddress, result.state, result.reason);
       await this.getAssetDetails();
     } catch (error) {
       console.error('Failed to change service state', error);
@@ -367,11 +369,11 @@ export class DetailsPage implements OnInit {
     const currentAsset = this.asset();
     if (!currentAsset) return;
 
-    const newState = await this.assetStateService.show(currentAsset.state);
-    if (newState !== null && newState !== currentAsset.state) {
+    const result = await this.assetStateService.show(currentAsset.state);
+    if (result !== null && result.state !== currentAsset.state) {
       this.loadingService.show('Changing state...');
       try {
-        await this.apiService.vaultUpdateAssetState(currentAsset.address, newState);
+        await this.apiService.vaultUpdateAssetState(currentAsset.address, result.state, result.reason);
         await this.getAssetDetails();
       } catch (error) {
         console.error('Failed to change state', error);
@@ -596,6 +598,7 @@ export class DetailsPage implements OnInit {
     XLSX.utils.book_append_sheet(wb, ws, 'Holders');
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `asset_holders_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'asset_holders');
   }
 
   exportHoldersPdf() {
@@ -658,6 +661,7 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`asset_holders_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'asset_holders');
   }
 
   exportPdf() {
@@ -761,6 +765,7 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`asset_transactions_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'asset_transactions');
   }
 
   exportExcel() {
@@ -781,6 +786,12 @@ export class DetailsPage implements OnInit {
     const now = new Date();
     const stamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `asset_transactions_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'asset_transactions');
+  }
+
+  showTransactionInfo(trx: AssetTransaction) {
+    this.auditService.logView('transaction', { id: trx.trxId });
+    this.trxInfoService.show(trx);
   }
 
   async gotoSubscription(subscription: string) {

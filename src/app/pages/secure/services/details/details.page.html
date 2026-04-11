@@ -610,7 +610,7 @@
                     }
                     @else {
                         @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
-                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
+                            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="openTransactionInfo(trx)">
                                 <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                                 <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
                                 <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){<span class="text-gray-400 ml-1">({{ trx.assetSymbol }})</span>}</td>

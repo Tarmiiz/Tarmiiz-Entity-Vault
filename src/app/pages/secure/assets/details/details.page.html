@@ -278,6 +278,20 @@
                   <p class="text-sm font-medium text-gray-500">Asset Type</p>
                   <p class="text-base">{{ v.assetTypeName }}</p>
                 </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Regulator</p>
+                  <p class="text-base">{{ v.regulatorName }}{{ v.regulatorSymbol ? ' (' + v.regulatorSymbol + ')' : '' }}</p>
+                  @if (v.regulator) {
+                    <p class="font-mono text-xs text-gray-400">{{ v.regulator }}</p>
+                  }
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Credit Settlement</p>
+                  <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                    [class]="v.creditSettlement ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'">
+                    {{ v.creditSettlement ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </div>
               </div>
               
               @if(userInfo && userInfo.role !== 3) {
@@ -605,7 +619,7 @@
                     }
                     @else {
                       @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
-                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
+                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="showTransactionInfo(trx)">
                           <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
                           <td class="px-6 py-2">{{ trx.serviceName }}</td>

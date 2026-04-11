@@ -66,6 +66,15 @@
         >
           Transactions
         </button>
+        <button (click)="setTab('credit')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'credit'"
+          [class.border-b-2]="activeTab() === 'credit'"
+          [class.border-blue-600]="activeTab() === 'credit'"
+          [class.bg-blue-600]="activeTab() === 'credit'"
+        >
+          Credit
+        </button>
       </div>
     </div>
 
@@ -139,6 +148,21 @@
                 </div>
               }
             </div>
+
+            <!-- Credit balance summary -->
+            @if (activeCreditBalances().length > 0) {
+              <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Credit Balance</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  @for (bal of activeCreditBalances(); track bal.currencyCode) {
+                    <div>
+                      <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} ({{ bal.currencySymbol }})</p>
+                      <p class="text-base font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</p>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
 
             <!-- Transactions summary -->
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
@@ -484,7 +508,7 @@
                     }
                     @else {
                       @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
-                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="trxInfoService.show(trx)">
+                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewTransactionDetails(trx)">
                           <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
                           <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){<span class="text-gray-400 ml-1">({{ trx.assetSymbol }})</span>}</td>
@@ -520,8 +544,156 @@
           </div>
         }
 
+        <!-- credit tab -->
+        @if (activeTab() === 'credit') {
+          <div class="space-y-3">
 
-      } 
+            <!-- Balance Cards -->
+            <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Credit Balances</p>
+              @if (activeCreditBalances().length === 0) {
+                <p class="text-xs text-gray-400">No credit balances</p>
+              } @else {
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  @for (bal of activeCreditBalances(); track bal.currencyCode) {
+                    <div class="bg-white rounded-lg border border-gray-200 p-3">
+                      <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} ({{ bal.currencySymbol }})</p>
+                      <p class="text-lg font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</p>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+              <div class="flex flex-wrap gap-2 items-end">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Type</label>
+                  <select [ngModel]="filterCreditType()" (ngModelChange)="filterCreditType.set($event); creditTrxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <option value="">All</option>
+                    <option value="Deposit">Deposit</option>
+                    <option value="Withdraw">Withdraw</option>
+                    <option value="Transfer">Transfer</option>
+                    <option value="Withhold">Withhold</option>
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <select [ngModel]="filterCreditCurrency()" (ngModelChange)="filterCreditCurrency.set($event); creditTrxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <option value="">All</option>
+                    @for (c of uniqueCreditCurrencies(); track c) {
+                      <option [value]="c">{{ c }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">Amount</label>
+                  <div class="flex items-center gap-1">
+                    <select [ngModel]="filterCreditAmountOp()" (ngModelChange)="filterCreditAmountOp.set($event); creditTrxPage.set(0)"
+                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                      <option value="">Any</option>
+                      <option value="gt">&gt;</option>
+                      <option value="lt">&lt;</option>
+                    </select>
+                    <input type="number" min="0" [ngModel]="filterCreditAmountVal()" (ngModelChange)="filterCreditAmountVal.set($event === '' || $event === null ? null : +$event); creditTrxPage.set(0)"
+                      placeholder="Amount"
+                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
+                  </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">From</label>
+                  <input type="date" [ngModel]="filterCreditStartDate()" (ngModelChange)="filterCreditStartDate.set($event); creditTrxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">To</label>
+                  <input type="date" [ngModel]="filterCreditEndDate()" (ngModelChange)="filterCreditEndDate.set($event); creditTrxPage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                </div>
+                <div class="flex flex-col justify-end">
+                  <button (click)="clearCreditFilters()"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    Clear
+                  </button>
+                </div>
+                <div class="flex gap-2 ml-auto">
+                  <button (click)="exportCreditExcel()"
+                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export Excel
+                  </button>
+                  <button (click)="exportCreditPdf()"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm text-left text-gray-700">
+                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                    <tr>
+                      <th scope="col" class="px-6 py-2">Date</th>
+                      <th scope="col" class="px-6 py-2">Type</th>
+                      <th scope="col" class="px-6 py-2">Currency</th>
+                      <th scope="col" class="px-6 py-2 text-right">Amount</th>
+                      <th scope="col" class="px-6 py-2">State</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    @if (filteredCreditTransactions().length === 0) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                        <td colspan="5" class="px-6 py-2 text-center text-gray-400">No credit transactions found</td>
+                      </tr>
+                    } @else {
+                      @for (trx of pagedCreditTransactions(); track trx.trxId; let isEven = $even) {
+                        <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                          <td class="px-6 py-2">{{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span></td>
+                          <td class="px-6 py-2">{{ trx.currencySymbol }}</td>
+                          <td class="px-6 py-2 text-right">{{ trx.amount | number: '1.2-2' }}</td>
+                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span></td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex items-center justify-between px-4 py-2 border-t">
+                <p class="text-xs font-medium text-gray-800">Showing {{ pagedCreditTransactions().length }} of {{ filteredCreditTransactions().length }} Credit Transactions</p>
+                @if (totalCreditTrxPages() > 1) {
+                  <div class="flex items-center gap-3 text-xs text-gray-600">
+                    <span>Page {{ creditTrxPage() + 1 }} of {{ totalCreditTrxPages() }}</span>
+                    <div class="flex gap-2">
+                      <button (click)="creditTrxPage.set(creditTrxPage() - 1)" [disabled]="creditTrxPage() === 0"
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                        Prev
+                      </button>
+                      <button (click)="creditTrxPage.set(creditTrxPage() + 1)" [disabled]="creditTrxPage() >= totalCreditTrxPages() - 1"
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+
+      }
       @else {
         <div class="text-center py-12 text-gray-500">
           <p>Loading service details...</p>

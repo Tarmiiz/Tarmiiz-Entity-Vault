@@ -17,17 +17,18 @@ export class ApiService {
   private ethersService = inject(EthersService);
   private injector = inject(Injector);
 
-  private get authService(): import('./auth.service').AuthService {
-    // Lazy resolution to avoid circular dependency (AuthService → ApiService)
-    const { AuthService } = require('./auth.service');
-    return this.injector.get(AuthService);
-  }
-
+  private _authRef: any = null;
   private formatReason(reason: string): string {
-    const user = this.authService.userInfo;
-    if (user?.userId) {
-      return `[userId:${user.userId}|${user.name || ''}] ${reason}`;
-    }
+    try {
+      // Lazy resolution to avoid circular dependency (AuthService ↔ ApiService)
+      if (!this._authRef) {
+        this._authRef = this.injector.get((require('./auth.service') as any).AuthService);
+      }
+      const user = this._authRef?.userInfo;
+      if (user?.userId) {
+        return `[userId:${user.userId}|${user.name || ''}] ${reason}`;
+      }
+    } catch (_) {}
     return reason;
   }
 
@@ -35,6 +36,22 @@ export class ApiService {
   vaultToken = environment.vaultToken;
 
   globalSalt = environment.globalSalt;
+
+  private getAuditHeaders(): Record<string, string> {
+    try {
+      if (!this._authRef) {
+        this._authRef = this.injector.get((require('./auth.service') as any).AuthService);
+      }
+      const user = this._authRef?.userInfo;
+      if (user?.userId) {
+        return {
+          'X-Audit-User-Id': String(user.userId),
+          'X-Audit-User-Name': user.name || '',
+        };
+      }
+    } catch (_) {}
+    return {};
+  }
 
   // ─── Vault — Config (unauthenticated) ────────────────────────────────────────
 
@@ -80,6 +97,7 @@ export class ApiService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
         },
         data: body,
       });
@@ -98,6 +116,7 @@ export class ApiService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
         },
       });
       if (response.data?.type !== 'success') return null;
@@ -115,6 +134,7 @@ export class ApiService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
         },
         data: body,
       });
@@ -345,8 +365,8 @@ export class ApiService {
     return data ?? null;
   }
 
-  async vaultSetAssetServiceState(assetAddress: string, serviceAddress: string, state: number) {
-    const data = await this.vaultPut('/assets/' + assetAddress + '/services/' + serviceAddress + '/state', { state });
+  async vaultSetAssetServiceState(assetAddress: string, serviceAddress: string, state: number, reason = '') {
+    const data = await this.vaultPut('/assets/' + assetAddress + '/services/' + serviceAddress + '/state', { state, reason: this.formatReason(reason) });
     return data ?? null;
   }
 
@@ -399,6 +419,16 @@ export class ApiService {
   async vaultUpdateSubscriptionState(address: string, state: number, reason = '') {
     const data = await this.vaultPut('/subscriptions/' + address + '/state', { state, reason: this.formatReason(reason) });
     return data ?? null;
+  }
+
+  async vaultGetSubscriptionCreditBalance(address: string) {
+    const data = await this.vaultGet('/subscriptions/' + address + '/credit-balance');
+    return data?.balances ?? null;
+  }
+
+  async vaultGetSubscriptionCreditTransactions(address: string, start = 1, offset = 500) {
+    const data = await this.vaultGet('/subscriptions/' + address + '/credit-transactions', { start: String(start), offset: String(offset) });
+    return data ? { count: data.count, transactions: data.transactions } : null;
   }
 
   async vaultGetSubscriptionIdentityHash(address: string) {
@@ -791,6 +821,44 @@ export class ApiService {
     });
   }
   
+  // ─── Activity Logs ──────────────────────────────────────────────────────────
+
+  async vaultPostActivityLog(body: Record<string, any>) {
+    try {
+      await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/vault/activity-log',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+        },
+        data: body,
+      });
+    } catch {}
+  }
+
+  async vaultPostAuditLog(body: Record<string, any>) {
+    try {
+      await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/vault/audit-log',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
+        },
+        data: body,
+      });
+    } catch {}
+  }
+
+  async vaultGetActivityLogs(start = 1, offset = 50, category?: string, userId?: number) {
+    const params: Record<string, any> = { start: String(start), offset: String(offset) };
+    if (category) params['category'] = category;
+    if (userId) params['user_id'] = String(userId);
+    return this.vaultGet('/activity-logs', params);
+  }
+
   private async base64ToImage(base64: string): Promise<HTMLImageElement | null> {
     try {
       const image = new Image();

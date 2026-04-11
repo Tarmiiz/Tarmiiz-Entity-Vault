@@ -14,6 +14,7 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
+import { AuditService } from '../../../../shared/services/audit.service';
 import { AssetTransaction } from '../../../../shared/models/data.model';
 
 @Component({
@@ -33,6 +34,7 @@ export class ListPage implements OnInit {
   utils = inject(UtilsService);
   private loadingService = inject(LoadingService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
+  private auditService = inject(AuditService);
 
   transactions = signal<AssetTransaction[]>([]);
   totalCount = signal<number>(0);
@@ -268,6 +270,7 @@ export class ListPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`transactions_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'transactions');
   }
 
   exportExcel() {
@@ -290,6 +293,7 @@ export class ListPage implements OnInit {
     const now = new Date();
     const stamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `transactions_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'transactions');
   }
 
   getTrxTypeClass(type: string): string {
@@ -303,6 +307,7 @@ export class ListPage implements OnInit {
 
   viewDetails(trx: AssetTransaction): void {
     this.modalTransactionInfoService.show(trx);
+    this.auditService.logView('transaction', { trxId: trx.trxId, trxType: trx.trxType });
   }
 
 

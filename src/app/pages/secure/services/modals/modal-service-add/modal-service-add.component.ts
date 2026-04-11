@@ -186,6 +186,17 @@ export class ModalServiceAddComponent {
     return p ? (p.name || p.address) : 'None';
   }
 
+  async fillFromEntity(): Promise<void> {
+    const info = await this.apiService.vaultGetEntityInfo();
+    if (!info) return;
+    const meta = typeof (info as any).metadata === 'string' ? JSON.parse((info as any).metadata) : (info as any).metadata ?? {};
+    this.addForm.patchValue({
+      website: meta.website ?? '',
+      email: meta.email ?? '',
+      mobile: meta.mobile ?? '',
+    });
+  }
+
   onSave(): void {
     if (this.addForm.invalid || !this.reviewConfirmed()) return;
 

@@ -113,7 +113,13 @@
 
           <!-- Step 3: Contact -->
           @if (currentStep() === 3) {
-            <p class="text-sm text-gray-500 mb-2">Provide the service's contact information.</p>
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-sm text-gray-500">Provide the service's contact information.</p>
+              <button type="button" (click)="fillFromEntity()"
+                class="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+                Use Entity Info
+              </button>
+            </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Website</label>
               <input type="text" placeholder="https://example.com" formControlName="website"

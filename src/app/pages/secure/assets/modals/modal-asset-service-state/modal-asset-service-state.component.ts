@@ -17,7 +17,6 @@ export class ModalAssetServiceStateComponent {
   private fb = inject(FormBuilder);
 
   readonly states = [
-    { value: 1, label: 'Pending' },
     { value: 3, label: 'Suspended' },
     { value: 4, label: 'Exit Only' },
     { value: 5, label: 'Deactivated' },
@@ -25,6 +24,7 @@ export class ModalAssetServiceStateComponent {
 
   stateForm = this.fb.group({
     newState: [null as number | null, Validators.required],
+    reason: [''],
   });
 
   constructor() {
@@ -38,8 +38,9 @@ export class ModalAssetServiceStateComponent {
 
   onSave(): void {
     const newState = this.stateForm.get('newState')?.value;
+    const reason = this.stateForm.get('reason')?.value ?? '';
     if (newState !== null && newState !== undefined) {
-      this.stateService.confirm(newState);
+      this.stateService.confirm(newState, reason);
     }
   }
 

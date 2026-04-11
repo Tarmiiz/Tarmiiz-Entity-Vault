@@ -7,21 +7,21 @@ export class ModalAssetStateService {
   isVisible = signal(false);
   currentState = signal<number | null>(null);
 
-  private resolveFn?: (value: number | null) => void;
+  private resolveFn?: (value: {state: number, reason: string} | null) => void;
 
-  show(currentState: number): Promise<number | null> {
+  show(currentState: number): Promise<{state: number, reason: string} | null> {
     this.currentState.set(currentState);
     this.isVisible.set(true);
 
-    return new Promise<number | null>((resolve) => {
+    return new Promise<{state: number, reason: string} | null>((resolve) => {
       this.resolveFn = resolve;
     });
   }
 
-  confirm(newState: number): void {
+  confirm(newState: number, reason: string): void {
     this.isVisible.set(false);
     if (this.resolveFn) {
-      this.resolveFn(newState);
+      this.resolveFn({state: newState, reason});
     }
   }
 

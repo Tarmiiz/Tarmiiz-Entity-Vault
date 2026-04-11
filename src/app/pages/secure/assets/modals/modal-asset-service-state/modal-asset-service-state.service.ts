@@ -13,20 +13,20 @@ export class ModalAssetServiceStateService {
   isVisible = signal(false);
   context = signal<ServiceStateContext | null>(null);
 
-  private resolveFn?: (value: number | null) => void;
+  private resolveFn?: (value: {state: number, reason: string} | null) => void;
 
-  show(ctx: ServiceStateContext): Promise<number | null> {
+  show(ctx: ServiceStateContext): Promise<{state: number, reason: string} | null> {
     this.context.set(ctx);
     this.isVisible.set(true);
-    return new Promise<number | null>((resolve) => {
+    return new Promise<{state: number, reason: string} | null>((resolve) => {
       this.resolveFn = resolve;
     });
   }
 
-  confirm(newState: number): void {
+  confirm(newState: number, reason: string): void {
     this.isVisible.set(false);
     if (this.resolveFn) {
-      this.resolveFn(newState);
+      this.resolveFn({state: newState, reason});
     }
   }
 

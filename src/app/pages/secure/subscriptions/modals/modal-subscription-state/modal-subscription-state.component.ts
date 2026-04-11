@@ -22,6 +22,7 @@ export class ModalSubscriptionStateComponent {
   
   stateForm = this.fb.group({
     newState: [null as number | null, Validators.required],
+    reason: [''],
   });
 
   constructor() {
@@ -53,8 +54,9 @@ export class ModalSubscriptionStateComponent {
   onSave(): void {
     if (this.stateForm.valid) {
       const newStateValue = this.stateForm.get('newState')?.value;
+      const reason = this.stateForm.get('reason')?.value ?? '';
       if (newStateValue) {
-        this.changeStateService.confirm(newStateValue);
+        this.changeStateService.confirm(newStateValue, reason);
       }
     }
   }

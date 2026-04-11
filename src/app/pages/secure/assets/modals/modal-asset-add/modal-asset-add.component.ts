@@ -29,6 +29,7 @@ export class ModalAssetAddComponent {
 
   // Address resolution
   knownAddresses = signal<{ address: string; name: string }[]>([]);
+  entityAddress = signal('');
   ownerName = signal('');
   issuerName = signal('');
   managerName = signal('');
@@ -175,10 +176,18 @@ export class ModalAssetAddComponent {
 
     const entity = await this.apiService.vaultGetEntityInfo();
     if (entity?.address) {
+      this.entityAddress.set(entity.address);
       entries.push({ address: entity.address.toLowerCase(), name: entity.name || 'Entity' });
     }
 
     this.knownAddresses.set(entries);
+  }
+
+  useSelf(field: 'owner' | 'issuer' | 'manager'): void {
+    const addr = this.entityAddress();
+    if (!addr) return;
+    this.addForm.get(field)?.setValue(addr);
+    this.resolveAddress(field);
   }
 
   resolveAddress(field: 'owner' | 'issuer' | 'manager'): void {

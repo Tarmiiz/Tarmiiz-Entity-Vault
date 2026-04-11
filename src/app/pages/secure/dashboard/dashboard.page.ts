@@ -17,6 +17,7 @@ import { Router } from '@angular/router';
 import { AuthService } from 'src/app/shared/services/auth.service';
 import { ModalTransactionInfoService } from '../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../shared/components/modal-transaction-info/modal-transaction-info.component';
+import { AuditService } from '../../../shared/services/audit.service';
 
 interface StatCard {
   title: string;
@@ -27,15 +28,21 @@ interface StatCard {
 }
 
 interface DashboardKpis {
-  totalAum: number;
   activeInvestors: number;
   pendingKyc: number;
-  netFlow30d: number;
   netFlowTokens30d: number;
 }
 
-interface WeeklyActivityPoint {
-  week: string;
+interface CurrencySummary {
+  code: string;
+  name: string;
+  assetCount: number;
+  totalAum: number;
+  netFlow30d: number;
+}
+
+interface DailyActivityPoint {
+  day: string;
   subscribeTokens: number; redeemTokens: number;
   subscribeValue: number;  redeemValue: number;
 }
@@ -50,13 +57,15 @@ interface TopAsset {
   address: string; name: string; symbol: string;
   circulating: number; bid: number; ask: number;
   aum: number; price_ts: number; previousBid: number; state: number;
+  currency: string;
 }
 
 interface DashboardSummary {
   kpis: DashboardKpis;
+  currencies: CurrencySummary[];
   charts: {
-    weeklyActivity: WeeklyActivityPoint[];
-    aumByAsset: AumByAsset[];
+    dailyActivityByCurrency: Record<string, DailyActivityPoint[]>;
+    aumByAssetByCurrency: Record<string, AumByAsset[]>;
   };
   topAssets: TopAsset[];
 }
@@ -81,6 +90,7 @@ export class DashboardPage implements OnInit {
   private authService = inject(AuthService);
   socketService = inject(SocketService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
+  private auditService = inject(AuditService);
 
   userInfo!: User;
 
@@ -113,14 +123,28 @@ export class DashboardPage implements OnInit {
   dashboardSummary  = signal<DashboardSummary | null>(null);
   summaryLoading    = signal(true);
   lastUpdated       = signal<Date | null>(null);
+  selectedCurrency  = signal<string | null>(null);
 
-  totalAum         = computed(() => this.dashboardSummary()?.kpis.totalAum ?? 0);
   activeInvestors  = computed(() => this.dashboardSummary()?.kpis.activeInvestors ?? 0);
   pendingKyc       = computed(() => this.dashboardSummary()?.kpis.pendingKyc ?? 0);
-  netFlow30d       = computed(() => this.dashboardSummary()?.kpis.netFlow30d ?? 0);
+  netFlowTokens30d = computed(() => this.dashboardSummary()?.kpis.netFlowTokens30d ?? 0);
+  currencies       = computed(() => this.dashboardSummary()?.currencies ?? []);
+  hasMultipleCurrencies = computed(() => this.currencies().length > 1);
+  selectedCurrencyName = computed(() => {
+    const code = this.selectedCurrency();
+    return this.currencies().find(c => c.code === code)?.name ?? code ?? '';
+  });
   topAssets       = computed(() => this.dashboardSummary()?.topAssets ?? []);
-  weeklyActivity  = computed(() => this.dashboardSummary()?.charts.weeklyActivity ?? []);
-  aumByAsset      = computed(() => this.dashboardSummary()?.charts.aumByAsset ?? []);
+  dailyActivity   = computed(() => {
+    const code = this.selectedCurrency();
+    if (!code) return [] as DailyActivityPoint[];
+    return this.dashboardSummary()?.charts.dailyActivityByCurrency[code] ?? [];
+  });
+  aumByAsset      = computed(() => {
+    const code = this.selectedCurrency();
+    if (!code) return [] as AumByAsset[];
+    return this.dashboardSummary()?.charts.aumByAssetByCurrency[code] ?? [];
+  });
 
   private _socketSub: RxSubscription | null = null;
 
@@ -134,6 +158,7 @@ export class DashboardPage implements OnInit {
 
   viewDetails(trx: AssetTransaction) {
     this.modalTransactionInfoService.show(trx);
+    this.auditService.logView('transaction', { trxId: trx.trxId, trxType: trx.trxType });
   }
 
   async ionViewWillEnter() {
@@ -272,10 +297,20 @@ export class DashboardPage implements OnInit {
     this.summaryLoading.set(true);
     const result = await this.apiService.vaultGetDashboardSummary();
     if (result) {
-      this.dashboardSummary.set(result as DashboardSummary);
+      const summary = result as DashboardSummary;
+      this.dashboardSummary.set(summary);
+      const current = this.selectedCurrency();
+      const available = summary.currencies ?? [];
+      if (!current || !available.some(c => c.code === current)) {
+        this.selectedCurrency.set(available.length ? available[0].code : null);
+      }
     }
     this.summaryLoading.set(false);
-    // Canvases are now in the DOM (loading state hidden) — safe to render
+    setTimeout(() => this.renderAllCharts(), 50);
+  }
+
+  setCurrency(code: string) {
+    this.selectedCurrency.set(code);
     setTimeout(() => this.renderAllCharts(), 50);
   }
 
@@ -289,25 +324,29 @@ export class DashboardPage implements OnInit {
   private renderActivityChart(Chart: any) {
     if (!this.activityChartRef?.nativeElement) return;
     this.activityChartInstance?.destroy();
-    const data = this.weeklyActivity();
+    const data = this.dailyActivity();
+    const currency = this.selectedCurrency() ?? '';
+    const valueAxisLabel = currency ? `Value (${currency})` : 'Value';
     this.activityChartInstance = new Chart(this.activityChartRef.nativeElement, {
-      type: 'bar',
+      type: 'line',
       data: {
-        labels: data.map((d: WeeklyActivityPoint) => d.week),
+        labels: data.map((d: DailyActivityPoint) => d.day),
         datasets: [
-          { type: 'bar', label: 'Subscribe (tokens)', data: data.map((d: WeeklyActivityPoint) => d.subscribeTokens), backgroundColor: 'rgba(52,211,153,0.7)', barPercentage: 0.4, yAxisID: 'y' },
-          { type: 'bar', label: 'Subscribe (value)',  data: data.map((d: WeeklyActivityPoint) => d.subscribeValue),  backgroundColor: 'rgba(5,150,105,0.8)',  barPercentage: 0.4, yAxisID: 'y1' },
-          { type: 'bar', label: 'Redeem (tokens)',    data: data.map((d: WeeklyActivityPoint) => d.redeemTokens),    backgroundColor: 'rgba(252,165,165,0.7)', barPercentage: 0.4, yAxisID: 'y' },
-          { type: 'bar', label: 'Redeem (value)',     data: data.map((d: WeeklyActivityPoint) => d.redeemValue),     backgroundColor: 'rgba(185,28,28,0.8)',  barPercentage: 0.4, yAxisID: 'y1' },
+          { label: 'Subscribe (tokens)', data: data.map((d: DailyActivityPoint) => d.subscribeTokens), borderColor: 'rgba(52,211,153,1)',  backgroundColor: 'rgba(52,211,153,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
+          { label: `Subscribe (${currency || 'value'})`, data: data.map((d: DailyActivityPoint) => d.subscribeValue), borderColor: 'rgba(5,150,105,1)',   backgroundColor: 'rgba(5,150,105,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
+          { label: 'Redeem (tokens)',    data: data.map((d: DailyActivityPoint) => d.redeemTokens),    borderColor: 'rgba(252,165,165,1)', backgroundColor: 'rgba(252,165,165,0.15)',tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
+          { label: `Redeem (${currency || 'value'})`,    data: data.map((d: DailyActivityPoint) => d.redeemValue),    borderColor: 'rgba(185,28,28,1)',   backgroundColor: 'rgba(185,28,28,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: { legend: { position: 'top' } },
         scales: {
+          x:  { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
           y:  { beginAtZero: true, position: 'left',  title: { display: true, text: 'Tokens' } },
-          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Value' } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: valueAxisLabel } },
         },
       },
     });

@@ -71,6 +71,34 @@ export class LogEvent {
   ) {}
 }
 
+export interface StateChangeLog {
+  id: number;
+  address: string;
+  type: string;
+  action: string;
+  new_value: string;
+  reason: string;
+  caller: string;
+  tx_hash: string;
+  block_number: number;
+  user_id: number | null;
+  user_name: string;
+  client_ip: string;
+  created_at: number;
+}
+
+export interface ActivityLog {
+  id: number;
+  category: string;
+  action: string;
+  target: string;
+  details: string;
+  user_id: number | null;
+  user_name: string;
+  client_ip: string;
+  created_at: number;
+}
+
 
 // export class Asset {
 //   constructor (
@@ -343,5 +371,33 @@ export class AssetTransaction {
     public data: string,
     public trxRefNo: string,
     public time: number
+  ) {}
+}
+
+export class CreditBalance {
+  constructor (
+    public currencyCode: number,
+    public currencyName: string,
+    public currencySymbol: string,
+    public balance: number
+  ) {}
+}
+
+export class CreditTransaction {
+  constructor (
+    public trxId: number,
+    public service: string,
+    public from: string,
+    public to: string,
+    public trxType: number,
+    public trxTypeName: string,
+    public currencyCode: number,
+    public currencySymbol: string,
+    public amount: number,
+    public trxData: string,
+    public trxState: number,
+    public trxStateName: string,
+    public startTime: number,
+    public updateTime: number
   ) {}
 }

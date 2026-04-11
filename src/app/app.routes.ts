@@ -179,6 +179,13 @@ export const routes: Routes = [
           },
         ]
       },
+      // logs (admin only)
+      {
+        path: 'logs',
+        loadComponent: () => import('./pages/secure/logs/logs.page').then(m => m.LogsPage),
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [1] }
+      },
       // variables
       {
         path: 'variables',

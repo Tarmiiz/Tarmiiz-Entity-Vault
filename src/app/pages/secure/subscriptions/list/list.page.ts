@@ -14,6 +14,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
+import { AuditService } from '../../../../shared/services/audit.service';
 
 import { Subscription } from '../../../../shared/models/data.model';
 
@@ -33,6 +34,7 @@ export class ListPage implements OnInit {
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   utils = inject(UtilsService);
+  private auditService = inject(AuditService);
 
   loadingServices: boolean = false;
 
@@ -211,6 +213,7 @@ export class ListPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     doc.save(`subscriptions_${stamp}.pdf`);
+    this.auditService.logExport('pdf', 'subscriptions');
   }
 
   exportExcel() {
@@ -229,6 +232,7 @@ export class ListPage implements OnInit {
     const now = new Date();
     const stamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `subscriptions_${stamp}.xlsx`);
+    this.auditService.logExport('excel', 'subscriptions');
   }
 
 }
