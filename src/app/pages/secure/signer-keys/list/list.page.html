@@ -1,0 +1,67 @@
+<app-header title="Signer Keys"></app-header>
+
+<div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex items-center justify-between">
+      <p class="text-xs text-gray-500">Each signer key is an EOA wallet whose private key is AES-encrypted on-chain. Used to sign documents.</p>
+      <button (click)="generate()"
+        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        Generate Key
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-6 py-2">#</th>
+            <th class="px-6 py-2">ID</th>
+            <th class="px-6 py-2">Signer Address</th>
+            <th class="px-6 py-2">Description</th>
+            <th class="px-6 py-2">Created</th>
+            <th class="px-6 py-2">State</th>
+            <th class="px-6 py-2 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @if (!loading) {
+            @if (keys().length === 0) {
+              <tr class="bg-white border-b">
+                <td class="px-6 py-2" colspan="7">no signer keys yet</td>
+              </tr>
+            } @else {
+              @for (k of keys(); track k.keyId; let i = $index; let isEven = $even) {
+                <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                  <td class="px-6 py-2">{{ i + 1 }}</td>
+                  <td class="px-6 py-2">{{ k.keyId }}</td>
+                  <td class="px-6 py-2 font-mono break-all">{{ k.signer }}</td>
+                  <td class="px-6 py-2">{{ k.description || '—' }}</td>
+                  <td class="px-6 py-2">{{ utils.formatDate(k.createdAt) }}</td>
+                  <td class="px-6 py-2">
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="stateClass(k.state)">{{ stateLabel(k.state) }}</span>
+                  </td>
+                  <td class="px-6 py-2 text-right">
+                    <button (click)="toggleState(k)" class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors mr-1">
+                      {{ k.state === 1 ? 'Disable' : 'Activate' }}
+                    </button>
+                    <button (click)="remove(k)" class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">Remove</button>
+                  </td>
+                </tr>
+              }
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center px-4 py-2 border-t">
+      <p class="text-xs font-medium text-gray-800">Total {{ total }} signer keys</p>
+    </div>
+  </div>
+</div>
+
+<app-modal-signer-key-add />

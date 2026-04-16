@@ -6,17 +6,24 @@ import { Injectable, signal } from '@angular/core';
 export class LoadingService {
   isVisible = signal(false);
   message = signal('Submitting data...');
+  progress = signal<number | null>(null);
 
   show(message?: string): void {
-    if (message) {
-      this.message.set(message);
-    } else {
-      this.message.set('Submitting data...');
-    }
+    this.message.set(message || 'Submitting data...');
+    this.progress.set(null);
     this.isVisible.set(true);
+  }
+
+  setProgress(percent: number | null): void {
+    this.progress.set(percent);
+  }
+
+  setMessage(message: string): void {
+    this.message.set(message);
   }
 
   hide(): void {
     this.isVisible.set(false);
+    this.progress.set(null);
   }
 }

@@ -1,0 +1,104 @@
+<app-header [title]="'Thread #' + threadId"></app-header>
+
+<div class="flex-grow p-4 bg-gray-300 overflow-y-auto">
+
+  @if (thread(); as t) {
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+      <div class="flex justify-between items-start gap-2">
+        <div>
+          <div class="text-sm font-semibold">{{ t.subject || '(no subject)' }}</div>
+          <div class="text-xs text-gray-500">Created {{ utils.formatDate(t.createdAt) }}</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] px-2 py-0.5 rounded font-medium"
+                [ngClass]="t.state===1 ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'">
+            {{ t.state === 1 ? 'Open' : t.state === 2 ? 'Closed' : 'Archived' }}
+          </span>
+          @if (t.state === 1 && isEntityCreator()) {
+            <button (click)="closeThread()"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">
+              Close thread
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="mt-3 flex flex-wrap gap-2">
+        @for (p of t.participants; track p.address) {
+          <span class="text-[10px] bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-100">
+            {{ participantType(p.partyType) }} · {{ p.address.slice(0, 8) }}…{{ p.address.slice(-4) }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+      <div class="max-h-[50vh] overflow-auto flex flex-col gap-2">
+        @for (m of messages(); track m.id) {
+          <div class="flex" [class.justify-end]="isMine(m)">
+            <div class="max-w-[70%] rounded-lg px-3 py-2 text-xs"
+                 [ngClass]="isMine(m) ? 'bg-indigo-100 text-indigo-900' : 'bg-gray-100 text-gray-800'">
+              <div class="text-[10px] text-gray-500 mb-1">
+                {{ isMine(m) ? 'me' : (m.sender.slice(0,8) + '…') }}
+                · {{ utils.formatDate(m.sentAt) }}
+                @if (m.state === 2) { · <span class="italic">tombstoned</span> }
+              </div>
+              <div class="whitespace-pre-wrap break-words">
+                {{ m.state === 2 ? '(message hidden)' : m.contentCid }}
+              </div>
+              <div class="flex gap-3 mt-1 text-[10px]">
+                @if (!isMine(m) && !m.readAt) {
+                  <button class="text-indigo-700 hover:underline" (click)="markRead(m)">Mark read</button>
+                }
+                @if (isMine(m) && m.state === 1) {
+                  <button class="text-red-700 hover:underline" (click)="tombstone(m)">Tombstone</button>
+                }
+                @if (m.readAt) {
+                  <span class="text-gray-400">read {{ utils.formatDate(m.readAt) }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+        @if (messages().length === 0) {
+          <div class="text-center text-xs text-gray-500 py-6">No messages yet.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Compose -->
+    @if (t.state === 1) {
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+        <label class="text-xs font-medium text-gray-500">Send message</label>
+        <textarea rows="3" [ngModel]="composeText()" (ngModelChange)="composeText.set($event)"
+                  class="mt-1 w-full text-xs border border-gray-300 rounded px-2 py-1.5 text-black focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  placeholder="Type your message (stored on-chain as content CID)…"></textarea>
+        <div class="mt-2 text-right">
+          <button (click)="send()" [disabled]="!composeText()"
+                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50 transition-colors">
+            Send
+          </button>
+        </div>
+      </div>
+
+      @if (hasSubscriptionParticipants()) {
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+          <label class="text-xs font-medium text-gray-500">Broadcast to all subscribers in this thread</label>
+          <textarea rows="2" [ngModel]="broadcastText()" (ngModelChange)="broadcastText.set($event)"
+                    class="mt-1 w-full text-xs border border-gray-300 rounded px-2 py-1.5 text-black focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    placeholder="Broadcast message (fans out to every subscription participant)…"></textarea>
+          <div class="mt-2 text-right">
+            <button (click)="broadcast()" [disabled]="!broadcastText()"
+                    class="text-xs px-3 py-1.5 rounded bg-purple-700 text-white hover:bg-purple-800 disabled:opacity-50 transition-colors">
+              Broadcast
+            </button>
+          </div>
+        </div>
+      }
+    }
+  } @else {
+    <div class="text-center text-sm text-gray-500 py-12">Loading…</div>
+  }
+</div>

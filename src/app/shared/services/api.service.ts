@@ -155,6 +155,7 @@ export class ApiService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
         },
         params,
       });
@@ -448,6 +449,11 @@ export class ApiService {
     return data?.user ?? null;
   }
 
+  async vaultGetUserDefaultKey(id: string | number) {
+    const data = await this.vaultGet('/users/' + id + '/default-key');
+    return data ? { address: data.address as string | null, keyId: data.keyId as number | null } : null;
+  }
+
   async vaultCreateUser(body: Record<string, any>) {
     const data = await this.vaultPost('/users', body);
     return data ?? null;
@@ -565,6 +571,130 @@ export class ApiService {
 
   async signerKeyRemove(id: string) {
     return await this.authDelete('/signer-keys/' + id);
+  }
+
+  // ─── Documents (this entity's own RegulatorTemplate-style documents) ──────────
+
+  async documentsList(start = 1, offset = 50) {
+    return await this.authGet('/documents', { start: String(start), offset: String(offset) });
+  }
+  async documentGet(id: any)                             { return await this.authGet('/documents/' + id); }
+  async documentAdd(body: any)                           { return await this.authPost('/documents', body); }
+  async documentUpdate(id: any, body: any)               { return await this.authPut('/documents/' + id, body); }
+  async documentRemove(id: any)                          { return await this.authDelete('/documents/' + id); }
+  async documentSetState(id: any, newState: number)     { return await this.authPut('/documents/' + id + '/state', { newState }); }
+  async documentShare(id: any, account: string)         { return await this.authPost('/documents/' + id + '/share', { account }); }
+  async documentUnshare(id: any, account: string)       { return await this.authDelete('/documents/' + id + '/share/' + account); }
+  async documentGetSharedWith(id: any)                   { return await this.authGet('/documents/' + id + '/shared'); }
+
+  // Document signatures (this entity's own documents)
+  async documentSignatures(id: any, start = 1, offset = 50) {
+    return await this.authGet('/documents/' + id + '/signatures', { start: String(start), offset: String(offset) });
+  }
+  async documentSigners(id: any)                         { return await this.authGet('/documents/' + id + '/signers'); }
+  async documentHasSigned(id: any, account: string)     { return await this.authGet('/documents/' + id + '/signed/' + account); }
+  async documentSignatureCount(id: any)                 { return await this.authGet('/documents/' + id + '/signatures/count'); }
+  async documentSign(id: any, keyId: any, docHash: string) {
+    return await this.authPost('/documents/' + id + '/sign', { keyId, docHash });
+  }
+
+  // ─── Service documents (scoped to a given service address) ───────────────────
+
+  async serviceDocumentsList(address: string, start = 1, offset = 50) {
+    return await this.authGet('/services/' + address + '/documents', { start: String(start), offset: String(offset) });
+  }
+  async serviceDocumentGet(address: string, id: any)                           { return await this.authGet('/services/' + address + '/documents/' + id); }
+  async serviceDocumentAdd(address: string, body: any)                         { return await this.authPost('/services/' + address + '/documents', body); }
+  async serviceDocumentUpdate(address: string, id: any, body: any)             { return await this.authPut('/services/' + address + '/documents/' + id, body); }
+  async serviceDocumentRemove(address: string, id: any)                        { return await this.authDelete('/services/' + address + '/documents/' + id); }
+  async serviceDocumentSetState(address: string, id: any, state: number)       { return await this.authPut('/services/' + address + '/documents/' + id + '/state', { state }); }
+  async serviceDocumentShare(address: string, id: any, account: string)        { return await this.authPost('/services/' + address + '/documents/' + id + '/share', { account }); }
+  async serviceDocumentUnshare(address: string, id: any, account: string)      { return await this.authDelete('/services/' + address + '/documents/' + id + '/share/' + account); }
+  async serviceDocumentGetSharedWith(address: string, id: any)                 { return await this.authGet('/services/' + address + '/documents/' + id + '/shared'); }
+  async serviceDocumentSignatures(address: string, id: any, start = 1, offset = 100) {
+    return await this.authGet('/services/' + address + '/documents/' + id + '/signatures', { start: String(start), offset: String(offset) });
+  }
+  async serviceDocumentSigners(address: string, id: any)                       { return await this.authGet('/services/' + address + '/documents/' + id + '/signers'); }
+  async serviceDocumentHasSigned(address: string, id: any, account: string)    { return await this.authGet('/services/' + address + '/documents/' + id + '/signed/' + account); }
+  async serviceDocumentSignatureCount(address: string, id: any)                { return await this.authGet('/services/' + address + '/documents/' + id + '/signatures/count'); }
+  async serviceDocumentSign(address: string, id: any, keyId: any, docHash: string) {
+    return await this.authPost('/services/' + address + '/documents/' + id + '/sign', { keyId, docHash });
+  }
+
+  // ─── Asset documents (scoped to a given asset address) ───────────────────────
+
+  async assetDocumentsList(address: string, start = 1, offset = 50) {
+    return await this.authGet('/assets/' + address + '/documents', { start: String(start), offset: String(offset) });
+  }
+  async assetDocumentGet(address: string, id: any)                           { return await this.authGet('/assets/' + address + '/documents/' + id); }
+  async assetDocumentAdd(address: string, body: any)                         { return await this.authPost('/assets/' + address + '/documents', body); }
+  async assetDocumentUpdate(address: string, id: any, body: any)             { return await this.authPut('/assets/' + address + '/documents/' + id, body); }
+  async assetDocumentRemove(address: string, id: any)                        { return await this.authDelete('/assets/' + address + '/documents/' + id); }
+  async assetDocumentSetState(address: string, id: any, state: number)       { return await this.authPut('/assets/' + address + '/documents/' + id + '/state', { state }); }
+  async assetDocumentShare(address: string, id: any, account: string)        { return await this.authPost('/assets/' + address + '/documents/' + id + '/share', { account }); }
+  async assetDocumentUnshare(address: string, id: any, account: string)      { return await this.authDelete('/assets/' + address + '/documents/' + id + '/share/' + account); }
+  async assetDocumentGetSharedWith(address: string, id: any)                 { return await this.authGet('/assets/' + address + '/documents/' + id + '/shared'); }
+  async assetDocumentSignatures(address: string, id: any, start = 1, offset = 100) {
+    return await this.authGet('/assets/' + address + '/documents/' + id + '/signatures', { start: String(start), offset: String(offset) });
+  }
+  async assetDocumentSigners(address: string, id: any)                       { return await this.authGet('/assets/' + address + '/documents/' + id + '/signers'); }
+  async assetDocumentHasSigned(address: string, id: any, account: string)    { return await this.authGet('/assets/' + address + '/documents/' + id + '/signed/' + account); }
+  async assetDocumentSignatureCount(address: string, id: any)                { return await this.authGet('/assets/' + address + '/documents/' + id + '/signatures/count'); }
+  async assetDocumentSign(address: string, id: any, keyId: any, docHash: string) {
+    return await this.authPost('/assets/' + address + '/documents/' + id + '/sign', { keyId, docHash });
+  }
+
+  // ─── Subscription signer keys + signing relays ───────────────────────────────
+
+  async subscriptionSignerKeyList(address: string, start = 1, offset = 100) {
+    return await this.authGet('/subscriptions/' + address + '/signer-keys', { start: String(start), offset: String(offset) });
+  }
+  async subscriptionSignerKeyGet(address: string, keyId: any)                              { return await this.authGet('/subscriptions/' + address + '/signer-keys/' + keyId); }
+  async subscriptionSignerKeyGenerate(address: string, description: string)                { return await this.authPost('/subscriptions/' + address + '/signer-keys/generate', { description }); }
+  async subscriptionSignerKeyUpdate(address: string, keyId: any, description: string)      { return await this.authPut('/subscriptions/' + address + '/signer-keys/' + keyId, { description }); }
+  async subscriptionSignerKeyChangeState(address: string, keyId: any, state: number)       { return await this.authPut('/subscriptions/' + address + '/signer-keys/' + keyId + '/state', { state }); }
+  async subscriptionSignerKeyRemove(address: string, keyId: any)                           { return await this.authDelete('/subscriptions/' + address + '/signer-keys/' + keyId); }
+
+  async subscriptionDocumentSign(address: string, id: any, keyId: any, docHash: string) {
+    return await this.authPost('/subscriptions/' + address + '/documents/' + id + '/sign', { keyId, docHash });
+  }
+  async subscriptionForwardSignature(address: string, id: any, body: { targetType: 'entity' | 'service' | 'regulator', target?: string, keyId: any, docHash: string }) {
+    return await this.authPost('/subscriptions/' + address + '/documents/' + id + '/forward-signature', body);
+  }
+
+  // ─── IPFS ─────────────────────────────────────────────────────────────────────
+
+  async ipfsHealth()                                    { return await this.authGet('/ipfs/health'); }
+  async ipfsFetchData(cid: string)                      { return await this.authGet('/ipfs/data/' + cid); }
+  async ipfsFetchImage(cid: string)                     { return await this.authGet('/ipfs/image/' + cid); }
+  async ipfsFetchFile(cid: string)                      { return await this.authGet('/ipfs/file/' + cid); }
+
+  async ipfsUploadFile(file: File, onProgress?: (percent: number) => void): Promise<string | null> {
+    return new Promise<string | null>((resolve) => {
+      try {
+        const form = new FormData();
+        form.append('file', file, file.name);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', this.apiURL + '/ipfs/upload');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + this.vaultToken);
+
+        xhr.upload.onprogress = (e) => {
+          if (onProgress && e.lengthComputable) {
+            onProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          try {
+            const json = JSON.parse(xhr.responseText);
+            resolve(json?.cid || null);
+          } catch { resolve(null); }
+        };
+        xhr.onerror = () => resolve(null);
+        xhr.onabort = () => resolve(null);
+        xhr.send(form);
+      } catch { resolve(null); }
+    });
   }
 
   // ─── Regulator Document Submissions ───────────────────────────────────────────
@@ -852,6 +982,52 @@ export class ApiService {
     } catch {}
   }
 
+  // ─── Audit Trail ──────────────────────────────────────────────────────────
+  async auditMe(filters: {
+    from?: string; to?: string; category?: string; action?: string;
+    page?: number; pageSize?: number;
+  } = {}) {
+    const params: Record<string, string> = {};
+    if (filters.from)      params['from']     = filters.from;
+    if (filters.to)        params['to']       = filters.to;
+    if (filters.category)  params['category'] = filters.category;
+    if (filters.action)    params['action']   = filters.action;
+    if (filters.page)      params['page']     = String(filters.page);
+    if (filters.pageSize)  params['pageSize'] = String(filters.pageSize);
+    return this.authGet('/audit/me', params);
+  }
+
+  async auditSystem(filters: {
+    actor?: string; target?: string; category?: string; action?: string;
+    from?: string; to?: string; page?: number; pageSize?: number;
+  } = {}) {
+    const params: Record<string, string> = {};
+    if (filters.actor)     params['actor']    = filters.actor;
+    if (filters.target)    params['target']   = filters.target;
+    if (filters.category)  params['category'] = filters.category;
+    if (filters.action)    params['action']   = filters.action;
+    if (filters.from)      params['from']     = filters.from;
+    if (filters.to)        params['to']       = filters.to;
+    if (filters.page)      params['page']     = String(filters.page);
+    if (filters.pageSize)  params['pageSize'] = String(filters.pageSize);
+    return this.authGet('/audit/system', params);
+  }
+
+  async auditByRef(refNo: string) {
+    return this.authGet('/audit/ref/' + refNo);
+  }
+
+  async auditByTarget(address: string, page = 1, pageSize = 50) {
+    return this.authGet('/audit/target/' + address, { page: String(page), pageSize: String(pageSize) });
+  }
+
+  async auditVerify(range?: { from?: number | string; to?: number | string }) {
+    const params: Record<string, string> = {};
+    if (range?.from != null) params['from'] = String(range.from);
+    if (range?.to   != null) params['to']   = String(range.to);
+    return this.authGet('/audit/verify', params);
+  }
+
   async vaultGetActivityLogs(start = 1, offset = 50, category?: string, userId?: number) {
     const params: Record<string, any> = { start: String(start), offset: String(offset) };
     if (category) params['category'] = category;
@@ -872,6 +1048,35 @@ export class ApiService {
       console.error('Error converting base64 to image:', error);
       return null;
     }
+  }
+
+  // ─── Connect (messaging) ──────────────────────────────────────────────────
+  async connectInboxRegister()                       { return this.vaultPost('/connect/inbox/register', {}); }
+  async connectInboxInfo()                           { return this.vaultGet ('/connect/inbox'); }
+  async connectInboxSetDND(enabled: boolean)         { return this.vaultPost('/connect/inbox/dnd', { enabled }); }
+  async connectInboxBlock(counterparty: string)      { return this.vaultPost('/connect/inbox/block', { counterparty }); }
+  async connectInboxUnblock(addr: string)            { return this.vaultDelete('/connect/inbox/block/' + addr); }
+
+  async connectThreadsList(start = 1, offset = 50)   { return this.vaultGet (`/connect/threads?start=${start}&offset=${offset}`); }
+  async connectThreadCreate(body: any)               { return this.vaultPost('/connect/threads', body); }
+  async connectThreadGet(id: number)                 { return this.vaultGet ('/connect/threads/' + id); }
+  async connectThreadClose(id: number, reason = '')  { return this.vaultPost(`/connect/threads/${id}/close`, { reason }); }
+  async connectThreadBroadcast(id: number, cid: string, contentType = 4) {
+    return this.vaultPost(`/connect/threads/${id}/broadcast`, { cid, contentType });
+  }
+
+  async connectMessagesList(threadId: number, start = 1, offset = 100) {
+    return this.vaultGet(`/connect/threads/${threadId}/messages?start=${start}&offset=${offset}`);
+  }
+  async connectMessageSend(threadId: number, body: { recipient?: string; subscriptionAddr?: string; cid: string; contentType?: number }) {
+    return this.vaultPost(`/connect/threads/${threadId}/messages`, body);
+  }
+  async connectMessageMarkRead(id: number)           { return this.vaultPost(`/connect/messages/${id}/read`, {}); }
+  async connectMessagesMarkBatchRead(messageIds: number[]) { return this.vaultPost('/connect/messages/read-batch', { messageIds }); }
+  async connectMessageTombstone(id: number)          { return this.vaultPost(`/connect/messages/${id}/tombstone`, {}); }
+
+  async connectRecipientsSearch(type: 'entity' | 'regulator' | 'subscription', q: string) {
+    return this.vaultGet(`/connect/recipients/search?type=${type}&q=${encodeURIComponent(q)}`);
   }
 
 }

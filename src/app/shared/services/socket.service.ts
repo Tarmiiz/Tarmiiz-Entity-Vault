@@ -14,6 +14,9 @@ export class SocketService {
   /** Fires whenever the backend emits `vault:updated` */
   readonly vaultUpdated$ = new Subject<{ type: string; ts: number }>();
 
+  /** Fires whenever the backend emits `audit:appended` (new audit rows available) */
+  readonly auditAppended$ = new Subject<{ count: number; lastBlock: number }>();
+
   /** Reactive connection state — true when socket is connected */
   readonly connected = signal(false);
 
@@ -35,6 +38,10 @@ export class SocketService {
 
     this.socket.on('vault:updated', (payload: { type: string; ts: number }) => {
       this.vaultUpdated$.next(payload);
+    });
+
+    this.socket.on('audit:appended', (payload: { count: number; lastBlock: number }) => {
+      this.auditAppended$.next(payload);
     });
 
     this.socket.on('disconnect', (reason) => {

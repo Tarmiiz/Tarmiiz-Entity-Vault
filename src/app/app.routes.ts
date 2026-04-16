@@ -61,6 +61,16 @@ export const routes: Routes = [
             canActivate: [AuthGuard]
           },
           {
+            path: 'documents/list/:address',
+            loadComponent: () => import('./pages/secure/services/documents/list/list.page').then(m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'documents/details/:address/:id',
+            loadComponent: () => import('./pages/secure/services/documents/details/details.page').then(m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
             path: '',
             redirectTo: '/authorized/services/list',
             pathMatch: 'full',
@@ -81,6 +91,16 @@ export const routes: Routes = [
           {
             path: 'details/:address',
             loadComponent: () => import('./pages/secure/assets/details/details.page').then( m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'documents/list/:address',
+            loadComponent: () => import('./pages/secure/assets/documents/list/list.page').then(m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'documents/details/:address/:id',
+            loadComponent: () => import('./pages/secure/assets/documents/details/details.page').then(m => m.DetailsPage),
             canActivate: [AuthGuard]
           },
           {
@@ -109,6 +129,70 @@ export const routes: Routes = [
           {
             path: '',
             redirectTo: '/authorized/subscriptions/list',
+            pathMatch: 'full',
+          },
+        ]
+      },
+      // documents
+      {
+        path: 'documents',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [1, 2] },
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/documents/list/list.page').then(m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'details/:id',
+            loadComponent: () => import('./pages/secure/documents/details/details.page').then(m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/dashboard',
+            pathMatch: 'full',
+          },
+        ]
+      },
+      // signer-keys (issuer-only — used for document signing)
+      {
+        path: 'signer-keys',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2] },
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/signer-keys/list/list.page').then(m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/signer-keys/list',
+            pathMatch: 'full',
+          },
+        ]
+      },
+      // messages
+      {
+        path: 'messages',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [1, 2, 3] },
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/messages/list/list.page').then(m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: 'details/:id',
+            loadComponent: () => import('./pages/secure/messages/details/details.page').then(m => m.DetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/messages/list',
             pathMatch: 'full',
           },
         ]
@@ -179,12 +263,35 @@ export const routes: Routes = [
           },
         ]
       },
-      // logs (admin only)
+      // logs (audit trail)
       {
         path: 'logs',
-        loadComponent: () => import('./pages/secure/logs/logs.page').then(m => m.LogsPage),
-        canActivate: [AuthGuard, RoleGuard],
-        data: { allowedRoles: [1] }
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'my',
+            loadComponent: () => import('./pages/secure/logs/my/my.page').then(m => m.MyPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1, 2, 3] }
+          },
+          {
+            path: 'system',
+            loadComponent: () => import('./pages/secure/logs/system/system.page').then(m => m.SystemPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] }
+          },
+          {
+            path: 'details/:id',
+            loadComponent: () => import('./pages/secure/logs/details/details.page').then(m => m.DetailsPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1, 2, 3] }
+          },
+          {
+            path: '',
+            redirectTo: 'my',
+            pathMatch: 'full',
+          },
+        ]
       },
       // variables
       {

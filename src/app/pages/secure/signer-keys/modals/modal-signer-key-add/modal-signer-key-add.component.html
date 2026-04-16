@@ -1,0 +1,22 @@
+@if (addService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Generate Signer Key</h3>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-gray-500">A new EOA wallet will be generated; the private key is encrypted with the API's AES key and stored on-chain. The key never leaves the server unencrypted.</p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Description</label>
+          <input type="text" [ngModel]="description()" (ngModelChange)="description.set($event)"
+            placeholder="e.g. 2026 quarterly attestation"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">Cancel</button>
+        <button type="button" (click)="onSave()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">Generate</button>
+      </div>
+    </div>
+  </div>
+}

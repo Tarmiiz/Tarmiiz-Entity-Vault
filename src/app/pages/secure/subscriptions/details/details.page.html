@@ -156,7 +156,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                   @for (bal of activeCreditBalances(); track bal.currencyCode) {
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} ({{ bal.currencySymbol }})</p>
+                      <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} <span class="badge-currency">{{ bal.currencySymbol }}</span></p>
                       <p class="text-base font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</p>
                     </div>
                   }
@@ -352,8 +352,8 @@
                   } @else {
                     @for (h of pagedHoldings(); track h.asset; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoAsset(h.asset)">
-                        <td class="px-6 py-2">{{ h.assetName }}@if(h.assetSymbol){<span class="text-gray-400 ml-1">({{ h.assetSymbol }})</span>}</td>
-                        <td class="px-6 py-2">{{ h.currencyCode }}</td>
+                        <td class="px-6 py-2">{{ h.assetName }}@if(h.assetSymbol){ <span class="badge-symbol ml-1">{{ h.assetSymbol }}</span>}</td>
+                        <td class="px-6 py-2"><span class="badge-currency">{{ h.currencyCode }}</span></td>
                         <td class="px-6 py-2 text-right">{{ h.balance | number: '1.0-2' }}</td>
                         <td class="px-6 py-2 text-right">{{ h.cost | number: '1.6-6' }}</td>
                         <td class="px-6 py-2 text-right">{{ h.balance * h.currentBid | number: '1.6-6' }}</td>
@@ -511,8 +511,8 @@
                         <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewTransactionDetails(trx)">
                           <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
-                          <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){<span class="text-gray-400 ml-1">({{ trx.assetSymbol }})</span>}</td>
-                          <td class="px-6 py-2 text-center">{{ trx.currencyCode }}</td>
+                          <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){ <span class="badge-symbol ml-1">{{ trx.assetSymbol }}</span>}</td>
+                          <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
                           <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
@@ -557,7 +557,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                   @for (bal of activeCreditBalances(); track bal.currencyCode) {
                     <div class="bg-white rounded-lg border border-gray-200 p-3">
-                      <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} ({{ bal.currencySymbol }})</p>
+                      <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} <span class="badge-currency">{{ bal.currencySymbol }}</span></p>
                       <p class="text-lg font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</p>
                     </div>
                   }
@@ -658,10 +658,10 @@
                       </tr>
                     } @else {
                       @for (trx of pagedCreditTransactions(); track trx.trxId; let isEven = $even) {
-                        <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="creditTrxInfoService.show(trx)">
                           <td class="px-6 py-2">{{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span></td>
-                          <td class="px-6 py-2">{{ trx.currencySymbol }}</td>
+                          <td class="px-6 py-2"><span class="badge-currency">{{ trx.currencySymbol }}</span></td>
                           <td class="px-6 py-2 text-right">{{ trx.amount | number: '1.2-2' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span></td>
                         </tr>
@@ -708,3 +708,4 @@
 
 <app-modal-subscription-state></app-modal-subscription-state>
 <app-modal-transaction-info></app-modal-transaction-info>
+<app-modal-credit-trx-info></app-modal-credit-trx-info>

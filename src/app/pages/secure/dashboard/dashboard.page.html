@@ -62,23 +62,9 @@
         </div>
       </div>
 
-      <!-- Stats Cards (5 cards) — order: Services, Assets, Subscriptions, Investors, Transactions -->
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 badges">
-        @for (stat of stats(); track stat.title; let i = $index) {
-          @if (i === 3) {
-            <!-- Active Investors card (between Subscriptions and Transactions) -->
-            <div class="p-4 rounded-xl shadow-md border border-green-200 flex flex-col cursor-pointer hover:bg-green-50 transition-colors" [class]="summaryLoading() ? 'bg-green-50 animate-pulse' : 'bg-white'">
-              <p class="text-xs font-medium text-gray-500 mb-1">Active Investors</p>
-              @if (summaryLoading()) {
-                <svg class="animate-spin h-5 w-5 text-green-500 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-              } @else {
-                <p class="text-xl font-bold text-green-700">{{ activeInvestors() | number }}</p>
-              }
-            </div>
-          }
+      <!-- Stats Cards — order: Services, Assets, Subscriptions, Transactions -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 badges">
+        @for (stat of stats(); track stat.title) {
           <div class="p-4 rounded-xl shadow-md border border-gray-200 flex flex-col cursor-pointer hover:bg-indigo-50 transition-colors" [class]="stat.loading ? 'bg-blue-50 animate-pulse' : 'bg-white'" (click)="goTo(stat.path)">
             <p class="text-xs font-medium text-gray-500 mb-1">{{ stat.title }}</p>
             @if (stat.loading) {
@@ -202,10 +188,10 @@
                     <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/assets/details/' + asset.address)">
                       <td class="px-4 py-2 font-medium text-gray-800">{{ asset.name }}</td>
                       <td class="px-4 py-2">
-                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded-full">{{ asset.symbol }}</span>
+                        <span class="badge-symbol">{{ asset.symbol }}</span>
                       </td>
                       <td class="px-4 py-2">
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">{{ asset.currency }}</span>
+                        <span class="badge-currency">{{ asset.currency }}</span>
                       </td>
                       <td class="px-4 py-2 text-right font-mono">{{ asset.circulating | number:'1.0-0' }}</td>
                       <td class="px-4 py-2 text-right font-mono">{{ asset.bid | number:'1.4-4' }}</td>
@@ -275,7 +261,7 @@
                     <td class="px-4 py-2">
                       <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="getTrxTypeClass(t.trxType)">{{ t.trxType }}</span>
                     </td>
-                    <td class="px-4 py-2">{{ t.assetName }} <span class="text-gray-400">({{ t.assetSymbol }})</span></td>
+                    <td class="px-4 py-2">{{ t.assetName }} <span class="badge-symbol">{{ t.assetSymbol }}</span></td>
                     <td class="px-4 py-2">{{ t.serviceName }}</td>
                     <td class="px-4 py-2 text-right font-mono">{{ t.tokens | number:'1.0-0' }}</td>
                     <td class="px-4 py-2 text-right font-mono">{{ t.price | number:'1.6-6' }}</td>
@@ -371,9 +357,7 @@
                   </th>
                   <td class="px-6 py-2">{{ asset.name }}</td>
                   <td class="px-6 py-2">
-                    <span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">
-                      {{ asset.symbol }}
-                    </span>
+                    <span class="badge-symbol">{{ asset.symbol }}</span>
                   </td>
                   <td class="px-6 py-2 text-right font-mono">{{ asset.circulating | number }}</td>
                 </tr>

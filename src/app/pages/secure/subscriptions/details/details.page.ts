@@ -20,6 +20,8 @@ import { ModalSubscriptionStateService } from '../modals/modal-subscription-stat
 import { ModalSubscriptionStateComponent } from "../modals/modal-subscription-state/modal-subscription-state.component";
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
+import { ModalCreditTrxInfoService } from '../../../../shared/components/modal-credit-trx-info/modal-credit-trx-info.service';
+import { ModalCreditTrxInfoComponent } from '../../../../shared/components/modal-credit-trx-info/modal-credit-trx-info.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 
@@ -35,7 +37,8 @@ import { AuditService } from '../../../../shared/services/audit.service';
     HeaderComponent,
     RouterLink,
     ModalSubscriptionStateComponent,
-    ModalTransactionInfoComponent
+    ModalTransactionInfoComponent,
+    ModalCreditTrxInfoComponent
 ]
 })
 export class DetailsPage implements OnInit {
@@ -46,6 +49,7 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private subscriptionStateService = inject(ModalSubscriptionStateService);
   trxInfoService = inject(ModalTransactionInfoService);
+  creditTrxInfoService = inject(ModalCreditTrxInfoService);
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
@@ -679,8 +683,11 @@ export class DetailsPage implements OnInit {
     return {
       trxId: raw.trxId ?? 0,
       service: raw.service ?? '',
+      serviceName: raw.serviceName ?? '',
       from: raw.from ?? '',
+      fromName: raw.fromName ?? '',
       to: raw.to ?? '',
+      toName: raw.toName ?? '',
       trxType: raw.trxType ?? 0,
       trxTypeName: this.creditTrxTypeNames[raw.trxType] ?? String(raw.trxType),
       currencyCode: raw.currencyCode ?? 0,

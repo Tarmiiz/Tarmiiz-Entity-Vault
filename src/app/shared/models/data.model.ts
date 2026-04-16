@@ -87,6 +87,41 @@ export interface StateChangeLog {
   created_at: number;
 }
 
+export class AuditLog {
+  constructor(
+    public id: number,
+    public category: string,
+    public action: string,
+    public actor_address: string,
+    public actor_user_id: number | null,
+    public actor_user_name: string,
+    public target_address: string,
+    public target_kind: string,
+    public subject_id: string,
+    public ref_no: string,
+    public before_state: string,
+    public after_state: string,
+    public reason: string,
+    public extras: string,
+    public visibility: number,
+    public encrypted: number,
+    public tx_hash: string,
+    public block_number: number,
+    public log_index: number,
+    public chain_time: number,
+    public client_ip: string,
+    public created_at: number
+  ) {}
+
+  get categoryLabel(): string {
+    return (this.category || '').replace(/_/g, ' ');
+  }
+
+  get actionLabel(): string {
+    return (this.action || '').replace(/_/g, ' ');
+  }
+}
+
 export interface ActivityLog {
   id: number;
   category: string;
@@ -387,8 +422,11 @@ export class CreditTransaction {
   constructor (
     public trxId: number,
     public service: string,
+    public serviceName: string,
     public from: string,
+    public fromName: string,
     public to: string,
+    public toName: string,
     public trxType: number,
     public trxTypeName: string,
     public currencyCode: number,
@@ -399,5 +437,96 @@ export class CreditTransaction {
     public trxStateName: string,
     public startTime: number,
     public updateTime: number
+  ) {}
+}
+
+// ─── Connect (messaging) ────────────────────────────────────────────────────
+
+// partyType: 1 = Identity, 2 = Entity, 3 = Regulator
+// thread state: 1 = Open, 2 = Closed, 3 = Archived
+// message state: 1 = Sent, 2 = Tombstoned
+// contentType: 1 = text, 2 = document, 3 = notification, 4 = broadcast
+
+export class ConnectParticipant {
+  constructor(
+    public address: string,
+    public partyType: number | null
+  ) {}
+}
+
+export class ConnectThread {
+  constructor(
+    public id: number,
+    public creator: string,
+    public creatorType: number,
+    public subject: string,
+    public metadataCid: string,
+    public state: number,
+    public createdAt: number,
+    public messageCount: number,
+    public lastMessageAt: number,
+    public participantCount: number,
+    public participants: ConnectParticipant[] = [],
+    public subscriptions: string[] = []
+  ) {}
+}
+
+export class ConnectMessage {
+  constructor(
+    public id: number,
+    public threadId: number,
+    public sender: string,
+    public recipient: string,
+    public contentCid: string,
+    public contentType: number,
+    public state: number,
+    public sentAt: number,
+    public readAt: number | null
+  ) {}
+}
+
+// ─── Documents ──────────────────────────────────────────────────────────────
+// documentType: 1 = Public, 2 = Private, 3 = Regulator
+// documentState: 1 = Active, 2 = Deleted
+
+export class DocumentSignature {
+  constructor(
+    public signer: string,
+    public docHash: string,
+    public signature: string,
+    public reviewState: number,
+    public submitter: string,
+    public signedAt: number,
+    public reviewStateName?: string
+  ) {}
+}
+
+export class Document {
+  constructor(
+    public id: number,
+    public cid: string,
+    public title: string,
+    public description: string,
+    public fileType: string,
+    public documentType: number,
+    public documentState: number,
+    public owner: string,
+    public createdByUserId: number,
+    public createdAt: number,
+    public updatedAt: number,
+    public documentTypeName?: string,
+    public documentStateName?: string
+  ) {}
+}
+
+export class ConnectInboxState {
+  constructor(
+    public registered: boolean,
+    public doNotDisturb: boolean,
+    public partyType: number,
+    public countryCode: number,
+    public unread: number,
+    public blockedCount: number,
+    public blocks: string[] = []
   ) {}
 }

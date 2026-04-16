@@ -61,6 +61,34 @@
             </ion-item>
           }
 
+          <!-- admin + exec: documents -->
+          @if(userInfo && (userInfo.role == 1 || userInfo.role == 2)) {
+            <ion-item button routerLink="/authorized/documents/list" routerDirection="root" (click)="closeMenuOnMobile()">
+              <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-6 4h6m-6 4h4m4 4H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/>
+              </svg>
+              <ion-label>Documents</ion-label>
+            </ion-item>
+          }
+
+          <!-- exec only: signer keys -->
+          @if(userInfo && userInfo.role == 2) {
+            <ion-item button routerLink="/authorized/signer-keys/list" routerDirection="root" (click)="closeMenuOnMobile()">
+              <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a4 4 0 0 1-4 4h-1.5l-2 2h-2v2h-2v2H6v-3l6.6-6.6A4 4 0 1 1 21 12Zm-4-1a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/>
+              </svg>
+              <ion-label>Signer Keys</ion-label>
+            </ion-item>
+          }
+
+          <!-- all users: messages -->
+          <ion-item button routerLink="/authorized/messages/list" routerDirection="root" (click)="closeMenuOnMobile()">
+            <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h10M7 13h7m-7 4.5V20l3.5-3H19a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z"/>
+            </svg>
+            <ion-label>Messages</ion-label>
+          </ion-item>
+
           <!-- admin only: dashboard -->
           @if(userInfo && userInfo.role == 1) {
             <ion-item button routerLink="/authorized/dashboard" routerDirection="root" (click)="closeMenuOnMobile()">
@@ -91,13 +119,23 @@
             </ion-item>
           }
 
-          <!-- admin only: audit logs -->
+          <!-- all users: my activity -->
+          @if(userInfo) {
+            <ion-item button routerLink="/authorized/logs/my" routerDirection="root" (click)="closeMenuOnMobile()">
+              <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+              </svg>
+              <ion-label>My Activity</ion-label>
+            </ion-item>
+          }
+
+          <!-- admin only: system activity -->
           @if(userInfo && userInfo.role == 1) {
-            <ion-item button routerLink="/authorized/logs" routerDirection="root" (click)="closeMenuOnMobile()">
+            <ion-item button routerLink="/authorized/logs/system" routerDirection="root" (click)="closeMenuOnMobile()">
               <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
               </svg>
-              <ion-label>Audit Logs</ion-label>
+              <ion-label>System Activity</ion-label>
             </ion-item>
           }
 
@@ -127,5 +165,6 @@
     <ion-router-outlet></ion-router-outlet>
     <app-alert></app-alert>
     <app-loading></app-loading>
+    <app-modal-new-thread></app-modal-new-thread>
   </div>
 </ion-split-pane>

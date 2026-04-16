@@ -1,0 +1,104 @@
+@if (modalService.isVisible()) {
+  @if (modalService.transaction(); as trx) {
+    <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onClose()">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+
+        <!-- header -->
+        <div class="p-6 border-b bg-[#202a3b] rounded-t-xl flex items-center justify-between">
+          <h3 class="text-xl leading-6 font-semibold text-gray-100">Credit Transaction Details</h3>
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span>
+            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span>
+          </div>
+        </div>
+
+        <!-- body -->
+        <div class="p-6 grid grid-cols-2 gap-x-8 gap-y-4 text-sm text-gray-700">
+
+          <div class="border-t pt-3">
+            <p class="text-xs font-medium text-gray-500">Trx ID</p>
+            <p class="font-mono">{{ trx.trxId }}</p>
+          </div>
+          <div class="border-t pt-3">
+            <p class="text-xs font-medium text-gray-500">Currency</p>
+            <p><span class="font-semibold">{{ trx.currencySymbol }}</span> <span class="text-gray-400 text-xs">({{ trx.currencyCode }})</span></p>
+          </div>
+
+          <div class="border-t pt-3">
+            <p class="text-xs font-medium text-gray-500">Date & Time</p>
+            <p>{{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+          </div>
+          <div class="border-t pt-3">
+            <p class="text-xs font-medium text-gray-500">Last Update</p>
+            <p>{{ trx.updateTime ? (trx.updateTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}</p>
+          </div>
+
+          @if (trx.service) {
+            <div class="border-t pt-3 col-span-2">
+              <p class="text-xs font-medium text-gray-500">Service</p>
+              <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors"
+                 (click)="navigate('/authorized/services/details/' + trx.service)">
+                {{ trx.serviceName || trx.service }}
+              </p>
+            </div>
+          }
+
+          @if (trx.from) {
+            <div class="border-t pt-3 col-span-2">
+              <p class="text-xs font-medium text-gray-500">From</p>
+              @if (isZero(trx.from)) {
+                <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(mint)</span></p>
+              } @else if (trx.fromName) {
+                <p class="text-gray-700">{{ trx.fromName }}</p>
+                <p class="font-mono text-xs text-gray-400 break-all">{{ trx.from }}</p>
+              } @else {
+                <p class="font-mono text-xs break-all">{{ trx.from }}</p>
+              }
+            </div>
+          }
+          @if (trx.to) {
+            <div class="border-t pt-3 col-span-2">
+              <p class="text-xs font-medium text-gray-500">To</p>
+              @if (isZero(trx.to)) {
+                <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(burn)</span></p>
+              } @else if (trx.toName) {
+                <p class="text-gray-700">{{ trx.toName }}</p>
+                <p class="font-mono text-xs text-gray-400 break-all">{{ trx.to }}</p>
+              } @else {
+                <p class="font-mono text-xs break-all">{{ trx.to }}</p>
+              }
+            </div>
+          }
+
+          @if (trx.trxData) {
+            <div class="border-t pt-3 col-span-2">
+              <p class="text-xs font-medium text-gray-500">Data</p>
+              <p class="text-xs break-all whitespace-pre-wrap">{{ trx.trxData }}</p>
+            </div>
+          }
+
+          <div class="border-t pt-3 col-span-2">
+            <p class="text-xs font-medium text-gray-500">Amount</p>
+            <p class="text-right font-semibold text-base">{{ trx.amount | number: '1.2-2' }} <span class="text-gray-500 font-normal text-sm">{{ trx.currencySymbol }}</span></p>
+          </div>
+
+        </div>
+
+        <!-- footer -->
+        <div class="px-6 py-4 bg-gray-50 flex justify-between items-center rounded-b-2xl">
+          <button type="button" (click)="exportPdf()"
+            class="flex items-center gap-1.5 px-4 py-2 bg-gray-700 text-white text-sm rounded-md shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+            </svg>
+            Export PDF
+          </button>
+          <button type="button" (click)="onClose()" class="px-4 py-2 bg-[#202a3b] text-white border border-transparent rounded-md shadow-sm hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+}

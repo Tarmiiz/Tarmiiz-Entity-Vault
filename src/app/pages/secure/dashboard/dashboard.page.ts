@@ -28,7 +28,6 @@ interface StatCard {
 }
 
 interface DashboardKpis {
-  activeInvestors: number;
   pendingKyc: number;
   netFlowTokens30d: number;
 }
@@ -125,7 +124,6 @@ export class DashboardPage implements OnInit {
   lastUpdated       = signal<Date | null>(null);
   selectedCurrency  = signal<string | null>(null);
 
-  activeInvestors  = computed(() => this.dashboardSummary()?.kpis.activeInvestors ?? 0);
   pendingKyc       = computed(() => this.dashboardSummary()?.kpis.pendingKyc ?? 0);
   netFlowTokens30d = computed(() => this.dashboardSummary()?.kpis.netFlowTokens30d ?? 0);
   currencies       = computed(() => this.dashboardSummary()?.currencies ?? []);

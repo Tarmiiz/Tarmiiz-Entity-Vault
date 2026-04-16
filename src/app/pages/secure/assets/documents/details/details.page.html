@@ -1,0 +1,188 @@
+<app-header title="Asset Document"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200">
+  @if (document(); as doc) {
+    <nav class="flex" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a routerLink="/authorized/assets/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">Assets</a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+            <a [routerLink]="'/authorized/assets/details/' + assetAddress()" class="ml-1 text-sm font-medium text-gray-700 hover:text-indigo-600 md:ml-2 font-mono break-all">{{ assetAddress() }}</a>
+          </div>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+            <a [routerLink]="'/authorized/assets/documents/list/' + assetAddress()" class="ml-1 text-sm font-medium text-gray-700 hover:text-indigo-600 md:ml-2">Documents</a>
+          </div>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ doc.title || ('#' + doc.id) }}</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+  }
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+    <div class="bg-white rounded-t-lg shadow-md p-2">
+      <div class="flex border-b border-gray-200">
+        <button (click)="setTab('info')" class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'info'" [class.border-b-2]="activeTab() === 'info'" [class.border-blue-600]="activeTab() === 'info'" [class.bg-blue-600]="activeTab() === 'info'">Information</button>
+        <button (click)="setTab('sharing')" class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'sharing'" [class.border-b-2]="activeTab() === 'sharing'" [class.border-blue-600]="activeTab() === 'sharing'" [class.bg-blue-600]="activeTab() === 'sharing'">Sharing ({{ sharedWith().length }})</button>
+        <button (click)="setTab('signatures')" class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'signatures'" [class.border-b-2]="activeTab() === 'signatures'" [class.border-blue-600]="activeTab() === 'signatures'" [class.bg-blue-600]="activeTab() === 'signatures'">Signatures ({{ signatures().length }})</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-b-lg shadow-md p-2">
+      @if (document(); as doc) {
+
+        @if (activeTab() === 'info') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ doc.title || ('Document #' + doc.id) }}</h2>
+                  @if (doc.title) { <p class="text-xs text-gray-500 mt-0.5">#{{ doc.id }}</p> }
+                </div>
+                <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="stateClass(doc.documentState)">{{ stateLabel(doc.documentState) }}</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                <div class="border-t pt-4 col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Description</p>
+                  <p class="text-base text-gray-700">{{ doc.description || '—' }}</p>
+                </div>
+                <div class="border-t pt-4 col-span-2">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-gray-500">CID</p>
+                    <button (click)="viewFile()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                      View File
+                    </button>
+                  </div>
+                  <p class="text-base font-mono text-indigo-800 break-all">{{ doc.cid }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Type</p>
+                  <p class="text-base text-gray-700">{{ typeLabel(doc.documentType) }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">File Type</p>
+                  <p class="text-base font-mono text-gray-700">{{ doc.fileType || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Owner</p>
+                  @if (ownerDisplay()) {
+                    <p class="text-base text-gray-700">{{ ownerDisplay() }} <span class="text-xs font-mono text-gray-500 break-all ml-1">({{ ownerAddress() || doc.owner }})</span></p>
+                  } @else {
+                    <p class="text-base font-mono text-gray-700 break-all">{{ doc.owner }}</p>
+                  }
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Created</p>
+                  <p class="text-base text-gray-700">{{ utils.formatDate(doc.createdAt) }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Updated</p>
+                  <p class="text-base text-gray-700">{{ utils.formatDate(doc.updatedAt) }}</p>
+                </div>
+              </div>
+
+              <div class="mt-6 flex justify-end gap-2">
+                @if (doc.documentState === 1 && isExecutive()) {
+                  <button (click)="signDocument()" class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z"/>
+                    </svg>
+                    Sign
+                  </button>
+                }
+                @if (doc.documentState === 1) {
+                  <button (click)="deleteDocument()" class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors flex items-center gap-1">Soft Delete</button>
+                } @else {
+                  <button (click)="restoreDocument()" class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">Restore</button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activeTab() === 'sharing') {
+          <div class="flex justify-end mb-3">
+            <button (click)="shareWithNew()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">Share with account</button>
+          </div>
+          @if (sharedWith().length === 0) {
+            <p class="text-sm text-gray-500">Not shared with anyone.</p>
+          } @else {
+            <table class="w-full text-sm text-left text-gray-700">
+              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <tr><th class="px-4 py-2">#</th><th class="px-4 py-2">Account</th><th class="px-4 py-2 text-right">Actions</th></tr>
+              </thead>
+              <tbody class="text-xs">
+                @for (acc of sharedWith(); track acc; let i = $index; let isEven = $even) {
+                  <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                    <td class="px-4 py-2">{{ i + 1 }}</td>
+                    <td class="px-4 py-2 font-mono break-all">{{ acc }}</td>
+                    <td class="px-4 py-2 text-right">
+                      <button (click)="unshare(acc)" class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">Revoke</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+
+        @if (activeTab() === 'signatures') {
+          @if (signatures().length === 0) {
+            <p class="text-sm text-gray-500 p-4">No signatures yet.</p>
+          } @else {
+            <table class="w-full text-sm text-left text-gray-700">
+              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <tr>
+                  <th class="px-4 py-2">#</th>
+                  <th class="px-4 py-2">Signer</th>
+                  <th class="px-4 py-2">Submitter</th>
+                  <th class="px-4 py-2">Signed At</th>
+                  <th class="px-4 py-2">Review State</th>
+                  <th class="px-4 py-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="text-xs">
+                @for (sig of signatures(); track sig.signer + sig.docHash; let i = $index; let isEven = $even) {
+                  <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                    <td class="px-4 py-2">{{ i + 1 }}</td>
+                    <td class="px-4 py-2 font-mono break-all">{{ sig.signer }}</td>
+                    <td class="px-4 py-2 font-mono break-all">{{ sig.submitter }}</td>
+                    <td class="px-4 py-2">{{ utils.formatDate(sig.signedAt) }}</td>
+                    <td class="px-4 py-2">{{ sig.reviewStateName || reviewStateLabel(sig.reviewState) }}</td>
+                    <td class="px-4 py-2 text-right">
+                      <button (click)="verifySignature(sig)" class="text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">Verify</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+
+      }
+    </div>
+  </div>
+</main>
+
+<app-modal-document-share />
+<app-modal-document-sign />

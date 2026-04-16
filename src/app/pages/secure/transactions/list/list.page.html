@@ -119,10 +119,10 @@
               <td class="px-4 py-2">
                 <span class="px-2 py-1 rounded-full text-xs font-semibold" [class]="getTrxTypeClass(t.trxType)">{{ t.trxType }}</span>
               </td>
-              <td class="px-4 py-2">{{ t.assetName }} ({{ t.assetSymbol }})</td>
+              <td class="px-4 py-2">{{ t.assetName }} <span class="badge-symbol">{{ t.assetSymbol }}</span></td>
               <td class="px-4 py-2">{{ t.serviceName }}</td>
               <td class="px-4 py-2">{{ t.subscription }}</td>
-              <td class="px-4 py-2 text-center">{{ t.currencyCode }}</td>
+              <td class="px-4 py-2 text-center"><span class="badge-currency">{{ t.currencyCode }}</span></td>
               <td class="px-4 py-2 text-right">{{ t.tokens | number:'1.0-0' }}</td>
               <td class="px-4 py-2 text-right">{{ t.price | number:'1.6-6' }}</td>
               <td class="px-4 py-2 text-right">{{ t.totalPrice | number:'1.6-6' }}</td>

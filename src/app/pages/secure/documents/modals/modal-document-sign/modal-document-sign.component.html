@@ -1,0 +1,35 @@
+@if (signService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Sign Document</h3>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-gray-500">Pick a signer key. The API will fetch the file from IPFS, hash it (SHA-256), sign with the chosen key, and submit the signature on-chain.</p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Signer Key</label>
+          @if (loading()) {
+            <p class="text-xs text-indigo-600 mt-1">Loading keys...</p>
+          } @else if (keys().length === 0) {
+            <p class="text-xs text-red-600 mt-1">No active signer keys. Generate one in the Signer Keys page.</p>
+          } @else {
+            <select [ngModel]="selectedKeyId()" (ngModelChange)="selectedKeyId.set(+$event)"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              <option [ngValue]="null">Select a key...</option>
+              @for (k of keys(); track k.keyId) {
+                <option [value]="k.keyId">#{{ k.keyId }} — {{ k.description || k.signer.slice(0, 10) + '…' }}</option>
+              }
+            </select>
+          }
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">Cancel</button>
+        <button type="button" (click)="onSave()" [disabled]="!isValid()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+          Sign
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -262,6 +262,10 @@
 
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <a [routerLink]="'/authorized/services/documents/list/' + serviceAddress"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                    Documents
+                  </a>
                   @if (isTokenIssuer()) {
                     <button (click)="openChangeValidatorModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
@@ -354,7 +358,7 @@
                         <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoAsset(data)">
                           <td class="px-6 py-2">{{ assetPage() * assetPageSize + i + 1 }}</td>
                           <td class="px-6 py-2">{{ data.name }}</td>
-                          <td class="px-6 py-2">{{ data.symbol }}</td>
+                          <td class="px-6 py-2"><span class="badge-symbol">{{ data.symbol }}</span></td>
                           <td class="px-6 py-2">{{ data.issuerName }}</td>
                           <td class="px-6 py-2">{{ data.assetTypeName }}</td>
                           <td class="px-6 py-2">
@@ -613,8 +617,8 @@
                             <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="openTransactionInfo(trx)">
                                 <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                                 <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
-                                <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){<span class="text-gray-400 ml-1">({{ trx.assetSymbol }})</span>}</td>
-                                <td class="px-6 py-2 text-center">{{ trx.currencyCode }}</td>
+                                <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){ <span class="badge-symbol ml-1">{{ trx.assetSymbol }}</span>}</td>
+                                <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
                                 <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
                                 <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
                                 <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>

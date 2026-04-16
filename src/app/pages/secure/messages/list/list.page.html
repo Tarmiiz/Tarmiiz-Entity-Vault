@@ -1,0 +1,92 @@
+<app-header title="Messages"></app-header>
+
+<div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Filters / Actions -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Show</label>
+        <label class="inline-flex items-center space-x-2 cursor-pointer h-[30px]">
+          <span class="text-xs font-medium text-gray-700">All</span>
+          <span class="relative">
+            <input id="ToggleMessagesUnread" type="checkbox" class="hidden peer"
+                   [checked]="unreadOnly()"
+                   (change)="onScopeToggle($event)">
+            <div class="w-8 h-4 rounded-full shadow-inner dark:bg-gray-600 peer-checked:dark:bg-violet-600"></div>
+            <div class="absolute inset-y-0 left-0 w-2 h-2 m-1 rounded-full shadow peer-checked:right-0 peer-checked:left-auto dark:bg-gray-100"></div>
+          </span>
+          <span class="text-xs font-medium text-gray-700">Unread</span>
+        </label>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Search</label>
+        <input type="text" placeholder="Subject or thread id…"
+               [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Type</label>
+        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <option value="all">All</option>
+          <option value="entity">Entities</option>
+          <option value="regulator">Regulators</option>
+          <option value="subscription">Subscriptions</option>
+        </select>
+      </div>
+      <div class="flex flex-col justify-end">
+        <button (click)="clearFilters()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Clear
+        </button>
+      </div>
+      <div class="flex ml-auto items-end gap-2">
+        <button (click)="openNewThread()"
+                class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          New thread
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Threads list -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="max-h-[70vh] overflow-auto">
+      <table class="min-w-full text-xs">
+        <thead class="bg-gray-50 text-gray-600 sticky top-0">
+          <tr>
+            <th class="text-left px-3 py-2">#</th>
+            <th class="text-left px-3 py-2">Subject</th>
+            <th class="text-left px-3 py-2">Participants</th>
+            <th class="text-left px-3 py-2">Messages</th>
+            <th class="text-left px-3 py-2">Last activity</th>
+            <th class="text-left px-3 py-2">State</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of filteredThreads(); track t.id) {
+            <tr class="border-t hover:bg-gray-50 cursor-pointer" (click)="viewDetails(t)">
+              <td class="px-3 py-2 text-gray-600">{{ t.id }}</td>
+              <td class="px-3 py-2 font-medium">{{ t.subject || '(no subject)' }}</td>
+              <td class="px-3 py-2">{{ t.participantCount }}</td>
+              <td class="px-3 py-2">{{ t.messageCount }}</td>
+              <td class="px-3 py-2">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : '—' }}</td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-medium" [ngClass]="stateClass(t.state)">
+                  {{ stateName(t.state) }}
+                </span>
+              </td>
+            </tr>
+          }
+          @if (filteredThreads().length === 0 && !loadingData) {
+            <tr><td colspan="6" class="px-3 py-6 text-center text-gray-500">No threads.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

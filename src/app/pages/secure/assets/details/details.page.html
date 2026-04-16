@@ -296,9 +296,10 @@
               
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <!-- <button (click)="openEditModal()" class="px-6 py-2.5 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105">
-                    Edit
-                  </button> -->
+                  <a [routerLink]="'/authorized/assets/documents/list/' + assetAddress"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                    Documents
+                  </a>
                   <button (click)="openChangeStateModal()" [disabled]="!entityActive"
                     class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
                     Change State
@@ -624,7 +625,7 @@
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
                           <td class="px-6 py-2">{{ trx.serviceName }}</td>
                           <td class="px-6 py-2 font-mono text-xs">{{ trx.subscription }}</td>
-                          <td class="px-6 py-2 text-center">{{ trx.currencyCode }}</td>
+                          <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
                           <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>

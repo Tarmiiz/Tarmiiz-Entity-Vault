@@ -124,8 +124,8 @@
                     <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(data)">
                         <td class="px-6 py-2">{{ i + 1 }}</td>
                         <td class="px-6 py-2">{{ data.name }}</td>
-                        <td class="px-6 py-2">{{ data.symbol }}</td>
-                        <td class="px-6 py-2">{{ data.currencyCode }}</td>
+                        <td class="px-6 py-2"><span class="badge-symbol">{{ data.symbol }}</span></td>
+                        <td class="px-6 py-2"><span class="badge-currency">{{ data.currencyCode }}</span></td>
                         <td class="px-6 py-2">{{ data.services.length > 0 ? data.services[0].serviceName : 'None' }}</td>
                         <td class="px-6 py-2">{{ data.assetTypeName }}</td>
                         <td class="px-6 py-2">{{ data.circulating | number:'1.0-0' }}</td>

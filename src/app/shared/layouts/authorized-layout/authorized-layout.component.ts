@@ -10,6 +10,7 @@ import { SocketService } from '../../services/socket.service';
 import { Entity, User } from '../../models/data.model';
 import { AlertComponent } from '../../components/alerts/alert/alert.component';
 import { LoadingComponent } from "../../components/alerts/loading/loading.component";
+import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/modal-new-thread/modal-new-thread.component";
 
 @Component({
   selector: 'app-authorized-layout',
@@ -31,6 +32,7 @@ import { LoadingComponent } from "../../components/alerts/loading/loading.compon
     RouterModule,
     AlertComponent,
     LoadingComponent,
+    ModalNewThreadComponent,
   ],
 })
 export class AuthorizedLayoutComponent {
