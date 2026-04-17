@@ -5,12 +5,8 @@ import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, 
 
 import { StorageService } from '../../../../shared/services/storage.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
-import { AlertComponent } from "../../../../shared/components/alerts/alert/alert.component";
 import { CryptoService } from '../../../../shared/services/crypto.service';
 import { AuthService } from '../../../../shared/services/auth.service';
-
-import { LoadingComponent } from "src/app/shared/components/alerts/loading/loading.component";
-
 
 
 @Component({
@@ -21,8 +17,6 @@ import { LoadingComponent } from "src/app/shared/components/alerts/loading/loadi
   imports: [
     ReactiveFormsModule,
     FormsModule,
-    AlertComponent,
-    LoadingComponent
 ]
 })
 export class LoginPage implements OnInit {
@@ -75,8 +69,8 @@ export class LoginPage implements OnInit {
       // Attempt login with 1 hour session duration
       const loginResult = await this.authService.login(email, password);
       if (loginResult.success) {
-          // route to authorized pages
-          this.router.navigate(['/authorized']);
+          // route to authorized pages — spinner stays up until the dashboard hides it
+          await this.router.navigate(['/authorized']);
       }
       else {
         console.error('Login failed:', loginResult.error);

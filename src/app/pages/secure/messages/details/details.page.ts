@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -15,7 +15,7 @@ import { ConnectThread, ConnectMessage } from '../../../../shared/models/data.mo
   selector: 'app-messages-details',
   templateUrl: './details.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, HeaderComponent],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);
@@ -28,6 +28,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   threadId  = 0;
   thread    = signal<ConnectThread | null>(null);
   messages  = signal<ConnectMessage[]>([]);
+  messageTexts = signal<Record<string, string>>({});
   entityAddress = '';
 
   composeText   = signal('');
@@ -66,7 +67,28 @@ export class DetailsPage implements OnInit, OnDestroy {
       this.resolveEntityAddress();
     }
     const msgsResp = await this.apiService.connectMessagesList(this.threadId, 1, 200);
-    if (msgsResp?.messages) this.messages.set(msgsResp.messages);
+    if (msgsResp?.messages) {
+      this.messages.set(msgsResp.messages);
+      this.resolveMessageTexts(msgsResp.messages);
+    }
+  }
+
+  private async resolveMessageTexts(msgs: ConnectMessage[]) {
+    const current = { ...this.messageTexts() };
+    const toFetch = msgs.filter(m => m.state !== 2 && m.contentCid && !current[m.contentCid]);
+    if (toFetch.length === 0) return;
+    await Promise.all(toFetch.map(async m => {
+      try {
+        const resp = await this.apiService.connectMessageContent(m.contentCid);
+        if (resp?.text != null) current[m.contentCid] = resp.text;
+      } catch { /* ignore */ }
+    }));
+    this.messageTexts.set(current);
+  }
+
+  textFor(m: ConnectMessage): string {
+    if (m.state === 2) return '(message hidden)';
+    return this.messageTexts()[m.contentCid] ?? '…';
   }
 
   participantType(partyType: number | null): string {
@@ -90,10 +112,10 @@ export class DetailsPage implements OnInit, OnDestroy {
     const recipient = others[0];
     if (!recipient) return;
 
-    const cid = this.composeText();
+    const text = this.composeText();
 
     this.loadingService.show('Sending...');
-    await this.apiService.connectMessageSend(t.id, { recipient: recipient.address, cid, contentType: 1 });
+    await this.apiService.connectMessageSend(t.id, { recipient: recipient.address, text, contentType: 1 });
     this.composeText.set('');
     this.loadingService.hide();
     await this.reload();

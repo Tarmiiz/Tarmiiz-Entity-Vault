@@ -71,10 +71,10 @@
           @for (t of filteredThreads(); track t.id) {
             <tr class="border-t hover:bg-gray-50 cursor-pointer" (click)="viewDetails(t)">
               <td class="px-3 py-2 text-gray-600">{{ t.id }}</td>
-              <td class="px-3 py-2 font-medium">{{ t.subject || '(no subject)' }}</td>
-              <td class="px-3 py-2">{{ t.participantCount }}</td>
-              <td class="px-3 py-2">{{ t.messageCount }}</td>
-              <td class="px-3 py-2">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : '—' }}</td>
+              <td class="px-3 py-2 font-medium text-gray-800">{{ t.subject || '(no subject)' }}</td>
+              <td class="px-3 py-2 text-gray-700">{{ t.participantCount }}</td>
+              <td class="px-3 py-2 text-gray-700">{{ t.messageCount }}</td>
+              <td class="px-3 py-2 text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : '—' }}</td>
               <td class="px-3 py-2">
                 <span class="px-2 py-0.5 rounded text-[10px] font-medium" [ngClass]="stateClass(t.state)">
                   {{ stateName(t.state) }}

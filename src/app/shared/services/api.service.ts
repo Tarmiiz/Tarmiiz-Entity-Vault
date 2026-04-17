@@ -1061,15 +1061,18 @@ export class ApiService {
   async connectThreadCreate(body: any)               { return this.vaultPost('/connect/threads', body); }
   async connectThreadGet(id: number)                 { return this.vaultGet ('/connect/threads/' + id); }
   async connectThreadClose(id: number, reason = '')  { return this.vaultPost(`/connect/threads/${id}/close`, { reason }); }
-  async connectThreadBroadcast(id: number, cid: string, contentType = 4) {
-    return this.vaultPost(`/connect/threads/${id}/broadcast`, { cid, contentType });
+  async connectThreadBroadcast(id: number, text: string, contentType = 4) {
+    return this.vaultPost(`/connect/threads/${id}/broadcast`, { text, contentType });
   }
 
   async connectMessagesList(threadId: number, start = 1, offset = 100) {
     return this.vaultGet(`/connect/threads/${threadId}/messages?start=${start}&offset=${offset}`);
   }
-  async connectMessageSend(threadId: number, body: { recipient?: string; subscriptionAddr?: string; cid: string; contentType?: number }) {
+  async connectMessageSend(threadId: number, body: { recipient?: string; subscriptionAddr?: string; text: string; contentType?: number }) {
     return this.vaultPost(`/connect/threads/${threadId}/messages`, body);
+  }
+  async connectMessageContent(cid: string) {
+    return this.vaultGet('/connect/content/' + encodeURIComponent(cid));
   }
   async connectMessageMarkRead(id: number)           { return this.vaultPost(`/connect/messages/${id}/read`, {}); }
   async connectMessagesMarkBatchRead(messageIds: number[]) { return this.vaultPost('/connect/messages/read-batch', { messageIds }); }

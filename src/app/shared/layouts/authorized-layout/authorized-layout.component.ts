@@ -8,8 +8,6 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { SocketService } from '../../services/socket.service';
 import { Entity, User } from '../../models/data.model';
-import { AlertComponent } from '../../components/alerts/alert/alert.component';
-import { LoadingComponent } from "../../components/alerts/loading/loading.component";
 import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/modal-new-thread/modal-new-thread.component";
 
 @Component({
@@ -30,8 +28,6 @@ import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/m
     IonButtons,
     IonMenuButton,
     RouterModule,
-    AlertComponent,
-    LoadingComponent,
     ModalNewThreadComponent,
   ],
 })

@@ -2,6 +2,18 @@
 
 <div class="flex-grow p-4 bg-gray-300 overflow-y-auto">
 
+  <!-- Breadcrumb -->
+  <div class="mb-3 text-xs text-gray-600 flex items-center gap-1">
+    <a routerLink="/authorized/messages/list" class="text-indigo-700 hover:underline flex items-center gap-1">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Messages
+    </a>
+    <span class="text-gray-400">/</span>
+    <span>Thread #{{ threadId }}</span>
+  </div>
+
   @if (thread(); as t) {
     <!-- Header -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
@@ -46,7 +58,7 @@
                 @if (m.state === 2) { · <span class="italic">tombstoned</span> }
               </div>
               <div class="whitespace-pre-wrap break-words">
-                {{ m.state === 2 ? '(message hidden)' : m.contentCid }}
+                {{ textFor(m) }}
               </div>
               <div class="flex gap-3 mt-1 text-[10px]">
                 @if (!isMine(m) && !m.readAt) {

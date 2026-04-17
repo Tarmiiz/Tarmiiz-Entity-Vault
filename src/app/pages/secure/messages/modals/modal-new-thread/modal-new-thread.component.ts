@@ -91,9 +91,9 @@ export class ModalNewThreadComponent {
       };
       if (this.initialText()) {
         if (this.kind() === 'subscription') {
-          body.initialMessage = { subscriptionAddr: sel[0].address, cid: this.initialText(), contentType: 1 };
+          body.initialMessage = { subscriptionAddr: sel[0].address, text: this.initialText(), contentType: 1 };
         } else {
-          body.initialMessage = { recipient: sel[0].address, cid: this.initialText(), contentType: 1 };
+          body.initialMessage = { recipient: sel[0].address, text: this.initialText(), contentType: 1 };
         }
       }
       const resp = await this.apiService.connectThreadCreate(body);

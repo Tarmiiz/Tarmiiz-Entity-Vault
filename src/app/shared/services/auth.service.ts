@@ -46,7 +46,7 @@ export class AuthService {
   async login(username: string, password: string) {
     try {
 
-      this.loadingService.show('Connecting to Contract ...');
+      this.loadingService.show('Generating zero-knowledge proof — connecting...');
 
       // Fetch blockchain config from API
       const config = await this.apiService.vaultGetConfig();
@@ -61,7 +61,7 @@ export class AuthService {
       const expiryTime = new Date().getTime() + SESSION_DURATION;
 
       // Attempt login with 1 hour session duration
-      this.loadingService.show('Generating zero-knowledge proof and logging in...');
+      this.loadingService.show('Generating zero-knowledge proof — verifying credentials...');
       const loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
       if (loginResult.success && loginResult.userId && loginResult.key) {
 
@@ -69,6 +69,7 @@ export class AuthService {
         const key = JSON.stringify(loginResult.key)
 
         // get user info
+        this.loadingService.show('Generating zero-knowledge proof — fetching profile...');
         const userId = Number(loginResult.userId);
         const userInfo = await this.ethersService.userInfo(userId);
         if(userInfo.result && userInfo.result.state === 2) {
@@ -94,7 +95,7 @@ export class AuthService {
           this.socketService.connect();
 
           // keep loading spinner visible — the dashboard will hide it after loading
-          this.loadingService.show('Loading dashboard...');
+          this.loadingService.show('Generating zero-knowledge proof — loading dashboard...');
           return { success: true, error: '' };
 
         }
@@ -133,18 +134,22 @@ export class AuthService {
   }
 
   async logout() {
-    const confirmed =await this.alertService.show('Logout', 'Are you sure you want to logout?');
+    const confirmed = await this.alertService.show('Logout', 'Are you sure you want to logout?');
     if(!confirmed) return;
-    this.loadingService.show('Closing session ...');
+    this.loadingService.show('Closing session...');
     this.socketService.disconnect();
-    await this.storageService.remove('sessionExpiry');
-    await this.storageService.remove('rpcNode');
-    await this.storageService.remove('variablesProxyContract');
-    await this.storageService.remove('contract');
-    await this.storageService.remove('wallet');
-    await this.storageService.remove('user');
-    await this.apiService.entityLogout();
+    await Promise.all([
+      this.storageService.remove('sessionExpiry'),
+      this.storageService.remove('rpcNode'),
+      this.storageService.remove('variablesProxyContract'),
+      this.storageService.remove('contract'),
+      this.storageService.remove('wallet'),
+      this.storageService.remove('user'),
+    ]);
+    await this.router.navigate(['/public/user/login']);
     this.loadingService.hide();
-    this.router.navigate(['/public/user/login']);
+    // Fire-and-forget server logout — client session is already invalid,
+    // no need to block the UI on the on-chain logout() transaction.
+    this.apiService.entityLogout().catch(() => { /* silent */ });
   }
 }
