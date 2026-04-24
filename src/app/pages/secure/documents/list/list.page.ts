@@ -4,13 +4,15 @@ import { Router } from '@angular/router';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
-import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 
-import { Document, GlobalVariable } from '../../../../shared/models/data.model';
-import { ModalDocumentAddService } from '../modals/modal-document-add/modal-document-add.service';
+import { Document, DocumentShare, GlobalVariable } from '../../../../shared/models/data.model';
 import { ModalDocumentAddComponent } from '../modals/modal-document-add/modal-document-add.component';
+import { ModalDocumentAddService } from '../modals/modal-document-add/modal-document-add.service';
+
+type Tab = 'mine' | 'shared';
 
 @Component({
   selector: 'app-documents-list',
@@ -24,12 +26,13 @@ export class ListPage implements OnInit {
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
+  addModal = inject(ModalDocumentAddService);
   utils = inject(UtilsService);
-  private addModal = inject(ModalDocumentAddService);
 
   loading = false;
+  activeTab = signal<Tab>('mine');
   documents = signal<Document[]>([]);
-  documentsCount = 0;
+  sharedWithMe = signal<DocumentShare[]>([]);
 
   ipfsStatus = signal<'unknown' | 'ok' | 'down'>('unknown');
   ipfsPeerId = signal<string>('');
@@ -46,7 +49,7 @@ export class ListPage implements OnInit {
 
   async ionViewDidEnter() {
     this.loading = true;
-    await Promise.all([this.list(), this.checkIpfs(), this.loadGlobals()]);
+    await Promise.all([this.list(), this.loadSharedWithMe(), this.checkIpfs(), this.loadGlobals()]);
     this.loading = false;
   }
 
@@ -76,11 +79,30 @@ export class ListPage implements OnInit {
     this.loadingService.show('Loading documents...');
     const result = await this.apiService.documentsList(1, 100);
     if (result?.documents) {
-      this.documentsCount = result.count ?? result.documents.length;
       this.documents.set(result.documents);
     }
     this.loadingService.hide();
   }
+
+  async loadSharedWithMe() {
+    const result = await this.apiService.documentsSharedWithMe(1, 100);
+    if (result?.shares) {
+      // API returns raw snake_case rows from SQLite; map to camelCase for the template.
+      const shares = (result.shares as any[]).map(r => new DocumentShare(
+        r.owner_address,
+        Number(r.document_id),
+        r.shared_with_address,
+        r.cid ?? null,
+        r.title ?? null,
+        r.document_type !== null && r.document_type !== undefined ? Number(r.document_type) : null,
+        Number(r.shared_at || 0),
+        Number(r.updated_at || 0),
+      ));
+      this.sharedWithMe.set(shares);
+    }
+  }
+
+  setTab(tab: Tab) { this.activeTab.set(tab); }
 
   filtered = computed(() => {
     const term = this.search().toLowerCase();
@@ -94,6 +116,17 @@ export class ListPage implements OnInit {
         d.description?.toLowerCase().includes(term) ||
         d.cid?.toLowerCase().includes(term) ||
         String(d.id).includes(term))
+    );
+  });
+
+  filteredShared = computed(() => {
+    const term = this.search().toLowerCase();
+    return this.sharedWithMe().filter(s =>
+      !term ||
+      s.title?.toLowerCase().includes(term) ||
+      s.cid?.toLowerCase().includes(term) ||
+      s.ownerAddress?.toLowerCase().includes(term) ||
+      String(s.documentId).includes(term)
     );
   });
 
@@ -123,14 +156,38 @@ export class ListPage implements OnInit {
     this.router.navigate(['/authorized/documents/details/' + doc.id]);
   }
 
-  async add() {
-    const result = await this.addModal.show();
-    if (!result) return;
-    this.loadingService.show('Adding document...');
+  viewShared(share: DocumentShare) {
+    // Inbound shares live on another template — we can't navigate to our local details page for
+    // them (it'd 404). Fall back to viewing the file stream directly.
+    this.openSharedFile(share);
+  }
+
+  async openSharedFile(share: DocumentShare) {
+    // The /documents/:id/file endpoint is scoped to our entity's docs, so inbound shares don't
+    // resolve there. This is a placeholder — cross-template file viewing requires the service /
+    // asset / subscription file endpoints which are a deferred follow-up.
+    this.alertService.show('Coming soon', 'Viewing inbound shared files requires the per-template file endpoints (deferred).');
+  }
+
+  async onAddClick() {
+    const data = await this.addModal.show();
+    if (!data) return;
+    this.loadingService.show('Uploading and registering document...');
     try {
-      const response = await this.apiService.documentAdd(result);
-      if (!response || response?.error) {
-        this.alertService.show('Error', response?.error || 'Failed to add document');
+      const result = await this.apiService.documentAddMultipart(
+        data.file,
+        {
+          title:         data.title,
+          description:   data.description,
+          fileType:      data.fileType,
+          documentType:  data.documentType,
+          documentState: data.documentState,
+          sharedWith:    data.sharedWith,
+        },
+        (percent) => this.loadingService.setProgress(percent),
+      );
+      if (!result) {
+        this.alertService.show('Error', 'Failed to add document. Check that every recipient has published an encryption public key.');
       } else {
         await this.list();
       }
@@ -138,4 +195,5 @@ export class ListPage implements OnInit {
       this.loadingService.hide();
     }
   }
+
 }

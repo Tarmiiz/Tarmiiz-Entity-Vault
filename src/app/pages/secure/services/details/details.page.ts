@@ -28,6 +28,7 @@ import { ModalServicePaymentProcessorService } from '../modals/modal-service-pay
 import { ModalServicePaymentProcessorComponent } from '../modals/modal-service-payment-processor/modal-service-payment-processor.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 
 
 
@@ -44,7 +45,8 @@ import { AuditService } from '../../../../shared/services/audit.service';
     ModalServiceStateComponent,
     ModalTransactionInfoComponent,
     ModalServiceValidatorComponent,
-    ModalServicePaymentProcessorComponent
+    ModalServicePaymentProcessorComponent,
+    DocumentsTabComponent,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -67,7 +69,7 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'docs'>('overview');
 
   loadingData: boolean = false;
 
@@ -208,7 +210,7 @@ export class DetailsPage implements OnInit {
     ]);
   }
 
-  setTab(tab: 'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs') {
+  setTab(tab: 'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'docs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();

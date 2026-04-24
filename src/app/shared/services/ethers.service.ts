@@ -3,15 +3,12 @@ import { ethers } from 'ethers';
 // @ts-ignore
 import * as snarkjs from 'snarkjs';
 
-import { environment } from '../../../environments/environment';
-
 import GlobalVariablesAbi from '../../../assets/ABIs/GlobalVariablesProxy.json';
 import EntityTemplateAbi from '../../../assets/ABIs/EntityTemplate.json';
 
-import { Key, User } from '../models/data.model';
+import { Key } from '../models/data.model';
 
 import { StorageService } from './storage.service';
-import { CryptoService } from './crypto.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
 
@@ -22,11 +19,10 @@ import { ParseProofUtils } from '../utils/parse-proof.utils';
 export class EthersService {
 
   private storageService = inject(StorageService);
-  private cryptoService = inject(CryptoService);
 
   key: Key = new Key('', '', '');
 
-  globalSalt = environment.globalSalt;
+  globalSalt = '';
 
   rpcProvider: any;
   signer: any;
@@ -39,10 +35,11 @@ export class EthersService {
 
   constructor() {}
 
-  configure(rpcNode: string, entityContract: string, variablesProxyContract: string) {
+  configure(rpcNode: string, entityContract: string, variablesProxyContract: string, globalSalt: string) {
     this.rpcProvider = new ethers.JsonRpcProvider(rpcNode);
     this.entityContractAddress = entityContract;
     this.variablesProxyContractAddress = variablesProxyContract;
+    this.globalSalt = globalSalt;
   }
 
   async init() {
@@ -194,63 +191,6 @@ export class EthersService {
     catch (error: any) {
       console.error('Login payload error:', error);
       return null;
-    }
-  }
-
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Users
-// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-  async userInfo(userId: number) {
-    try {
-      const result = await this.entityContract.getUserInfo(userId);
-      if(result) {
-
-        await this.connectVariablesProxyContract();
-
-        const statesResult = await this.getGlobalVariableByCategory('Account State');
-        const stateId = Number(Number(result[3]));
-        let stateName = 'Unknown';
-        if (statesResult.result) {
-          const stateVariable = statesResult.result.find((v: any) => v.variableId === stateId);
-          stateName = stateVariable?.name || 'Unknown';
-        }
-
-        const rolesResult = await this.getGlobalVariableByCategory('User Role');
-        const roleId = Number(Number(result[2]));
-        let roleName = 'Unknown';
-        if (rolesResult.result) {
-          const roleVariable = rolesResult.result.find((v: any) => v.variableId === roleId);
-          roleName = roleVariable?.name || 'Unknown';
-        }
-
-        let username = '', name = '', email = '', did = '';
-        try {
-          const userData = await this.cryptoService.aesDecrypt(environment.aesKEY, result[1]);
-          ({ username, name, email, did } = JSON.parse(userData));
-        } catch (_) {}
-
-        const user: User = {
-          username,
-          name,
-          email,
-          did,
-          userId: Number(result[0]),
-          state: stateId,
-          stateName,
-          role: roleId,
-          roleName,
-          createdAt: Number(result[4]),
-          lastModifiedAt: Number(result[5])
-        }
-        return { result: user, error: '' };
-      }
-      else {
-        return { result: null, error: 'Error fetching info'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching info'};
     }
   }
 

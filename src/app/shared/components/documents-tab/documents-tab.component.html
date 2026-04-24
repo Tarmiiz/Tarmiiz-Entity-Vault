@@ -1,0 +1,287 @@
+<!-- Filter Bar -->
+<div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+  <div class="flex flex-wrap gap-2 items-end">
+
+    <div class="flex flex-col gap-1">
+      <label class="text-xs font-medium text-gray-500">Search</label>
+      <input type="text" placeholder="Title or description..."
+        [ngModel]="filterTitle()" (ngModelChange)="filterTitle.set($event)"
+        class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-xs font-medium text-gray-500">Type</label>
+      <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+        class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        <option value="">All</option>
+        <option value="1">Public</option>
+        <option value="2">Private</option>
+      </select>
+    </div>
+
+    <div class="flex flex-col justify-end">
+      <button (click)="clearFilters()"
+        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+        Clear
+      </button>
+    </div>
+
+    <div class="flex ml-auto items-end gap-2">
+      @if (entityActive) {
+        <button (click)="openAdd()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add Document
+        </button>
+      }
+    </div>
+
+  </div>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+  <div class="overflow-x-auto rounded-lg">
+    <table class="w-full text-sm text-left text-gray-700">
+      <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <tr>
+          <th scope="col" class="px-6 py-2">#</th>
+          <th scope="col" class="px-6 py-2">Title</th>
+          <th scope="col" class="px-6 py-2">Type</th>
+          <th scope="col" class="px-6 py-2">CID</th>
+          <th scope="col" class="px-6 py-2">Added</th>
+          <th scope="col" class="px-6 py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-xs">
+        @if (loading()) {
+          @for (i of [1,2,3]; track i) {
+            <tr class="bg-white border-b">
+              <td colspan="6" class="px-6 py-2"><div class="h-3 bg-gray-200 rounded w-full animate-pulse"></div></td>
+            </tr>
+          }
+        } @else if (filteredDocs().length === 0) {
+          <tr class="bg-white border-b">
+            <td class="px-6 py-3 text-gray-400" colspan="6">No documents found</td>
+          </tr>
+        } @else {
+          @for (doc of filteredDocs(); track doc.id; let i = $index; let isEven = $even) {
+            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                (click)="openView(doc)">
+              <td class="px-6 py-2">{{ i + 1 }}</td>
+              <td class="px-6 py-2 font-medium">{{ doc.title }}</td>
+              <td class="px-6 py-2">
+                <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(doc.documentType)">
+                  {{ doc.documentTypeName || docTypeNames[doc.documentType] }}
+                </span>
+              </td>
+              <td class="px-6 py-2 font-mono text-gray-500 break-all max-w-[160px] truncate" [title]="doc.cid">{{ doc.cid || '—' }}</td>
+              <td class="px-6 py-2">{{ utils.formatDate(doc.createdAt) }}</td>
+              <td class="px-6 py-2" (click)="$event.stopPropagation()">
+                <div class="flex gap-1">
+                  <button (click)="viewFile(doc)"
+                    class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                    View
+                  </button>
+                  @if (entityActive) {
+                    <button (click)="openEdit(doc)"
+                      class="text-xs px-2 py-1 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
+                      Edit
+                    </button>
+                    @if (doc.documentType === 2) {
+                      <button (click)="shareDocument(doc)"
+                        class="text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
+                        Share
+                      </button>
+                      <button (click)="publishDocument(doc)"
+                        [title]="'Make Public — re-uploads plaintext to IPFS and clears all shares. One-way.'"
+                        class="text-xs px-2 py-1 rounded bg-amber-700 text-white hover:bg-amber-800 transition-colors">
+                        Publish
+                      </button>
+                    }
+                    <button (click)="removeDocument(doc)"
+                      class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                      Remove
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="flex items-center px-4 py-2 border-t">
+    <p class="text-xs font-medium text-gray-800">Showing {{ filteredDocs().length }} of Total {{ documents().length }} Records</p>
+  </div>
+</div>
+
+<!-- Add / Edit / View Modal -->
+@if (modalVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
+       (click)="closeModal()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4"
+         (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ modalTitle }}</h3>
+        @if (isAddMode) {
+          <p class="text-xs text-gray-400 mt-1">The API handles encryption, IPFS pinning, and on-chain registration.</p>
+        }
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+
+        @if (isViewMode) {
+          <!-- View: read-only -->
+          <div>
+            <p class="text-sm font-medium text-gray-500">Title</p>
+            <p class="text-base text-gray-700">{{ formTitle() || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500">Description</p>
+            <p class="text-base text-gray-700 whitespace-pre-wrap">{{ formDescription() || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500">Type</p>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(formType())">
+              {{ docTypeNames[formType()] }}
+            </span>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500">CID</p>
+            <p class="text-base text-gray-700 font-mono break-all">{{ formState().doc?.cid || '—' }}</p>
+          </div>
+          @if (formState().doc?.fileType) {
+            <div>
+              <p class="text-sm font-medium text-gray-500">File Type</p>
+              <p class="text-base text-gray-700">{{ formState().doc?.fileType }}</p>
+            </div>
+          }
+
+          @if (formState().doc && formState().doc!.documentType === 2) {
+            <div class="border-t pt-4">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-medium text-gray-500">Shared with ({{ sharedWith().length }})</p>
+                @if (entityActive) {
+                  <button (click)="shareDocument(formState().doc!)"
+                    class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Share with account
+                  </button>
+                }
+              </div>
+              @if (sharedWith().length === 0) {
+                <p class="text-xs text-gray-400">Not shared with anyone.</p>
+              } @else {
+                <ul class="space-y-1">
+                  @for (acc of sharedWith(); track acc) {
+                    <li class="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded bg-gray-50">
+                      <span class="font-mono break-all text-gray-700">{{ acc }}</span>
+                      @if (entityActive) {
+                        <button (click)="unshareAccount(formState().doc!, acc)"
+                          class="text-xs px-2 py-0.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors shrink-0">
+                          Revoke
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        } @else {
+          <!-- Add / Edit: editable -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Title <span class="text-red-500">*</span></label>
+            <input type="text" placeholder="Document title"
+              [ngModel]="formTitle()" (ngModelChange)="formTitle.set($event)"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea rows="3" placeholder="Optional description"
+              [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none">
+            </textarea>
+          </div>
+
+          @if (isAddMode) {
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Visibility</label>
+              <select [ngModel]="formType()" (ngModelChange)="formType.set(+$event)"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+                <option [value]="1">Public</option>
+                <option [value]="2">Private</option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">
+                @if (isPrivate()) {
+                  Private — stored AES-GCM encrypted on IPFS. The API wraps the decryption key for each recipient.
+                } @else {
+                  Public — stored plaintext on IPFS. Anyone with the CID can read it.
+                }
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">File <span class="text-red-500">*</span></label>
+              <input type="file" (change)="onFileSelected($event)"
+                class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-indigo-700 file:text-white hover:file:bg-indigo-800 cursor-pointer">
+              @if (formSelectedFile()) {
+                <p class="text-xs text-gray-500 mt-1">Selected: {{ formSelectedFile()!.name }} ({{ formSelectedFile()!.type || 'unknown type' }})</p>
+              }
+              @if (formUploadProgress() !== null) {
+                <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+                  <div class="bg-indigo-600 h-1.5 rounded-full transition-all" [style.width.%]="formUploadProgress()"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Uploading {{ formUploadProgress() }}%...</p>
+              }
+            </div>
+
+            @if (isPrivate()) {
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Share with (optional)</label>
+                <textarea rows="3" placeholder="0x... recipient addresses (comma, space or newline separated)"
+                  [ngModel]="formSharedWithRaw()" (ngModelChange)="formSharedWithRaw.set($event)"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono resize-none">
+                </textarea>
+                <p class="text-xs text-gray-500 mt-1">Each recipient must have published an encryption public key on-chain.</p>
+              </div>
+            }
+          } @else {
+            <!-- Edit mode: only title + description are editable. CID / type / file cannot change in-place. -->
+            <p class="text-xs text-gray-500">CID, type, and file cannot be changed — delete + re-add to replace.</p>
+          }
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="closeModal()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          {{ isViewMode ? 'Close' : 'Cancel' }}
+        </button>
+        @if (!isViewMode) {
+          <button type="button" (click)="onSave()" [disabled]="!isFormValid()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
+            {{ isAddMode ? 'Add Document' : 'Save Changes' }}
+          </button>
+        }
+      </div>
+
+    </div>
+  </div>
+}
+
+<app-modal-document-share />
+

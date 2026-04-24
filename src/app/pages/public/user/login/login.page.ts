@@ -43,15 +43,6 @@ export class LoginPage implements OnInit {
     await this.storageService.remove('contract');
     await this.storageService.remove('wallet');
     await this.storageService.remove('user');
-    // const k = environment.aesKEY;
-    // const d = {
-    //   username: 'admin@regulator1.com',
-    //   name: 'Super Admin',
-    //   email: 'admin@regulator1.com',
-    //   did: ''
-    // };
-    // const e = await this.cryptoService.aesEncrypt(k, JSON.stringify(d));
-    // console.log(e);
   }
 
  async login() {

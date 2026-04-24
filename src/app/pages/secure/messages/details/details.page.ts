@@ -8,6 +8,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { ApiService } from '../../../../shared/services/api.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { ConnectThread, ConnectMessage } from '../../../../shared/models/data.model';
 
@@ -23,6 +24,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   private route          = inject(ActivatedRoute);
   private router         = inject(Router);
   private loadingService = inject(LoadingService);
+  private alertService   = inject(AlertService);
   utils                  = inject(UtilsService);
 
   threadId  = 0;
@@ -31,13 +33,41 @@ export class DetailsPage implements OnInit, OnDestroy {
   messageTexts = signal<Record<string, string>>({});
   entityAddress = '';
 
+  // address (lower-cased) → resolved { name, partyType } from Directory Registry
+  directory = signal<Record<string, { name: string; partyType: number }>>({});
+
   composeText   = signal('');
   broadcastText = signal('');
+
+  markingRead = signal<Record<string, true>>({});
+  isMarkingRead(id: string | number): boolean { return !!this.markingRead()[String(id)]; }
+
+  deleting = signal<Record<string, true>>({});
+  isDeleting(id: string | number): boolean { return !!this.deleting()[String(id)]; }
+
+  activeTab = signal<'conversation' | 'info' | 'participants'>('conversation');
+  setTab(tab: 'conversation' | 'info' | 'participants') { this.activeTab.set(tab); }
+
+  stateName(state: number | undefined): string {
+    return state === 1 ? 'Open' : state === 2 ? 'Closed' : state === 3 ? 'Archived' : '—';
+  }
+
+  getStateClass(state: number | undefined): string {
+    switch (state) {
+      case 1: return 'bg-green-100 text-green-800';
+      case 2: return 'bg-gray-100 text-gray-700';
+      case 3: return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
 
   private sub?: Subscription;
 
   async ngOnInit() {
     this.threadId = Number(this.route.snapshot.paramMap.get('id'));
+
+    const cfg = await this.apiService.vaultGetConfig();
+    this.entityAddress = (cfg?.entityContract || '').toLowerCase();
 
     this.sub = this.socketService.vaultUpdated$.subscribe(p => {
       if (p.type === 'connect' || p.type === 'all') this.reload();
@@ -46,31 +76,73 @@ export class DetailsPage implements OnInit, OnDestroy {
     await this.reload();
   }
 
-  private resolveEntityAddress() {
-    const t = this.thread();
-    if (!t) return;
-    // Creator is either this entity (if we created the thread) or the entity participant (partyType=2)
-    if (t.creatorType === 2) {
-      this.entityAddress = t.creator.toLowerCase();
-      return;
-    }
-    const mine = (t.participants || []).find(p => p.partyType === 2);
-    if (mine) this.entityAddress = mine.address.toLowerCase();
-  }
-
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
   async reload() {
     const threadResp = await this.apiService.connectThreadGet(this.threadId);
     if (threadResp?.thread) {
       this.thread.set(threadResp.thread);
-      this.resolveEntityAddress();
+      this.resolveDirectory(threadResp.thread);
     }
     const msgsResp = await this.apiService.connectMessagesList(this.threadId, 1, 200);
     if (msgsResp?.messages) {
       this.messages.set(msgsResp.messages);
       this.resolveMessageTexts(msgsResp.messages);
+      this.resolveMessageSenders(msgsResp.messages);
     }
+  }
+
+  private async resolveMessageSenders(msgs: ConnectMessage[]) {
+    const current = { ...this.directory() };
+    const addrs = new Set<string>();
+    for (const m of msgs) {
+      if (m.sender) addrs.add(m.sender.toLowerCase());
+      if (m.recipient) addrs.add(m.recipient.toLowerCase());
+    }
+    const toFetch = Array.from(addrs).filter(a => !current[a]);
+    if (toFetch.length === 0) return;
+    await Promise.all(toFetch.map(async a => {
+      try {
+        const resp = await this.apiService.directoryByAddress(a);
+        const e = resp?.entry;
+        if (e?.name) current[a] = { name: e.name, partyType: e.partyType };
+      } catch { /* ignore */ }
+    }));
+    this.directory.set(current);
+  }
+
+  senderLabel(m: ConnectMessage): string {
+    if (this.isMine(m)) return 'me';
+    const name = this.nameFor(m.sender);
+    if (name) return name;
+    return (m.sender || '').slice(0, 8) + '…';
+  }
+
+  private async resolveDirectory(t: ConnectThread) {
+    const current = { ...this.directory() };
+    const addrs = new Set<string>();
+    if (t.creator) addrs.add(t.creator.toLowerCase());
+    for (const p of (t.participants || [])) if (p.address) addrs.add(p.address.toLowerCase());
+    const toFetch = Array.from(addrs).filter(a => !current[a]);
+    if (toFetch.length === 0) return;
+    await Promise.all(toFetch.map(async a => {
+      try {
+        const resp = await this.apiService.directoryByAddress(a);
+        const e = resp?.entry;
+        if (e?.name) current[a] = { name: e.name, partyType: e.partyType };
+      } catch { /* not in directory — keep raw address fallback */ }
+    }));
+    this.directory.set(current);
+  }
+
+  nameFor(address: string): string {
+    if (!address) return '—';
+    return this.directory()[address.toLowerCase()]?.name || '';
+  }
+
+  resolvedPartyType(address: string, fallback: number | null): number | null {
+    const d = this.directory()[(address || '').toLowerCase()];
+    return d ? d.partyType : fallback;
   }
 
   private async resolveMessageTexts(msgs: ConnectMessage[]) {
@@ -87,12 +159,16 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   textFor(m: ConnectMessage): string {
-    if (m.state === 2) return '(message hidden)';
+    if (m.state === 2) return '(message deleted)';
     return this.messageTexts()[m.contentCid] ?? '…';
   }
 
   participantType(partyType: number | null): string {
-    return partyType === 1 ? 'Identity' : partyType === 2 ? 'Entity' : partyType === 3 ? 'Regulator' : '—';
+    return partyType === 1 ? 'Identity'
+         : partyType === 2 ? 'Entity'
+         : partyType === 3 ? 'Regulator'
+         : partyType === 4 ? 'Service'
+         : '—';
   }
 
   isEntityCreator(): boolean {
@@ -131,7 +207,8 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   async closeThread() {
-    if (!confirm('Close this thread?')) return;
+    const ok = await this.alertService.show('Close thread', 'Close this thread? Participants will no longer be able to send messages.', 'Close');
+    if (!ok) return;
     this.loadingService.show('Closing...');
     await this.apiService.connectThreadClose(this.threadId, '');
     this.loadingService.hide();
@@ -140,15 +217,36 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   async markRead(m: ConnectMessage) {
     if (m.readAt || m.sender.toLowerCase() === this.entityAddress) return;
-    await this.apiService.connectMessageMarkRead(m.id);
-    await this.reload();
+    const key = String(m.id);
+    if (this.markingRead()[key]) return;
+    this.markingRead.update(s => ({ ...s, [key]: true }));
+    try {
+      await this.apiService.connectMessageMarkRead(m.id);
+      await this.reload();
+    } finally {
+      this.markingRead.update(s => {
+        const { [key]: _, ...rest } = s;
+        return rest;
+      });
+    }
   }
 
   async tombstone(m: ConnectMessage) {
     if (m.sender.toLowerCase() !== this.entityAddress) return;
-    if (!confirm('Tombstone (hide) this message?')) return;
-    await this.apiService.connectMessageTombstone(m.id);
-    await this.reload();
+    const key = String(m.id);
+    if (this.deleting()[key]) return;
+    const ok = await this.alertService.show('Delete message', 'Delete this message? This cannot be undone.', 'Delete');
+    if (!ok) return;
+    this.deleting.update(s => ({ ...s, [key]: true }));
+    try {
+      await this.apiService.connectMessageTombstone(m.id);
+      await this.reload();
+    } finally {
+      this.deleting.update(s => {
+        const { [key]: _, ...rest } = s;
+        return rest;
+      });
+    }
   }
 
   isMine(m: ConnectMessage): boolean {

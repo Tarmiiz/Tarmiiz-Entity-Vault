@@ -75,6 +75,15 @@
         >
           Credit
         </button>
+        <button (click)="setTab('docs')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'docs'"
+          [class.border-b-2]="activeTab() === 'docs'"
+          [class.border-blue-600]="activeTab() === 'docs'"
+          [class.bg-blue-600]="activeTab() === 'docs'"
+        >
+          Documents
+        </button>
       </div>
     </div>
 
@@ -693,18 +702,29 @@
         }
 
 
+        <!-- docs tab -->
+        @if (activeTab() === 'docs') {
+          <div class="p-2">
+            <app-documents-tab
+              resourceType="subscription"
+              [address]="subscriptionAddress"
+              [entityActive]="entityActive">
+            </app-documents-tab>
+          </div>
+        }
+
       }
       @else {
         <div class="text-center py-12 text-gray-500">
-          <p>Loading service details...</p>
+          <p>Loading subscription details...</p>
         </div>
       }
 
     </div>
 
-  
+
   </div>
-</main>  
+</main>
 
 <app-modal-subscription-state></app-modal-subscription-state>
 <app-modal-transaction-info></app-modal-transaction-info>

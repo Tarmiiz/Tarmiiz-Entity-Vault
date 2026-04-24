@@ -467,7 +467,8 @@ export class ConnectThread {
     public lastMessageAt: number,
     public participantCount: number,
     public participants: ConnectParticipant[] = [],
-    public subscriptions: string[] = []
+    public subscriptions: string[] = [],
+    public unreadCount: number = 0
   ) {}
 }
 
@@ -486,8 +487,23 @@ export class ConnectMessage {
 }
 
 // ─── Documents ──────────────────────────────────────────────────────────────
-// documentType: 1 = Public, 2 = Private, 3 = Regulator
+// documentType:  1 = Public (plaintext on IPFS), 2 = Private (AES-GCM; per-recipient wrapped DEK)
 // documentState: 1 = Active, 2 = Deleted
+// Share flow: API owns envelope encryption. Frontends post raw files via multipart and receive
+// rendered files via the streaming endpoint — no client-side crypto for documents.
+
+export class DocumentShare {
+  constructor(
+    public ownerAddress: string,
+    public documentId: number,
+    public sharedWithAddress: string,
+    public cid: string | null,
+    public title: string | null,
+    public documentType: number | null,
+    public sharedAt: number,
+    public updatedAt: number,
+  ) {}
+}
 
 export class DocumentSignature {
   constructor(

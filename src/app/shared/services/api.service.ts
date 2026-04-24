@@ -35,8 +35,6 @@ export class ApiService {
   apiURL = environment.apiURL;
   vaultToken = environment.vaultToken;
 
-  globalSalt = environment.globalSalt;
-
   private getAuditHeaders(): Record<string, string> {
     try {
       if (!this._authRef) {
@@ -55,7 +53,7 @@ export class ApiService {
 
   // ─── Vault — Config (unauthenticated) ────────────────────────────────────────
 
-  async vaultGetConfig(): Promise<{ rpcNode: string; entityContract: string; globalVariablesProxyContract: string } | null> {
+  async vaultGetConfig(): Promise<{ rpcNode: string; entityContract: string; globalVariablesProxyContract: string; globalSalt: string } | null> {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
@@ -578,6 +576,9 @@ export class ApiService {
   async documentsList(start = 1, offset = 50) {
     return await this.authGet('/documents', { start: String(start), offset: String(offset) });
   }
+  async documentsSharedWithMe(start = 1, offset = 50) {
+    return await this.authGet('/documents/shared-with-me', { start: String(start), offset: String(offset) });
+  }
   async documentGet(id: any)                             { return await this.authGet('/documents/' + id); }
   async documentAdd(body: any)                           { return await this.authPost('/documents', body); }
   async documentUpdate(id: any, body: any)               { return await this.authPut('/documents/' + id, body); }
@@ -586,6 +587,83 @@ export class ApiService {
   async documentShare(id: any, account: string)         { return await this.authPost('/documents/' + id + '/share', { account }); }
   async documentUnshare(id: any, account: string)       { return await this.authDelete('/documents/' + id + '/share/' + account); }
   async documentGetSharedWith(id: any)                   { return await this.authGet('/documents/' + id + '/shared'); }
+  async documentPublish(id: any)                         { return await this.authPost('/documents/' + id + '/publish', {}); }
+
+  // Shared multipart uploader. Path-agnostic so the same code serves entity / service / asset /
+  // subscription document POSTs. The API handles encryption, IPFS pin, wrapped-DEK assembly, and
+  // on-chain addDocument — frontend just posts raw file + metadata.
+  private async _uploadMultipart(
+    path: string,
+    file: File,
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    onProgress?: (percent: number) => void
+  ): Promise<any | null> {
+    return new Promise<any | null>((resolve) => {
+      try {
+        const form = new FormData();
+        form.append('file', file, file.name);
+        if (metadata.title)       form.append('title', metadata.title);
+        if (metadata.description) form.append('description', metadata.description);
+        if (metadata.fileType)    form.append('fileType', metadata.fileType);
+        form.append('documentType', String(metadata.documentType));
+        form.append('documentState', String(metadata.documentState));
+        if (metadata.sharedWith && metadata.sharedWith.length) {
+          form.append('sharedWith', JSON.stringify(metadata.sharedWith));
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', this.apiURL + path);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + this.vaultToken);
+        const audit = this.getAuditHeaders();
+        for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
+
+        xhr.upload.onprogress = (e) => {
+          if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          try {
+            const json = JSON.parse(xhr.responseText);
+            if (xhr.status >= 300 || json?.error) resolve(null);
+            else resolve(json);
+          } catch { resolve(null); }
+        };
+        xhr.onerror = () => resolve(null);
+        xhr.onabort = () => resolve(null);
+        xhr.send(form);
+      } catch { resolve(null); }
+    });
+  }
+
+  // Shared file-streaming fetcher. Uses fetch() because CapacitorHttp coerces bodies to JSON on
+  // ok responses. Caller owns URL.revokeObjectURL for the returned blobUrl.
+  private async _fetchFileBlob(path: string): Promise<{ blobUrl: string; contentType: string } | null> {
+    try {
+      const res = await fetch(this.apiURL + path, {
+        headers: {
+          'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
+        },
+      });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      return { blobUrl, contentType: blob.type || 'application/octet-stream' };
+    } catch {
+      return null;
+    }
+  }
+
+  // Entity-document shortcuts
+  async documentAddMultipart(
+    file: File,
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    onProgress?: (percent: number) => void,
+  ) {
+    return this._uploadMultipart('/documents', file, metadata, onProgress);
+  }
+  async documentFetchFile(id: any) {
+    return this._fetchFileBlob('/documents/' + id + '/file');
+  }
 
   // Document signatures (this entity's own documents)
   async documentSignatures(id: any, start = 1, offset = 50) {
@@ -620,6 +698,19 @@ export class ApiService {
   async serviceDocumentSign(address: string, id: any, keyId: any, docHash: string) {
     return await this.authPost('/services/' + address + '/documents/' + id + '/sign', { keyId, docHash });
   }
+  async serviceDocumentAddMultipart(
+    address: string, file: File,
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    onProgress?: (percent: number) => void,
+  ) {
+    return this._uploadMultipart('/services/' + address + '/documents', file, metadata, onProgress);
+  }
+  async serviceDocumentFetchFile(address: string, id: any) {
+    return this._fetchFileBlob('/services/' + address + '/documents/' + id + '/file');
+  }
+  async serviceDocumentPublish(address: string, id: any) {
+    return await this.authPost('/services/' + address + '/documents/' + id + '/publish', {});
+  }
 
   // ─── Asset documents (scoped to a given asset address) ───────────────────────
 
@@ -642,6 +733,52 @@ export class ApiService {
   async assetDocumentSignatureCount(address: string, id: any)                { return await this.authGet('/assets/' + address + '/documents/' + id + '/signatures/count'); }
   async assetDocumentSign(address: string, id: any, keyId: any, docHash: string) {
     return await this.authPost('/assets/' + address + '/documents/' + id + '/sign', { keyId, docHash });
+  }
+  async assetDocumentAddMultipart(
+    address: string, file: File,
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    onProgress?: (percent: number) => void,
+  ) {
+    return this._uploadMultipart('/assets/' + address + '/documents', file, metadata, onProgress);
+  }
+  async assetDocumentFetchFile(address: string, id: any) {
+    return this._fetchFileBlob('/assets/' + address + '/documents/' + id + '/file');
+  }
+  async assetDocumentPublish(address: string, id: any) {
+    return await this.authPost('/assets/' + address + '/documents/' + id + '/publish', {});
+  }
+
+  // ─── Subscription documents ──────────────────────────────────────────────────
+
+  async subscriptionDocumentsList(address: string, start = 1, offset = 50) {
+    return await this.authGet('/subscriptions/' + address + '/documents', { start: String(start), offset: String(offset) });
+  }
+  async subscriptionDocumentGet(address: string, id: any)                           { return await this.authGet('/subscriptions/' + address + '/documents/' + id); }
+  async subscriptionDocumentAdd(address: string, body: any)                         { return await this.authPost('/subscriptions/' + address + '/documents', body); }
+  async subscriptionDocumentUpdate(address: string, id: any, body: any)             { return await this.authPut('/subscriptions/' + address + '/documents/' + id, body); }
+  async subscriptionDocumentRemove(address: string, id: any)                        { return await this.authDelete('/subscriptions/' + address + '/documents/' + id); }
+  async subscriptionDocumentSetState(address: string, id: any, state: number)       { return await this.authPut('/subscriptions/' + address + '/documents/' + id + '/state', { state }); }
+  async subscriptionDocumentShare(address: string, id: any, account: string)        { return await this.authPost('/subscriptions/' + address + '/documents/' + id + '/share', { account }); }
+  async subscriptionDocumentUnshare(address: string, id: any, account: string)      { return await this.authDelete('/subscriptions/' + address + '/documents/' + id + '/share/' + account); }
+  async subscriptionDocumentGetSharedWith(address: string, id: any)                 { return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/shared'); }
+  async subscriptionDocumentSignatures(address: string, id: any, start = 1, offset = 100) {
+    return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/signatures', { start: String(start), offset: String(offset) });
+  }
+  async subscriptionDocumentSigners(address: string, id: any)                       { return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/signers'); }
+  async subscriptionDocumentHasSigned(address: string, id: any, account: string)    { return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/signed/' + account); }
+  async subscriptionDocumentSignatureCount(address: string, id: any)                { return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/signatures/count'); }
+  async subscriptionDocumentAddMultipart(
+    address: string, file: File,
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    onProgress?: (percent: number) => void,
+  ) {
+    return this._uploadMultipart('/subscriptions/' + address + '/documents', file, metadata, onProgress);
+  }
+  async subscriptionDocumentFetchFile(address: string, id: any) {
+    return this._fetchFileBlob('/subscriptions/' + address + '/documents/' + id + '/file');
+  }
+  async subscriptionDocumentPublish(address: string, id: any) {
+    return await this.authPost('/subscriptions/' + address + '/documents/' + id + '/publish', {});
   }
 
   // ─── Subscription signer keys + signing relays ───────────────────────────────
@@ -871,7 +1008,7 @@ export class ApiService {
       // Convert to BigInts
       const emailBigInt = ParseProofUtils.stringToBigInt(email);
       const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(this.globalSalt);
+      const globalSaltBigInt = BigInt(this.ethersService.globalSalt);
 
       // Generate hashes for contract
       const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
@@ -1078,8 +1215,11 @@ export class ApiService {
   async connectMessagesMarkBatchRead(messageIds: number[]) { return this.vaultPost('/connect/messages/read-batch', { messageIds }); }
   async connectMessageTombstone(id: number)          { return this.vaultPost(`/connect/messages/${id}/tombstone`, {}); }
 
-  async connectRecipientsSearch(type: 'entity' | 'regulator' | 'subscription', q: string) {
+  async connectRecipientsSearch(type: 'entity' | 'regulator' | 'subscription' | 'service', q: string) {
     return this.vaultGet(`/connect/recipients/search?type=${type}&q=${encodeURIComponent(q)}`);
   }
+
+  // ─── Directory (unified address → name/partyType resolver) ────────────────
+  async directoryByAddress(address: string) { return this.vaultGet('/directory/by-address/' + address); }
 
 }

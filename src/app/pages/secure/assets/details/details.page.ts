@@ -26,6 +26,7 @@ import { ModalTransactionInfoComponent } from '../../../../shared/components/mod
 import { ModalAssetServiceStateService } from '../modals/modal-asset-service-state/modal-asset-service-state.service';
 import { ModalAssetServiceStateComponent } from '../modals/modal-asset-service-state/modal-asset-service-state.component';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 
 
 
@@ -41,7 +42,8 @@ import { AuditService } from '../../../../shared/services/audit.service';
     ModalAssetStateComponent,
     ModalAssetAddServiceComponent,
     ModalTransactionInfoComponent,
-    ModalAssetServiceStateComponent
+    ModalAssetServiceStateComponent,
+    DocumentsTabComponent,
   ]
 })
 export class DetailsPage implements OnInit {
@@ -65,7 +67,7 @@ export class DetailsPage implements OnInit {
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
-  activeTab = signal<'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services'>('overview');
+  activeTab = signal<'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services' | 'docs'>('overview');
 
   loadingData: boolean = false;
 
@@ -213,7 +215,7 @@ export class DetailsPage implements OnInit {
     ]);
   }
 
-  setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services') {
+  setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services' | 'docs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
     if (tab === 'services') this.getAssetDetails();

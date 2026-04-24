@@ -53,7 +53,7 @@ export class AuthService {
       if (!config) return { success: false, error: 'Failed to fetch configuration' };
 
       // Configure ethers with blockchain addresses and initialize
-      this.ethersService.configure(config.rpcNode, config.entityContract, config.globalVariablesProxyContract);
+      this.ethersService.configure(config.rpcNode, config.entityContract, config.globalVariablesProxyContract, config.globalSalt);
       await this.ethersService.init();
 
       // 1 hour in milliseconds
@@ -71,9 +71,9 @@ export class AuthService {
         // get user info
         this.loadingService.show('Generating zero-knowledge proof — fetching profile...');
         const userId = Number(loginResult.userId);
-        const userInfo = await this.ethersService.userInfo(userId);
-        if(userInfo.result && userInfo.result.state === 2) {
-          this.userInfo = userInfo.result;
+        const user = await this.apiService.vaultGetUser(String(userId));
+        if (user && user.state === 2) {
+          this.userInfo = user;
 
           // check entity state — block login if entity is not active
           const entityData = await this.apiService.vaultGetEntityInfo();
@@ -101,7 +101,7 @@ export class AuthService {
         }
         else {
           this.loadingService.hide();
-          return { success: false, error: userInfo.error };
+          return { success: false, error: user ? 'User is not active' : 'Error fetching info' };
         }
       }
       else {

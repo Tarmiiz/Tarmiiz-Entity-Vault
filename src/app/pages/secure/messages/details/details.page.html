@@ -1,116 +1,304 @@
-<app-header [title]="'Thread #' + threadId"></app-header>
+<app-header title="Thread Details"></app-header>
 
-<div class="flex-grow p-4 bg-gray-300 overflow-y-auto">
-
-  <!-- Breadcrumb -->
-  <div class="mb-3 text-xs text-gray-600 flex items-center gap-1">
-    <a routerLink="/authorized/messages/list" class="text-indigo-700 hover:underline flex items-center gap-1">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-      </svg>
-      Messages
-    </a>
-    <span class="text-gray-400">/</span>
-    <span>Thread #{{ threadId }}</span>
-  </div>
-
+<!-- breadcrumb -->
+<div class="px-6 py-4 border-b bg-gray-200">
   @if (thread(); as t) {
-    <!-- Header -->
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
-      <div class="flex justify-between items-start gap-2">
-        <div>
-          <div class="text-sm font-semibold">{{ t.subject || '(no subject)' }}</div>
-          <div class="text-xs text-gray-500">Created {{ utils.formatDate(t.createdAt) }}</div>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-[10px] px-2 py-0.5 rounded font-medium"
-                [ngClass]="t.state===1 ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'">
-            {{ t.state === 1 ? 'Open' : t.state === 2 ? 'Closed' : 'Archived' }}
-          </span>
-          @if (t.state === 1 && isEntityCreator()) {
-            <button (click)="closeThread()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">
-              Close thread
-            </button>
-          }
-        </div>
-      </div>
+    <div class="flex items-center justify-between">
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+          <li class="inline-flex items-center">
+            <a routerLink="/authorized/messages/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+              Messages
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+              <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ t.subject || ('Thread #' + t.id) }}</span>
+            </div>
+          </li>
+        </ol>
+      </nav>
+      @if (t.state === 1 && isEntityCreator()) {
+        <button (click)="closeThread()"
+                class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Close Thread
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
+  }
+</div>
 
-      <div class="mt-3 flex flex-wrap gap-2">
-        @for (p of t.participants; track p.address) {
-          <span class="text-[10px] bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-100">
-            {{ participantType(p.partyType) }} · {{ p.address.slice(0, 8) }}…{{ p.address.slice(-4) }}
-          </span>
-        }
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-t-lg shadow-md p-2">
+      <div class="flex border-b border-gray-200">
+
+        <button (click)="setTab('conversation')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'conversation'"
+          [class.border-b-2]="activeTab() === 'conversation'"
+          [class.border-blue-600]="activeTab() === 'conversation'"
+          [class.bg-blue-600]="activeTab() === 'conversation'">
+          Conversation
+        </button>
+
+        <button (click)="setTab('info')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'info'"
+          [class.border-b-2]="activeTab() === 'info'"
+          [class.border-blue-600]="activeTab() === 'info'"
+          [class.bg-blue-600]="activeTab() === 'info'">
+          Information
+        </button>
+
+        <button (click)="setTab('participants')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'participants'"
+          [class.border-b-2]="activeTab() === 'participants'"
+          [class.border-blue-600]="activeTab() === 'participants'"
+          [class.bg-blue-600]="activeTab() === 'participants'">
+          Participants
+        </button>
+
       </div>
     </div>
 
-    <!-- Messages -->
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
-      <div class="max-h-[50vh] overflow-auto flex flex-col gap-2">
-        @for (m of messages(); track m.id) {
-          <div class="flex" [class.justify-end]="isMine(m)">
-            <div class="max-w-[70%] rounded-lg px-3 py-2 text-xs"
-                 [ngClass]="isMine(m) ? 'bg-indigo-100 text-indigo-900' : 'bg-gray-100 text-gray-800'">
-              <div class="text-[10px] text-gray-500 mb-1">
-                {{ isMine(m) ? 'me' : (m.sender.slice(0,8) + '…') }}
-                · {{ utils.formatDate(m.sentAt) }}
-                @if (m.state === 2) { · <span class="italic">tombstoned</span> }
+    <!-- Tab Content -->
+    <div class="bg-white rounded-b-lg shadow-md p-2">
+      @if (thread(); as t) {
+
+        <!-- Conversation tab -->
+        @if (activeTab() === 'conversation') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ t.subject || '(no subject)' }}</h2>
+                  <p class="text-xs text-gray-500 mt-0.5">#{{ t.id }} · {{ messages().length }} messages</p>
+                </div>
+                <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStateClass(t.state)">
+                  {{ stateName(t.state) }}
+                </span>
               </div>
-              <div class="whitespace-pre-wrap break-words">
-                {{ textFor(m) }}
+
+              <!-- Messages -->
+              <div class="border-t pt-4">
+                <div class="max-h-[55vh] overflow-auto flex flex-col gap-2">
+                  @for (m of messages(); track m.id) {
+                    <div class="flex" [class.justify-end]="isMine(m)">
+                      <div class="max-w-[70%] rounded-lg px-3 py-2 text-xs"
+                           [ngClass]="isMine(m) ? 'bg-indigo-100 text-indigo-900' : 'bg-gray-100 text-gray-800'">
+                        <div class="text-[10px] text-gray-500 mb-1">
+                          {{ senderLabel(m) }}
+                          · {{ utils.formatDate(m.sentAt) }}
+                          @if (m.state === 2) { · <span class="italic">deleted</span> }
+                        </div>
+                        <div class="whitespace-pre-wrap break-words">
+                          {{ textFor(m) }}
+                        </div>
+                        <div class="flex gap-3 mt-1 text-[10px]">
+                          @if (!isMine(m) && !m.readAt) {
+                            <button class="text-indigo-700 hover:underline inline-flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    [disabled]="isMarkingRead(m.id)"
+                                    (click)="markRead(m)">
+                              @if (isMarkingRead(m.id)) {
+                                <svg class="w-3 h-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <span>Marking…</span>
+                              } @else {
+                                <span>Mark read</span>
+                              }
+                            </button>
+                          }
+                          @if (isMine(m) && m.state === 1) {
+                            <button class="text-red-700 hover:underline inline-flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    [disabled]="isDeleting(m.id)"
+                                    (click)="tombstone(m)">
+                              @if (isDeleting(m.id)) {
+                                <svg class="w-3 h-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <span>Deleting…</span>
+                              } @else {
+                                <span>Delete</span>
+                              }
+                            </button>
+                          }
+                          @if (m.readAt) {
+                            <span class="text-gray-400">read {{ utils.formatDate(m.readAt) }}</span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+                  @if (messages().length === 0) {
+                    <div class="text-center text-xs text-gray-500 py-6">No messages yet.</div>
+                  }
+                </div>
               </div>
-              <div class="flex gap-3 mt-1 text-[10px]">
-                @if (!isMine(m) && !m.readAt) {
-                  <button class="text-indigo-700 hover:underline" (click)="markRead(m)">Mark read</button>
+
+              <!-- Compose -->
+              @if (t.state === 1) {
+                <div class="border-t pt-4 mt-4">
+                  <label class="text-sm font-medium text-gray-500">Send message</label>
+                  <textarea rows="3" [ngModel]="composeText()" (ngModelChange)="composeText.set($event)"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                            placeholder="Type your message (stored on-chain as content CID)…"></textarea>
+                  <div class="mt-2 flex justify-end">
+                    <button (click)="send()" [disabled]="!composeText()"
+                            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l14-7-7 14-2-5-5-2z"/>
+                      </svg>
+                      Send
+                    </button>
+                  </div>
+                </div>
+
+                @if (hasSubscriptionParticipants()) {
+                  <div class="border-t pt-4 mt-4">
+                    <label class="text-sm font-medium text-gray-500">Broadcast to all subscribers in this thread</label>
+                    <textarea rows="2" [ngModel]="broadcastText()" (ngModelChange)="broadcastText.set($event)"
+                              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                              placeholder="Broadcast message (fans out to every subscription participant)…"></textarea>
+                    <div class="mt-2 flex justify-end">
+                      <button (click)="broadcast()" [disabled]="!broadcastText()"
+                              class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                        Broadcast
+                      </button>
+                    </div>
+                  </div>
                 }
-                @if (isMine(m) && m.state === 1) {
-                  <button class="text-red-700 hover:underline" (click)="tombstone(m)">Tombstone</button>
-                }
-                @if (m.readAt) {
-                  <span class="text-gray-400">read {{ utils.formatDate(m.readAt) }}</span>
-                }
-              </div>
+              }
+
             </div>
           </div>
         }
-        @if (messages().length === 0) {
-          <div class="text-center text-xs text-gray-500 py-6">No messages yet.</div>
+
+        <!-- Info tab -->
+        @if (activeTab() === 'info') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ t.subject || '(no subject)' }}</h2>
+                  <p class="text-xs text-gray-500 mt-0.5">#{{ t.id }}</p>
+                </div>
+                <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStateClass(t.state)">
+                  {{ stateName(t.state) }}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Subject</p>
+                  <p class="text-base text-gray-700">{{ t.subject || '—' }}</p>
+                </div>
+
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">State</p>
+                  <p class="text-base text-gray-700">{{ stateName(t.state) }}</p>
+                </div>
+
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Creator</p>
+                  <p class="text-base text-gray-700">{{ nameFor(t.creator) || '—' }}</p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {{ participantType(resolvedPartyType(t.creator, t.creatorType)) }}
+                    · <span class="font-mono">{{ t.creator }}</span>
+                  </p>
+                </div>
+
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Created</p>
+                  <p class="text-base text-gray-700">{{ t.createdAt ? utils.formatDate(t.createdAt) : '—' }}</p>
+                </div>
+
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Messages</p>
+                  <p class="text-base text-gray-700">{{ t.messageCount || messages().length }}</p>
+                </div>
+
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Last Message</p>
+                  <p class="text-base text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : '—' }}</p>
+                </div>
+
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Participants</p>
+                  <p class="text-base text-gray-700">{{ t.participantCount || t.participants.length || 0 }}</p>
+                </div>
+
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Metadata CID</p>
+                  <p class="text-base text-gray-700 font-mono break-all">{{ t.metadataCid || '—' }}</p>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
         }
-      </div>
+
+        <!-- Participants tab -->
+        @if (activeTab() === 'participants') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th scope="col" class="px-6 py-2">#</th>
+                    <th scope="col" class="px-6 py-2">Name</th>
+                    <th scope="col" class="px-6 py-2">Party Type</th>
+                    <th scope="col" class="px-6 py-2">Address</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if (t.participants.length === 0) {
+                    <tr class="bg-white border-b">
+                      <td class="px-6 py-2" colspan="4">no data</td>
+                    </tr>
+                  } @else {
+                    @for (p of t.participants; track p.address; let i = $index; let isEven = $even) {
+                      <tr class="border-b transition-colors"
+                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <td class="px-6 py-2">{{ i + 1 }}</td>
+                        <td class="px-6 py-2">{{ nameFor(p.address) || '—' }}</td>
+                        <td class="px-6 py-2">{{ participantType(resolvedPartyType(p.address, p.partyType)) }}</td>
+                        <td class="px-6 py-2 font-mono break-all">{{ p.address }}</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="flex items-center px-4 py-2 border-t">
+              <p class="text-xs font-medium text-gray-800">Showing {{ t.participants.length }} of Total {{ t.participants.length }} Records</p>
+            </div>
+          </div>
+        }
+
+      } @else {
+        <div class="text-center text-sm text-gray-500 py-12">Loading…</div>
+      }
     </div>
 
-    <!-- Compose -->
-    @if (t.state === 1) {
-      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
-        <label class="text-xs font-medium text-gray-500">Send message</label>
-        <textarea rows="3" [ngModel]="composeText()" (ngModelChange)="composeText.set($event)"
-                  class="mt-1 w-full text-xs border border-gray-300 rounded px-2 py-1.5 text-black focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                  placeholder="Type your message (stored on-chain as content CID)…"></textarea>
-        <div class="mt-2 text-right">
-          <button (click)="send()" [disabled]="!composeText()"
-                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50 transition-colors">
-            Send
-          </button>
-        </div>
-      </div>
-
-      @if (hasSubscriptionParticipants()) {
-        <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
-          <label class="text-xs font-medium text-gray-500">Broadcast to all subscribers in this thread</label>
-          <textarea rows="2" [ngModel]="broadcastText()" (ngModelChange)="broadcastText.set($event)"
-                    class="mt-1 w-full text-xs border border-gray-300 rounded px-2 py-1.5 text-black focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                    placeholder="Broadcast message (fans out to every subscription participant)…"></textarea>
-          <div class="mt-2 text-right">
-            <button (click)="broadcast()" [disabled]="!broadcastText()"
-                    class="text-xs px-3 py-1.5 rounded bg-purple-700 text-white hover:bg-purple-800 disabled:opacity-50 transition-colors">
-              Broadcast
-            </button>
-          </div>
-        </div>
-      }
-    }
-  } @else {
-    <div class="text-center text-sm text-gray-500 py-12">Loading…</div>
-  }
-</div>
+  </div>
+</main>

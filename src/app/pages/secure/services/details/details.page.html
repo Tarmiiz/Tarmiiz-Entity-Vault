@@ -77,6 +77,15 @@
             Transactions
           </button>
         }
+        <button (click)="setTab('docs')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'docs'"
+          [class.border-b-2]="activeTab() === 'docs'"
+          [class.border-blue-600]="activeTab() === 'docs'"
+          [class.bg-blue-600]="activeTab() === 'docs'"
+        >
+          Documents
+        </button>
       </div>
     </div>
 
@@ -262,10 +271,6 @@
 
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <a [routerLink]="'/authorized/services/documents/list/' + serviceAddress"
-                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
-                    Documents
-                  </a>
                   @if (isTokenIssuer()) {
                     <button (click)="openChangeValidatorModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
@@ -650,7 +655,18 @@
         }
 
 
-      } 
+        <!-- docs tab -->
+        @if (activeTab() === 'docs') {
+          <div class="p-2">
+            <app-documents-tab
+              resourceType="service"
+              [address]="serviceAddress"
+              [entityActive]="entityActive">
+            </app-documents-tab>
+          </div>
+        }
+
+      }
       @else {
         <div class="text-center py-12 text-gray-500">
           <p>Loading service details...</p>

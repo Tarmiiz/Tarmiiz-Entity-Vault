@@ -24,6 +24,7 @@ import { ModalCreditTrxInfoService } from '../../../../shared/components/modal-c
 import { ModalCreditTrxInfoComponent } from '../../../../shared/components/modal-credit-trx-info/modal-credit-trx-info.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 
 
 
@@ -38,7 +39,8 @@ import { AuditService } from '../../../../shared/services/audit.service';
     RouterLink,
     ModalSubscriptionStateComponent,
     ModalTransactionInfoComponent,
-    ModalCreditTrxInfoComponent
+    ModalCreditTrxInfoComponent,
+    DocumentsTabComponent,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -59,7 +61,7 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs' | 'credit'>('overview');
+  activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs'>('overview');
 
   loadingData: boolean = false;
 
@@ -266,7 +268,7 @@ export class DetailsPage implements OnInit {
     ]);
   }
 
-  setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs' | 'credit') {
+  setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getSubscriptionDetails();
     if (tab === 'holdings') this.getHoldings(1, 500);

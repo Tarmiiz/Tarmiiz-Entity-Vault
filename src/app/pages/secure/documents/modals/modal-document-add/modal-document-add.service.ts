@@ -1,12 +1,15 @@
 import { Injectable, signal } from '@angular/core';
 
+// The modal now always yields a File (multipart upload) — the API owns encryption + pin + add. If
+// the user wants Public, the API still handles the pin.
 export interface AddDocumentData {
-  cid: string;
+  file: File;
   title: string;
   description: string;
   fileType: string;
-  documentType: number;
-  documentState: number;
+  documentType: number;   // 1 = Public, 2 = Private
+  documentState: number;  // 1 = Active
+  sharedWith: string[];   // recipient addresses (only used when documentType = 2)
 }
 
 @Injectable({ providedIn: 'root' })

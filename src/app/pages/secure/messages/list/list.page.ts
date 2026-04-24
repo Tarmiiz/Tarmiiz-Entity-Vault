@@ -29,13 +29,20 @@ export class ListPage implements OnInit, OnDestroy {
   threads        = signal<ConnectThread[]>([]);
   threadsCount   = 0;
   searchTerm     = signal('');
+  searchParticipant = signal('');
   filterType     = signal<'all' | 'entity' | 'regulator' | 'subscription'>('all');
+  filterState    = signal<'all' | '1' | '2' | '3'>('all');
   unreadOnly     = signal(false);
   loadingData    = false;
+  entityAddress  = signal('');
+  directory      = signal<Record<string, { name: string; partyType: number }>>({});
 
   private sub?: Subscription;
 
-  ngOnInit() {
+  async ngOnInit() {
+    const cfg = await this.apiService.vaultGetConfig();
+    this.entityAddress.set((cfg?.entityContract || '').toLowerCase());
+
     this.sub = this.socketService.vaultUpdated$.subscribe(p => {
       if (p.type === 'connect' || p.type === 'all') this.loadThreads();
     });
@@ -55,24 +62,61 @@ export class ListPage implements OnInit, OnDestroy {
     if (result?.threads) {
       this.threadsCount = result.count;
       this.threads.set(result.threads);
+      this.resolveDirectory(result.threads);
     }
     this.loadingService.hide();
   }
 
+  private async resolveDirectory(threads: ConnectThread[]) {
+    const current = { ...this.directory() };
+    const addrs = new Set<string>();
+    for (const t of threads) {
+      if (t.creator) addrs.add(t.creator.toLowerCase());
+      for (const p of (t.participants || [])) if (p.address) addrs.add(p.address.toLowerCase());
+    }
+    const toFetch = Array.from(addrs).filter(a => !current[a]);
+    if (toFetch.length === 0) return;
+    await Promise.all(toFetch.map(async a => {
+      try {
+        const resp = await this.apiService.directoryByAddress(a);
+        const e = resp?.entry;
+        if (e?.name) current[a] = { name: e.name, partyType: e.partyType };
+      } catch { /* ignore */ }
+    }));
+    this.directory.set(current);
+  }
+
   filteredThreads = computed(() => {
     const term = this.searchTerm().toLowerCase();
+    const partTerm = this.searchParticipant().toLowerCase();
     const type = this.filterType();
+    const state = this.filterState();
     const unread = this.unreadOnly();
+    const self = this.entityAddress();
+    const dir = this.directory();
     return this.threads().filter(t => {
-      if (unread && t.messageCount === 0) return false;
-      if (term && !(t.subject?.toLowerCase().includes(term) || String(t.id).includes(term))) return false;
+      if (unread && (t.unreadCount || 0) === 0) return false;
+      if (state !== 'all' && t.state !== Number(state)) return false;
+      if (term) {
+        const subjectHit = (t.subject?.toLowerCase() || '').includes(term) || String(t.id).includes(term);
+        if (!subjectHit) return false;
+      }
+      if (partTerm) {
+        const inParticipants = (t.participants || []).some(p => {
+          const a = (p.address || '').toLowerCase();
+          const n = (dir[a]?.name || '').toLowerCase();
+          return a.includes(partTerm) || n.includes(partTerm);
+        });
+        const inSubs = (t.subscriptions || []).some(s => s.toLowerCase().includes(partTerm));
+        if (!inParticipants && !inSubs) return false;
+      }
       if (type !== 'all') {
         if (type === 'subscription') {
           if (!(t.subscriptions && t.subscriptions.length > 0)) return false;
         } else {
-          const others = (t.participants || []).filter(p => p.partyType !== 2);
+          const counterparties = (t.participants || []).filter(p => p.address.toLowerCase() !== self);
           const target = type === 'entity' ? 2 : 3;
-          if (!others.some(p => p.partyType === target)) return false;
+          if (!counterparties.some(p => p.partyType === target)) return false;
         }
       }
       return true;
@@ -86,7 +130,9 @@ export class ListPage implements OnInit, OnDestroy {
   clearFilters() {
     this.unreadOnly.set(false);
     this.searchTerm.set('');
+    this.searchParticipant.set('');
     this.filterType.set('all');
+    this.filterState.set('all');
     const toggle = document.getElementById('ToggleMessagesUnread') as HTMLInputElement | null;
     if (toggle) toggle.checked = false;
   }

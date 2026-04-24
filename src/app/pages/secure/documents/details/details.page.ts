@@ -173,22 +173,21 @@ export class DetailsPage implements OnInit {
     } finally { this.loadingService.hide(); }
   }
 
-  private sniffMime(bytes: Uint8Array): string {
-    const b = bytes;
-    if (b.length >= 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
-    if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
-    if (b.length >= 6 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return 'image/gif';
-    if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'image/webp';
-    if (b.length >= 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return 'application/pdf';
-    if (b.length >= 4 && b[0] === 0x50 && b[1] === 0x4b && (b[2] === 0x03 || b[2] === 0x05) && (b[3] === 0x04 || b[3] === 0x06)) return 'application/zip';
-    if (b.length >= 5 && b[0] === 0x7b) return 'application/json';
-    if (b.length >= 4 && b[0] === 0x3c) return 'text/html';
-    // fallback — many text files are safely inspected as UTF-8
+  // Fetches the decrypted file bytes via the streaming endpoint. The API does all crypto (Public
+  // plaintext passthrough; Private - unwrap DEK + AES-GCM decrypt), so the frontend just gets raw
+  // bytes back. Returns null on failure (alert already shown).
+  private async _fetchFileBytes(): Promise<ArrayBuffer | null> {
+    const fetched = await this.apiService.documentFetchFile(this.id());
+    if (!fetched) {
+      this.alertService.show('Error', 'Could not fetch file.');
+      return null;
+    }
     try {
-      const sample = new TextDecoder('utf-8', { fatal: true }).decode(b.slice(0, Math.min(512, b.length)));
-      if (/^[\x09\x0a\x0d\x20-\x7e]*$/.test(sample)) return 'text/plain';
-    } catch { /* binary */ }
-    return 'application/octet-stream';
+      const res = await fetch(fetched.blobUrl);
+      return await res.arrayBuffer();
+    } finally {
+      URL.revokeObjectURL(fetched.blobUrl);
+    }
   }
 
   async signDocument() {
@@ -198,17 +197,9 @@ export class DetailsPage implements OnInit {
     if (keyId === null) return;
     this.loadingService.show('Hashing file + signing...');
     try {
-      const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) {
-        this.alertService.show('Error', 'Could not fetch file from IPFS for hashing.');
-        return;
-      }
-      const base64 = typeof r.data === 'string' ? r.data : '';
-      const byteString = atob(base64);
-      const bytes = new Uint8Array(byteString.length);
-      for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
-
-      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      const buf = await this._fetchFileBytes();
+      if (!buf) return;
+      const digest = await crypto.subtle.digest('SHA-256', buf);
       const docHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 
       const signRes = await this.apiService.documentSign(this.id(), keyId, docHash);
@@ -228,12 +219,9 @@ export class DetailsPage implements OnInit {
     if (!doc?.cid) return;
     this.loadingService.show('Verifying signature...');
     try {
-      const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) { this.alertService.show('Error', 'Could not fetch file from IPFS.'); return; }
-      const byteString = atob(typeof r.data === 'string' ? r.data : '');
-      const bytes = new Uint8Array(byteString.length);
-      for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
-      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      const buf = await this._fetchFileBytes();
+      if (!buf) return;
+      const digest = await crypto.subtle.digest('SHA-256', buf);
       const currentHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 
       const hashMatches = currentHash.toLowerCase() === (sig.docHash || '').toLowerCase();
@@ -262,21 +250,41 @@ export class DetailsPage implements OnInit {
     if (!doc?.cid) return;
     this.loadingService.show('Fetching file...');
     try {
-      const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) {
-        this.alertService.show('Error', 'Could not fetch file from IPFS.');
+      const fetched = await this.apiService.documentFetchFile(this.id());
+      if (!fetched) {
+        this.alertService.show('Error', 'Could not fetch file.');
         return;
       }
-      // `data` is a base64 string of the original file bytes (the API encrypts/decrypts a base64 payload).
-      const base64 = typeof r.data === 'string' ? r.data : '';
-      const byteString = atob(base64);
-      const bytes = new Uint8Array(byteString.length);
-      for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
-      const mime = doc.fileType || this.sniffMime(bytes);
-      const blob = new Blob([bytes], { type: mime });
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      window.open(fetched.blobUrl, '_blank');
+      // Give the new tab time to load the blob before revoking (MIME & Content-Disposition already
+      // set by the API response). One minute is enough even for slower devices.
+      setTimeout(() => URL.revokeObjectURL(fetched.blobUrl), 60_000);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // Private → Public one-way conversion. Deletes all inbound shares + wrapped DEKs and re-pins
+  // the file as plaintext on IPFS. The reverse direction is not offered — once a CID is on IPFS
+  // as plaintext, future reads can come from cache/mirrors regardless of what we do on-chain.
+  async publishDocument() {
+    const doc = this.document();
+    if (!doc) return;
+    if (doc.documentType !== 2) {
+      this.alertService.show('Not applicable', 'Only Private documents can be published.');
+      return;
+    }
+    const ok = confirm(
+      'Make this document Public?\n\n' +
+      'The file will be re-uploaded to IPFS as plaintext — anyone with the CID will be able to read it. ' +
+      'This cannot be undone: Public → Private conversion is not supported.'
+    );
+    if (!ok) return;
+    this.loadingService.show('Publishing...');
+    try {
+      const r = await this.apiService.documentPublish(this.id());
+      if (r?.error) this.alertService.show('Error', r.error);
+      else await this.loadAll();
     } finally {
       this.loadingService.hide();
     }

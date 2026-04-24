@@ -2,6 +2,28 @@
 
 <div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
+  <!-- Tab bar -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-3 p-2">
+    <div class="flex border-b border-gray-200">
+      <button (click)="setTab('mine')"
+        class="px-5 py-2 font-semibold text-gray-600 text-xs focus:outline-none transition-all duration-200"
+        [class.text-white]="activeTab() === 'mine'"
+        [class.border-b-2]="activeTab() === 'mine'"
+        [class.border-blue-600]="activeTab() === 'mine'"
+        [class.bg-blue-600]="activeTab() === 'mine'">
+        My Documents ({{ documents().length }})
+      </button>
+      <button (click)="setTab('shared')"
+        class="px-5 py-2 font-semibold text-gray-600 text-xs focus:outline-none transition-all duration-200"
+        [class.text-white]="activeTab() === 'shared'"
+        [class.border-b-2]="activeTab() === 'shared'"
+        [class.border-blue-600]="activeTab() === 'shared'"
+        [class.bg-blue-600]="activeTab() === 'shared'">
+        Shared with me ({{ sharedWithMe().length }})
+      </button>
+    </div>
+  </div>
+
   <!-- Filters -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
@@ -11,26 +33,28 @@
           [ngModel]="search()" (ngModelChange)="search.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Type</label>
-        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="">All</option>
-          @for (v of docTypes(); track v.variableId) {
-            <option [value]="v.variableId">{{ v.name }}</option>
-          }
-        </select>
-      </div>
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">State</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="">All</option>
-          @for (v of docStates(); track v.variableId) {
-            <option [value]="v.variableId">{{ v.name }}</option>
-          }
-        </select>
-      </div>
+      @if (activeTab() === 'mine') {
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Type</label>
+          <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option value="">All</option>
+            @for (v of docTypes(); track v.variableId) {
+              <option [value]="v.variableId">{{ v.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">State</label>
+          <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option value="">All</option>
+            @for (v of docStates(); track v.variableId) {
+              <option [value]="v.variableId">{{ v.name }}</option>
+            }
+          </select>
+        </div>
+      }
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
@@ -57,64 +81,113 @@
             </span>
           }
         </div>
-        <button (click)="add()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Add Document
-        </button>
+        @if (activeTab() === 'mine') {
+          <button (click)="onAddClick()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Document
+          </button>
+        }
       </div>
     </div>
   </div>
 
-  <!-- Documents Table -->
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-    <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
-          <tr>
-            <th scope="col" class="px-6 py-2">#</th>
-            <th scope="col" class="px-6 py-2">Title</th>
-            <th scope="col" class="px-6 py-2">File Type</th>
-            <th scope="col" class="px-6 py-2">CID</th>
-            <th scope="col" class="px-6 py-2">Type</th>
-            <th scope="col" class="px-6 py-2">Created</th>
-            <th scope="col" class="px-6 py-2">State</th>
-          </tr>
-        </thead>
-        <tbody class="text-xs">
-          @if (!loading) {
-            @if (filtered().length == 0) {
-              <tr class="bg-white border-b">
-                <td class="px-6 py-2" colspan="7">no data</td>
-              </tr>
-            } @else {
-              @for (doc of filtered(); track doc.id; let i = $index; let isEven = $even) {
-                <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                    [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="view(doc)">
-                  <td class="px-6 py-2">{{ i + 1 }}</td>
-                  <td class="px-6 py-2" [title]="doc.description">{{ doc.title || ('#' + doc.id) }}</td>
-                  <td class="px-6 py-2 text-gray-500">{{ doc.fileType || '—' }}</td>
-                  <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="doc.cid">{{ doc.cid }}</td>
-                  <td class="px-6 py-2">{{ doc.documentTypeName || typeLabel(doc.documentType) }}</td>
-                  <td class="px-6 py-2">{{ utils.formatDate(doc.createdAt) }}</td>
-                  <td class="px-6 py-2">
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="stateClass(doc.documentState)">
-                      {{ doc.documentStateName || stateLabel(doc.documentState) }}
-                    </span>
-                  </td>
+  @if (activeTab() === 'mine') {
+    <!-- My Documents Table -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto rounded-lg">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th scope="col" class="px-6 py-2">#</th>
+              <th scope="col" class="px-6 py-2">Title</th>
+              <th scope="col" class="px-6 py-2">File Type</th>
+              <th scope="col" class="px-6 py-2">CID</th>
+              <th scope="col" class="px-6 py-2">Type</th>
+              <th scope="col" class="px-6 py-2">Created</th>
+              <th scope="col" class="px-6 py-2">State</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            @if (!loading) {
+              @if (filtered().length == 0) {
+                <tr class="bg-white border-b">
+                  <td class="px-6 py-2" colspan="7">no data</td>
                 </tr>
+              } @else {
+                @for (doc of filtered(); track doc.id; let i = $index; let isEven = $even) {
+                  <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                      [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="view(doc)">
+                    <td class="px-6 py-2">{{ i + 1 }}</td>
+                    <td class="px-6 py-2" [title]="doc.description">{{ doc.title || ('#' + doc.id) }}</td>
+                    <td class="px-6 py-2 text-gray-500">{{ doc.fileType || '—' }}</td>
+                    <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="doc.cid">{{ doc.cid }}</td>
+                    <td class="px-6 py-2">{{ doc.documentTypeName || typeLabel(doc.documentType) }}</td>
+                    <td class="px-6 py-2">{{ utils.formatDate(doc.createdAt) }}</td>
+                    <td class="px-6 py-2">
+                      <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="stateClass(doc.documentState)">
+                        {{ doc.documentStateName || stateLabel(doc.documentState) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
               }
             }
-          }
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex items-center px-4 py-2 border-t">
+        <p class="text-xs font-medium text-gray-800">Showing {{ filtered().length }} of Total {{ documents().length }} Documents</p>
+      </div>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ filtered().length }} of Total {{ documents().length }} Documents</p>
+  } @else {
+    <!-- Shared with me Table -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto rounded-lg">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th scope="col" class="px-6 py-2">#</th>
+              <th scope="col" class="px-6 py-2">Title</th>
+              <th scope="col" class="px-6 py-2">Doc ID</th>
+              <th scope="col" class="px-6 py-2">Owner</th>
+              <th scope="col" class="px-6 py-2">CID</th>
+              <th scope="col" class="px-6 py-2">Type</th>
+              <th scope="col" class="px-6 py-2">Shared</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            @if (!loading) {
+              @if (filteredShared().length == 0) {
+                <tr class="bg-white border-b">
+                  <td class="px-6 py-2" colspan="7">no documents shared with this entity</td>
+                </tr>
+              } @else {
+                @for (share of filteredShared(); track share.documentId + ':' + share.ownerAddress; let i = $index; let isEven = $even) {
+                  <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                      [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewShared(share)">
+                    <td class="px-6 py-2">{{ i + 1 }}</td>
+                    <td class="px-6 py-2">{{ share.title || '—' }}</td>
+                    <td class="px-6 py-2">#{{ share.documentId }}</td>
+                    <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="share.ownerAddress">{{ share.ownerAddress }}</td>
+                    <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="share.cid || ''">{{ share.cid || '—' }}</td>
+                    <td class="px-6 py-2">{{ share.documentType !== null ? typeLabel(share.documentType) : '—' }}</td>
+                    <td class="px-6 py-2">{{ utils.formatDate(share.sharedAt) }}</td>
+                  </tr>
+                }
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="flex items-center px-4 py-2 border-t">
+        <p class="text-xs font-medium text-gray-800">Showing {{ filteredShared().length }} of Total {{ sharedWithMe().length }} Shares</p>
+      </div>
     </div>
-  </div>
+  }
+
 </div>
 
 <app-modal-document-add />

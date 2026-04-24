@@ -3,9 +3,10 @@ import { FormsModule } from '@angular/forms';
 
 import { AddDocumentData, ModalDocumentAddService } from './modal-document-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
-import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
-import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { GlobalVariable } from '../../../../../shared/models/data.model';
+
+const DOC_TYPE_PUBLIC  = 1;
+const DOC_TYPE_PRIVATE = 2;
 
 @Component({
   selector: 'app-modal-document-add',
@@ -17,27 +18,27 @@ import { GlobalVariable } from '../../../../../shared/models/data.model';
 export class ModalDocumentAddComponent {
   addService = inject(ModalDocumentAddService);
   private apiService = inject(ApiService);
-  private alertService = inject(AlertService);
-  private loadingService = inject(LoadingService);
 
-  cid = signal('');
   title = signal('');
   description = signal('');
   fileType = signal('');
-  documentType = signal<number>(2);
+  documentType = signal<number>(DOC_TYPE_PRIVATE);
   documentState = signal<number>(1);
-  uploading = signal(false);
-  uploadProgress = signal(0);
   selectedFile = signal<File | null>(null);
   selectedFileName = signal('');
   titleAuto = signal(true);
 
+  // Private-doc sharing. Comma- or newline-separated address list; parsed on submit.
+  sharedWithRaw = signal('');
   docTypes = signal<GlobalVariable[]>([]);
-  docStates = signal<GlobalVariable[]>([]);
 
-  isValid = computed(() =>
-    !!this.description() && (!!this.cid() || !!this.selectedFile())
+  // Only Public / Private are supported; anything else in the Global Variables table is filtered
+  // out defensively (e.g. a legacy "Shared" entry from a pre-redesign deployment).
+  visibleDocTypes = computed(() =>
+    this.docTypes().filter(v => v.variableId === DOC_TYPE_PUBLIC || v.variableId === DOC_TYPE_PRIVATE)
   );
+
+  isValid = computed(() => !!this.selectedFile() && !!this.description());
 
   constructor() {
     effect(() => {
@@ -45,27 +46,22 @@ export class ModalDocumentAddComponent {
         this.loadGlobals();
       }
       if (!this.addService.isVisible()) {
-        this.cid.set('');
         this.title.set('');
         this.titleAuto.set(true);
         this.description.set('');
         this.fileType.set('');
-        this.documentType.set(2);
+        this.documentType.set(DOC_TYPE_PRIVATE);
         this.documentState.set(1);
         this.selectedFile.set(null);
         this.selectedFileName.set('');
-        this.uploading.set(false);
+        this.sharedWithRaw.set('');
       }
     });
   }
 
   async loadGlobals() {
-    const [typesRes, statesRes] = await Promise.all([
-      this.apiService.vaultGetGlobalVariablesList('Document Type'),
-      this.apiService.vaultGetGlobalVariablesList('Document State'),
-    ]);
-    if (typesRes?.variables)  this.docTypes.set(typesRes.variables as GlobalVariable[]);
-    if (statesRes?.variables) this.docStates.set(statesRes.variables as GlobalVariable[]);
+    const typesRes = await this.apiService.vaultGetGlobalVariablesList('Document Type');
+    if (typesRes?.variables) this.docTypes.set(typesRes.variables as GlobalVariable[]);
   }
 
   onFileSelected(event: Event): void {
@@ -80,7 +76,6 @@ export class ModalDocumentAddComponent {
       this.title.set(dot > 0 ? file.name.slice(0, dot) : file.name);
       this.titleAuto.set(true);
     }
-    this.cid.set('');
   }
 
   onTitleInput(value: string) {
@@ -96,37 +91,28 @@ export class ModalDocumentAddComponent {
     if (input) input.value = '';
   }
 
-  async onSave(): Promise<void> {
-    if (!this.isValid()) return;
+  isPrivate = computed(() => this.documentType() === DOC_TYPE_PRIVATE);
 
-    let cid = this.cid();
+  onSave(): void {
     const file = this.selectedFile();
+    if (!file || !this.isValid()) return;
 
-    if (file && !cid) {
-      this.uploading.set(true);
-      this.loadingService.show('Uploading to IPFS...');
-      this.loadingService.setProgress(0);
-      try {
-        const uploaded = await this.apiService.ipfsUploadFile(file, (p) => this.loadingService.setProgress(p));
-        if (!uploaded) {
-          this.alertService.show('Error', 'Upload to IPFS failed.');
-          return;
-        }
-        cid = uploaded;
-        this.cid.set(uploaded);
-      } finally {
-        this.uploading.set(false);
-        this.loadingService.hide();
-      }
-    }
+    // Parse sharedWith only for Private docs — ignore for Public.
+    const sharedWith = this.isPrivate()
+      ? this.sharedWithRaw()
+          .split(/[\s,;]+/)
+          .map(s => s.trim())
+          .filter(s => /^0x[0-9a-fA-F]{40}$/.test(s))
+      : [];
 
     const data: AddDocumentData = {
-      cid,
+      file,
       title: this.title(),
       description: this.description(),
       fileType: this.fileType(),
       documentType: this.documentType(),
       documentState: this.documentState(),
+      sharedWith,
     };
     this.addService.confirm(data);
   }
