@@ -1,0 +1,219 @@
+<app-header title="Venue Details"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/dex/venues/list"
+          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX Venues</a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ venue()?.serviceName || (venue()?.serviceAddress?.slice(0,10) + '…') }}</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+
+    <div class="bg-white rounded-t-lg shadow-md p-2">
+      <div class="flex border-b border-gray-200">
+        <button (click)="setTab('info')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'info'" [class.border-b-2]="activeTab() === 'info'" [class.border-blue-600]="activeTab() === 'info'" [class.bg-blue-600]="activeTab() === 'info'">
+          Information
+        </button>
+        <button (click)="setTab('orders')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'orders'" [class.border-b-2]="activeTab() === 'orders'" [class.border-blue-600]="activeTab() === 'orders'" [class.bg-blue-600]="activeTab() === 'orders'">
+          Orders ({{ venueOrders().length }})
+        </button>
+        <button (click)="setTab('trades')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'trades'" [class.border-b-2]="activeTab() === 'trades'" [class.border-blue-600]="activeTab() === 'trades'" [class.bg-blue-600]="activeTab() === 'trades'">
+          Trades ({{ venueTrades().length }})
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-b-lg shadow-md p-2">
+      @if (venue(); as v) {
+        @if (activeTab() === 'info') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ v.serviceName || 'Unnamed Service' }}</h2>
+                  <p class="text-xs text-gray-500 mt-0.5 font-mono break-all">{{ v.serviceAddress }}</p>
+                </div>
+                <div class="flex flex-row items-center gap-2">
+                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStateClass(v.state)">{{ stateName(v.state) }}</span>
+                  @if (v.suspended) {
+                    <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                  }
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-base text-gray-700">{{ v.countryName || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Registered</p>
+                  <p class="text-base text-gray-700">{{ v.registeredAt ? utils.formatDate(v.registeredAt) : '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Last Updated</p>
+                  <p class="text-base text-gray-700">{{ formatMs(v.updatedAt) }}</p>
+                </div>
+                @if (v.suspended) {
+                  <div class="border-t pt-4 col-span-2">
+                    <p class="text-sm font-medium text-gray-500">Suspension Reason</p>
+                    <p class="text-base text-gray-700">{{ v.suspendedReason || '—' }}</p>
+                  </div>
+                }
+              </div>
+
+              <div class="mt-6 flex justify-end gap-2">
+                <button (click)="openStateModal()" [disabled]="v.state === 4"
+                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  Change State
+                </button>
+              </div>
+
+              @if (v.suspended) {
+                <div class="mt-6 px-3 py-2 rounded bg-yellow-50 border border-yellow-200 text-xs text-yellow-800">
+                  Awaiting regulator clearance — orders cannot place on this venue until the regulator clears the suspension.
+                </div>
+              }
+
+              <div class="mt-8 border-t pt-4">
+                <h3 class="text-base font-semibold text-gray-800 mb-3">Tiers</h3>
+                <p class="text-xs text-gray-500 mb-3">
+                  Request which scopes this venue may host trading at. Approval is granted by the venue's regulator.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  @for (tier of [1, 2, 3]; track tier) {
+                    <div class="border border-gray-200 rounded-lg p-3">
+                      <p class="text-sm font-semibold text-gray-700">{{ tierLabel($any(tier)) }}</p>
+                      <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                            [class]="tierStatus($any(tier)).cls">{{ tierStatus($any(tier)).label }}</span>
+                      @if (tierStatus($any(tier)).label === 'Not requested') {
+                        <div class="mt-3">
+                          <button (click)="requestTier($any(tier))"
+                            class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                            Request approval
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activeTab() === 'orders') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th class="px-6 py-2">#</th>
+                    <th class="px-6 py-2">ID</th>
+                    <th class="px-6 py-2">Asset</th>
+                    <th class="px-6 py-2">Side</th>
+                    <th class="px-6 py-2">Price</th>
+                    <th class="px-6 py-2">Amount</th>
+                    <th class="px-6 py-2">Filled</th>
+                    <th class="px-6 py-2">Status</th>
+                    <th class="px-6 py-2">Created</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if (venueOrders().length === 0) {
+                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">no orders for this venue</td></tr>
+                  } @else {
+                    @for (o of venueOrders(); track o.orderId; let i = $index; let isEven = $even) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                          (click)="goOrder(o.orderId)">
+                        <td class="px-6 py-2">{{ i + 1 }}</td>
+                        <td class="px-6 py-2 font-mono">#{{ o.orderId }}</td>
+                        <td class="px-6 py-2">{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
+                        <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? 'Buy' : 'Sell') }}</span></td>
+                        <td class="px-6 py-2">{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
+                        <td class="px-6 py-2">{{ fmtAmount(o.amount) }}</td>
+                        <td class="px-6 py-2">{{ fmtAmount(o.filled) }}</td>
+                        <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStatusClass(o.status)">{{ o.statusName || o.status }}</span></td>
+                        <td class="px-6 py-2">{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="flex items-center px-4 py-2 border-t">
+              <p class="text-xs font-medium text-gray-800">Showing {{ venueOrders().length }} Orders</p>
+            </div>
+          </div>
+        }
+
+        @if (activeTab() === 'trades') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th class="px-6 py-2">#</th>
+                    <th class="px-6 py-2">ID</th>
+                    <th class="px-6 py-2">Asset</th>
+                    <th class="px-6 py-2">Amount</th>
+                    <th class="px-6 py-2">Price</th>
+                    <th class="px-6 py-2">Credit</th>
+                    <th class="px-6 py-2">Buyer</th>
+                    <th class="px-6 py-2">Seller</th>
+                    <th class="px-6 py-2">Executed</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if (venueTrades().length === 0) {
+                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">no trades for this venue</td></tr>
+                  } @else {
+                    @for (t of venueTrades(); track t.tradeId; let i = $index; let isEven = $even) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                          (click)="goTrade(t.tradeId)">
+                        <td class="px-6 py-2">{{ i + 1 }}</td>
+                        <td class="px-6 py-2 font-mono">#{{ t.tradeId }}</td>
+                        <td class="px-6 py-2">{{ t.assetSymbol || (t.baseAsset.slice(0,10) + '…') }}</td>
+                        <td class="px-6 py-2">{{ fmtAmount(t.amount) }}</td>
+                        <td class="px-6 py-2">{{ fmtPrice(t.price) }} <span class="text-gray-500">{{ t.currencyName || '' }}</span></td>
+                        <td class="px-6 py-2">{{ fmtPrice(t.creditAmount) }}</td>
+                        <td class="px-6 py-2 font-mono">{{ t.buyer.slice(0,10) }}…</td>
+                        <td class="px-6 py-2 font-mono">{{ t.seller.slice(0,10) }}…</td>
+                        <td class="px-6 py-2">{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="flex items-center px-4 py-2 border-t">
+              <p class="text-xs font-medium text-gray-800">Showing {{ venueTrades().length }} Trades</p>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+  </div>
+</main>
+
+<app-modal-venue-state />

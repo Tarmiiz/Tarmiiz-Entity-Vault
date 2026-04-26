@@ -42,6 +42,11 @@ export class ModalCreditTrxInfoComponent {
     return !addr || /^0x0+$/i.test(addr);
   }
 
+  isSubscription(addr: string): boolean {
+    const sub = this.modalService.subscriptionAddress();
+    return !!addr && !!sub && addr.toLowerCase() === sub.toLowerCase();
+  }
+
   navigate(path: string): void {
     this.modalService.close();
     this.router.navigate([path]);

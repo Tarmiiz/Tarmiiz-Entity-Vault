@@ -546,3 +546,133 @@ export class ConnectInboxState {
     public blocks: string[] = []
   ) {}
 }
+
+export class DexVenue {
+  constructor(
+    public serviceAddress: string,
+    public serviceName: string,
+    public entityAddress: string,
+    public entityName: string,
+    public countryCode: number,
+    public countryName: string,
+    public state: number,
+    public suspended: boolean,
+    public suspendedReason: string,
+    public registeredAt: number,
+    public updatedAt: number,
+    public tier1Pending: boolean = false,
+    public tier1Approved: boolean = false,
+    public tier2Pending: boolean = false,
+    public tier2Approved: boolean = false,
+    public tier3Pending: boolean = false,
+    public tier3Approved: boolean = false,
+  ) {}
+}
+
+export class DexAssetListingVenue {
+  constructor(
+    public baseAsset: string,
+    public tier: number,
+    public dexService: string,
+    public dexServiceName: string,
+    public assetName: string,
+    public assetSymbol: string,
+    public entityAddress: string,
+    public entityName: string,
+    public countryCode: number | null,
+    public countryName: string,
+    public venueState: number,
+    public venueSuspended: boolean,
+    public tier1Approved: boolean,
+    public tier2Approved: boolean,
+    public tier3Approved: boolean,
+    public addedAt: number,
+  ) {}
+}
+
+export class DexAssetListing {
+  constructor(
+    public baseAsset: string,
+    public assetName: string,
+    public assetSymbol: string,
+    public assetRegulator: string,
+    public assetCurrencyCode: number,
+    public assetCurrencyName: string,
+    public listedBy: string,
+    public listedByName: string,
+    public listedByEntity: string,
+    public venuePending: boolean,
+    public countryPending: boolean,
+    public globalPending: boolean,
+    public venueApproved: boolean,
+    public countryApproved: boolean,
+    public globalApproved: boolean,
+    public listedAt: number,
+    public updatedAt: number,
+  ) {}
+}
+
+export interface DexOrder {
+  orderId: number;
+  dexService: string;
+  dexServiceName?: string;
+  subscription: string;
+  subscriptionName?: string;
+  baseAsset: string;
+  assetName?: string;
+  assetSymbol?: string;
+  side: number;
+  sideName?: string;
+  marketScope: number;
+  marketScopeName?: string;
+  price: string;
+  amount: string;
+  filled: string;
+  remaining: string;
+  status: number;
+  statusName?: string;
+  withholdTrxId: number;
+  creditWithheld: string;
+  assetWithheld: string;
+  currencyCode: number;
+  currencyName?: string;
+  countryCode: number;
+  countryName?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface DexTrade {
+  tradeId: number;
+  buyOrderId: number;
+  sellOrderId: number;
+  buyDexService: string;
+  buyDexServiceName?: string;
+  sellDexService: string;
+  sellDexServiceName?: string;
+  baseAsset: string;
+  assetName?: string;
+  assetSymbol?: string;
+  buyer: string;
+  buyerName?: string;
+  seller: string;
+  sellerName?: string;
+  amount: string;
+  price: string;
+  creditAmount: string;
+  currencyCode: number;
+  currencyName?: string;
+  marketScope: number;
+  marketScopeName?: string;
+  countryCode: number;
+  countryName?: string;
+  executedAt: number;
+}
+
+export interface OrderBookSnapshot {
+  baseAsset: string;
+  bestBid: { orderId: number; price: string; amount?: string } | null;
+  bestAsk: { orderId: number; price: string; amount?: string } | null;
+  bids: DexOrder[];
+  asks: DexOrder[];
+}

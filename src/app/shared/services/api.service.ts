@@ -172,6 +172,7 @@ export class ApiService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
         },
         data: body,
       });
@@ -190,6 +191,7 @@ export class ApiService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
         },
         data: body,
       });
@@ -208,6 +210,7 @@ export class ApiService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
         },
       });
       if (response.status >= 300 || response.data?.error) return null;
@@ -216,6 +219,108 @@ export class ApiService {
       return null;
     }
   }
+
+  // ─── Vault — DEX ──────────────────────────────────────────────────────────────
+
+  async vaultDexVenuesList(start = 1, offset = 50) {
+    const data = await this.vaultGet('/dex/venues', { start, offset });
+    return data ? { count: data.count, venues: data.venues } : null;
+  }
+  async vaultDexVenueInfo(address: string) {
+    const data = await this.vaultGet('/dex/venues/' + address);
+    return data?.venue ?? null;
+  }
+  async vaultDexVenueCreate(serviceAddress: string) {
+    return this.vaultPost('/dex/venues', { serviceAddress });
+  }
+  async vaultDexVenueSetState(address: string, newState: number) {
+    return this.vaultPut('/dex/venues/' + address + '/state', { newState });
+  }
+  async vaultDexAssetListingsList(start = 1, offset = 50) {
+    const data = await this.vaultGet('/dex/asset-listings', { start, offset });
+    return data ? { count: data.count, listings: data.listings } : null;
+  }
+  async vaultDexAssetListingInfo(asset: string) {
+    const data = await this.vaultGet('/dex/asset-listings/' + asset);
+    return data?.listing ?? null;
+  }
+  async vaultDexAssetListingCreate(baseAsset: string, venue: boolean, country: boolean, global: boolean) {
+    return this.vaultPost('/dex/asset-listings', { baseAsset, venue, country, global });
+  }
+
+  // Per-listing issuer-enabled venues (per-tier)
+  async vaultDexAssetListingVenues(asset: string) {
+    const data = await this.vaultGet(`/dex/asset-listings/${asset}/venues`);
+    return data ? { count: data.count, venues: data.venues } : null;
+  }
+  async vaultDexAssetListingVenuesByTier(asset: string, tier: number) {
+    const data = await this.vaultGet(`/dex/asset-listings/${asset}/venues`, { tier });
+    return data ? { count: data.count, venues: data.venues } : null;
+  }
+  async vaultDexAssetListingVenueAdd(asset: string, tier: number, dexService: string) {
+    return this.vaultPost(`/dex/asset-listings/${asset}/venues`, { tier, dexService });
+  }
+  async vaultDexAssetListingVenueRemove(asset: string, tier: number, dexService: string) {
+    return this.vaultDelete(`/dex/asset-listings/${asset}/venues/${tier}/${dexService}`);
+  }
+  async vaultDexAssetListingVenuesAvailable(asset: string, tier: number, opts: { q?: string; country?: number } = {}) {
+    const params: any = {};
+    if (opts.q)       params.q       = opts.q;
+    if (opts.country) params.country = opts.country;
+    const data = await this.vaultGet(`/dex/asset-listings/${asset}/venues/${tier}/available`, params);
+    return data ? { count: data.count, venues: data.venues } : null;
+  }
+
+  // Venue tier requests (entity-side)
+  async vaultDexVenueRequestTier(address: string, tier: number) {
+    return this.vaultPost(`/dex/venues/${address}/tier-request`, { tier });
+  }
+
+  // DEX — Orders / Trades / Order Book (Phase B)
+  async vaultDexOrdersList(filters: { status?: string | number; side?: string | number; asset?: string; venue?: string; subscription?: string; start?: number; offset?: number } = {}) {
+    const params: any = { start: filters.start ?? 1, offset: filters.offset ?? 50 };
+    if (filters.status      !== undefined && filters.status      !== '') params.status       = filters.status;
+    if (filters.side        !== undefined && filters.side        !== '') params.side         = filters.side;
+    if (filters.asset)        params.asset        = filters.asset;
+    if (filters.venue)        params.dexService   = filters.venue;
+    if (filters.subscription) params.subscription = filters.subscription;
+    const data = await this.vaultGet('/dex/orders', params);
+    return data ? { count: data.count, orders: data.orders } : null;
+  }
+  async vaultDexOrderInfo(orderId: number | string) {
+    const data = await this.vaultGet('/dex/orders/' + orderId);
+    return data?.order ?? null;
+  }
+  async vaultDexPlaceOrder(body: { subscription: string; dexService: string; baseAsset: string; side: number; marketScope: number; price: string; amount: string }) {
+    return this.vaultPost('/dex/orders', body);
+  }
+  async vaultDexCancelOrder(orderId: number | string) {
+    return this.vaultPut('/dex/orders/' + orderId + '/cancel', {});
+  }
+  async vaultDexMatchOrders(buyOrderId: number, sellOrderId: number) {
+    return this.vaultPut('/dex/match', { buyOrderId, sellOrderId });
+  }
+  async vaultDexTradesList(filters: { asset?: string; venue?: string; party?: string; scope?: string | number; start?: number; offset?: number } = {}) {
+    const params: any = { start: filters.start ?? 1, offset: filters.offset ?? 50 };
+    if (filters.asset) params.asset      = filters.asset;
+    if (filters.venue) params.dexService = filters.venue;
+    if (filters.party) params.party      = filters.party;
+    if (filters.scope !== undefined && filters.scope !== '') params.scope = filters.scope;
+    const data = await this.vaultGet('/dex/trades', params);
+    return data ? { count: data.count, trades: data.trades } : null;
+  }
+  async vaultDexTradeInfo(tradeId: number | string) {
+    const data = await this.vaultGet('/dex/trades/' + tradeId);
+    return data?.trade ?? null;
+  }
+  async vaultDexOrderBook(asset: string, params: { dexService?: string; countryCode?: number; currencyCode?: number; start?: number; offset?: number } = {}) {
+    const q: any = { start: params.start ?? 1, offset: params.offset ?? 50 };
+    if (params.dexService)   q.dexService   = params.dexService;
+    if (params.countryCode)  q.countryCode  = params.countryCode;
+    if (params.currencyCode) q.currencyCode = params.currencyCode;
+    return this.vaultGet('/dex/order-book/' + asset, q);
+  }
+
 
   // ─── Vault — Assets ───────────────────────────────────────────────────────────
 
@@ -430,6 +535,11 @@ export class ApiService {
     return data ? { count: data.count, transactions: data.transactions } : null;
   }
 
+  async vaultGetEntityCreditOverview() {
+    const data = await this.vaultGet('/entity/credit-overview');
+    return data ? { totals: data.totals, subscriptions: data.subscriptions } : null;
+  }
+
   async vaultGetSubscriptionIdentityHash(address: string) {
     const data = await this.vaultGet('/subscriptions/' + address + '/identity-hash');
     return data?.identityHash ?? null;
@@ -509,15 +619,37 @@ export class ApiService {
     return data?.regulators ?? null;
   }
 
+  async vaultDirectoryByAddress(address: string) {
+    const data = await this.vaultGet('/directory/by-address/' + address);
+    return data?.entry ?? null;
+  }
+
   // ─── Vault — Entity auth ──────────────────────────────────────────────────────
 
   async entityLogin(username: string, password: string, sessionDuration: number) {
     const payload = await this.ethersService.createLoginPayload(username, password, sessionDuration);
     if (!payload) return { success: false, error: 'Proof generation failed' };
     const { key, ...rest } = payload;
-    const data = await this.vaultPost('/entity/login', { ...rest, privateKey: key.privateKey });
-    if (!data) return { success: false, error: 'Login API call failed' };
-    return { success: true, userId: data.userId, key };
+    // Raw POST so we can surface the contract-level revert reason (nonce mismatch,
+    // commitment mismatch, invalid zk proof, …) — vaultPost() swallows it on non-2xx.
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/vault/entity/login',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
+        },
+        data: { ...rest, privateKey: key.privateKey },
+      });
+      if (response.data?.type === 'success') {
+        return { success: true, userId: response.data.userId, key };
+      }
+      return { success: false, error: response.data?.error || 'Login API call failed', key };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Login API call failed', key };
+    }
   }
 
   async entityLogout() {

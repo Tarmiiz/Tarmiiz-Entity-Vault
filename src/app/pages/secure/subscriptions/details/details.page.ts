@@ -68,7 +68,6 @@ export class DetailsPage implements OnInit {
   subscriptionAddress = '';
   subscription = signal<Subscription | undefined>(undefined);
   suspensionReason = signal<string>('');
-  didHash = '';
   holdings = signal<SubscriptionHolding[]>([]);
   holdingPage = signal(0);
   readonly holdingPageSize = 10;
@@ -355,8 +354,6 @@ export class DetailsPage implements OnInit {
         this.suspensionReason.set('');
       }
     }
-    const didHash = await this.apiService.vaultGetSubscriptionIdentityHash(this.subscriptionAddress);
-    if (didHash) this.didHash = didHash;
     this.loadingService.hide();
   }
 
@@ -422,10 +419,6 @@ export class DetailsPage implements OnInit {
     this.trxPage.set(0);
     this.loadingService.hide();
   }
-
-  async gotoIdentity(entity: string) {
-    this.router.navigate(['/authorized/entities/details/' + entity]);
-  }  
 
   async gotoEntity(entity: string) {
     this.router.navigate(['/authorized/entities/details/' + entity]);

@@ -1,0 +1,99 @@
+<app-header title="Trade Details"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/dex/trades/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX Trades</a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">#{{ tradeId() }}</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+
+    <div class="bg-white rounded-lg shadow-md p-2">
+      @if (trade(); as t) {
+        <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+          <div class="p-4">
+            <div class="flex items-start justify-between mb-4">
+              <div>
+                <h2 class="text-1xl font-bold text-gray-800">Trade #{{ t.tradeId }}</h2>
+                <p class="text-xs text-gray-500 mt-0.5">{{ t.assetName || t.assetSymbol }} <span class="font-mono">{{ t.baseAsset.slice(0,10) }}…</span></p>
+              </div>
+              <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ t.marketScopeName || ('Tier ' + t.marketScope) }}</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Asset</p>
+                <p class="text-base text-gray-700">{{ t.assetName || '—' }} <span class="text-gray-500">({{ t.assetSymbol || '—' }})</span></p>
+                <p class="text-xs text-gray-500 font-mono break-all">{{ t.baseAsset }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Country</p>
+                <p class="text-base text-gray-700">{{ t.countryName || '—' }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Amount</p>
+                <p class="text-base text-gray-700">{{ fmtAmount(t.amount) }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Price</p>
+                <p class="text-base text-gray-700">{{ fmtPrice(t.price) }} {{ t.currencyName || '' }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Credit Settled</p>
+                <p class="text-base text-gray-700">{{ fmtPrice(t.creditAmount) }} {{ t.currencyName || '' }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Currency</p>
+                <p class="text-base text-gray-700">{{ t.currencyName || t.currencyCode || '—' }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Buy Order</p>
+                <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.buyOrderId)">#{{ t.buyOrderId }}</a>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Sell Order</p>
+                <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.sellOrderId)">#{{ t.sellOrderId }}</a>
+              </div>
+              <div class="border-t pt-4 col-span-2">
+                <p class="text-sm font-medium text-gray-500">Buy Venue</p>
+                <p class="text-base text-gray-700">{{ t.buyDexServiceName || '—' }}</p>
+                <p class="text-xs text-gray-500 font-mono break-all">{{ t.buyDexService }}</p>
+              </div>
+              <div class="border-t pt-4 col-span-2">
+                <p class="text-sm font-medium text-gray-500">Sell Venue</p>
+                <p class="text-base text-gray-700">{{ t.sellDexServiceName || '—' }}</p>
+                <p class="text-xs text-gray-500 font-mono break-all">{{ t.sellDexService }}</p>
+              </div>
+              <div class="border-t pt-4 col-span-2">
+                <p class="text-sm font-medium text-gray-500">Buyer (Subscription)</p>
+                <p class="text-base text-gray-700">{{ t.buyerName || '—' }}</p>
+                <p class="text-xs text-gray-500 font-mono break-all">{{ t.buyer }}</p>
+              </div>
+              <div class="border-t pt-4 col-span-2">
+                <p class="text-sm font-medium text-gray-500">Seller (Subscription)</p>
+                <p class="text-base text-gray-700">{{ t.sellerName || '—' }}</p>
+                <p class="text-xs text-gray-500 font-mono break-all">{{ t.seller }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">Executed</p>
+                <p class="text-base text-gray-700">{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+  </div>
+</main>

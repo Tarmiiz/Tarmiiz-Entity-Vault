@@ -60,9 +60,15 @@ export class AuthService {
       const SESSION_DURATION = 60 * 60 * 1000;
       const expiryTime = new Date().getTime() + SESSION_DURATION;
 
-      // Attempt login with 1 hour session duration
+      // A cold first attempt can fail on the chain side ("invalid zk proof" from
+      // un-warmed snarkjs, or stale "nonce mismatch" / "commitment mismatch" from
+      // a prior pending logout). Regenerate + resubmit once on transient errors.
       this.loadingService.show('Generating zero-knowledge proof — verifying credentials...');
-      const loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
+      let loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
+      const transient = /nonce mismatch|commitment mismatch|invalid zk proof|No UserAccess event|Login API call failed/i;
+      if (!(loginResult.success && loginResult.userId) && transient.test(String(loginResult.error ?? ''))) {
+        loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
+      }
       if (loginResult.success && loginResult.userId && loginResult.key) {
 
         // set temporary wallet

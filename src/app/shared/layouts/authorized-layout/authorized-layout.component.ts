@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import {
   IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonToolbar,
   IonContent, IonList, IonItem, IonLabel,
@@ -38,6 +38,9 @@ export class AuthorizedLayoutComponent {
 
   get entityInfo(): Entity { return this.authService.entityInfo; }
   get userInfo(): User { return this.authService.userInfo; }
+
+  dexExpanded = signal(false);
+  toggleDex() { this.dexExpanded.update(v => !v); }
 
   constructor() {
     this.socketService.connect();

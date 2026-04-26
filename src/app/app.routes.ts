@@ -110,6 +110,53 @@ export const routes: Routes = [
           },
         ]
       },
+      // dex
+      {
+        path: 'dex',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2, 3] },
+        children: [
+          {
+            path: 'venues',
+            children: [
+              { path: 'list',             loadComponent: () => import('./pages/secure/dex/venues/list/list.page').then( m => m.ListPage), canActivate: [AuthGuard] },
+              { path: 'details/:address', loadComponent: () => import('./pages/secure/dex/venues/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
+          {
+            path: 'asset-listings',
+            children: [
+              { path: 'list',           loadComponent: () => import('./pages/secure/dex/asset-listings/list/list.page').then( m => m.ListPage), canActivate: [AuthGuard] },
+              { path: 'details/:asset', loadComponent: () => import('./pages/secure/dex/asset-listings/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
+          {
+            path: 'orders',
+            children: [
+              { path: 'list',             loadComponent: () => import('./pages/secure/dex/orders/list/list.page').then( m => m.ListPage), canActivate: [AuthGuard] },
+              { path: 'details/:orderId', loadComponent: () => import('./pages/secure/dex/orders/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
+          {
+            path: 'trades',
+            children: [
+              { path: 'list',             loadComponent: () => import('./pages/secure/dex/trades/list/list.page').then( m => m.ListPage), canActivate: [AuthGuard] },
+              { path: 'details/:tradeId', loadComponent: () => import('./pages/secure/dex/trades/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
+          {
+            path: 'order-book',
+            children: [
+              { path: 'view/:asset', loadComponent: () => import('./pages/secure/dex/order-book/view/view.page').then( m => m.ViewPage), canActivate: [AuthGuard] },
+            ],
+          },
+          { path: '', redirectTo: '/authorized/dashboard', pathMatch: 'full' },
+        ]
+      },
       // subscriptions
       {
         path: 'subscriptions',
@@ -132,6 +179,20 @@ export const routes: Routes = [
             pathMatch: 'full',
           },
         ]
+      },
+      // credit
+      {
+        path: 'credit',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2, 3] },
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/credit/credit.page').then(m => m.CreditPage),
+            canActivate: [AuthGuard],
+          },
+          { path: '', redirectTo: '/authorized/credit/list', pathMatch: 'full' },
+        ],
       },
       // documents
       {

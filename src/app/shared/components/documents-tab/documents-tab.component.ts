@@ -1,9 +1,12 @@
 import {
-  Component, Input, OnChanges, SimpleChanges,
+  Component, Input, OnChanges, SimpleChanges, DestroyRef,
   ChangeDetectionStrategy, inject, signal, computed
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { from, of } from 'rxjs';
 
 import { ApiService } from '../../services/api.service';
 import { AlertService } from '../alerts/alert/alert.service';
@@ -12,8 +15,17 @@ import { UtilsService } from '../../services/utils.service';
 import { Document } from '../../models/data.model';
 import { ModalDocumentShareService } from '../../../pages/secure/documents/modals/modal-document-share/modal-document-share.service';
 import { ModalDocumentShareComponent } from '../../../pages/secure/documents/modals/modal-document-share/modal-document-share.component';
+import { ModalDocumentSignService } from '../../../pages/secure/documents/modals/modal-document-sign/modal-document-sign.service';
+import { ModalDocumentSignComponent } from '../../../pages/secure/documents/modals/modal-document-sign/modal-document-sign.component';
 
 type ResourceType = 'service' | 'asset' | 'subscription';
+type RecipientKind = 'entity' | 'regulator' | 'service' | 'subscription';
+
+interface RecipientCandidate {
+  address: string;
+  name: string;
+  type: RecipientKind;
+}
 
 type DocFormMode = 'add' | 'edit' | 'view';
 
@@ -30,7 +42,7 @@ const DOC_TYPE_PRIVATE = 2;
   templateUrl: './documents-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalDocumentShareComponent],
+  imports: [CommonModule, FormsModule, ModalDocumentShareComponent, ModalDocumentSignComponent],
 })
 export class DocumentsTabComponent implements OnChanges {
   @Input() resourceType!: ResourceType;
@@ -41,13 +53,18 @@ export class DocumentsTabComponent implements OnChanges {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private shareModal = inject(ModalDocumentShareService);
+  private signModal = inject(ModalDocumentSignService);
+  private destroyRef = inject(DestroyRef);
   utils = inject(UtilsService);
 
   // Current recipients for the document open in the view modal. Refreshed each time View opens
   // and after every share / unshare so the list stays in sync with on-chain state.
   sharedWith = signal<string[]>([]);
+  // Resolved name + kind per shared-with address. Missing entries render as the raw address.
+  sharedWithDirectory = signal<Record<string, { name: string; partyType: number } | null>>({});
 
   documents = signal<Document[]>([]);
+  signedCounts = signal<Record<number, number>>({});
   loading = signal(false);
 
   filterTitle = signal('');
@@ -71,9 +88,15 @@ export class DocumentsTabComponent implements OnChanges {
   formDescription = signal('');
   // Documents are now Public (1) or Private (2) only. Regulator (3) was retired in the redesign.
   formType = signal<number>(DOC_TYPE_PRIVATE);
-  formSharedWithRaw = signal('');
   formUploadProgress = signal<number | null>(null);
   formSelectedFile = signal<File | null>(null);
+
+  // Recipient picker state (mirrors the pattern used by the messages "New thread" modal).
+  recipientKind = signal<RecipientKind>('entity');
+  recipientQuery = signal('');
+  recipientResults = signal<RecipientCandidate[]>([]);
+  recipientSelected = signal<RecipientCandidate[]>([]);
+  recipientSearching = signal(false);
 
   // Add: file required. Edit: title required (no file re-upload — clients must delete + re-add to
   // replace a file because the old CID can't be re-encrypted without decrypting first).
@@ -100,6 +123,66 @@ export class DocumentsTabComponent implements OnChanges {
 
   isPrivate = computed(() => this.formType() === DOC_TYPE_PRIVATE);
 
+  constructor() {
+    toObservable(this.recipientQuery).pipe(
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap(q => {
+        if (!q || q.length < 2) {
+          this.recipientResults.set([]);
+          this.recipientSearching.set(false);
+          return of(null);
+        }
+        this.recipientSearching.set(true);
+        return from(this.apiService.connectRecipientsSearch(this.recipientKind(), q));
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(resp => {
+      this.recipientSearching.set(false);
+      if (!resp) return;
+      const kind = this.recipientKind();
+      const rows: RecipientCandidate[] = (resp?.results || []).map((r: any) => ({
+        address: r.address,
+        name:    r.name || r.address,
+        type:    kind,
+      }));
+      this.recipientResults.set(rows);
+    });
+  }
+
+  setRecipientKind(k: RecipientKind) {
+    this.recipientKind.set(k);
+    this.recipientResults.set([]);
+    this.recipientQuery.set('');
+  }
+
+  toggleRecipient(c: RecipientCandidate) {
+    const cur = this.recipientSelected();
+    if (cur.some(x => x.address === c.address)) {
+      this.recipientSelected.set(cur.filter(x => x.address !== c.address));
+      return;
+    }
+    this.recipientSelected.set([...cur, c]);
+  }
+
+  isRecipientSelected(c: RecipientCandidate): boolean {
+    return this.recipientSelected().some(x => x.address === c.address);
+  }
+
+  recipientKindBadgeClass(k: RecipientKind): string {
+    switch (k) {
+      case 'entity':       return 'bg-blue-100 text-blue-800';
+      case 'regulator':    return 'bg-purple-100 text-purple-800';
+      case 'service':      return 'bg-amber-100 text-amber-800';
+      case 'subscription': return 'bg-green-100 text-green-800';
+      default:             return 'bg-gray-100 text-gray-700';
+    }
+  }
+
+  recipientKindLabel(k: RecipientKind): string {
+    return k.charAt(0).toUpperCase() + k.slice(1);
+  }
+
   ngOnChanges(changes: SimpleChanges) {
     if ((changes['address'] || changes['resourceType']) && this.address && this.resourceType) {
       this.loadDocuments();
@@ -119,9 +202,26 @@ export class DocumentsTabComponent implements OnChanges {
       }
       const docs: Document[] = (data?.documents ?? []).map((r: any) => this.mapDoc(r));
       this.documents.set(docs);
+      this.loadSignedCounts(docs);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private async loadSignedCounts(docs: Document[]) {
+    this.signedCounts.set({});
+    await Promise.all(docs.map(async d => {
+      let res: any = null;
+      if (this.resourceType === 'service') {
+        res = await this.apiService.serviceDocumentSignatures(this.address, d.id, 1, 1);
+      } else if (this.resourceType === 'asset') {
+        res = await this.apiService.assetDocumentSignatures(this.address, d.id, 1, 1);
+      } else {
+        res = await this.apiService.subscriptionDocumentSignatures(this.address, d.id, 1, 1);
+      }
+      const count = Number(res?.count ?? 0);
+      this.signedCounts.update(m => ({ ...m, [d.id]: count }));
+    }));
   }
 
   private mapDoc(r: any): Document {
@@ -147,13 +247,21 @@ export class DocumentsTabComponent implements OnChanges {
     this.filterType.set('');
   }
 
+  private resetRecipientPicker() {
+    this.recipientKind.set('entity');
+    this.recipientQuery.set('');
+    this.recipientResults.set([]);
+    this.recipientSelected.set([]);
+    this.recipientSearching.set(false);
+  }
+
   openAdd() {
     this.formTitle.set('');
     this.formDescription.set('');
     this.formType.set(DOC_TYPE_PRIVATE);
-    this.formSharedWithRaw.set('');
     this.formSelectedFile.set(null);
     this.formUploadProgress.set(null);
+    this.resetRecipientPicker();
     this.formState.set({ mode: 'add', doc: null });
     this.modalVisible.set(true);
   }
@@ -162,9 +270,9 @@ export class DocumentsTabComponent implements OnChanges {
     this.formTitle.set(doc.title);
     this.formDescription.set(doc.description ?? '');
     this.formType.set(doc.documentType);
-    this.formSharedWithRaw.set('');
     this.formSelectedFile.set(null);
     this.formUploadProgress.set(null);
+    this.resetRecipientPicker();
     this.formState.set({ mode: 'edit', doc });
     this.modalVisible.set(true);
   }
@@ -174,9 +282,9 @@ export class DocumentsTabComponent implements OnChanges {
     this.formTitle.set(doc.title);
     this.formDescription.set(doc.description ?? '');
     this.formType.set(doc.documentType);
-    this.formSharedWithRaw.set('');
     this.formSelectedFile.set(null);
     this.formUploadProgress.set(null);
+    this.resetRecipientPicker();
     this.sharedWith.set([]);
     this.modalVisible.set(true);
     // Private docs can have recipients; Public docs cannot (shareDocument reverts on-chain).
@@ -192,7 +300,53 @@ export class DocumentsTabComponent implements OnChanges {
     } else {
       res = await this.apiService.subscriptionDocumentGetSharedWith(this.address, doc.id);
     }
-    this.sharedWith.set(res?.accounts ?? []);
+    const accounts: string[] = res?.accounts ?? [];
+    this.sharedWith.set(accounts);
+    this.sharedWithDirectory.set({});
+    await Promise.all(accounts.map(async a => {
+      const entry = await this.apiService.vaultDirectoryByAddress(a);
+      if (entry) {
+        this.sharedWithDirectory.update(m => ({ ...m, [a.toLowerCase()]: { name: entry.name, partyType: entry.partyType } }));
+      }
+    }));
+  }
+
+  sharedWithLabel(address: string): string {
+    const entry = this.sharedWithDirectory()[address.toLowerCase()];
+    return entry?.name ?? address;
+  }
+
+  // The document owner is included in sharedWith because the API wraps the DEK
+  // for the uploader's own address so they can still read the document. Revoking
+  // it would lock the owner out — don't expose that option.
+  isSelfShare(address: string): boolean {
+    const owner = this.formState().doc?.owner;
+    if (!owner || !address) return false;
+    return owner.toLowerCase() === address.toLowerCase();
+  }
+
+  sharedWithKindLabel(address: string): string {
+    const entry = this.sharedWithDirectory()[address.toLowerCase()];
+    if (!entry) return '';
+    switch (entry.partyType) {
+      case 2: return 'Entity';
+      case 3: return 'Regulator';
+      case 4: return 'Service';
+      case 5: return 'Subscription';
+      default: return '';
+    }
+  }
+
+  sharedWithKindBadgeClass(address: string): string {
+    const entry = this.sharedWithDirectory()[address.toLowerCase()];
+    if (!entry) return 'bg-gray-100 text-gray-700';
+    switch (entry.partyType) {
+      case 2: return 'bg-blue-100 text-blue-800';
+      case 3: return 'bg-purple-100 text-purple-800';
+      case 4: return 'bg-amber-100 text-amber-800';
+      case 5: return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-700';
+    }
   }
 
   // Shares a Private document with a new recipient. API does the RSA rewrap with the recipient's
@@ -254,6 +408,10 @@ export class DocumentsTabComponent implements OnChanges {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
     this.formSelectedFile.set(file);
+    if (file && !this.formTitle().trim()) {
+      const base = file.name.replace(/\.[^.]+$/, '');
+      this.formTitle.set(base);
+    }
     input.value = '';
   }
 
@@ -267,10 +425,7 @@ export class DocumentsTabComponent implements OnChanges {
     const file = this.formSelectedFile();
     if (!file) return;
     const sharedWith = this.isPrivate()
-      ? this.formSharedWithRaw()
-          .split(/[\s,;]+/)
-          .map(s => s.trim())
-          .filter(s => /^0x[0-9a-fA-F]{40}$/.test(s))
+      ? this.recipientSelected().map(r => r.address)
       : [];
     const metadata = {
       title:         this.formTitle().trim(),
@@ -371,6 +526,56 @@ export class DocumentsTabComponent implements OnChanges {
       }
       window.open(fetched.blobUrl, '_blank');
       setTimeout(() => URL.revokeObjectURL(fetched!.blobUrl), 60_000);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  private async _fetchFileBytes(doc: Document): Promise<ArrayBuffer | null> {
+    let fetched: { blobUrl: string; contentType: string } | null = null;
+    if (this.resourceType === 'service') {
+      fetched = await this.apiService.serviceDocumentFetchFile(this.address, doc.id);
+    } else if (this.resourceType === 'asset') {
+      fetched = await this.apiService.assetDocumentFetchFile(this.address, doc.id);
+    } else {
+      fetched = await this.apiService.subscriptionDocumentFetchFile(this.address, doc.id);
+    }
+    if (!fetched) {
+      this.alertService.show('Error', 'Could not fetch file.');
+      return null;
+    }
+    try {
+      const res = await fetch(fetched.blobUrl);
+      return await res.arrayBuffer();
+    } finally {
+      URL.revokeObjectURL(fetched.blobUrl);
+    }
+  }
+
+  async signDocument(doc: Document) {
+    if (!doc?.cid) return;
+    const keyId = await this.signModal.show();
+    if (keyId === null) return;
+    this.loadingService.show('Hashing file + signing...');
+    try {
+      const buf = await this._fetchFileBytes(doc);
+      if (!buf) return;
+      const digest = await crypto.subtle.digest('SHA-256', buf);
+      const docHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      let signRes: any;
+      if (this.resourceType === 'service') {
+        signRes = await this.apiService.serviceDocumentSign(this.address, doc.id, keyId, docHash);
+      } else if (this.resourceType === 'asset') {
+        signRes = await this.apiService.assetDocumentSign(this.address, doc.id, keyId, docHash);
+      } else {
+        signRes = await this.apiService.subscriptionDocumentSign(this.address, doc.id, keyId, docHash);
+      }
+      if (signRes?.error) {
+        this.alertService.show('Error', signRes.error);
+      } else {
+        this.alertService.show('Signed', 'Document signed successfully.');
+      }
     } finally {
       this.loadingService.hide();
     }

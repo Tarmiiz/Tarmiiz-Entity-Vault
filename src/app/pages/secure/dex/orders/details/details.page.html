@@ -1,0 +1,177 @@
+<app-header title="Order Details"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/dex/orders/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX Orders</a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">#{{ orderId() }}</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+
+    <div class="bg-white rounded-t-lg shadow-md p-2">
+      <div class="flex border-b border-gray-200">
+        <button (click)="setTab('info')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'info'" [class.border-b-2]="activeTab() === 'info'" [class.border-blue-600]="activeTab() === 'info'" [class.bg-blue-600]="activeTab() === 'info'">
+          Information
+        </button>
+        <button (click)="setTab('trades')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'trades'" [class.border-b-2]="activeTab() === 'trades'" [class.border-blue-600]="activeTab() === 'trades'" [class.bg-blue-600]="activeTab() === 'trades'">
+          Linked Trades ({{ linkedTrades().length }})
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-b-lg shadow-md p-2">
+      @if (order(); as o) {
+        @if (activeTab() === 'info') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-1xl font-bold text-gray-800">Order #{{ o.orderId }}</h2>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ o.assetName || o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</p>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStatusClass(o.status)">{{ o.statusName || o.status }}</span>
+                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? 'Buy' : 'Sell') }}</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Asset</p>
+                  <p class="text-base text-gray-700">{{ o.assetName || '—' }} <span class="text-gray-500">({{ o.assetSymbol || '—' }})</span></p>
+                  <p class="text-xs text-gray-500 font-mono break-all">{{ o.baseAsset }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Market Scope</p>
+                  <p class="text-base text-gray-700">{{ o.marketScopeName || ('Tier ' + o.marketScope) }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Price</p>
+                  <p class="text-base text-gray-700">{{ fmtPrice(o.price) }} {{ o.currencyName || '' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Currency</p>
+                  <p class="text-base text-gray-700">{{ o.currencyName || o.currencyCode || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Amount</p>
+                  <p class="text-base text-gray-700">{{ fmtAmount(o.amount) }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Filled / Remaining</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2">
+                      <div class="bg-indigo-500 h-2 rounded-full" [style.width.%]="fillPct(o)"></div>
+                    </div>
+                    <span class="text-xs">{{ fmtAmount(o.filled) }} / {{ fmtAmount(o.remaining) }}</span>
+                  </div>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Credit Withheld</p>
+                  <p class="text-base text-gray-700">{{ fmtPrice(o.creditWithheld) }} {{ o.currencyName || '' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Asset Withheld</p>
+                  <p class="text-base text-gray-700">{{ fmtAmount(o.assetWithheld) }}</p>
+                </div>
+                <div class="border-t pt-4 col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Venue</p>
+                  <p class="text-base text-gray-700">{{ o.dexServiceName || '—' }}</p>
+                  <p class="text-xs text-gray-500 font-mono break-all">{{ o.dexService }}</p>
+                </div>
+                <div class="border-t pt-4 col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Subscription</p>
+                  <p class="text-base text-gray-700">{{ o.subscriptionName || '—' }}</p>
+                  <p class="text-xs text-gray-500 font-mono break-all">{{ o.subscription }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-base text-gray-700">{{ o.countryName || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Withhold Trx ID</p>
+                  <p class="text-base text-gray-700">{{ o.withholdTrxId || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Created</p>
+                  <p class="text-base text-gray-700">{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Last Updated</p>
+                  <p class="text-base text-gray-700">{{ o.updatedAt ? utils.formatDate(o.updatedAt) : '—' }}</p>
+                </div>
+              </div>
+
+              <div class="mt-6 flex justify-end gap-2">
+                <button (click)="cancel()" [disabled]="!canCancel()"
+                  class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  Cancel Order
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (activeTab() === 'trades') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th class="px-6 py-2">#</th>
+                    <th class="px-6 py-2">Trade ID</th>
+                    <th class="px-6 py-2">Amount</th>
+                    <th class="px-6 py-2">Price</th>
+                    <th class="px-6 py-2">Credit</th>
+                    <th class="px-6 py-2">Buyer</th>
+                    <th class="px-6 py-2">Seller</th>
+                    <th class="px-6 py-2">Executed</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if (linkedTrades().length === 0) {
+                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="8">no trades for this order</td></tr>
+                  } @else {
+                    @for (t of linkedTrades(); track t.tradeId; let i = $index; let isEven = $even) {
+                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                          (click)="goTrade(t.tradeId)">
+                        <td class="px-6 py-2">{{ i + 1 }}</td>
+                        <td class="px-6 py-2 font-mono">#{{ t.tradeId }}</td>
+                        <td class="px-6 py-2">{{ fmtAmount(t.amount) }}</td>
+                        <td class="px-6 py-2">{{ fmtPrice(t.price) }} {{ t.currencyName || '' }}</td>
+                        <td class="px-6 py-2">{{ fmtPrice(t.creditAmount) }}</td>
+                        <td class="px-6 py-2 font-mono break-all">{{ t.buyer.slice(0,10) }}…</td>
+                        <td class="px-6 py-2 font-mono break-all">{{ t.seller.slice(0,10) }}…</td>
+                        <td class="px-6 py-2">{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="flex items-center px-4 py-2 border-t">
+              <p class="text-xs font-medium text-gray-800">Showing {{ linkedTrades().length }} Trades</p>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+  </div>
+</main>

@@ -21,7 +21,7 @@
           </div>
           <div class="border-t pt-3">
             <p class="text-xs font-medium text-gray-500">Currency</p>
-            <p><span class="font-semibold">{{ trx.currencySymbol }}</span> <span class="text-gray-400 text-xs">({{ trx.currencyCode }})</span></p>
+            <p><span class="font-semibold">{{ trx.currencySymbol }}</span></p>
           </div>
 
           <div class="border-t pt-3">
@@ -48,6 +48,9 @@
               <p class="text-xs font-medium text-gray-500">From</p>
               @if (isZero(trx.from)) {
                 <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(mint)</span></p>
+              } @else if (isSubscription(trx.from)) {
+                <p class="text-gray-700">Subscription</p>
+                <p class="font-mono text-xs text-gray-400 break-all">{{ trx.from }}</p>
               } @else if (trx.fromName) {
                 <p class="text-gray-700">{{ trx.fromName }}</p>
                 <p class="font-mono text-xs text-gray-400 break-all">{{ trx.from }}</p>
@@ -61,6 +64,9 @@
               <p class="text-xs font-medium text-gray-500">To</p>
               @if (isZero(trx.to)) {
                 <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(burn)</span></p>
+              } @else if (isSubscription(trx.to)) {
+                <p class="text-gray-700">Subscription</p>
+                <p class="font-mono text-xs text-gray-400 break-all">{{ trx.to }}</p>
               } @else if (trx.toName) {
                 <p class="text-gray-700">{{ trx.toName }}</p>
                 <p class="font-mono text-xs text-gray-400 break-all">{{ trx.to }}</p>

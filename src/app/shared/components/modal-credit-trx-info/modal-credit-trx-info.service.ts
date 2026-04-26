@@ -7,9 +7,11 @@ import { CreditTransaction } from '../../models/data.model';
 export class ModalCreditTrxInfoService {
   isVisible = signal(false);
   transaction = signal<CreditTransaction | null>(null);
+  subscriptionAddress = signal<string>('');
 
-  show(trx: CreditTransaction): void {
+  show(trx: CreditTransaction, subscriptionAddress = ''): void {
     this.transaction.set(trx);
+    this.subscriptionAddress.set(subscriptionAddress);
     this.isVisible.set(true);
   }
 

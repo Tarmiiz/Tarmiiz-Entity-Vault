@@ -1,0 +1,180 @@
+<app-header title="Order Book"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/dex/asset-listings/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX</a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-mono">{{ baseAsset().slice(0,10) }}…</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+      <div class="flex flex-wrap gap-2 items-end">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Asset</label>
+          <input type="text" [ngModel]="baseAsset()" (ngModelChange)="baseAsset.set($event)"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Scope</label>
+          <select [ngModel]="scope()" (ngModelChange)="scope.set($event)"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option value="venue">Tier 1 — Venue</option>
+            <option value="country">Tier 2 — Country</option>
+            <option value="global">Tier 3 — Global</option>
+          </select>
+        </div>
+        @if (scope() === 'venue') {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500">Venue Address</label>
+            <input type="text" [ngModel]="dexService()" (ngModelChange)="dexService.set($event)"
+              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
+          </div>
+        }
+        @if (scope() === 'country') {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500">Country Code</label>
+            <input type="number" [ngModel]="countryCode()" (ngModelChange)="countryCode.set($event)"
+              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500">Currency Code</label>
+            <input type="number" [ngModel]="currencyCode()" (ngModelChange)="currencyCode.set($event)"
+              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+          </div>
+        }
+        @if (scope() === 'global') {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500">Currency Code</label>
+            <input type="number" [ngModel]="currencyCode()" (ngModelChange)="currencyCode.set($event)"
+              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+          </div>
+        }
+        <div class="flex flex-col justify-end">
+          <button (click)="refresh()"
+            class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">Refresh</button>
+        </div>
+        <div class="flex ml-auto items-end gap-2">
+          @if (isExec()) {
+            <button (click)="match()" [disabled]="!canMatch()"
+              class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              Match Selected
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+        <p class="text-xs font-medium text-gray-500 mb-1">Best Bid</p>
+        @if (bestBid()) {
+          <p class="text-xl font-bold text-green-700">{{ fmtPrice(bestBid()!.price) }}</p>
+          <p class="text-xs text-gray-500 font-mono">Order #{{ bestBid()!.orderId }}</p>
+        } @else { <p class="text-xl font-bold text-gray-400">—</p> }
+      </div>
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+        <p class="text-xs font-medium text-gray-500 mb-1">Best Ask</p>
+        @if (bestAsk()) {
+          <p class="text-xl font-bold text-orange-700">{{ fmtPrice(bestAsk()!.price) }}</p>
+          <p class="text-xs text-gray-500 font-mono">Order #{{ bestAsk()!.orderId }}</p>
+        } @else { <p class="text-xl font-bold text-gray-400">—</p> }
+      </div>
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+        <p class="text-xs font-medium text-gray-500 mb-1">As Of</p>
+        <p class="text-base text-gray-700">{{ asOf() ? utils.formatDate(asOf()) : '—' }}</p>
+        <p class="text-xs text-gray-500">Auto-refresh every 5s</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div class="px-4 py-2 bg-green-700 text-white text-sm font-semibold">Bids ({{ bids().length }})</div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left text-gray-700">
+            <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <tr>
+                <th class="px-3 py-2"></th>
+                <th class="px-3 py-2">Order</th>
+                <th class="px-3 py-2">Price</th>
+                <th class="px-3 py-2">Remaining</th>
+                <th class="px-3 py-2">Subscription</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (bids().length === 0) {
+                <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">no bids</td></tr>
+              } @else {
+                @for (b of bids(); track b.orderId; let isEven = $even) {
+                  <tr class="border-b hover:bg-gray-100 cursor-pointer"
+                      [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                      [class.ring-2]="selectedBuy() === b.orderId" [class.ring-blue-500]="selectedBuy() === b.orderId">
+                    <td class="px-3 py-2">
+                      @if (isExec()) {
+                        <input type="checkbox" [checked]="selectedBuy() === b.orderId" (change)="selectBuy(b)" (click)="$event.stopPropagation()">
+                      }
+                    </td>
+                    <td class="px-3 py-2 font-mono" (click)="goOrder(b)">#{{ b.orderId }}</td>
+                    <td class="px-3 py-2 font-semibold text-green-700" (click)="goOrder(b)">{{ fmtPrice(b.price) }}</td>
+                    <td class="px-3 py-2" (click)="goOrder(b)">{{ fmtAmount(b.remaining) }}</td>
+                    <td class="px-3 py-2 font-mono" (click)="goOrder(b)">{{ b.subscription.slice(0,10) }}…</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div class="px-4 py-2 bg-orange-700 text-white text-sm font-semibold">Asks ({{ asks().length }})</div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left text-gray-700">
+            <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <tr>
+                <th class="px-3 py-2"></th>
+                <th class="px-3 py-2">Order</th>
+                <th class="px-3 py-2">Price</th>
+                <th class="px-3 py-2">Remaining</th>
+                <th class="px-3 py-2">Subscription</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (asks().length === 0) {
+                <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">no asks</td></tr>
+              } @else {
+                @for (a of asks(); track a.orderId; let isEven = $even) {
+                  <tr class="border-b hover:bg-gray-100 cursor-pointer"
+                      [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                      [class.ring-2]="selectedSell() === a.orderId" [class.ring-blue-500]="selectedSell() === a.orderId">
+                    <td class="px-3 py-2">
+                      @if (isExec()) {
+                        <input type="checkbox" [checked]="selectedSell() === a.orderId" (change)="selectSell(a)" (click)="$event.stopPropagation()">
+                      }
+                    </td>
+                    <td class="px-3 py-2 font-mono" (click)="goOrder(a)">#{{ a.orderId }}</td>
+                    <td class="px-3 py-2 font-semibold text-orange-700" (click)="goOrder(a)">{{ fmtPrice(a.price) }}</td>
+                    <td class="px-3 py-2" (click)="goOrder(a)">{{ fmtAmount(a.remaining) }}</td>
+                    <td class="px-3 py-2 font-mono" (click)="goOrder(a)">{{ a.subscription.slice(0,10) }}…</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>

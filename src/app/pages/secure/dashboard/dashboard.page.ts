@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 import { SocketService } from '../../../shared/services/socket.service';
 
-import { AssetTransaction, Subscription, User } from '../../../shared/models/data.model';
+import { AssetTransaction, CreditBalance, Subscription, User } from '../../../shared/models/data.model';
 
 import { Subscription as RxSubscription } from 'rxjs';
 
@@ -97,6 +97,10 @@ export class DashboardPage implements OnInit {
   get entityStateName() { return this.authService.entityInfo?.stateName ?? ''; }
 
   lastSynced: number = 0;
+
+  creditTotals = signal<CreditBalance[]>([]);
+  creditLoading = signal(true);
+  activeCreditTotals = computed(() => this.creditTotals().filter(t => t.balance > 0));
 
   latestTransactions = signal<AssetTransaction[]>([]);
   transactionsLoading = signal(true);
@@ -232,6 +236,7 @@ export class DashboardPage implements OnInit {
           this.getDashboardSummary(),
           this.getSubscriptions(),
           this.getTransactions(),
+          this.getCreditTotals(),
         ]);
         this.lastUpdated.set(new Date());
       }
@@ -279,6 +284,25 @@ export class DashboardPage implements OnInit {
       case 'Redeem':    return 'bg-red-100 text-red-800';
       case 'Transfer':  return 'bg-blue-100 text-blue-800';
       default:          return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  async getCreditTotals() {
+    this.creditLoading.set(true);
+    try {
+      const result = await this.apiService.vaultGetEntityCreditOverview();
+      if (result?.totals) {
+        this.creditTotals.set(result.totals.map((t: any) => ({
+          currencyCode: t.currencyCode,
+          currencyName: t.currencyName,
+          currencySymbol: t.currencySymbol,
+          balance: Number(t.balance) || 0,
+        })));
+      } else {
+        this.creditTotals.set([]);
+      }
+    } finally {
+      this.creditLoading.set(false);
     }
   }
 

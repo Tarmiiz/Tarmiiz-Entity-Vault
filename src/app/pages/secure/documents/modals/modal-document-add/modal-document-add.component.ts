@@ -1,12 +1,22 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { from, of } from 'rxjs';
 
 import { AddDocumentData, ModalDocumentAddService } from './modal-document-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
-import { GlobalVariable } from '../../../../../shared/models/data.model';
 
 const DOC_TYPE_PUBLIC  = 1;
 const DOC_TYPE_PRIVATE = 2;
+
+type RecipientKind = 'entity' | 'regulator' | 'service' | 'subscription';
+
+interface RecipientCandidate {
+  address: string;
+  name: string;
+  type: RecipientKind;
+}
 
 @Component({
   selector: 'app-modal-document-add',
@@ -18,6 +28,7 @@ const DOC_TYPE_PRIVATE = 2;
 export class ModalDocumentAddComponent {
   addService = inject(ModalDocumentAddService);
   private apiService = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
 
   title = signal('');
   description = signal('');
@@ -25,92 +36,125 @@ export class ModalDocumentAddComponent {
   documentType = signal<number>(DOC_TYPE_PRIVATE);
   documentState = signal<number>(1);
   selectedFile = signal<File | null>(null);
-  selectedFileName = signal('');
-  titleAuto = signal(true);
 
-  // Private-doc sharing. Comma- or newline-separated address list; parsed on submit.
-  sharedWithRaw = signal('');
-  docTypes = signal<GlobalVariable[]>([]);
+  // Recipient picker (mirrors the documents-tab pattern used on service/asset/subscription details).
+  recipientKind = signal<RecipientKind>('entity');
+  recipientQuery = signal('');
+  recipientResults = signal<RecipientCandidate[]>([]);
+  recipientSelected = signal<RecipientCandidate[]>([]);
+  recipientSearching = signal(false);
 
-  // Only Public / Private are supported; anything else in the Global Variables table is filtered
-  // out defensively (e.g. a legacy "Shared" entry from a pre-redesign deployment).
-  visibleDocTypes = computed(() =>
-    this.docTypes().filter(v => v.variableId === DOC_TYPE_PUBLIC || v.variableId === DOC_TYPE_PRIVATE)
-  );
-
-  isValid = computed(() => !!this.selectedFile() && !!this.description());
+  isPrivate = computed(() => this.documentType() === DOC_TYPE_PRIVATE);
+  isValid = computed(() => !!this.selectedFile() && this.title().trim().length > 0);
 
   constructor() {
     effect(() => {
-      if (this.addService.isVisible() && this.docTypes().length === 0) {
-        this.loadGlobals();
-      }
       if (!this.addService.isVisible()) {
         this.title.set('');
-        this.titleAuto.set(true);
         this.description.set('');
         this.fileType.set('');
         this.documentType.set(DOC_TYPE_PRIVATE);
         this.documentState.set(1);
         this.selectedFile.set(null);
-        this.selectedFileName.set('');
-        this.sharedWithRaw.set('');
+        this.resetRecipientPicker();
       }
     });
-  }
 
-  async loadGlobals() {
-    const typesRes = await this.apiService.vaultGetGlobalVariablesList('Document Type');
-    if (typesRes?.variables) this.docTypes.set(typesRes.variables as GlobalVariable[]);
+    toObservable(this.recipientQuery).pipe(
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap(q => {
+        if (!q || q.length < 2) {
+          this.recipientResults.set([]);
+          this.recipientSearching.set(false);
+          return of(null);
+        }
+        this.recipientSearching.set(true);
+        return from(this.apiService.connectRecipientsSearch(this.recipientKind(), q));
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(resp => {
+      this.recipientSearching.set(false);
+      if (!resp) return;
+      const kind = this.recipientKind();
+      const rows: RecipientCandidate[] = (resp?.results || []).map((r: any) => ({
+        address: r.address,
+        name:    r.name || r.address,
+        type:    kind,
+      }));
+      this.recipientResults.set(rows);
+    });
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const file = input.files?.[0] ?? null;
     this.selectedFile.set(file);
-    this.selectedFileName.set(file.name);
-    this.fileType.set(file.type || 'application/octet-stream');
-    if (!this.title() || this.titleAuto()) {
-      const dot = file.name.lastIndexOf('.');
-      this.title.set(dot > 0 ? file.name.slice(0, dot) : file.name);
-      this.titleAuto.set(true);
+    if (file) {
+      this.fileType.set(file.type || '');
+      if (!this.title().trim()) {
+        const base = file.name.replace(/\.[^.]+$/, '');
+        this.title.set(base);
+      }
+    }
+    input.value = '';
+  }
+
+  private resetRecipientPicker() {
+    this.recipientKind.set('entity');
+    this.recipientQuery.set('');
+    this.recipientResults.set([]);
+    this.recipientSelected.set([]);
+    this.recipientSearching.set(false);
+  }
+
+  setRecipientKind(k: RecipientKind) {
+    this.recipientKind.set(k);
+    this.recipientResults.set([]);
+    this.recipientQuery.set('');
+  }
+
+  toggleRecipient(c: RecipientCandidate) {
+    const cur = this.recipientSelected();
+    if (cur.some(x => x.address === c.address)) {
+      this.recipientSelected.set(cur.filter(x => x.address !== c.address));
+      return;
+    }
+    this.recipientSelected.set([...cur, c]);
+  }
+
+  isRecipientSelected(c: RecipientCandidate): boolean {
+    return this.recipientSelected().some(x => x.address === c.address);
+  }
+
+  recipientKindBadgeClass(k: RecipientKind): string {
+    switch (k) {
+      case 'entity':       return 'bg-blue-100 text-blue-800';
+      case 'regulator':    return 'bg-purple-100 text-purple-800';
+      case 'service':      return 'bg-amber-100 text-amber-800';
+      case 'subscription': return 'bg-green-100 text-green-800';
+      default:             return 'bg-gray-100 text-gray-700';
     }
   }
 
-  onTitleInput(value: string) {
-    this.title.set(value);
-    this.titleAuto.set(false);
+  recipientKindLabel(k: RecipientKind): string {
+    return k.charAt(0).toUpperCase() + k.slice(1);
   }
-
-  clearFile(): void {
-    this.selectedFile.set(null);
-    this.selectedFileName.set('');
-    this.fileType.set('');
-    const input = document.getElementById('docFileInput') as HTMLInputElement | null;
-    if (input) input.value = '';
-  }
-
-  isPrivate = computed(() => this.documentType() === DOC_TYPE_PRIVATE);
 
   onSave(): void {
     const file = this.selectedFile();
     if (!file || !this.isValid()) return;
 
-    // Parse sharedWith only for Private docs — ignore for Public.
     const sharedWith = this.isPrivate()
-      ? this.sharedWithRaw()
-          .split(/[\s,;]+/)
-          .map(s => s.trim())
-          .filter(s => /^0x[0-9a-fA-F]{40}$/.test(s))
+      ? this.recipientSelected().map(r => r.address)
       : [];
 
     const data: AddDocumentData = {
       file,
-      title: this.title(),
-      description: this.description(),
-      fileType: this.fileType(),
-      documentType: this.documentType(),
+      title:         this.title().trim(),
+      description:   this.description().trim(),
+      fileType:      file.type || '',
+      documentType:  this.documentType(),
       documentState: this.documentState(),
       sharedWith,
     };

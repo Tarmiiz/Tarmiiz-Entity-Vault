@@ -1,79 +1,138 @@
 @if (addService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
+
       <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Document</h3>
-        <p class="text-xs text-gray-400 mt-1">The API handles encryption, IPFS pinning, and on-chain registration.</p>
       </div>
+
       <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">File</label>
-          <div class="mt-1 flex items-center gap-2">
-            <label for="docFileInput"
-              class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 4v12m0-12l-4 4m4-4l4 4"/>
-              </svg>
-              Choose File
-            </label>
-            <span class="text-xs text-gray-600 truncate max-w-[220px]">
-              {{ selectedFileName() || 'No file selected' }}
-            </span>
-            @if (selectedFile()) {
-              <button type="button" (click)="clearFile()"
-                class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                Clear
-              </button>
-            }
-            <input id="docFileInput" type="file" (change)="onFileSelected($event)" class="hidden">
-          </div>
-          @if (fileType()) {
-            <p class="text-xs text-gray-500 mt-1">Detected type: <span class="font-mono">{{ fileType() }}</span></p>
+          <label class="block text-sm font-medium text-gray-700">File <span class="text-red-500">*</span></label>
+          <input type="file" (change)="onFileSelected($event)"
+            class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-indigo-700 file:text-white hover:file:bg-indigo-800 cursor-pointer">
+          @if (selectedFile()) {
+            <p class="text-xs text-gray-500 mt-1">Selected: {{ selectedFile()!.name }} ({{ selectedFile()!.type || 'unknown type' }})</p>
           }
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Title</label>
-          <input type="text" [ngModel]="title()" (ngModelChange)="onTitleInput($event)"
-            placeholder="Optional — defaults to filename"
+          <label class="block text-sm font-medium text-gray-700">Title <span class="text-red-500">*</span></label>
+          <input type="text" placeholder="Document title"
+            [ngModel]="title()" (ngModelChange)="title.set($event)"
             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700">Description</label>
-          <textarea [ngModel]="description()" (ngModelChange)="description.set($event)" rows="2"
-            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"></textarea>
+          <textarea rows="3" placeholder="Optional description"
+            [ngModel]="description()" (ngModelChange)="description.set($event)"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none">
+          </textarea>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Visibility</label>
-          <select [ngModel]="documentType()" (ngModelChange)="documentType.set(+$event)"
-            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-            @for (v of visibleDocTypes(); track v.variableId) {
-              <option [ngValue]="v.variableId">{{ v.name }}</option>
-            }
-          </select>
-          <p class="text-xs text-gray-500 mt-1">
-            @if (isPrivate()) {
-              Private — stored AES-GCM encrypted on IPFS. The API wraps the decryption key for each recipient.
-            } @else {
-              Public — stored plaintext on IPFS. Anyone with the CID can read it.
-            }
-          </p>
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700">Visibility</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="visibility" [value]="1"
+                [checked]="documentType() === 1" (change)="documentType.set(1)"
+                class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-sm text-gray-700">Public</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="visibility" [value]="2"
+                [checked]="documentType() === 2" (change)="documentType.set(2)"
+                class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-sm text-gray-700">Private</span>
+            </label>
+          </div>
         </div>
 
         @if (isPrivate()) {
           <div>
-            <label class="block text-sm font-medium text-gray-700">Share with (optional)</label>
-            <textarea [ngModel]="sharedWithRaw()" (ngModelChange)="sharedWithRaw.set($event)" rows="3"
-              placeholder="0x... recipient addresses (comma, space or newline separated)"
-              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono"></textarea>
-            <p class="text-xs text-gray-500 mt-1">Each recipient must have published an encryption public key on-chain.</p>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Share with (optional)</label>
+
+            <div class="flex flex-wrap gap-1 mb-2">
+              @for (k of ['entity','regulator','service','subscription']; track k) {
+                <button type="button"
+                  class="px-2 py-1 rounded-md border text-xs font-medium transition-colors"
+                  [class.bg-indigo-600]="recipientKind() === k"
+                  [class.text-white]="recipientKind() === k"
+                  [class.border-indigo-600]="recipientKind() === k"
+                  [class.bg-white]="recipientKind() !== k"
+                  [class.text-gray-700]="recipientKind() !== k"
+                  [class.border-gray-300]="recipientKind() !== k"
+                  [class.hover:bg-gray-50]="recipientKind() !== k"
+                  (click)="setRecipientKind($any(k))">
+                  {{ recipientKindLabel($any(k)) }}
+                </button>
+              }
+            </div>
+
+            <div class="relative">
+              <input type="text" placeholder="Name or address…"
+                [ngModel]="recipientQuery()" (ngModelChange)="recipientQuery.set($event)"
+                class="w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+              @if (recipientSearching()) {
+                <svg class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              }
+            </div>
+
+            @if (recipientResults().length > 0) {
+              <div class="mt-2 border border-gray-200 rounded-md max-h-40 overflow-auto">
+                @for (r of recipientResults(); track r.address) {
+                  <div class="px-3 py-2 border-t border-gray-100 first:border-t-0 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+                       [class.bg-indigo-50]="isRecipientSelected(r)"
+                       (click)="toggleRecipient(r)">
+                    <div class="min-w-0 flex items-center gap-2">
+                      <span class="px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0" [class]="recipientKindBadgeClass(r.type)">
+                        {{ recipientKindLabel(r.type) }}
+                      </span>
+                      <div class="min-w-0">
+                        <div class="text-sm font-medium text-gray-800 truncate">{{ r.name }}</div>
+                        <div class="text-[11px] text-gray-500 truncate font-mono">{{ r.address }}</div>
+                      </div>
+                    </div>
+                    <input type="checkbox" [checked]="isRecipientSelected(r)"
+                           (click)="$event.stopPropagation(); toggleRecipient(r)"
+                           class="h-4 w-4 accent-indigo-600">
+                  </div>
+                }
+              </div>
+            } @else if (recipientQuery().length >= 2 && !recipientSearching()) {
+              <p class="mt-2 text-[11px] text-gray-500">No matches.</p>
+            }
+
+            @if (recipientSelected().length > 0) {
+              <div class="mt-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs text-gray-500">Selected ({{ recipientSelected().length }})</span>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                  @for (s of recipientSelected(); track s.address) {
+                    <span class="inline-flex items-center gap-1 bg-indigo-100 text-indigo-800 pl-1 pr-2 py-0.5 rounded text-xs">
+                      <span class="px-1.5 py-0.5 rounded text-[10px] font-medium" [class]="recipientKindBadgeClass(s.type)">
+                        {{ recipientKindLabel(s.type) }}
+                      </span>
+                      {{ s.name }}
+                      <button type="button" class="ml-0.5 text-red-600 hover:text-red-800" (click)="toggleRecipient(s)">✕</button>
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+
+            <p class="text-xs text-gray-500 mt-2">Each recipient must have published an encryption public key on-chain.</p>
           </div>
         }
 
       </div>
+
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="onCancel()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
@@ -84,6 +143,7 @@
           Add Document
         </button>
       </div>
+
     </div>
   </div>
 }

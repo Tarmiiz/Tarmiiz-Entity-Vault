@@ -1,0 +1,201 @@
+<app-header title="Asset Listing Details"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/dex/asset-listings/list"
+          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">Asset Listings</a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ listing()?.assetName || (listing()?.baseAsset?.slice(0,10) + '…') }}</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+
+    <!-- Tab bar -->
+    <div class="bg-white rounded-t-lg shadow-md p-2">
+      <div class="flex border-b border-gray-200">
+        <button (click)="setTab('info')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'info'"
+          [class.border-b-2]="activeTab() === 'info'"
+          [class.border-blue-600]="activeTab() === 'info'"
+          [class.bg-blue-600]="activeTab() === 'info'">Information</button>
+        <button (click)="setTab('venues')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'venues'"
+          [class.border-b-2]="activeTab() === 'venues'"
+          [class.border-blue-600]="activeTab() === 'venues'"
+          [class.bg-blue-600]="activeTab() === 'venues'">Venues</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-b-lg shadow-md p-2">
+      @if (listing(); as l) {
+
+        @if (activeTab() === 'info') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ l.assetName || 'Unnamed Asset' }} <span class="text-sm font-normal text-gray-500">{{ l.assetSymbol ? '(' + l.assetSymbol + ')' : '' }}</span></h2>
+                  <p class="text-xs text-gray-500 mt-0.5 font-mono break-all">{{ l.baseAsset }}</p>
+                </div>
+                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Approvals are regulator-side</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Listed By (service)</p>
+                  <p class="text-base text-gray-700">{{ l.listedByName || '—' }}</p>
+                  <p class="text-xs text-gray-500 font-mono break-all">{{ l.listedBy }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Asset Regulator</p>
+                  <p class="text-xs text-gray-700 font-mono break-all">{{ l.assetRegulator || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Listed At</p>
+                  <p class="text-base text-gray-700">{{ l.listedAt ? utils.formatDate(l.listedAt) : '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Currency</p>
+                  <p class="text-base text-gray-700">{{ l.assetCurrencyName || '—' }}</p>
+                </div>
+              </div>
+
+              <h3 class="text-base font-semibold text-gray-800 mt-8 mb-3">Tier Approval Status</h3>
+              <div class="space-y-3">
+                <div class="border rounded-lg p-3">
+                  <p class="text-sm font-medium text-gray-800">Tier 1 — Venue Scope</p>
+                  <div class="mt-1 flex items-center gap-2 text-xs">
+                    @if (l.venueApproved) { <span class="px-2 py-0.5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
+                    @else if (l.venuePending) { <span class="px-2 py-0.5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending regulator approval</span> }
+                    @else { <span class="text-gray-400">Not requested</span> }
+                  </div>
+                </div>
+                <div class="border rounded-lg p-3">
+                  <p class="text-sm font-medium text-gray-800">Tier 2 — Country Scope</p>
+                  <div class="mt-1 flex items-center gap-2 text-xs">
+                    @if (l.countryApproved) { <span class="px-2 py-0.5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
+                    @else if (l.countryPending) { <span class="px-2 py-0.5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending regulator approval</span> }
+                    @else { <span class="text-gray-400">Not requested</span> }
+                  </div>
+                </div>
+                <div class="border rounded-lg p-3">
+                  <p class="text-sm font-medium text-gray-800">Tier 3 — Global Scope</p>
+                  <div class="mt-1 flex items-center gap-2 text-xs">
+                    @if (l.globalApproved) { <span class="px-2 py-0.5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
+                    @else if (l.globalPending) { <span class="px-2 py-0.5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending regulator approval</span> }
+                    @else { <span class="text-gray-400">Not requested</span> }
+                  </div>
+                </div>
+              </div>
+
+              <p class="text-xs text-gray-500 mt-6">
+                After approval, choose which venues this asset trades on (per tier) from the
+                <button class="text-blue-700 hover:underline" (click)="setTab('venues')">Venues tab</button>.
+              </p>
+            </div>
+          </div>
+        }
+
+        @if (activeTab() === 'venues') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+            <div class="p-4">
+
+              <!-- Tier sub-selector -->
+              <div class="flex flex-wrap items-center gap-2 mb-4">
+                @for (t of [1, 2, 3]; track t) {
+                  <button (click)="setTier($any(t))"
+                    class="text-xs px-3 py-1.5 rounded transition-colors"
+                    [class]="selectedTier() === t
+                      ? 'bg-[#202a3b] text-white'
+                      : 'border border-gray-300 text-gray-600 hover:bg-gray-100'">
+                    {{ tierLabel($any(t)) }}
+                  </button>
+                }
+                <button (click)="openAdd()"
+                  class="ml-auto text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Add venue
+                </button>
+              </div>
+
+              <p class="text-xs text-gray-500 mb-3">{{ tierHint(selectedTier()) }}</p>
+
+              @if (!tierApprovedOnAsset(selectedTier())) {
+                <div class="mb-3 px-3 py-2 rounded bg-yellow-50 border border-yellow-200 text-xs text-yellow-800">
+                  @if (tierPendingOnAsset(selectedTier())) {
+                    The regulator has not yet approved this tier on the asset listing. You can pre-stage venues here, but orders will not place until approval is granted.
+                  } @else {
+                    This tier is not requested on the asset listing. Orders will not place at this scope until the issuer requests it and the regulator approves.
+                  }
+                </div>
+              }
+
+              <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto rounded-lg">
+                  <table class="w-full text-sm text-left text-gray-700">
+                    <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                      <tr>
+                        <th class="px-6 py-2">#</th>
+                        <th class="px-6 py-2">Venue</th>
+                        <th class="px-6 py-2">Entity</th>
+                        <th class="px-6 py-2">Country</th>
+                        <th class="px-6 py-2">Address</th>
+                        <th class="px-6 py-2">Venue State</th>
+                        <th class="px-6 py-2 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody class="text-xs">
+                      @if (venuesForTier().length === 0) {
+                        <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">No venues enabled for {{ tierLabel(selectedTier()) }} yet.</td></tr>
+                      } @else {
+                        @for (v of venuesForTier(); track v.dexService; let i = $index; let isEven = $even) {
+                          <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                            <td class="px-6 py-2">{{ i + 1 }}</td>
+                            <td class="px-6 py-2">{{ v.dexServiceName || '—' }}</td>
+                            <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
+                            <td class="px-6 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
+                            <td class="px-6 py-2 font-mono break-all">{{ v.dexService }}</td>
+                            <td class="px-6 py-2">
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.venueState)">
+                                {{ v.venueSuspended ? 'Suspended' : (v.venueState === 2 ? 'Active' : v.venueState === 3 ? 'Paused' : v.venueState === 4 ? 'Deregistered' : 'Registered') }}
+                              </span>
+                            </td>
+                            <td class="px-6 py-2 text-right">
+                              <button (click)="removeVenue(v)"
+                                class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div class="flex items-center px-4 py-2 border-t">
+                  <p class="text-xs font-medium text-gray-800">Showing {{ venuesForTier().length }} of Total {{ enabledVenues().length }} Records</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        }
+
+      }
+    </div>
+  </div>
+</main>
+
+<app-modal-listing-venue-add />

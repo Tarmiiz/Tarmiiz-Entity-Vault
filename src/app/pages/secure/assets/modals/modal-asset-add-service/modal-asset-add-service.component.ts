@@ -1,44 +1,107 @@
-import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
-
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 import { ModalAssetAddServiceService } from './modal-asset-add-service.service';
 import { ApiService } from '../../../../../shared/services/api.service';
+
+interface Candidate {
+  address: string;
+  name: string;
+}
+
+interface ServicePreview {
+  address: string;
+  name: string;
+  state: number;
+  stateName: string;
+}
 
 @Component({
   selector: 'app-modal-asset-add-service',
   templateUrl: './modal-asset-add-service.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [CommonModule, FormsModule],
 })
 export class ModalAssetAddServiceComponent {
 
   addServiceModal = inject(ModalAssetAddServiceService);
   private apiService = inject(ApiService);
-  private fb = inject(FormBuilder);
 
-  lookedUpService = signal<{ address: string; name: string; state: number; stateName: string } | null>(null);
-  lookupError = signal<string | null>(null);
-  isLooking = signal(false);
+  query    = signal('');
+  results  = signal<Candidate[]>([]);
+  selected = signal<Candidate | null>(null);
+  searching = signal(false);
 
-  addressForm = this.fb.group({
-    address: ['', Validators.required],
-  });
+  manualMode    = signal(false);
+  manualAddress = signal('');
+
+  lookedUpService = signal<ServicePreview | null>(null);
+  lookupError     = signal<string | null>(null);
+  isLooking       = signal(false);
+
+  isValid = computed(() => this.lookedUpService() !== null);
 
   constructor() {
     effect(() => {
       if (!this.addServiceModal.isVisible()) {
-        this.addressForm.reset();
+        this.query.set('');
+        this.results.set([]);
+        this.selected.set(null);
+        this.manualMode.set(false);
+        this.manualAddress.set('');
         this.lookedUpService.set(null);
         this.lookupError.set(null);
       }
     });
   }
 
-  async onLookup() {
-    const address = this.addressForm.get('address')?.value?.trim();
-    if (!address) return;
+  async search() {
+    const q = this.query().trim();
+    if (q.length < 2) { this.results.set([]); return; }
+    this.searching.set(true);
+    try {
+      const resp = await this.apiService.connectRecipientsSearch('service', q);
+      const rows: Candidate[] = (resp?.results || []).map((r: any) => ({
+        address: r.address,
+        name:    r.name || r.address,
+      }));
+      this.results.set(rows);
+    } finally {
+      this.searching.set(false);
+    }
+  }
 
+  async pick(c: Candidate) {
+    if (this.selected()?.address === c.address) {
+      this.selected.set(null);
+      this.lookedUpService.set(null);
+      this.lookupError.set(null);
+      return;
+    }
+    this.selected.set(c);
+    await this.resolveAddress(c.address);
+  }
+
+  isPicked(c: Candidate): boolean {
+    return this.selected()?.address === c.address;
+  }
+
+  toggleManual() {
+    this.manualMode.set(!this.manualMode());
+    this.selected.set(null);
+    this.manualAddress.set('');
+    this.lookedUpService.set(null);
+    this.lookupError.set(null);
+  }
+
+  async onLookup() {
+    const addr = this.manualAddress().trim();
+    if (!addr) return;
+    await this.resolveAddress(addr);
+  }
+
+  private async resolveAddress(address: string) {
     const current = this.addServiceModal.currentServices();
     if (current.includes(address)) {
       this.lookupError.set('This service is already associated with the asset.');
@@ -50,18 +113,20 @@ export class ModalAssetAddServiceComponent {
     this.lookedUpService.set(null);
     this.lookupError.set(null);
 
-    const data = await this.apiService.vaultGetService(address);
-    this.isLooking.set(false);
-
-    if (data) {
-      this.lookedUpService.set({
-        address: data.address,
-        name: data.name ?? data.address,
-        state: data.state,
-        stateName: data.state_name ?? String(data.state),
-      });
-    } else {
-      this.lookupError.set('Service not found. Please check the address and try again.');
+    try {
+      const data = await this.apiService.vaultGetService(address);
+      if (data) {
+        this.lookedUpService.set({
+          address:   data.address,
+          name:      data.name ?? data.address,
+          state:     data.state,
+          stateName: data.state_name ?? String(data.state),
+        });
+      } else {
+        this.lookupError.set('Service not found. Please check the address and try again.');
+      }
+    } finally {
+      this.isLooking.set(false);
     }
   }
 

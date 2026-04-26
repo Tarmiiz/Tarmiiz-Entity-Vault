@@ -1,0 +1,94 @@
+<app-header title="DEX Asset Listings"></app-header>
+
+<div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Search</label>
+        <input type="text" placeholder="Asset, symbol, address..."
+          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
+      </div>
+      <div class="flex flex-col justify-end">
+        <button (click)="clearFilters()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
+      </div>
+      <div class="flex ml-auto items-end gap-2">
+        <button (click)="exportExcel()"
+          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
+          Export Excel
+        </button>
+        <button (click)="exportPdf()"
+          class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
+          Export PDF
+        </button>
+        <button (click)="createListing()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          List Asset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th scope="col" class="px-6 py-2">#</th>
+            <th scope="col" class="px-6 py-2">Asset</th>
+            <th scope="col" class="px-6 py-2">Tier 1 (Venue)</th>
+            <th scope="col" class="px-6 py-2">Tier 2 (Country)</th>
+            <th scope="col" class="px-6 py-2">Tier 3 (Global)</th>
+            <th scope="col" class="px-6 py-2">Listed</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @if (filteredListings().length == 0) {
+            <tr class="bg-white border-b">
+              <td class="px-6 py-2" colspan="6">no data</td>
+            </tr>
+          } @else {
+            @for (l of filteredListings(); track l.baseAsset; let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                  (click)="viewDetails(l)">
+                <td class="px-6 py-2">{{ i + 1 }}</td>
+                <td class="px-6 py-2">
+                  <div>{{ l.assetName || '—' }}</div>
+                  @if (l.assetSymbol) { <div class="text-gray-500 text-[10px]">{{ l.assetSymbol }}</div> }
+                </td>
+                <td class="px-6 py-2">
+                  @if (l.venueApproved) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
+                  @else if (l.venuePending) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span> }
+                  @else { <span class="text-gray-400">—</span> }
+                </td>
+                <td class="px-6 py-2">
+                  @if (l.countryApproved) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
+                  @else if (l.countryPending) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span> }
+                  @else { <span class="text-gray-400">—</span> }
+                </td>
+                <td class="px-6 py-2">
+                  @if (l.globalApproved) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
+                  @else if (l.globalPending) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span> }
+                  @else { <span class="text-gray-400">—</span> }
+                </td>
+                <td class="px-6 py-2">{{ l.listedAt ? utils.formatDate(l.listedAt) : '—' }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center px-4 py-2 border-t">
+      <p class="text-xs font-medium text-gray-800">Showing {{ filteredListings().length }} of Total {{ listings().length }} Listings</p>
+    </div>
+  </div>
+
+</div>
+
+<app-modal-listing-create />

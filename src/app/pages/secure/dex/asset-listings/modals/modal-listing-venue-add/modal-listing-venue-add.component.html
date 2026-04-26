@@ -1,0 +1,83 @@
+@if (modalService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
+       (click)="cancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl m-4"
+         (click)="$event.stopPropagation()">
+
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Venue</h3>
+        <p class="text-xs text-gray-400 mt-1">{{ tierLabel() }}</p>
+        <p class="text-xs text-gray-300 mt-2">{{ tierHint() }}</p>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+        <div class="flex flex-wrap gap-2 items-end">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500">Search</label>
+            <input type="text" placeholder="Name, entity, address..."
+              [ngModel]="search()" (ngModelChange)="search.set($event); reload()"
+              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
+          </div>
+          @if (modalService.input()?.tier === 3) {
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-gray-500">Country code</label>
+              <input type="number" placeholder="e.g. 818"
+                [ngModel]="countryFilter()" (ngModelChange)="countryFilter.set($event); reload()"
+                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+            </div>
+          }
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div class="overflow-x-auto rounded-lg">
+            <table class="w-full text-sm text-left text-gray-700">
+              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <tr>
+                  <th class="px-4 py-2">#</th>
+                  <th class="px-4 py-2">Venue</th>
+                  <th class="px-4 py-2">Entity</th>
+                  <th class="px-4 py-2">Country</th>
+                  <th class="px-4 py-2">Address</th>
+                  <th class="px-4 py-2 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="text-xs">
+                @if (loading()) {
+                  <tr class="bg-white border-b"><td class="px-4 py-3" colspan="6">Loading…</td></tr>
+                } @else if (candidates().length === 0) {
+                  <tr class="bg-white border-b"><td class="px-4 py-3 text-gray-400" colspan="6">No matching venues available</td></tr>
+                } @else {
+                  @for (v of candidates(); track v.serviceAddress; let i = $index; let isEven = $even) {
+                    <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                      <td class="px-4 py-2">{{ i + 1 }}</td>
+                      <td class="px-4 py-2">{{ v.serviceName || '—' }}</td>
+                      <td class="px-4 py-2">{{ v.entityName || '—' }}</td>
+                      <td class="px-4 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
+                      <td class="px-4 py-2 font-mono break-all">{{ v.serviceAddress }}</td>
+                      <td class="px-4 py-2 text-right">
+                        <button (click)="add(v)"
+                          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                          Enable
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center px-4 py-2 border-t">
+            <p class="text-xs font-medium text-gray-800">{{ candidates().length }} candidate venues</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="cancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

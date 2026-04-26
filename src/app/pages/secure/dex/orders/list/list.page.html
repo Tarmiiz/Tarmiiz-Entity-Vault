@@ -1,0 +1,139 @@
+<app-header title="DEX Orders"></app-header>
+
+<div class="flex-grow p-4 bg-gray-300 overflow-y-auto">
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Search</label>
+        <input type="text" placeholder="ID, asset, venue, sub..."
+          [ngModel]="search()" (ngModelChange)="search.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Status</label>
+        <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <option value="">All</option>
+          <option value="1">Open</option>
+          <option value="2">Partial</option>
+          <option value="3">Filled</option>
+          <option value="4">Cancelled</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Side</label>
+        <select [ngModel]="filterSide()" (ngModelChange)="filterSide.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <option value="">All</option>
+          <option value="1">Buy</option>
+          <option value="2">Sell</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Asset</label>
+        <input type="text" placeholder="symbol or address"
+          [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Venue</label>
+        <input type="text" placeholder="venue name or addr"
+          [ngModel]="filterVenue()" (ngModelChange)="filterVenue.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+      </div>
+      <div class="flex flex-col justify-end">
+        <button (click)="clearFilters()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
+      </div>
+      <div class="flex ml-auto items-end gap-2">
+        <button (click)="exportExcel()"
+          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
+          Export Excel
+        </button>
+        <button (click)="exportPdf()"
+          class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
+          Export PDF
+        </button>
+        <button (click)="openPlaceOrder()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Place Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-6 py-2">#</th>
+            <th class="px-6 py-2">ID</th>
+            <th class="px-6 py-2">Asset</th>
+            <th class="px-6 py-2">Side</th>
+            <th class="px-6 py-2">Scope</th>
+            <th class="px-6 py-2">Price</th>
+            <th class="px-6 py-2">Amount</th>
+            <th class="px-6 py-2">Filled</th>
+            <th class="px-6 py-2">Status</th>
+            <th class="px-6 py-2">Venue</th>
+            <th class="px-6 py-2">Created</th>
+            <th class="px-6 py-2"></th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @if (filtered().length === 0) {
+            <tr class="bg-white border-b">
+              <td class="px-6 py-2" colspan="12">no data</td>
+            </tr>
+          } @else {
+            @for (o of filtered(); track o.orderId; let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                  (click)="view(o)">
+                <td class="px-6 py-2">{{ i + 1 }}</td>
+                <td class="px-6 py-2 font-mono">#{{ o.orderId }}</td>
+                <td class="px-6 py-2">{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
+                <td class="px-6 py-2">
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? 'Buy' : 'Sell') }}</span>
+                </td>
+                <td class="px-6 py-2">{{ o.marketScopeName || ('Tier ' + o.marketScope) }}</td>
+                <td class="px-6 py-2">{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
+                <td class="px-6 py-2">{{ fmtAmount(o.amount) }}</td>
+                <td class="px-6 py-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-16 bg-gray-200 rounded-full h-1.5">
+                      <div class="bg-indigo-500 h-1.5 rounded-full" [style.width.%]="fillPct(o)"></div>
+                    </div>
+                    <span>{{ fillPct(o) }}%</span>
+                  </div>
+                </td>
+                <td class="px-6 py-2">
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStatusClass(o.status)">{{ o.statusName || o.status }}</span>
+                </td>
+                <td class="px-6 py-2">{{ o.dexServiceName || (o.dexService.slice(0,10) + '…') }}</td>
+                <td class="px-6 py-2">{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</td>
+                <td class="px-6 py-2">
+                  @if (isOpen(o)) {
+                    <button (click)="cancel(o, $event)"
+                      class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">Cancel</button>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center px-4 py-2 border-t">
+      <p class="text-xs font-medium text-gray-800">Showing {{ filtered().length }} of Total {{ orders().length }} Orders</p>
+    </div>
+  </div>
+
+</div>
+
+<app-modal-place-order />
