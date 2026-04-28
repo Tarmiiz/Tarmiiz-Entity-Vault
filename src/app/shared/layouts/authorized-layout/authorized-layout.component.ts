@@ -7,8 +7,10 @@ import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
 import { SocketService } from '../../services/socket.service';
+import { FeaturesService } from '../../services/features.service';
 import { Entity, User } from '../../models/data.model';
 import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/modal-new-thread/modal-new-thread.component";
+import { ModalResyncComponent } from "../../components/modal-resync/modal-resync.component";
 
 @Component({
   selector: 'app-authorized-layout',
@@ -29,12 +31,14 @@ import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/m
     IonMenuButton,
     RouterModule,
     ModalNewThreadComponent,
+    ModalResyncComponent,
   ],
 })
 export class AuthorizedLayoutComponent {
   private authService = inject(AuthService);
   private socketService = inject(SocketService);
   private menuController = inject(MenuController);
+  features = inject(FeaturesService);
 
   get entityInfo(): Entity { return this.authService.entityInfo; }
   get userInfo(): User { return this.authService.userInfo; }

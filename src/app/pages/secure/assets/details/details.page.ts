@@ -27,6 +27,9 @@ import { ModalAssetServiceStateService } from '../modals/modal-asset-service-sta
 import { ModalAssetServiceStateComponent } from '../modals/modal-asset-service-state/modal-asset-service-state.component';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
+import { ModalListingCreateService } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.service';
+import { ModalListingCreateComponent } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.component';
+import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models/data.model';
 
 
 
@@ -44,6 +47,7 @@ import { DocumentsTabComponent } from '../../../../shared/components/documents-t
     ModalTransactionInfoComponent,
     ModalAssetServiceStateComponent,
     DocumentsTabComponent,
+    ModalListingCreateComponent,
   ]
 })
 export class DetailsPage implements OnInit {
@@ -55,6 +59,7 @@ export class DetailsPage implements OnInit {
   private assetStateService = inject(ModalAssetStateService);
   addServiceModal = inject(ModalAssetAddServiceService);
   private serviceStateModal = inject(ModalAssetServiceStateService);
+  private listingCreateModal = inject(ModalListingCreateService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
@@ -67,7 +72,12 @@ export class DetailsPage implements OnInit {
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
-  activeTab = signal<'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex'>('overview');
+
+  // DEX listing state — populated lazily when the DEX tab opens.
+  dexListing       = signal<DexAssetListing | undefined>(undefined);
+  dexListingVenues = signal<DexAssetListingVenue[]>([]);
+  dexListingLoaded = signal(false);
 
   loadingData: boolean = false;
 
@@ -215,13 +225,58 @@ export class DetailsPage implements OnInit {
     ]);
   }
 
-  setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services' | 'docs') {
+  setTab(tab: 'overview' | 'info' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
     if (tab === 'services') this.getAssetDetails();
     if (tab === 'price') this.getPriceHistory(1, 500);
     if (tab === 'holders') this.getHolders(1, 500);
     if (tab === 'trxs') this.getTransactions(1, 500);
+    if (tab === 'dex') this.loadDexListing();
+  }
+
+  async loadDexListing() {
+    this.dexListingLoaded.set(false);
+    try {
+      const listing = await this.apiService.vaultDexAssetListingInfo(this.assetAddress);
+      this.dexListing.set(listing);
+      if (listing) {
+        const r = await this.apiService.vaultDexAssetListingVenues(this.assetAddress);
+        this.dexListingVenues.set(r?.venues || []);
+      } else {
+        this.dexListingVenues.set([]);
+      }
+    } finally { this.dexListingLoaded.set(true); }
+  }
+
+  async openDexListingCreate() {
+    const result = await this.listingCreateModal.show({ presetAsset: this.assetAddress });
+    if (!result) return;
+    this.loadingService.show('Listing on DEX...');
+    try {
+      const r = await this.apiService.vaultDexAssetListingCreate(result.baseAsset, result.venue, result.country, result.global);
+      if ((r as any)?.error) { this.alertService.show('Error', (r as any).error); return; }
+      await this.loadDexListing();
+    } finally { this.loadingService.hide(); }
+  }
+
+  goDexListing() { this.router.navigate(['/authorized/dex/asset-listings/details/' + this.assetAddress]); }
+
+  dexTierLabel(t: number): string {
+    return t === 1 ? 'Tier 1 — Venue' : t === 2 ? 'Tier 2 — Country' : t === 3 ? 'Tier 3 — Global' : '—';
+  }
+  dexTierBadgeClass(t: number): string {
+    return t === 1 ? 'bg-indigo-100 text-indigo-800'
+         : t === 2 ? 'bg-blue-100 text-blue-800'
+         : t === 3 ? 'bg-purple-100 text-purple-800'
+         : 'bg-gray-100 text-gray-800';
+  }
+  dexUpstreamBlockReason(): string {
+    const l = this.dexListing(); if (!l) return '';
+    const u = l.upstream;
+    if (u && u.issuerEntityState && u.issuerEntityState !== 2) return 'Trading blocked — issuer entity not active';
+    if (u && !u.assetTradable && u.syncedAt) return 'Trading blocked — asset suspended or inactive';
+    return '';
   }
 
   private readonly stateNames: Record<number, string> = {

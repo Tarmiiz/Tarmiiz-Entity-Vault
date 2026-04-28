@@ -86,7 +86,7 @@ export class ModalListingVenueAddComponent {
     if (!ok) return;
     this.loadingService.show('Enabling venue...');
     try {
-      const r = await this.apiService.vaultDexAssetListingVenueAdd(inp.asset, inp.tier, v.serviceAddress);
+      const r = await this.apiService.vaultDexAssetListingVenueAdd(inp.asset, v.serviceAddress, inp.tier);
       if (r?.error) { this.alertService.show('Error', r.error); return; }
       this.modalService.hide(true);
     } finally {

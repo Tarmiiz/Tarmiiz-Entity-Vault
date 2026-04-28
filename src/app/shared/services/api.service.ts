@@ -67,6 +67,20 @@ export class ApiService {
     }
   }
 
+  async vaultFeatures(): Promise<{ dex: boolean } | null> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/vault/features',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data?.type !== 'success') return null;
+      return response.data.features ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   // ─── Vault helpers ────────────────────────────────────────────────────────────
 
   private async vaultGet(path: string, params?: Record<string, any>) {
@@ -87,6 +101,15 @@ export class ApiService {
     }
   }
 
+  private extractError(response: any): string {
+    const d = response?.data;
+    if (d && typeof d === 'object') {
+      return d.error || d.message || d.reason || `HTTP ${response.status}`;
+    }
+    if (typeof d === 'string' && d) return d;
+    return `HTTP ${response?.status ?? 'error'}`;
+  }
+
   private async vaultPost(path: string, body: Record<string, any>) {
     try {
       const response = await CapacitorHttp.request({
@@ -99,10 +122,29 @@ export class ApiService {
         },
         data: body,
       });
-      if (response.data?.type !== 'success') return null;
+      if (response.data?.type !== 'success') return { error: this.extractError(response) };
       return response.data;
-    } catch {
-      return null;
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
+    }
+  }
+
+  private async vaultPatch(path: string, body: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'PATCH',
+        url: this.apiURL + '/vault' + path,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.vaultToken,
+          ...this.getAuditHeaders(),
+        },
+        data: body,
+      });
+      if (response.data?.type !== 'success') return { error: this.extractError(response) };
+      return response.data;
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
     }
   }
 
@@ -117,10 +159,10 @@ export class ApiService {
           ...this.getAuditHeaders(),
         },
       });
-      if (response.data?.type !== 'success') return null;
+      if (response.data?.type !== 'success') return { error: this.extractError(response) };
       return response.data;
-    } catch {
-      return null;
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
     }
   }
 
@@ -136,10 +178,10 @@ export class ApiService {
         },
         data: body,
       });
-      if (response.data?.type !== 'success') return null;
+      if (response.data?.type !== 'success') return { error: this.extractError(response) };
       return response.data;
-    } catch {
-      return null;
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
     }
   }
 
@@ -248,20 +290,19 @@ export class ApiService {
     return this.vaultPost('/dex/asset-listings', { baseAsset, venue, country, global });
   }
 
-  // Per-listing issuer-enabled venues (per-tier)
+  // Per-listing issuer-enabled venues — flat list (one row per (asset, venue), tier as a column).
   async vaultDexAssetListingVenues(asset: string) {
     const data = await this.vaultGet(`/dex/asset-listings/${asset}/venues`);
     return data ? { count: data.count, venues: data.venues } : null;
   }
-  async vaultDexAssetListingVenuesByTier(asset: string, tier: number) {
-    const data = await this.vaultGet(`/dex/asset-listings/${asset}/venues`, { tier });
-    return data ? { count: data.count, venues: data.venues } : null;
+  async vaultDexAssetListingVenueAdd(asset: string, dexService: string, tier: number) {
+    return this.vaultPost(`/dex/asset-listings/${asset}/venues`, { dexService, tier });
   }
-  async vaultDexAssetListingVenueAdd(asset: string, tier: number, dexService: string) {
-    return this.vaultPost(`/dex/asset-listings/${asset}/venues`, { tier, dexService });
+  async vaultDexAssetListingVenueSetTier(asset: string, dexService: string, tier: number) {
+    return this.vaultPatch(`/dex/asset-listings/${asset}/venues/${dexService}`, { tier });
   }
-  async vaultDexAssetListingVenueRemove(asset: string, tier: number, dexService: string) {
-    return this.vaultDelete(`/dex/asset-listings/${asset}/venues/${tier}/${dexService}`);
+  async vaultDexAssetListingVenueRemove(asset: string, dexService: string) {
+    return this.vaultDelete(`/dex/asset-listings/${asset}/venues/${dexService}`);
   }
   async vaultDexAssetListingVenuesAvailable(asset: string, tier: number, opts: { q?: string; country?: number } = {}) {
     const params: any = {};
@@ -274,6 +315,13 @@ export class ApiService {
   // Venue tier requests (entity-side)
   async vaultDexVenueRequestTier(address: string, tier: number) {
     return this.vaultPost(`/dex/venues/${address}/tier-request`, { tier });
+  }
+
+  async vaultDexVenueAssets(address: string, tier?: number) {
+    const params: any = {};
+    if (tier) params.tier = tier;
+    const data = await this.vaultGet(`/dex/venues/${address}/assets`, params);
+    return data ? { count: data.count, assets: data.assets } : null;
   }
 
   // DEX — Orders / Trades / Order Book (Phase B)
@@ -428,11 +476,24 @@ export class ApiService {
     return data ?? null;
   }
 
+  async vaultGetDashboardActivity(interval: string, points = 30) {
+    const data = await this.vaultGet(`/dashboard/activity?interval=${encodeURIComponent(interval)}&points=${points}`);
+    return data ?? null;
+  }
+
   // ─── Vault — Sync ─────────────────────────────────────────────────────────────
 
   async vaultGetSyncStatus() {
     const data = await this.vaultGet('/sync/status');
-    return data?.status ?? null;
+    return data?.status ?? data ?? null;
+  }
+
+  async vaultSyncStatus() {
+    return this.vaultGet('/sync/status');
+  }
+
+  async vaultSyncResync(fromBlock: number, mode: string) {
+    return this.vaultPost('/sync/resync', { fromBlock, mode });
   }
 
   // ─── Vault — Asset writes ─────────────────────────────────────────────────────
@@ -1354,4 +1415,20 @@ export class ApiService {
   // ─── Directory (unified address → name/partyType resolver) ────────────────
   async directoryByAddress(address: string) { return this.vaultGet('/directory/by-address/' + address); }
 
+  // ─── User attribution helper ──────────────────────────────────────────────
+  // Connect threads + messages carry a `createdByUserId: bytes32` hex hash.
+  // For the entity's own users this is the integer id zero-padded to 32 bytes.
+  // Decode and look up via /users/:id; cross-tenant ids that don't resolve
+  // here return null and the caller falls back to the address-based label.
+  async userByCreatedByHash(hash: string | null | undefined): Promise<{ id: number; name: string; username?: string; role?: number } | null> {
+    if (!hash || /^0x0+$/.test(hash)) return null;
+    let id: number;
+    try { id = Number(BigInt(hash)); } catch { return null; }
+    if (!Number.isFinite(id) || id <= 0) return null;
+    try {
+      const u = await this.vaultGetUser(String(id));
+      if (!u) return null;
+      return { id, name: u.name || u.username || ('user ' + id), username: u.username, role: u.role };
+    } catch { return null; }
+  }
 }

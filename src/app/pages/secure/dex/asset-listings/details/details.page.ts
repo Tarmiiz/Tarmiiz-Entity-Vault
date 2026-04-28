@@ -1,6 +1,6 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -11,30 +11,33 @@ import { DexAssetListing, DexAssetListingVenue } from '../../../../../shared/mod
 
 import { ModalListingVenueAddService } from '../modals/modal-listing-venue-add/modal-listing-venue-add.service';
 import { ModalListingVenueAddComponent } from '../modals/modal-listing-venue-add/modal-listing-venue-add.component';
+import { ModalListingVenueTierChangeService } from '../modals/modal-listing-venue-tier-change/modal-listing-venue-tier-change.service';
+import { ModalListingVenueTierChangeComponent } from '../modals/modal-listing-venue-tier-change/modal-listing-venue-tier-change.component';
 
 @Component({
   selector: 'app-dex-asset-listing-details',
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent],
+  imports: [FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent, ModalListingVenueTierChangeComponent],
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private apiService = inject(ApiService);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
   private addVenueModal = inject(ModalListingVenueAddService);
+  private tierChangeModal = inject(ModalListingVenueTierChangeService);
   utils = inject(UtilsService);
 
   baseAsset  = signal<string>('');
   listing    = signal<DexAssetListing | undefined>(undefined);
   activeTab  = signal<'info' | 'venues'>('info');
-  selectedTier = signal<1 | 2 | 3>(1);
+  // Initial tier presented in the Add Venue modal (only used at add time; tier is mutable afterwards).
+  addInitialTier = signal<1 | 2 | 3>(1);
 
   enabledVenues = signal<DexAssetListingVenue[]>([]);
-
-  venuesForTier = computed(() => this.enabledVenues().filter(v => v.tier === this.selectedTier()));
 
   constructor() {
     const asset = this.route.snapshot.paramMap.get('asset');
@@ -49,13 +52,10 @@ export class DetailsPage implements OnInit {
   }
 
   setTab(tab: 'info' | 'venues') { this.activeTab.set(tab); }
-  setTier(t: 1 | 2 | 3) { this.selectedTier.set(t); }
+  setAddInitialTier(t: 1 | 2 | 3) { this.addInitialTier.set(t); }
 
-  tierLabel(t: 1 | 2 | 3): string { return t === 1 ? 'Tier 1 — Venue' : t === 2 ? 'Tier 2 — Country' : 'Tier 3 — Global'; }
-  tierHint(t: 1 | 2 | 3): string {
-    if (t === 1) return 'Pick from your own entity\'s venues (must have a payment processor set).';
-    if (t === 2) return 'Add venues in the asset\'s country for country-scoped trading. Venues need a full-scope (level 2) payment processor.';
-    return 'Add venues anywhere globally for cross-border routing. Venues need a full-scope (level 2) payment processor.';
+  tierLabel(t: number): string {
+    return t === 1 ? 'Tier 1 — Venue' : t === 2 ? 'Tier 2 — Country' : t === 3 ? 'Tier 3 — Global' : '—';
   }
   tierApprovedOnAsset(t: 1 | 2 | 3): boolean {
     const l = this.listing(); if (!l) return false;
@@ -64,6 +64,21 @@ export class DetailsPage implements OnInit {
   tierPendingOnAsset(t: 1 | 2 | 3): boolean {
     const l = this.listing(); if (!l) return false;
     return t === 1 ? l.venuePending : t === 2 ? l.countryPending : l.globalPending;
+  }
+  tierBadgeClass(t: number): string {
+    return t === 1 ? 'bg-indigo-100 text-indigo-800'
+         : t === 2 ? 'bg-blue-100 text-blue-800'
+         : t === 3 ? 'bg-purple-100 text-purple-800'
+         : 'bg-gray-100 text-gray-800';
+  }
+  // Returns a short "why is this listing blocked" reason from the cached upstream snapshot.
+  // Empty string means upstream is healthy (still subject to per-tier listing/venue approval gates).
+  upstreamBlockReason(): string {
+    const l = this.listing(); if (!l) return '';
+    const u = l.upstream;
+    if (u && u.issuerEntityState && u.issuerEntityState !== 2) return 'Trading blocked — issuer entity not active';
+    if (u && !u.assetTradable && u.syncedAt) return 'Trading blocked — asset suspended or inactive';
+    return '';
   }
 
   async loadListing() {
@@ -82,7 +97,18 @@ export class DetailsPage implements OnInit {
   async openAdd() {
     const ok = await this.addVenueModal.show({
       asset: this.baseAsset(),
-      tier:  this.selectedTier(),
+      tier:  this.addInitialTier(),
+    });
+    if (ok) await this.loadEnabledVenues();
+  }
+
+  async openTierChange(v: DexAssetListingVenue) {
+    const l = this.listing();
+    if (!l) return;
+    const ok = await this.tierChangeModal.show({
+      asset:   this.baseAsset(),
+      listing: l,
+      venue:   v,
     });
     if (ok) await this.loadEnabledVenues();
   }
@@ -90,17 +116,19 @@ export class DetailsPage implements OnInit {
   async removeVenue(v: DexAssetListingVenue) {
     const ok = await this.alertService.show(
       'Remove venue',
-      `Remove "${v.dexServiceName || v.dexService}" from ${this.tierLabel(v.tier as 1 | 2 | 3)}? Open ${this.tierLabel(v.tier as 1 | 2 | 3)} orders against this venue will continue, but no new orders will place.`,
+      `Remove "${v.dexServiceName || v.dexService}" from this listing? Open orders against this venue will continue, but no new orders will place.`,
       'Remove'
     );
     if (!ok) return;
     this.loadingService.show('Removing venue...');
     try {
-      const r = await this.apiService.vaultDexAssetListingVenueRemove(this.baseAsset(), v.tier, v.dexService);
+      const r = await this.apiService.vaultDexAssetListingVenueRemove(this.baseAsset(), v.dexService);
       if (r?.error) this.alertService.show('Error', r.error);
       await this.loadEnabledVenues();
     } finally { this.loadingService.hide(); }
   }
+
+  goVenue(address: string) { this.router.navigate(['/authorized/dex/venues/details/' + address]); }
 
   getStateClass(s: number): string {
     switch (Number(s)) {

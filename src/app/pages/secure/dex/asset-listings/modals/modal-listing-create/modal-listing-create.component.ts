@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, effect, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalListingCreateService } from './modal-listing-create.service';
@@ -25,7 +25,16 @@ export class ModalListingCreateComponent {
     global: [false],
   });
 
-  constructor() { this.loadAssets(); }
+  constructor() {
+    this.loadAssets();
+    // When opened with a preset asset, lock the dropdown to that value.
+    effect(() => {
+      const preset = this.modalService.presetAsset();
+      if (this.modalService.isVisible() && preset) {
+        this.form.patchValue({ baseAsset: preset });
+      }
+    });
+  }
 
   async loadAssets() {
     const data = await this.apiService.vaultGetAssets(0, 1000);

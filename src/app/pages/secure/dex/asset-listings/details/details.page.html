@@ -1,4 +1,4 @@
-<app-header title="Asset Listing Details"></app-header>
+<app-header title="DEX Asset Listing Details"></app-header>
 
 <div class="px-6 py-4 border-b bg-gray-200">
   <nav class="flex" aria-label="Breadcrumb">
@@ -51,145 +51,159 @@
                 </div>
                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Approvals are regulator-side</span>
               </div>
+              @if (upstreamBlockReason()) {
+                <div class="mb-3 px-3 py-2 rounded bg-red-50 border border-red-200 text-xs text-red-800">
+                  {{ upstreamBlockReason() }}
+                </div>
+              }
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Listed By (service)</p>
+                  <p class="text-sm font-medium text-gray-500">Listed By</p>
                   <p class="text-base text-gray-700">{{ l.listedByName || '—' }}</p>
                   <p class="text-xs text-gray-500 font-mono break-all">{{ l.listedBy }}</p>
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Asset Regulator</p>
-                  <p class="text-xs text-gray-700 font-mono break-all">{{ l.assetRegulator || '—' }}</p>
+                  <p class="text-base text-gray-700">{{ l.regulatorName || '—' }}</p>
+                  <p class="text-xs text-gray-500 font-mono break-all">{{ l.assetRegulator || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-base text-gray-700">{{ l.entityCountryName || '—' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Currency</p>
+                  <p class="text-base text-gray-700">{{ l.assetCurrencyName || (l.assetCurrencyCode ? l.assetCurrencyCode : '—') }}</p>
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Listed At</p>
                   <p class="text-base text-gray-700">{{ l.listedAt ? utils.formatDate(l.listedAt) : '—' }}</p>
                 </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Currency</p>
-                  <p class="text-base text-gray-700">{{ l.assetCurrencyName || '—' }}</p>
-                </div>
               </div>
 
-              <h3 class="text-base font-semibold text-gray-800 mt-8 mb-3">Tier Approval Status</h3>
-              <div class="space-y-3">
-                <div class="border rounded-lg p-3">
-                  <p class="text-sm font-medium text-gray-800">Tier 1 — Venue Scope</p>
-                  <div class="mt-1 flex items-center gap-2 text-xs">
-                    @if (l.venueApproved) { <span class="px-2 py-0.5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
-                    @else if (l.venuePending) { <span class="px-2 py-0.5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending regulator approval</span> }
-                    @else { <span class="text-gray-400">Not requested</span> }
+              <div class="mt-8 border-t pt-4">
+                <h3 class="text-base font-semibold text-gray-800 mb-3">Tiers</h3>
+                <p class="text-xs text-gray-500 mb-3">
+                  Approval scopes for this asset's listing. Trading at a tier additionally requires the venue to be tier-approved and the issuer to enable the venue for the asset.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div class="border border-gray-200 rounded-lg p-3">
+                    <p class="text-sm font-semibold text-gray-700">Tier 1 — Venue</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                          [class]="l.venueApproved ? 'bg-green-100 text-green-800' : (l.venuePending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
+                      {{ l.venueApproved ? 'Approved' : (l.venuePending ? 'Pending regulator approval' : 'Not requested') }}
+                    </span>
+                    <div class="mt-3">
+                      <button (click)="setTab('venues')"
+                        class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                        Manage venues
+                      </button>
+                    </div>
+                  </div>
+                  <div class="border border-gray-200 rounded-lg p-3">
+                    <p class="text-sm font-semibold text-gray-700">Tier 2 — Country</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                          [class]="l.countryApproved ? 'bg-green-100 text-green-800' : (l.countryPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
+                      {{ l.countryApproved ? 'Approved' : (l.countryPending ? 'Pending regulator approval' : 'Not requested') }}
+                    </span>
+                  </div>
+                  <div class="border border-gray-200 rounded-lg p-3">
+                    <p class="text-sm font-semibold text-gray-700">Tier 3 — Global</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                          [class]="l.globalApproved ? 'bg-green-100 text-green-800' : (l.globalPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
+                      {{ l.globalApproved ? 'Approved' : (l.globalPending ? 'Pending regulator approval' : 'Not requested') }}
+                    </span>
                   </div>
                 </div>
-                <div class="border rounded-lg p-3">
-                  <p class="text-sm font-medium text-gray-800">Tier 2 — Country Scope</p>
-                  <div class="mt-1 flex items-center gap-2 text-xs">
-                    @if (l.countryApproved) { <span class="px-2 py-0.5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
-                    @else if (l.countryPending) { <span class="px-2 py-0.5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending regulator approval</span> }
-                    @else { <span class="text-gray-400">Not requested</span> }
-                  </div>
-                </div>
-                <div class="border rounded-lg p-3">
-                  <p class="text-sm font-medium text-gray-800">Tier 3 — Global Scope</p>
-                  <div class="mt-1 flex items-center gap-2 text-xs">
-                    @if (l.globalApproved) { <span class="px-2 py-0.5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
-                    @else if (l.globalPending) { <span class="px-2 py-0.5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending regulator approval</span> }
-                    @else { <span class="text-gray-400">Not requested</span> }
-                  </div>
-                </div>
+                <p class="text-xs text-gray-500 mt-3">
+                  Trading at scope <em>S</em> requires (1) the listing approved at tier S, (2) the venue approved at tier S, and (3) the issuer enabled the venue on this listing at a tier ≥ S. Use the Venues tab to manage that third gate.
+                </p>
               </div>
-
-              <p class="text-xs text-gray-500 mt-6">
-                After approval, choose which venues this asset trades on (per tier) from the
-                <button class="text-blue-700 hover:underline" (click)="setTab('venues')">Venues tab</button>.
-              </p>
             </div>
           </div>
         }
 
         @if (activeTab() === 'venues') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
-            <div class="p-4">
+          <div class="p-2">
 
-              <!-- Tier sub-selector -->
-              <div class="flex flex-wrap items-center gap-2 mb-4">
-                @for (t of [1, 2, 3]; track t) {
-                  <button (click)="setTier($any(t))"
-                    class="text-xs px-3 py-1.5 rounded transition-colors"
-                    [class]="selectedTier() === t
-                      ? 'bg-[#202a3b] text-white'
-                      : 'border border-gray-300 text-gray-600 hover:bg-gray-100'">
-                    {{ tierLabel($any(t)) }}
-                  </button>
-                }
-                <button (click)="openAdd()"
-                  class="ml-auto text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                  Add venue
+            <!-- Add-venue picker: a venue is added at an initial tier; you can change it afterwards. -->
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <span class="text-xs text-gray-500 mr-2">Initial tier when adding a venue:</span>
+              @for (t of [1, 2, 3]; track t) {
+                <button (click)="setAddInitialTier($any(t))"
+                  class="text-xs px-3 py-1.5 rounded transition-colors"
+                  [class]="addInitialTier() === t
+                    ? 'bg-[#202a3b] text-white'
+                    : 'border border-gray-300 text-gray-600 hover:bg-gray-100'">
+                  {{ tierLabel($any(t)) }}
                 </button>
-              </div>
-
-              <p class="text-xs text-gray-500 mb-3">{{ tierHint(selectedTier()) }}</p>
-
-              @if (!tierApprovedOnAsset(selectedTier())) {
-                <div class="mb-3 px-3 py-2 rounded bg-yellow-50 border border-yellow-200 text-xs text-yellow-800">
-                  @if (tierPendingOnAsset(selectedTier())) {
-                    The regulator has not yet approved this tier on the asset listing. You can pre-stage venues here, but orders will not place until approval is granted.
-                  } @else {
-                    This tier is not requested on the asset listing. Orders will not place at this scope until the issuer requests it and the regulator approves.
-                  }
-                </div>
               }
-
-              <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                <div class="overflow-x-auto rounded-lg">
-                  <table class="w-full text-sm text-left text-gray-700">
-                    <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
-                      <tr>
-                        <th class="px-6 py-2">#</th>
-                        <th class="px-6 py-2">Venue</th>
-                        <th class="px-6 py-2">Entity</th>
-                        <th class="px-6 py-2">Country</th>
-                        <th class="px-6 py-2">Address</th>
-                        <th class="px-6 py-2">Venue State</th>
-                        <th class="px-6 py-2 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody class="text-xs">
-                      @if (venuesForTier().length === 0) {
-                        <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">No venues enabled for {{ tierLabel(selectedTier()) }} yet.</td></tr>
-                      } @else {
-                        @for (v of venuesForTier(); track v.dexService; let i = $index; let isEven = $even) {
-                          <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                            <td class="px-6 py-2">{{ i + 1 }}</td>
-                            <td class="px-6 py-2">{{ v.dexServiceName || '—' }}</td>
-                            <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
-                            <td class="px-6 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
-                            <td class="px-6 py-2 font-mono break-all">{{ v.dexService }}</td>
-                            <td class="px-6 py-2">
-                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.venueState)">
-                                {{ v.venueSuspended ? 'Suspended' : (v.venueState === 2 ? 'Active' : v.venueState === 3 ? 'Paused' : v.venueState === 4 ? 'Deregistered' : 'Registered') }}
-                              </span>
-                            </td>
-                            <td class="px-6 py-2 text-right">
-                              <button (click)="removeVenue(v)"
-                                class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
-                                Remove
-                              </button>
-                            </td>
-                          </tr>
-                        }
-                      }
-                    </tbody>
-                  </table>
-                </div>
-                <div class="flex items-center px-4 py-2 border-t">
-                  <p class="text-xs font-medium text-gray-800">Showing {{ venuesForTier().length }} of Total {{ enabledVenues().length }} Records</p>
-                </div>
-              </div>
-
+              <button (click)="openAdd()"
+                class="ml-auto text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Add venue
+              </button>
             </div>
+
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm text-left text-gray-700">
+                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                    <tr>
+                      <th class="px-6 py-2">#</th>
+                      <th class="px-6 py-2">Venue</th>
+                      <th class="px-6 py-2">Entity</th>
+                      <th class="px-6 py-2">Country</th>
+                      <th class="px-6 py-2">Address</th>
+                      <th class="px-6 py-2">Tier</th>
+                      <th class="px-6 py-2">Venue State</th>
+                      <th class="px-6 py-2 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    @if (enabledVenues().length === 0) {
+                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="8">No venues enabled on this listing yet.</td></tr>
+                    } @else {
+                      @for (v of enabledVenues(); track v.dexService; let i = $index; let isEven = $even) {
+                        <tr class="border-b transition-colors"
+                            [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                          <td class="px-6 py-2">{{ i + 1 }}</td>
+                          <td class="px-6 py-2">{{ v.dexServiceName || '—' }}</td>
+                          <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
+                          <td class="px-6 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
+                          <td class="px-6 py-2 font-mono break-all">{{ v.dexService }}</td>
+                          <td class="px-6 py-2">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="tierBadgeClass(v.tier)">
+                              {{ tierLabel(v.tier) }}
+                            </span>
+                          </td>
+                          <td class="px-6 py-2">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.venueState)">
+                              {{ v.venueSuspended ? 'Suspended' : (v.venueState === 2 ? 'Active' : v.venueState === 3 ? 'Paused' : v.venueState === 4 ? 'Deregistered' : 'Registered') }}
+                            </span>
+                          </td>
+                          <td class="px-6 py-2 text-right whitespace-nowrap">
+                            <button (click)="openTierChange(v)"
+                              class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">
+                              Change tier
+                            </button>
+                            <button (click)="removeVenue(v)"
+                              class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex items-center px-4 py-2 border-t">
+                <p class="text-xs font-medium text-gray-800">Showing {{ enabledVenues().length }} of Total {{ enabledVenues().length }} Records</p>
+              </div>
+            </div>
+
           </div>
         }
 
@@ -199,3 +213,4 @@
 </main>
 
 <app-modal-listing-venue-add />
+<app-modal-listing-venue-tier-change />

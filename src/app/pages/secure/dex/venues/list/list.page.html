@@ -52,6 +52,9 @@
           <tr>
             <th scope="col" class="px-6 py-2">#</th>
             <th scope="col" class="px-6 py-2">Service</th>
+            <th scope="col" class="px-6 py-2">Entity</th>
+            <th scope="col" class="px-6 py-2">Country</th>
+            <th scope="col" class="px-6 py-2">Tiers</th>
             <th scope="col" class="px-6 py-2">State</th>
             <th scope="col" class="px-6 py-2">Suspended</th>
             <th scope="col" class="px-6 py-2">Registered</th>
@@ -60,7 +63,7 @@
         <tbody class="text-xs">
           @if (filteredVenues().length == 0) {
             <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="5">no data</td>
+              <td class="px-6 py-2" colspan="8">no data</td>
             </tr>
           } @else {
             @for (v of filteredVenues(); track v.serviceAddress; let i = $index; let isEven = $even) {
@@ -69,6 +72,30 @@
                   (click)="viewDetails(v)">
                 <td class="px-6 py-2">{{ i + 1 }}</td>
                 <td class="px-6 py-2">{{ v.serviceName || (v.serviceAddress.slice(0,10) + '…') }}</td>
+                <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
+                <td class="px-6 py-2">{{ v.countryName || '—' }}</td>
+                <td class="px-6 py-2">
+                  <div class="flex flex-wrap gap-1">
+                    @if (v.tier1Approved || v.tier1Pending) {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                        [class]="v.tier1Approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                        [title]="v.tier1Approved ? 'Tier 1 — Approved' : 'Tier 1 — Pending'">T1</span>
+                    }
+                    @if (v.tier2Approved || v.tier2Pending) {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                        [class]="v.tier2Approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                        [title]="v.tier2Approved ? 'Tier 2 — Approved' : 'Tier 2 — Pending'">T2</span>
+                    }
+                    @if (v.tier3Approved || v.tier3Pending) {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                        [class]="v.tier3Approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                        [title]="v.tier3Approved ? 'Tier 3 — Approved' : 'Tier 3 — Pending'">T3</span>
+                    }
+                    @if (!v.tier1Approved && !v.tier1Pending && !v.tier2Approved && !v.tier2Pending && !v.tier3Approved && !v.tier3Pending) {
+                      <span class="text-gray-400">—</span>
+                    }
+                  </div>
+                </td>
                 <td class="px-6 py-2">
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ stateName(v.state) }}</span>
                 </td>

@@ -36,6 +36,10 @@ export class DetailsPage implements OnInit, OnDestroy {
   // address (lower-cased) → resolved { name, partyType } from Directory Registry
   directory = signal<Record<string, { name: string; partyType: number }>>({});
 
+  // bytes32 createdByUserId hex → resolved local user (null when not in this
+  // entity's user table — typical for cross-tenant attribution hashes).
+  userByHash = signal<Record<string, { id: number; name: string } | null>>({});
+
   composeText   = signal('');
   broadcastText = signal('');
 
@@ -83,13 +87,25 @@ export class DetailsPage implements OnInit, OnDestroy {
     if (threadResp?.thread) {
       this.thread.set(threadResp.thread);
       this.resolveDirectory(threadResp.thread);
+      this.resolveUserAttribution([threadResp.thread.createdByUserId].filter(Boolean) as string[]);
     }
     const msgsResp = await this.apiService.connectMessagesList(this.threadId, 1, 200);
     if (msgsResp?.messages) {
       this.messages.set(msgsResp.messages);
       this.resolveMessageTexts(msgsResp.messages);
       this.resolveMessageSenders(msgsResp.messages);
+      this.resolveUserAttribution(msgsResp.messages.map((m: ConnectMessage) => m.createdByUserId).filter(Boolean) as string[]);
     }
+  }
+
+  private async resolveUserAttribution(hashes: string[]) {
+    const cache = { ...this.userByHash() };
+    const toFetch = Array.from(new Set(hashes)).filter(h => !(h in cache));
+    if (toFetch.length === 0) return;
+    await Promise.all(toFetch.map(async h => {
+      cache[h] = await this.apiService.userByCreatedByHash(h);
+    }));
+    this.userByHash.set(cache);
   }
 
   private async resolveMessageSenders(msgs: ConnectMessage[]) {
@@ -113,9 +129,9 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   senderLabel(m: ConnectMessage): string {
     if (this.isMine(m)) return 'me';
-    const name = this.nameFor(m.sender);
-    if (name) return name;
-    return (m.sender || '').slice(0, 8) + '…';
+    const partyName = this.nameFor(m.sender) || ((m.sender || '').slice(0, 8) + '…');
+    const user = m.createdByUserId ? this.userByHash()[m.createdByUserId] : null;
+    return user ? `${user.name} (${partyName})` : partyName;
   }
 
   private async resolveDirectory(t: ConnectThread) {

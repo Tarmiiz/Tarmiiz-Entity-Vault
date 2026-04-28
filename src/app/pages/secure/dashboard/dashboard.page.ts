@@ -40,8 +40,8 @@ interface CurrencySummary {
   netFlow30d: number;
 }
 
-interface DailyActivityPoint {
-  day: string;
+interface ActivityPoint {
+  label: string;
   subscribeTokens: number; redeemTokens: number;
   subscribeValue: number;  redeemValue: number;
 }
@@ -63,11 +63,35 @@ interface DashboardSummary {
   kpis: DashboardKpis;
   currencies: CurrencySummary[];
   charts: {
-    dailyActivityByCurrency: Record<string, DailyActivityPoint[]>;
     aumByAssetByCurrency: Record<string, AumByAsset[]>;
   };
   topAssets: TopAsset[];
 }
+
+interface ActivityResponse {
+  interval: string;
+  intervalSeconds: number;
+  bucketCount: number;
+  dataByCurrency: Record<string, ActivityPoint[]>;
+}
+
+const ACTIVITY_INTERVALS: { value: string; label: string }[] = [
+  { value: '1m',  label: '1 min'    },
+  { value: '5m',  label: '5 min'    },
+  { value: '15m', label: '15 min'   },
+  { value: '30m', label: '30 min'   },
+  { value: '1h',  label: '1 hour'   },
+  { value: '3h',  label: '3 hours'  },
+  { value: '6h',  label: '6 hours'  },
+  { value: '12h', label: '12 hours' },
+  { value: '1d',  label: '1 day'    },
+  { value: '3d',  label: '3 days'   },
+  { value: '7d',  label: '7 days'   },
+  { value: '15d', label: '15 days'  },
+  { value: '30d', label: '30 days'  },
+  { value: '60d', label: '60 days'  },
+  { value: '90d', label: '90 days'  },
+];
 
 @Component({
   selector: 'app-dashboard',
@@ -137,15 +161,24 @@ export class DashboardPage implements OnInit {
     return this.currencies().find(c => c.code === code)?.name ?? code ?? '';
   });
   topAssets       = computed(() => this.dashboardSummary()?.topAssets ?? []);
-  dailyActivity   = computed(() => {
-    const code = this.selectedCurrency();
-    if (!code) return [] as DailyActivityPoint[];
-    return this.dashboardSummary()?.charts.dailyActivityByCurrency[code] ?? [];
-  });
   aumByAsset      = computed(() => {
     const code = this.selectedCurrency();
     if (!code) return [] as AumByAsset[];
     return this.dashboardSummary()?.charts.aumByAssetByCurrency[code] ?? [];
+  });
+
+  intervalOptions = ACTIVITY_INTERVALS;
+  activityInterval = signal<string>('1d');
+  activityData     = signal<Record<string, ActivityPoint[]>>({});
+  activityLoading  = signal(false);
+  activityPoints   = computed(() => {
+    const code = this.selectedCurrency();
+    if (!code) return [] as ActivityPoint[];
+    return this.activityData()[code] ?? [];
+  });
+  activeIntervalLabel = computed(() => {
+    const v = this.activityInterval();
+    return ACTIVITY_INTERVALS.find(i => i.value === v)?.label ?? v;
   });
 
   private _socketSub: RxSubscription | null = null;
@@ -328,11 +361,28 @@ export class DashboardPage implements OnInit {
       }
     }
     this.summaryLoading.set(false);
+    await this.loadActivity();
     setTimeout(() => this.renderAllCharts(), 50);
+  }
+
+  async loadActivity() {
+    this.activityLoading.set(true);
+    try {
+      const result = await this.apiService.vaultGetDashboardActivity(this.activityInterval(), 30) as ActivityResponse | null;
+      this.activityData.set(result?.dataByCurrency ?? {});
+    } finally {
+      this.activityLoading.set(false);
+    }
   }
 
   setCurrency(code: string) {
     this.selectedCurrency.set(code);
+    setTimeout(() => this.renderAllCharts(), 50);
+  }
+
+  async setInterval(value: string) {
+    this.activityInterval.set(value);
+    await this.loadActivity();
     setTimeout(() => this.renderAllCharts(), 50);
   }
 
@@ -346,18 +396,18 @@ export class DashboardPage implements OnInit {
   private renderActivityChart(Chart: any) {
     if (!this.activityChartRef?.nativeElement) return;
     this.activityChartInstance?.destroy();
-    const data = this.dailyActivity();
+    const data = this.activityPoints();
     const currency = this.selectedCurrency() ?? '';
     const valueAxisLabel = currency ? `Value (${currency})` : 'Value';
     this.activityChartInstance = new Chart(this.activityChartRef.nativeElement, {
       type: 'line',
       data: {
-        labels: data.map((d: DailyActivityPoint) => d.day),
+        labels: data.map((d: ActivityPoint) => d.label),
         datasets: [
-          { label: 'Subscribe (tokens)', data: data.map((d: DailyActivityPoint) => d.subscribeTokens), borderColor: 'rgba(52,211,153,1)',  backgroundColor: 'rgba(52,211,153,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
-          { label: `Subscribe (${currency || 'value'})`, data: data.map((d: DailyActivityPoint) => d.subscribeValue), borderColor: 'rgba(5,150,105,1)',   backgroundColor: 'rgba(5,150,105,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
-          { label: 'Redeem (tokens)',    data: data.map((d: DailyActivityPoint) => d.redeemTokens),    borderColor: 'rgba(252,165,165,1)', backgroundColor: 'rgba(252,165,165,0.15)',tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
-          { label: `Redeem (${currency || 'value'})`,    data: data.map((d: DailyActivityPoint) => d.redeemValue),    borderColor: 'rgba(185,28,28,1)',   backgroundColor: 'rgba(185,28,28,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
+          { label: 'Subscribe (tokens)', data: data.map((d: ActivityPoint) => d.subscribeTokens), borderColor: 'rgba(52,211,153,1)',  backgroundColor: 'rgba(52,211,153,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
+          { label: `Subscribe (${currency || 'value'})`, data: data.map((d: ActivityPoint) => d.subscribeValue), borderColor: 'rgba(5,150,105,1)',   backgroundColor: 'rgba(5,150,105,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
+          { label: 'Redeem (tokens)',    data: data.map((d: ActivityPoint) => d.redeemTokens),    borderColor: 'rgba(252,165,165,1)', backgroundColor: 'rgba(252,165,165,0.15)',tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
+          { label: `Redeem (${currency || 'value'})`,    data: data.map((d: ActivityPoint) => d.redeemValue),    borderColor: 'rgba(185,28,28,1)',   backgroundColor: 'rgba(185,28,28,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
         ],
       },
       options: {

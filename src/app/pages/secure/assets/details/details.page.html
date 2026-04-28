@@ -93,6 +93,15 @@
         >
           Documents
         </button>
+        <button (click)="setTab('dex')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'dex'"
+          [class.border-b-2]="activeTab() === 'dex'"
+          [class.border-blue-600]="activeTab() === 'dex'"
+          [class.bg-blue-600]="activeTab() === 'dex'"
+        >
+          DEX
+        </button>
       </div>
     </div>
 
@@ -733,6 +742,107 @@
           </div>
         }
 
+        <!-- DEX tab -->
+        @if (activeTab() === 'dex') {
+          <div class="p-4">
+            @if (!dexListingLoaded()) {
+              <p class="text-sm text-gray-500">Loading DEX listing…</p>
+            } @else if (!dexListing()) {
+              <!-- Empty state — issuer hasn't listed this asset yet. -->
+              <div class="bg-white border border-gray-200 rounded-lg p-6 text-center max-w-2xl mx-auto">
+                <h3 class="text-base font-semibold text-gray-800 mb-2">This asset is not listed on the DEX</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                  Listing makes the asset eligible to trade. After you submit, the asset's regulator must approve each requested tier before orders can place at that scope.
+                </p>
+                <button (click)="openDexListingCreate()"
+                  [disabled]="!entityActive"
+                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  List asset on DEX
+                </button>
+              </div>
+            } @else {
+              <!-- Listed — summary + venues + manage link. -->
+              @if (dexListing(); as l) {
+                @if (dexUpstreamBlockReason()) {
+                  <div class="mb-3 px-3 py-2 rounded bg-red-50 border border-red-200 text-xs text-red-800">
+                    {{ dexUpstreamBlockReason() }}
+                  </div>
+                }
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  <div class="border border-gray-200 rounded-lg p-3">
+                    <p class="text-sm font-semibold text-gray-700">Tier 1 — Venue</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                          [class]="l.venueApproved ? 'bg-green-100 text-green-800' : (l.venuePending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
+                      {{ l.venueApproved ? 'Approved' : (l.venuePending ? 'Pending regulator approval' : 'Not requested') }}
+                    </span>
+                  </div>
+                  <div class="border border-gray-200 rounded-lg p-3">
+                    <p class="text-sm font-semibold text-gray-700">Tier 2 — Country</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                          [class]="l.countryApproved ? 'bg-green-100 text-green-800' : (l.countryPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
+                      {{ l.countryApproved ? 'Approved' : (l.countryPending ? 'Pending regulator approval' : 'Not requested') }}
+                    </span>
+                  </div>
+                  <div class="border border-gray-200 rounded-lg p-3">
+                    <p class="text-sm font-semibold text-gray-700">Tier 3 — Global</p>
+                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                          [class]="l.globalApproved ? 'bg-green-100 text-green-800' : (l.globalPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
+                      {{ l.globalApproved ? 'Approved' : (l.globalPending ? 'Pending regulator approval' : 'Not requested') }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-base font-semibold text-gray-800">Enabled Venues</h3>
+                  <button (click)="goDexListing()"
+                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                    Manage on DEX
+                  </button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                  <div class="overflow-x-auto rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-700">
+                      <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                        <tr>
+                          <th class="px-6 py-2">#</th>
+                          <th class="px-6 py-2">Venue</th>
+                          <th class="px-6 py-2">Entity</th>
+                          <th class="px-6 py-2">Country</th>
+                          <th class="px-6 py-2">Tier</th>
+                          <th class="px-6 py-2">Address</th>
+                        </tr>
+                      </thead>
+                      <tbody class="text-xs">
+                        @if (dexListingVenues().length === 0) {
+                          <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="6">No venues enabled yet. Use "Manage on DEX" to add some.</td></tr>
+                        } @else {
+                          @for (v of dexListingVenues(); track v.dexService; let i = $index; let isEven = $even) {
+                            <tr class="border-b transition-colors"
+                                [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                              <td class="px-6 py-2">{{ i + 1 }}</td>
+                              <td class="px-6 py-2">{{ v.dexServiceName || '—' }}</td>
+                              <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
+                              <td class="px-6 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
+                              <td class="px-6 py-2">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="dexTierBadgeClass(v.tier)">{{ dexTierLabel(v.tier) }}</span>
+                              </td>
+                              <td class="px-6 py-2 font-mono break-all">{{ v.dexService }}</td>
+                            </tr>
+                          }
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="flex items-center px-4 py-2 border-t">
+                    <p class="text-xs font-medium text-gray-800">Showing {{ dexListingVenues().length }} of Total {{ dexListingVenues().length }} Records</p>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+
       }
       @else {
         <div class="text-center py-12 text-gray-500">
@@ -749,4 +859,5 @@
 <app-modal-asset-state></app-modal-asset-state>
 <app-modal-asset-add-service></app-modal-asset-add-service>
 <app-modal-asset-service-state></app-modal-asset-service-state>
+<app-modal-listing-create></app-modal-listing-create>
 <app-modal-transaction-info></app-modal-transaction-info>

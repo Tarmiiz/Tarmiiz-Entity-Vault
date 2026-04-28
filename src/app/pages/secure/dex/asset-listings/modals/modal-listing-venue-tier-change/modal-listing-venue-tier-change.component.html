@@ -1,0 +1,60 @@
+@if (modalService.isVisible() && modalService.input(); as inp) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="cancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
+
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Change venue tier</h3>
+        <p class="text-xs text-gray-400 mt-1">Pick the new tier for this venue on this listing. Forbidden tiers are disabled with the reason.</p>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p class="text-xs font-medium text-gray-500">Venue</p>
+          <p class="text-sm text-gray-800">{{ inp.venue.dexServiceName || '—' }}</p>
+          <p class="text-xs font-mono text-gray-500 break-all">{{ inp.venue.dexService }}</p>
+          <p class="text-xs text-gray-500 mt-2">Currently at <span class="font-semibold">Tier {{ inp.venue.tier }}</span></p>
+        </div>
+
+        <div class="space-y-2">
+          @for (opt of options(); track opt.tier) {
+            <button
+              (click)="pick(opt.tier, opt.enabled)"
+              [disabled]="!opt.enabled"
+              class="w-full text-left border rounded-lg px-3 py-2 transition-colors"
+              [class.bg-indigo-50]="selectedTier() === opt.tier"
+              [class.border-indigo-400]="selectedTier() === opt.tier"
+              [class.border-gray-200]="selectedTier() !== opt.tier"
+              [class.opacity-50]="!opt.enabled"
+              [class.cursor-not-allowed]="!opt.enabled">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-gray-800">{{ opt.label }}</span>
+                @if (!opt.enabled) {
+                  <span class="text-xs text-gray-500">disabled</span>
+                } @else if (selectedTier() === opt.tier) {
+                  <span class="text-xs text-indigo-600 font-semibold">selected</span>
+                }
+              </div>
+              @if (opt.reason) {
+                <p class="text-xs text-gray-500 mt-1">{{ opt.reason }}</p>
+              }
+            </button>
+          }
+        </div>
+
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="cancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Cancel
+        </button>
+        <button type="button" (click)="submit()" [disabled]="!selectedTier()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          Change tier
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

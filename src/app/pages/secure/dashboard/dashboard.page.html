@@ -117,30 +117,41 @@
       <!-- Chart Row 1: Activity chart (full width) — bars for tokens, lines for value -->
       <div class="mb-6 badges">
         <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4">
-          <div class="flex items-center justify-between gap-3 mb-3">
+          <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
             <h3 class="text-sm font-semibold text-gray-700">
-              Transaction Activity — Last 30 Days
+              Transaction Activity — Last 30 × {{ activeIntervalLabel() }}
               @if (selectedCurrency()) { <span class="text-gray-400 font-normal">({{ selectedCurrency() }})</span> }
             </h3>
-            @if (hasMultipleCurrencies()) {
+            <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
-                <label class="text-xs font-medium text-gray-500">Currency</label>
-                <select [ngModel]="selectedCurrency()" (ngModelChange)="setCurrency($event)"
-                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-20"
-                  [title]="selectedCurrencyName()">
-                  @for (c of currencies(); track c.code) {
-                    <option [value]="c.code" [title]="c.name">{{ c.code }}</option>
+                <label class="text-xs font-medium text-gray-500">Interval</label>
+                <select [ngModel]="activityInterval()" (ngModelChange)="setInterval($event)"
+                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
+                  @for (i of intervalOptions; track i.value) {
+                    <option [value]="i.value">{{ i.label }}</option>
                   }
                 </select>
               </div>
-            }
+              @if (hasMultipleCurrencies()) {
+                <div class="flex items-center gap-2">
+                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <select [ngModel]="selectedCurrency()" (ngModelChange)="setCurrency($event)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-20"
+                    [title]="selectedCurrencyName()">
+                    @for (c of currencies(); track c.code) {
+                      <option [value]="c.code" [title]="c.name">{{ c.code }}</option>
+                    }
+                  </select>
+                </div>
+              }
+            </div>
           </div>
           <div class="relative h-72" style="position:relative">
-            @if (summaryLoading()) {
+            @if (summaryLoading() || activityLoading()) {
               <div class="h-full bg-gray-100 rounded animate-pulse flex items-center justify-center">
                 <p class="text-gray-400 text-sm">Loading chart…</p>
               </div>
-            } @else if (dailyActivity().length === 0) {
+            } @else if (activityPoints().length === 0) {
               <div class="h-full flex items-center justify-center">
                 <p class="text-gray-400 text-sm">No transactions yet</p>
               </div>

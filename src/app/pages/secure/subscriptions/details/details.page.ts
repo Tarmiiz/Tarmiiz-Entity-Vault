@@ -693,6 +693,7 @@ export class DetailsPage implements OnInit {
       trxStateName: this.creditTrxStateNames[raw.trxState] ?? String(raw.trxState),
       startTime: raw.startTime ?? 0,
       updateTime: raw.updateTime ?? 0,
+      assetTrxId: Number(raw.assetTrxId ?? 0),
     } as CreditTransaction;
   }
 

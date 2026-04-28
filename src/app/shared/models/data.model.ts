@@ -436,7 +436,8 @@ export class CreditTransaction {
     public trxState: number,
     public trxStateName: string,
     public startTime: number,
-    public updateTime: number
+    public updateTime: number,
+    public assetTrxId: number = 0
   ) {}
 }
 
@@ -468,7 +469,8 @@ export class ConnectThread {
     public participantCount: number,
     public participants: ConnectParticipant[] = [],
     public subscriptions: string[] = [],
-    public unreadCount: number = 0
+    public unreadCount: number = 0,
+    public createdByUserId: string | null = null
   ) {}
 }
 
@@ -482,7 +484,8 @@ export class ConnectMessage {
     public contentType: number,
     public state: number,
     public sentAt: number,
-    public readAt: number | null
+    public readAt: number | null,
+    public createdByUserId: string | null = null
   ) {}
 }
 
@@ -587,6 +590,7 @@ export class DexAssetListingVenue {
     public tier2Approved: boolean,
     public tier3Approved: boolean,
     public addedAt: number,
+    public updatedAt: number = 0,
   ) {}
 }
 
@@ -596,11 +600,14 @@ export class DexAssetListing {
     public assetName: string,
     public assetSymbol: string,
     public assetRegulator: string,
+    public regulatorName: string,
     public assetCurrencyCode: number,
     public assetCurrencyName: string,
     public listedBy: string,
     public listedByName: string,
     public listedByEntity: string,
+    public entityCountryCode: number | null,
+    public entityCountryName: string,
     public venuePending: boolean,
     public countryPending: boolean,
     public globalPending: boolean,
@@ -609,6 +616,7 @@ export class DexAssetListing {
     public globalApproved: boolean,
     public listedAt: number,
     public updatedAt: number,
+    public upstream: { issuerEntityState: number; assetTradable: boolean; syncedAt: number } = { issuerEntityState: 0, assetTradable: false, syncedAt: 0 },
   ) {}
 }
 

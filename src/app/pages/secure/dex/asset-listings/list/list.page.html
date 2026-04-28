@@ -41,16 +41,17 @@
           <tr>
             <th scope="col" class="px-6 py-2">#</th>
             <th scope="col" class="px-6 py-2">Asset</th>
-            <th scope="col" class="px-6 py-2">Tier 1 (Venue)</th>
-            <th scope="col" class="px-6 py-2">Tier 2 (Country)</th>
-            <th scope="col" class="px-6 py-2">Tier 3 (Global)</th>
+            <th scope="col" class="px-6 py-2">Symbol</th>
+            <th scope="col" class="px-6 py-2">Currency</th>
+            <th scope="col" class="px-6 py-2">Country</th>
+            <th scope="col" class="px-6 py-2">Tiers</th>
             <th scope="col" class="px-6 py-2">Listed</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filteredListings().length == 0) {
             <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="6">no data</td>
+              <td class="px-6 py-2" colspan="7">no data</td>
             </tr>
           } @else {
             @for (l of filteredListings(); track l.baseAsset; let i = $index; let isEven = $even) {
@@ -58,24 +59,31 @@
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="viewDetails(l)">
                 <td class="px-6 py-2">{{ i + 1 }}</td>
+                <td class="px-6 py-2">{{ l.assetName || '—' }}</td>
+                <td class="px-6 py-2">@if (l.assetSymbol) { <span class="badge-symbol">{{ l.assetSymbol }}</span> } @else { — }</td>
+                <td class="px-6 py-2">@if (l.assetCurrencyName) { <span class="badge-currency">{{ l.assetCurrencyName }}</span> } @else { — }</td>
+                <td class="px-6 py-2">{{ l.entityCountryName || '—' }}</td>
                 <td class="px-6 py-2">
-                  <div>{{ l.assetName || '—' }}</div>
-                  @if (l.assetSymbol) { <div class="text-gray-500 text-[10px]">{{ l.assetSymbol }}</div> }
-                </td>
-                <td class="px-6 py-2">
-                  @if (l.venueApproved) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
-                  @else if (l.venuePending) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span> }
-                  @else { <span class="text-gray-400">—</span> }
-                </td>
-                <td class="px-6 py-2">
-                  @if (l.countryApproved) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
-                  @else if (l.countryPending) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span> }
-                  @else { <span class="text-gray-400">—</span> }
-                </td>
-                <td class="px-6 py-2">
-                  @if (l.globalApproved) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Approved</span> }
-                  @else if (l.globalPending) { <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span> }
-                  @else { <span class="text-gray-400">—</span> }
+                  <div class="flex flex-wrap gap-1">
+                    @if (l.venueApproved || l.venuePending) {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                        [class]="l.venueApproved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                        [title]="l.venueApproved ? 'Tier 1 — Approved' : 'Tier 1 — Pending'">T1</span>
+                    }
+                    @if (l.countryApproved || l.countryPending) {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                        [class]="l.countryApproved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                        [title]="l.countryApproved ? 'Tier 2 — Approved' : 'Tier 2 — Pending'">T2</span>
+                    }
+                    @if (l.globalApproved || l.globalPending) {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                        [class]="l.globalApproved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                        [title]="l.globalApproved ? 'Tier 3 — Approved' : 'Tier 3 — Pending'">T3</span>
+                    }
+                    @if (!l.venueApproved && !l.venuePending && !l.countryApproved && !l.countryPending && !l.globalApproved && !l.globalPending) {
+                      <span class="text-gray-400">—</span>
+                    }
+                  </div>
                 </td>
                 <td class="px-6 py-2">{{ l.listedAt ? utils.formatDate(l.listedAt) : '—' }}</td>
               </tr>

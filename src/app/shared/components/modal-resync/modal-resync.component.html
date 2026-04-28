@@ -1,0 +1,102 @@
+@if (resyncService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          Resync Blockchain Data
+        </h3>
+      </div>
+
+      <form [formGroup]="resyncForm" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4">
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide">Current Block</label>
+              <p class="mt-1 text-lg font-semibold text-gray-900">{{ resyncService.currentBlock() | number }}</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide">Last Synced Block</label>
+              <p class="mt-1 text-lg font-semibold text-gray-900">{{ resyncService.lastSyncedBlock() | number }}</p>
+            </div>
+          </div>
+
+          @if (resyncService.isSyncing()) {
+            <div class="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+              <span class="text-sm text-amber-700 font-medium">A sync is currently in progress</span>
+            </div>
+          }
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Sync Mode</label>
+            <div class="space-y-2">
+              <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" [class.border-indigo-500]="modeValue() === 'snapshot'" [class.bg-indigo-50]="modeValue() === 'snapshot'">
+                <input type="radio" formControlName="mode" value="snapshot" class="mt-0.5 text-indigo-600" />
+                <div>
+                  <span class="text-sm font-medium text-gray-900">Full Snapshot</span>
+                  <p class="text-xs text-gray-500 mt-0.5">Re-fetches all data directly from blockchain contracts. Fixes any DB state mismatches.</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" [class.border-indigo-500]="modeValue() === 'events'" [class.bg-indigo-50]="modeValue() === 'events'">
+                <input type="radio" formControlName="mode" value="events" class="mt-0.5 text-indigo-600" />
+                <div>
+                  <span class="text-sm font-medium text-gray-900">Event Replay</span>
+                  <p class="text-xs text-gray-500 mt-0.5">Replays blockchain events from a specific block. Catches missed state changes.</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" [class.border-indigo-500]="modeValue() === 'both'" [class.bg-indigo-50]="modeValue() === 'both'">
+                <input type="radio" formControlName="mode" value="both" class="mt-0.5 text-indigo-600" />
+                <div>
+                  <span class="text-sm font-medium text-gray-900">Full Snapshot + Event Replay</span>
+                  <p class="text-xs text-gray-500 mt-0.5">Runs a full snapshot first, then replays events. Most thorough but slowest.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          @if (showBlocksBack()) {
+            <div>
+              <label for="blocksBack" class="block text-sm font-medium text-gray-700">Blocks Back</label>
+              <input
+                id="blocksBack"
+                type="number"
+                formControlName="blocksBack"
+                min="1"
+                class="mt-1 block w-full pl-3 pr-3 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black"
+                placeholder="Number of blocks to go back"
+              />
+            </div>
+
+            <div class="p-3 bg-gray-50 rounded-lg">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide">Will replay events from block</label>
+              <p class="mt-1 text-lg font-semibold text-indigo-600">{{ targetBlock() | number }}</p>
+            </div>
+          }
+
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+          <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="!resyncForm.valid || resyncService.isSyncing()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Start Resync
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

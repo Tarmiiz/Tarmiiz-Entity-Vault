@@ -99,8 +99,8 @@
             <ion-label>Messages</ion-label>
           </ion-item>
 
-          <!-- exec/viewer only: DEX (collapsible) -->
-          @if(userInfo && userInfo.role != 1) {
+          <!-- exec/viewer only: DEX (collapsible) — gated by API feature flag -->
+          @if(userInfo && userInfo.role != 1 && features.loaded() && features.dex()) {
             <ion-item button (click)="toggleDex()">
               <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"/>
@@ -206,5 +206,6 @@
   <div id="main-content" class="ion-page">
     <ion-router-outlet></ion-router-outlet>
     <app-modal-new-thread></app-modal-new-thread>
+    <app-modal-resync></app-modal-resync>
   </div>
 </ion-split-pane>

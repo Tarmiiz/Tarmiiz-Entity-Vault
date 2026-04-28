@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 import { SocketService } from '../../services/socket.service';
 import { AlertService } from '../alerts/alert/alert.service';
+import { ModalResyncService } from '../modal-resync/modal-resync.service';
 import { MenuController } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 
@@ -25,8 +26,10 @@ export class HeaderComponent  implements OnInit, OnDestroy {
   private socketService = inject(SocketService);
   private router = inject(Router);
   private vaultSub?: Subscription;
+  private resyncService = inject(ModalResyncService);
 
   unreadCount = signal(0);
+  syncing = signal(false);
 
   get userInfo() {
     return this.authService.userInfo;
@@ -58,9 +61,33 @@ export class HeaderComponent  implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.vaultSub = this.socketService.vaultUpdated$.subscribe((payload: any) => {
+      if (this.syncing()) this.syncing.set(false);
       if (payload?.type === 'connect' || payload?.type === 'all') this.refreshUnread();
     });
     this.refreshUnread();
+  }
+
+  async openResyncModal() {
+    try {
+      const res: any = await this.apiService.vaultSyncStatus();
+      const currentBlock    = Number(res?.current_block ?? 0);
+      const lastSyncedBlock = Number(res?.last_synced_block ?? 0);
+      const isSyncing       = res?.is_syncing ?? false;
+
+      if (isSyncing) this.syncing.set(true);
+
+      const resyncResult = await this.resyncService.show(currentBlock, lastSyncedBlock, isSyncing);
+      if (resyncResult !== null) {
+        const result: any = await this.apiService.vaultSyncResync(resyncResult.fromBlock, resyncResult.mode);
+        if (result?.error || result?.type === 'error') {
+          await this.alertService.show('Resync Failed', result?.error || 'An error occurred');
+        } else {
+          this.syncing.set(true);
+        }
+      }
+    } catch (err: any) {
+      await this.alertService.show('Error', err?.message || 'Failed to fetch sync status');
+    }
   }
 
   ngOnDestroy() { this.vaultSub?.unsubscribe(); }

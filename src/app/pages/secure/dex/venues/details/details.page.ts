@@ -34,9 +34,10 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   serviceAddress = signal<string>('');
   venue = signal<DexVenue | undefined>(undefined);
-  activeTab = signal<'info' | 'orders' | 'trades'>('info');
+  activeTab = signal<'info' | 'assets' | 'orders' | 'trades'>('info');
   venueOrders = signal<DexOrder[]>([]);
   venueTrades = signal<DexTrade[]>([]);
+  venueAssets = signal<any[]>([]);
 
   private sub?: Subscription;
 
@@ -49,10 +50,12 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   async ionViewWillEnter() {
     await this.loadVenue();
-    await Promise.all([this.loadOrders(), this.loadTrades()]);
+    await Promise.all([this.loadOrders(), this.loadTrades(), this.loadAssets()]);
     this.sub = this.socket.vaultUpdated$.subscribe(p => {
+      if (p.type === 'dex-venue') this.loadVenue();
       if (p.type === 'dex-order') this.loadOrders();
       if (p.type === 'dex-trade') this.loadTrades();
+      if (p.type === 'dex-asset-venue') this.loadAssets();
     });
   }
 
@@ -75,7 +78,17 @@ export class DetailsPage implements OnInit, OnDestroy {
     if (r?.trades) this.venueTrades.set(r.trades);
   }
 
-  setTab(tab: 'info' | 'orders' | 'trades') { this.activeTab.set(tab); }
+  async loadAssets() {
+    const r = await this.apiService.vaultDexVenueAssets(this.serviceAddress());
+    this.venueAssets.set(r?.assets || []);
+  }
+
+  setTab(tab: 'info' | 'assets' | 'orders' | 'trades') { this.activeTab.set(tab); }
+
+  tierLabelShort(tier: number): string {
+    return tier === 1 ? 'Tier 1 — Venue' : tier === 2 ? 'Tier 2 — Country' : tier === 3 ? 'Tier 3 — Global' : '—';
+  }
+  goAsset(baseAsset: string) { this.router.navigate(['/authorized/dex/asset-listings/details/' + baseAsset]); }
 
   fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { maximumFractionDigits: 6 }); } catch { return '0'; } }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }

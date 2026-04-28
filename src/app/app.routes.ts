@@ -1,6 +1,20 @@
-import { Routes } from '@angular/router';
+import { CanActivateFn, Router, Routes } from '@angular/router';
+import { inject } from '@angular/core';
 import { AuthGuard } from './shared/guards/auth.guard';
 import { RoleGuard } from './shared/guards/role.guard';
+import { FeaturesService } from './shared/services/features.service';
+
+// Functional guard that hides /authorized/dex/... routes when DEX is disabled at the API.
+// Waits for the features service to load before deciding so a hard-refresh on a /authorized/dex/...
+// URL doesn't race the flag fetch.
+const dexFeatureGuard: CanActivateFn = async () => {
+  const features = inject(FeaturesService);
+  const router   = inject(Router);
+  if (!features.loaded()) await features.refresh();
+  if (features.dex()) return true;
+  router.navigate(['/authorized/dashboard']);
+  return false;
+};
 
 export const routes: Routes = [
   {
@@ -113,7 +127,7 @@ export const routes: Routes = [
       // dex
       {
         path: 'dex',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, dexFeatureGuard],
         data: { allowedRoles: [2, 3] },
         children: [
           {
