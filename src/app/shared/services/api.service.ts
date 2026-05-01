@@ -535,6 +535,11 @@ export class ApiService {
     return data ?? null;
   }
 
+  async vaultSetAssetServiceCanQuote(assetAddress: string, serviceAddress: string, allowed: boolean) {
+    const data = await this.vaultPut('/assets/' + assetAddress + '/services/' + serviceAddress + '/can-quote', { allowed });
+    return data ?? null;
+  }
+
   // ─── Vault — Service writes ───────────────────────────────────────────────────
 
   async vaultCreateService(body: Record<string, any>) {

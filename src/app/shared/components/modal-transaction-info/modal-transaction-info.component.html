@@ -70,6 +70,21 @@
                 {{ trx.from }}
               </p>
             </div>
+          } @else if (trx.trxType === 'Trade') {
+            <div class="border-t pt-3">
+              <p class="text-xs font-medium text-gray-500">Seller (Subscription)</p>
+              <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors font-mono text-xs break-all"
+                 (click)="navigate('/authorized/subscriptions/details/' + trx.from)">
+                {{ trx.from }}
+              </p>
+            </div>
+            <div class="border-t pt-3">
+              <p class="text-xs font-medium text-gray-500">Buyer (Subscription)</p>
+              <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors font-mono text-xs break-all"
+                 (click)="navigate('/authorized/subscriptions/details/' + trx.to)">
+                {{ trx.to }}
+              </p>
+            </div>
           } @else {
             <div class="border-t pt-3 col-span-2">
               <p class="text-xs font-medium text-gray-500">Sender</p>

@@ -38,6 +38,7 @@ export class ListPage implements OnInit {
 
   transactions = signal<AssetTransaction[]>([]);
   totalCount = signal<number>(0);
+  newTrxIds = signal<Set<number>>(new Set());
 
   page = signal(0);
   readonly trxPageSize = 20;
@@ -134,8 +135,8 @@ export class ListPage implements OnInit {
   async ngOnInit() {}
 
   async ionViewDidEnter() {
-    await this.load();
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.load());
+    await this.load(false);
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.load(true));
   }
 
   ionViewWillLeave() {
@@ -143,14 +144,23 @@ export class ListPage implements OnInit {
     this._socketSub = null;
   }
 
-  async load() {
-    this.loadingService.show('Loading transactions...');
+  async load(silent = false) {
+    if (!silent) this.loadingService.show('Loading transactions...');
     const result = await this.apiService.vaultGetTransactions(undefined, 0, 500);
     if (result) {
-      this.transactions.set(result.transactions.map((t: any) => this.mapVaultTransaction(t)));
+      const next = result.transactions.map((t: any) => this.mapVaultTransaction(t));
+      if (silent) {
+        const prevIds = new Set(this.transactions().map(t => t.trxId));
+        const added = next.filter((t: AssetTransaction) => !prevIds.has(t.trxId)).map((t: AssetTransaction) => t.trxId);
+        if (added.length) {
+          this.newTrxIds.set(new Set(added));
+          setTimeout(() => this.newTrxIds.set(new Set()), 2000);
+        }
+      }
+      this.transactions.set(next);
       this.totalCount.set(result.count);
     }
-    this.loadingService.hide();
+    if (!silent) this.loadingService.hide();
   }
 
   clearFilters() {
@@ -300,9 +310,22 @@ export class ListPage implements OnInit {
     switch (type) {
       case 'Subscribe': return 'bg-green-100 text-green-800';
       case 'Redeem':    return 'bg-red-100 text-red-800';
+      case 'Trade':     return 'bg-purple-100 text-purple-800';
       case 'Transfer':  return 'bg-blue-100 text-blue-800';
       default:          return 'bg-gray-100 text-gray-800';
     }
+  }
+
+  shortAddr(addr: string): string {
+    if (!addr || addr.length < 14) return addr || '';
+    return `${addr.slice(0, 8)}…${addr.slice(-6)}`;
+  }
+
+  trxParty(t: AssetTransaction): string {
+    if (t.trxType === 'Trade') {
+      return `${this.shortAddr(t.from)} → ${this.shortAddr(t.to)}`;
+    }
+    return this.shortAddr(t.subscription || '');
   }
 
   viewDetails(trx: AssetTransaction): void {

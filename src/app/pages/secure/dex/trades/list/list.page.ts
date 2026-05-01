@@ -80,8 +80,15 @@ export class ListPage implements OnInit, OnDestroy {
     this.filterVenue.set('');
   }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { maximumFractionDigits: 6 }); } catch { return '0'; } }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
+  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  fmtTotal(amount: string, priceWei: string) {
+    try {
+      const p = Number(ethers.formatEther(priceWei || '0'));
+      const a = Number(amount || '0');
+      return (a * p).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+    } catch { return '0.00'; }
+  }
 
   view(t: DexTrade) { this.router.navigate(['/authorized/dex/trades/details/' + t.tradeId]); }
 

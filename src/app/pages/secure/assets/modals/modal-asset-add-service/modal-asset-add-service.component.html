@@ -4,7 +4,7 @@
 
       <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Service</h3>
-        <p class="text-xs text-gray-400 mt-1">Find a service by name, or enter an address manually.</p>
+        <p class="text-xs text-gray-400 mt-1">Pick one of your services by name, or enter an address manually.</p>
       </div>
 
       <div class="p-6 overflow-y-auto flex flex-col gap-4">
@@ -16,7 +16,7 @@
               <input id="addServiceSearch" type="text"
                      [ngModel]="query()" (ngModelChange)="query.set($event)"
                      (keyup.enter)="search()"
-                     placeholder="Service name..."
+                     placeholder="Service name or address (leave blank to list all)..."
                      class="flex-1 pl-3 pr-3 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
               <button type="button" (click)="search()"
                       class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">
@@ -43,7 +43,7 @@
                   </div>
                 }
               </div>
-            } @else if (query().length >= 2) {
+            } @else if (query().length > 0) {
               <p class="text-xs text-gray-400 mt-2">No matches. Try a shorter term, or enter an address manually below.</p>
             }
           </div>

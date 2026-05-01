@@ -363,6 +363,7 @@ export class DetailsPage implements OnInit {
           serviceName: s.service_name ?? s.service,
           state: s.state ?? 0,
           stateName: s.state_name ?? this.serviceStateNames[s.state] ?? 'Unknown',
+          canQuote: !!(s.can_quote ?? s.canQuote ?? 0),
         }));
       }
       this.asset.set(asset);
@@ -382,8 +383,22 @@ export class DetailsPage implements OnInit {
     switch (trxType) {
       case 'Subscribe': return 'bg-green-100 text-green-800';
       case 'Redeem':    return 'bg-orange-100 text-orange-800';
+      case 'Trade':     return 'bg-purple-100 text-purple-800';
+      case 'Transfer':  return 'bg-blue-100 text-blue-800';
       default:          return 'bg-gray-100 text-gray-800';
     }
+  }
+
+  trxParty(trx: any): string {
+    if (trx.trxType === 'Trade') {
+      return `${this.shortAddr(trx.from)} → ${this.shortAddr(trx.to)}`;
+    }
+    return trx.subscription || '';
+  }
+
+  shortAddr(addr: string): string {
+    if (!addr || addr.length < 14) return addr || '';
+    return `${addr.slice(0, 8)}…${addr.slice(-6)}`;
   }
 
   getStateClass(stateId: number | undefined): string {
@@ -417,6 +432,25 @@ export class DetailsPage implements OnInit {
       await this.getAssetDetails();
     } catch (error) {
       console.error('Failed to change service state', error);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async toggleServiceCanQuote(serviceAddress: string, serviceName: string, currentlyAllowed: boolean) {
+    const next = !currentlyAllowed;
+    const title = next ? 'Allow Price Quoting' : 'Revoke Price Quoting';
+    const message = next
+      ? `Allow "${serviceName}" to set its own per-trade price on this asset? Trades placed through this service will clear at the price it supplies, not at your setPrice.`
+      : `Pin "${serviceName}" to your asset price? Any per-trade price this service supplies will be ignored — trades will clear at your current bid/ask.`;
+    const confirmed = await this.alertService.show(title, message, next ? 'Allow' : 'Pin');
+    if (!confirmed) return;
+    this.loadingService.show('Updating price-quoting permission...');
+    try {
+      await this.apiService.vaultSetAssetServiceCanQuote(this.assetAddress, serviceAddress, next);
+      await this.getAssetDetails();
+    } catch (error) {
+      console.error('Failed to change service canQuote', error);
     } finally {
       this.loadingService.hide();
     }

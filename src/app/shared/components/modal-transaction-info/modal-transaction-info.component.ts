@@ -25,6 +25,8 @@ export class ModalTransactionInfoComponent {
     switch (trxType) {
       case 'Subscribe': return 'bg-green-100 text-green-800';
       case 'Redeem':    return 'bg-orange-100 text-orange-800';
+      case 'Trade':     return 'bg-purple-100 text-purple-800';
+      case 'Transfer':  return 'bg-blue-100 text-blue-800';
       default:          return 'bg-gray-100 text-gray-800';
     }
   }
@@ -98,6 +100,9 @@ export class ModalTransactionInfoComponent {
       row('Subscription', trx.to, true);
     } else if (trx.trxType === 'Redeem') {
       row('Subscription', trx.from, true);
+    } else if (trx.trxType === 'Trade') {
+      row('Seller', trx.from, true);
+      row('Buyer',  trx.to,   true);
     } else {
       row('From', trx.from, true);
       row('To', trx.to, true);

@@ -197,8 +197,8 @@ export class DashboardPage implements OnInit {
   }
 
   async ionViewWillEnter() {
-    await this.loadPageData();
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.loadPageData());
+    await this.loadPageData(false);
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.loadPageData(true));
   }
 
   ionViewWillLeave() {
@@ -257,7 +257,7 @@ export class DashboardPage implements OnInit {
     } as AssetTransaction;
   }
 
-  private async loadPageData() {
+  private async loadPageData(silent = false) {
     await this.authService.ready();
     this.userInfo = this.authService.userInfo;
     if (!this.userInfo) this.router.navigate(['/public/user/login']);
@@ -265,19 +265,19 @@ export class DashboardPage implements OnInit {
       this.authService.refreshEntityState();
       if (this.userInfo.role !== 1) {
         await Promise.all([
-          this.getStats(),
-          this.getDashboardSummary(),
-          this.getSubscriptions(),
-          this.getTransactions(),
-          this.getCreditTotals(),
+          this.getStats(silent),
+          this.getDashboardSummary(silent),
+          this.getSubscriptions(silent),
+          this.getTransactions(silent),
+          this.getCreditTotals(silent),
         ]);
         this.lastUpdated.set(new Date());
       }
-      this.loadingService.hide();
+      if (!silent) this.loadingService.hide();
     }
   }
 
-  async getStats() {
+  async getStats(silent = false) {
     const status = await this.apiService.vaultGetSyncStatus();
     if (status) {
       this.lastSynced = status.lastSync ? Number(status.lastSync) : 0;
@@ -292,13 +292,13 @@ export class DashboardPage implements OnInit {
     }
   }
 
-  async getSubscriptions() {
-    this.subscriptionsLoading.set(true);
+  async getSubscriptions(silent = false) {
+    if (!silent) this.subscriptionsLoading.set(true);
     const result = await this.apiService.vaultGetSubscriptions(undefined, 0, 5);
     if (result?.subscriptions) {
       this.latestSubscriptions.set(result.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
     }
-    this.subscriptionsLoading.set(false);
+    if (!silent) this.subscriptionsLoading.set(false);
   }
 
   getStateClass(state: number): string {
@@ -320,8 +320,8 @@ export class DashboardPage implements OnInit {
     }
   }
 
-  async getCreditTotals() {
-    this.creditLoading.set(true);
+  async getCreditTotals(silent = false) {
+    if (!silent) this.creditLoading.set(true);
     try {
       const result = await this.apiService.vaultGetEntityCreditOverview();
       if (result?.totals) {
@@ -335,21 +335,21 @@ export class DashboardPage implements OnInit {
         this.creditTotals.set([]);
       }
     } finally {
-      this.creditLoading.set(false);
+      if (!silent) this.creditLoading.set(false);
     }
   }
 
-  async getTransactions() {
-    this.transactionsLoading.set(true);
+  async getTransactions(silent = false) {
+    if (!silent) this.transactionsLoading.set(true);
     const result = await this.apiService.vaultGetTransactions(undefined, 0, 5);
     if (result?.transactions) {
       this.latestTransactions.set(result.transactions.map((t: any) => this.mapVaultTransaction(t)));
     }
-    this.transactionsLoading.set(false);
+    if (!silent) this.transactionsLoading.set(false);
   }
 
-  async getDashboardSummary() {
-    this.summaryLoading.set(true);
+  async getDashboardSummary(silent = false) {
+    if (!silent) this.summaryLoading.set(true);
     const result = await this.apiService.vaultGetDashboardSummary();
     if (result) {
       const summary = result as DashboardSummary;
@@ -360,54 +360,74 @@ export class DashboardPage implements OnInit {
         this.selectedCurrency.set(available.length ? available[0].code : null);
       }
     }
-    this.summaryLoading.set(false);
-    await this.loadActivity();
-    setTimeout(() => this.renderAllCharts(), 50);
+    if (!silent) this.summaryLoading.set(false);
+    await this.loadActivity(silent);
+    setTimeout(() => this.renderAllCharts(silent), 50);
   }
 
-  async loadActivity() {
-    this.activityLoading.set(true);
+  async loadActivity(silent = false) {
+    if (!silent) this.activityLoading.set(true);
     try {
       const result = await this.apiService.vaultGetDashboardActivity(this.activityInterval(), 30) as ActivityResponse | null;
       this.activityData.set(result?.dataByCurrency ?? {});
     } finally {
-      this.activityLoading.set(false);
+      if (!silent) this.activityLoading.set(false);
     }
   }
 
   setCurrency(code: string) {
     this.selectedCurrency.set(code);
-    setTimeout(() => this.renderAllCharts(), 50);
+    setTimeout(() => this.renderAllCharts(false), 50);
   }
 
   async setInterval(value: string) {
     this.activityInterval.set(value);
     await this.loadActivity();
-    setTimeout(() => this.renderAllCharts(), 50);
+    setTimeout(() => this.renderAllCharts(false), 50);
   }
 
-  private async renderAllCharts() {
+  private async renderAllCharts(silent = false) {
     const { Chart, registerables } = await import('chart.js') as any;
     Chart.register(...registerables);
-    this.renderActivityChart(Chart);
-    this.renderAumChart(Chart);
+    this.renderActivityChart(Chart, silent);
+    this.renderAumChart(Chart, silent);
   }
 
-  private renderActivityChart(Chart: any) {
+  private renderActivityChart(Chart: any, silent = false) {
     if (!this.activityChartRef?.nativeElement) return;
-    this.activityChartInstance?.destroy();
     const data = this.activityPoints();
     const currency = this.selectedCurrency() ?? '';
     const valueAxisLabel = currency ? `Value (${currency})` : 'Value';
+    const labels = data.map((d: ActivityPoint) => d.label);
+    const subTok = data.map((d: ActivityPoint) => d.subscribeTokens);
+    const subVal = data.map((d: ActivityPoint) => d.subscribeValue);
+    const redTok = data.map((d: ActivityPoint) => d.redeemTokens);
+    const redVal = data.map((d: ActivityPoint) => d.redeemValue);
+
+    if (silent && this.activityChartInstance) {
+      const c = this.activityChartInstance;
+      c.data.labels = labels;
+      c.data.datasets[0].data = subTok;
+      c.data.datasets[1].data = subVal;
+      c.data.datasets[1].label = `Subscribe (${currency || 'value'})`;
+      c.data.datasets[2].data = redTok;
+      c.data.datasets[3].data = redVal;
+      c.data.datasets[3].label = `Redeem (${currency || 'value'})`;
+      c.options.scales.y1.title.text = valueAxisLabel;
+      c.update('none');
+      return;
+    }
+
+    this.activityChartInstance?.destroy();
     this.activityChartInstance = new Chart(this.activityChartRef.nativeElement, {
       type: 'line',
       data: {
-        labels: data.map((d: ActivityPoint) => d.label),
+        labels,
         datasets: [
-          { label: 'Subscribe (tokens)', data: data.map((d: ActivityPoint) => d.subscribeTokens), borderColor: 'rgba(52,211,153,1)',  backgroundColor: 'rgba(52,211,153,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
-          { label: `Subscribe (${currency || 'value'})`, data: data.map((d: ActivityPoint) => d.subscribeValue), borderColor: 'rgba(5,150,105,1)',   backgroundColor: 'rgba(5,150,105,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
-          { label: 'Redeem (tokens)',    data: data.map((d: ActivityPoint) => d.redeemTokens),    borderColor: 'rgba(252,165,165,1)', backgroundColor: 'rgba(252,165,165,0.15)',tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
-          { label: `Redeem (${currency || 'value'})`,    data: data.map((d: ActivityPoint) => d.redeemValue),    borderColor: 'rgba(185,28,28,1)',   backgroundColor: 'rgba(185,28,28,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
+          { label: 'Subscribe (tokens)', data: subTok, borderColor: 'rgba(52,211,153,1)',  backgroundColor: 'rgba(52,211,153,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
+          { label: `Subscribe (${currency || 'value'})`, data: subVal, borderColor: 'rgba(5,150,105,1)',   backgroundColor: 'rgba(5,150,105,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
+          { label: 'Redeem (tokens)',    data: redTok, borderColor: 'rgba(252,165,165,1)', backgroundColor: 'rgba(252,165,165,0.15)',tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y' },
+          { label: `Redeem (${currency || 'value'})`,    data: redVal, borderColor: 'rgba(185,28,28,1)',   backgroundColor: 'rgba(185,28,28,0.15)',  tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [4, 3], yAxisID: 'y1' },
         ],
       },
       options: {
@@ -424,16 +444,27 @@ export class DashboardPage implements OnInit {
     });
   }
 
-  private renderAumChart(Chart: any) {
+  private renderAumChart(Chart: any, silent = false) {
     if (!this.aumChartRef?.nativeElement) return;
-    this.aumChartInstance?.destroy();
     const data = this.aumByAsset();
     const colors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#14b8a6', '#fb923c'];
+    const labels = data.map((d: AumByAsset) => d.symbol);
+    const values = data.map((d: AumByAsset) => d.aum);
+
+    if (silent && this.aumChartInstance) {
+      const c = this.aumChartInstance;
+      c.data.labels = labels;
+      c.data.datasets[0].data = values;
+      c.update('none');
+      return;
+    }
+
+    this.aumChartInstance?.destroy();
     this.aumChartInstance = new Chart(this.aumChartRef.nativeElement, {
       type: 'doughnut',
       data: {
-        labels: data.map((d: AumByAsset) => d.symbol),
-        datasets: [{ data: data.map((d: AumByAsset) => d.aum), backgroundColor: colors }],
+        labels,
+        datasets: [{ data: values, backgroundColor: colors }],
       },
       options: {
         responsive: true,

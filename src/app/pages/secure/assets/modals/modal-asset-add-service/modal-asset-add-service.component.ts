@@ -57,14 +57,20 @@ export class ModalAssetAddServiceComponent {
   }
 
   async search() {
-    const q = this.query().trim();
-    if (q.length < 2) { this.results.set([]); return; }
+    const q = this.query().trim().toLowerCase();
     this.searching.set(true);
     try {
-      const resp = await this.apiService.connectRecipientsSearch('service', q);
-      const rows: Candidate[] = (resp?.results || []).map((r: any) => ({
-        address: r.address,
-        name:    r.name || r.address,
+      const resp = await this.apiService.vaultGetServicesOwn(1, 200);
+      const all = ((resp?.services || []) as any[])
+        .filter(s => Number(s.service_type ?? s.serviceType) === 1);
+      const filtered = q
+        ? all.filter(s =>
+            (s.name || '').toLowerCase().includes(q) ||
+            (s.address || '').toLowerCase().includes(q))
+        : all;
+      const rows: Candidate[] = filtered.map(s => ({
+        address: s.address,
+        name:    s.name || s.address,
       }));
       this.results.set(rows);
     } finally {

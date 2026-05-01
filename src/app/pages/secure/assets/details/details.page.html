@@ -529,6 +529,8 @@
                     <option value="">All</option>
                     <option value="Subscribe">Subscribe</option>
                     <option value="Redeem">Redeem</option>
+                    <option value="Trade">Trade</option>
+                    <option value="Transfer">Transfer</option>
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
@@ -638,7 +640,7 @@
                           <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
                           <td class="px-6 py-2">{{ trx.serviceName }}</td>
-                          <td class="px-6 py-2 font-mono text-xs">{{ trx.subscription }}</td>
+                          <td class="px-6 py-2 font-mono text-xs">{{ trxParty(trx) }}</td>
                           <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
                           <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
                           <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
@@ -694,6 +696,7 @@
                         <th scope="col" class="px-6 py-2">Service</th>
                         <th scope="col" class="px-6 py-2">Address</th>
                         <th scope="col" class="px-6 py-2">State</th>
+                        <th scope="col" class="px-6 py-2" title="Whether this service is allowed to set its own per-trade price; otherwise trades clear at the asset's current bid/ask.">Price Quoting</th>
                         @if (userInfo && userInfo.role !== 3) {
                           <th scope="col" class="px-6 py-2 w-12"></th>
                         }
@@ -710,6 +713,26 @@
                             <span class="px-2 py-1 text-xs font-semibold rounded-full" [ngClass]="getServiceStateClass(svc.state)">
                               {{ serviceStateNames[svc.state] || 'Unknown' }}
                             </span>
+                          </td>
+                          <td class="px-6 py-3">
+                            @if (userInfo && userInfo.role !== 3) {
+                              <button (click)="toggleServiceCanQuote(svc.service, svc.serviceName, svc.canQuote)"
+                                [disabled]="!entityActive"
+                                class="text-xs px-2 py-1 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                [class.bg-green-100]="svc.canQuote"
+                                [class.text-green-800]="svc.canQuote"
+                                [class.hover:bg-green-200]="svc.canQuote && entityActive"
+                                [class.bg-gray-200]="!svc.canQuote"
+                                [class.text-gray-700]="!svc.canQuote"
+                                [class.hover:bg-gray-300]="!svc.canQuote && entityActive"
+                                [title]="svc.canQuote ? 'Click to revoke price-quoting permission' : 'Click to allow this service to quote its own per-trade price'">
+                                {{ svc.canQuote ? 'Allowed' : 'Pinned to issuer' }}
+                              </button>
+                            } @else {
+                              <span class="px-2 py-1 text-xs rounded-full" [class.bg-green-100]="svc.canQuote" [class.text-green-800]="svc.canQuote" [class.bg-gray-200]="!svc.canQuote" [class.text-gray-700]="!svc.canQuote">
+                                {{ svc.canQuote ? 'Allowed' : 'Pinned to issuer' }}
+                              </span>
+                            }
                           </td>
                           @if (userInfo && userInfo.role !== 3) {
                             <td class="px-6 py-3">

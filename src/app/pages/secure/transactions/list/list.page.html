@@ -13,6 +13,7 @@
           <option value="">All</option>
           <option value="Subscribe">Subscribe</option>
           <option value="Redeem">Redeem</option>
+          <option value="Trade">Trade</option>
           <option value="Transfer">Transfer</option>
         </select>
       </div>
@@ -99,8 +100,9 @@
             <th scope="col" class="px-4 py-2">Time</th>
             <th scope="col" class="px-4 py-2">Type</th>
             <th scope="col" class="px-4 py-2">Asset</th>
-            <th scope="col" class="px-4 py-2">Service</th>
-            <th scope="col" class="px-4 py-2">Subscription</th>
+            <th scope="col" class="px-4 py-2">Symbol</th>
+            <th scope="col" class="px-4 py-2">Service / From</th>
+            <th scope="col" class="px-4 py-2">Subscription / To</th>
             <th scope="col" class="px-4 py-2 text-center">Currency</th>
             <th scope="col" class="px-4 py-2 text-right">Tokens</th>
             <th scope="col" class="px-4 py-2 text-right">Price</th>
@@ -110,18 +112,19 @@
         <tbody class="text-xs">
           @if (filteredTransactions().length === 0) {
             <tr>
-              <td colspan="9" class="px-4 py-8 text-center text-gray-400">No transactions found</td>
+              <td colspan="10" class="px-4 py-8 text-center text-gray-400">No transactions found</td>
             </tr>
           }
           @for (t of pagedTransactions(); track t.trxId) {
-            <tr class="border-b hover:bg-gray-100 transition-colors cursor-pointer" (click)="viewDetails(t)">
+            <tr class="border-b hover:bg-gray-100 transition-colors cursor-pointer" [class.row-new]="newTrxIds().has(t.trxId)" (click)="viewDetails(t)">
               <td class="px-4 py-2">{{ utils.formatDate(t.time) }}</td>
               <td class="px-4 py-2">
                 <span class="px-2 py-1 rounded-full text-xs font-semibold" [class]="getTrxTypeClass(t.trxType)">{{ t.trxType }}</span>
               </td>
-              <td class="px-4 py-2">{{ t.assetName }} <span class="badge-symbol">{{ t.assetSymbol }}</span></td>
-              <td class="px-4 py-2">{{ t.serviceName }}</td>
-              <td class="px-4 py-2">{{ t.subscription }}</td>
+              <td class="px-4 py-2">{{ t.assetName }}</td>
+              <td class="px-4 py-2"><span class="badge-symbol">{{ t.assetSymbol }}</span></td>
+              <td class="px-4 py-2 font-mono">{{ t.serviceName && t.serviceName !== t.service ? t.serviceName : shortAddr(t.from && t.from.toLowerCase() !== t.asset.toLowerCase() ? t.from : t.service) }}</td>
+              <td class="px-4 py-2 font-mono">{{ shortAddr(t.to && t.to.toLowerCase() !== t.asset.toLowerCase() ? t.to : t.subscription) }}</td>
               <td class="px-4 py-2 text-center"><span class="badge-currency">{{ t.currencyCode }}</span></td>
               <td class="px-4 py-2 text-right">{{ t.tokens | number:'1.0-0' }}</td>
               <td class="px-4 py-2 text-right">{{ t.price | number:'1.6-6' }}</td>

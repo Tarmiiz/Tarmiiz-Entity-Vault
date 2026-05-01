@@ -319,7 +319,8 @@ export class AssetService {
     public service: string,
     public serviceName: string,
     public state: number = 0,
-    public stateName: string = ''
+    public stateName: string = '',
+    public canQuote: boolean = false
   ) {}
 }
 

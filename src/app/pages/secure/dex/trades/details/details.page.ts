@@ -54,8 +54,8 @@ export class DetailsPage implements OnInit, OnDestroy {
     } finally { this.loadingService.hide(); }
   }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { maximumFractionDigits: 6 }); } catch { return '0'; } }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
+  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
 
   goOrder(id: number) { this.router.navigate(['/authorized/dex/orders/details/' + id]); }
 }

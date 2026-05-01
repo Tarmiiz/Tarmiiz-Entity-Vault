@@ -67,8 +67,8 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   setTab(t: 'info' | 'trades') { this.activeTab.set(t); }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { maximumFractionDigits: 6 }); } catch { return '0'; } }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
+  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   fillPct(o: DexOrder | undefined): number {
     if (!o) return 0;
     const a = Number(o.amount || '0');

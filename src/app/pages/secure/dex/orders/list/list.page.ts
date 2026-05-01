@@ -105,8 +105,8 @@ export class ListPage implements OnInit, OnDestroy {
     return Number(s) === 1 ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
   }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { maximumFractionDigits: 6 }); } catch { return '0'; } }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
+  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   fillPct(o: DexOrder): number {
     const a = Number(o.amount || '0');
     const f = Number(o.filled || '0');

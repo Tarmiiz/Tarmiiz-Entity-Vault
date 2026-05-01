@@ -85,13 +85,44 @@ export class ModalListingVenueAddComponent {
     );
     if (!ok) return;
     this.loadingService.show('Enabling venue...');
+    let listed = false;
     try {
       const r = await this.apiService.vaultDexAssetListingVenueAdd(inp.asset, v.serviceAddress, inp.tier);
       if (r?.error) { this.alertService.show('Error', r.error); return; }
-      this.modalService.hide(true);
+      listed = true;
     } finally {
       this.loadingService.hide();
     }
+    if (!listed) return;
+    // DEX settlement clears at the matched-order price by calling T20.withholdSettle with that price.
+    // For that price to be honored (rather than silently pinned to the asset's setPrice), the venue
+    // service must have canQuote = true on this asset. Default the prompt to yes — denying it leaves
+    // the venue listed but unable to settle matched trades.
+    const allowQuote = await this.alertService.show(
+      'Allow venue to clear at matched price?',
+      `For DEX settlement to work normally, "${v.serviceName || v.serviceAddress}" needs permission to clear trades at the matched-order price on this asset. Grant it now? (You can revoke this later from the asset's Services tab.)`,
+      'Allow quoting'
+    );
+    if (allowQuote) {
+      this.loadingService.show('Granting price-quoting permission...');
+      try {
+        await this.apiService.vaultSetAssetServiceCanQuote(inp.asset, v.serviceAddress, true);
+      } catch (err) {
+        console.error('Failed to grant canQuote', err);
+        this.alertService.show(
+          'Quoting permission not granted',
+          'The venue is listed but cannot clear trades at the matched price yet. Open the asset\'s Services tab and toggle Price Quoting to "Allowed" before any trade is matched.'
+        );
+      } finally {
+        this.loadingService.hide();
+      }
+    } else {
+      this.alertService.show(
+        'Heads up',
+        'The venue is listed but pinned to your asset price. DEX matched-price settlement will revert until you grant quoting permission from the asset\'s Services tab.'
+      );
+    }
+    this.modalService.hide(true);
   }
 
   cancel() { this.modalService.hide(false); }
