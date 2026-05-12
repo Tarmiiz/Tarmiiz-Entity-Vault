@@ -1,6 +1,6 @@
 <app-header title="Order Details"></app-header>
 
-<div class="px-6 py-4 border-b bg-gray-200">
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
   <nav class="flex" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
@@ -14,6 +14,7 @@
       </li>
     </ol>
   </nav>
+  <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">

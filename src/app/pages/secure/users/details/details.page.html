@@ -1,7 +1,7 @@
 <app-header title="User Details"></app-header>
 
 <!-- breadcrumb -->
-<div class="px-6 py-4 border-b bg-gray-200">
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
   @if (user(); as op) {
     <nav class="flex" aria-label="Breadcrumb">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -21,6 +21,7 @@
   } @else {
       <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
   }
+  <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">

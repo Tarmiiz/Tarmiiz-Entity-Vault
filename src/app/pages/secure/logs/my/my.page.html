@@ -1,4 +1,5 @@
 <app-header [title]="title"></app-header>
+<app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
@@ -24,17 +25,17 @@
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">From</label>
-        <input type="date" [ngModel]="filterFrom()" (ngModelChange)="filterFrom.set($event)"
+        <input type="date" [ngModel]="filterFrom()" (ngModelChange)="filterFrom.set($event); applyFilters()"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">To</label>
-        <input type="date" [ngModel]="filterTo()" (ngModelChange)="filterTo.set($event)"
+        <input type="date" [ngModel]="filterTo()" (ngModelChange)="filterTo.set($event); applyFilters()"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">Category</label>
-        <select [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event)"
+        <select [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event); applyFilters()"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
           <option value="">All</option>
           @for (c of categories; track c) {
@@ -44,12 +45,23 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">Action</label>
-        <input type="text" [ngModel]="filterAction()" (ngModelChange)="filterAction.set($event)" placeholder="e.g. create"
+        <input type="text" [ngModel]="filterAction()" (ngModelChange)="filterAction.set($event); applyFilters()" placeholder="e.g. create"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-36" />
       </div>
-      <div class="flex flex-col justify-end">
-        <button (click)="applyFilters()"
-          class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">Apply</button>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Actor</label>
+        <input type="text" [ngModel]="filterActor()" (ngModelChange)="filterActor.set($event); applyFilters()" placeholder="0x…"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44 font-mono" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Contract</label>
+        <input type="text" [ngModel]="filterContract()" (ngModelChange)="filterContract.set($event); applyFilters()" placeholder="0x…"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44 font-mono" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">RefNo</label>
+        <input type="text" [ngModel]="filterRefNo()" (ngModelChange)="filterRefNo.set($event); applyFilters()" placeholder="0x…"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44 font-mono" />
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
@@ -69,37 +81,38 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th class="px-4 py-2">Time</th>
-            <th class="px-4 py-2">Category</th>
-            <th class="px-4 py-2">Action</th>
-            <th class="px-4 py-2">Actor</th>
-            <th class="px-4 py-2">Target</th>
-            <th class="px-4 py-2">Reason</th>
-            <th class="px-4 py-2">RefNo</th>
+            <th scope="col" class="px-4 py-2">#</th>
+            <th scope="col" class="px-4 py-2">Time</th>
+            <th scope="col" class="px-4 py-2">Category</th>
+            <th scope="col" class="px-4 py-2">Action</th>
+            <th scope="col" class="px-4 py-2">Function</th>
+            <th scope="col" class="px-4 py-2">Actor</th>
+            <th scope="col" class="px-4 py-2">Contract</th>
+            <th scope="col" class="px-4 py-2">RefNo</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (rows().length === 0) {
-            <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">No audit events found</td></tr>
+            <tr class="bg-white border-b"><td colspan="8" class="px-4 py-8 text-center text-gray-400">no data</td></tr>
           }
-          @for (r of rows(); track r.id) {
-            <tr class="border-b hover:bg-gray-100 transition-colors cursor-pointer" (click)="openDetails(r)">
+          @for (r of rows(); track r.id; let i = $index; let isEven = $even) {
+            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                (click)="openDetails(r)">
+              <td class="px-4 py-2">{{ i + 1 }}</td>
               <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatDate(r.chain_time || r.created_at) }}</td>
               <td class="px-4 py-2">
                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">{{ r.category }}</span>
               </td>
-              <td class="px-4 py-2 capitalize">{{ r.actionLabel }}</td>
+              <td class="px-4 py-2 capitalize">{{ actionLabel(r) }}</td>
+              <td class="px-4 py-2 font-mono" [title]="r.function_signature || r.function_selector">{{ functionLabel(r) }}</td>
               <td class="px-4 py-2 font-mono" [title]="r.actor_address">{{ actorLabel(r) }}</td>
-              <td class="px-4 py-2 font-mono" [title]="r.target_address">{{ targetLabel(r) }}</td>
-              <td class="px-4 py-2 text-gray-600" [title]="r.reason">{{ r.reason }}</td>
+              <td class="px-4 py-2 font-mono" [title]="r.contract">{{ contractLabel(r) }}</td>
               <td class="px-4 py-2 font-mono text-xs">
                 @if (isZeroRef(r.ref_no)) {
                   <span class="text-gray-400">-</span>
                 } @else {
                   <span class="text-indigo-600 hover:underline" [title]="r.ref_no">{{ shortAddr(r.ref_no) }}</span>
-                }
-                @if (r.encrypted === 1) {
-                  <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] bg-yellow-100 text-yellow-800">enc</span>
                 }
               </td>
             </tr>
@@ -109,7 +122,7 @@
     </div>
 
     <div class="flex items-center justify-between px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ rows().length }} of {{ total() }}</p>
+      <p class="text-xs font-medium text-gray-800">Showing {{ rows().length }} of Total {{ total() }} Records</p>
       @if (totalPages() > 1) {
         <div class="flex items-center gap-3 text-xs text-gray-600">
           <span>Page {{ page() }} of {{ totalPages() }}</span>

@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
@@ -16,7 +17,7 @@ import { DexOrder, DexTrade } from '../../../../../shared/models/data.model';
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [HeaderComponent, RouterLink],
+  imports: [HeaderComponent, LiveIndicatorComponent, RouterLink],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -31,6 +32,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   order = signal<DexOrder | undefined>(undefined);
   linkedTrades = signal<DexTrade[]>([]);
   activeTab = signal<'info' | 'trades'>('info');
+  refreshing = signal(false);
 
   private sub?: Subscription;
 
@@ -44,14 +46,15 @@ export class DetailsPage implements OnInit, OnDestroy {
   async ionViewWillEnter() {
     await this.load();
     this.sub = this.socket.vaultUpdated$.subscribe(p => {
-      if (p.type === 'dex-order' || p.type === 'dex-trade') this.load();
+      if (p.type === 'dex-order' || p.type === 'dex-trade') this.load(true);
     });
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
-  async load() {
-    this.loadingService.show('Loading order...');
+  async load(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading order...');
     try {
       const o = await this.apiService.vaultDexOrderInfo(this.orderId());
       if (o) {
@@ -62,7 +65,10 @@ export class DetailsPage implements OnInit, OnDestroy {
           this.linkedTrades.set(linked);
         }
       }
-    } finally { this.loadingService.hide(); }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
+    }
   }
 
   setTab(t: 'info' | 'trades') { this.activeTab.set(t); }

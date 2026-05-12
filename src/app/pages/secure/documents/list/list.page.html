@@ -124,11 +124,15 @@
                     <td class="px-6 py-2" [title]="doc.description">{{ doc.title || ('#' + doc.id) }}</td>
                     <td class="px-6 py-2 text-gray-500">{{ doc.fileType || '—' }}</td>
                     <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="doc.cid">{{ doc.cid }}</td>
-                    <td class="px-6 py-2">{{ doc.documentTypeName || typeLabel(doc.documentType) }}</td>
+                    <td class="px-6 py-2">
+                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="typeClass(doc.documentType)">
+                        {{ typeLabel(doc.documentType) }}
+                      </span>
+                    </td>
                     <td class="px-6 py-2">{{ utils.formatDate(doc.createdAt) }}</td>
                     <td class="px-6 py-2">
                       <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="stateClass(doc.documentState)">
-                        {{ doc.documentStateName || stateLabel(doc.documentState) }}
+                        {{ stateLabel(doc.documentState) }}
                       </span>
                     </td>
                   </tr>
@@ -173,7 +177,13 @@
                     <td class="px-6 py-2">#{{ share.documentId }}</td>
                     <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="share.ownerAddress">{{ share.ownerAddress }}</td>
                     <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="share.cid || ''">{{ share.cid || '—' }}</td>
-                    <td class="px-6 py-2">{{ share.documentType !== null ? typeLabel(share.documentType) : '—' }}</td>
+                    <td class="px-6 py-2">
+                      @if (share.documentType !== null) {
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="typeClass(share.documentType)">
+                          {{ typeLabel(share.documentType) }}
+                        </span>
+                      } @else { — }
+                    </td>
                     <td class="px-6 py-2">{{ utils.formatDate(share.sharedAt) }}</td>
                   </tr>
                 }

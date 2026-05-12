@@ -87,30 +87,35 @@ export interface StateChangeLog {
   created_at: number;
 }
 
+// Slim, privacy-first audit-log shape. Mirrors the on-chain AuditLog event:
+// no target / subject / state / reason / visibility / encrypted payload.
+// `client_ip` and `actor_user_address` are full off-chain values (from the
+// API's tenant DB) — render them masked in the UI via utils.maskIp / shortAddr.
 export class AuditLog {
   constructor(
     public id: number,
     public category: string,
     public action: string,
     public actor_address: string,
-    public actor_user_id: number | null,
-    public actor_user_name: string,
-    public target_address: string,
-    public target_kind: string,
-    public subject_id: string,
+    public actor_user_id: string | null,
+    public actor_user_address: string | null,
+    public country_code: number,
+    public function_selector: string | null,
+    public contract: string | null,
     public ref_no: string,
-    public before_state: string,
-    public after_state: string,
-    public reason: string,
-    public extras: string,
-    public visibility: number,
-    public encrypted: number,
     public tx_hash: string,
     public block_number: number,
     public log_index: number,
     public chain_time: number,
-    public client_ip: string,
-    public created_at: number
+    public client_ip: string | null,
+    public created_at: number,
+    public actor_name: string | null = null,
+    public actor_kind: string | null = null,
+    public actor_user_name: string | null = null,
+    public function_name: string | null = null,
+    public function_signature: string | null = null,
+    public contract_name: string | null = null,
+    public contract_kind: string | null = null
   ) {}
 
   get categoryLabel(): string {
@@ -340,7 +345,9 @@ export class SubscriptionHolding {
     public currencyCode: string,
     public balance: number,
     public cost: number,
-    public currentBid: number
+    public currentBid: number,
+    public withheld: number = 0,
+    public available: number = 0
   ) {}
 }
 
@@ -415,7 +422,9 @@ export class CreditBalance {
     public currencyCode: number,
     public currencyName: string,
     public currencySymbol: string,
-    public balance: number
+    public balance: number,
+    public withheld: number = 0,
+    public available: number = 0
   ) {}
 }
 
@@ -424,6 +433,8 @@ export class CreditTransaction {
     public trxId: number,
     public service: string,
     public serviceName: string,
+    public paymentProcessor: string,
+    public paymentProcessorName: string,
     public from: string,
     public fromName: string,
     public to: string,
@@ -438,7 +449,9 @@ export class CreditTransaction {
     public trxStateName: string,
     public startTime: number,
     public updateTime: number,
-    public assetTrxId: number = 0
+    public assetTrxId: number = 0,
+    public origin: number = 0,
+    public originName: string = ''
   ) {}
 }
 

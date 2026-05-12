@@ -9,12 +9,15 @@ import * as XLSX from 'xlsx';
 import { Subscription as RxSubscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../shared/components/live-indicator/live-indicator.component';
 
 import { ApiService } from '../../../shared/services/api.service';
+import { AuthService } from '../../../shared/services/auth.service';
 import { SocketService } from '../../../shared/services/socket.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../shared/services/utils.service';
 import { AuditService } from '../../../shared/services/audit.service';
+import { applyPdfFooter } from '../../../shared/utils/pdf-export.utils';
 
 import { CreditBalance } from '../../../shared/models/data.model';
 
@@ -33,10 +36,11 @@ interface CreditRow {
   templateUrl: './credit.page.html',
   styleUrls: ['./credit.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent],
 })
 export class CreditPage implements OnInit {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private socketService = inject(SocketService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
@@ -44,6 +48,7 @@ export class CreditPage implements OnInit {
   private auditService = inject(AuditService);
 
   loading = signal(false);
+  refreshing = signal(false);
 
   totals = signal<CreditBalance[]>([]);
   rows = signal<CreditRow[]>([]);
@@ -105,7 +110,7 @@ export class CreditPage implements OnInit {
 
   async ionViewDidEnter() {
     await this.load();
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.load());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.load(true));
   }
 
   ionViewWillLeave() {
@@ -113,9 +118,12 @@ export class CreditPage implements OnInit {
     this._socketSub = null;
   }
 
-  async load() {
-    this.loading.set(true);
-    this.loadingService.show('Loading credit overview...');
+  async load(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) {
+      this.loading.set(true);
+      this.loadingService.show('Loading credit overview...');
+    }
     try {
       const data = await this.apiService.vaultGetEntityCreditOverview();
       if (data) {
@@ -141,8 +149,11 @@ export class CreditPage implements OnInit {
         })));
       }
     } finally {
-      this.loadingService.hide();
-      this.loading.set(false);
+      if (!silent) {
+        this.loadingService.hide();
+        this.loading.set(false);
+      }
+      if (silent) this.refreshing.set(false);
     }
   }
 
@@ -214,7 +225,6 @@ export class CreditPage implements OnInit {
     doc.text('Entity Credit Overview', pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     autoTable(doc, {
       startY: 28,
@@ -263,6 +273,7 @@ export class CreditPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`entity_credit_overview_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'entity_credit_overview');
   }

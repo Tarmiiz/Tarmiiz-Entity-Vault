@@ -88,7 +88,7 @@
       <!-- Stats Cards — order: Services, Assets, Subscriptions, Transactions -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 badges">
         @for (stat of stats(); track stat.title) {
-          <div class="p-4 rounded-xl shadow-md border border-gray-200 flex flex-col cursor-pointer hover:bg-indigo-50 transition-colors" [class]="stat.loading ? 'bg-blue-50 animate-pulse' : 'bg-white'" (click)="goTo(stat.path)">
+          <div class="p-4 rounded-xl shadow-md border border-gray-200 flex flex-col cursor-pointer hover:bg-indigo-50 transition-colors" [class]="stat.loading ? 'bg-blue-50 animate-pulse' : 'bg-white'" [class.row-new]="changedStatTitles().has(stat.title)" (click)="goTo(stat.path)">
             <p class="text-xs font-medium text-gray-500 mb-1">{{ stat.title }}</p>
             @if (stat.loading) {
               <svg class="animate-spin h-5 w-5 text-blue-500 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -219,7 +219,7 @@
                   </tr>
                 } @else {
                   @for (asset of topAssets(); track asset.address) {
-                    <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/assets/details/' + asset.address)">
+                    <tr class="border-b hover:bg-gray-50 cursor-pointer" [class.row-new]="newTopAssetKeys().has(asset.address)" (click)="goTo('/authorized/assets/details/' + asset.address)">
                       <td class="px-4 py-2 font-medium text-gray-800">{{ asset.name }}</td>
                       <td class="px-4 py-2">
                         <span class="badge-symbol">{{ asset.symbol }}</span>
@@ -291,7 +291,7 @@
                 </tr>
               } @else {
                 @for (t of latestTransactions(); track t.trxId) {
-                  <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="viewDetails(t)">
+                  <tr class="border-b hover:bg-gray-50 cursor-pointer" [class.row-new]="newTrxIds().has(t.trxId)" (click)="viewDetails(t)">
                     <td class="px-4 py-2 whitespace-nowrap font-mono text-xs">{{ utils.formatDate(t.time) }}</td>
                     <td class="px-4 py-2">
                       <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="getTrxTypeClass(t.trxType)">{{ t.trxType }}</span>
@@ -349,7 +349,7 @@
                 </tr>
               } @else {
                 @for (s of latestSubscriptions(); track s.subscription) {
-                  <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/subscriptions/details/' + s.subscription)">
+                  <tr class="border-b hover:bg-gray-50 cursor-pointer" [class.row-new]="newSubKeys().has(s.subscription)" (click)="goTo('/authorized/subscriptions/details/' + s.subscription)">
                     <td class="px-4 py-2 whitespace-nowrap font-mono text-xs">{{ utils.formatDate(s.createdAt) }}</td>
                     <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ s.subscription }}</td>
                     <td class="px-4 py-2">{{ s.serviceName }}</td>

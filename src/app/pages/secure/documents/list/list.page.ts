@@ -131,11 +131,27 @@ export class ListPage implements OnInit {
   });
 
   typeLabel(t: number): string {
-    return this.docTypes().find(v => v.variableId === t)?.name || String(t);
+    switch (t) {
+      case 1: return 'Public';
+      case 2: return 'Private';
+      default: return String(t);
+    }
+  }
+
+  typeClass(t: number): string {
+    switch (t) {
+      case 1: return 'bg-blue-100 text-blue-800';
+      case 2: return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   }
 
   stateLabel(s: number): string {
-    return this.docStates().find(v => v.variableId === s)?.name || String(s);
+    switch (s) {
+      case 1: return 'Active';
+      case 2: return 'Deleted';
+      default: return String(s);
+    }
   }
 
   stateClass(s: number): string {
@@ -186,8 +202,11 @@ export class ListPage implements OnInit {
         },
         (percent) => this.loadingService.setProgress(percent),
       );
-      if (!result) {
-        this.alertService.show('Error', 'Failed to add document. Check that every recipient has published an encryption public key.');
+      if (!result || result.error) {
+        // 401 already triggers a global session-clear + redirect, no duplicate alert.
+        if (result?.status !== 401) {
+          this.alertService.show('Error', result?.error || 'Failed to add document.');
+        }
       } else {
         await this.list();
       }

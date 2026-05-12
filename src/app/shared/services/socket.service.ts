@@ -1,13 +1,17 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
-import { environment } from '../../../environments/environment';
+import { ConfigService } from './config.service';
+import { SessionService } from './session.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SocketService {
+
+  private configService = inject(ConfigService);
+  private sessionService = inject(SessionService);
 
   private socket: Socket | null = null;
 
@@ -20,11 +24,14 @@ export class SocketService {
   /** Reactive connection state — true when socket is connected */
   readonly connected = signal(false);
 
-  connect() {
+  async connect() {
     if (this.socket?.connected) return;
 
-    this.socket = io(environment.socketURL, {
-      auth: { token: environment.vaultToken },
+    const token = await this.sessionService.getActiveToken();
+    if (!token) return;
+
+    this.socket = io(this.configService.get('socketURL'), {
+      auth: { token },
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 2000,
@@ -49,9 +56,11 @@ export class SocketService {
       this.connected.set(false);
     });
 
-    this.socket.on('connect_error', (err) => {
+    this.socket.on('connect_error', async (err) => {
       console.warn('[SocketService] connect error:', err.message);
       this.connected.set(false);
+      const fresh = await this.sessionService.getActiveToken();
+      if (fresh && this.socket) (this.socket as any).auth = { token: fresh };
     });
   }
 

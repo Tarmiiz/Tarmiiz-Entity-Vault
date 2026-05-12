@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../shared/services/api.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
@@ -16,7 +17,7 @@ import { ModalNewThreadService } from '../modals/modal-new-thread/modal-new-thre
   selector: 'app-messages-list',
   templateUrl: './list.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);
@@ -34,6 +35,7 @@ export class ListPage implements OnInit, OnDestroy {
   filterState    = signal<'all' | '1' | '2' | '3'>('all');
   unreadOnly     = signal(false);
   loadingData    = false;
+  refreshing     = signal(false);
   entityAddress  = signal('');
   directory      = signal<Record<string, { name: string; partyType: number }>>({});
 
@@ -44,7 +46,7 @@ export class ListPage implements OnInit, OnDestroy {
     this.entityAddress.set((cfg?.entityContract || '').toLowerCase());
 
     this.sub = this.socketService.vaultUpdated$.subscribe(p => {
-      if (p.type === 'connect' || p.type === 'all') this.loadThreads();
+      if (p.type === 'connect' || p.type === 'all') this.loadThreads(true);
     });
   }
 
@@ -56,15 +58,20 @@ export class ListPage implements OnInit, OnDestroy {
     this.loadingData = false;
   }
 
-  async loadThreads() {
-    this.loadingService.show('Loading messages...');
-    const result = await this.apiService.connectThreadsList(1, 100);
-    if (result?.threads) {
-      this.threadsCount = result.count;
-      this.threads.set(result.threads);
-      this.resolveDirectory(result.threads);
+  async loadThreads(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading messages...');
+    try {
+      const result = await this.apiService.connectThreadsList(1, 100);
+      if (result?.threads) {
+        this.threadsCount = result.count;
+        this.threads.set(result.threads);
+        this.resolveDirectory(result.threads);
+      }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
     }
-    this.loadingService.hide();
   }
 
   private async resolveDirectory(threads: ConnectThread[]) {

@@ -14,6 +14,7 @@ export interface AddAssetData {
   assetType?: number;
   initialSupply?: number;
   creditSettlement: boolean;
+  customMetadata: Record<string, string>;
 }
 
 @Injectable({

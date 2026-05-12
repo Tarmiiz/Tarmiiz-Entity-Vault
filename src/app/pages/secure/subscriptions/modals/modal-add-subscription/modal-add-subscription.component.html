@@ -1,0 +1,123 @@
+@if (modalService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Subscription</h3>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+
+          <!-- Mode toggle -->
+          <div class="flex gap-2">
+            <button type="button" (click)="setMode('A')"
+              class="flex-1 text-xs px-3 py-2 rounded border transition-colors"
+              [class.bg-indigo-600]="mode() === 'A'"
+              [class.text-white]="mode() === 'A'"
+              [class.border-indigo-600]="mode() === 'A'"
+              [class.text-gray-700]="mode() !== 'A'"
+              [class.border-gray-300]="mode() !== 'A'"
+              [class.hover:bg-gray-100]="mode() !== 'A'">
+              Existing DID
+            </button>
+            <button type="button" (click)="setMode('B')"
+              class="flex-1 text-xs px-3 py-2 rounded border transition-colors"
+              [class.bg-indigo-600]="mode() === 'B'"
+              [class.text-white]="mode() === 'B'"
+              [class.border-indigo-600]="mode() === 'B'"
+              [class.text-gray-700]="mode() !== 'B'"
+              [class.border-gray-300]="mode() !== 'B'"
+              [class.hover:bg-gray-100]="mode() !== 'B'">
+              New User (eKYC)
+            </button>
+          </div>
+
+          <!-- Service -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Service</label>
+            <select formControlName="service" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
+              <option value="">Select a service</option>
+              @for (s of services(); track s.address) {
+                <option [value]="s.address">{{ s.name }}</option>
+              }
+            </select>
+          </div>
+
+          @if (mode() === 'A') {
+            <div>
+              <label class="block text-sm font-medium text-gray-700">DID Hash</label>
+              <input type="text" formControlName="didHash"
+                placeholder="0x..."
+                class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
+            </div>
+          } @else {
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Unique ID Hash</label>
+              <input type="text" formControlName="uniqueIdHash"
+                placeholder="0x..."
+                class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" formControlName="email"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Mobile</label>
+                <input type="text" formControlName="mobile"
+                  placeholder="+201001234567"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">DID Type</label>
+                <select formControlName="didType" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
+                  <option [ngValue]="1">Individual</option>
+                  <option [ngValue]="2">Organization</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Country</label>
+                <select formControlName="countryCode" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
+                  <option [ngValue]="null" class="text-black bg-white">Select</option>
+                  @for (c of countries(); track c.countryCode) {
+                    <option [ngValue]="c.countryCode" class="text-black bg-white">{{ c.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Trx Ref No</label>
+                <input type="text" formControlName="trxRefNo"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Trx Timestamp</label>
+                <input type="datetime-local" formControlName="trxTimestamp"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Verification Level</label>
+              <select formControlName="level" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
+                <option [ngValue]="1">Level 1</option>
+                <option [ngValue]="2">Level 2</option>
+                <option [ngValue]="3">Level 3</option>
+              </select>
+            </div>
+          }
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+          <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="!canSubmit()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Create Subscription
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

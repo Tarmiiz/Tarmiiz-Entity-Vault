@@ -1,4 +1,4 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -14,25 +14,8 @@ import { MyPage } from '../my/my.page';
   imports: [CommonModule, FormsModule, HeaderComponent]
 })
 export class SystemPage extends MyPage {
-  filterActor = signal<string>('');
-  filterTarget = signal<string>('');
-
-  protected override buildFilters() {
-    return {
-      ...super.buildFilters(),
-      actor: this.filterActor() || undefined,
-      target: this.filterTarget() || undefined,
-    };
-  }
-
   protected override fetch() {
     return this.apiService.auditSystem(this.buildFilters());
-  }
-
-  override clearFilters() {
-    this.filterActor.set('');
-    this.filterTarget.set('');
-    super.clearFilters();
   }
 
   protected override exportName(): string { return 'audit_system'; }

@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
@@ -18,7 +19,7 @@ import { DexOrder } from '../../../../../shared/models/data.model';
   templateUrl: './view.page.html',
   styleUrls: ['./view.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, RouterLink],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink],
 })
 export class ViewPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -44,6 +45,7 @@ export class ViewPage implements OnInit, OnDestroy {
 
   selectedBuy = signal<number | null>(null);
   selectedSell = signal<number | null>(null);
+  refreshing = signal(false);
 
   private sub?: Subscription;
   private poller?: any;
@@ -67,9 +69,9 @@ export class ViewPage implements OnInit, OnDestroy {
   async ionViewDidEnter() {
     await this.refresh();
     this.sub = this.socket.vaultUpdated$.subscribe(p => {
-      if (p.type === 'dex-order' || p.type === 'dex-trade') this.refresh();
+      if (p.type === 'dex-order' || p.type === 'dex-trade') this.refresh(true);
     });
-    this.poller = setInterval(() => this.refresh(), 5000);
+    this.poller = setInterval(() => this.refresh(true), 5000);
   }
 
   ngOnDestroy() {
@@ -79,7 +81,7 @@ export class ViewPage implements OnInit, OnDestroy {
 
   isExec(): boolean { return Number(this.auth.userInfo?.role) === 2; }
 
-  async refresh() {
+  async refresh(silent = false) {
     if (!this.baseAsset()) return;
     const params: any = {};
     if (this.scope() === 'venue' && this.dexService()) params.dexService = this.dexService();
@@ -88,13 +90,18 @@ export class ViewPage implements OnInit, OnDestroy {
       if (this.currencyCode()) params.currencyCode = this.currencyCode();
     } else if (this.scope() === 'global' && this.currencyCode()) params.currencyCode = this.currencyCode();
     else return;
-    const r = await this.apiService.vaultDexOrderBook(this.baseAsset(), params);
-    if (r) {
-      this.bestBid.set(r.bestBid ?? null);
-      this.bestAsk.set(r.bestAsk ?? null);
-      this.bids.set(r.bids || []);
-      this.asks.set(r.asks || []);
-      this.asOf.set(Math.floor(Date.now() / 1000));
+    if (silent) this.refreshing.set(true);
+    try {
+      const r = await this.apiService.vaultDexOrderBook(this.baseAsset(), params);
+      if (r) {
+        this.bestBid.set(r.bestBid ?? null);
+        this.bestAsk.set(r.bestAsk ?? null);
+        this.bids.set(r.bids || []);
+        this.asks.set(r.asks || []);
+        this.asOf.set(Math.floor(Date.now() / 1000));
+      }
+    } finally {
+      if (silent) this.refreshing.set(false);
     }
   }
 

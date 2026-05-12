@@ -5,9 +5,11 @@ import { StorageService } from './storage.service';
 import { EthersService } from './ethers.service';
 import { ApiService } from './api.service';
 import { SocketService } from './socket.service';
+import { SessionService } from './session.service';
 import { LoadingService } from '../components/alerts/loading/loading.service';
 import { AlertService } from '../components/alerts/alert/alert.service';
 import { Entity, User } from '../models/data.model';
+import { ParseProofUtils } from '../utils/parse-proof.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +22,7 @@ export class AuthService {
   private ethersService = inject(EthersService);
   private apiService = inject(ApiService);
   private socketService = inject(SocketService);
+  private sessionService = inject(SessionService);
 
   entityInfo!: Entity;
   userInfo!: User;
@@ -56,6 +59,21 @@ export class AuthService {
       this.ethersService.configure(config.rpcNode, config.entityContract, config.globalVariablesProxyContract, config.globalSalt);
       await this.ethersService.init();
 
+      // Bootstrap-admin claim detection: if the loginHash maps to an unclaimed bootstrap admin,
+      // bail out early and route into the claim wizard. The user enters their email + the
+      // activation OTP they received via email, then sets their own password — see /public/user/claim.
+      try {
+        await ParseProofUtils.init();
+        const usernameBigInt = ParseProofUtils.stringToBigInt(username);
+        const loginHash      = ParseProofUtils.hashStringForContract(usernameBigInt);
+        const status = await this.apiService.vaultUserClaimStatus(loginHash);
+        if (status && status.exists && !status.claimed) {
+          this.loadingService.hide();
+          await this.router.navigate(['/public/user/claim'], { queryParams: { email: username } });
+          return { success: false, error: 'CLAIM_REQUIRED' };
+        }
+      } catch { /* fall through to normal login */ }
+
       // 1 hour in milliseconds
       const SESSION_DURATION = 60 * 60 * 1000;
       const expiryTime = new Date().getTime() + SESSION_DURATION;
@@ -70,6 +88,11 @@ export class AuthService {
         loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
       }
       if (loginResult.success && loginResult.userId && loginResult.key) {
+
+        // Persist the JWT immediately so the authenticated calls below pick it up.
+        if (loginResult.token && loginResult.expiresAt && loginResult.refreshExpiresAt) {
+          await this.sessionService.setSession(loginResult.token, loginResult.expiresAt, loginResult.refreshExpiresAt);
+        }
 
         // set temporary wallet
         const key = JSON.stringify(loginResult.key)
@@ -144,6 +167,10 @@ export class AuthService {
     if(!confirmed) return;
     this.loadingService.show('Closing session...');
     this.socketService.disconnect();
+    // Server logout MUST complete before we clear local state and navigate —
+    // otherwise the browser cancels the in-flight HTTP request on route
+    // change and the on-chain Auth/Logout audit row never gets emitted.
+    try { await this.apiService.entityLogout(); } catch { /* silent */ }
     await Promise.all([
       this.storageService.remove('sessionExpiry'),
       this.storageService.remove('rpcNode'),
@@ -151,11 +178,9 @@ export class AuthService {
       this.storageService.remove('contract'),
       this.storageService.remove('wallet'),
       this.storageService.remove('user'),
+      this.sessionService.clear(),
     ]);
     await this.router.navigate(['/public/user/login']);
     this.loadingService.hide();
-    // Fire-and-forget server logout — client session is already invalid,
-    // no need to block the UI on the on-chain logout() transaction.
-    this.apiService.entityLogout().catch(() => { /* silent */ });
   }
 }

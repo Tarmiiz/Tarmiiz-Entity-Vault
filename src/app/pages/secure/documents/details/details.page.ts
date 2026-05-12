@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ethers } from 'ethers';
@@ -43,6 +43,14 @@ export class DetailsPage implements OnInit {
   id = signal<string>('');
   document = signal<Document | null>(null);
   sharedWith = signal<string[]>([]);
+  sharedWithDirectory = signal<Record<string, { name: string; partyType: number } | null>>({});
+
+  // Hide the owner from the sharing list — the owner is added as a recipient at upload time so the
+  // uploading API can still decrypt the doc, but exposing them as a "shared with" row is confusing.
+  visibleSharedWith = computed(() => {
+    const owner = (this.document()?.owner || '').toLowerCase();
+    return this.sharedWith().filter(a => a.toLowerCase() !== owner);
+  });
   signatures = signal<DocumentSignature[]>([]);
   activeTab = signal<TabId>('info');
 
@@ -113,14 +121,65 @@ export class DetailsPage implements OnInit {
 
   async loadShared() {
     const r = await this.apiService.documentGetSharedWith(this.id());
-    if (r?.accounts) this.sharedWith.set(r.accounts);
+    const accounts: string[] = r?.accounts ?? [];
+    this.sharedWith.set(accounts);
+    this.sharedWithDirectory.set({});
+    await Promise.all(accounts.map(async a => {
+      const entry = await this.apiService.vaultDirectoryByAddress(a);
+      if (entry) {
+        this.sharedWithDirectory.update(m => ({ ...m, [a.toLowerCase()]: { name: entry.name, partyType: entry.partyType } }));
+      }
+    }));
+  }
+
+  sharedWithLabel(address: string): string {
+    return this.sharedWithDirectory()[address.toLowerCase()]?.name ?? address;
+  }
+
+  sharedWithKindLabel(address: string): string {
+    const entry = this.sharedWithDirectory()[address.toLowerCase()];
+    if (!entry) return '';
+    switch (entry.partyType) {
+      case 2: return 'Entity';
+      case 3: return 'Regulator';
+      case 4: return 'Service';
+      case 5: return 'Subscription';
+      default: return '';
+    }
+  }
+
+  sharedWithKindBadgeClass(address: string): string {
+    const entry = this.sharedWithDirectory()[address.toLowerCase()];
+    if (!entry) return 'bg-gray-100 text-gray-700';
+    switch (entry.partyType) {
+      case 2: return 'bg-blue-100 text-blue-800';
+      case 3: return 'bg-purple-100 text-purple-800';
+      case 4: return 'bg-amber-100 text-amber-800';
+      case 5: return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-700';
+    }
   }
 
   typeLabel(t?: number): string {
-    return this.docTypes().find(v => v.variableId === t)?.name || String(t ?? '');
+    switch (t) {
+      case 1: return 'Public';
+      case 2: return 'Private';
+      default: return String(t ?? '');
+    }
+  }
+  typeClass(t?: number): string {
+    switch (t) {
+      case 1: return 'bg-blue-100 text-blue-800';
+      case 2: return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   }
   stateLabel(s?: number): string {
-    return this.docStates().find(v => v.variableId === s)?.name || String(s ?? '');
+    switch (s) {
+      case 1: return 'Active';
+      case 2: return 'Deleted';
+      default: return String(s ?? '');
+    }
   }
   reviewStateLabel(s?: number): string {
     return this.reviewStates().find(v => v.variableId === s)?.name || String(s ?? '');

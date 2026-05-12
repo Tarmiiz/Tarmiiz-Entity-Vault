@@ -43,6 +43,16 @@
             </div>
           }
 
+          @if (trx.paymentProcessor && !isZero(trx.paymentProcessor)) {
+            <div class="border-t pt-3 col-span-2">
+              <p class="text-xs font-medium text-gray-500">Payment Processor</p>
+              <p class="text-gray-700">{{ trx.paymentProcessorName || trx.paymentProcessor }}</p>
+              @if (trx.paymentProcessorName) {
+                <p class="font-mono text-xs text-gray-400 break-all">{{ trx.paymentProcessor }}</p>
+              }
+            </div>
+          }
+
           @if (trx.from) {
             <div class="border-t pt-3 col-span-2">
               <p class="text-xs font-medium text-gray-500">From</p>
@@ -80,6 +90,13 @@
             <div class="border-t pt-3 col-span-2">
               <p class="text-xs font-medium text-gray-500">Data</p>
               <p class="text-xs break-all whitespace-pre-wrap">{{ trx.trxData }}</p>
+            </div>
+          }
+
+          @if (trx.origin) {
+            <div class="border-t pt-3">
+              <p class="text-xs font-medium text-gray-500">Origin</p>
+              <p>{{ trx.originName || ('Origin #' + trx.origin) }}</p>
             </div>
           }
 

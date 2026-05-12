@@ -1,0 +1,91 @@
+@if (modalService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Transaction</h3>
+        <p class="text-xs text-gray-400 mt-1">Submit a Subscribe or Redeem transaction.</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+
+          <!-- Type -->
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Transaction Type</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center justify-center px-3 py-2 border rounded-md cursor-pointer text-sm font-medium transition-colors"
+                [class]="form.get('trxType')?.value === 'Subscribe' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'">
+                <input type="radio" formControlName="trxType" value="Subscribe" class="sr-only">
+                Subscribe
+              </label>
+              <label class="flex items-center justify-center px-3 py-2 border rounded-md cursor-pointer text-sm font-medium transition-colors"
+                [class]="form.get('trxType')?.value === 'Redeem' ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'">
+                <input type="radio" formControlName="trxType" value="Redeem" class="sr-only">
+                Redeem
+              </label>
+            </div>
+          </div>
+
+          <!-- Service -->
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Service</label>
+            <select formControlName="service"
+              class="block w-full pl-3 pr-10 py-2 border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black bg-white">
+              <option value="" disabled selected hidden>Select service...</option>
+              @for (s of services(); track s.address) {
+                <option [value]="s.address">{{ s.name }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Asset -->
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Asset</label>
+            <select formControlName="asset" [attr.disabled]="!selectedService() ? true : null"
+              class="block w-full pl-3 pr-10 py-2 border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black bg-white disabled:bg-gray-100 disabled:text-gray-400">
+              <option value="" disabled selected hidden>{{ selectedService() ? 'Select asset...' : 'Select a service first' }}</option>
+              @for (a of filteredAssets(); track a.address) {
+                <option [value]="a.address">{{ a.name }} ({{ a.symbol }})</option>
+              }
+            </select>
+          </div>
+
+          <!-- Subscription -->
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Subscription</label>
+            <select formControlName="subscription" [attr.disabled]="!selectedService() ? true : null"
+              class="block w-full pl-3 pr-10 py-2 border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black bg-white disabled:bg-gray-100 disabled:text-gray-400 font-mono text-xs">
+              <option value="" disabled selected hidden>{{ selectedService() ? 'Select subscription...' : 'Select a service first' }}</option>
+              @for (s of filteredSubscriptions(); track s.address) {
+                <option [value]="s.address">{{ s.address }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Tokens -->
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Tokens</label>
+            <input type="number" formControlName="tokens" min="1" placeholder="0"
+              class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end gap-2">
+          <button type="button" (click)="onCancel()"
+            class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="form.invalid"
+            class="px-4 py-2 text-sm font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            [class]="form.get('trxType')?.value === 'Redeem' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'">
+            Submit {{ form.get('trxType')?.value }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

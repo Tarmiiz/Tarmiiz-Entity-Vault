@@ -1,7 +1,7 @@
 <app-header title="Service Details"></app-header>
 
 <!-- breadcrumb -->
-<div class="px-6 py-4 border-b bg-gray-200">
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
   @if (service(); as op) {
     <nav class="flex" aria-label="Breadcrumb">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -21,6 +21,7 @@
   } @else {
       <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
   }
+  <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
@@ -139,6 +140,35 @@
                 <p class="text-base font-semibold text-gray-800">{{ v.verificationLevelName }}</p>
               </div>
             </div>
+
+            <!-- Currently Withheld -->
+            @if (isTokenIssuer() && (withheldCredit().length > 0 || withheldAssets().length > 0)) {
+              <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Currently Withheld</p>
+                @if (withheldCredit().length > 0) {
+                  <p class="text-xs text-gray-500 mb-1">Credit</p>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    @for (c of withheldCredit(); track c.currencyCode) {
+                      <div>
+                        <p class="text-xs text-gray-500">{{ c.currencyName }} <span class="badge-currency">{{ c.currencySymbol }}</span></p>
+                        <p class="text-base font-semibold text-amber-700">{{ c.withheld | number:'1.2-2' }}</p>
+                      </div>
+                    }
+                  </div>
+                }
+                @if (withheldAssets().length > 0) {
+                  <p class="text-xs text-gray-500 mb-1">Assets</p>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    @for (a of withheldAssets(); track a.asset) {
+                      <div>
+                        <p class="text-xs text-gray-500">{{ a.name }} <span class="badge-symbol">{{ a.symbol }}</span></p>
+                        <p class="text-base font-semibold text-amber-700">{{ a.totalWithheld | number:'1.0-0' }}</p>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
 
             <!-- Transactions summary -->
             @if (isTokenIssuer()) {

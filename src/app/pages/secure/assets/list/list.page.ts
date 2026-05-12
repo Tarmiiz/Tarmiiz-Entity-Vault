@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { LiveIndicatorComponent } from "../../../../shared/components/live-indicator/live-indicator.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
 import { SocketService } from '../../../../shared/services/socket.service';
@@ -21,6 +22,7 @@ import { AuditService } from '../../../../shared/services/audit.service';
 
 import { Asset, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 
 @Component({
   selector: 'app-list',
@@ -30,6 +32,7 @@ import { AuthService } from '../../../../shared/services/auth.service';
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
+    LiveIndicatorComponent,
     ModalAssetAddComponent,
   ]
 })
@@ -47,6 +50,7 @@ export class ListPage implements OnInit {
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
   loadingData: boolean = false;
+  refreshing = signal(false);
 
   assetsCount = 0;
   assets = signal<Asset[]>([]);
@@ -116,7 +120,7 @@ export class ListPage implements OnInit {
     this.loadingData = true;
     await this.listAssets();
     this.loadingData = false;
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listAssets());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listAssets(true));
   }
 
   ionViewWillLeave() {
@@ -171,29 +175,36 @@ export class ListPage implements OnInit {
     };
   }
 
-  async listAssets() {
-    this.loadingService.show('Loading data...');
-    this.assets.set([]);
-    const [result, servicesResult] = await Promise.all([
-      this.apiService.vaultGetAssets(0, 500),
-      this.apiService.vaultGetServices(0, 500),
-    ]);
-    const serviceNames: Record<string, string> = {};
-    for (const s of (servicesResult?.services ?? [])) {
-      serviceNames[s.address] = s.name;
+  async listAssets(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) {
+      this.loadingService.show('Loading data...');
+      this.assets.set([]);
     }
-    if (result) {
-      this.assetsCount = result.count;
-      this.assets.set(result.assets.map((a: any) => {
-        const asset = this.mapVaultAsset(a);
-        asset.services = asset.services.map(s => ({
-          ...s,
-          serviceName: serviceNames[s.service] ?? s.service,
+    try {
+      const [result, servicesResult] = await Promise.all([
+        this.apiService.vaultGetAssets(0, 500),
+        this.apiService.vaultGetServices(0, 500),
+      ]);
+      const serviceNames: Record<string, string> = {};
+      for (const s of (servicesResult?.services ?? [])) {
+        serviceNames[s.address] = s.name;
+      }
+      if (result) {
+        this.assetsCount = result.count;
+        this.assets.set(result.assets.map((a: any) => {
+          const asset = this.mapVaultAsset(a);
+          asset.services = asset.services.map(s => ({
+            ...s,
+            serviceName: serviceNames[s.service] ?? s.service,
+          }));
+          return asset;
         }));
-        return asset;
-      }));
+      }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
     }
-    this.loadingService.hide();
   }
 
   async openAddModal() {
@@ -209,7 +220,7 @@ export class ListPage implements OnInit {
         manager: data.manager,
         name: data.name,
         symbol: data.symbol,
-        metadata: JSON.stringify({ description: data.description }),
+        metadata: JSON.stringify({ description: data.description, ...data.customMetadata }),
         currency: data.currency,
         regulator: data.regulator,
         tokenType: data.tokenType,
@@ -261,7 +272,6 @@ export class ListPage implements OnInit {
     doc.text('Assets', pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     const svcLabel = this.filterService()
       ? (this.uniqueServices().find(s => s[0] === this.filterService())?.[1] ?? this.filterService())
@@ -301,6 +311,7 @@ export class ListPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`assets_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'assets');
   }

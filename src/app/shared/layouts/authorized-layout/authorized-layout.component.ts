@@ -46,6 +46,9 @@ export class AuthorizedLayoutComponent {
   dexExpanded = signal(false);
   toggleDex() { this.dexExpanded.update(v => !v); }
 
+  analyticsExpanded = signal(false);
+  toggleAnalytics() { this.analyticsExpanded.update(v => !v); }
+
   constructor() {
     this.socketService.connect();
   }

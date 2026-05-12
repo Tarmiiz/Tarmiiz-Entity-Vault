@@ -10,7 +10,7 @@
 
       <!-- Step Indicator -->
       <div class="flex items-center justify-center gap-1 px-6 py-4 bg-gray-50 border-b">
-        @for (step of [1,2,3,4,5]; track step) {
+        @for (step of [1,2,3,4,5,6]; track step) {
           <div class="flex items-center">
             <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
               [class]="step < currentStep()
@@ -24,7 +24,7 @@
                 {{ step }}
               }
             </div>
-            @if (step < 5) {
+            @if (step < 6) {
               <div class="w-6 h-0.5 mx-0.5" [class]="step < currentStep() ? 'bg-green-500' : 'bg-gray-200'"></div>
             }
           </div>
@@ -102,8 +102,37 @@
             </div>
           }
 
-          <!-- Step 3: Service & Currency -->
+          <!-- Step 3: Metadata -->
           @if (currentStep() === 3) {
+            <p class="text-sm text-gray-500 mb-2">Add free-form key/value pairs stored as JSON alongside the description (e.g. ISIN, share class, inception date). All fields are optional.</p>
+            <div formArrayName="metadata">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-medium text-gray-500">Additional metadata</label>
+                <button type="button" (click)="addMetadataRow()"
+                  class="text-xs text-indigo-600 hover:text-indigo-800">+ Add field</button>
+              </div>
+              <div class="space-y-2">
+                @for (row of metadataRows.controls; let i = $index; track i) {
+                  <div [formGroupName]="i" class="flex items-center gap-2">
+                    <input type="text" placeholder="Key" formControlName="key"
+                      class="block w-1/3 border border-gray-300 rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs text-black">
+                    <input type="text" placeholder="Value" formControlName="value"
+                      class="block flex-1 border border-gray-300 rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs text-black">
+                    <button type="button" (click)="removeMetadataRow(i)"
+                      class="text-gray-400 hover:text-red-600 transition-colors p-1" title="Remove">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+              @if (metadataError()) {
+                <p class="text-xs text-red-600 mt-2">{{ metadataError() }}</p>
+              }
+            </div>
+          }
+
+          <!-- Step 4: Service & Currency -->
+          @if (currentStep() === 4) {
             <p class="text-sm text-gray-500 mb-2">Select which service will host this asset and its denomination currency.</p>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Service</label>
@@ -127,8 +156,8 @@
             </div>
           }
 
-          <!-- Step 4: Roles & Compliance -->
-          @if (currentStep() === 4) {
+          <!-- Step 5: Roles & Compliance -->
+          @if (currentStep() === 5) {
             <p class="text-sm text-gray-500 mb-2">Set the governance addresses, regulator, and credit settlement option.</p>
             <div>
               <div class="flex items-center justify-between mb-1">
@@ -189,8 +218,8 @@
             </div>
           }
 
-          <!-- Step 5: Review -->
-          @if (currentStep() === 5) {
+          <!-- Step 6: Review -->
+          @if (currentStep() === 6) {
             <p class="text-sm text-gray-500 mb-4">Review the details below before creating the asset.</p>
 
             <!-- Token Configuration -->
@@ -230,6 +259,14 @@
                   <span class="text-gray-500 shrink-0">Description</span>
                   <span class="text-black font-medium text-right ml-4">{{ addForm.get('description')?.value }}</span>
                 </div>
+                @for (row of metadataRows.controls; track $index) {
+                  @if (row.controls.key.value.trim()) {
+                    <div class="flex justify-between items-start">
+                      <span class="text-gray-500 shrink-0">{{ row.controls.key.value.trim() }}</span>
+                      <span class="text-black font-medium text-right ml-4 break-all">{{ row.controls.value.value.trim() }}</span>
+                    </div>
+                  }
+                }
               </div>
             </div>
 

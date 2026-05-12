@@ -1,0 +1,4 @@
+{
+  "apiURL": "http://localhost:8026/api/v1",
+  "socketURL": "http://localhost:8026"
+}

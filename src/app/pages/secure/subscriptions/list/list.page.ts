@@ -9,12 +9,19 @@ import * as XLSX from 'xlsx';
 import { Subscription as RxSubscription } from 'rxjs';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { LiveIndicatorComponent } from "../../../../shared/components/live-indicator/live-indicator.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
+
+import { ModalAddSubscriptionComponent } from '../modals/modal-add-subscription/modal-add-subscription.component';
+import { ModalAddSubscriptionService } from '../modals/modal-add-subscription/modal-add-subscription.service';
 
 import { Subscription } from '../../../../shared/models/data.model';
 
@@ -26,17 +33,23 @@ import { Subscription } from '../../../../shared/models/data.model';
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
+    LiveIndicatorComponent,
+    ModalAddSubscriptionComponent,
   ]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private socketService = inject(SocketService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
+  private alertService = inject(AlertService);
   utils = inject(UtilsService);
   private auditService = inject(AuditService);
+  private addSubscriptionService = inject(ModalAddSubscriptionService);
 
   loadingServices: boolean = false;
+  refreshing = signal(false);
 
   subscriptionsCount = 0
   subscriptions = signal<Subscription[]>([]);
@@ -64,7 +77,7 @@ export class ListPage implements OnInit {
     this.loadingServices = true;
     await this.listSubscriptions();
     this.loadingServices = false;
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listSubscriptions());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listSubscriptions(true));
   }
 
   ionViewWillLeave() {
@@ -107,18 +120,31 @@ export class ListPage implements OnInit {
     } as Subscription;
   }
 
-  async listSubscriptions() {
-    this.loadingService.show('Loading data...');
-    const result = await this.apiService.vaultGetSubscriptions(undefined, 0, 1000);
-    if (result) {
-      this.subscriptionsCount = result.count;
-      this.subscriptions.set(result.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
+  async listSubscriptions(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading data...');
+    try {
+      const result = await this.apiService.vaultGetSubscriptions(undefined, 0, 1000);
+      if (result) {
+        this.subscriptionsCount = result.count;
+        this.subscriptions.set(result.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
+      }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
     }
-    this.loadingService.hide();
   }
 
   viewDetails(subscription: Subscription) {
     this.router.navigate(['/authorized/subscriptions/details/' + subscription.subscription]);
+  }
+
+  async openAddSubscription() {
+    const result = await this.addSubscriptionService.show();
+    if (result?.subscriptionAddress) {
+      await this.alertService.show('Subscription Created', 'Subscription address: ' + result.subscriptionAddress);
+      await this.listSubscriptions();
+    }
   }
 
   filteredSubscriptions = computed(() => {
@@ -145,7 +171,6 @@ export class ListPage implements OnInit {
     doc.text('Subscriptions', pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     const filterParts = [
       `Service: ${this.filterService() || 'None'}`,
@@ -212,6 +237,7 @@ export class ListPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`subscriptions_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'subscriptions');
   }

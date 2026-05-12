@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { LiveIndicatorComponent } from "../../../../shared/components/live-indicator/live-indicator.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
@@ -31,6 +32,7 @@ import { SocketService } from '../../../../shared/services/socket.service';
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
+    LiveIndicatorComponent,
     RouterLink,
     ModalUserEditComponent,
     ModalUserStateComponent,
@@ -61,6 +63,7 @@ export class DetailsPage implements OnInit {
   };
 
   loadingData: boolean = false;
+  refreshing = signal(false);
 
   userId = signal<number>(0);
   user = signal<User | undefined>(undefined);
@@ -76,7 +79,7 @@ export class DetailsPage implements OnInit {
     }
     await this.getUserDetails();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => {
-      if (!this._isBusy) this.getUserDetails();
+      if (!this._isBusy) this.getUserDetails(true);
     });
   }
 
@@ -85,15 +88,20 @@ export class DetailsPage implements OnInit {
     this._socketSub = null;
   }
 
-  async getUserDetails() {
-    this.loadingService.show('Loading data...');
-    const data = await this.apiService.vaultGetUser(String(this.userId()));
-    if (data) this.user.set({
-      ...data,
-      stateName: this.stateNames[data.state] ?? String(data.state ?? ''),
-      roleName:  this.roleNames[data.role]   ?? String(data.role  ?? ''),
-    });
-    this.loadingService.hide();
+  async getUserDetails(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading data...');
+    try {
+      const data = await this.apiService.vaultGetUser(String(this.userId()));
+      if (data) this.user.set({
+        ...data,
+        stateName: this.stateNames[data.state] ?? String(data.state ?? ''),
+        roleName:  this.roleNames[data.role]   ?? String(data.role  ?? ''),
+      });
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
+    }
   }
 
   getStateClass(stateId: number | undefined): string {

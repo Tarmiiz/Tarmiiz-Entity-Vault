@@ -9,12 +9,17 @@ import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../shared/services/api.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
+import { ModalTransactionAddService } from '../modals/modal-transaction-add/modal-transaction-add.service';
+import { ModalTransactionAddComponent } from '../modals/modal-transaction-add/modal-transaction-add.component';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { AssetTransaction } from '../../../../shared/models/data.model';
 
 @Component({
@@ -26,14 +31,18 @@ import { AssetTransaction } from '../../../../shared/models/data.model';
     CommonModule, FormsModule,
     HeaderComponent,
     ModalTransactionInfoComponent,
+    ModalTransactionAddComponent,
   ]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private socketService = inject(SocketService);
   utils = inject(UtilsService);
   private loadingService = inject(LoadingService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
+  private modalTransactionAddService = inject(ModalTransactionAddService);
+  private alertService = inject(AlertService);
   private auditService = inject(AuditService);
 
   transactions = signal<AssetTransaction[]>([]);
@@ -146,21 +155,24 @@ export class ListPage implements OnInit {
 
   async load(silent = false) {
     if (!silent) this.loadingService.show('Loading transactions...');
-    const result = await this.apiService.vaultGetTransactions(undefined, 0, 500);
-    if (result) {
-      const next = result.transactions.map((t: any) => this.mapVaultTransaction(t));
-      if (silent) {
-        const prevIds = new Set(this.transactions().map(t => t.trxId));
-        const added = next.filter((t: AssetTransaction) => !prevIds.has(t.trxId)).map((t: AssetTransaction) => t.trxId);
-        if (added.length) {
-          this.newTrxIds.set(new Set(added));
-          setTimeout(() => this.newTrxIds.set(new Set()), 2000);
+    try {
+      const result = await this.apiService.vaultGetTransactions(undefined, 0, 500);
+      if (result) {
+        const next = result.transactions.map((t: any) => this.mapVaultTransaction(t));
+        if (silent) {
+          const prevIds = new Set(this.transactions().map(t => t.trxId));
+          const added = next.filter((t: AssetTransaction) => !prevIds.has(t.trxId)).map((t: AssetTransaction) => t.trxId);
+          if (added.length) {
+            this.newTrxIds.set(new Set(added));
+            setTimeout(() => this.newTrxIds.set(new Set()), 2000);
+          }
         }
+        this.transactions.set(next);
+        this.totalCount.set(result.count);
       }
-      this.transactions.set(next);
-      this.totalCount.set(result.count);
+    } finally {
+      if (!silent) this.loadingService.hide();
     }
-    if (!silent) this.loadingService.hide();
   }
 
   clearFilters() {
@@ -184,7 +196,6 @@ export class ListPage implements OnInit {
     doc.text('Transactions', pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     // ── filters line ──────────────────────────────────────────────
     const assetLabel = this.filterAsset()
@@ -279,6 +290,7 @@ export class ListPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`transactions_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'transactions');
   }
@@ -331,6 +343,41 @@ export class ListPage implements OnInit {
   viewDetails(trx: AssetTransaction): void {
     this.modalTransactionInfoService.show(trx);
     this.auditService.logView('transaction', { trxId: trx.trxId, trxType: trx.trxType });
+  }
+
+  async openAddTransaction(): Promise<void> {
+    const data = await this.modalTransactionAddService.show();
+    if (!data) return;
+
+    this.loadingService.show(`Submitting ${data.trxType.toLowerCase()}...`);
+    let result: { result?: any; error?: string };
+    try {
+      const body = {
+        asset: data.asset,
+        service: data.service,
+        subscriber: data.subscription,
+        tokens: data.tokens,
+        price: 0,
+        data: {},
+        timestamp: Math.floor(Date.now() / 1000),
+      };
+      result = data.trxType === 'Subscribe'
+        ? await this.apiService.transactionBuy(body)
+        : await this.apiService.transactionSell(body);
+    } finally {
+      this.loadingService.hide();
+    }
+
+    if (result.error) {
+      await this.alertService.show('Transaction Failed', result.error);
+      return;
+    }
+    await this.alertService.show(
+      `${data.trxType} Submitted`,
+      `Transaction submitted successfully${result.result?.transactionHash ? '\n\nTx: ' + result.result.transactionHash : ''}`
+    );
+    this.auditService.logView('transaction-add', { trxType: data.trxType, asset: data.asset, service: data.service, subscription: data.subscription, tokens: data.tokens });
+    await this.load(true);
   }
 
 

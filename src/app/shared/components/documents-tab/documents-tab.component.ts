@@ -447,8 +447,12 @@ export class DocumentsTabComponent implements OnChanges {
       } else {
         res = await this.apiService.subscriptionDocumentAddMultipart(this.address, file, metadata, onProgress);
       }
-      if (!res) {
-        this.alertService.show('Error', 'Failed to add document. Check that every recipient has published an encryption public key.');
+      if (!res || res.error) {
+        // 401 is already handled globally (clears session + redirects to login),
+        // so don't surface a duplicate alert in that case.
+        if (res?.status !== 401) {
+          this.alertService.show('Error', res?.error || 'Failed to add document.');
+        }
         return;
       }
       this.closeModal();

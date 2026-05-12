@@ -16,6 +16,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { Asset, AssetTransaction, Service, Subscription, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
 import { ModalServiceStateComponent } from "../modals/modal-service-state/modal-service-state.component";
 import { ModalServiceEditService } from '../modals/modal-service-edit/modal-service-edit.service';
@@ -29,6 +30,7 @@ import { ModalServicePaymentProcessorComponent } from '../modals/modal-service-p
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
+import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 
 
 
@@ -47,6 +49,7 @@ import { DocumentsTabComponent } from '../../../../shared/components/documents-t
     ModalServiceValidatorComponent,
     ModalServicePaymentProcessorComponent,
     DocumentsTabComponent,
+    LiveIndicatorComponent,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -72,9 +75,12 @@ export class DetailsPage implements OnInit {
   activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'docs'>('overview');
 
   loadingData: boolean = false;
+  refreshing = signal(false);
 
   serviceAddress = '';
   service = signal<Service | undefined>(undefined);
+  withheldCredit  = signal<{ currencyCode: number; currencyName: string; currencySymbol: string; withheld: number }[]>([]);
+  withheldAssets  = signal<{ asset: string; name: string; symbol: string; totalWithheld: number }[]>([]);
   isTokenIssuer = computed(() => this.service()?.serviceType === 1);
   suspensionReason = signal<string>('');
   validatorName = signal<string>('');
@@ -193,7 +199,7 @@ export class DetailsPage implements OnInit {
     this.userInfo = this.authService.userInfo;
     this.activeTab.set('overview');
     await this.reload();
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload(true));
   }
 
   ionViewWillLeave() {
@@ -201,13 +207,18 @@ export class DetailsPage implements OnInit {
     this._socketSub = null;
   }
 
-  private async reload() {
-    await this.getServiceDetails();
-    await Promise.all([
-      this.getAssets(),
-      this.getSubscriptions(),
-      this.getTransactions(1, 500),
-    ]);
+  private async reload(silent = false) {
+    if (silent) this.refreshing.set(true);
+    try {
+      await this.getServiceDetails(silent);
+      await Promise.all([
+        this.getAssets(silent),
+        this.getSubscriptions(silent),
+        this.getTransactions(1, 500, silent),
+      ]);
+    } finally {
+      if (silent) this.refreshing.set(false);
+    }
   }
 
   setTab(tab: 'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'docs') {
@@ -330,9 +341,16 @@ export class DetailsPage implements OnInit {
     } as AssetTransaction;
   }
 
-  async getServiceDetails() {
-    this.loadingService.show('Loading data...');
-    const raw = await this.apiService.vaultGetService(this.serviceAddress);
+  async getServiceDetails(silent = false) {
+    if (!silent) this.loadingService.show('Loading data...');
+    const [raw, summary] = await Promise.all([
+      this.apiService.vaultGetService(this.serviceAddress),
+      this.apiService.vaultGetServiceWithheldSummary(this.serviceAddress).catch(() => null),
+    ]);
+    if (summary) {
+      this.withheldCredit.set((summary.creditByCurrency ?? []).filter((c: any) => c.withheld > 0));
+      this.withheldAssets.set((summary.assetsByAddress ?? []).filter((a: any) => a.totalWithheld > 0));
+    }
     if (raw) {
       const service = this.mapVaultService(raw);
       this.service.set(service);
@@ -346,7 +364,7 @@ export class DetailsPage implements OnInit {
         this.suspensionReason.set('');
       }
     }
-    this.loadingService.hide();
+    if (!silent) this.loadingService.hide();
   }
 
   private async resolveLinkedNames(validator: string, paymentProcessor: string) {
@@ -389,22 +407,22 @@ export class DetailsPage implements OnInit {
     this.router.navigate(['/authorized/entities/details/' + address]);
   }
 
-  async getAssets() {
-    this.loadingService.show('Loading data...');
+  async getAssets(silent = false) {
+    if (!silent) this.loadingService.show('Loading data...');
     const data = await this.apiService.vaultGetAssets(0, 500, this.serviceAddress);
     if (data?.assets) this.assets.set(data.assets.map((a: any) => this.mapVaultAsset(a)));
-    this.loadingService.hide();
+    if (!silent) this.loadingService.hide();
   }
 
   gotoAsset(asset: Asset) {
     this.router.navigate(['/authorized/assets/details/' + asset.address]);
   }
   
-  async getSubscriptions() {
-    this.loadingService.show('Loading data...');
+  async getSubscriptions(silent = false) {
+    if (!silent) this.loadingService.show('Loading data...');
     const data = await this.apiService.vaultGetSubscriptions(this.serviceAddress, 0, 500);
     if (data?.subscriptions) this.subscriptions.set(data.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
-    this.loadingService.hide();
+    if (!silent) this.loadingService.hide();
   }
 
   async openEditModal() {
@@ -529,12 +547,12 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  async getTransactions(start: number, offset: number) {
-    this.loadingService.show('Loading data...');
+  async getTransactions(start: number, offset: number, silent = false) {
+    if (!silent) this.loadingService.show('Loading data...');
     const data = await this.apiService.vaultGetTransactions({ service: this.serviceAddress }, start - 1, offset);
     if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
     this.trxPage.set(0);
-    this.loadingService.hide();
+    if (!silent) this.loadingService.hide();
   }
 
   clearAssetFilters() {
@@ -572,7 +590,6 @@ export class DetailsPage implements OnInit {
     doc.text(`Assets — ${svcName}`, pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     const filterParts = [
       `Name: ${this.filterAssetName() || 'None'}`,
@@ -607,6 +624,7 @@ export class DetailsPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`assets_${svcName}_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'service_assets');
   }
@@ -644,7 +662,6 @@ export class DetailsPage implements OnInit {
     doc.text(`Subscriptions — ${svcName}`, pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     const filterParts = [
       `Address: ${this.filterSubAddress() || 'None'}`,
@@ -675,6 +692,7 @@ export class DetailsPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`subscriptions_${svcName}_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'service_subscriptions');
   }
@@ -720,7 +738,6 @@ export class DetailsPage implements OnInit {
     doc.text(`Transactions — ${svcName}`, pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     // ── filters line ──────────────────────────────────────────────
     const assetLabel = this.filterTrxAsset()
@@ -795,6 +812,7 @@ export class DetailsPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`transactions_${svcName}_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'service_transactions');
   }

@@ -1,17 +1,20 @@
 import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../shared/services/api.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { AuditLog } from '../../../../shared/models/data.model';
 
 const AUDIT_CATEGORIES = [
@@ -26,19 +29,22 @@ const AUDIT_CATEGORIES = [
   styleUrls: ['./my.page.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent]
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent]
 })
 export class MyPage implements OnInit {
   protected apiService = inject(ApiService);
+  protected authService = inject(AuthService);
   protected socketService = inject(SocketService);
   protected loadingService = inject(LoadingService);
   protected router = inject(Router);
+  protected activatedRoute = inject(ActivatedRoute);
   utils = inject(UtilsService);
 
   readonly categories = AUDIT_CATEGORIES;
 
   rows = signal<AuditLog[]>([]);
   total = signal(0);
+  refreshing = signal(false);
   page = signal(1);
   readonly pageSize = 25;
 
@@ -46,6 +52,9 @@ export class MyPage implements OnInit {
   filterTo = signal<string>('');
   filterCategory = signal<string>('');
   filterAction = signal<string>('');
+  filterActor = signal<string>('');
+  filterContract = signal<string>('');
+  filterRefNo = signal<string>('');
 
   // Tamper-evidence banner state (GET /audit/verify)
   verifyState = signal<{ ok: boolean; anchored: boolean; untilBlock?: number; brokenAt?: number; loading: boolean }>({ ok: true, anchored: false, loading: true });
@@ -60,6 +69,13 @@ export class MyPage implements OnInit {
   async ngOnInit() {}
 
   async ionViewDidEnter() {
+    const qp = this.activatedRoute.snapshot.queryParamMap;
+    const actor    = qp.get('actor')    || '';
+    const contract = qp.get('contract') || '';
+    const refNo    = qp.get('refNo')    || '';
+    if (actor)    this.filterActor.set(actor);
+    if (contract) this.filterContract.set(contract);
+    if (refNo)    this.filterRefNo.set(refNo);
     await this.load();
     this.loadVerify();
     this._socketSub = this.socketService.auditAppended$.subscribe(() => this.scheduleRefresh());
@@ -97,7 +113,7 @@ export class MyPage implements OnInit {
     if (this._refreshTimer) return;
     this._refreshTimer = setTimeout(() => {
       this._refreshTimer = null;
-      this.load();
+      this.load(true);
     }, 500);
   }
 
@@ -107,6 +123,9 @@ export class MyPage implements OnInit {
       to: this.filterTo() || undefined,
       category: this.filterCategory() || undefined,
       action: this.filterAction() || undefined,
+      actor: this.filterActor() || undefined,
+      contract: this.filterContract() || undefined,
+      refNo: this.filterRefNo() || undefined,
       page: this.page(),
       pageSize: this.pageSize,
     };
@@ -116,18 +135,23 @@ export class MyPage implements OnInit {
     return this.apiService.auditMe(this.buildFilters());
   }
 
-  async load() {
-    this.loadingService.show('Loading audit log...');
-    const data = await this.fetch();
-    if (data) {
-      const rows = (data.rows || []).map((r: any) => this.mapRow(r));
-      this.rows.set(rows);
-      this.total.set(data.total ?? 0);
-    } else {
-      this.rows.set([]);
-      this.total.set(0);
+  async load(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading audit log...');
+    try {
+      const data = await this.fetch();
+      if (data) {
+        const rows = (data.rows || []).map((r: any) => this.mapRow(r));
+        this.rows.set(rows);
+        this.total.set(data.total ?? 0);
+      } else {
+        this.rows.set([]);
+        this.total.set(0);
+      }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
     }
-    this.loadingService.hide();
   }
 
   protected mapRow(r: any): AuditLog {
@@ -136,30 +160,30 @@ export class MyPage implements OnInit {
       for (const k of keys) if (r?.[k] !== undefined && r?.[k] !== null) return r[k];
       return undefined;
     };
-    const rawExtras = pick('extras');
     return new AuditLog(
       pick('id') ?? 0,
       pick('category') ?? '',
       pick('action') ?? '',
       pick('actor_address', 'actorAddress') ?? '',
       pick('actor_user_id', 'actorUserId') ?? null,
-      pick('actor_user_name', 'actorUserName') ?? '',
-      pick('target_address', 'targetAddress') ?? '',
-      pick('target_kind', 'targetKind') ?? '',
-      pick('subject_id', 'subjectId') ?? '',
+      pick('actor_user_address', 'actorUserAddress') ?? null,
+      pick('country_code', 'countryCode') ?? 0,
+      pick('function_selector', 'functionSelector') ?? null,
+      pick('contract') ?? null,
       pick('ref_no', 'refNo') ?? '',
-      pick('before_state', 'beforeState') ?? '',
-      pick('after_state', 'afterState') ?? '',
-      pick('reason') ?? '',
-      typeof rawExtras === 'string' ? rawExtras : JSON.stringify(rawExtras ?? {}),
-      pick('visibility') ?? 0,
-      pick('encrypted') ?? 0,
       pick('tx_hash', 'txHash') ?? '',
       pick('block_number', 'blockNumber') ?? 0,
       pick('log_index', 'logIndex') ?? 0,
       pick('chain_time', 'chainTime') ?? 0,
-      pick('client_ip', 'clientIp') ?? '',
+      pick('client_ip', 'clientIp') ?? null,
       pick('created_at', 'createdAt') ?? 0,
+      pick('actor_name', 'actorName') ?? null,
+      pick('actor_kind', 'actorKind') ?? null,
+      pick('actor_user_name', 'actorUserName') ?? null,
+      pick('function_name', 'functionName') ?? null,
+      pick('function_signature', 'functionSignature') ?? null,
+      pick('contract_name', 'contractName') ?? null,
+      pick('contract_kind', 'contractKind') ?? null,
     );
   }
 
@@ -173,6 +197,9 @@ export class MyPage implements OnInit {
     this.filterTo.set('');
     this.filterCategory.set('');
     this.filterAction.set('');
+    this.filterActor.set('');
+    this.filterContract.set('');
+    this.filterRefNo.set('');
     this.applyFilters();
   }
 
@@ -183,25 +210,38 @@ export class MyPage implements OnInit {
     if (this.page() > 1) { this.page.set(this.page() - 1); this.load(); }
   }
 
-  shortAddr(addr: string): string {
-    if (!addr) return '';
-    if (addr.length <= 12) return addr;
-    return addr.slice(0, 6) + '…' + addr.slice(-4);
+  shortAddr(addr: string | null | undefined, head = 6, tail = 4): string {
+    return this.utils.shortAddr(addr, head, tail);
   }
 
   actorLabel(r: AuditLog): string {
-    return r.actor_user_name || this.shortAddr(r.actor_address);
+    if (r.actor_name) {
+      return r.actor_kind ? `${r.actor_name} · ${r.actor_kind}` : r.actor_name;
+    }
+    return r.actor_user_name || r.actor_address || '';
   }
 
-  targetLabel(r: AuditLog): string {
-    const kind = r.target_kind || '';
-    const addr = this.shortAddr(r.target_address);
-    if (kind && addr) return `${kind} · ${addr}`;
-    return kind || addr || '';
+  functionLabel(r: AuditLog): string {
+    if (r.function_name) return r.function_name;
+    return r.function_selector ? this.shortAddr(r.function_selector) : '';
+  }
+
+  contractLabel(r: AuditLog): string {
+    if (r.contract_name) return r.contract_name;
+    return this.shortAddr(r.contract);
+  }
+
+  actionLabel(r: AuditLog): string {
+    return (r.action || '').replace(/_/g, ' ');
   }
 
   openDetails(r: AuditLog) {
-    this.router.navigate(['/authorized/logs/details', r.id], { queryParams: { refNo: r.ref_no } });
+    // Pass the full row via Router state so the details page can render
+    // without re-fetching by id.
+    this.router.navigate(
+      ['/authorized/logs/details', r.id],
+      { queryParams: { refNo: r.ref_no }, state: { row: r } }
+    );
   }
 
   isZeroRef(refNo: string): boolean {
@@ -213,11 +253,10 @@ export class MyPage implements OnInit {
       'Time': this.utils.formatDate(r.chain_time || r.created_at),
       'Category': r.category,
       'Action': r.action,
+      'Function': this.functionLabel(r),
       'Actor': this.actorLabel(r),
-      'Target Kind': r.target_kind,
-      'Target': r.target_address,
+      'Contract': r.contract,
       'RefNo': r.ref_no,
-      'Reason': r.reason,
       'TxHash': r.tx_hash,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -235,22 +274,22 @@ export class MyPage implements OnInit {
     doc.text(this.exportTitle(), 14, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, 14, 21);
     autoTable(doc, {
       startY: 26,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [['Time', 'Category', 'Action', 'Actor', 'Target', 'RefNo', 'Reason']],
+      head: [['Time', 'Category', 'Action', 'Function', 'Actor', 'Contract', 'RefNo']],
       body: rows.map(r => [
         this.utils.formatDate(r.chain_time || r.created_at),
         r.category, r.action,
+        this.functionLabel(r),
         this.actorLabel(r),
-        this.targetLabel(r),
+        this.shortAddr(r.contract),
         this.shortAddr(r.ref_no),
-        (r.reason || '').slice(0, 60),
       ]),
     });
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`${this.exportName()}_${stamp}.pdf`);
   }
 

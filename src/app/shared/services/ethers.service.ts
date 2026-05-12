@@ -126,7 +126,28 @@ export class EthersService {
     }
   }
 
-  async createLoginPayload(username: string, password: string, sessionDuration: number = 3600) {
+  // Compute the bytes32 commitment that EntityTemplate stores in `proofs[userId].commitment`.
+  // Used during the claim flow to set the new commitment with the entity API's salt + the
+  // user's chosen password (split out so the wizard can pre-compute it before posting).
+  async computeCommitment(username: string, password: string, salt?: string): Promise<string | null> {
+    try {
+      await ParseProofUtils.init();
+      const usernameBigInt = ParseProofUtils.stringToBigInt(username);
+      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
+      const saltBigInt     = BigInt(salt ?? this.globalSalt);
+      return ParseProofUtils.generateCommitment(usernameBigInt, passwordBigInt, saltBigInt);
+    } catch (error: any) {
+      console.error('computeCommitment error:', error);
+      return null;
+    }
+  }
+
+  // `saltOverride` lets the bootstrap admin claim wizard run a login proof against the regulator
+  // API's salt (recorded on chain as EntityTemplate.bootstrapSalt) instead of the entity API's.
+  // `passwordIsRawBigInt` — when true, treat `password` as a decimal numeric string (e.g. a 6-digit
+  // OTP) and use `BigInt(password)` directly instead of `passwordToBigInt`. The Regulator API
+  // computes the bootstrap commitment with `BigInt(otp)`, so the claim wizard must match.
+  async createLoginPayload(username: string, password: string, sessionDuration: number = 3600, saltOverride?: string, passwordIsRawBigInt: boolean = false) {
     try {
       if (!username || !password) return null;
       if (!Number.isInteger(sessionDuration) || sessionDuration <= 0) return null;
@@ -136,8 +157,8 @@ export class EthersService {
 
       // Convert credentials to BigInts
       const usernameBigInt = ParseProofUtils.stringToBigInt(username);
-      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(this.globalSalt);
+      const passwordBigInt = passwordIsRawBigInt ? BigInt(password) : ParseProofUtils.passwordToBigInt(password);
+      const globalSaltBigInt = BigInt(saltOverride ?? this.globalSalt);
 
       // Generate contract lookup hash
       const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
@@ -190,6 +211,74 @@ export class EthersService {
     }
     catch (error: any) {
       console.error('Login payload error:', error);
+      return null;
+    }
+  }
+
+  // Generate a login payload targeting an IdentityTemplate (the entity DID). Differs from
+  // createLoginPayload: there's no per-template user table, so credentials live directly on
+  // `_credentials.loginHash` / `commitment` / `nonce`. The login() signature on IdentityTemplate
+  // omits the usernameHash arg.
+  async createIdentityLoginPayload(identityAddress: string, username: string, password: string, sessionDuration: number, saltOverride?: string, passwordIsRawBigInt: boolean = false) {
+    try {
+      if (!identityAddress || !username || !password) return null;
+      if (!Number.isInteger(sessionDuration) || sessionDuration <= 0) return null;
+
+      await ParseProofUtils.init();
+
+      const usernameBigInt   = ParseProofUtils.stringToBigInt(username);
+      const passwordBigInt   = passwordIsRawBigInt ? BigInt(password) : ParseProofUtils.passwordToBigInt(password);
+      const globalSaltBigInt = BigInt(saltOverride ?? this.globalSalt);
+
+      const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
+
+      const idIface = new ethers.Interface([
+        'function commitment() external view returns (bytes32)',
+        'function nonce() external view returns (uint256)',
+      ]);
+      const idContract = new ethers.Contract(identityAddress, idIface, this.signer);
+      const [storedCommitmentHex, nonceVal] = await Promise.all([
+        idContract['commitment'](),
+        idContract['nonce'](),
+      ]);
+
+      const storedCommitmentString = BigInt(storedCommitmentHex).toString();
+      const usernameHashString     = BigInt(usernameHashHex).toString();
+
+      const circuitInput = {
+        email: usernameBigInt.toString(),
+        password: passwordBigInt.toString(),
+        salt: globalSaltBigInt.toString(),
+        emailHash: usernameHashString,
+        storedCommitment: storedCommitmentString,
+        nonce: nonceVal.toString(),
+      };
+
+      const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+        circuitInput,
+        'assets/zk/Login.wasm',
+        'assets/zk/Login_final.zkey'
+      );
+      const { a, b, c, input: proofInput } = await ParseProofUtils.parseProof({ proof, publicSignals });
+
+      // Use a fresh ephemeral wallet for the DID session — keeps it independent of the entity session.
+      const didEphemeral = ethers.Wallet.createRandom();
+      const message = ethers.solidityPacked(['string', 'address'], ['Set owner to:', didEphemeral.address]);
+      const messageHash = ethers.keccak256(message);
+      const signedMessage = await didEphemeral.signMessage(ethers.getBytes(messageHash));
+
+      return {
+        identityAddress,
+        privateKey:     didEphemeral.privateKey,
+        a:              a.map((x: bigint) => x.toString()),
+        b:              b.map((row: bigint[]) => row.map((x: bigint) => x.toString())),
+        c:              c.map((x: bigint) => x.toString()),
+        proofInput:     proofInput.map((x: bigint) => x.toString()),
+        signedMessage,
+        sessionDuration,
+      };
+    } catch (error: any) {
+      console.error('Identity login payload error:', error);
       return null;
     }
   }

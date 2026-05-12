@@ -1,10 +1,11 @@
 import { inject, Injectable, Injector } from '@angular/core';
+import { Router } from '@angular/router';
 import { CapacitorHttp } from '@capacitor/core';
 
 import { CryptoService } from './crypto.service';
 import { EthersService } from './ethers.service';
-
-import { environment } from '../../../environments/environment';
+import { ConfigService } from './config.service';
+import { SessionService } from './session.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
 
@@ -15,7 +16,27 @@ export class ApiService {
 
   private cryptoService = inject(CryptoService);
   private ethersService = inject(EthersService);
+  private configService = inject(ConfigService);
+  private sessionService = inject(SessionService);
+  private router = inject(Router);
   private injector = inject(Injector);
+
+  // Tracks whether we've already kicked off the auth-expired redirect, so a
+  // burst of in-flight 401s doesn't spam the alert / navigate repeatedly.
+  private _authExpiredHandled = false;
+
+  // Called whenever an authenticated request returns 401. Clears the cached
+  // session and bounces the user to the login page so the silent-401 trap
+  // (server restart wipes in-memory sessions) surfaces immediately instead of
+  // leaving every page rendering as empty data with misleading error toasts.
+  private async _handleAuthFailure(): Promise<void> {
+    if (this._authExpiredHandled) return;
+    this._authExpiredHandled = true;
+    try { await this.sessionService.clear(); } catch (_) {}
+    try { await this.router.navigate(['/public/user/login'], { queryParams: { reason: 'session-expired' } }); } catch (_) {}
+    // Allow re-entry once the user logs in again.
+    setTimeout(() => { this._authExpiredHandled = false; }, 5000);
+  }
 
   private _authRef: any = null;
   private formatReason(reason: string): string {
@@ -32,8 +53,12 @@ export class ApiService {
     return reason;
   }
 
-  apiURL = environment.apiURL;
-  vaultToken = environment.vaultToken;
+  apiURL = this.configService.get('apiURL');
+
+  private async authHeader(): Promise<Record<string, string>> {
+    const token = await this.sessionService.getActiveToken();
+    return token ? { 'Authorization': 'Bearer ' + token } : {};
+  }
 
   private getAuditHeaders(): Record<string, string> {
     try {
@@ -53,7 +78,7 @@ export class ApiService {
 
   // ─── Vault — Config (unauthenticated) ────────────────────────────────────────
 
-  async vaultGetConfig(): Promise<{ rpcNode: string; entityContract: string; globalVariablesProxyContract: string; globalSalt: string } | null> {
+  async vaultGetConfig(): Promise<{ rpcNode: string; entityContract: string; globalVariablesProxyContract: string; globalSalt: string; bootstrapSalt?: string } | null> {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
@@ -90,10 +115,11 @@ export class ApiService {
         url: this.apiURL + '/vault' + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
         },
         params,
       });
+      if (response.status === 401) { this._handleAuthFailure(); return null; }
       if (response.data?.type !== 'success') return null;
       return response.data;
     } catch {
@@ -117,11 +143,12 @@ export class ApiService {
         url: this.apiURL + '/vault' + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
         data: body,
       });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
       if (response.data?.type !== 'success') return { error: this.extractError(response) };
       return response.data;
     } catch (e: any) {
@@ -136,11 +163,12 @@ export class ApiService {
         url: this.apiURL + '/vault' + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
         data: body,
       });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
       if (response.data?.type !== 'success') return { error: this.extractError(response) };
       return response.data;
     } catch (e: any) {
@@ -155,10 +183,11 @@ export class ApiService {
         url: this.apiURL + '/vault' + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
       });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
       if (response.data?.type !== 'success') return { error: this.extractError(response) };
       return response.data;
     } catch (e: any) {
@@ -173,11 +202,12 @@ export class ApiService {
         url: this.apiURL + '/vault' + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
         data: body,
       });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
       if (response.data?.type !== 'success') return { error: this.extractError(response) };
       return response.data;
     } catch (e: any) {
@@ -194,11 +224,12 @@ export class ApiService {
         url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
         params,
       });
+      if (response.status === 401) { this._handleAuthFailure(); return null; }
       if (response.status >= 300 || response.data?.error) return null;
       return response.data;
     } catch {
@@ -213,11 +244,12 @@ export class ApiService {
         url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
         data: body,
       });
+      if (response.status === 401) { this._handleAuthFailure(); return null; }
       if (response.status >= 300 || response.data?.error) return null;
       return response.data;
     } catch {
@@ -232,11 +264,12 @@ export class ApiService {
         url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
         data: body,
       });
+      if (response.status === 401) { this._handleAuthFailure(); return null; }
       if (response.status >= 300 || response.data?.error) return null;
       return response.data;
     } catch {
@@ -251,10 +284,11 @@ export class ApiService {
         url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
       });
+      if (response.status === 401) { this._handleAuthFailure(); return null; }
       if (response.status >= 300 || response.data?.error) return null;
       return response.data;
     } catch {
@@ -394,6 +428,26 @@ export class ApiService {
     return data?.price ?? null;
   }
 
+  async vaultSetAssetPrice(payload: { asset: string; bid?: number; ask?: number; price?: number; timestamp: number }) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/assets/price',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await this.authHeader()),
+          ...this.getAuditHeaders(),
+        },
+        data: payload,
+      });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
+      if (response.data?.success !== true) return { error: this.extractError(response) };
+      return response.data;
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
+    }
+  }
+
   async vaultGetAssetPriceHistory(address: string, start = 0, offset = 50) {
     const data = await this.vaultGet('/assets/' + address + '/price/history', { start, offset });
     return data ? { count: data.count, history: data.history } : null;
@@ -404,6 +458,12 @@ export class ApiService {
     return data?.services ?? null;
   }
 
+  async vaultGetAssetWithheldTotal(address: string) {
+    return this.vaultGet('/assets/' + address + '/withheld-total');
+  }
+  async vaultGetServiceWithheldSummary(address: string) {
+    return this.vaultGet('/services/' + address + '/withheld-summary');
+  }
   async vaultGetAssetHolders(address: string, start = 0, offset = 500) {
     const data = await this.vaultGet('/assets/' + address + '/holders', { start, offset });
     return data ? { count: data.count, holders: data.holders } : null;
@@ -425,6 +485,36 @@ export class ApiService {
   async vaultGetTransaction(id: number) {
     const data = await this.vaultGet('/transactions/' + id);
     return data?.transaction ?? null;
+  }
+
+  async transactionBuy(body: { asset: string; service: string; subscriber: string; tokens: number; price?: number; data?: any; timestamp?: number }): Promise<{ result?: any; error?: string }> {
+    return this._postPlain('/transactions/buy', body);
+  }
+
+  async transactionSell(body: { asset: string; service: string; subscriber: string; tokens: number; price?: number; data?: any; timestamp?: number }): Promise<{ result?: any; error?: string }> {
+    return this._postPlain('/transactions/sell', body);
+  }
+
+  private async _postPlain(path: string, body: Record<string, any>): Promise<{ result?: any; error?: string }> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + path,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await this.authHeader()),
+          ...this.getAuditHeaders(),
+        },
+        data: body,
+      });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
+      if (response.status >= 400 || response.data?.error) {
+        return { error: response.data?.error || ('HTTP ' + response.status) };
+      }
+      return { result: response.data?.result };
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
+    }
   }
 
   // ─── Vault — Services ─────────────────────────────────────────────────────────
@@ -481,6 +571,38 @@ export class ApiService {
     return data ?? null;
   }
 
+  // ─── Vault — Analytics ───────────────────────────────────────────────────────
+
+  async vaultGetAumTrend(interval = '1d', points = 30) {
+    const data = await this.vaultGet(`/analytics/aum-trend?interval=${encodeURIComponent(interval)}&points=${points}`);
+    return data ?? null;
+  }
+
+  async vaultGetHolderConcentration() {
+    const data = await this.vaultGet('/analytics/holder-concentration');
+    return data ?? null;
+  }
+
+  async vaultGetNetFlow(interval = '1d', points = 30) {
+    const data = await this.vaultGet(`/analytics/net-flow?interval=${encodeURIComponent(interval)}&points=${points}`);
+    return data ?? null;
+  }
+
+  async vaultGetCreditExposure() {
+    const data = await this.vaultGet('/analytics/credit-exposure');
+    return data ?? null;
+  }
+
+  async vaultGetDexVolume(interval = '1d', points = 30) {
+    const data = await this.vaultGet(`/analytics/dex-volume?interval=${encodeURIComponent(interval)}&points=${points}`);
+    return data ?? null;
+  }
+
+  async vaultGetValidatorReliance() {
+    const data = await this.vaultGet('/analytics/validator-reliance');
+    return data ?? null;
+  }
+
   // ─── Vault — Sync ─────────────────────────────────────────────────────────────
 
   async vaultGetSyncStatus() {
@@ -505,7 +627,7 @@ export class ApiService {
         url: this.apiURL + '/vault/assets',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
         },
         data: body,
       });
@@ -596,7 +718,7 @@ export class ApiService {
     return data?.balances ?? null;
   }
 
-  async vaultGetSubscriptionCreditTransactions(address: string, start = 1, offset = 500) {
+  async vaultGetSubscriptionCreditTransactions(address: string, start = 1, offset = 50) {
     const data = await this.vaultGet('/subscriptions/' + address + '/credit-transactions', { start: String(start), offset: String(offset) });
     return data ? { count: data.count, transactions: data.transactions } : null;
   }
@@ -665,6 +787,75 @@ export class ApiService {
     return data ? { count: data.count, services: data.services } : null;
   }
 
+  async creditDeposit(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; data?: any }): Promise<{ result?: any; error?: string }> {
+    return this._creditMutation('/credit/deposit', body);
+  }
+
+  async creditWithdraw(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; data?: any }): Promise<{ result?: any; error?: string }> {
+    return this._creditMutation('/credit/withdraw', body);
+  }
+
+  private async _creditMutation(path: string, body: Record<string, any>): Promise<{ result?: any; error?: string }> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + path,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await this.authHeader()),
+          ...this.getAuditHeaders(),
+        },
+        data: body,
+      });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
+      if (response.status >= 400 || response.data?.error) {
+        return { error: response.data?.error || ('HTTP ' + response.status) };
+      }
+      return { result: response.data?.result };
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
+    }
+  }
+
+  async vaultGetApprovedPaymentProcessors(): Promise<Array<{ service: string; name: string; regulator: string; serviceLevel: number }> | null> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/credit/approved-processors',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await this.authHeader()),
+        },
+      });
+      if (response.data?.type !== 'success') return null;
+      return response.data.processors;
+    } catch {
+      return null;
+    }
+  }
+
+  async usersOnboard(body: Record<string, any>): Promise<{ subscriptionAddress?: string; error?: string }> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/users/onboard',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await this.authHeader()),
+          ...this.getAuditHeaders(),
+        },
+        data: body,
+      });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
+      if (response.status >= 400 || response.data?.error) {
+        return { error: response.data?.error || ('HTTP ' + response.status) };
+      }
+      return { subscriptionAddress: response.data?.subscriptionAddress };
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
+    }
+  }
+
   async vaultGetCountries() {
     const data = await this.vaultGet('/countries');
     return data?.countries ?? null;
@@ -692,25 +883,29 @@ export class ApiService {
 
   // ─── Vault — Entity auth ──────────────────────────────────────────────────────
 
-  async entityLogin(username: string, password: string, sessionDuration: number) {
-    const payload = await this.ethersService.createLoginPayload(username, password, sessionDuration);
+  async entityLogin(username: string, password: string, sessionDuration: number, saltOverride?: string, passwordIsRawBigInt: boolean = false) {
+    const payload = await this.ethersService.createLoginPayload(username, password, sessionDuration, saltOverride, passwordIsRawBigInt);
     if (!payload) return { success: false, error: 'Proof generation failed' };
     const { key, ...rest } = payload;
     // Raw POST so we can surface the contract-level revert reason (nonce mismatch,
-    // commitment mismatch, invalid zk proof, …) — vaultPost() swallows it on non-2xx.
+    // commitment mismatch, invalid zk proof, …). PUBLIC endpoint — no Authorization
+    // header (the user has no JWT yet).
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
         url: this.apiURL + '/vault/entity/login',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
-          ...this.getAuditHeaders(),
-        },
+        headers: { 'Content-Type': 'application/json' },
         data: { ...rest, privateKey: key.privateKey },
       });
       if (response.data?.type === 'success') {
-        return { success: true, userId: response.data.userId, key };
+        return {
+          success: true,
+          userId: response.data.userId,
+          token: response.data.token,
+          expiresAt: response.data.expiresAt,
+          refreshExpiresAt: response.data.refreshExpiresAt,
+          key,
+        };
       }
       return { success: false, error: response.data?.error || 'Login API call failed', key };
     } catch (err: any) {
@@ -720,6 +915,48 @@ export class ApiService {
 
   async entityLogout() {
     const data = await this.vaultPost('/entity/logout', {});
+    return data ?? null;
+  }
+
+  // Bootstrap-admin claim flow ────────────────────────────────────────────────
+  // Probe whether a loginHash points at an unclaimed bootstrap admin. PUBLIC endpoint —
+  // safe to call before any session exists.
+  async vaultUserClaimStatus(loginHash: string) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/vault/users/claim-status?loginHash=' + encodeURIComponent(loginHash),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data?.type === 'success') return response.data.status;
+      return null;
+    } catch { return null; }
+  }
+
+  // Submit the claim transaction. Must be called immediately after a successful login with the
+  // placeholder commitment — the just-established admin session is what authenticates the call
+  // on chain (contract enforces authorizedUser[msg.sender] == 1).
+  async vaultUserAdminClaim(newCommitment: string, profile?: { name: string; username: string; email: string }) {
+    const data = await this.vaultPost('/users/admin-claim', { newCommitment, ...(profile || {}) });
+    return data ?? null;
+  }
+
+  // Best-effort claim of the entity's own DID. Called by the bootstrap-admin claim wizard right
+  // after vaultUserAdminClaim succeeds. Payload carries a fresh ZK login proof for the
+  // IdentityTemplate (using the same OTP as the bootstrap login) plus the new commitment.
+  // Returns `{ skipped: true }` when the entity has no DID linked.
+  async vaultIdentityAdminClaim(payload: {
+    identityAddress: string;
+    privateKey: string;
+    a: string[];
+    b: string[][];
+    c: string[];
+    proofInput: string[];
+    signedMessage: string;
+    sessionDuration: number;
+    newCommitment: string;
+  }) {
+    const data = await this.vaultPost('/identity/admin-claim', payload);
     return data ?? null;
   }
 
@@ -790,13 +1027,23 @@ export class ApiService {
   // Shared multipart uploader. Path-agnostic so the same code serves entity / service / asset /
   // subscription document POSTs. The API handles encryption, IPFS pin, wrapped-DEK assembly, and
   // on-chain addDocument — frontend just posts raw file + metadata.
+  // Returns the parsed JSON on 2xx, or { error, status } on any failure path
+  // (HTTP error, network error, abort, parse failure). Callers should check
+  // `result?.error` rather than just `!result`. On 401, the global auth-failure
+  // handler is invoked so the user is bounced to /public/user/login instead of
+  // staring at a generic toast.
   private async _uploadMultipart(
     path: string,
     file: File,
     metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
     onProgress?: (percent: number) => void
-  ): Promise<any | null> {
-    return new Promise<any | null>((resolve) => {
+  ): Promise<any> {
+    const token = await this.sessionService.getActiveToken();
+    if (!token) {
+      this._handleAuthFailure();
+      return { error: 'Session expired. Please log in again.', status: 401 };
+    }
+    return new Promise<any>((resolve) => {
       try {
         const form = new FormData();
         form.append('file', file, file.name);
@@ -811,7 +1058,7 @@ export class ApiService {
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', this.apiURL + path);
-        xhr.setRequestHeader('Authorization', 'Bearer ' + this.vaultToken);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
         const audit = this.getAuditHeaders();
         for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
 
@@ -819,16 +1066,26 @@ export class ApiService {
           if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
         };
         xhr.onload = () => {
-          try {
-            const json = JSON.parse(xhr.responseText);
-            if (xhr.status >= 300 || json?.error) resolve(null);
-            else resolve(json);
-          } catch { resolve(null); }
+          let json: any = null;
+          try { json = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { /* non-JSON body */ }
+          if (xhr.status === 401) {
+            this._handleAuthFailure();
+            resolve({ error: 'Session expired. Please log in again.', status: 401 });
+            return;
+          }
+          if (xhr.status >= 300 || json?.error) {
+            const msg = json?.error || json?.message || `Upload failed (HTTP ${xhr.status})`;
+            resolve({ error: msg, status: xhr.status });
+            return;
+          }
+          resolve(json ?? { ok: true });
         };
-        xhr.onerror = () => resolve(null);
-        xhr.onabort = () => resolve(null);
+        xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.onabort = () => resolve({ error: 'Upload aborted', status: 0 });
         xhr.send(form);
-      } catch { resolve(null); }
+      } catch (e: any) {
+        resolve({ error: e?.message || 'Upload failed', status: 0 });
+      }
     });
   }
 
@@ -838,7 +1095,7 @@ export class ApiService {
     try {
       const res = await fetch(this.apiURL + path, {
         headers: {
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
       });
@@ -1005,6 +1262,7 @@ export class ApiService {
   async ipfsFetchFile(cid: string)                      { return await this.authGet('/ipfs/file/' + cid); }
 
   async ipfsUploadFile(file: File, onProgress?: (percent: number) => void): Promise<string | null> {
+    const token = await this.sessionService.getActiveToken();
     return new Promise<string | null>((resolve) => {
       try {
         const form = new FormData();
@@ -1012,7 +1270,7 @@ export class ApiService {
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', this.apiURL + '/ipfs/upload');
-        xhr.setRequestHeader('Authorization', 'Bearer ' + this.vaultToken);
+        if (token) xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 
         xhr.upload.onprogress = (e) => {
           if (onProgress && e.lengthComputable) {
@@ -1070,7 +1328,7 @@ export class ApiService {
 
       const response = await fetch(this.apiURL + '/ekyc/nid/verify', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + this.vaultToken },
+        headers: await this.authHeader(),
         body: formData
       });
 
@@ -1295,7 +1553,7 @@ export class ApiService {
         url: this.apiURL + '/vault/activity-log',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
         },
         data: body,
       });
@@ -1309,7 +1567,7 @@ export class ApiService {
         url: this.apiURL + '/vault/audit-log',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + this.vaultToken,
+          ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
         data: body,
@@ -1320,6 +1578,7 @@ export class ApiService {
   // ─── Audit Trail ──────────────────────────────────────────────────────────
   async auditMe(filters: {
     from?: string; to?: string; category?: string; action?: string;
+    actor?: string; contract?: string; refNo?: string;
     page?: number; pageSize?: number;
   } = {}) {
     const params: Record<string, string> = {};
@@ -1327,18 +1586,24 @@ export class ApiService {
     if (filters.to)        params['to']       = filters.to;
     if (filters.category)  params['category'] = filters.category;
     if (filters.action)    params['action']   = filters.action;
+    if (filters.actor)     params['actor']    = filters.actor;
+    if (filters.contract)  params['contract'] = filters.contract;
+    if (filters.refNo)     params['refNo']    = filters.refNo;
     if (filters.page)      params['page']     = String(filters.page);
     if (filters.pageSize)  params['pageSize'] = String(filters.pageSize);
     return this.authGet('/audit/me', params);
   }
 
   async auditSystem(filters: {
-    actor?: string; target?: string; category?: string; action?: string;
+    actor?: string; target?: string; contract?: string; refNo?: string;
+    category?: string; action?: string;
     from?: string; to?: string; page?: number; pageSize?: number;
   } = {}) {
     const params: Record<string, string> = {};
     if (filters.actor)     params['actor']    = filters.actor;
     if (filters.target)    params['target']   = filters.target;
+    if (filters.contract)  params['contract'] = filters.contract;
+    if (filters.refNo)     params['refNo']    = filters.refNo;
     if (filters.category)  params['category'] = filters.category;
     if (filters.action)    params['action']   = filters.action;
     if (filters.from)      params['from']     = filters.from;
@@ -1350,6 +1615,10 @@ export class ApiService {
 
   async auditByRef(refNo: string) {
     return this.authGet('/audit/ref/' + refNo);
+  }
+
+  async auditById(id: number | string) {
+    return this.authGet('/audit/by-id/' + encodeURIComponent(String(id)));
   }
 
   async auditByTarget(address: string, page = 1, pageSize = 50) {

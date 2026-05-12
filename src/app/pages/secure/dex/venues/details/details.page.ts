@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
+import { LiveIndicatorComponent } from "../../../../../shared/components/live-indicator/live-indicator.component";
 import { ApiService } from '../../../../../shared/services/api.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
@@ -20,7 +21,7 @@ import { ModalVenueStateComponent } from '../modals/modal-venue-state/modal-venu
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, RouterLink, ModalVenueStateComponent],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, ModalVenueStateComponent],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -38,6 +39,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   venueOrders = signal<DexOrder[]>([]);
   venueTrades = signal<DexTrade[]>([]);
   venueAssets = signal<any[]>([]);
+  refreshing = signal(false);
 
   private sub?: Subscription;
 
@@ -51,21 +53,28 @@ export class DetailsPage implements OnInit, OnDestroy {
   async ionViewWillEnter() {
     await this.loadVenue();
     await Promise.all([this.loadOrders(), this.loadTrades(), this.loadAssets()]);
-    this.sub = this.socket.vaultUpdated$.subscribe(p => {
-      if (p.type === 'dex-venue') this.loadVenue();
-      if (p.type === 'dex-order') this.loadOrders();
-      if (p.type === 'dex-trade') this.loadTrades();
-      if (p.type === 'dex-asset-venue') this.loadAssets();
+    this.sub = this.socket.vaultUpdated$.subscribe(async p => {
+      const isRelevant = p.type === 'dex-venue' || p.type === 'dex-order' || p.type === 'dex-trade' || p.type === 'dex-asset-venue';
+      if (!isRelevant) return;
+      this.refreshing.set(true);
+      try {
+        if (p.type === 'dex-venue') await this.loadVenue(true);
+        if (p.type === 'dex-order') await this.loadOrders();
+        if (p.type === 'dex-trade') await this.loadTrades();
+        if (p.type === 'dex-asset-venue') await this.loadAssets();
+      } finally {
+        this.refreshing.set(false);
+      }
     });
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
-  async loadVenue() {
-    this.loadingService.show('Loading venue...');
+  async loadVenue(silent = false) {
+    if (!silent) this.loadingService.show('Loading venue...');
     const data = await this.apiService.vaultDexVenueInfo(this.serviceAddress());
     this.venue.set(data);
-    this.loadingService.hide();
+    if (!silent) this.loadingService.hide();
   }
 
   async loadOrders() {

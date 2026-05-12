@@ -23,4 +23,37 @@ export class UtilsService {
     return Number(value).toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
   }
 
+  // Shorten a 0x-prefixed hex string for display: 0xabcdef…1234. Used for
+  // wallet addresses, tx hashes, refNos.
+  shortAddr(value: string | null | undefined, head = 6, tail = 4): string {
+    if (!value) return '-';
+    const s = String(value);
+    if (!s.startsWith('0x')) return s;
+    if (s.length <= head + tail + 2) return s;
+    return s.slice(0, 2 + head) + '…' + s.slice(-tail);
+  }
+
+  // Mask an IP address so the casual viewer sees only the first + last segment.
+  // IPv4: 192.168.1.42 → 192.xxx.xxx.42 ; IPv6: 2001:db8:…:7334 → 2001:xxxx:…:7334
+  maskIp(ip: string | null | undefined): string {
+    if (!ip) return '—';
+    const trimmed = String(ip).trim();
+    if (!trimmed || trimmed === '::1' || trimmed === '127.0.0.1') return '—';
+    const v4 = trimmed.match(/(\d{1,3})\.\d{1,3}\.\d{1,3}\.(\d{1,3})$/);
+    if (v4) return `${v4[1]}.xxx.xxx.${v4[2]}`;
+    if (trimmed.includes(':')) {
+      const expanded = trimmed.includes('::')
+        ? (() => {
+            const [head, tail] = trimmed.split('::');
+            const headParts = head ? head.split(':') : [];
+            const tailParts = tail ? tail.split(':') : [];
+            const fill = 8 - headParts.length - tailParts.length;
+            return [...headParts, ...Array(fill).fill('0'), ...tailParts];
+          })()
+        : trimmed.split(':');
+      if (expanded.length === 8) return `${expanded[0]}:xxxx:…:${expanded[7]}`;
+    }
+    return trimmed;
+  }
+
 }

@@ -167,8 +167,18 @@ export class DashboardPage implements OnInit {
     return this.dashboardSummary()?.charts.aumByAssetByCurrency[code] ?? [];
   });
 
+  // change-highlight signals (cleared 2s after a silent refresh)
+  newTrxIds          = signal<Set<number>>(new Set());
+  newSubKeys         = signal<Set<string>>(new Set());
+  newTopAssetKeys    = signal<Set<string>>(new Set());
+  changedStatTitles  = signal<Set<string>>(new Set());
+  private flashTrxIds(ids: number[])      { if (!ids.length)   return; this.newTrxIds.set(new Set(ids));         setTimeout(() => this.newTrxIds.set(new Set()),         2000); }
+  private flashSubKeys(keys: string[])    { if (!keys.length)  return; this.newSubKeys.set(new Set(keys));       setTimeout(() => this.newSubKeys.set(new Set()),        2000); }
+  private flashTopAssetKeys(keys: string[]) { if (!keys.length) return; this.newTopAssetKeys.set(new Set(keys)); setTimeout(() => this.newTopAssetKeys.set(new Set()),    2000); }
+  private flashStats(titles: string[])    { if (!titles.length) return; this.changedStatTitles.set(new Set(titles)); setTimeout(() => this.changedStatTitles.set(new Set()), 2000); }
+
   intervalOptions = ACTIVITY_INTERVALS;
-  activityInterval = signal<string>('1d');
+  activityInterval = signal<string>('5m');
   activityData     = signal<Record<string, ActivityPoint[]>>({});
   activityLoading  = signal(false);
   activityPoints   = computed(() => {
@@ -281,12 +291,18 @@ export class DashboardPage implements OnInit {
     const status = await this.apiService.vaultGetSyncStatus();
     if (status) {
       this.lastSynced = status.lastSync ? Number(status.lastSync) : 0;
-      this.stats.update(cards => [
-        { ...cards[0], value: status.serviceCount, loading: false },
-        { ...cards[1], value: status.assetCount,   loading: false },
-        { ...cards[2], value: status.subCount,     loading: false },
-        { ...cards[3], value: status.trxCount,     loading: false },
-      ]);
+      const next = [
+        { value: status.serviceCount, title: 'Total Services'      },
+        { value: status.assetCount,   title: 'Total Assets'        },
+        { value: status.subCount,     title: 'Total Subscriptions' },
+        { value: status.trxCount,     title: 'Total Transactions'  },
+      ];
+      if (silent) {
+        const prev = new Map(this.stats().map(c => [c.title, c.value]));
+        const changed = next.filter(n => prev.get(n.title) !== n.value).map(n => n.title);
+        this.flashStats(changed);
+      }
+      this.stats.update(cards => cards.map((c, i) => ({ ...c, value: next[i].value, loading: false })));
     } else {
       this.stats.update(cards => cards.map(c => ({ ...c, loading: false })));
     }
@@ -296,7 +312,12 @@ export class DashboardPage implements OnInit {
     if (!silent) this.subscriptionsLoading.set(true);
     const result = await this.apiService.vaultGetSubscriptions(undefined, 0, 5);
     if (result?.subscriptions) {
-      this.latestSubscriptions.set(result.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
+      const next = result.subscriptions.map((s: any) => this.mapVaultSubscription(s));
+      if (silent) {
+        const prev = new Set(this.latestSubscriptions().map(s => s.subscription));
+        this.flashSubKeys(next.filter((s: Subscription) => !prev.has(s.subscription)).map((s: Subscription) => s.subscription));
+      }
+      this.latestSubscriptions.set(next);
     }
     if (!silent) this.subscriptionsLoading.set(false);
   }
@@ -343,7 +364,12 @@ export class DashboardPage implements OnInit {
     if (!silent) this.transactionsLoading.set(true);
     const result = await this.apiService.vaultGetTransactions(undefined, 0, 5);
     if (result?.transactions) {
-      this.latestTransactions.set(result.transactions.map((t: any) => this.mapVaultTransaction(t)));
+      const next = result.transactions.map((t: any) => this.mapVaultTransaction(t));
+      if (silent) {
+        const prevIds = new Set(this.latestTransactions().map(t => t.trxId));
+        this.flashTrxIds(next.filter((t: AssetTransaction) => !prevIds.has(t.trxId)).map((t: AssetTransaction) => t.trxId));
+      }
+      this.latestTransactions.set(next);
     }
     if (!silent) this.transactionsLoading.set(false);
   }
@@ -353,6 +379,14 @@ export class DashboardPage implements OnInit {
     const result = await this.apiService.vaultGetDashboardSummary();
     if (result) {
       const summary = result as DashboardSummary;
+      if (silent) {
+        const prev = new Map(this.topAssets().map(a => [a.address, { aum: a.aum, bid: a.bid, circulating: a.circulating }]));
+        const changed = (summary.topAssets ?? []).filter(a => {
+          const p = prev.get(a.address);
+          return !p || p.aum !== a.aum || p.bid !== a.bid || p.circulating !== a.circulating;
+        }).map(a => a.address);
+        this.flashTopAssetKeys(changed);
+      }
       this.dashboardSummary.set(summary);
       const current = this.selectedCurrency();
       const available = summary.currencies ?? [];

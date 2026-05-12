@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { SocketService } from '../../../../../shared/services/socket.service';
@@ -15,7 +16,7 @@ import { DexTrade } from '../../../../../shared/models/data.model';
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [HeaderComponent, RouterLink],
+  imports: [HeaderComponent, LiveIndicatorComponent, RouterLink],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -27,6 +28,7 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   tradeId = signal<number>(0);
   trade = signal<DexTrade | undefined>(undefined);
+  refreshing = signal(false);
 
   private sub?: Subscription;
 
@@ -40,18 +42,22 @@ export class DetailsPage implements OnInit, OnDestroy {
   async ionViewWillEnter() {
     await this.load();
     this.sub = this.socket.vaultUpdated$.subscribe(p => {
-      if (p.type === 'dex-trade') this.load();
+      if (p.type === 'dex-trade') this.load(true);
     });
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
-  async load() {
-    this.loadingService.show('Loading trade...');
+  async load(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading trade...');
     try {
       const t = await this.apiService.vaultDexTradeInfo(this.tradeId());
       if (t) this.trade.set(t);
-    } finally { this.loadingService.hide(); }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
+    }
   }
 
   fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }

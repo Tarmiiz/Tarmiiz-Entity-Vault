@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../shared/services/api.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
@@ -16,7 +17,7 @@ import { ConnectThread, ConnectMessage } from '../../../../shared/models/data.mo
   selector: 'app-messages-details',
   templateUrl: './details.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, HeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, HeaderComponent, LiveIndicatorComponent],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);
@@ -50,6 +51,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   isDeleting(id: string | number): boolean { return !!this.deleting()[String(id)]; }
 
   activeTab = signal<'conversation' | 'info' | 'participants'>('conversation');
+  refreshing = signal(false);
   setTab(tab: 'conversation' | 'info' | 'participants') { this.activeTab.set(tab); }
 
   stateName(state: number | undefined): string {
@@ -74,7 +76,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     this.entityAddress = (cfg?.entityContract || '').toLowerCase();
 
     this.sub = this.socketService.vaultUpdated$.subscribe(p => {
-      if (p.type === 'connect' || p.type === 'all') this.reload();
+      if (p.type === 'connect' || p.type === 'all') this.reload(true);
     });
 
     await this.reload();
@@ -82,7 +84,9 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
-  async reload() {
+  async reload(silent = false) {
+    if (silent) this.refreshing.set(true);
+    try {
     const threadResp = await this.apiService.connectThreadGet(this.threadId);
     if (threadResp?.thread) {
       this.thread.set(threadResp.thread);
@@ -95,6 +99,9 @@ export class DetailsPage implements OnInit, OnDestroy {
       this.resolveMessageTexts(msgsResp.messages);
       this.resolveMessageSenders(msgsResp.messages);
       this.resolveUserAttribution(msgsResp.messages.map((m: ConnectMessage) => m.createdByUserId).filter(Boolean) as string[]);
+    }
+    } finally {
+      if (silent) this.refreshing.set(false);
     }
   }
 

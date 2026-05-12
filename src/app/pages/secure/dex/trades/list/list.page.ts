@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { SocketService } from '../../../../../shared/services/socket.service';
@@ -19,7 +20,7 @@ import { DexTrade } from '../../../../../shared/models/data.model';
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
@@ -29,6 +30,7 @@ export class ListPage implements OnInit, OnDestroy {
   utils = inject(UtilsService);
 
   trades = signal<DexTrade[]>([]);
+  refreshing = signal(false);
   search = signal('');
   filterScope = signal<string>('');
   filterAsset = signal<string>('');
@@ -41,18 +43,22 @@ export class ListPage implements OnInit, OnDestroy {
   async ionViewDidEnter() {
     await this.refresh();
     this.sub = this.socket.vaultUpdated$.subscribe(p => {
-      if (p.type === 'dex-trade') this.refresh();
+      if (p.type === 'dex-trade') this.refresh(true);
     });
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
-  async refresh() {
-    this.loadingService.show('Loading trades...');
+  async refresh(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading trades...');
     try {
       const r = await this.apiService.vaultDexTradesList({ start: 1, offset: 200 });
       if (r?.trades) this.trades.set(r.trades);
-    } finally { this.loadingService.hide(); }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
+    }
   }
 
   filtered = computed(() => {

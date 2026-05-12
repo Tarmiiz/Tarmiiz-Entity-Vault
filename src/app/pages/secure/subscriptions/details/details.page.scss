@@ -1,0 +1,9 @@
+@keyframes row-pulse {
+  0%   { background-color: rgba(99, 102, 241, 0.25); }
+  100% { background-color: transparent; }
+}
+
+tr.row-new,
+.row-new {
+  animation: row-pulse 2s ease-out;
+}

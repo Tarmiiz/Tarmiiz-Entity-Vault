@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { ModalAssetAddService, AddAssetData } from './modal-asset-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -36,8 +36,8 @@ export class ModalAssetAddComponent {
 
   // Wizard state
   currentStep = signal(1);
-  readonly totalSteps = 5;
-  readonly stepLabels = ['Token Type', 'Identity', 'Service', 'Roles', 'Review'];
+  readonly totalSteps = 6;
+  readonly stepLabels = ['Token Type', 'Identity', 'Metadata', 'Service', 'Roles', 'Review'];
   reviewConfirmed = signal(false);
 
   // Symbol availability check (on-chain via API)
@@ -58,7 +58,48 @@ export class ModalAssetAddComponent {
     currency: ['', Validators.required],
     regulator: ['', Validators.required],
     creditSettlement: [false],
+    metadata: this.fb.array<FormGroup<{ key: FormControl<string>; value: FormControl<string> }>>([]),
   });
+
+  metadataError = signal('');
+
+  get metadataRows(): FormArray<FormGroup<{ key: FormControl<string>; value: FormControl<string> }>> {
+    return this.addForm.get('metadata') as FormArray<FormGroup<{ key: FormControl<string>; value: FormControl<string> }>>;
+  }
+
+  addMetadataRow(): void {
+    this.metadataRows.push(this.fb.nonNullable.group({
+      key: '',
+      value: '',
+    }));
+  }
+
+  removeMetadataRow(index: number): void {
+    this.metadataRows.removeAt(index);
+    if (this.metadataRows.length === 0) {
+      this.addMetadataRow();
+    }
+  }
+
+  /**
+   * Returns '' if metadata is valid, else a user-facing error string.
+   * Empty-key rows are ignored (will be dropped on submit).
+   */
+  private validateMetadata(): string {
+    const seen = new Set<string>();
+    for (const ctrl of this.metadataRows.controls) {
+      const key = (ctrl.controls.key.value ?? '').trim();
+      if (!key) continue;
+      if (key.toLowerCase() === 'description') {
+        return '"description" is reserved — use the Description field above.';
+      }
+      if (seen.has(key)) {
+        return `Duplicate key: "${key}".`;
+      }
+      seen.add(key);
+    }
+    return '';
+  }
 
   get isFixedSupply(): boolean {
     return this.addForm.get('tokenType')?.value === '1';
@@ -76,6 +117,9 @@ export class ModalAssetAddComponent {
     effect(() => {
       if (this.addAssetService.isVisible()) {
         this.addForm.reset({ creditSettlement: false });
+        this.metadataRows.clear();
+        this.addMetadataRow();
+        this.metadataError.set('');
         this.currentStep.set(1);
         this.symbolAvailable.set(null);
         this.symbolCheckPending.set(false);
@@ -88,6 +132,10 @@ export class ModalAssetAddComponent {
         this.loadTokenAndAssetTypes();
         this.loadKnownAddresses();
       }
+    });
+
+    this.metadataRows.valueChanges.subscribe(() => {
+      this.metadataError.set(this.validateMetadata());
     });
 
     // Auto-uncheck credit settlement when service changes to one without payment processor
@@ -120,18 +168,21 @@ export class ModalAssetAddComponent {
   private readonly stepFields: Record<number, string[]> = {
     1: ['tokenType'],
     2: ['name', 'symbol', 'description'],
-    3: ['service', 'currency'],
-    4: ['owner', 'issuer', 'manager', 'regulator'],
+    3: [],
+    4: ['service', 'currency'],
+    5: ['owner', 'issuer', 'manager', 'regulator'],
   };
 
   isCurrentStepValid(): boolean {
     const step = this.currentStep();
-    if (step === 5) return this.addForm.valid;
+    if (step === 6) return this.addForm.valid && !this.metadataError();
     let fields = this.stepFields[step] ?? [];
     if (step === 1 && this.isFixedSupply) {
       fields = [...fields, 'assetType', 'initialSupply'];
     }
-    return fields.every(f => this.addForm.get(f)?.valid ?? true);
+    const fieldsValid = fields.every(f => this.addForm.get(f)?.valid ?? true);
+    if (step === 3 && this.metadataError()) return false;
+    return fieldsValid;
   }
 
   nextStep(): void {
@@ -139,7 +190,7 @@ export class ModalAssetAddComponent {
     if (this.currentStep() === 2) {
       this.symbolCheckPending.set(true);
     }
-    if (this.currentStep() === 3 && this.symbolCheckPending()) {
+    if (this.currentStep() === 4 && this.symbolCheckPending()) {
       this.checkSymbolAvailability();
     }
     this.currentStep.update(s => s + 1);
@@ -281,6 +332,18 @@ export class ModalAssetAddComponent {
 
   onSave(): void {
     if (this.addForm.invalid) return;
+    const metadataErr = this.validateMetadata();
+    if (metadataErr) {
+      this.metadataError.set(metadataErr);
+      return;
+    }
+
+    const customMetadata: Record<string, string> = {};
+    for (const ctrl of this.metadataRows.controls) {
+      const key = (ctrl.controls.key.value ?? '').trim();
+      if (!key) continue;
+      customMetadata[key] = (ctrl.controls.value.value ?? '').trim();
+    }
 
     const formValue = this.addForm.getRawValue();
     const tokenType = Number(formValue.tokenType);
@@ -296,6 +359,7 @@ export class ModalAssetAddComponent {
       regulator: formValue.regulator ?? '',
       tokenType,
       creditSettlement: formValue.creditSettlement === true,
+      customMetadata,
       ...(tokenType === 1 ? {
         assetType: Number(formValue.assetType),
         initialSupply: Number(formValue.initialSupply),

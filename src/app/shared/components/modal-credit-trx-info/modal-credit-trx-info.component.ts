@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import jsPDF from 'jspdf';
 
 import { UtilsService } from '../../services/utils.service';
+import { AuthService } from '../../services/auth.service';
+import { applyPdfFooter } from '../../utils/pdf-export.utils';
 import { ModalCreditTrxInfoService } from './modal-credit-trx-info.service';
 
 @Component({
@@ -17,6 +19,7 @@ export class ModalCreditTrxInfoComponent {
   modalService = inject(ModalCreditTrxInfoService);
   private router = inject(Router);
   private utils = inject(UtilsService);
+  private authService = inject(AuthService);
 
   getTrxTypeClass(trxType: number): string {
     switch (trxType) {
@@ -139,12 +142,8 @@ export class ModalCreditTrxInfoComponent {
     doc.text(`${trx.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${trx.currencySymbol}`, valX, y + 5, { align: 'right' });
     y += 18;
 
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(160, 160, 160);
-    doc.text(`Generated: ${formatDate(Math.floor(Date.now() / 1000))}`, W / 2, y, { align: 'center' });
-
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`credit_receipt_trx${trx.trxId}_${stamp}.pdf`);
   }
 }

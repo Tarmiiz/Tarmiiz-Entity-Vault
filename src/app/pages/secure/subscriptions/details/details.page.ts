@@ -16,15 +16,19 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { AssetTransaction, CreditBalance, CreditTransaction, Subscription, SubscriptionHolding, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalSubscriptionStateService } from '../modals/modal-subscription-state/modal-subscription-state.service';
 import { ModalSubscriptionStateComponent } from "../modals/modal-subscription-state/modal-subscription-state.component";
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 import { ModalCreditTrxInfoService } from '../../../../shared/components/modal-credit-trx-info/modal-credit-trx-info.service';
 import { ModalCreditTrxInfoComponent } from '../../../../shared/components/modal-credit-trx-info/modal-credit-trx-info.component';
+import { ModalCreditDepositService } from '../modals/modal-credit-deposit/modal-credit-deposit.service';
+import { ModalCreditDepositComponent } from '../modals/modal-credit-deposit/modal-credit-deposit.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
+import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 
 
 
@@ -40,7 +44,9 @@ import { DocumentsTabComponent } from '../../../../shared/components/documents-t
     ModalSubscriptionStateComponent,
     ModalTransactionInfoComponent,
     ModalCreditTrxInfoComponent,
+    ModalCreditDepositComponent,
     DocumentsTabComponent,
+    LiveIndicatorComponent,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -50,6 +56,7 @@ export class DetailsPage implements OnInit {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private subscriptionStateService = inject(ModalSubscriptionStateService);
+  private creditDepositService = inject(ModalCreditDepositService);
   trxInfoService = inject(ModalTransactionInfoService);
   creditTrxInfoService = inject(ModalCreditTrxInfoService);
   utils = inject(UtilsService);
@@ -64,6 +71,7 @@ export class DetailsPage implements OnInit {
   activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs'>('overview');
 
   loadingData: boolean = false;
+  refreshing = signal(false);
 
   subscriptionAddress = '';
   subscription = signal<Subscription | undefined>(undefined);
@@ -237,6 +245,16 @@ export class DetailsPage implements OnInit {
   });
   totalCreditTrxPages = computed(() => Math.ceil(this.filteredCreditTransactions().length / this.creditTrxPageSize));
 
+  // change-highlight signals (cleared 2s after a silent refresh)
+  newHoldingKeys      = signal<Set<string>>(new Set());
+  newTrxIds           = signal<Set<number>>(new Set());
+  newCreditTrxIds     = signal<Set<number>>(new Set());
+  changedCreditCodes  = signal<Set<number>>(new Set());
+  private flashHoldingKeys(keys: string[])   { if (!keys.length) return; this.newHoldingKeys.set(new Set(keys));     setTimeout(() => this.newHoldingKeys.set(new Set()),     2000); }
+  private flashTrxIds(ids: number[])         { if (!ids.length)  return; this.newTrxIds.set(new Set(ids));           setTimeout(() => this.newTrxIds.set(new Set()),         2000); }
+  private flashCreditTrxIds(ids: number[])   { if (!ids.length)  return; this.newCreditTrxIds.set(new Set(ids));     setTimeout(() => this.newCreditTrxIds.set(new Set()),   2000); }
+  private flashCreditCodes(codes: number[])  { if (!codes.length) return; this.changedCreditCodes.set(new Set(codes)); setTimeout(() => this.changedCreditCodes.set(new Set()), 2000); }
+
   constructor() { 
     const address = this.route.snapshot.paramMap.get('address');
     if (address) {
@@ -250,7 +268,7 @@ export class DetailsPage implements OnInit {
     this.userInfo = this.authService.userInfo;
     this.activeTab.set('overview');
     await this.reload();
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload(true));
   }
 
   ionViewWillLeave() {
@@ -258,13 +276,33 @@ export class DetailsPage implements OnInit {
     this._socketSub = null;
   }
 
-  private async reload() {
-    await this.getSubscriptionDetails();
-    await Promise.all([
-      this.getHoldings(1, 500),
-      this.getTransactions(1, 500),
-      this.getCreditBalances(),
-    ]);
+  private async reload(silent = false) {
+    if (silent) this.refreshing.set(true);
+    try {
+      await this.getSubscriptionDetails(silent);
+      const tasks: Promise<any>[] = [
+        this.getHoldings(1, 500, silent),
+        this.getTransactions(1, 500, silent),
+        this.getCreditBalances(silent),
+      ];
+      if (silent && this.activeTab() === 'credit') tasks.push(this.refreshCreditTransactions(silent));
+      await Promise.all(tasks);
+    } finally {
+      if (silent) this.refreshing.set(false);
+    }
+  }
+
+  private async refreshCreditTransactions(silent = false) {
+    const trxData = await this.apiService.vaultGetSubscriptionCreditTransactions(this.subscriptionAddress, 1, 50);
+    if (trxData?.transactions) {
+      const mapped = trxData.transactions.map((t: any) => this.mapCreditTransaction(t));
+      mapped.sort((a: CreditTransaction, b: CreditTransaction) => b.startTime - a.startTime);
+      if (silent) {
+        const prevIds = new Set(this.creditTransactions().map(t => t.trxId));
+        this.flashCreditTrxIds(mapped.filter((t: CreditTransaction) => !prevIds.has(t.trxId)).map((t: CreditTransaction) => t.trxId));
+      }
+      this.creditTransactions.set(mapped);
+    }
   }
 
   setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs') {
@@ -300,14 +338,18 @@ export class DetailsPage implements OnInit {
   }
 
   private mapVaultHolding(raw: any): SubscriptionHolding {
+    const balance  = Number(raw.balance ?? 0);
+    const withheld = Number(raw.withheld ?? 0);
     return {
       asset: raw.asset ?? '',
       assetName: raw.asset_name ?? '',
       assetSymbol: raw.asset_symbol ?? '',
       currencyCode: raw.currency_code ?? '',
-      balance: raw.balance ?? 0,
+      balance,
       cost: raw.cost ?? 0,
       currentBid: raw.current_bid ?? 0,
+      withheld,
+      available: raw.available != null ? Number(raw.available) : balance - withheld,
     } as SubscriptionHolding;
   }
 
@@ -339,8 +381,8 @@ export class DetailsPage implements OnInit {
     } as AssetTransaction;
   }
 
-  async getSubscriptionDetails() {
-    this.loadingService.show('Loading data...');
+  async getSubscriptionDetails(silent = false) {
+    if (!silent) this.loadingService.show('Loading data...');
     const raw = await this.apiService.vaultGetSubscription(this.subscriptionAddress);
     if (raw) {
       const subscription = this.mapVaultSubscription(raw);
@@ -354,7 +396,7 @@ export class DetailsPage implements OnInit {
         this.suspensionReason.set('');
       }
     }
-    this.loadingService.hide();
+    if (!silent) this.loadingService.hide();
   }
 
   getStateClass(stateId: number | undefined): string {
@@ -400,24 +442,43 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  async getHoldings(start: number, offset: number) {
-    this.loadingService.show('Loading data...');
+  async getHoldings(start: number, offset: number, silent = false) {
+    if (!silent) this.loadingService.show('Loading data...');
     const data = await this.apiService.vaultGetSubscriptionHoldings(this.subscriptionAddress, start - 1, offset);
-    if (data?.holdings) this.holdings.set(data.holdings.map((h: any) => this.mapVaultHolding(h)));
-    this.holdingPage.set(0);
-    this.loadingService.hide();
+    if (data?.holdings) {
+      const next = data.holdings.map((h: any) => this.mapVaultHolding(h));
+      if (silent) {
+        const prev = new Map(this.holdings().map(h => [h.asset, h.balance]));
+        const changed: string[] = [];
+        for (const h of next) {
+          const prevBal = prev.get(h.asset);
+          if (prevBal === undefined || prevBal !== h.balance) changed.push(h.asset);
+        }
+        this.flashHoldingKeys(changed);
+      }
+      this.holdings.set(next);
+    }
+    if (!silent) this.holdingPage.set(0);
+    if (!silent) this.loadingService.hide();
   }
 
   async gotoAsset(asset: string) {
     this.router.navigate(['/authorized/assets/details/' + asset]);
   }
 
-  async getTransactions(start: number, offset: number) {
-    this.loadingService.show('Loading data...');
+  async getTransactions(start: number, offset: number, silent = false) {
+    if (!silent) this.loadingService.show('Loading data...');
     const data = await this.apiService.vaultGetTransactions({ subscription: this.subscriptionAddress }, start - 1, offset);
-    if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
-    this.trxPage.set(0);
-    this.loadingService.hide();
+    if (data?.transactions) {
+      const next = data.transactions.map((t: any) => this.mapVaultTransaction(t));
+      if (silent) {
+        const prevIds = new Set(this.transactions().map(t => t.trxId));
+        this.flashTrxIds(next.filter((t: AssetTransaction) => !prevIds.has(t.trxId)).map((t: AssetTransaction) => t.trxId));
+      }
+      this.transactions.set(next);
+    }
+    if (!silent) this.trxPage.set(0);
+    if (!silent) this.loadingService.hide();
   }
 
   async gotoEntity(entity: string) {
@@ -458,7 +519,6 @@ export class DetailsPage implements OnInit {
     doc.text(`Transactions - ${sub?.subscription ?? ''}`, pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     const tokensOp = this.filterTokensOp();
     const tokensAmt = this.filterTokensAmt();
@@ -544,6 +604,7 @@ export class DetailsPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`subscription_transactions_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'subscription_transactions');
   }
@@ -559,7 +620,6 @@ export class DetailsPage implements OnInit {
     doc.text(`Holdings - ${sub?.subscription ?? ''}`, pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     const holdingBalanceOp = this.filterHoldingBalanceOp();
     const holdingBalanceAmt = this.filterHoldingBalanceAmt();
@@ -616,6 +676,7 @@ export class DetailsPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`subscription_holdings_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'subscription_holdings');
   }
@@ -673,12 +734,30 @@ export class DetailsPage implements OnInit {
   private readonly creditTrxStateNames: Record<number, string> = {
     1: 'Initiated', 2: 'Success', 3: 'Failed', 4: 'Cancelled',
   };
+  // Mirrors the 'Credit Transaction Origin' VariablesProxy category — see
+  // Tarmiiz Global Variables/Contracts/Global Variables/scripts/2.initiate.js.
+  // Used as a fallback label; primary source is `originMap` populated from the API.
+  private readonly creditOriginNames: Record<number, string> = {
+    1: 'Deposit',
+    2: 'Withdraw',
+    3: 'Liquidity Inject',
+    4: 'Liquidity Withdraw',
+    5: 'Service Send',
+    6: 'Service Withhold',
+    7: 'Service Settle',
+    8: 'Cross Service Settle',
+    9: 'Peer To Peer',
+    10: 'Regulator Transfer',
+  };
+  private originMap: Record<number, string> = {};
 
   private mapCreditTransaction(raw: any): CreditTransaction {
     return {
       trxId: raw.trxId ?? 0,
       service: raw.service ?? '',
       serviceName: raw.serviceName ?? '',
+      paymentProcessor: raw.paymentProcessor ?? '',
+      paymentProcessorName: raw.paymentProcessorName ?? '',
       from: raw.from ?? '',
       fromName: raw.fromName ?? '',
       to: raw.to ?? '',
@@ -694,20 +773,68 @@ export class DetailsPage implements OnInit {
       startTime: raw.startTime ?? 0,
       updateTime: raw.updateTime ?? 0,
       assetTrxId: Number(raw.assetTrxId ?? 0),
+      origin: Number(raw.origin ?? 0),
+      originName: this.originMap[raw.origin] ?? this.creditOriginNames[raw.origin] ?? (raw.origin ? `Origin #${raw.origin}` : ''),
     } as CreditTransaction;
   }
 
-  async getCreditBalances() {
+  async getCreditBalances(silent = false) {
     const balances = await this.apiService.vaultGetSubscriptionCreditBalance(this.subscriptionAddress);
-    if (balances) this.creditBalances.set(balances);
+    if (balances) {
+      if (silent) {
+        const prev = new Map(this.creditBalances().map(b => [b.currencyCode, b.balance]));
+        const changed: number[] = [];
+        for (const b of balances) {
+          const p = prev.get(b.currencyCode);
+          if (p === undefined || p !== b.balance) changed.push(b.currencyCode);
+        }
+        this.flashCreditCodes(changed);
+      }
+      this.creditBalances.set(balances);
+    }
+  }
+
+  async openCreditDeposit() {
+    const sub = this.subscription();
+    if (!sub) return;
+    if (!sub.service) {
+      await this.alertService.show('Error', 'Subscription has no token-issuer service.');
+      return;
+    }
+    const service = await this.apiService.vaultGetService(sub.service);
+    const paymentProcessor = service?.payment_processor || service?.paymentProcessor || '';
+    const currencies = this.creditBalances();
+    if (currencies.length === 0) {
+      await this.alertService.show('Error', 'No currencies available. Wait for credit balances to load.');
+      return;
+    }
+    const result = await this.creditDepositService.show({
+      subscriptionAddress: this.subscriptionAddress,
+      service: sub.service,
+      paymentProcessor,
+      currencies,
+    });
+    if (result) {
+      await this.alertService.show('Credit Deposited', result.txHash ? ('Tx: ' + result.txHash) : 'Deposit successful.');
+      await this.getCreditData();
+    }
   }
 
   async getCreditData() {
     this.loadingService.show('Loading credit data...');
-    const [, trxData] = await Promise.all([
+    const [, trxData, originVars] = await Promise.all([
       this.getCreditBalances(),
-      this.apiService.vaultGetSubscriptionCreditTransactions(this.subscriptionAddress, 1, 500),
+      this.apiService.vaultGetSubscriptionCreditTransactions(this.subscriptionAddress, 1, 50),
+      this.apiService.vaultGetGlobalVariablesByCategory('Credit Transaction Origin').catch(() => null),
     ]);
+
+    if (Array.isArray(originVars)) {
+      this.originMap = {};
+      for (const v of originVars) {
+        if (v?.variableId != null && v?.name) this.originMap[Number(v.variableId)] = v.name;
+      }
+    }
+
     if (trxData?.transactions) {
       const mapped = trxData.transactions.map((t: any) => this.mapCreditTransaction(t));
       mapped.sort((a: CreditTransaction, b: CreditTransaction) => b.startTime - a.startTime);
@@ -758,7 +885,6 @@ export class DetailsPage implements OnInit {
     doc.text(`Credit Transactions - ${sub?.subscription ?? ''}`, pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     // Balances summary table
     const balances = this.creditBalances();
@@ -808,6 +934,7 @@ export class DetailsPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`subscription_credit_transactions_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'subscription_credit');
   }

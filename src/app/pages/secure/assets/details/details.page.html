@@ -1,7 +1,7 @@
 <app-header title="Asset Details"></app-header>
 
 <!-- breadcrumb -->
-<div class="px-6 py-4 border-b bg-gray-200">
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
   @if (asset(); as op) {
     <nav class="flex" aria-label="Breadcrumb">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -21,6 +21,7 @@
   } @else {
       <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
   }
+  <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
@@ -28,7 +29,7 @@
     
     <!-- Tab Navigation -->
     <div class="bg-white rounded-t-lg shadow-md p-2">
-      <div class="flex border-b border-gray-200">
+      <div class="flex border-b border-gray-200 items-center">
 
         <button (click)="setTab('overview')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -47,6 +48,15 @@
           [class.bg-blue-600]="activeTab() === 'info'"
         >
           Information
+        </button>
+        <button (click)="setTab('metadata')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'metadata'"
+          [class.border-b-2]="activeTab() === 'metadata'"
+          [class.border-blue-600]="activeTab() === 'metadata'"
+          [class.bg-blue-600]="activeTab() === 'metadata'"
+        >
+          Metadata
         </button>
         <button (click)="setTab('services')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -93,15 +103,17 @@
         >
           Documents
         </button>
-        <button (click)="setTab('dex')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'dex'"
-          [class.border-b-2]="activeTab() === 'dex'"
-          [class.border-blue-600]="activeTab() === 'dex'"
-          [class.bg-blue-600]="activeTab() === 'dex'"
-        >
-          DEX
-        </button>
+        @if (!dexListingLoaded() || dexListing()) {
+          <button (click)="setTab('dex')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'dex'"
+            [class.border-b-2]="activeTab() === 'dex'"
+            [class.border-blue-600]="activeTab() === 'dex'"
+            [class.bg-blue-600]="activeTab() === 'dex'"
+          >
+            DEX
+          </button>
+        }
       </div>
     </div>
 
@@ -132,7 +144,7 @@
               }
 
               <!-- Supply & Market row -->
-              <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                   <p class="text-xs text-gray-500 mb-1">Total Supply</p>
                   <p class="text-base font-semibold text-gray-800">{{ v.totalSupply | number:'1.0-0' }}</p>
@@ -140,6 +152,10 @@
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                   <p class="text-xs text-gray-500 mb-1">Circulating</p>
                   <p class="text-base font-semibold text-gray-800">{{ v.circulating | number:'1.0-0' }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                  <p class="text-xs text-gray-500 mb-1">Total Withheld</p>
+                  <p class="text-base font-semibold text-amber-700">{{ assetTotalWithheld() | number:'1.0-0' }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                   <p class="text-xs text-gray-500 mb-1">Market Value</p>
@@ -325,13 +341,86 @@
           </div>
         }
 
+        <!-- metadata tab -->
+        @if (activeTab() === 'metadata') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto p-4 space-y-6">
+
+            <!-- Description -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Description</h4>
+              @if (parsedMetadata().description) {
+                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ parsedMetadata().description }}</p>
+              } @else {
+                <p class="text-sm text-gray-400 italic">No description provided.</p>
+              }
+            </div>
+
+            <!-- Additional fields -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Additional Fields</h4>
+              @if (!parsedMetadata().valid) {
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p class="text-xs text-gray-500 mb-2">The metadata field is not valid JSON. Showing raw value:</p>
+                  <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap break-all">{{ parsedMetadata().raw }}</pre>
+                </div>
+              } @else if (parsedMetadata().entries.length === 0) {
+                <p class="text-sm text-gray-400 italic">No additional metadata recorded.</p>
+              } @else {
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div class="overflow-x-auto rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-700">
+                      <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                        <tr>
+                          <th scope="col" class="px-6 py-2 w-1/3">Key</th>
+                          <th scope="col" class="px-6 py-2">Value</th>
+                        </tr>
+                      </thead>
+                      <tbody class="text-xs">
+                        @for (row of parsedMetadata().entries; track row[0]; let isEven = $even) {
+                          <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                            <td class="px-6 py-2 font-medium text-gray-700">{{ row[0] }}</td>
+                            <td class="px-6 py-2 break-all">{{ row[1] }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+            </div>
+
+          </div>
+        }
+
         <!-- price tab -->
         @if (activeTab() === 'price') {
 
+          <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <h3 class="text-sm font-semibold text-gray-700 pl-10">
+              Price History@if (showWindowSuffix()) { — Last 30 × {{ activeIntervalLabel() }} }
+            </h3>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-xs font-medium text-gray-500">Interval</label>
+                <select [ngModel]="priceInterval()" (ngModelChange)="setPriceInterval($event)"
+                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
+                  @for (i of intervalOptions; track i.value) {
+                    <option [value]="i.value">{{ i.label }}</option>
+                  }
+                </select>
+              </div>
+              @if (userInfo && userInfo.role !== 3) {
+                <button (click)="openAddPriceModal()" [disabled]="!entityActive"
+                  class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                  + Add Price
+                </button>
+              }
+            </div>
+          </div>
+
           <!-- chart card -->
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-            <!-- <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Price History Chart</h3> -->
-            @if (priceHistory() && priceHistory()!.length > 0) {
+            @if (filteredPriceHistory().length > 0) {
               <div class="relative h-72">
                 <canvas #priceChart></canvas>
               </div>
@@ -341,8 +430,46 @@
               </div>
             }
 
+            <!-- price history filters -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mt-6">
+              <div class="flex flex-wrap gap-2 items-end">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">From</label>
+                  <input type="date" [ngModel]="filterPriceStartDate()" (ngModelChange)="filterPriceStartDate.set($event); pricePage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">To</label>
+                  <input type="date" [ngModel]="filterPriceEndDate()" (ngModelChange)="filterPriceEndDate.set($event); pricePage.set(0)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                </div>
+                <div class="flex flex-col justify-end">
+                  <button (click)="clearPriceFilter()"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    Clear
+                  </button>
+                </div>
+                <div class="flex gap-2 ml-auto">
+                  <button (click)="exportPricesExcel()"
+                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export Excel
+                  </button>
+                  <button (click)="exportPricesPdf()"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- price history table -->
-            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-6">
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-3">
               <div class="overflow-x-auto rounded-lg">
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
@@ -354,14 +481,14 @@
                   </thead>
                   <tbody  class="text-xs">
                       <!-- no data -->
-                      @if(priceHistory() && priceHistory()!.length === 0) {
+                      @if(filteredPriceTable().length === 0) {
                           <tr class="bg-white border-b hover:bg-gray-50">
                               <td class="px-6 py-2">no data</td>
                           </tr>
                       }
                       @else {
                           @for(price of pagedPriceHistory(); track price.timestamp; let i = $index; let isEven = $even;) {
-                              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" [class.row-new]="newPriceTimestamps().has(price.timestamp)">
                                   <td class="px-6 py-2">{{ price.timestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                                   <td class="px-6 py-2">{{ price.bid | number: '1.6-6' }}</td>
                                   <td class="px-6 py-2">{{ price.ask | number: '1.6-6' }}</td>
@@ -372,7 +499,7 @@
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedPriceHistory().length }} of {{ priceHistory().length }} Price Records</p>
+                <p class="text-xs font-medium text-gray-800">Showing {{ pagedPriceHistory().length }} of {{ filteredPriceTable().length }} Price Records</p>
                 @if (totalPricePages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
                     <span>Page {{ pricePage() + 1 }} of {{ totalPricePages() }}</span>
@@ -883,4 +1010,5 @@
 <app-modal-asset-add-service></app-modal-asset-add-service>
 <app-modal-asset-service-state></app-modal-asset-service-state>
 <app-modal-listing-create></app-modal-listing-create>
+<app-modal-asset-price></app-modal-asset-price>
 <app-modal-transaction-info></app-modal-transaction-info>

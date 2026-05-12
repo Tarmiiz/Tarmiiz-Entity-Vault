@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
+import { LiveIndicatorComponent } from '../../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
@@ -23,7 +24,7 @@ import { ModalPlaceOrderComponent } from '../modals/modal-place-order/modal-plac
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalPlaceOrderComponent],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, ModalPlaceOrderComponent],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
@@ -35,6 +36,7 @@ export class ListPage implements OnInit, OnDestroy {
   utils = inject(UtilsService);
 
   orders = signal<DexOrder[]>([]);
+  refreshing = signal(false);
   search = signal('');
   filterStatus = signal<string>('');
   filterSide = signal<string>('');
@@ -48,18 +50,22 @@ export class ListPage implements OnInit, OnDestroy {
   async ionViewDidEnter() {
     await this.refresh();
     this.sub = this.socket.vaultUpdated$.subscribe(p => {
-      if (p.type === 'dex-order') this.refresh();
+      if (p.type === 'dex-order') this.refresh(true);
     });
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
-  async refresh() {
-    this.loadingService.show('Loading orders...');
+  async refresh(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) this.loadingService.show('Loading orders...');
     try {
       const r = await this.apiService.vaultDexOrdersList({ start: 1, offset: 200 });
       if (r?.orders) this.orders.set(r.orders);
-    } finally { this.loadingService.hide(); }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
+    }
   }
 
   filtered = computed(() => {

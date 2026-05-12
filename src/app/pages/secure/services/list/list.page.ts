@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { LiveIndicatorComponent } from "../../../../shared/components/live-indicator/live-indicator.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
 import { SocketService } from '../../../../shared/services/socket.service';
@@ -21,6 +22,7 @@ import { ModalServiceAddComponent } from '../modals/modal-service-add/modal-serv
 import { Service, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 
 @Component({
   selector: 'app-list',
@@ -30,6 +32,7 @@ import { AuditService } from '../../../../shared/services/audit.service';
   imports: [
     FormsModule,
     HeaderComponent,
+    LiveIndicatorComponent,
     ModalServiceAddComponent
 ]
 })
@@ -47,6 +50,7 @@ export class ListPage implements OnInit {
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
   loadingServices: boolean = false;
+  refreshing = signal(false);
   showAllServices = signal(false);
 
   servicesCount = 0
@@ -81,7 +85,7 @@ export class ListPage implements OnInit {
     this.loadingServices = true;
     await this.listServices();
     this.loadingServices = false;
-    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listServices());
+    this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listServices(true));
   }
 
   ionViewWillLeave() {
@@ -139,15 +143,22 @@ export class ListPage implements OnInit {
     } as Service;
   }
 
-  async listServices() {
-    this.loadingService.show('Loading data...');
-    this.services.set([]);
-    const result = await this.apiService.vaultGetServices(0, 500);
-    if (result) {
-      this.servicesCount = result.count;
-      this.services.set(result.services.map((s: any) => this.mapVaultService(s)));
+  async listServices(silent = false) {
+    if (silent) this.refreshing.set(true);
+    if (!silent) {
+      this.loadingService.show('Loading data...');
+      this.services.set([]);
     }
-    this.loadingService.hide();
+    try {
+      const result = await this.apiService.vaultGetServices(0, 500);
+      if (result) {
+        this.servicesCount = result.count;
+        this.services.set(result.services.map((s: any) => this.mapVaultService(s)));
+      }
+    } finally {
+      if (!silent) this.loadingService.hide();
+      if (silent) this.refreshing.set(false);
+    }
   }
 
   async openAddModal() {
@@ -222,7 +233,6 @@ export class ListPage implements OnInit {
     doc.text('Services', pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${this.utils.formatDate(Math.floor(Date.now() / 1000))}`, pad, 21);
 
     const filterParts = [
       `Verification Level: ${this.filterVerificationLevel() ? (this.uniqueVerificationLevels().find(l => String(l[0]) === this.filterVerificationLevel())?.[1] ?? this.filterVerificationLevel()) : 'None'}`,
@@ -250,6 +260,7 @@ export class ListPage implements OnInit {
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`services_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'services');
   }

@@ -33,6 +33,10 @@ export const routes: Routes = [
             loadComponent: () => import('./pages/public/user/login/login.page').then( m => m.LoginPage)
           },
           {
+            path: 'claim',
+            loadComponent: () => import('./pages/public/user/claim/claim.page').then( m => m.ClaimPage)
+          },
+          {
             path: '',
             redirectTo: 'login',
             pathMatch: 'full',
@@ -57,6 +61,21 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/secure/dashboard/dashboard.page').then(m => m.DashboardPage),
         canActivate: [AuthGuard, RoleGuard],
         data: { allowedRoles: [1, 2, 3] }
+      },
+      // analytics — issuer-side multi-chart dashboards
+      {
+        path: 'analytics',
+        canActivate: [AuthGuard, RoleGuard],
+        data: { allowedRoles: [2, 3] },
+        children: [
+          { path: 'aum',         loadComponent: () => import('./pages/secure/analytics/aum-performance/aum-performance.page').then(m => m.AumPerformancePage), canActivate: [AuthGuard] },
+          { path: 'investors',   loadComponent: () => import('./pages/secure/analytics/investors/investors.page').then(m => m.InvestorsPage), canActivate: [AuthGuard] },
+          { path: 'flows',       loadComponent: () => import('./pages/secure/analytics/flows/flows.page').then(m => m.FlowsPage), canActivate: [AuthGuard] },
+          { path: 'credit',      loadComponent: () => import('./pages/secure/analytics/credit-liquidity/credit-liquidity.page').then(m => m.CreditLiquidityPage), canActivate: [AuthGuard] },
+          { path: 'dex',         loadComponent: () => import('./pages/secure/analytics/dex-secondary/dex-secondary.page').then(m => m.DexSecondaryPage), canActivate: [AuthGuard, dexFeatureGuard] },
+          { path: 'operational', loadComponent: () => import('./pages/secure/analytics/operational-risk/operational-risk.page').then(m => m.OperationalRiskPage), canActivate: [AuthGuard] },
+          { path: '', redirectTo: 'aum', pathMatch: 'full' },
+        ],
       },
       // services
       {

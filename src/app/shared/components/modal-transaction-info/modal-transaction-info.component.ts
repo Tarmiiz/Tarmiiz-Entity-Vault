@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import jsPDF from 'jspdf';
 
 import { UtilsService } from '../../services/utils.service';
+import { AuthService } from '../../services/auth.service';
+import { applyPdfFooter } from '../../utils/pdf-export.utils';
 import { ModalTransactionInfoService } from './modal-transaction-info.service';
 
 @Component({
@@ -17,6 +19,7 @@ export class ModalTransactionInfoComponent {
   modalService = inject(ModalTransactionInfoService);
   private router = inject(Router);
   private utils = inject(UtilsService);
+  private authService = inject(AuthService);
 
   assetName = computed(() => this.modalService.transaction()?.assetName || '');
   assetSymbol = computed(() => this.modalService.transaction()?.assetSymbol || '');
@@ -134,13 +137,8 @@ export class ModalTransactionInfoComponent {
     doc.text(fmtPrice(trx.totalPrice), valX, y + 5, { align: 'right' });
     y += 18;
 
-    // ── footer ───────────────────────────────────────────────────
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(160, 160, 160);
-    doc.text(`Generated: ${formatDate(Math.floor(Date.now() / 1000))}`, W / 2, y, { align: 'center' });
-
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`receipt_trx${trx.serviceTrxId}_${stamp}.pdf`);
   }
 }
