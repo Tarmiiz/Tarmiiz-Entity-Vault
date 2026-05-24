@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -14,7 +15,7 @@ import { AuditLog } from '../../../../shared/models/data.model';
   styleUrls: ['./details.page.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, HeaderComponent]
+  imports: [CommonModule, RouterLink, HeaderComponent, TranslatePipe]
 })
 export class DetailsPage implements OnInit {
   private apiService = inject(ApiService);

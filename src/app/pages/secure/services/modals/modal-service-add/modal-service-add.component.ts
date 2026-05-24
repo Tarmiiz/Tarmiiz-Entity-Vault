@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal, effect, computed } 
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
-import { ModalServiceAddService, AddServiceData } from './modal-service-add.service';
+import { ModalServiceAddService, AddServiceData, SELF_CUSTODY_SENTINEL } from './modal-service-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 
 @Component({
@@ -23,6 +23,8 @@ export class ModalServiceAddComponent {
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
   allValidators = signal<{ address: string; name: string; validationLevel: number; state: number }[]>([]);
   paymentProcessors = signal<{ address: string; name: string; serviceLevel: number; state: number }[]>([]);
+  custodians = signal<{ address: string; name: string; state: number }[]>([]);
+  readonly SELF_CUSTODY = SELF_CUSTODY_SENTINEL;
   selectedVerificationLevel = signal<number>(0);
   selectedServiceType = signal<number>(0);
 
@@ -52,6 +54,8 @@ export class ModalServiceAddComponent {
     regulator: ['', Validators.required],
     validator: [''],
     paymentProcessor: [''],
+    custodian: [SELF_CUSTODY_SENTINEL],
+    visibility: [1, Validators.required],
   });
 
   constructor() {
@@ -62,7 +66,7 @@ export class ModalServiceAddComponent {
         this.addForm.reset({
           serviceType: '', name: '', description: '', website: '',
           email: '', mobile: '', verificationLevel: '', regulator: '',
-          validator: '', paymentProcessor: '',
+          validator: '', paymentProcessor: '', custodian: SELF_CUSTODY_SENTINEL, visibility: 1,
         });
         this.loadServiceTypes();
         this.loadVerificationLevels();
@@ -85,7 +89,19 @@ export class ModalServiceAddComponent {
       if (Number(val) !== 1) {
         this.addForm.get('validator')!.setValue('');
         this.addForm.get('paymentProcessor')!.setValue('');
+        this.addForm.get('custodian')!.setValue('');
+      } else {
+        // Default type-1 services to self-custody and refresh endorsed custodian list.
+        if (!this.addForm.get('custodian')!.value) {
+          this.addForm.get('custodian')!.setValue(SELF_CUSTODY_SENTINEL);
+        }
       }
+    });
+
+    // Refresh endorsed custodians whenever the regulator changes (since the picker is regulator-scoped).
+    this.addForm.get('regulator')!.valueChanges.subscribe(val => {
+      if (val) this.loadCustodians(val);
+      else this.custodians.set([]);
     });
   }
 
@@ -132,6 +148,24 @@ export class ModalServiceAddComponent {
     if (data?.paymentProcessors) {
       this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2));
     }
+  }
+
+  async loadCustodians(regulator: string) {
+    if (!regulator) { this.custodians.set([]); return; }
+    const data = await this.apiService.vaultGetEndorsedCustodians(regulator, 1, 50);
+    if (data?.custodians) {
+      this.custodians.set(data.custodians.filter((c: any) => c.state === 2 || c.state === 1 || c.state === true));
+    } else {
+      this.custodians.set([]);
+    }
+  }
+
+  getCustodianDisplay(): string {
+    const v = this.addForm.get('custodian')?.value;
+    if (!v) return 'Not set';
+    if (v === SELF_CUSTODY_SENTINEL) return 'Self-custody';
+    const match = this.custodians().find(c => c.address === v);
+    return match ? (match.name || match.address) : v;
   }
 
   private stepFields(): string[] {
@@ -212,6 +246,9 @@ export class ModalServiceAddComponent {
       regulator: formValue.regulator ?? '',
       validator: formValue.validator ?? '',
       paymentProcessor: formValue.paymentProcessor ?? '',
+      // Custodian is only meaningful for type-1 services. Non-type-1 send empty (treated as unset by the API).
+      custodian: Number(formValue.serviceType) === 1 ? (formValue.custodian || SELF_CUSTODY_SENTINEL) : '',
+      visibility: Number(formValue.visibility) || 1,
     };
     this.addServiceService.confirm(data);
   }

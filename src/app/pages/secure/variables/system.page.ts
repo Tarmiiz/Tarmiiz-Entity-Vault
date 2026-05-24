@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 
@@ -17,7 +18,7 @@ import { Country, GlobalVariable } from '../../../shared/models/data.model';
   standalone: true,
   imports: [
     FormsModule,
-    HeaderComponent
+    HeaderComponent, TranslatePipe
 ]
 })
 export class SystemPage implements OnInit {

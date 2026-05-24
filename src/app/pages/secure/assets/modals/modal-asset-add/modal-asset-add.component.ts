@@ -24,8 +24,16 @@ export class ModalAssetAddComponent {
   services = signal<{ address: string; name: string; paymentProcessor: string | null }[]>([]);
   countries = signal<{ countryCode: number; nameShort: string; currencyCode: string }[]>([]);
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
-  tokenTypes = signal<{ id: number; name: string }[]>([]);
+  // Supply modes — the 1 = Fixed / 2 = Dynamic choice that used to be `tokenType` on the
+  // two leaf templates. The on-chain T20Template carries it as immutable `_supplyMode`.
+  // The Global Variables registry still exposes these under the 'Asset Token Type' category
+  // for backward compat; the API translates between the two names.
+  supplyModes = signal<{ id: number; name: string }[]>([]);
   assetTypes = signal<{ id: number; name: string }[]>([]);
+  priceModes = signal<{ id: number; name: string }[]>([
+    { id: 1, name: 'Single' },
+    { id: 2, name: 'Bid/Ask' },
+  ]);
 
   // Address resolution
   knownAddresses = signal<{ address: string; name: string }[]>([]);
@@ -37,7 +45,7 @@ export class ModalAssetAddComponent {
   // Wizard state
   currentStep = signal(1);
   readonly totalSteps = 6;
-  readonly stepLabels = ['Token Type', 'Identity', 'Metadata', 'Service', 'Roles', 'Review'];
+  readonly stepLabels = ['Supply Mode', 'Identity', 'Metadata', 'Service', 'Roles', 'Review'];
   reviewConfirmed = signal(false);
 
   // Symbol availability check (on-chain via API)
@@ -50,7 +58,10 @@ export class ModalAssetAddComponent {
     manager: ['', Validators.required],
     name: ['', Validators.required],
     symbol: ['', Validators.required],
-    tokenType: ['', Validators.required],
+    // supplyMode: 1 = Fixed (initialSupply minted to contract at init), 2 = Dynamic (mint on subscribe).
+    // Replaces the old leaf-template-encoded `tokenType` choice.
+    supplyMode: ['', Validators.required],
+    priceMode: ['2', Validators.required],
     assetType: [''],
     initialSupply: [''],
     description: ['', Validators.required],
@@ -102,7 +113,7 @@ export class ModalAssetAddComponent {
   }
 
   get isFixedSupply(): boolean {
-    return this.addForm.get('tokenType')?.value === '1';
+    return this.addForm.get('supplyMode')?.value === '1';
   }
 
   get selectedServiceHasPaymentProcessor(): boolean {
@@ -129,7 +140,7 @@ export class ModalAssetAddComponent {
         this.managerName.set('');
         this.loadServices();
         this.loadCountriesAndRegulators();
-        this.loadTokenAndAssetTypes();
+        this.loadSupplyModesAndAssetTypes();
         this.loadKnownAddresses();
       }
     });
@@ -145,18 +156,25 @@ export class ModalAssetAddComponent {
       }
     });
 
-    // Conditional validators for BasicToken
-    this.addForm.get('tokenType')!.valueChanges.subscribe(val => {
+    // Conditional validators driven by supplyMode (Fixed vs Dynamic).
+    this.addForm.get('supplyMode')!.valueChanges.subscribe(val => {
       const assetTypeCtrl = this.addForm.get('assetType')!;
       const initialSupplyCtrl = this.addForm.get('initialSupply')!;
+      const priceModeCtrl = this.addForm.get('priceMode')!;
       if (val === '1') {
+        // Fixed supply — initialSupply minted to contract at init.
         assetTypeCtrl.setValidators(Validators.required);
         initialSupplyCtrl.setValidators([Validators.required, Validators.min(0)]);
+        // Fixed supply defaults to BidAsk
+        priceModeCtrl.setValue('2');
       } else {
+        // Dynamic supply — totalSupply starts at 0, mint on subscribe.
         assetTypeCtrl.clearValidators();
         initialSupplyCtrl.clearValidators();
         assetTypeCtrl.setValue('');
         initialSupplyCtrl.setValue('');
+        // Dynamic supply defaults to Single (NAV-style)
+        if (val === '2') priceModeCtrl.setValue('1');
       }
       assetTypeCtrl.updateValueAndValidity();
       initialSupplyCtrl.updateValueAndValidity();
@@ -166,7 +184,7 @@ export class ModalAssetAddComponent {
   // --- Step navigation ---
 
   private readonly stepFields: Record<number, string[]> = {
-    1: ['tokenType'],
+    1: ['supplyMode', 'priceMode'],
     2: ['name', 'symbol', 'description'],
     3: [],
     4: ['service', 'currency'],
@@ -252,12 +270,16 @@ export class ModalAssetAddComponent {
 
   // --- Display name resolvers ---
 
-  getTokenTypeName(): string {
-    return this.tokenTypes().find(t => t.id === Number(this.addForm.get('tokenType')?.value))?.name ?? '';
+  getSupplyModeName(): string {
+    return this.supplyModes().find(t => t.id === Number(this.addForm.get('supplyMode')?.value))?.name ?? '';
   }
 
   getAssetTypeName(): string {
     return this.assetTypes().find(t => t.id === Number(this.addForm.get('assetType')?.value))?.name ?? '';
+  }
+
+  getPriceModeName(): string {
+    return this.priceModes().find(p => p.id === Number(this.addForm.get('priceMode')?.value))?.name ?? '';
   }
 
   getServiceName(): string {
@@ -315,13 +337,15 @@ export class ModalAssetAddComponent {
     }
   }
 
-  async loadTokenAndAssetTypes() {
-    const [tokenTypesRaw, assetTypesRaw] = await Promise.all([
+  async loadSupplyModesAndAssetTypes() {
+    // The Global Variables registry still exposes the 1=Fixed/2=Dynamic choice under the
+    // 'Asset Token Type' category for backward compat — the modal renders it as 'Supply Mode'.
+    const [supplyModesRaw, assetTypesRaw] = await Promise.all([
       this.apiService.vaultGetGlobalVariablesByCategory('Asset Token Type'),
       this.apiService.vaultGetGlobalVariablesByCategory('Asset Type'),
     ]);
-    if (tokenTypesRaw) {
-      this.tokenTypes.set(tokenTypesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
+    if (supplyModesRaw) {
+      this.supplyModes.set(supplyModesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
     }
     if (assetTypesRaw) {
       this.assetTypes.set(assetTypesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
@@ -346,7 +370,10 @@ export class ModalAssetAddComponent {
     }
 
     const formValue = this.addForm.getRawValue();
-    const tokenType = Number(formValue.tokenType);
+    const supplyMode = Number(formValue.supplyMode);
+    const priceMode = Number(formValue.priceMode) || 2;
+    // tokenType: V1 only supports 1 (T20). T3643 follow-up adds 2.
+    const tokenType = 1;
     const data: AddAssetData = {
       owner: formValue.owner ?? '',
       issuer: formValue.issuer ?? '',
@@ -358,9 +385,11 @@ export class ModalAssetAddComponent {
       currency: Number(formValue.currency),
       regulator: formValue.regulator ?? '',
       tokenType,
+      supplyMode,
+      priceMode,
       creditSettlement: formValue.creditSettlement === true,
       customMetadata,
-      ...(tokenType === 1 ? {
+      ...(supplyMode === 1 ? {
         assetType: Number(formValue.assetType),
         initialSupply: Number(formValue.initialSupply),
       } : {}),

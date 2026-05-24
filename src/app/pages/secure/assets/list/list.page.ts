@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -33,7 +34,7 @@ import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
     CommonModule, FormsModule,
     HeaderComponent,
     LiveIndicatorComponent,
-    ModalAssetAddComponent,
+    ModalAssetAddComponent, TranslatePipe,
   ]
 })
 export class ListPage implements OnInit {
@@ -172,6 +173,10 @@ export class ListPage implements OnInit {
       creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
       stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      priceMode: raw.priceMode ?? raw.price_mode ?? 2,
+      priceModeName: raw.priceModeName ?? raw.price_mode_name ?? (Number(raw.priceMode ?? raw.price_mode ?? 2) === 1 ? 'Single' : 'Bid/Ask'),
+      supplyMode: raw.supplyMode ?? raw.supply_mode ?? 1,
+      supplyModeName: raw.supplyModeName ?? raw.supply_mode_name ?? (Number(raw.supplyMode ?? raw.supply_mode ?? 1) === 2 ? 'Dynamic' : 'Fixed'),
     };
   }
 
@@ -224,8 +229,10 @@ export class ListPage implements OnInit {
         currency: data.currency,
         regulator: data.regulator,
         tokenType: data.tokenType,
+        supplyMode: data.supplyMode,
+        priceMode: data.priceMode,
         creditSettlement: data.creditSettlement,
-        ...(data.tokenType === 1 ? { assetType: data.assetType, initialSupply: data.initialSupply } : {}),
+        ...(data.supplyMode === 1 ? { assetType: data.assetType, initialSupply: data.initialSupply } : {}),
       });
       if (result?.type === 'success') {
         await this.listAssets();

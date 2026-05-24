@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -19,7 +20,7 @@ import { ModalListingVenueTierChangeComponent } from '../modals/modal-listing-ve
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent, ModalListingVenueTierChangeComponent],
+  imports: [FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent, ModalListingVenueTierChangeComponent, TranslatePipe],
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);

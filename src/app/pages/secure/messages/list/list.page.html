@@ -1,4 +1,4 @@
-<app-header title="Messages"></app-header>
+<app-header [title]="'messages.title' | translate"></app-header>
 <app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
 
 <div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">

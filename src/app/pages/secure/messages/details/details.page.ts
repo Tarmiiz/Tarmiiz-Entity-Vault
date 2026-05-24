@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -17,7 +18,7 @@ import { ConnectThread, ConnectMessage } from '../../../../shared/models/data.mo
   selector: 'app-messages-details',
   templateUrl: './details.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, HeaderComponent, LiveIndicatorComponent],
+  imports: [CommonModule, FormsModule, RouterLink, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);

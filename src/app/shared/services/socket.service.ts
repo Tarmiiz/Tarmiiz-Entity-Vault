@@ -21,6 +21,12 @@ export class SocketService {
   /** Fires whenever the backend emits `audit:appended` (new audit rows available) */
   readonly auditAppended$ = new Subject<{ count: number; lastBlock: number }>();
 
+  /** Fires when a maker submits a new approval (`approvals:created`). */
+  readonly approvalsCreated$ = new Subject<{ approval: any; ts: number }>();
+
+  /** Fires when a pending approval transitions out of Pending (`approvals:decided`). */
+  readonly approvalsDecided$ = new Subject<{ approval: any; ts: number }>();
+
   /** Reactive connection state — true when socket is connected */
   readonly connected = signal(false);
 
@@ -49,6 +55,14 @@ export class SocketService {
 
     this.socket.on('audit:appended', (payload: { count: number; lastBlock: number }) => {
       this.auditAppended$.next(payload);
+    });
+
+    this.socket.on('approvals:created', (payload: { approval: any; ts: number }) => {
+      this.approvalsCreated$.next(payload);
+    });
+
+    this.socket.on('approvals:decided', (payload: { approval: any; ts: number }) => {
+      this.approvalsDecided$.next(payload);
     });
 
     this.socket.on('disconnect', (reason) => {

@@ -8,6 +8,7 @@ export interface AddUserData {
   username: string;
   password: string;
   role: string;
+  approvalRole: 'none' | 'maker' | 'checker';
 }
 
 @Injectable({

@@ -11,7 +11,12 @@ export interface AddServiceData {
   regulator: string;
   validator: string;
   paymentProcessor: string;
+  custodian: string;
+  visibility: number;
 }
+
+// Sentinel for self-custody at serviceCreate; ServiceTemplate substitutes address(this) at init.
+export const SELF_CUSTODY_SENTINEL = '0x0000000000000000000000000000000000000001';
 
 @Injectable({
   providedIn: 'root'

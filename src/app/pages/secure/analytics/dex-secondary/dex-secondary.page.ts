@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -19,9 +20,9 @@ interface DexAsset {
   selector: 'app-analytics-dex-secondary',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent, AnalyticsCardComponent, AnalyticsIntervalSelectComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, AnalyticsCardComponent, AnalyticsIntervalSelectComponent, TranslatePipe],
   template: `
-    <app-header title="DEX / Secondary Market"></app-header>
+    <app-header [title]="'analytics.dexSecondary.title' | translate"></app-header>
     <div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
       <app-analytics-card
         title="Secondary trade volume + NAV premium"

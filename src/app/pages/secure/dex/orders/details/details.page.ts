@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
@@ -17,7 +18,7 @@ import { DexOrder, DexTrade } from '../../../../../shared/models/data.model';
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [HeaderComponent, LiveIndicatorComponent, RouterLink],
+  imports: [HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

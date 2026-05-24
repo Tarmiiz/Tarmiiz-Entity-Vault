@@ -1,9 +1,9 @@
-@if (addAssetService.isVisible()) {
+﻿@if (addAssetService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
 
       <!-- Header -->
-      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Add New Asset</h3>
         <p class="text-xs text-gray-400 mt-1">Step {{ currentStep() }} of {{ totalSteps }} — {{ stepLabels[currentStep() - 1] }}</p>
       </div>
@@ -16,7 +16,7 @@
               [class]="step < currentStep()
                 ? 'bg-green-500 text-white'
                 : step === currentStep()
-                  ? 'bg-[#202a3b] text-white'
+                  ? 'bg-[var(--brand-primary)] text-white'
                   : 'bg-gray-200 text-gray-400'">
               @if (step < currentStep()) {
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -34,16 +34,16 @@
       <form [formGroup]="addForm" (ngSubmit)="onSave()">
         <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
 
-          <!-- Step 1: Token Type -->
+          <!-- Step 1: Supply Mode -->
           @if (currentStep() === 1) {
-            <p class="text-sm text-gray-500 mb-2">Select the type of token you want to create.</p>
+            <p class="text-sm text-gray-500 mb-2">Select the supply mode for the new asset.</p>
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Token Type</label>
-              <select formControlName="tokenType"
+              <label class="block text-xs font-medium text-gray-500 mb-1">Supply Mode</label>
+              <select formControlName="supplyMode"
                 class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="" disabled selected hidden>Select token type...</option>
-                @for (tt of tokenTypes(); track tt.id) {
-                  <option value="{{ tt.id }}">{{ tt.name }}</option>
+                <option value="" disabled selected hidden>Select supply mode...</option>
+                @for (sm of supplyModes(); track sm.id) {
+                  <option value="{{ sm.id }}">{{ sm.name }}</option>
                 }
               </select>
             </div>
@@ -67,6 +67,18 @@
                 }
               </div>
             }
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Price Mode</label>
+              <select formControlName="priceMode"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                @for (pm of priceModes(); track pm.id) {
+                  <option [value]="pm.id">{{ pm.name }}</option>
+                }
+              </select>
+              <p class="text-xs text-gray-400 mt-1">
+                Single: one price (bid == ask). Bid/Ask: separate bid and ask quotes. This is immutable after creation.
+              </p>
+            </div>
           }
 
           <!-- Step 2: Identity -->
@@ -227,8 +239,12 @@
               <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Token Configuration</h4>
               <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Token Type</span>
-                  <span class="text-black font-medium">{{ getTokenTypeName() }}</span>
+                  <span class="text-gray-500">Supply Mode</span>
+                  <span class="text-black font-medium">{{ getSupplyModeName() }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Price Mode</span>
+                  <span class="text-black font-medium">{{ getPriceModeName() }}</span>
                 </div>
                 @if (isFixedSupply) {
                   <div class="flex justify-between">
@@ -353,12 +369,12 @@
             </button>
             @if (currentStep() < totalSteps) {
               <button type="button" (click)="nextStep()" [disabled]="!isCurrentStepValid()"
-                class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Next
               </button>
             } @else {
               <button type="submit" [disabled]="addForm.invalid || !reviewConfirmed()"
-                class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Create Asset
               </button>
             }

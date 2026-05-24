@@ -4,15 +4,15 @@
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
     <ion-title class="pt-2">
-      {{ title || 'Tarmiiz Regulator Dashboard' }}
+      {{ title || ('header.title' | translate) }}
     </ion-title>
     <ion-buttons slot="end" class="pt-2">
       @if (userInfo) {
         <ion-label class="text-indigo-300">
-          Welcome, {{ userInfo.name || userInfo.username || 'Admin' }}
+          {{ 'header.welcome' | translate: { name: userInfo.name || userInfo.username || 'Admin' } }}
         </ion-label>
       }
-      <ion-button (click)="openResyncModal()" fill="clear" class="p-0">
+      <ion-button (click)="openResyncModal()" fill="clear" class="p-0" [title]="'header.resync' | translate">
         <svg
           [class]="syncing() ? 'w-6 h-6 text-blue-400 animate-spin' : 'w-6 h-6 text-gray-800 dark:text-white'"
           aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -20,7 +20,7 @@
             d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4"/>
         </svg>
       </ion-button>
-      <ion-button (click)="gotoMessages()" fill="clear" class="p-0 relative">
+      <ion-button (click)="gotoMessages()" fill="clear" class="p-0 relative" [title]="'header.messages' | translate">
         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
         </svg>
@@ -30,13 +30,13 @@
           </span>
         }
       </ion-button>
-      <ion-button [routerLink]="profileRoute" routerDirection="root" fill="clear" class="p-0">
+      <ion-button [routerLink]="profileRoute" routerDirection="root" fill="clear" class="p-0" [title]="'header.profile' | translate">
         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.948 8.948 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
         </svg>
       </ion-button>
-      <ion-button (click)="logout()" fill="clear" class="p-0">
-          <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <ion-button (click)="logout()" fill="clear" class="p-0" [title]="'header.logout' | translate">
+          <svg class="w-6 h-6 text-gray-800 dark:text-white mr-2 rtl:mr-0 rtl:ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
           </svg>
       </ion-button>
@@ -45,11 +45,11 @@
   @if (!entityActive) {
     <div class="bg-red-600 text-white text-xs font-semibold py-1.5 px-4">
       <div class="flex items-center justify-center gap-2">
-        <span>Entity is {{ entityStateName || 'not active' }} — actions are restricted. Contact your regulator.</span>
+        <span>{{ 'header.entityRestricted' | translate: { state: entityStateName || ('state.unknown' | translate) } }}</span>
         @if (entityStateReason) {
           <button (click)="showReasonAlert()"
             class="underline text-red-100 hover:text-white text-xs font-medium">
-            Show reason
+            {{ 'common.reason' | translate }}
           </button>
         }
       </div>

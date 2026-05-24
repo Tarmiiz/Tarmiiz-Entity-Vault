@@ -39,9 +39,14 @@
 @import '@ionic/angular/css/palettes/dark.system.css' layer(ionic-reset);
 
 
-/* Global font */
+/* Global font + brand colors
+ * --brand-primary / --brand-primary-hover are seeded here as a fallback and
+ * overridden at bootstrap by ConfigService from assets/config.json so ops can
+ * rebrand per deployment without a rebuild. */
 :root {
   --ion-font-family: 'Inter', sans-serif;
+  --brand-primary: #202a3b;
+  --brand-primary-hover: #2c3648;
 }
 
 ion-content {
@@ -465,4 +470,34 @@ ion-segment-view {
       }
     }
   }
+}
+
+/* Arabic / RTL — LanguageService toggles this class on <html> */
+html.lang-ar,
+html.lang-ar body,
+html.lang-ar ion-app {
+  font-family: 'Cairo', 'Inter', 'Montserrat', sans-serif;
+  /* Arabic glyphs render smaller than Latin at the same nominal size — bump
+     the root to keep visual weight in lockstep with the English UI. All
+     Tailwind text-* utilities are rem-based so this flows down globally. */
+  font-size: 18px;
+}
+html.lang-ar pre,
+html.lang-ar code,
+html.lang-ar .font-mono {
+  /* Monospace/hex/JSON blocks stay Latin — don't bump them. */
+  font-size: 0.8125rem;
+}
+
+/* In RTL, Tailwind's `text-left` stays left-aligned — flip every table cell
+   that uses `text-left` so columns track the reading direction. Templates
+   can still opt back in with explicit `ltr:text-left` / `rtl:text-right`. */
+html.lang-ar table th.text-left,
+html.lang-ar table td.text-left,
+html.lang-ar table {
+  text-align: right;
+}
+html.lang-ar table th.text-right,
+html.lang-ar table td.text-right {
+  text-align: left;
 }

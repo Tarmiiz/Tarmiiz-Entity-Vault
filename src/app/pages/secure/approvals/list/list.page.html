@@ -1,0 +1,101 @@
+<app-header [title]="'approvals.title' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">State</label>
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); load()"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+          <option value="">All</option>
+          <option value="1">Pending</option>
+          <option value="2">Approved</option>
+          <option value="3">Rejected</option>
+          <option value="4">Cancelled</option>
+          <option value="5">Execution failed</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1 flex-1 min-w-[200px]">
+        <label class="text-xs font-medium text-gray-500">Search</label>
+        <input type="text" placeholder="Category, target, maker, request id..."
+          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-full">
+      </div>
+      <div class="flex items-end gap-3 ml-auto">
+        <span class="text-xs text-gray-500 pb-1">
+          {{ count() }} total
+          @if (myApprovalRole() !== 'none') {
+            — you are <span class="font-semibold uppercase">{{ myApprovalRole() }}</span>
+          }
+        </span>
+        @if (userInfo && userInfo.role === 1) {
+          <button (click)="openPolicy()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {{ 'approvals.managePolicy' | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Approvals Table -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-4 py-2">#</th>
+            <th class="px-4 py-2">Category</th>
+            <th class="px-4 py-2">Target</th>
+            <th class="px-4 py-2">Maker</th>
+            <th class="px-4 py-2">Created</th>
+            <th class="px-4 py-2">State</th>
+            <th class="px-4 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of filtered(); track a.requestId; let i = $index) {
+            <tr [class.bg-gray-50]="i % 2 === 1">
+              <td class="px-4 py-2">{{ i + 1 }}</td>
+              <td class="px-4 py-2 font-mono text-xs">{{ a.actionCategory }}</td>
+              <td class="px-4 py-2 font-mono text-xs">
+                {{ a.targetLabel || a.targetAddress }}
+              </td>
+              <td class="px-4 py-2">{{ a.makerUserName || a.makerUserId }}</td>
+              <td class="px-4 py-2 text-xs">{{ formatDate(a.createdAt) }}</td>
+              <td class="px-4 py-2">
+                <span class="px-2 py-0.5 rounded text-xs" [ngClass]="stateBadgeClass(a.approvalState)">
+                  {{ a.approvalStateName }}
+                </span>
+              </td>
+              <td class="px-4 py-2">
+                <div class="flex gap-1">
+                  @if (canDecide(a)) {
+                    <button (click)="approve(a)" class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">Approve</button>
+                    <button (click)="reject(a)"  class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800">Reject</button>
+                  }
+                  @if (canCancel(a)) {
+                    <button (click)="cancel(a)" class="text-xs px-2 py-1 rounded bg-gray-600 text-white hover:bg-gray-700">Withdraw</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="px-4 py-6 text-center text-gray-500 text-sm">
+                @if (loading()) { Loading… }
+                @else            { No approvals match the current filter. }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

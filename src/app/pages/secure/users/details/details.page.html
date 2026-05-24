@@ -1,4 +1,4 @@
-<app-header title="User Details"></app-header>
+﻿<app-header [title]="'users.details.title' | translate"></app-header>
 
 <!-- breadcrumb -->
 <div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
@@ -59,10 +59,16 @@
                   <p class="text-sm font-medium text-gray-500">Identity Contract</p>
                   <p class="text-base">{{ v.did }}</p>
                 </div>
-                <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Role</p>
+                <div class="border-t pt-4" [class.md:col-span-2]="!isExecutive(v.role)">
+                  <p class="text-sm font-medium text-gray-500">User Role</p>
                   <p class="text-base">{{ v.roleName }}</p>
                 </div>
+                @if (isExecutive(v.role)) {
+                  <div class="border-t pt-4">
+                    <p class="text-sm font-medium text-gray-500">Approval Role</p>
+                    <p class="text-base">{{ approvalRoleLabel(approvalRole()) }}</p>
+                  </div>
+                }
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Created On</p>
                   <p class="text-base">{{ v.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
@@ -73,8 +79,8 @@
                 </div>
               </div>
               
-              <div class="mt-8 pt-6 border-t flex items-center justify-end space-x-3">
-                <button (click)="openEditModal()" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+              <div class="mt-8 pt-6 border-t flex flex-wrap items-center justify-end gap-3">
+                <button (click)="openEditModal()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                   Edit User
                 </button>
                 <button (click)="openCredentialsModal()" class="text-xs px-3 py-1.5 rounded bg-violet-600 text-white hover:bg-violet-700 transition-colors">
@@ -83,6 +89,11 @@
                 <button (click)="openChangeRoleModal()" class="text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors">
                   Change Role
                 </button>
+                @if (isExecutive(v.role)) {
+                  <button (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()" class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Change Approval Role
+                  </button>
+                }
                 <button (click)="openChangeStateModal()" class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors">
                   Change State
                 </button>
@@ -108,4 +119,5 @@
 <app-modal-user-edit></app-modal-user-edit>
 <app-modal-user-state></app-modal-user-state>
 <app-modal-user-role></app-modal-user-role>
+<app-modal-user-approval-role></app-modal-user-approval-role>
 <app-modal-user-edit-credentials></app-modal-user-edit-credentials>

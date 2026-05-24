@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 
@@ -24,7 +25,7 @@ import { ModalProfileMetadataEditComponent } from './modal-profile-metadata-edit
     FormsModule,
     HeaderComponent,
     ModalProfileOperatorEditComponent,
-    ModalProfileMetadataEditComponent
+    ModalProfileMetadataEditComponent, TranslatePipe
 ]
 })
 export class ProfilePage implements OnInit {

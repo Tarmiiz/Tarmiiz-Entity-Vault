@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
@@ -19,7 +20,7 @@ import { DexOrder } from '../../../../../shared/models/data.model';
   templateUrl: './view.page.html',
   styleUrls: ['./view.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe],
 })
 export class ViewPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

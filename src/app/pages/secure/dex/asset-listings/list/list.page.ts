@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -20,7 +21,7 @@ import { ModalListingCreateComponent } from '../modals/modal-listing-create/moda
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalListingCreateComponent],
+  imports: [FormsModule, HeaderComponent, ModalListingCreateComponent, TranslatePipe],
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);

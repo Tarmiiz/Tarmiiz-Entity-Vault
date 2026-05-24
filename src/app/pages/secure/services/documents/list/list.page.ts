@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -16,7 +17,7 @@ import { ModalDocumentAddComponent } from '../../../documents/modals/modal-docum
   selector: 'app-service-documents-list',
   templateUrl: './list.page.html',
   standalone: true,
-  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentAddComponent]
+  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentAddComponent, TranslatePipe]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);

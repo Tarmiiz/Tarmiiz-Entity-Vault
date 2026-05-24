@@ -1,17 +1,21 @@
 import { Injectable, signal } from '@angular/core';
 
 export interface AssetPriceModalInput {
-  tokenType: number;
+  // priceMode is the source of truth for which form to show.
+  // 1 = Single (single price; bid == ask), 2 = BidAsk (separate bid + ask)
+  priceMode: number;
+  // supplyMode: 1 = Fixed, 2 = Dynamic. Post-T20Template-consolidation rename of the
+  // old leaf-template `tokenType` distinction at this level.
+  supplyMode: number;
   symbol: string;
   currentBid?: number;
   currentAsk?: number;
-  currentNav?: number;
 }
 
 export interface AssetPriceModalResult {
-  bid?: number;
-  ask?: number;
-  price?: number;
+  // Always emits both bid and ask. Single mode sets bid = ask.
+  bid: number;
+  ask: number;
   timestamp: number;
 }
 

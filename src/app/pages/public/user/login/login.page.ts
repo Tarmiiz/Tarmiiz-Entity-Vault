@@ -2,11 +2,13 @@ import { Component, inject, OnInit } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { StorageService } from '../../../../shared/services/storage.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { CryptoService } from '../../../../shared/services/crypto.service';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { LanguageService } from '../../../../shared/services/language.service';
 
 
 @Component({
@@ -17,6 +19,7 @@ import { AuthService } from '../../../../shared/services/auth.service';
   imports: [
     ReactiveFormsModule,
     FormsModule,
+    TranslatePipe,
 ]
 })
 export class LoginPage implements OnInit {
@@ -25,10 +28,14 @@ export class LoginPage implements OnInit {
   private router = inject(Router);
   private storageService = inject(StorageService);
   private cryptoService = inject(CryptoService);
-  private authService = inject(AuthService);  
+  private authService = inject(AuthService);
+  private languageService = inject(LanguageService);
 
   formLogin!: FormGroup;
   isLoading = false;
+
+  get lang() { return this.languageService.lang(); }
+  toggleLang() { this.languageService.toggle(); }
 
   constructor(
   ) { 

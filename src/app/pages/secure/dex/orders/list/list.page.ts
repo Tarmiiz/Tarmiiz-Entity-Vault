@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 import jsPDF from 'jspdf';
@@ -24,7 +25,7 @@ import { ModalPlaceOrderComponent } from '../modals/modal-place-order/modal-plac
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, ModalPlaceOrderComponent],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, ModalPlaceOrderComponent, TranslatePipe],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);

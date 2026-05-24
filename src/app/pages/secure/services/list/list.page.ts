@@ -1,7 +1,9 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -31,9 +33,10 @@ import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
   standalone: true,
   imports: [
     FormsModule,
+    DecimalPipe,
     HeaderComponent,
     LiveIndicatorComponent,
-    ModalServiceAddComponent
+    ModalServiceAddComponent, TranslatePipe
 ]
 })
 export class ListPage implements OnInit {
@@ -56,6 +59,17 @@ export class ListPage implements OnInit {
   servicesCount = 0
   services = signal<Service[]>([]);
   servicesSearchTerm = signal('');
+  coverageByService = signal<Record<string, { minRatio: number | null; worstCurrency: string | null; totalShortfall: number; breakdown: { currency: string; obligation: number; liquidity: number; shortfall: number; coverageRatio: number | null }[] }>>({});
+
+  coverageFor(addr: string) {
+    return this.coverageByService()[addr?.toLowerCase()] ?? null;
+  }
+  coverageTone(ratio: number | null | undefined): 'good' | 'warn' | 'bad' | 'idle' {
+    if (ratio === null || ratio === undefined) return 'idle';
+    if (ratio >= 1) return 'good';
+    if (ratio >= 0.5) return 'warn';
+    return 'bad';
+  }
 
   filterState = signal<string>('');
   filterVerificationLevel = signal<string>('');
@@ -150,11 +164,17 @@ export class ListPage implements OnInit {
       this.services.set([]);
     }
     try {
-      const result = await this.apiService.vaultGetServices(0, 500);
+      const [result, coverage] = await Promise.all([
+        this.apiService.vaultGetServices(0, 500),
+        this.apiService.vaultGetServicesCoverage().catch(() => []),
+      ]);
       if (result) {
         this.servicesCount = result.count;
         this.services.set(result.services.map((s: any) => this.mapVaultService(s)));
       }
+      const cov: Record<string, any> = {};
+      for (const c of (coverage || [])) cov[(c.service || '').toLowerCase()] = c;
+      this.coverageByService.set(cov);
     } finally {
       if (!silent) this.loadingService.hide();
       if (silent) this.refreshing.set(false);
@@ -177,6 +197,8 @@ export class ListPage implements OnInit {
         regulator: data.regulator,
         validator: data.validator || '',
         payment_processor: data.paymentProcessor || '',
+        custodian: data.custodian || '',
+        visibility: data.visibility || 1,
       });
       if (result) {
         await this.listServices();

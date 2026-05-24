@@ -4,8 +4,8 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalUserAddService, AddUserData } from './modal-user-add.service';
 
-import { LoadingService } from 'src/app/shared/components/alerts/loading/loading.service';
-import { AlertService } from 'src/app/shared/components/alerts/alert/alert.service';
+import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 
 @Component({
   selector: 'app-modal-user-add',
@@ -24,13 +24,14 @@ export class ModalUserAddComponent {
   isLoading = false;
 
   addForm = this.fb.group({
-    name: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    did: [''],
-    username: ['', Validators.required],
-    password: ['', Validators.required],
-    password2: ['', Validators.required],
-    role: ['', Validators.required],
+    name:         ['', Validators.required],
+    email:        ['', [Validators.required, Validators.email]],
+    did:          [''],
+    username:     ['', Validators.required],
+    password:     ['', Validators.required],
+    password2:    ['', Validators.required],
+    role:         ['', Validators.required],
+    approvalRole: ['none'],
   });
 
   readonly roles = [
@@ -38,6 +39,16 @@ export class ModalUserAddComponent {
     { variableId: 2, name: 'Executive' },
     { variableId: 3, name: 'Viewer' },
   ];
+
+  constructor() {
+    this.addForm.get('role')?.valueChanges.subscribe((role) => {
+      if (Number(role) !== 2) this.addForm.get('approvalRole')?.setValue('none');
+    });
+  }
+
+  isExecutive(): boolean {
+    return Number(this.addForm.get('role')?.value) === 2;
+  }
 
 
   onSave(): void {
@@ -54,10 +65,11 @@ export class ModalUserAddComponent {
       this.loadingService.hide();
       this.alertService.show('Passwords Mismatch', 'Passwords do not match.');
       return;
-    }  
+    }
 
     try {
       const formValue = this.addForm.getRawValue();
+      const approvalRole = (Number(formValue.role) === 2 ? (formValue.approvalRole || 'none') : 'none') as 'none' | 'maker' | 'checker';
       const addData: AddUserData = {
         name: formValue.name ?? '',
         email: formValue.email ?? '',
@@ -65,6 +77,7 @@ export class ModalUserAddComponent {
         role: formValue.role ?? '',
         username: formValue.username ?? '',
         password: formValue.password ?? '',
+        approvalRole,
       };
       this.loadingService.hide();
       this.addUserService.confirm(addData);

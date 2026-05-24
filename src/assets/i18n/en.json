@@ -1,0 +1,944 @@
+{
+  "common": {
+    "save":            "Save",
+    "cancel":          "Cancel",
+    "close":           "Close",
+    "confirm":         "Confirm",
+    "yes":             "Yes",
+    "no":              "No",
+    "copy":            "Copy",
+    "copied":          "Copied",
+    "loading":         "Loading…",
+    "noData":          "No data",
+    "noResults":       "No results",
+    "clear":           "Clear",
+    "search":          "Search",
+    "filter":          "Filter",
+    "filters":         "Filters",
+    "back":            "Back",
+    "next":            "Next",
+    "prev":            "Previous",
+    "submit":          "Submit",
+    "create":          "Create",
+    "add":             "Add",
+    "edit":            "Edit",
+    "delete":          "Delete",
+    "remove":          "Remove",
+    "view":            "View",
+    "viewAll":         "View all →",
+    "viewDetails":     "View Details",
+    "refresh":         "Refresh",
+    "retry":           "Retry",
+    "actions":         "Actions",
+    "more":            "More",
+    "less":            "Less",
+    "none":            "None",
+    "all":             "All",
+    "any":             "Any",
+    "name":            "Name",
+    "symbol":          "Symbol",
+    "address":         "Address",
+    "email":           "Email",
+    "mobile":          "Mobile",
+    "website":         "Website",
+    "country":         "Country",
+    "createdAt":       "Created",
+    "updatedAt":       "Updated",
+    "state":           "State",
+    "type":            "Type",
+    "amount":          "Amount",
+    "description":     "Description",
+    "metadata":        "Metadata",
+    "id":              "#",
+    "exportExcel":     "Export Excel",
+    "exportPdf":       "Export PDF",
+    "exportGenerated": "Generated",
+    "exportedBy":      "Exported by",
+    "exportNone":      "None",
+    "comingSoon":      "Coming soon",
+    "showing":         "Showing {{showing}} of {{total}}",
+    "pageOf":          "Page {{page}} of {{pages}}",
+    "saving":          "Saving…",
+    "creating":        "Creating…",
+    "updating":        "Updating…",
+    "deleting":        "Deleting…",
+    "processing":      "Processing…",
+    "loadingData":     "Loading data…",
+    "from":            "From",
+    "to":              "To",
+    "by":              "By",
+    "reason":          "Reason",
+    "reasonPlaceholder": "Enter reason…",
+    "optional":        "Optional",
+    "required":        "Required",
+    "notSet":          "—",
+    "live":            "Live",
+    "offline":         "Offline"
+  },
+  "state": {
+    "all":         "All",
+    "initiated":   "Initiated",
+    "active":      "Active",
+    "suspended":   "Suspended",
+    "deactivated": "Deactivated",
+    "paused":      "Paused",
+    "registered":  "Registered",
+    "pending":     "Pending",
+    "approved":    "Approved",
+    "rejected":    "Rejected",
+    "open":        "Open",
+    "closed":      "Closed",
+    "archived":    "Archived",
+    "unknown":     "Unknown"
+  },
+  "role": {
+    "all":      "All",
+    "admin":    "Admin",
+    "issuer":   "Issuer",
+    "operator": "Operator",
+    "viewer":   "Viewer",
+    "unknown":  "—"
+  },
+  "partyType": {
+    "entity":       "Entity",
+    "service":      "Service",
+    "subscription": "Subscription",
+    "regulator":    "Regulator",
+    "identity":     "Identity",
+    "operator":     "Operator",
+    "unknown":      "—"
+  },
+  "header": {
+    "title":         "Tarmiiz Vault",
+    "welcome":       "Welcome, {{name}}",
+    "logout":        "Logout",
+    "resync":        "Resync",
+    "profile":       "Profile",
+    "messages":      "Messages",
+    "sync": {
+      "live":        "API Live",
+      "offline":     "API Offline",
+      "syncing":     "Syncing…"
+    },
+    "entityRestricted": "Entity is {{state}} — actions are restricted. Contact your regulator."
+  },
+  "sidebar": {
+    "home":              "Home",
+    "services":          "Services",
+    "assets":            "Assets",
+    "subscriptions":     "Subscriptions",
+    "subscribers":       "Subscribers",
+    "transactions":      "Transactions",
+    "credit":            "Credit",
+    "analytics":         "Analytics",
+    "dex":               "DEX",
+    "dexListings":       "Listings",
+    "dexOrders":         "Orders",
+    "dexTrades":         "Trades",
+    "dexVenues":         "Venues",
+    "documents":         "Documents",
+    "users":             "Users",
+    "messages":          "Messages",
+    "system":            "System",
+    "signerKeys":        "Signer Keys",
+    "auditTrail":        "Audit Trail",
+    "systemVariables":   "System Variables",
+    "entityProfile":     "Entity Profile",
+    "myProfile":         "My Profile",
+    "myLogs":            "My Logs",
+    "systemLogs":        "System Logs",
+    "approvals":         "Approvals"
+  },
+  "login": {
+    "title":         "Sign In",
+    "subtitle":      "Please enter your credentials to continue.",
+    "welcomeBack":   "Welcome Back!",
+    "helperCopy":    "Sign in to access your token-issuer vault and manage your assets.",
+    "usernameLabel": "Email",
+    "passwordLabel": "Password",
+    "submit":        "Login",
+    "forgotPassword": "Forgot password?",
+    "errors": {
+      "invalid":      "Invalid credentials.",
+      "network":      "Network error — please try again.",
+      "generic":      "Login failed. Please try again."
+    }
+  },
+  "claim": {
+    "title":           "Activate Account",
+    "subtitle":        "Use the activation OTP emailed to you, then set a new password.",
+    "steps": {
+      "activation":    "Activation",
+      "newPassword":   "Set Password"
+    },
+    "emailLabel":      "Admin Email",
+    "otpLabel":        "Activation OTP",
+    "otpPlaceholder":  "6-digit code from email",
+    "verify":          "Verify",
+    "verifying":       "Verifying…",
+    "newPasswordLabel":"New Password",
+    "confirmLabel":    "Confirm Password",
+    "submit":          "Activate",
+    "submitting":      "Activating…",
+    "successMsg":      "Account activated. Please log in.",
+    "errors": {
+      "otpInvalid":    "Invalid OTP.",
+      "passwordMin":   "Password must be at least 8 characters.",
+      "passwordMismatch": "Passwords do not match.",
+      "activateFailed": "Could not activate the account."
+    }
+  },
+  "forgotPassword": {
+    "title":         "Reset Password",
+    "subtitle":      "Enter your email to receive a reset link.",
+    "emailLabel":    "Email",
+    "submit":        "Send Reset Link",
+    "backToLogin":   "Back to login",
+    "successMsg":    "If an account exists, a reset link has been sent."
+  },
+  "alerts": {
+    "success":  "Success",
+    "error":    "Error",
+    "warning":  "Warning",
+    "info":     "Info",
+    "confirm":  "Confirm",
+    "ok":       "OK",
+    "saved":    "Saved successfully",
+    "deleted":  "Deleted successfully",
+    "created":  "Created successfully",
+    "updated":  "Updated successfully",
+    "failed":   "Operation failed",
+    "networkError": "Network error — please try again.",
+    "unexpected":   "An unexpected error occurred.",
+    "validationFailed": "Please fix the highlighted fields."
+  },
+  "dashboard": {
+    "title":           "Home",
+    "aum":             "Assets Under Management",
+    "aumEmpty":        "No active assets yet",
+    "totalCredit":     "Total Credit",
+    "creditEmpty":     "No credit",
+    "trxActivity":     "Transaction Activity — Last 30 × {{interval}}",
+    "latestAssets":    "Latest Assets",
+    "latestSubscriptions": "Latest Subscriptions",
+    "latestTransactions":  "Latest Transactions",
+    "viewAll":         "View all →",
+    "bootstrapAdminTitle": "No Executive User Yet",
+    "bootstrapAdminBody":  "This entity has only its bootstrap administrator. Document signing, signer-key rotation, and DEX operations require an Executive user (role 2). Add one to unlock those features.",
+    "bootstrapAdminCta":   "Add Executive User",
+    "table": {
+      "id":         "#",
+      "name":       "Name",
+      "type":       "Type",
+      "service":    "Service",
+      "subscriber": "Subscriber",
+      "created":    "Created",
+      "state":      "State"
+    }
+  },
+  "services": {
+    "title": "Services",
+    "filters": {
+      "search":           "Search",
+      "searchPlaceholder":"Name, address…",
+      "state":            "State",
+      "type":             "Type",
+      "typeAll":          "All",
+      "type1":            "Token Issuer",
+      "type2":            "Validator / PP"
+    },
+    "table": {
+      "id":            "#",
+      "name":          "Name",
+      "type":          "Type",
+      "verification":  "Verification",
+      "validator":     "Validator",
+      "paymentProcessor": "Payment Processor",
+      "state":         "State",
+      "suspended":     "Suspended"
+    },
+    "details": {
+      "title": "Service Details",
+      "tabs": {
+        "info":          "Information",
+        "subscriptions": "Subscriptions",
+        "assets":        "Assets",
+        "transactions":  "Transactions",
+        "documents":     "Documents",
+        "messages":      "Messages",
+        "logs":          "Audit Trail"
+      },
+      "info": {
+        "name":              "Name",
+        "address":           "Service Address",
+        "type":              "Type",
+        "verificationLevel": "Verification Level",
+        "validator":         "Validator",
+        "paymentProcessor":  "Payment Processor",
+        "email":             "Email",
+        "mobile":            "Mobile",
+        "website":           "Website",
+        "country":           "Country",
+        "regulator":         "Regulator",
+        "state":             "State",
+        "suspended":         "Suspended",
+        "metadata":          "Metadata"
+      }
+    }
+  },
+  "assets": {
+    "title": "Assets",
+    "add":   "Add Asset",
+    "filters": {
+      "type":       "Type",
+      "typeAll":    "All",
+      "state":      "State",
+      "service":    "Service",
+      "currency":   "Currency",
+      "circulating":"Circulating",
+      "amount":     "Amount",
+      "search":     "Search",
+      "searchPlaceholder": "Name, symbol, address…"
+    },
+    "compare": {
+      "any": "Any",
+      "gt":  ">",
+      "lt":  "<"
+    },
+    "table": {
+      "id":          "#",
+      "name":        "Name",
+      "symbol":      "Symbol",
+      "type":        "Type",
+      "supply":      "Total Supply",
+      "circulating": "Circulating",
+      "currency":    "Currency",
+      "state":       "State",
+      "suspended":   "Suspended"
+    },
+    "details": {
+      "title": "Asset Details",
+      "tabs": {
+        "info":         "Information",
+        "price":        "Price",
+        "holders":      "Holders",
+        "transactions": "Transactions",
+        "services":     "Services",
+        "documents":    "Documents",
+        "actions":      "Actions",
+        "dex":          "DEX",
+        "messages":     "Messages",
+        "logs":         "Audit Trail"
+      },
+      "info": {
+        "name":         "Name",
+        "symbol":       "Symbol",
+        "address":      "Asset Address",
+        "tokenType":    "Token Type",
+        "assetType":    "Asset Type",
+        "manager":      "Manager",
+        "regulator":    "Regulator",
+        "country":      "Country",
+        "currency":     "Currency",
+        "totalSupply":  "Total Supply",
+        "circulating":  "Circulating",
+        "state":        "State",
+        "suspended":    "Suspended",
+        "metadata":     "Metadata"
+      },
+      "price": {
+        "title":     "Price History",
+        "bid":       "Bid",
+        "ask":       "Ask",
+        "nav":       "NAV",
+        "timestamp": "Timestamp",
+        "empty":     "No price points recorded.",
+        "setPrice":  "Set Price"
+      },
+      "holders": {
+        "title":   "Holders",
+        "holder":  "Holder",
+        "balance": "Balance",
+        "cost":    "Cost basis",
+        "empty":   "No holders."
+      },
+      "transactions": {
+        "title":      "Transactions",
+        "trxId":      "Tx #",
+        "trxType":    "Type",
+        "from":       "From",
+        "to":         "To",
+        "tokens":     "Tokens",
+        "price":      "Price",
+        "total":      "Total",
+        "service":    "Service",
+        "time":       "Time",
+        "ref":        "Ref",
+        "empty":      "No transactions."
+      },
+      "services": {
+        "title":    "Services",
+        "service":  "Service",
+        "state":    "State",
+        "canQuote": "Can Quote",
+        "empty":    "No services attached.",
+        "addService": "Add Service"
+      },
+      "actions": {
+        "title":     "Asset Actions",
+        "subscribe": "Subscribe",
+        "redeem":    "Redeem",
+        "transfer":  "Transfer",
+        "setPrice":  "Set Price",
+        "mint":      "Mint",
+        "burn":      "Burn"
+      }
+    },
+    "addModal": {
+      "title":         "Add Asset",
+      "name":          "Name",
+      "symbol":        "Symbol",
+      "type":          "Asset Type",
+      "supply":        "Initial Supply",
+      "currency":      "Currency",
+      "service":       "Service",
+      "metadata":      "Metadata",
+      "submit":        "Create Asset",
+      "submitting":    "Creating asset on-chain…"
+    },
+    "stateModal": {
+      "title":     "Change Asset State",
+      "newState":  "New State",
+      "reason":    "Reason",
+      "submit":    "Update State"
+    },
+    "serviceStateModal": {
+      "title":     "Change Asset-Service State",
+      "newState":  "New State",
+      "reason":    "Reason",
+      "submit":    "Update"
+    },
+    "priceModal": {
+      "title":  "Set Price",
+      "bid":    "Bid",
+      "ask":    "Ask",
+      "nav":    "NAV",
+      "submit": "Set Price",
+      "submitting": "Setting price…"
+    },
+    "subscribeModal": {
+      "title":     "Subscribe",
+      "subscriber":"Subscriber",
+      "tokens":    "Tokens",
+      "submit":    "Subscribe",
+      "submitting":"Processing…"
+    },
+    "redeemModal": {
+      "title":     "Redeem",
+      "subscriber":"Subscriber",
+      "tokens":    "Tokens",
+      "submit":    "Redeem",
+      "submitting":"Processing…"
+    },
+    "transferModal": {
+      "title":     "Transfer",
+      "from":      "From",
+      "to":        "To",
+      "tokens":    "Tokens",
+      "submit":    "Transfer",
+      "submitting":"Processing…"
+    }
+  },
+  "subscriptions": {
+    "title": "Subscriptions",
+    "filters": {
+      "search":           "Search",
+      "searchPlaceholder":"Address, service…",
+      "state":            "State",
+      "service":          "Service"
+    },
+    "table": {
+      "id":        "#",
+      "address":   "Address",
+      "service":   "Service",
+      "validator": "Validator",
+      "createdAt": "Created",
+      "state":     "State",
+      "suspended": "Suspended"
+    },
+    "details": {
+      "title":   "Subscription Details",
+      "tabs": {
+        "info":         "Information",
+        "holdings":     "Holdings",
+        "transactions": "Transactions",
+        "documents":    "Documents",
+        "messages":     "Messages",
+        "logs":         "Audit Trail"
+      },
+      "info": {
+        "subscription":  "Subscription Address",
+        "service":       "Service",
+        "validator":     "Validator",
+        "validatorData": "Validator Data",
+        "trxNo":         "Validator Trx #",
+        "trxTime":       "Validator Trx Time",
+        "regulator":     "Regulator",
+        "createdAt":     "Created",
+        "state":         "State",
+        "suspended":     "Suspended"
+      },
+      "holdings": {
+        "title":   "Holdings",
+        "asset":   "Asset",
+        "balance": "Balance",
+        "cost":    "Cost",
+        "empty":   "No holdings."
+      }
+    },
+    "stateModal": {
+      "title": "Change Subscription State",
+      "newState": "New State",
+      "reason": "Reason",
+      "submit": "Update"
+    }
+  },
+  "transactions": {
+    "title": "Transactions",
+    "add":   "Add Transaction",
+    "filters": {
+      "search":           "Search",
+      "searchPlaceholder":"Ref, address…",
+      "type":             "Type",
+      "asset":            "Asset",
+      "from":             "From",
+      "to":               "To"
+    },
+    "table": {
+      "id":         "#",
+      "trxId":      "Tx #",
+      "type":       "Type",
+      "asset":      "Asset",
+      "from":       "From",
+      "to":         "To",
+      "tokens":     "Tokens",
+      "price":      "Price",
+      "total":      "Total",
+      "ref":        "Ref",
+      "time":       "Time"
+    },
+    "empty": "No transactions found",
+    "addModal": {
+      "title":     "Add Transaction",
+      "type":      "Type",
+      "asset":     "Asset",
+      "amount":    "Amount",
+      "from":      "From",
+      "to":        "To",
+      "submit":    "Submit",
+      "submitting":"Submitting…"
+    }
+  },
+  "credit": {
+    "title": "Credit",
+    "summary": {
+      "totalBalance": "Total Balance",
+      "withheld":     "Withheld",
+      "available":    "Available"
+    },
+    "table": {
+      "id":         "#",
+      "currency":   "Currency",
+      "balance":    "Balance",
+      "trxId":      "Tx #",
+      "service":    "Service",
+      "from":       "From",
+      "to":         "To",
+      "type":       "Type",
+      "amount":     "Amount",
+      "state":      "State",
+      "time":       "Time"
+    },
+    "transactions": {
+      "title": "Credit Transactions",
+      "empty": "No credit transactions."
+    },
+    "transferModal": {
+      "title":     "Transfer Credit",
+      "from":      "From",
+      "to":        "To",
+      "currency":  "Currency",
+      "amount":    "Amount",
+      "submit":    "Transfer",
+      "submitting":"Processing…"
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "aumPerformance": {
+      "title":   "AUM Performance",
+      "asset":   "Asset",
+      "range":   "Range",
+      "empty":   "Pick an asset to see its AUM curve."
+    }
+  },
+  "documents": {
+    "title": "Documents",
+    "tabs": {
+      "my":           "My Documents",
+      "sharedWithMe": "Shared With Me"
+    },
+    "filters": {
+      "search":            "Search",
+      "searchPlaceholder": "Title, CID, owner…",
+      "type":              "Type",
+      "typeAll":           "All",
+      "typePublic":        "Public",
+      "typePrivate":       "Private",
+      "documentState":     "State"
+    },
+    "table": {
+      "id":          "#",
+      "title":       "Title",
+      "type":        "Type",
+      "owner":       "Owner",
+      "addedBy":     "Added By",
+      "createdAt":   "Created",
+      "state":       "State",
+      "actions":     "Actions"
+    },
+    "type": {
+      "public":  "Public",
+      "private": "Private"
+    },
+    "docState": {
+      "active":  "Active",
+      "deleted": "Deleted"
+    },
+    "actions": {
+      "view":     "View",
+      "viewFile": "View File",
+      "download": "Download",
+      "share":    "Share",
+      "publish":  "Publish",
+      "delete":   "Delete"
+    },
+    "addModal": {
+      "title":       "Add Document",
+      "fileLabel":   "File",
+      "filePick":    "Choose file…",
+      "titleLabel":  "Title",
+      "descriptionLabel": "Description",
+      "typeLabel":   "Type",
+      "shareWith":   "Share With",
+      "submit":      "Upload",
+      "uploading":   "Uploading… {{percent}}%"
+    },
+    "shareModal": {
+      "title":       "Share Document",
+      "recipient":   "Recipient",
+      "submit":      "Share",
+      "sharing":     "Sharing…"
+    },
+    "publishConfirm": {
+      "title":   "Publish Document?",
+      "body":    "Publishing makes this document public on IPFS. This is irreversible.",
+      "confirm": "Publish",
+      "cancel":  "Cancel"
+    }
+  },
+  "messages": {
+    "title":        "Messages",
+    "threadPrefix": "Thread #",
+    "noSubject":    "(no subject)",
+    "list": {
+      "filters": {
+        "show":              "Show",
+        "all":               "All",
+        "unread":            "Unread",
+        "search":            "Search",
+        "searchPlaceholder": "Subject or thread id…",
+        "type":              "Type",
+        "typeAll":           "All",
+        "clear":             "Clear"
+      },
+      "newThread": "New thread",
+      "table": {
+        "id":           "#",
+        "subject":      "Subject",
+        "participants": "Participants",
+        "messages":     "Messages",
+        "lastActivity": "Last activity",
+        "state":        "State"
+      },
+      "noThreads": "No threads."
+    },
+    "details": {
+      "title":             "Thread",
+      "conversation":      "Conversation",
+      "breadcrumb":        "Messages",
+      "closeThread":       "Close thread",
+      "me":                "me",
+      "markRead":          "Mark read",
+      "tombstone":         "Tombstone",
+      "noMessages":        "No messages yet.",
+      "sendLabel":         "Send message",
+      "sendPlaceholder":   "Type your message…",
+      "sendButton":        "Send"
+    }
+  },
+  "signerKeys": {
+    "title": "Signer Keys",
+    "add":   "Add Key",
+    "table": {
+      "id":          "#",
+      "keyId":       "Key ID",
+      "signer":      "Signer Address",
+      "description": "Description",
+      "state":       "State",
+      "createdAt":   "Created"
+    },
+    "keyState": {
+      "active":   "Active",
+      "disabled": "Disabled"
+    },
+    "addModal": {
+      "title":       "Add Signer Key",
+      "description": "Description",
+      "submit":      "Generate & Add",
+      "submitting":  "Generating key…"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "add":   "Add User",
+    "filters": {
+      "search":           "Search",
+      "searchPlaceholder":"Name, username, email…",
+      "state":            "State",
+      "role":             "Role"
+    },
+    "table": {
+      "id":         "#",
+      "name":       "Name",
+      "username":   "Username",
+      "email":      "Email",
+      "role":       "Role",
+      "createdAt":  "Created",
+      "state":      "State"
+    },
+    "details": {
+      "title":   "User Details",
+      "tabs": {
+        "info":   "Information",
+        "logs":   "Audit Trail"
+      },
+      "info": {
+        "name":         "Name",
+        "username":     "Username",
+        "email":        "Email",
+        "role":         "Role",
+        "state":        "State",
+        "createdAt":    "Created",
+        "lastModified": "Last Modified"
+      }
+    },
+    "myProfile": {
+      "title":          "My Profile",
+      "name":           "Name",
+      "username":       "Username",
+      "email":          "Email",
+      "role":           "Role",
+      "changePassword": "Change Password"
+    },
+    "addModal": {
+      "title":          "Add User",
+      "name":           "Name",
+      "username":       "Username",
+      "email":          "Email",
+      "role":           "Role",
+      "password":       "Password",
+      "confirmPassword":"Confirm Password",
+      "submit":         "Create User",
+      "submitting":     "Creating…"
+    }
+  },
+  "variables": {
+    "title":     "System Variables",
+    "filters": {
+      "search":           "Search",
+      "searchPlaceholder":"Name, category…",
+      "category":         "Category"
+    },
+    "table": {
+      "category": "Category",
+      "id":       "Variable ID",
+      "name":     "Name",
+      "visible":  "Visible"
+    },
+    "empty": "No variables found."
+  },
+  "profile": {
+    "title": "Entity Profile",
+    "tabs": {
+      "info":      "Information",
+      "metadata":  "Metadata",
+      "operator":  "Operator",
+      "api":       "API"
+    },
+    "info": {
+      "name":      "Name",
+      "email":     "Email",
+      "mobile":    "Mobile",
+      "website":   "Website",
+      "country":   "Country",
+      "regulator": "Regulator",
+      "metadata":  "Metadata",
+      "edit":      "Edit"
+    },
+    "api": {
+      "title":    "API Configuration",
+      "url":      "API URL",
+      "status":   "Status",
+      "address":  "API Address"
+    },
+    "dataModal": {
+      "title": "Edit Entity Data",
+      "submit": "Save",
+      "submitting": "Saving…"
+    },
+    "metadataModal": {
+      "title": "Edit Metadata",
+      "submit": "Save",
+      "submitting": "Saving…"
+    },
+    "operatorModal": {
+      "title": "Edit Operator Details",
+      "submit": "Save",
+      "submitting": "Saving…"
+    }
+  },
+  "approvals": {
+    "title":        "Approvals",
+    "policyTitle":  "Approval Policy",
+    "managePolicy": "Manage Approval Policy"
+  },
+  "logs": {
+    "title": "Audit Trail",
+    "titleMy":     "My Logs",
+    "titleSystem": "System Logs",
+    "details": {
+      "title":         "Audit Event",
+      "actor":         "Actor",
+      "target":        "Target",
+      "refNo":         "RefNo",
+      "txHash":        "Tx Hash",
+      "reason":        "Reason",
+      "before":        "Before",
+      "after":         "After"
+    },
+    "table": {
+      "time":     "Time",
+      "category": "Category",
+      "action":   "Action",
+      "actor":    "Actor",
+      "target":   "Target",
+      "reason":   "Reason",
+      "refNo":    "RefNo",
+      "empty":    "No audit events found"
+    }
+  },
+  "dex": {
+    "title": "DEX",
+    "listings": {
+      "title": "Asset Listings",
+      "add":   "List Asset",
+      "table": {
+        "id":     "#",
+        "asset":  "Asset",
+        "venues": "Venues",
+        "tier":   "Tier",
+        "state":  "State"
+      },
+      "details": {
+        "title": "Listing Details",
+        "addVenue": "Add Venue",
+        "changeTier": "Change Tier"
+      },
+      "createModal": {
+        "title":    "List Asset",
+        "asset":    "Asset",
+        "venues":   "Venues",
+        "tier":     "Tier",
+        "submit":   "List",
+        "submitting": "Listing…"
+      },
+      "addVenueModal": {
+        "title":   "Add Venue to Listing",
+        "venue":   "Venue",
+        "tier":    "Tier",
+        "submit":  "Add",
+        "submitting": "Adding…"
+      },
+      "changeTierModal": {
+        "title":   "Change Venue Tier",
+        "tier":    "Tier",
+        "submit":  "Update",
+        "submitting": "Updating…"
+      }
+    },
+    "orders": {
+      "title": "Orders",
+      "side": {
+        "buy":  "Buy",
+        "sell": "Sell"
+      },
+      "state": {
+        "open":     "Open",
+        "filled":   "Filled",
+        "cancelled":"Cancelled",
+        "expired":  "Expired"
+      },
+      "table": {
+        "id":         "#",
+        "venue":      "Venue",
+        "asset":      "Asset",
+        "side":       "Side",
+        "price":      "Price",
+        "amount":     "Amount",
+        "remaining":  "Remaining",
+        "state":      "State",
+        "createdAt":  "Created"
+      }
+    },
+    "trades": {
+      "title": "Trades",
+      "table": {
+        "id":        "#",
+        "venue":     "Venue",
+        "asset":     "Asset",
+        "price":     "Price",
+        "amount":    "Amount",
+        "total":     "Total",
+        "tradedAt":  "Traded At"
+      }
+    },
+    "venues": {
+      "title": "Venues",
+      "table": {
+        "id":      "#",
+        "name":    "Name",
+        "service": "Service",
+        "state":   "State"
+      }
+    }
+  },
+  "modalResync": {
+    "title":   "Resync With Chain",
+    "intro":   "Trigger a full resync of the entity API's mirror against the on-chain registries.",
+    "status":  "Status",
+    "trigger": "Trigger Resync",
+    "triggering": "Triggering…",
+    "successMsg": "Resync started."
+  }
+}

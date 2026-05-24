@@ -1,8 +1,8 @@
-@if (modalService.isVisible() && modalService.input(); as inp) {
+﻿@if (modalService.isVisible() && modalService.input(); as inp) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="cancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
 
-      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Change venue tier</h3>
         <p class="text-xs text-gray-400 mt-1">Pick the new tier for this venue on this listing. Forbidden tiers are disabled with the reason.</p>
       </div>

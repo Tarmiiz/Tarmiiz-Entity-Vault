@@ -1,4 +1,4 @@
-<app-header title="Asset Details"></app-header>
+﻿<app-header [title]="'assets.details.title' | translate"></app-header>
 
 <!-- breadcrumb -->
 <div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
@@ -241,6 +241,10 @@
                   <!-- <p class="text-lg text-gray-500">ID: {{ v.id }}</p> -->
                 </div>
                 <div class="flex items-center gap-2">
+                  <span class="px-3 py-1.5 text-xs font-semibold rounded-full"
+                    [class]="v.priceMode === 1 ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'">
+                    {{ v.priceModeName || (v.priceMode === 1 ? 'Single' : 'Bid/Ask') }}
+                  </span>
                   @if (v.suspended) {
                     <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">
                       Suspended
@@ -313,6 +317,10 @@
                   <p class="text-base">{{ v.assetTypeName }}</p>
                 </div>
                 <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Price Mode</p>
+                  <p class="text-base">{{ v.priceModeName || (v.priceMode === 1 ? 'Single' : 'Bid/Ask') }}</p>
+                </div>
+                <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Regulator</p>
                   <p class="text-base">{{ v.regulatorName }}{{ v.regulatorSymbol ? ' (' + v.regulatorSymbol + ')' : '' }}</p>
                   @if (v.regulator) {
@@ -331,7 +339,7 @@
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
                   <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
+                    class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                     Change State
                   </button>
                 </div>
@@ -411,7 +419,7 @@
               </div>
               @if (userInfo && userInfo.role !== 3) {
                 <button (click)="openAddPriceModal()" [disabled]="!entityActive"
-                  class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                  class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                   + Add Price
                 </button>
               }
@@ -475,8 +483,12 @@
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
                       <th scope="col" class="px-6 py-2">Date</th>
-                      <th scope="col" class="px-6 py-2">Bid</th>
-                      <th scope="col" class="px-6 py-2">Ask</th>
+                      @if (asset()?.priceMode === 1) {
+                        <th scope="col" class="px-6 py-2">Price</th>
+                      } @else {
+                        <th scope="col" class="px-6 py-2">Bid</th>
+                        <th scope="col" class="px-6 py-2">Ask</th>
+                      }
                     </tr>
                   </thead>
                   <tbody  class="text-xs">
@@ -490,8 +502,12 @@
                           @for(price of pagedPriceHistory(); track price.timestamp; let i = $index; let isEven = $even;) {
                               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" [class.row-new]="newPriceTimestamps().has(price.timestamp)">
                                   <td class="px-6 py-2">{{ price.timestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                                  <td class="px-6 py-2">{{ price.bid | number: '1.6-6' }}</td>
-                                  <td class="px-6 py-2">{{ price.ask | number: '1.6-6' }}</td>
+                                  @if (asset()?.priceMode === 1) {
+                                    <td class="px-6 py-2">{{ price.bid | number: '1.6-6' }}</td>
+                                  } @else {
+                                    <td class="px-6 py-2">{{ price.bid | number: '1.6-6' }}</td>
+                                    <td class="px-6 py-2">{{ price.ask | number: '1.6-6' }}</td>
+                                  }
                               </tr>
                           }
                       }
@@ -808,7 +824,7 @@
                 <h3 class="text-lg font-semibold text-gray-800">Services</h3>
                 @if (userInfo && userInfo.role !== 3) {
                   <button (click)="openAddServiceModal()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
+                    class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                     + Add Service
                   </button>
                 }
@@ -824,6 +840,7 @@
                         <th scope="col" class="px-6 py-2">Address</th>
                         <th scope="col" class="px-6 py-2">State</th>
                         <th scope="col" class="px-6 py-2" title="Whether this service is allowed to set its own per-trade price; otherwise trades clear at the asset's current bid/ask.">Price Quoting</th>
+                        <th scope="col" class="px-6 py-2" title="Issuer fee charged on credit-settled flows distributed by this service.">Fee Config</th>
                         @if (userInfo && userInfo.role !== 3) {
                           <th scope="col" class="px-6 py-2 w-12"></th>
                         }
@@ -859,6 +876,32 @@
                               <span class="px-2 py-1 text-xs rounded-full" [class.bg-green-100]="svc.canQuote" [class.text-green-800]="svc.canQuote" [class.bg-gray-200]="!svc.canQuote" [class.text-gray-700]="!svc.canQuote">
                                 {{ svc.canQuote ? 'Allowed' : 'Pinned to issuer' }}
                               </span>
+                            }
+                          </td>
+                          <td class="px-6 py-3">
+                            @if (svc.feeConfig && (svc.feeConfig.buyFeeMode || svc.feeConfig.sellFeeMode)) {
+                              <div class="flex flex-col gap-1">
+                                <span class="text-xs text-gray-700">
+                                  <span class="text-gray-500">Buy:</span>
+                                  {{ feeModeName(svc.feeConfig.buyFeeMode) }}
+                                  @if (svc.feeConfig.buyFeeMode) { &middot; {{ feeValueDisplay(svc.feeConfig.buyFeeMode, svc.feeConfig.buyFeeValue) }} }
+                                </span>
+                                <span class="text-xs text-gray-700">
+                                  <span class="text-gray-500">Sell:</span>
+                                  {{ feeModeName(svc.feeConfig.sellFeeMode) }}
+                                  @if (svc.feeConfig.sellFeeMode) { &middot; {{ feeValueDisplay(svc.feeConfig.sellFeeMode, svc.feeConfig.sellFeeValue) }} }
+                                </span>
+                              </div>
+                            } @else {
+                              <span class="text-xs text-gray-400">—</span>
+                            }
+                            @if (userInfo && userInfo.role !== 3) {
+                              <button (click)="openFeeConfigModal(svc.service, svc.serviceName)"
+                                [disabled]="!entityActive || !svc.canQuote"
+                                class="mt-1 text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                                [title]="svc.canQuote ? 'Edit issuer fee config for this service' : 'Allow price quoting first to set a fee config'">
+                                Edit Fees
+                              </button>
                             }
                           </td>
                           @if (userInfo && userInfo.role !== 3) {
@@ -945,7 +988,7 @@
                 <div class="flex items-center justify-between mb-3">
                   <h3 class="text-base font-semibold text-gray-800">Enabled Venues</h3>
                   <button (click)="goDexListing()"
-                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                    class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                     Manage on DEX
                   </button>
                 </div>
@@ -1011,4 +1054,5 @@
 <app-modal-asset-service-state></app-modal-asset-service-state>
 <app-modal-listing-create></app-modal-listing-create>
 <app-modal-asset-price></app-modal-asset-price>
+<app-modal-asset-fee-config></app-modal-asset-fee-config>
 <app-modal-transaction-info></app-modal-transaction-info>

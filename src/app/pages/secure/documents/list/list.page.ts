@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -19,7 +20,7 @@ type Tab = 'mine' | 'shared';
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalDocumentAddComponent]
+  imports: [FormsModule, HeaderComponent, ModalDocumentAddComponent, TranslatePipe]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);

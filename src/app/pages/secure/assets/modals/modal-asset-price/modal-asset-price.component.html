@@ -1,14 +1,17 @@
-@if (modal.isVisible() && modal.input(); as input) {
+﻿@if (modal.isVisible() && modal.input(); as input) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
-      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">
           Add Price &mdash; {{ input.symbol }}
         </h3>
+        <p class="text-xs text-gray-400 mt-1">
+          Price mode: {{ input.priceMode === 1 ? 'Single' : 'Bid/Ask' }}
+        </p>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSave()">
         <div class="p-6 space-y-4">
-          @if (input.tokenType === 1) {
+          @if (input.priceMode === 2) {
             <div>
               <label for="bid" class="block text-sm font-medium text-gray-700">Bid</label>
               <input id="bid" type="number" step="any" min="0" formControlName="bid"
@@ -20,14 +23,17 @@
               <input id="ask" type="number" step="any" min="0" formControlName="ask"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.000000" />
+              @if (form.value.bid != null && form.value.ask != null && +(form.value.ask ?? 0) < +(form.value.bid ?? 0)) {
+                <p class="mt-1 text-xs text-red-600">Ask must be greater than or equal to Bid.</p>
+              }
             </div>
           } @else {
             <div>
-              <label for="price" class="block text-sm font-medium text-gray-700">NAV</label>
+              <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
               <input id="price" type="number" step="any" min="0" formControlName="price"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.000000" />
-              <p class="mt-1 text-xs text-gray-500">Net Asset Value per token.</p>
+              <p class="mt-1 text-xs text-gray-500">In Single-price mode the same value is recorded as both bid and ask.</p>
             </div>
           }
         </div>
@@ -35,7 +41,7 @@
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             Cancel
           </button>
-          <button type="submit" [disabled]="!form.valid" class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="submit" [disabled]="!isValid()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Save Price
           </button>
         </div>

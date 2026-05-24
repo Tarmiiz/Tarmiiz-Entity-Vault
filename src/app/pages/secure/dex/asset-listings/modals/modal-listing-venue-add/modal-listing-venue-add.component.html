@@ -1,10 +1,10 @@
-@if (modalService.isVisible()) {
+﻿@if (modalService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
        (click)="cancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl m-4"
          (click)="$event.stopPropagation()">
 
-      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Venue</h3>
         <p class="text-xs text-gray-400 mt-1">{{ tierLabel() }}</p>
         <p class="text-xs text-gray-300 mt-2">{{ tierHint() }}</p>

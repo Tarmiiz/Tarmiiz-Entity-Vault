@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -34,7 +35,7 @@ import { Subscription } from '../../../../shared/models/data.model';
     CommonModule, FormsModule,
     HeaderComponent,
     LiveIndicatorComponent,
-    ModalAddSubscriptionComponent,
+    ModalAddSubscriptionComponent, TranslatePipe,
   ]
 })
 export class ListPage implements OnInit {

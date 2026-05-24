@@ -14,7 +14,8 @@ import { UtilsService } from '../../../shared/services/utils.service';
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { Router } from '@angular/router';
-import { AuthService } from 'src/app/shared/services/auth.service';
+import { TranslatePipe } from '@ngx-translate/core';
+import { AuthService } from '../../../shared/services/auth.service';
 import { ModalTransactionInfoService } from '../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 import { AuditService } from '../../../shared/services/audit.service';
@@ -59,6 +60,26 @@ interface TopAsset {
   currency: string;
 }
 
+interface LiquidityCoverageRow {
+  currency: string;
+  currencyName: string;
+  obligation: number;
+  liquidity: number;
+  shortfall: number;
+  coverageRatio: number | null;
+}
+
+interface LiquidityCoverageByServiceRow {
+  service: string;
+  serviceName: string;
+  currency: string;
+  currencyName: string;
+  obligation: number;
+  liquidity: number;
+  shortfall: number;
+  coverageRatio: number | null;
+}
+
 interface DashboardSummary {
   kpis: DashboardKpis;
   currencies: CurrencySummary[];
@@ -66,6 +87,8 @@ interface DashboardSummary {
     aumByAssetByCurrency: Record<string, AumByAsset[]>;
   };
   topAssets: TopAsset[];
+  liquidityCoverage?: LiquidityCoverageRow[];
+  liquidityCoverageByService?: LiquidityCoverageByServiceRow[];
 }
 
 interface ActivityResponse {
@@ -101,7 +124,7 @@ const ACTIVITY_INTERVALS: { value: string; label: string }[] = [
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
-    ModalTransactionInfoComponent,
+    ModalTransactionInfoComponent, TranslatePipe,
   ]
 })
 export class DashboardPage implements OnInit {
@@ -119,6 +142,9 @@ export class DashboardPage implements OnInit {
 
   get entityActive() { return this.authService.entityActive(); }
   get entityStateName() { return this.authService.entityInfo?.stateName ?? ''; }
+
+  userCount = signal<number | null>(null);
+  showBootstrapNudge = computed(() => this.userCount() === 1 && Number(this.userInfo?.role) === 1);
 
   lastSynced: number = 0;
 
@@ -161,6 +187,16 @@ export class DashboardPage implements OnInit {
     return this.currencies().find(c => c.code === code)?.name ?? code ?? '';
   });
   topAssets       = computed(() => this.dashboardSummary()?.topAssets ?? []);
+  liquidityCoverage = computed(() => (this.dashboardSummary()?.liquidityCoverage ?? []).filter(r => r.shortfall > 0));
+  liquidityCoverageByService = computed(() => (this.dashboardSummary()?.liquidityCoverageByService ?? []).filter(r => r.shortfall > 0));
+  hasLiquidityWarnings = computed(() => this.liquidityCoverage().length > 0 || this.liquidityCoverageByService().length > 0);
+  coverageTone(row: { obligation: number; coverageRatio: number | null }): 'good' | 'warn' | 'bad' | 'idle' {
+    if (row.obligation === 0) return 'idle';
+    const r = row.coverageRatio ?? 0;
+    if (r >= 1) return 'good';
+    if (r >= 0.5) return 'warn';
+    return 'bad';
+  }
   aumByAsset      = computed(() => {
     const code = this.selectedCurrency();
     if (!code) return [] as AumByAsset[];
@@ -199,6 +235,10 @@ export class DashboardPage implements OnInit {
 
   async goTo(path: string) {
     this.router.navigate([path]);
+  }
+
+  async goToServiceLiquidity(serviceAddress: string) {
+    this.router.navigate(['/authorized/services/details/' + serviceAddress], { queryParams: { tab: 'liquidity' } });
   }
 
   viewDetails(trx: AssetTransaction) {
@@ -282,9 +322,16 @@ export class DashboardPage implements OnInit {
           this.getCreditTotals(silent),
         ]);
         this.lastUpdated.set(new Date());
+      } else {
+        await this.getUserCount();
       }
       if (!silent) this.loadingService.hide();
     }
+  }
+
+  async getUserCount() {
+    const res = await this.apiService.vaultGetUsers(0, 2);
+    if (res) this.userCount.set(res.count);
   }
 
   async getStats(silent = false) {

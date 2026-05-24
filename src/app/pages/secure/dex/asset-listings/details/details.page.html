@@ -1,4 +1,4 @@
-<app-header title="DEX Asset Listing Details"></app-header>
+﻿<app-header [title]="'dex.listings.details.title' | translate"></app-header>
 
 <div class="px-6 py-4 border-b bg-gray-200">
   <nav class="flex" aria-label="Breadcrumb">
@@ -96,7 +96,7 @@
                     </span>
                     <div class="mt-3">
                       <button (click)="setTab('venues')"
-                        class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+                        class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                         Manage venues
                       </button>
                     </div>
@@ -134,7 +134,7 @@
                 <button (click)="setAddInitialTier($any(t))"
                   class="text-xs px-3 py-1.5 rounded transition-colors"
                   [class]="addInitialTier() === t
-                    ? 'bg-[#202a3b] text-white'
+                    ? 'bg-[var(--brand-primary)] text-white'
                     : 'border border-gray-300 text-gray-600 hover:bg-gray-100'">
                   {{ tierLabel($any(t)) }}
                 </button>

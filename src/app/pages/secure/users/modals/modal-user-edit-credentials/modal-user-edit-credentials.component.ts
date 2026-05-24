@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/cor
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalUserCredentialsService, CredentialsUserData } from './modal-user-edit-credentials.service';
-import { AlertService } from 'src/app/shared/components/alerts/alert/alert.service';
+import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 
 @Component({
   selector: 'app-modal-user-edit-credentials',

@@ -1,4 +1,4 @@
-<app-header title="Users"></app-header>
+﻿<app-header [title]="'users.title' | translate"></app-header>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
@@ -44,7 +44,7 @@
       @if (userInfo && userInfo.role === 1) {
       <div class="flex ml-auto items-end">
         <button (click)="openAddModal()"
-          class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors">
+          class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
           + Add User
         </button>
       </div>

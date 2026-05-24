@@ -260,7 +260,11 @@ export class Service {
     public paymentProcessor: string,
     public suspended: boolean,
     public state: number,
-    public stateName: string
+    public stateName: string,
+    public validatorActive: boolean = true,
+    public visibility: number = 1,
+    public custodian: string = '',
+    public custodianActive: boolean = true
   ) {}
 }
 
@@ -306,7 +310,10 @@ export class Subscription {
     public createdAt: number,
     public suspended: boolean,
     public state: number,
-    public stateName: string
+    public stateName: string,
+    public validatorActive: boolean = true,
+    public holdingsByCurrency: { currency: string; currencyName: string; value: number }[] = [],
+    public holdingsTotalValue: number = 0,
   ) {}
 }
 
@@ -325,8 +332,19 @@ export class AssetService {
     public serviceName: string,
     public state: number = 0,
     public stateName: string = '',
-    public canQuote: boolean = false
+    public canQuote: boolean = false,
+    public feeConfig: FeeConfig | null = null
   ) {}
+}
+
+// Fee mode: 0 = None, 1 = Bps (bps-based, value out of 10000, cap 2000), 2 = Fixed (wei amount)
+export interface FeeConfig {
+  buyFeeMode: number;
+  buyFeeValue: string;
+  buyFeeDestination: string;
+  sellFeeMode: number;
+  sellFeeValue: string;
+  sellFeeDestination: string;
 }
 
 export class AssetHolder {
@@ -347,7 +365,31 @@ export class SubscriptionHolding {
     public cost: number,
     public currentBid: number,
     public withheld: number = 0,
-    public available: number = 0
+    public available: number = 0,
+    public regulatorHeld?: number,
+    public regulatorActiveHolds?: number
+  ) {}
+}
+
+// Regulator-scoped freeze record on (asset, account). The entity is read-only —
+// holds are placed and released regulator-side. amount/released/remaining are
+// stringified uint256 token counts (plain integers — NOT wei). state names:
+// 1=Active, 2=PartiallyReleased, 3=Released.
+export class RegulatorHold {
+  constructor (
+    public assetAddress: string,
+    public holdId: number,
+    public accountAddress: string,
+    public amount: string,
+    public released: string,
+    public remaining: string,
+    public state: number,
+    public stateName: string,
+    public reason: string,
+    public releaseReason: string,
+    public blockNumber: number,
+    public createdAt: number,
+    public lastUpdate: number
   ) {}
 }
 
@@ -356,6 +398,7 @@ export class Asset {
     public address: string,
     public name: string,
     public symbol: string,
+    // tokenType: leaf template kind. V1: 1 = T20. T3643 follow-up will add 2.
     public tokenType: number,
     public tokenTypeName: string,
     public assetType: number,
@@ -379,7 +422,15 @@ export class Asset {
     public suspended: boolean,
     public creditSettlement: boolean,
     public state: number,
-    public stateName: string
+    public stateName: string,
+    public priceMode: number = 2,
+    public priceModeName?: string,
+    // supplyMode: 1 = Fixed (initialSupply minted to asset at init; subscribe transfers).
+    //             2 = Dynamic (subscribe mints, redeem burns).
+    // Immutable post-create. Set by the T20Template consolidation — replaces the old
+    // tokenType=1/2 distinction at this level (tokenType now records the leaf-template kind).
+    public supplyMode: number = 1,
+    public supplyModeName?: string
   ) {}
 }
 
@@ -697,4 +748,87 @@ export interface OrderBookSnapshot {
   bestAsk: { orderId: number; price: string; amount?: string } | null;
   bids: DexOrder[];
   asks: DexOrder[];
+}
+
+// ─── Maker/checker approvals ─────────────────────────────────────────────────
+
+export type ApprovalRole = 'none' | 'maker' | 'checker';
+
+export const APPROVAL_STATE_NAMES: Record<number, string> = {
+  1: 'Pending',
+  2: 'Approved',
+  3: 'Rejected',
+  4: 'Cancelled',
+  5: 'Execution failed',
+};
+
+export class PendingApproval {
+  constructor(
+    public requestId: string,
+    public actionCategory: string,
+    public targetType: string,
+    public targetAddress: string,
+    public targetLabel: string | null,
+    public payload: any,
+    public makerUserId: string,
+    public makerUserName: string | null,
+    public makerReason: string | null,
+    public approvalState: number,
+    public approvalStateName: string,
+    public checkerUserId: string | null,
+    public checkerUserName: string | null,
+    public checkerReason: string | null,
+    public decisionAt: number | null,
+    public executionTxHash: string | null,
+    public executionAt: number | null,
+    public executionError: string | null,
+    public notificationThreadId: string | null,
+    public createdAt: number,
+    public updatedAt: number,
+  ) {}
+
+  static fromApi(r: any): PendingApproval {
+    let payload: any = {};
+    try { payload = r.payload_json ? JSON.parse(r.payload_json) : {}; } catch { payload = {}; }
+    const state = Number(r.approval_state);
+    return new PendingApproval(
+      r.request_id,
+      r.action_category,
+      r.target_type,
+      r.target_address,
+      r.target_label ?? null,
+      payload,
+      r.maker_user_id,
+      r.maker_user_name ?? null,
+      r.maker_reason ?? null,
+      state,
+      APPROVAL_STATE_NAMES[state] || 'Unknown',
+      r.checker_user_id ?? null,
+      r.checker_user_name ?? null,
+      r.checker_reason ?? null,
+      r.decision_at != null ? Number(r.decision_at) : null,
+      r.execution_tx_hash ?? null,
+      r.execution_at != null ? Number(r.execution_at) : null,
+      r.execution_error ?? null,
+      r.notification_thread_id ?? null,
+      Number(r.created_at),
+      Number(r.updated_at),
+    );
+  }
+}
+
+export interface ApprovalPolicyRow {
+  actionCategory: string;
+  requiresApproval: boolean;
+  updatedAt: number;
+  updatedByUserId: string | null;
+}
+
+export function approvalPolicyFromApi(r: any): ApprovalPolicyRow {
+  return {
+    actionCategory:   r.action_category,
+    requiresApproval: r.requires_approval === true || r.requires_approval === 1 || r.requires_approval === '1' || r.requires_approval === 't',
+    updatedAt:        Number(r.updated_at),
+    updatedByUserId:  r.updated_by_user_id ?? null,
+  };
 }

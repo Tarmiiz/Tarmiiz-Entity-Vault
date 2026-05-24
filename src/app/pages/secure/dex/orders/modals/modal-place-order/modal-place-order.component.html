@@ -1,8 +1,8 @@
-@if (modalService.isVisible()) {
+﻿@if (modalService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4" (click)="$event.stopPropagation()">
 
-      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Place Order</h3>
         <p class="text-xs text-gray-400 mt-1">
           Step {{ step() }} of {{ totalSteps }} —
@@ -15,7 +15,7 @@
         @for (s of [1,2,3]; track s) {
           <div class="flex items-center">
             <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
-              [class]="s < step() ? 'bg-green-500 text-white' : s === step() ? 'bg-[#202a3b] text-white' : 'bg-gray-200 text-gray-400'">
+              [class]="s < step() ? 'bg-green-500 text-white' : s === step() ? 'bg-[var(--brand-primary)] text-white' : 'bg-gray-200 text-gray-400'">
               @if (s < step()) {
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
               } @else { {{ s }} }
@@ -175,10 +175,10 @@
             class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Cancel</button>
           @if (step() < totalSteps) {
             <button type="button" (click)="next()" [disabled]="(step() === 1 && !isStep1Valid()) || (step() === 2 && !isStep2Valid())"
-              class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
           } @else {
             <button type="button" (click)="onSave()" [disabled]="!reviewConfirmed()"
-              class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Submit</button>
+              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Submit</button>
           }
         </div>
       </div>

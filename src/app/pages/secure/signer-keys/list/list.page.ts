@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -24,7 +25,7 @@ interface SignerKey {
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalSignerKeyAddComponent]
+  imports: [FormsModule, HeaderComponent, ModalSignerKeyAddComponent, TranslatePipe]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);

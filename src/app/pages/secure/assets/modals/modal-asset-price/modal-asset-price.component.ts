@@ -24,7 +24,8 @@ export class ModalAssetPriceComponent {
     effect(() => {
       const input = this.modal.input();
       if (!input || !this.modal.isVisible()) return;
-      if (input.tokenType === 1) {
+      // priceMode 2 = Bid/Ask, priceMode 1 = Single
+      if (input.priceMode === 2) {
         this.form.controls.bid.setValidators([Validators.required, Validators.min(0)]);
         this.form.controls.ask.setValidators([Validators.required, Validators.min(0)]);
         this.form.controls.price.clearValidators();
@@ -40,7 +41,7 @@ export class ModalAssetPriceComponent {
         this.form.patchValue({
           bid:   null,
           ask:   null,
-          price: input.currentNav ?? null,
+          price: input.currentBid ?? null,
         });
       }
       this.form.controls.bid.updateValueAndValidity();
@@ -49,18 +50,29 @@ export class ModalAssetPriceComponent {
     });
   }
 
-  onSave(): void {
-    if (!this.form.valid) return;
+  isValid(): boolean {
+    if (!this.form.valid) return false;
     const input = this.modal.input();
-    if (!input) return;
+    if (!input) return false;
+    if (input.priceMode === 2) {
+      const bid = Number(this.form.value.bid);
+      const ask = Number(this.form.value.ask);
+      if (!(ask >= bid)) return false;
+    }
+    return true;
+  }
+
+  onSave(): void {
+    const input = this.modal.input();
+    if (!input || !this.isValid()) return;
     const timestamp = Math.floor(Date.now() / 1000);
-    if (input.tokenType === 1) {
+    if (input.priceMode === 2) {
       const bid = Number(this.form.value.bid);
       const ask = Number(this.form.value.ask);
       this.modal.confirm({ bid, ask, timestamp });
     } else {
       const price = Number(this.form.value.price);
-      this.modal.confirm({ price, timestamp });
+      this.modal.confirm({ bid: price, ask: price, timestamp });
     }
   }
 

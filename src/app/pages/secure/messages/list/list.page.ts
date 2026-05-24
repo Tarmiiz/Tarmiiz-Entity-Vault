@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -17,7 +18,7 @@ import { ModalNewThreadService } from '../modals/modal-new-thread/modal-new-thre
   selector: 'app-messages-list',
   templateUrl: './list.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);

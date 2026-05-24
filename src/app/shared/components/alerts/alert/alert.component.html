@@ -1,4 +1,4 @@
-@if (alertService.isVisible()) {
+﻿@if (alertService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
     <div class="bg-white rounded-lg shadow-xl w-full m-4 p-6 transform transition-all duration-300 ease-in-out scale-100" [class]="alertService.maxWidth()">
       <div class="flex items-start">
@@ -19,7 +19,7 @@
         </div>
       </div>
       <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-        <button type="button" (click)="onConfirm()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#202a3b] text-base font-medium text-white hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+        <button type="button" (click)="onConfirm()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[var(--brand-primary)] text-base font-medium text-white hover:bg-[var(--brand-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
           {{ alertService.confirmText() }}
         </button>
         <button type="button" (click)="onCancel()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">

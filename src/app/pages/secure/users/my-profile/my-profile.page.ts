@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 
@@ -19,7 +20,7 @@ import { User } from '../../../../shared/models/data.model';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    HeaderComponent,
+    HeaderComponent, TranslatePipe,
   ]
 })
 export class MyProfilePage {

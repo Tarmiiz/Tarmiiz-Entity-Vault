@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -27,6 +28,10 @@ import { ModalServiceValidatorService } from '../modals/modal-service-validator/
 import { ModalServiceValidatorComponent } from '../modals/modal-service-validator/modal-service-validator.component';
 import { ModalServicePaymentProcessorService } from '../modals/modal-service-payment-processor/modal-service-payment-processor.service';
 import { ModalServicePaymentProcessorComponent } from '../modals/modal-service-payment-processor/modal-service-payment-processor.component';
+import { ModalServiceCustodianService, SELF_CUSTODY_SENTINEL } from '../modals/modal-service-custodian/modal-service-custodian.service';
+import { ModalServiceCustodianComponent } from '../modals/modal-service-custodian/modal-service-custodian.component';
+import { ModalServiceFeeConfigService } from '../modals/modal-service-fee-config/modal-service-fee-config.service';
+import { ModalServiceFeeConfigComponent } from '../modals/modal-service-fee-config/modal-service-fee-config.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
@@ -48,8 +53,10 @@ import { LiveIndicatorComponent } from '../../../../shared/components/live-indic
     ModalTransactionInfoComponent,
     ModalServiceValidatorComponent,
     ModalServicePaymentProcessorComponent,
+    ModalServiceCustodianComponent,
+    ModalServiceFeeConfigComponent,
     DocumentsTabComponent,
-    LiveIndicatorComponent,
+    LiveIndicatorComponent, TranslatePipe,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -64,6 +71,8 @@ export class DetailsPage implements OnInit {
   trxInfoService = inject(ModalTransactionInfoService);
   private validatorModalService = inject(ModalServiceValidatorService);
   private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
+  private custodianModalService = inject(ModalServiceCustodianService);
+  private feeConfigModal = inject(ModalServiceFeeConfigService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
@@ -72,7 +81,25 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+
+  liquidityBalances = signal<{ currencyCode: number; currencyName: string; currencySymbol: string; currencyAlpha?: string; balance: number; withheld: number; available: number; obligation: number; shortfall: number; coverageRatio: number | null }[]>([]);
+
+  liquidityCoverageTone(ratio: number | null | undefined): 'good' | 'warn' | 'bad' | 'idle' {
+    if (ratio === null || ratio === undefined) return 'idle';
+    if (ratio >= 1) return 'good';
+    if (ratio >= 0.5) return 'warn';
+    return 'bad';
+  }
+  liquidityLoading = signal(false);
+  liquidityModalOpen = signal(false);
+  liquidityModalAction = signal<'inject' | 'withdraw'>('inject');
+  liquidityModalCurrency = signal<{ code: number; name: string; symbol: string } | null>(null);
+  liquidityModalAvailable = signal<number>(0);
+  liquidityModalAmount = signal<string>('');
+  liquidityModalRefNo = signal<string>('');
+  liquidityModalSubmitting = signal(false);
+  liquidityModalError = signal<string>('');
 
   loadingData: boolean = false;
   refreshing = signal(false);
@@ -85,6 +112,7 @@ export class DetailsPage implements OnInit {
   suspensionReason = signal<string>('');
   validatorName = signal<string>('');
   paymentProcessorName = signal<string>('');
+  custodianName = signal<string>('');
   subscriptions = signal<Subscription[]>([]);
   assets = signal<Asset[]>([]);
   transactions = signal<AssetTransaction[]>([]);
@@ -197,8 +225,13 @@ export class DetailsPage implements OnInit {
   
   async ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
-    this.activeTab.set('overview');
+    const requested = this.route.snapshot.queryParamMap.get('tab') as
+      ('overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
+    const allowed = ['overview', 'info', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
+    const initialTab = requested && (allowed as readonly string[]).includes(requested) ? requested : 'overview';
+    this.activeTab.set(initialTab);
     await this.reload();
+    if (initialTab === 'liquidity') this.getLiquidity();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload(true));
   }
 
@@ -221,12 +254,13 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'docs') {
+  setTab(tab: 'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
     if (tab === 'trxs') this.getTransactions(1, 500);
+    if (tab === 'liquidity') this.getLiquidity();
   }   
 
   private readonly stateNames: Record<number, string> = {
@@ -259,6 +293,10 @@ export class DetailsPage implements OnInit {
       suspended: raw.suspended === true || raw.suspended === 1,
       state: raw.state ?? 0,
       stateName: raw.state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      visibility: raw.visibility ?? 1,
+      custodian: raw.custodian ?? '',
+      custodianActive: raw.custodian_active === false ? false : true,
+      validatorActive: raw.validator_active === false ? false : true,
     } as Service;
   }
 
@@ -310,6 +348,8 @@ export class DetailsPage implements OnInit {
       suspended: raw.suspended === true || raw.suspended === 1,
       state: raw.state ?? 0,
       stateName: this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      holdingsByCurrency: Array.isArray(raw.holdingsByCurrency) ? raw.holdingsByCurrency : [],
+      holdingsTotalValue: Number(raw.holdingsTotalValue ?? 0),
     } as Subscription;
   }
 
@@ -354,7 +394,7 @@ export class DetailsPage implements OnInit {
     if (raw) {
       const service = this.mapVaultService(raw);
       this.service.set(service);
-      this.resolveLinkedNames(raw.validator, raw.payment_processor);
+      this.resolveLinkedNames(raw.validator, raw.payment_processor, raw.custodian, raw.address);
       if (service.suspended) {
         const logs = await this.apiService.vaultGetStateChangeLogs(service.address, 1, 1);
         if (logs?.logs?.length > 0) {
@@ -367,10 +407,11 @@ export class DetailsPage implements OnInit {
     if (!silent) this.loadingService.hide();
   }
 
-  private async resolveLinkedNames(validator: string, paymentProcessor: string) {
+  private async resolveLinkedNames(validator: string, paymentProcessor: string, custodian: string, serviceAddress: string) {
     const zeroAddr = '0x0000000000000000000000000000000000000000';
     this.validatorName.set('');
     this.paymentProcessorName.set('');
+    this.custodianName.set('');
 
     const promises: Promise<void>[] = [];
     if (validator && validator !== zeroAddr) {
@@ -389,7 +430,26 @@ export class DetailsPage implements OnInit {
         })
       );
     }
+    // Custodian: only resolve a friendly name when it's external (not self-custody).
+    if (custodian && custodian !== zeroAddr && custodian.toLowerCase() !== (serviceAddress || '').toLowerCase()) {
+      const currentService = this.service();
+      const regulator = currentService?.regulator;
+      if (regulator) {
+        promises.push(
+          this.apiService.vaultGetEndorsedCustodians(regulator, 1, 50).then(data => {
+            const match = data?.custodians?.find((c: any) => c.address.toLowerCase() === custodian.toLowerCase());
+            if (match?.name) this.custodianName.set(match.name);
+          }).catch(() => {})
+        );
+      }
+    }
     await Promise.all(promises);
+  }
+
+  isSelfCustody(): boolean {
+    const s = this.service();
+    if (!s || !s.custodian) return false;
+    return s.custodian.toLowerCase() === s.address.toLowerCase();
   }
 
   getStateClass(stateId: number | undefined): string {
@@ -467,6 +527,25 @@ export class DetailsPage implements OnInit {
     }
   }
 
+  async onChangeVisibility() {
+    const currentService = this.service();
+    if (!currentService) return;
+    const next = currentService.visibility === 2 ? 1 : 2;
+    this.loadingService.show('Updating visibility...');
+    try {
+      const res = await this.apiService.vaultSetServiceVisibility(currentService.address, next);
+      await this.getServiceDetails();
+      if (res?.requestId) {
+        this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+      }
+    } catch (error) {
+      console.error('Failed to change visibility', error);
+      this.alertService.show('Update Failed', 'There was an error updating the service visibility.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
   async openChangeStateModal(){
     const currentService = this.service();
     if (!currentService) return;
@@ -475,8 +554,11 @@ export class DetailsPage implements OnInit {
     if (result !== null && result.state !== currentService.state) {
         this.loadingService.show('Changing state...');
         try {
-            await this.apiService.vaultUpdateServiceState(currentService.address, result.state, result.reason);
+            const res = await this.apiService.vaultUpdateServiceState(currentService.address, result.state, result.reason);
             await this.getServiceDetails();
+            if (res?.requestId) {
+              this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+            }
         } catch (error) {
             console.error('Failed to change state', error);
         } finally {
@@ -531,6 +613,66 @@ export class DetailsPage implements OnInit {
     }
   }
 
+  async openChangeCustodianModal() {
+    const currentService = this.service();
+    if (!currentService) return;
+
+    const newCustodian = await this.custodianModalService.show(
+      currentService.address,
+      currentService.custodian,
+      currentService.regulator,
+    );
+    if (newCustodian === null) return;
+
+    // Normalize: treat the self-custody sentinel as a distinct selection.
+    // We send what the user picked (either the sentinel or an external address) straight to the API.
+    const zeroAddr = '0x0000000000000000000000000000000000000000';
+    const currentNormalized = (currentService.custodian && currentService.custodian !== zeroAddr) ? currentService.custodian : '';
+    if (newCustodian === currentNormalized) return;
+
+    this.loadingService.show('Updating custodian...');
+    try {
+      const res = await this.apiService.vaultSetServiceCustodian(currentService.address, newCustodian);
+      await this.getServiceDetails();
+      if (res?.requestId) {
+        this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+      }
+    } catch (error) {
+      console.error('Failed to change custodian', error);
+      this.alertService.show('Update Failed', 'There was an error updating the custodian.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // Venue-side per-(this service, asset) fee config (Phase B, all-flows).
+  // Stacks on top of the asset issuer's own cut on every credit-settled flow.
+  async openVenueFeeConfigModal(assetAddress: string, assetSymbol: string) {
+    const currentService = this.service();
+    if (!currentService) return;
+    const res = await this.apiService.vaultGetServiceFeeConfig(currentService.address, assetAddress);
+    const current = res?.feeConfig ?? null;
+    const result = await this.feeConfigModal.show({
+      service: currentService.address,
+      serviceName: currentService.name,
+      asset: assetAddress,
+      assetSymbol,
+      feeConfig: current,
+    });
+    if (!result) return;
+    this.loadingService.show('Saving venue fee config...');
+    try {
+      const r = await this.apiService.vaultSetServiceFeeConfig(currentService.address, assetAddress, result.feeConfig);
+      if ((r as any)?.error) {
+        this.alertService.show('Error', (r as any).error);
+        return;
+      }
+      await this.getServiceDetails();
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
   async gotoValidator(validator: string) {
     this.router.navigate(['/authorized/validators/details/' + validator]);
   }
@@ -553,6 +695,66 @@ export class DetailsPage implements OnInit {
     if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
     this.trxPage.set(0);
     if (!silent) this.loadingService.hide();
+  }
+
+  async getLiquidity(silent = false) {
+    if (!silent) this.liquidityLoading.set(true);
+    try {
+      const balances = await this.apiService.vaultGetServiceLiquidity(this.serviceAddress);
+      this.liquidityBalances.set(Array.isArray(balances) ? balances : []);
+    } finally {
+      if (!silent) this.liquidityLoading.set(false);
+    }
+  }
+
+  openLiquidityModal(action: 'inject' | 'withdraw', row: { currencyCode: number; currencyName: string; currencySymbol: string; available: number }) {
+    this.liquidityModalAction.set(action);
+    this.liquidityModalCurrency.set({ code: row.currencyCode, name: row.currencyName, symbol: row.currencySymbol });
+    this.liquidityModalAvailable.set(Number(row.available || 0));
+    this.liquidityModalAmount.set('');
+    this.liquidityModalRefNo.set('');
+    this.liquidityModalError.set('');
+    this.liquidityModalSubmitting.set(false);
+    this.liquidityModalOpen.set(true);
+  }
+
+  closeLiquidityModal() {
+    if (this.liquidityModalSubmitting()) return;
+    this.liquidityModalOpen.set(false);
+  }
+
+  async submitLiquidity() {
+    const cur = this.liquidityModalCurrency();
+    const amt = Number(this.liquidityModalAmount());
+    if (!cur || !Number.isFinite(amt) || amt <= 0) {
+      this.liquidityModalError.set('Enter a positive amount.');
+      return;
+    }
+    if (this.liquidityModalAction() === 'withdraw' && amt > this.liquidityModalAvailable()) {
+      this.liquidityModalError.set(`Cannot withdraw more than available (${this.liquidityModalAvailable()}).`);
+      return;
+    }
+    this.liquidityModalSubmitting.set(true);
+    this.liquidityModalError.set('');
+    try {
+      const body: any = { currencyCode: cur.code, amount: amt };
+      const refNo = this.liquidityModalRefNo().trim();
+      if (refNo) body.refNo = refNo;
+      const fn = this.liquidityModalAction() === 'inject'
+        ? this.apiService.vaultServiceLiquidityInject.bind(this.apiService)
+        : this.apiService.vaultServiceLiquidityWithdraw.bind(this.apiService);
+      const result = await fn(this.serviceAddress, body);
+      if (!result || result.error || result.type === 'error') {
+        this.liquidityModalError.set(result?.error || 'Operation failed.');
+      } else {
+        this.liquidityModalOpen.set(false);
+        await this.getLiquidity();
+      }
+    } catch (e: any) {
+      this.liquidityModalError.set(e?.message || 'Operation failed.');
+    } finally {
+      this.liquidityModalSubmitting.set(false);
+    }
   }
 
   clearAssetFilters() {

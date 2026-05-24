@@ -1,4 +1,4 @@
-<app-header title="Assets"></app-header>
+﻿<app-header [title]="'assets.title' | translate"></app-header>
 <app-modal-asset-add></app-modal-asset-add>
 <app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
 
@@ -85,7 +85,7 @@
         </button>
         @if(userInfo && userInfo.role !== 3) {
           <button (click)="openAddModal()" [disabled]="!entityActive"
-            class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
             + Add Asset
           </button>
         }
@@ -105,6 +105,7 @@
                   <th scope="col" class="px-6 py-2">Currency</th>
                   <th scope="col" class="px-6 py-2">Service</th>
                   <th scope="col" class="px-6 py-2">Type</th>
+                  <th scope="col" class="px-6 py-2">Price Mode</th>
                   <th scope="col" class="px-6 py-2">Circulating</th>
                   <th scope="col" class="px-6 py-2">State</th>
               </tr>
@@ -129,6 +130,12 @@
                         <td class="px-6 py-2"><span class="badge-currency">{{ data.currencyCode }}</span></td>
                         <td class="px-6 py-2">{{ data.services.length > 0 ? data.services[0].serviceName : 'None' }}</td>
                         <td class="px-6 py-2">{{ data.assetTypeName }}</td>
+                        <td class="px-6 py-2">
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                            [class]="data.priceMode === 1 ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'">
+                            {{ data.priceModeName || (data.priceMode === 1 ? 'Single' : 'Bid/Ask') }}
+                          </span>
+                        </td>
                         <td class="px-6 py-2">{{ data.circulating | number:'1.0-0' }}</td>
                         <td class="px-6 py-2">
                           <div class="flex items-center gap-1.5">

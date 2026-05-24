@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed, ElementRef, ViewChild } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -33,6 +34,8 @@ import { ModalListingCreateService } from '../../dex/asset-listings/modals/modal
 import { ModalListingCreateComponent } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.component';
 import { ModalAssetPriceService } from '../modals/modal-asset-price/modal-asset-price.service';
 import { ModalAssetPriceComponent } from '../modals/modal-asset-price/modal-asset-price.component';
+import { ModalAssetFeeConfigService } from '../modals/modal-asset-fee-config/modal-asset-fee-config.service';
+import { ModalAssetFeeConfigComponent } from '../modals/modal-asset-fee-config/modal-asset-fee-config.component';
 import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models/data.model';
 
 
@@ -54,6 +57,7 @@ import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models
     LiveIndicatorComponent,
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
+    ModalAssetFeeConfigComponent, TranslatePipe,
   ]
 })
 export class DetailsPage implements OnInit {
@@ -67,6 +71,7 @@ export class DetailsPage implements OnInit {
   private serviceStateModal = inject(ModalAssetServiceStateService);
   private listingCreateModal = inject(ModalListingCreateService);
   private priceModal = inject(ModalAssetPriceService);
+  private feeConfigModal = inject(ModalAssetFeeConfigService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
@@ -498,6 +503,10 @@ export class DetailsPage implements OnInit {
       creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
       stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      priceMode: raw.priceMode ?? raw.price_mode ?? 2,
+      priceModeName: raw.priceModeName ?? raw.price_mode_name ?? (Number(raw.priceMode ?? raw.price_mode ?? 2) === 1 ? 'Single' : 'Bid/Ask'),
+      supplyMode: raw.supplyMode ?? raw.supply_mode ?? 1,
+      supplyModeName: raw.supplyModeName ?? raw.supply_mode_name ?? (Number(raw.supplyMode ?? raw.supply_mode ?? 1) === 2 ? 'Dynamic' : 'Fixed'),
     };
   }
 
@@ -548,6 +557,7 @@ export class DetailsPage implements OnInit {
           state: s.state ?? 0,
           stateName: s.state_name ?? this.serviceStateNames[s.state] ?? 'Unknown',
           canQuote: !!(s.can_quote ?? s.canQuote ?? 0),
+          feeConfig: s.fee_config ?? s.feeConfig ?? null,
         }));
       }
       this.asset.set(asset);
@@ -612,10 +622,61 @@ export class DetailsPage implements OnInit {
     if (result === null || result.state === currentState) return;
     this.loadingService.show('Updating service state...');
     try {
-      await this.apiService.vaultSetAssetServiceState(this.assetAddress, serviceAddress, result.state, result.reason);
+      const res = await this.apiService.vaultSetAssetServiceState(this.assetAddress, serviceAddress, result.state, result.reason);
       await this.getAssetDetails();
+      if (res?.requestId) {
+        this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+      }
     } catch (error) {
       console.error('Failed to change service state', error);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  feeModeName(mode: number | undefined): string {
+    switch (Number(mode ?? 0)) {
+      case 1: return 'Bps';
+      case 2: return 'Fixed';
+      default: return 'None';
+    }
+  }
+
+  feeValueDisplay(mode: number | undefined, value: string | undefined): string {
+    const m = Number(mode ?? 0);
+    if (!m || !value) return '—';
+    if (m === 1) return `${value} bps`;
+    // Fixed: stored in wei → format to a human-readable decimal
+    try {
+      const raw = BigInt(value);
+      const whole = raw / 10n ** 18n;
+      const frac  = raw % 10n ** 18n;
+      const fracStr = frac.toString().padStart(18, '0').replace(/0+$/, '');
+      return fracStr ? `${whole}.${fracStr}` : `${whole}`;
+    } catch { return value; }
+  }
+
+  async openFeeConfigModal(serviceAddress: string, serviceName: string) {
+    const asset = this.asset();
+    if (!asset) return;
+    const res = await this.apiService.vaultGetAssetFeeConfig(this.assetAddress, serviceAddress);
+    const current = res?.feeConfig ?? null;
+    const result = await this.feeConfigModal.show({
+      asset: this.assetAddress,
+      assetSymbol: asset.symbol,
+      service: serviceAddress,
+      serviceName,
+      feeConfig: current,
+    });
+    if (!result) return;
+    this.loadingService.show('Saving fee config...');
+    try {
+      const r = await this.apiService.vaultSetAssetFeeConfig(this.assetAddress, serviceAddress, result.feeConfig);
+      if ((r as any)?.error) {
+        this.alertService.show('Error', (r as any).error);
+        return;
+      }
+      await this.getAssetDetails();
     } finally {
       this.loadingService.hide();
     }
@@ -648,8 +709,11 @@ export class DetailsPage implements OnInit {
     if (result !== null && result.state !== currentAsset.state) {
       this.loadingService.show('Changing state...');
       try {
-        await this.apiService.vaultUpdateAssetState(currentAsset.address, result.state, result.reason);
+        const res = await this.apiService.vaultUpdateAssetState(currentAsset.address, result.state, result.reason);
         await this.getAssetDetails();
+        if (res?.requestId) {
+          this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+        }
       } catch (error) {
         console.error('Failed to change state', error);
       } finally {
@@ -663,11 +727,11 @@ export class DetailsPage implements OnInit {
     if (!asset) return;
     const lp = this.latestPrice();
     const result = await this.priceModal.show({
-      tokenType: asset.tokenType,
+      priceMode: asset.priceMode,
+      supplyMode: asset.supplyMode,
       symbol: asset.symbol,
       currentBid: lp?.bid,
       currentAsk: lp?.ask,
-      currentNav: lp?.bid,
     });
     if (!result) return;
     this.loadingService.show('Saving price...');
@@ -676,7 +740,6 @@ export class DetailsPage implements OnInit {
         asset: this.assetAddress,
         bid: result.bid,
         ask: result.ask,
-        price: result.price,
         timestamp: result.timestamp,
       });
       if ((r as any)?.error) {

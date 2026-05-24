@@ -1,0 +1,115 @@
+﻿@if (modal.isVisible() && modal.input(); as input) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          Fee Config &mdash; {{ input.assetSymbol }}
+        </h3>
+        <p class="text-xs text-gray-400 mt-1">
+          Distributed by service: {{ input.serviceName }}
+        </p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-6 max-h-[65vh] overflow-y-auto">
+
+          <p class="text-xs text-gray-500">
+            Asset-side issuer fee charged on every credit-settled flow distributed by this service.
+            Modes: <strong>None</strong> = no fee; <strong>Bps</strong> = percentage of gross (max 2000 bps = 20%);
+            <strong>Fixed</strong> = flat amount in the asset's settlement currency.
+          </p>
+
+          <!-- Buy side -->
+          <div class="border border-gray-200 rounded-lg p-4 space-y-3">
+            <h4 class="text-sm font-semibold text-gray-700">Buy / Subscribe side</h4>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Mode</label>
+              <select formControlName="buyFeeMode"
+                class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md text-black">
+                <option value="0">None — no fee</option>
+                <option value="1">Bps — percentage</option>
+                <option value="2">Fixed — flat amount</option>
+              </select>
+            </div>
+
+            @if (buyMode() !== 0) {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">
+                  @if (buyMode() === 1) { Value (bps; 1-2000) } @else { Value (currency amount) }
+                </label>
+                <input type="number" step="any" min="0" formControlName="buyFeeValue"
+                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                  [placeholder]="buyMode() === 1 ? 'e.g. 50 = 0.50%' : 'e.g. 1.5'">
+                @if (buyMode() === 1) {
+                  <p class="text-xs text-gray-400 mt-1">100 bps = 1% &middot; cap 2000 bps = 20%.</p>
+                } @else {
+                  <p class="text-xs text-gray-400 mt-1">Stored on-chain in wei (×1e18).</p>
+                }
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Destination Address</label>
+                <input type="text" formControlName="buyFeeDestination"
+                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono"
+                  placeholder="0x...">
+              </div>
+            }
+          </div>
+
+          <!-- Sell side -->
+          <div class="border border-gray-200 rounded-lg p-4 space-y-3">
+            <h4 class="text-sm font-semibold text-gray-700">Sell / Redeem side</h4>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Mode</label>
+              <select formControlName="sellFeeMode"
+                class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md text-black">
+                <option value="0">None — no fee</option>
+                <option value="1">Bps — percentage</option>
+                <option value="2">Fixed — flat amount</option>
+              </select>
+            </div>
+
+            @if (sellMode() !== 0) {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">
+                  @if (sellMode() === 1) { Value (bps; 1-2000) } @else { Value (currency amount) }
+                </label>
+                <input type="number" step="any" min="0" formControlName="sellFeeValue"
+                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                  [placeholder]="sellMode() === 1 ? 'e.g. 50 = 0.50%' : 'e.g. 1.5'">
+                @if (sellMode() === 1) {
+                  <p class="text-xs text-gray-400 mt-1">100 bps = 1% &middot; cap 2000 bps = 20%.</p>
+                } @else {
+                  <p class="text-xs text-gray-400 mt-1">Stored on-chain in wei (×1e18).</p>
+                }
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Destination Address</label>
+                <input type="text" formControlName="sellFeeDestination"
+                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono"
+                  placeholder="0x...">
+              </div>
+            }
+          </div>
+
+          @if (submitError()) {
+            <p class="text-xs text-red-600">{{ submitError() }}</p>
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
+          <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="!isValid()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Save Fee Config
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

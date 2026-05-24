@@ -1,4 +1,4 @@
-<app-header title="My Profile"></app-header>
+﻿<app-header [title]="'users.myProfile.title' | translate"></app-header>
 
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
   <div class="container mx-auto max-w-2xl space-y-6">
@@ -7,7 +7,7 @@
 
       <!-- Profile info card -->
       <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 bg-[#202a3b]">
+        <div class="px-6 py-4 bg-[var(--brand-primary)]">
           <h2 class="text-lg font-semibold text-white">Profile Details</h2>
         </div>
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700">
@@ -40,7 +40,7 @@
         </div>
         <div class="px-6 pb-6 flex justify-end">
           <button (click)="toggleCredentialsForm()"
-            class="px-5 py-2 rounded-lg bg-[#202a3b] text-white text-sm font-semibold hover:bg-[#2c3648] transition-colors">
+            class="px-5 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-semibold hover:bg-[var(--brand-primary-hover)] transition-colors">
             {{ showCredentialsForm() ? 'Cancel' : 'Change Credentials' }}
           </button>
         </div>
@@ -70,7 +70,7 @@
             </div>
             <div class="flex justify-end pt-2">
               <button type="submit" [disabled]="!credentialsForm.valid"
-                class="px-6 py-2 bg-[#202a3b] text-white font-semibold rounded-lg shadow-md hover:bg-[#2c3648] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                class="px-6 py-2 bg-[var(--brand-primary)] text-white font-semibold rounded-lg shadow-md hover:bg-[var(--brand-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 Save Changes
               </button>
             </div>

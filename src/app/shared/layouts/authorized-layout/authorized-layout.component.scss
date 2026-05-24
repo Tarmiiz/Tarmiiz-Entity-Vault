@@ -1,4 +1,4 @@
-ion-content {
+﻿ion-content {
     padding: 0 !important;
 }
 
@@ -38,7 +38,7 @@ ion-menu {
     }
 
     ion-content {
-        --background:#202a3b;
+        --background: var(--brand-primary);
     }
 }
 

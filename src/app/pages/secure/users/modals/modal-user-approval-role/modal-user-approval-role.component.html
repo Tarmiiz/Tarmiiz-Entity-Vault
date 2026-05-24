@@ -1,0 +1,32 @@
+﻿@if (approvalRoleService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          Change Approval Role
+        </h3>
+      </div>
+      <form [formGroup]="roleForm" (ngSubmit)="onSave()">
+        <div class="p-6">
+          <label for="approvalRole" class="block text-sm font-medium text-gray-700">Maker / Checker</label>
+          <select id="approvalRole" formControlName="newRole" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+            <option value="none">None</option>
+            <option value="maker">Maker</option>
+            <option value="checker">Checker</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-2">Strict role split — a user is exactly one of None / Maker / Checker.</p>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+          <button type="button" (click)="onCancel()"
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="!roleForm.valid"
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Update Approval Role
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

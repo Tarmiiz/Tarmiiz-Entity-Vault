@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -14,9 +15,9 @@ interface Row {
   selector: 'app-analytics-investors',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, HeaderComponent, AnalyticsCardComponent],
+  imports: [CommonModule, HeaderComponent, AnalyticsCardComponent, TranslatePipe],
   template: `
-    <app-header title="Investors / Holders"></app-header>
+    <app-header [title]="'analytics.investors.title' | translate"></app-header>
     <div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
       <app-analytics-card
         title="Holder concentration"

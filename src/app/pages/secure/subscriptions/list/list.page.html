@@ -1,4 +1,4 @@
-<app-header title="Subscriptions"></app-header>
+<app-header [title]="'subscriptions.title' | translate"></app-header>
 <app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
@@ -96,6 +96,11 @@
                               @if (subscription.suspended) {
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                   Suspended
+                                </span>
+                              }
+                              @if (subscription.validatorActive === false) {
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" title="The validator that verified this subscriber is no longer active. The subscription remains operable; a fresh verification is needed before any new subscription can be created.">
+                                  Validator inactive
                                 </span>
                               }
                             </div>

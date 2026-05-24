@@ -1,7 +1,7 @@
-<div class="flex items-center justify-center min-h-screen bg-gray-100 font-sans">
+﻿<div class="flex items-center justify-center min-h-screen bg-gray-100 font-sans">
   <div class="w-full max-w-5xl flex bg-white rounded-2xl shadow-2xl overflow-hidden my-8">
 
-    <div class="hidden md:flex w-2/5 bg-[#202a3b] p-10 flex-col justify-center items-start text-white">
+    <div class="hidden md:flex w-2/5 bg-[var(--brand-primary)] p-10 flex-col justify-center items-start text-white">
       <div class="mb-8">
         <img src="assets/images/logo.svg" alt="">
       </div>
@@ -24,7 +24,7 @@
 
           <div class="pt-4">
             <button type="submit" [disabled]="isSubmitting()"
-                    class="w-full bg-[#202a3b] hover:bg-[#2c3648] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out disabled:opacity-50">
+                    class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out disabled:opacity-50">
               VERIFY
             </button>
           </div>
@@ -50,7 +50,7 @@
 
           <div class="pt-4">
             <button type="submit" [disabled]="isSubmitting()"
-                    class="w-full bg-[#202a3b] hover:bg-[#2c3648] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out disabled:opacity-50">
+                    class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out disabled:opacity-50">
               CLAIM ACCOUNT
             </button>
           </div>
@@ -61,7 +61,7 @@
         <h1 class="text-3xl font-bold text-gray-800 mb-2">Account claimed</h1>
         <p class="text-gray-500 mb-8">Your password is set. Sign in with your email and new password to enter the vault.</p>
         <button type="button" (click)="goToLogin()"
-                class="w-full bg-[#202a3b] hover:bg-[#2c3648] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out">
+                class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out">
           GO TO SIGN IN
         </button>
       }

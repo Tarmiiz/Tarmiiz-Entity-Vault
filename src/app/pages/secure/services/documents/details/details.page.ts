@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ethers } from 'ethers';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
@@ -23,7 +24,7 @@ type TabId = 'info' | 'sharing' | 'signatures';
   selector: 'app-service-document-details',
   templateUrl: './details.page.html',
   standalone: true,
-  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentShareComponent, ModalDocumentSignComponent]
+  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentShareComponent, ModalDocumentSignComponent, TranslatePipe]
 })
 export class DetailsPage implements OnInit {
   private apiService = inject(ApiService);

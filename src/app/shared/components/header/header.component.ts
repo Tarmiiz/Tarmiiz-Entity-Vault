@@ -10,13 +10,14 @@ import { AlertService } from '../alerts/alert/alert.service';
 import { ModalResyncService } from '../modal-resync/modal-resync.service';
 import { MenuController } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
   imports: [CommonModule, IonLabel,
-    IonHeader, IonToolbar, IonButtons, IonTitle, IonMenuButton, IonButton, RouterLink
+    IonHeader, IonToolbar, IonButtons, IonTitle, IonMenuButton, IonButton, RouterLink, TranslatePipe
   ]
 })
 export class HeaderComponent  implements OnInit, OnDestroy {
@@ -27,6 +28,7 @@ export class HeaderComponent  implements OnInit, OnDestroy {
   private router = inject(Router);
   private vaultSub?: Subscription;
   private resyncService = inject(ModalResyncService);
+  private translate = inject(TranslateService);
 
   unreadCount = signal(0);
   syncing = signal(false);
@@ -80,13 +82,13 @@ export class HeaderComponent  implements OnInit, OnDestroy {
       if (resyncResult !== null) {
         const result: any = await this.apiService.vaultSyncResync(resyncResult.fromBlock, resyncResult.mode);
         if (result?.error || result?.type === 'error') {
-          await this.alertService.show('Resync Failed', result?.error || 'An error occurred');
+          await this.alertService.show(this.translate.instant('alerts.failed'), result?.error || this.translate.instant('alerts.unexpected'));
         } else {
           this.syncing.set(true);
         }
       }
     } catch (err: any) {
-      await this.alertService.show('Error', err?.message || 'Failed to fetch sync status');
+      await this.alertService.show(this.translate.instant('alerts.error'), err?.message || this.translate.instant('alerts.unexpected'));
     }
   }
 

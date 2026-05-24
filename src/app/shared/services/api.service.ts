@@ -8,6 +8,7 @@ import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
+import { FeeConfig } from '../models/data.model';
 
 @Injectable({
   providedIn: 'root'
@@ -428,7 +429,7 @@ export class ApiService {
     return data?.price ?? null;
   }
 
-  async vaultSetAssetPrice(payload: { asset: string; bid?: number; ask?: number; price?: number; timestamp: number }) {
+  async vaultSetAssetPrice(payload: { asset: string; bid: number; ask: number; timestamp: number }) {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
@@ -446,6 +447,41 @@ export class ApiService {
     } catch (e: any) {
       return { error: e?.message || 'Network error' };
     }
+  }
+
+  async vaultGetAssetFeeConfig(asset: string, service: string): Promise<{ feeConfig: FeeConfig | null } | null> {
+    const data = await this.vaultGet('/assets/' + asset + '/services/' + service + '/fee-config');
+    if (!data) return null;
+    return { feeConfig: data.feeConfig ?? null };
+  }
+
+  async vaultSetAssetFeeConfig(asset: string, service: string, feeConfig: FeeConfig) {
+    const data = await this.vaultPut('/assets/' + asset + '/services/' + service + '/fee-config', { feeConfig });
+    return data ?? null;
+  }
+
+  async vaultQuoteAssetFee(asset: string, service: string, direction: number, gross: string | number) {
+    const data = await this.vaultGet('/assets/' + asset + '/services/' + service + '/quote-fee', { direction, gross });
+    return data ?? null;
+  }
+
+  // Venue-side fee config (Phase B, all-flows) — keyed by (service, asset) on the
+  // distributing service's ServiceTemplate. Stacks with the asset-side cut on every
+  // credit-settled flow through callExternalBatchWithCreditFee.
+  async vaultGetServiceFeeConfig(service: string, asset: string): Promise<{ feeConfig: FeeConfig | null } | null> {
+    const data = await this.vaultGet('/services/' + service + '/assets/' + asset + '/fee-config');
+    if (!data) return null;
+    return { feeConfig: data.feeConfig ?? null };
+  }
+
+  async vaultSetServiceFeeConfig(service: string, asset: string, feeConfig: FeeConfig) {
+    const data = await this.vaultPut('/services/' + service + '/assets/' + asset + '/fee-config', { feeConfig });
+    return data ?? null;
+  }
+
+  async vaultQuoteServiceFee(service: string, asset: string, direction: number, gross: string | number) {
+    const data = await this.vaultGet('/services/' + service + '/assets/' + asset + '/quote-fee', { direction, gross });
+    return data ?? null;
   }
 
   async vaultGetAssetPriceHistory(address: string, start = 0, offset = 50) {
@@ -529,6 +565,24 @@ export class ApiService {
     return data?.service ?? null;
   }
 
+  async vaultGetServicesCoverage() {
+    const data = await this.vaultGet('/services/coverage');
+    return data?.services ?? [];
+  }
+
+  async vaultGetServiceLiquidity(address: string) {
+    const data = await this.vaultGet('/services/' + address + '/liquidity');
+    return data?.balances ?? [];
+  }
+
+  async vaultServiceLiquidityInject(address: string, body: { currencyCode: number; amount: number; trxData?: string; refNo?: string }) {
+    return this.vaultPost('/services/' + address + '/liquidity/inject', body);
+  }
+
+  async vaultServiceLiquidityWithdraw(address: string, body: { currencyCode: number; amount: number; trxData?: string; refNo?: string }) {
+    return this.vaultPost('/services/' + address + '/liquidity/withdraw', body);
+  }
+
   // ─── Vault — Subscriptions ────────────────────────────────────────────────────
 
   async vaultGetSubscriptions(service?: string, start = 0, offset = 50) {
@@ -546,6 +600,15 @@ export class ApiService {
   async vaultGetSubscriptionHoldings(address: string, start = 0, offset = 500) {
     const data = await this.vaultGet('/subscriptions/' + address + '/holdings', { start, offset });
     return data ? { count: data.count, holdings: data.holdings } : null;
+  }
+
+  // Regulator-hold mirror — read-only. Hold create / release happens regulator-side; this
+  // is the entity's view of any freeze placed on a subscription's holdings of an asset.
+  async vaultGetSubscriptionRegulatorHolds(subscription: string, asset: string, start = 1, offset = 50) {
+    return this.vaultGet(`/subscriptions/${subscription}/holdings/${asset}/regulator-holds`, { start, offset });
+  }
+  async vaultGetAssetRegulatorHold(asset: string, holdId: number) {
+    return this.vaultGet(`/assets/${asset}/regulator-holds/${holdId}`);
   }
 
   // ─── Vault — State Change Logs ──────────────────────────────────────────────
@@ -684,6 +747,11 @@ export class ApiService {
     return data ?? null;
   }
 
+  async vaultSetServiceVisibility(address: string, visibility: number) {
+    const data = await this.vaultPut('/services/' + address + '/visibility', { visibility });
+    return data ?? null;
+  }
+
   async vaultSetServiceValidator(address: string, validator: string) {
     const data = await this.vaultPut('/services/' + address + '/validator', { validator });
     return data ?? null;
@@ -691,6 +759,11 @@ export class ApiService {
 
   async vaultSetServicePaymentProcessor(address: string, paymentProcessor: string) {
     const data = await this.vaultPut('/services/' + address + '/payment-processor', { payment_processor: paymentProcessor });
+    return data ?? null;
+  }
+
+  async vaultSetServiceCustodian(address: string, custodian: string) {
+    const data = await this.vaultPut('/services/' + address + '/custodian', { custodian });
     return data ?? null;
   }
 
@@ -704,6 +777,11 @@ export class ApiService {
   async vaultGetPaymentProcessors(start = 1, offset = 50) {
     const data = await this.vaultGet('/payment-processors', { start, offset });
     return data ? { count: data.count, paymentProcessors: data.paymentProcessors } : null;
+  }
+
+  async vaultGetEndorsedCustodians(regulatorAddress: string, start = 1, offset = 50) {
+    const data = await this.vaultGet('/regulators/' + regulatorAddress + '/custodians/endorsed', { start, offset });
+    return data ? { count: data.count, custodians: data.custodians } : null;
   }
 
   // ─── Vault — Subscription writes ─────────────────────────────────────────────
@@ -1705,4 +1783,29 @@ export class ApiService {
       return { id, name: u.name || u.username || ('user ' + id), username: u.username, role: u.role };
     } catch { return null; }
   }
+
+  // ─── Approvals (maker/checker workflow) ────────────────────────────────────
+  // Mounted on /api/v1/approvals* and /api/v1/users/:id/approval-role (NOT
+  // under /vault/...) so we use the authPut/Get/Post/Delete wrappers.
+
+  async vaultApprovalsList(opts: { state?: number; category?: string; target?: string; makerUserId?: string; start?: number; offset?: number } = {}) {
+    const params: any = {};
+    if (opts.state != null)    params.state        = opts.state;
+    if (opts.category)         params.category     = opts.category;
+    if (opts.target)           params.target       = opts.target;
+    if (opts.makerUserId)      params.makerUserId  = opts.makerUserId;
+    if (opts.start  != null)   params.start        = opts.start;
+    if (opts.offset != null)   params.offset       = opts.offset;
+    return this.authGet('/approvals', params);
+  }
+  async vaultApprovalGet(requestId: string)                    { return this.authGet('/approvals/' + requestId); }
+  async vaultApprovalApprove(requestId: string, reason = '')   { return this.authPost('/approvals/' + requestId + '/approve', { reason }); }
+  async vaultApprovalReject(requestId: string, reason: string) { return this.authPost('/approvals/' + requestId + '/reject',  { reason }); }
+  async vaultApprovalCancel(requestId: string)                 { return this.authDelete('/approvals/' + requestId); }
+
+  // Admin: policy + per-user roles
+  async vaultApprovalsPolicyList()                                              { return this.authGet('/approvals/policy'); }
+  async vaultApprovalsPolicySet(category: string, requiresApproval: boolean)    { return this.authPut('/approvals/policy/' + category, { requiresApproval }); }
+  async vaultUserApprovalRoleGet(userId: number | string)                       { return this.authGet('/users/' + userId + '/approval-role'); }
+  async vaultUserApprovalRoleSet(userId: number | string, approvalRole: 'none' | 'maker' | 'checker') { return this.authPut('/users/' + userId + '/approval-role', { approvalRole }); }
 }

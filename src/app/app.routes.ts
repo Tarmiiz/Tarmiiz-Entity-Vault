@@ -357,6 +357,30 @@ export const routes: Routes = [
           },
         ]
       },
+      // approvals (maker/checker workflow)
+      {
+        path: 'approvals',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/approvals/list/list.page').then( m => m.ListPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1, 2] },
+          },
+          {
+            path: 'policy',
+            loadComponent: () => import('./pages/secure/approvals/policy/policy.page').then( m => m.PolicyPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            path: '',
+            redirectTo: 'list',
+            pathMatch: 'full',
+          },
+        ]
+      },
       // logs (audit trail)
       {
         path: 'logs',

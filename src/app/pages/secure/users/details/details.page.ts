@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { Subscription } from 'rxjs';
 
@@ -21,6 +22,8 @@ import { ModalUserEditCredentialsComponent } from "../modals/modal-user-edit-cre
 import { ModalUserCredentialsService } from '../modals/modal-user-edit-credentials/modal-user-edit-credentials.service';
 import { ModalUserRoleComponent } from '../modals/modal-user-role/modal-user-role.component';
 import { ModalUserRoleService } from '../modals/modal-user-role/modal-user-role.service';
+import { ModalUserApprovalRoleService, ApprovalRoleValue } from '../modals/modal-user-approval-role/modal-user-approval-role.service';
+import { ModalUserApprovalRoleComponent } from '../modals/modal-user-approval-role/modal-user-approval-role.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 
 
@@ -38,6 +41,7 @@ import { SocketService } from '../../../../shared/services/socket.service';
     ModalUserStateComponent,
     ModalUserEditCredentialsComponent,
     ModalUserRoleComponent,
+    ModalUserApprovalRoleComponent, TranslatePipe,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -50,6 +54,7 @@ export class DetailsPage implements OnInit {
   private userStateService = inject(ModalUserStateService);
   private userCredentialsService = inject(ModalUserCredentialsService);
   private userRoleService = inject(ModalUserRoleService);
+  private userApprovalRoleService = inject(ModalUserApprovalRoleService);
   private socketService = inject(SocketService);
 
   private _socketSub: Subscription | null = null;
@@ -68,19 +73,68 @@ export class DetailsPage implements OnInit {
   userId = signal<number>(0);
   user = signal<User | undefined>(undefined);
 
+  approvalRole       = signal<'none' | 'maker' | 'checker'>('none');
+  approvalRoleSaving = signal(false);
+
   constructor() { }
 
   async ngOnInit() {}
-  
+
   async ionViewWillEnter() {
     const userId = this.route.snapshot.paramMap.get('id');
     if (userId) {
       this.userId.set(Number(userId));
     }
     await this.getUserDetails();
+    await this.loadApprovalRole();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => {
       if (!this._isBusy) this.getUserDetails(true);
     });
+  }
+
+  async loadApprovalRole() {
+    try {
+      const res = await this.apiService.vaultUserApprovalRoleGet(this.userId());
+      this.approvalRole.set((res?.approvalRole as any) || 'none');
+    } catch { this.approvalRole.set('none'); }
+  }
+
+  isExecutive(role: number | string | undefined): boolean {
+    return Number(role) === 2;
+  }
+
+  async openChangeApprovalRoleModal() {
+    const u = this.user();
+    if (!u) return;
+    if (!this.isExecutive(u.role)) {
+      this.alertService.show('Cannot assign role', 'Only executive (role=2) users can be configured as maker or checker. Change the user role to Executive first.');
+      return;
+    }
+
+    const newRole = await this.userApprovalRoleService.show(this.approvalRole());
+    if (newRole === null || newRole === this.approvalRole()) return;
+
+    this.approvalRoleSaving.set(true);
+    this.loadingService.show('Updating approval role...');
+    try {
+      const res = await this.apiService.vaultUserApprovalRoleSet(u.userId, newRole);
+      if (res?.error) {
+        this.alertService.show('Error', res.error);
+        return;
+      }
+      this.approvalRole.set(newRole);
+    } finally {
+      this.approvalRoleSaving.set(false);
+      this.loadingService.hide();
+    }
+  }
+
+  approvalRoleLabel(role: ApprovalRoleValue): string {
+    switch (role) {
+      case 'maker':   return 'Maker';
+      case 'checker': return 'Checker';
+      default:        return 'None';
+    }
   }
 
   ionViewWillLeave() {
@@ -182,6 +236,7 @@ export class DetailsPage implements OnInit {
       this._isBusy = false;
       this.loadingService.hide();
       await this.getUserDetails();
+      await this.loadApprovalRole();
     }
   }
 

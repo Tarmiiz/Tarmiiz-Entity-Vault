@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -14,7 +15,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
-import { AssetTransaction, CreditBalance, CreditTransaction, Subscription, SubscriptionHolding, User } from '../../../../shared/models/data.model';
+import { AssetTransaction, CreditBalance, CreditTransaction, RegulatorHold, Subscription, SubscriptionHolding, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalSubscriptionStateService } from '../modals/modal-subscription-state/modal-subscription-state.service';
@@ -46,7 +47,7 @@ import { LiveIndicatorComponent } from '../../../../shared/components/live-indic
     ModalCreditTrxInfoComponent,
     ModalCreditDepositComponent,
     DocumentsTabComponent,
-    LiveIndicatorComponent,
+    LiveIndicatorComponent, TranslatePipe,
 ]
 })
 export class DetailsPage implements OnInit {
@@ -419,7 +420,9 @@ export class DetailsPage implements OnInit {
         this.loadingService.show('Changing state...');
         try {
             const result = await this.apiService.vaultUpdateSubscriptionState(currentService.subscription, modalResult.state, modalResult.reason);
-            if (result) {
+            if (result?.requestId) {
+                this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+            } else if (result) {
                 this.subscription.update(sub => sub ? {
                     ...sub,
                     state: modalResult.state,
@@ -446,7 +449,21 @@ export class DetailsPage implements OnInit {
     if (!silent) this.loadingService.show('Loading data...');
     const data = await this.apiService.vaultGetSubscriptionHoldings(this.subscriptionAddress, start - 1, offset);
     if (data?.holdings) {
-      const next = data.holdings.map((h: any) => this.mapVaultHolding(h));
+      const next: SubscriptionHolding[] = data.holdings.map((h: any) => this.mapVaultHolding(h));
+      // Enrich each holding with the regulator-hold summary in parallel. The
+      // endpoint returns 0/0 quickly when there are no holds on the (asset, sub) pair.
+      await Promise.all(next.map(async (h) => {
+        try {
+          const r = await this.apiService.vaultGetSubscriptionRegulatorHolds(this.subscriptionAddress, h.asset, 1, 1);
+          h.regulatorHeld         = r?.heldRemaining ? Number(r.heldRemaining) : 0;
+          h.regulatorActiveHolds  = r?.activeHolds   ? Number(r.activeHolds)   : 0;
+          // Tighten `available` to reflect the freeze too (parity with the regulator dashboard).
+          h.available = Math.max(0, h.balance - h.withheld - (h.regulatorHeld ?? 0));
+        } catch {
+          h.regulatorHeld = 0;
+          h.regulatorActiveHolds = 0;
+        }
+      }));
       if (silent) {
         const prev = new Map(this.holdings().map(h => [h.asset, h.balance]));
         const changed: string[] = [];
@@ -460,6 +477,37 @@ export class DetailsPage implements OnInit {
     }
     if (!silent) this.holdingPage.set(0);
     if (!silent) this.loadingService.hide();
+  }
+
+  // ── Regulator holds (read-only expandable row) ──────────────────────────────
+
+  expandedHoldsAsset = signal<string | null>(null);
+  holdsByAsset = signal<Record<string, RegulatorHold[]>>({});
+
+  async toggleHoldsRow(h: SubscriptionHolding, ev: Event) {
+    ev.stopPropagation();
+    if (this.expandedHoldsAsset() === h.asset) {
+      this.expandedHoldsAsset.set(null);
+      return;
+    }
+    await this.loadHoldsForAsset(h.asset);
+    this.expandedHoldsAsset.set(h.asset);
+  }
+
+  private async loadHoldsForAsset(asset: string) {
+    try {
+      const r = await this.apiService.vaultGetSubscriptionRegulatorHolds(this.subscriptionAddress, asset, 1, 200);
+      const list: RegulatorHold[] = (r?.holds || []).map((x: any) => new RegulatorHold(
+        x.assetAddress, Number(x.holdId), x.accountAddress,
+        String(x.amount), String(x.released), String(x.remaining),
+        Number(x.state), x.stateName || '', x.reason || '', x.releaseReason || '',
+        Number(x.blockNumber || 0), Number(x.createdAt || 0), Number(x.lastUpdate || 0),
+      ));
+      this.holdsByAsset.update(m => ({ ...m, [asset]: list }));
+    } catch (e) {
+      console.error('Failed to load regulator holds', e);
+      this.holdsByAsset.update(m => ({ ...m, [asset]: [] }));
+    }
   }
 
   async gotoAsset(asset: string) {

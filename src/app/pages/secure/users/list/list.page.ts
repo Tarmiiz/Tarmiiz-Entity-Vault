@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
@@ -22,7 +23,7 @@ import { ModalUserAddService } from '../modals/modal-user-add/modal-user-add.ser
   imports: [
     FormsModule,
     HeaderComponent,
-    ModalUserAddComponent
+    ModalUserAddComponent, TranslatePipe
 ]
 })
 export class ListPage implements OnInit {
@@ -131,6 +132,17 @@ export class ListPage implements OnInit {
           did: result.did,
         });
         await this.listUsers();
+        if (Number(result.role) === 2 && result.approvalRole && result.approvalRole !== 'none') {
+          const created = this.users().find(u => u.username === result.username);
+          if (created) {
+            try {
+              await this.apiService.vaultUserApprovalRoleSet(created.userId, result.approvalRole);
+              await this.listUsers();
+            } catch (e) {
+              console.error('Failed to set approval role', e);
+            }
+          }
+        }
         this.loadingService.hide();
       } catch (error) {
         console.error('Failed to add new user', error);

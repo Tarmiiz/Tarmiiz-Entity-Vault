@@ -1,0 +1,944 @@
+{
+  "common": {
+    "save":            "حفظ",
+    "cancel":          "إلغاء",
+    "close":           "إغلاق",
+    "confirm":         "تأكيد",
+    "yes":             "نعم",
+    "no":              "لا",
+    "copy":            "نسخ",
+    "copied":          "تم النسخ",
+    "loading":         "جارٍ التحميل…",
+    "noData":          "لا توجد بيانات",
+    "noResults":       "لا توجد نتائج",
+    "clear":           "مسح",
+    "search":          "بحث",
+    "filter":          "تصفية",
+    "filters":         "عوامل التصفية",
+    "back":            "رجوع",
+    "next":            "التالي",
+    "prev":            "السابق",
+    "submit":          "إرسال",
+    "create":          "إنشاء",
+    "add":             "إضافة",
+    "edit":            "تعديل",
+    "delete":          "حذف",
+    "remove":          "إزالة",
+    "view":            "عرض",
+    "viewAll":         "عرض الكل ←",
+    "viewDetails":     "عرض التفاصيل",
+    "refresh":         "تحديث",
+    "retry":           "إعادة المحاولة",
+    "actions":         "الإجراءات",
+    "more":            "المزيد",
+    "less":            "أقل",
+    "none":            "لا يوجد",
+    "all":             "الكل",
+    "any":             "أي",
+    "name":            "الاسم",
+    "symbol":          "الرمز",
+    "address":         "العنوان",
+    "email":           "البريد الإلكتروني",
+    "mobile":          "الهاتف",
+    "website":         "الموقع الإلكتروني",
+    "country":         "الدولة",
+    "createdAt":       "تاريخ الإنشاء",
+    "updatedAt":       "آخر تحديث",
+    "state":           "الحالة",
+    "type":            "النوع",
+    "amount":          "المبلغ",
+    "description":     "الوصف",
+    "metadata":        "البيانات الوصفية",
+    "id":              "#",
+    "exportExcel":     "تصدير إلى Excel",
+    "exportPdf":       "تصدير إلى PDF",
+    "exportGenerated": "تاريخ التوليد",
+    "exportedBy":      "تم التصدير بواسطة",
+    "exportNone":      "لا يوجد",
+    "comingSoon":      "قريباً",
+    "showing":         "عرض {{showing}} من {{total}}",
+    "pageOf":          "الصفحة {{page}} من {{pages}}",
+    "saving":          "جارٍ الحفظ…",
+    "creating":        "جارٍ الإنشاء…",
+    "updating":        "جارٍ التحديث…",
+    "deleting":        "جارٍ الحذف…",
+    "processing":      "جارٍ المعالجة…",
+    "loadingData":     "جارٍ تحميل البيانات…",
+    "from":            "من",
+    "to":              "إلى",
+    "by":              "بواسطة",
+    "reason":          "السبب",
+    "reasonPlaceholder": "أدخل السبب…",
+    "optional":        "اختياري",
+    "required":        "مطلوب",
+    "notSet":          "—",
+    "live":            "متصل",
+    "offline":         "غير متصل"
+  },
+  "state": {
+    "all":         "الكل",
+    "initiated":   "قيد الإنشاء",
+    "active":      "نشط",
+    "suspended":   "موقوف",
+    "deactivated": "مُعطَّل",
+    "paused":      "متوقف مؤقتاً",
+    "registered":  "مسجل",
+    "pending":     "قيد الانتظار",
+    "approved":    "موافق عليه",
+    "rejected":    "مرفوض",
+    "open":        "مفتوح",
+    "closed":      "مغلق",
+    "archived":    "مؤرشف",
+    "unknown":     "غير معروف"
+  },
+  "role": {
+    "all":      "الكل",
+    "admin":    "مسؤول",
+    "issuer":   "مُصدر",
+    "operator": "مشغّل",
+    "viewer":   "مشاهد",
+    "unknown":  "—"
+  },
+  "partyType": {
+    "entity":       "جهة",
+    "service":      "خدمة",
+    "subscription": "اشتراك",
+    "regulator":    "جهة تنظيمية",
+    "identity":     "هوية",
+    "operator":     "مشغّل",
+    "unknown":      "—"
+  },
+  "header": {
+    "title":         "خزينة ترميز",
+    "welcome":       "مرحباً، {{name}}",
+    "logout":        "تسجيل الخروج",
+    "resync":        "إعادة المزامنة",
+    "profile":       "الملف الشخصي",
+    "messages":      "الرسائل",
+    "sync": {
+      "live":        "API متصل",
+      "offline":     "API غير متصل",
+      "syncing":     "جارٍ المزامنة…"
+    },
+    "entityRestricted": "الجهة {{state}} — الإجراءات مقيدة. تواصل مع الجهة التنظيمية."
+  },
+  "sidebar": {
+    "home":              "الرئيسية",
+    "services":          "الخدمات",
+    "assets":            "الأصول",
+    "subscriptions":     "الاشتراكات",
+    "subscribers":       "المشتركون",
+    "transactions":      "المعاملات",
+    "credit":            "الرصيد",
+    "analytics":         "التحليلات",
+    "dex":               "البورصة",
+    "dexListings":       "القوائم",
+    "dexOrders":         "الأوامر",
+    "dexTrades":         "الصفقات",
+    "dexVenues":         "الأسواق",
+    "documents":         "المستندات",
+    "users":             "المستخدمون",
+    "messages":          "الرسائل",
+    "system":            "النظام",
+    "signerKeys":        "مفاتيح التوقيع",
+    "auditTrail":        "سجل التدقيق",
+    "systemVariables":   "متغيرات النظام",
+    "entityProfile":     "ملف الجهة",
+    "myProfile":         "ملفي الشخصي",
+    "myLogs":            "سجلاتي",
+    "systemLogs":        "سجلات النظام",
+    "approvals":         "الموافقات"
+  },
+  "login": {
+    "title":         "تسجيل الدخول",
+    "subtitle":      "يرجى إدخال بيانات الاعتماد للمتابعة.",
+    "welcomeBack":   "مرحباً بعودتك!",
+    "helperCopy":    "سجّل الدخول للوصول إلى خزينة المُصدر وإدارة أصولك.",
+    "usernameLabel": "البريد الإلكتروني",
+    "passwordLabel": "كلمة المرور",
+    "submit":        "دخول",
+    "forgotPassword": "هل نسيت كلمة المرور؟",
+    "errors": {
+      "invalid":      "بيانات اعتماد غير صحيحة.",
+      "network":      "خطأ في الشبكة — حاول مرة أخرى.",
+      "generic":      "فشل تسجيل الدخول. حاول مرة أخرى."
+    }
+  },
+  "claim": {
+    "title":           "تفعيل الحساب",
+    "subtitle":        "استخدم رمز التفعيل المرسل إلى بريدك، ثم اضبط كلمة مرور جديدة.",
+    "steps": {
+      "activation":    "التفعيل",
+      "newPassword":   "ضبط كلمة المرور"
+    },
+    "emailLabel":      "بريد المسؤول",
+    "otpLabel":        "رمز التفعيل",
+    "otpPlaceholder":  "رمز مكون من 6 أرقام من البريد",
+    "verify":          "تحقق",
+    "verifying":       "جارٍ التحقق…",
+    "newPasswordLabel":"كلمة المرور الجديدة",
+    "confirmLabel":    "تأكيد كلمة المرور",
+    "submit":          "تفعيل",
+    "submitting":      "جارٍ التفعيل…",
+    "successMsg":      "تم تفعيل الحساب. يرجى تسجيل الدخول.",
+    "errors": {
+      "otpInvalid":    "رمز التفعيل غير صحيح.",
+      "passwordMin":   "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+      "passwordMismatch": "كلمتا المرور غير متطابقتين.",
+      "activateFailed": "تعذّر تفعيل الحساب."
+    }
+  },
+  "forgotPassword": {
+    "title":         "إعادة تعيين كلمة المرور",
+    "subtitle":      "أدخل بريدك الإلكتروني لتلقي رابط الإعادة.",
+    "emailLabel":    "البريد الإلكتروني",
+    "submit":        "إرسال رابط الإعادة",
+    "backToLogin":   "العودة إلى تسجيل الدخول",
+    "successMsg":    "إذا كان الحساب موجوداً، تم إرسال رابط الإعادة."
+  },
+  "alerts": {
+    "success":  "نجاح",
+    "error":    "خطأ",
+    "warning":  "تحذير",
+    "info":     "معلومات",
+    "confirm":  "تأكيد",
+    "ok":       "موافق",
+    "saved":    "تم الحفظ بنجاح",
+    "deleted":  "تم الحذف بنجاح",
+    "created":  "تم الإنشاء بنجاح",
+    "updated":  "تم التحديث بنجاح",
+    "failed":   "فشلت العملية",
+    "networkError": "خطأ في الشبكة — حاول مرة أخرى.",
+    "unexpected":   "حدث خطأ غير متوقع.",
+    "validationFailed": "يرجى تصحيح الحقول المظللة."
+  },
+  "dashboard": {
+    "title":           "الرئيسية",
+    "aum":             "الأصول تحت الإدارة",
+    "aumEmpty":        "لا توجد أصول نشطة بعد",
+    "totalCredit":     "إجمالي الرصيد",
+    "creditEmpty":     "لا يوجد رصيد",
+    "trxActivity":     "نشاط المعاملات — آخر 30 × {{interval}}",
+    "latestAssets":    "أحدث الأصول",
+    "latestSubscriptions": "أحدث الاشتراكات",
+    "latestTransactions":  "أحدث المعاملات",
+    "viewAll":         "عرض الكل ←",
+    "bootstrapAdminTitle": "لا يوجد مستخدم تنفيذي بعد",
+    "bootstrapAdminBody":  "هذه الجهة لديها فقط المسؤول الافتراضي. توقيع المستندات وتدوير مفاتيح التوقيع وعمليات البورصة تتطلب مستخدمًا تنفيذيًا (الدور 2). أضف واحدًا لتمكين هذه الميزات.",
+    "bootstrapAdminCta":   "إضافة مستخدم تنفيذي",
+    "table": {
+      "id":         "#",
+      "name":       "الاسم",
+      "type":       "النوع",
+      "service":    "الخدمة",
+      "subscriber": "المشترك",
+      "created":    "تاريخ الإنشاء",
+      "state":      "الحالة"
+    }
+  },
+  "services": {
+    "title": "الخدمات",
+    "filters": {
+      "search":           "بحث",
+      "searchPlaceholder":"اسم، عنوان…",
+      "state":            "الحالة",
+      "type":             "النوع",
+      "typeAll":          "الكل",
+      "type1":            "مُصدر رموز",
+      "type2":            "مُحقق / معالج"
+    },
+    "table": {
+      "id":            "#",
+      "name":          "الاسم",
+      "type":          "النوع",
+      "verification":  "مستوى التحقق",
+      "validator":     "المُحقق",
+      "paymentProcessor": "معالج الدفع",
+      "state":         "الحالة",
+      "suspended":     "موقوف"
+    },
+    "details": {
+      "title": "تفاصيل الخدمة",
+      "tabs": {
+        "info":          "المعلومات",
+        "subscriptions": "الاشتراكات",
+        "assets":        "الأصول",
+        "transactions":  "المعاملات",
+        "documents":     "المستندات",
+        "messages":      "الرسائل",
+        "logs":          "سجل التدقيق"
+      },
+      "info": {
+        "name":              "الاسم",
+        "address":           "عنوان الخدمة",
+        "type":              "النوع",
+        "verificationLevel": "مستوى التحقق",
+        "validator":         "المُحقق",
+        "paymentProcessor":  "معالج الدفع",
+        "email":             "البريد الإلكتروني",
+        "mobile":            "الهاتف",
+        "website":           "الموقع",
+        "country":           "الدولة",
+        "regulator":         "الجهة التنظيمية",
+        "state":             "الحالة",
+        "suspended":         "موقوف",
+        "metadata":          "البيانات الوصفية"
+      }
+    }
+  },
+  "assets": {
+    "title": "الأصول",
+    "add":   "إضافة أصل",
+    "filters": {
+      "type":       "النوع",
+      "typeAll":    "الكل",
+      "state":      "الحالة",
+      "service":    "الخدمة",
+      "currency":   "العملة",
+      "circulating":"المتداول",
+      "amount":     "المبلغ",
+      "search":     "بحث",
+      "searchPlaceholder": "اسم، رمز، عنوان…"
+    },
+    "compare": {
+      "any": "أي",
+      "gt":  ">",
+      "lt":  "<"
+    },
+    "table": {
+      "id":          "#",
+      "name":        "الاسم",
+      "symbol":      "الرمز",
+      "type":        "النوع",
+      "supply":      "الإجمالي",
+      "circulating": "المتداول",
+      "currency":    "العملة",
+      "state":       "الحالة",
+      "suspended":   "موقوف"
+    },
+    "details": {
+      "title": "تفاصيل الأصل",
+      "tabs": {
+        "info":         "المعلومات",
+        "price":        "السعر",
+        "holders":      "الحائزون",
+        "transactions": "المعاملات",
+        "services":     "الخدمات",
+        "documents":    "المستندات",
+        "actions":      "الإجراءات",
+        "dex":          "البورصة",
+        "messages":     "الرسائل",
+        "logs":         "سجل التدقيق"
+      },
+      "info": {
+        "name":         "الاسم",
+        "symbol":       "الرمز",
+        "address":      "عنوان الأصل",
+        "tokenType":    "نوع الرمز",
+        "assetType":    "نوع الأصل",
+        "manager":      "المدير",
+        "regulator":    "الجهة التنظيمية",
+        "country":      "الدولة",
+        "currency":     "العملة",
+        "totalSupply":  "الإجمالي",
+        "circulating":  "المتداول",
+        "state":        "الحالة",
+        "suspended":    "موقوف",
+        "metadata":     "البيانات الوصفية"
+      },
+      "price": {
+        "title":     "تاريخ السعر",
+        "bid":       "العرض",
+        "ask":       "الطلب",
+        "nav":       "صافي قيمة الأصل",
+        "timestamp": "التوقيت",
+        "empty":     "لا توجد نقاط سعر مسجلة.",
+        "setPrice":  "ضبط السعر"
+      },
+      "holders": {
+        "title":   "الحائزون",
+        "holder":  "الحائز",
+        "balance": "الرصيد",
+        "cost":    "أساس التكلفة",
+        "empty":   "لا يوجد حائزون."
+      },
+      "transactions": {
+        "title":      "المعاملات",
+        "trxId":      "رقم المعاملة",
+        "trxType":    "النوع",
+        "from":       "من",
+        "to":         "إلى",
+        "tokens":     "الرموز",
+        "price":      "السعر",
+        "total":      "الإجمالي",
+        "service":    "الخدمة",
+        "time":       "الوقت",
+        "ref":        "المرجع",
+        "empty":      "لا توجد معاملات."
+      },
+      "services": {
+        "title":    "الخدمات",
+        "service":  "الخدمة",
+        "state":    "الحالة",
+        "canQuote": "يمكنه التسعير",
+        "empty":    "لا توجد خدمات مرتبطة.",
+        "addService": "إضافة خدمة"
+      },
+      "actions": {
+        "title":     "إجراءات الأصل",
+        "subscribe": "اشتراك",
+        "redeem":    "استرداد",
+        "transfer":  "تحويل",
+        "setPrice":  "ضبط السعر",
+        "mint":      "سك",
+        "burn":      "حرق"
+      }
+    },
+    "addModal": {
+      "title":         "إضافة أصل",
+      "name":          "الاسم",
+      "symbol":        "الرمز",
+      "type":          "نوع الأصل",
+      "supply":        "العرض الأولي",
+      "currency":      "العملة",
+      "service":       "الخدمة",
+      "metadata":      "البيانات الوصفية",
+      "submit":        "إنشاء الأصل",
+      "submitting":    "جارٍ إنشاء الأصل على السلسلة…"
+    },
+    "stateModal": {
+      "title":     "تغيير حالة الأصل",
+      "newState":  "الحالة الجديدة",
+      "reason":    "السبب",
+      "submit":    "تحديث الحالة"
+    },
+    "serviceStateModal": {
+      "title":     "تغيير حالة خدمة-الأصل",
+      "newState":  "الحالة الجديدة",
+      "reason":    "السبب",
+      "submit":    "تحديث"
+    },
+    "priceModal": {
+      "title":  "ضبط السعر",
+      "bid":    "العرض",
+      "ask":    "الطلب",
+      "nav":    "صافي قيمة الأصل",
+      "submit": "ضبط السعر",
+      "submitting": "جارٍ ضبط السعر…"
+    },
+    "subscribeModal": {
+      "title":     "اشتراك",
+      "subscriber":"المشترك",
+      "tokens":    "الرموز",
+      "submit":    "اشتراك",
+      "submitting":"جارٍ المعالجة…"
+    },
+    "redeemModal": {
+      "title":     "استرداد",
+      "subscriber":"المشترك",
+      "tokens":    "الرموز",
+      "submit":    "استرداد",
+      "submitting":"جارٍ المعالجة…"
+    },
+    "transferModal": {
+      "title":     "تحويل",
+      "from":      "من",
+      "to":        "إلى",
+      "tokens":    "الرموز",
+      "submit":    "تحويل",
+      "submitting":"جارٍ المعالجة…"
+    }
+  },
+  "subscriptions": {
+    "title": "الاشتراكات",
+    "filters": {
+      "search":           "بحث",
+      "searchPlaceholder":"عنوان، خدمة…",
+      "state":            "الحالة",
+      "service":          "الخدمة"
+    },
+    "table": {
+      "id":        "#",
+      "address":   "العنوان",
+      "service":   "الخدمة",
+      "validator": "المُحقق",
+      "createdAt": "تاريخ الإنشاء",
+      "state":     "الحالة",
+      "suspended": "موقوف"
+    },
+    "details": {
+      "title":   "تفاصيل الاشتراك",
+      "tabs": {
+        "info":         "المعلومات",
+        "holdings":     "الحيازات",
+        "transactions": "المعاملات",
+        "documents":    "المستندات",
+        "messages":     "الرسائل",
+        "logs":         "سجل التدقيق"
+      },
+      "info": {
+        "subscription":  "عنوان الاشتراك",
+        "service":       "الخدمة",
+        "validator":     "المُحقق",
+        "validatorData": "بيانات المُحقق",
+        "trxNo":         "رقم معاملة المُحقق",
+        "trxTime":       "وقت معاملة المُحقق",
+        "regulator":     "الجهة التنظيمية",
+        "createdAt":     "تاريخ الإنشاء",
+        "state":         "الحالة",
+        "suspended":     "موقوف"
+      },
+      "holdings": {
+        "title":   "الحيازات",
+        "asset":   "الأصل",
+        "balance": "الرصيد",
+        "cost":    "التكلفة",
+        "empty":   "لا توجد حيازات."
+      }
+    },
+    "stateModal": {
+      "title": "تغيير حالة الاشتراك",
+      "newState": "الحالة الجديدة",
+      "reason": "السبب",
+      "submit": "تحديث"
+    }
+  },
+  "transactions": {
+    "title": "المعاملات",
+    "add":   "إضافة معاملة",
+    "filters": {
+      "search":           "بحث",
+      "searchPlaceholder":"مرجع، عنوان…",
+      "type":             "النوع",
+      "asset":            "الأصل",
+      "from":             "من",
+      "to":               "إلى"
+    },
+    "table": {
+      "id":         "#",
+      "trxId":      "رقم المعاملة",
+      "type":       "النوع",
+      "asset":      "الأصل",
+      "from":       "من",
+      "to":         "إلى",
+      "tokens":     "الرموز",
+      "price":      "السعر",
+      "total":      "الإجمالي",
+      "ref":        "المرجع",
+      "time":       "الوقت"
+    },
+    "empty": "لا توجد معاملات",
+    "addModal": {
+      "title":     "إضافة معاملة",
+      "type":      "النوع",
+      "asset":     "الأصل",
+      "amount":    "المبلغ",
+      "from":      "من",
+      "to":        "إلى",
+      "submit":    "إرسال",
+      "submitting":"جارٍ الإرسال…"
+    }
+  },
+  "credit": {
+    "title": "الرصيد",
+    "summary": {
+      "totalBalance": "إجمالي الرصيد",
+      "withheld":     "محتجز",
+      "available":    "متاح"
+    },
+    "table": {
+      "id":         "#",
+      "currency":   "العملة",
+      "balance":    "الرصيد",
+      "trxId":      "رقم المعاملة",
+      "service":    "الخدمة",
+      "from":       "من",
+      "to":         "إلى",
+      "type":       "النوع",
+      "amount":     "المبلغ",
+      "state":      "الحالة",
+      "time":       "الوقت"
+    },
+    "transactions": {
+      "title": "معاملات الرصيد",
+      "empty": "لا توجد معاملات رصيد."
+    },
+    "transferModal": {
+      "title":     "تحويل رصيد",
+      "from":      "من",
+      "to":        "إلى",
+      "currency":  "العملة",
+      "amount":    "المبلغ",
+      "submit":    "تحويل",
+      "submitting":"جارٍ المعالجة…"
+    }
+  },
+  "analytics": {
+    "title": "التحليلات",
+    "aumPerformance": {
+      "title":   "أداء الأصول تحت الإدارة",
+      "asset":   "الأصل",
+      "range":   "النطاق",
+      "empty":   "اختر أصلاً لعرض منحنى الأصول تحت الإدارة."
+    }
+  },
+  "documents": {
+    "title": "المستندات",
+    "tabs": {
+      "my":           "مستنداتي",
+      "sharedWithMe": "المشتركة معي"
+    },
+    "filters": {
+      "search":            "بحث",
+      "searchPlaceholder": "العنوان، CID، المالك…",
+      "type":              "النوع",
+      "typeAll":           "الكل",
+      "typePublic":        "عام",
+      "typePrivate":       "خاص",
+      "documentState":     "الحالة"
+    },
+    "table": {
+      "id":          "#",
+      "title":       "العنوان",
+      "type":        "النوع",
+      "owner":       "المالك",
+      "addedBy":     "أُضيف بواسطة",
+      "createdAt":   "تاريخ الإنشاء",
+      "state":       "الحالة",
+      "actions":     "الإجراءات"
+    },
+    "type": {
+      "public":  "عام",
+      "private": "خاص"
+    },
+    "docState": {
+      "active":  "نشط",
+      "deleted": "محذوف"
+    },
+    "actions": {
+      "view":     "عرض",
+      "viewFile": "عرض الملف",
+      "download": "تحميل",
+      "share":    "مشاركة",
+      "publish":  "نشر",
+      "delete":   "حذف"
+    },
+    "addModal": {
+      "title":       "إضافة مستند",
+      "fileLabel":   "الملف",
+      "filePick":    "اختر ملفاً…",
+      "titleLabel":  "العنوان",
+      "descriptionLabel": "الوصف",
+      "typeLabel":   "النوع",
+      "shareWith":   "مشاركة مع",
+      "submit":      "رفع",
+      "uploading":   "جارٍ الرفع… {{percent}}%"
+    },
+    "shareModal": {
+      "title":       "مشاركة المستند",
+      "recipient":   "المستلم",
+      "submit":      "مشاركة",
+      "sharing":     "جارٍ المشاركة…"
+    },
+    "publishConfirm": {
+      "title":   "نشر المستند؟",
+      "body":    "النشر يجعل المستند عاماً على IPFS. هذا الإجراء لا يمكن التراجع عنه.",
+      "confirm": "نشر",
+      "cancel":  "إلغاء"
+    }
+  },
+  "messages": {
+    "title":        "الرسائل",
+    "threadPrefix": "المحادثة #",
+    "noSubject":    "(بدون موضوع)",
+    "list": {
+      "filters": {
+        "show":              "عرض",
+        "all":               "الكل",
+        "unread":            "غير مقروءة",
+        "search":            "بحث",
+        "searchPlaceholder": "الموضوع أو رقم المحادثة…",
+        "type":              "النوع",
+        "typeAll":           "الكل",
+        "clear":             "مسح"
+      },
+      "newThread": "محادثة جديدة",
+      "table": {
+        "id":           "#",
+        "subject":      "الموضوع",
+        "participants": "المشاركون",
+        "messages":     "الرسائل",
+        "lastActivity": "آخر نشاط",
+        "state":        "الحالة"
+      },
+      "noThreads": "لا توجد محادثات."
+    },
+    "details": {
+      "title":             "المحادثة",
+      "conversation":      "المحادثة",
+      "breadcrumb":        "الرسائل",
+      "closeThread":       "إغلاق المحادثة",
+      "me":                "أنا",
+      "markRead":          "تحديد كمقروءة",
+      "tombstone":         "حذف",
+      "noMessages":        "لا توجد رسائل بعد.",
+      "sendLabel":         "إرسال رسالة",
+      "sendPlaceholder":   "اكتب رسالتك…",
+      "sendButton":        "إرسال"
+    }
+  },
+  "signerKeys": {
+    "title": "مفاتيح التوقيع",
+    "add":   "إضافة مفتاح",
+    "table": {
+      "id":          "#",
+      "keyId":       "معرّف المفتاح",
+      "signer":      "عنوان المُوقّع",
+      "description": "الوصف",
+      "state":       "الحالة",
+      "createdAt":   "تاريخ الإنشاء"
+    },
+    "keyState": {
+      "active":   "نشط",
+      "disabled": "معطّل"
+    },
+    "addModal": {
+      "title":       "إضافة مفتاح توقيع",
+      "description": "الوصف",
+      "submit":      "توليد وإضافة",
+      "submitting":  "جارٍ التوليد…"
+    }
+  },
+  "users": {
+    "title": "المستخدمون",
+    "add":   "إضافة مستخدم",
+    "filters": {
+      "search":           "بحث",
+      "searchPlaceholder":"اسم، اسم مستخدم، بريد…",
+      "state":            "الحالة",
+      "role":             "الدور"
+    },
+    "table": {
+      "id":         "#",
+      "name":       "الاسم",
+      "username":   "اسم المستخدم",
+      "email":      "البريد الإلكتروني",
+      "role":       "الدور",
+      "createdAt":  "تاريخ الإنشاء",
+      "state":      "الحالة"
+    },
+    "details": {
+      "title":   "تفاصيل المستخدم",
+      "tabs": {
+        "info":   "المعلومات",
+        "logs":   "سجل التدقيق"
+      },
+      "info": {
+        "name":         "الاسم",
+        "username":     "اسم المستخدم",
+        "email":        "البريد الإلكتروني",
+        "role":         "الدور",
+        "state":        "الحالة",
+        "createdAt":    "تاريخ الإنشاء",
+        "lastModified": "آخر تعديل"
+      }
+    },
+    "myProfile": {
+      "title":          "ملفي الشخصي",
+      "name":           "الاسم",
+      "username":       "اسم المستخدم",
+      "email":          "البريد الإلكتروني",
+      "role":           "الدور",
+      "changePassword": "تغيير كلمة المرور"
+    },
+    "addModal": {
+      "title":          "إضافة مستخدم",
+      "name":           "الاسم",
+      "username":       "اسم المستخدم",
+      "email":          "البريد الإلكتروني",
+      "role":           "الدور",
+      "password":       "كلمة المرور",
+      "confirmPassword":"تأكيد كلمة المرور",
+      "submit":         "إنشاء المستخدم",
+      "submitting":     "جارٍ الإنشاء…"
+    }
+  },
+  "variables": {
+    "title":     "متغيرات النظام",
+    "filters": {
+      "search":           "بحث",
+      "searchPlaceholder":"اسم، فئة…",
+      "category":         "الفئة"
+    },
+    "table": {
+      "category": "الفئة",
+      "id":       "معرّف المتغير",
+      "name":     "الاسم",
+      "visible":  "ظاهر"
+    },
+    "empty": "لا توجد متغيرات."
+  },
+  "profile": {
+    "title": "ملف الجهة",
+    "tabs": {
+      "info":      "المعلومات",
+      "metadata":  "البيانات الوصفية",
+      "operator":  "المشغّل",
+      "api":       "API"
+    },
+    "info": {
+      "name":      "الاسم",
+      "email":     "البريد الإلكتروني",
+      "mobile":    "الهاتف",
+      "website":   "الموقع",
+      "country":   "الدولة",
+      "regulator": "الجهة التنظيمية",
+      "metadata":  "البيانات الوصفية",
+      "edit":      "تعديل"
+    },
+    "api": {
+      "title":    "إعدادات API",
+      "url":      "عنوان API",
+      "status":   "الحالة",
+      "address":  "عنوان API"
+    },
+    "dataModal": {
+      "title": "تعديل بيانات الجهة",
+      "submit": "حفظ",
+      "submitting": "جارٍ الحفظ…"
+    },
+    "metadataModal": {
+      "title": "تعديل البيانات الوصفية",
+      "submit": "حفظ",
+      "submitting": "جارٍ الحفظ…"
+    },
+    "operatorModal": {
+      "title": "تعديل بيانات المشغّل",
+      "submit": "حفظ",
+      "submitting": "جارٍ الحفظ…"
+    }
+  },
+  "approvals": {
+    "title":        "الموافقات",
+    "policyTitle":  "سياسة الموافقات",
+    "managePolicy": "إدارة سياسة الموافقات"
+  },
+  "logs": {
+    "title": "سجل التدقيق",
+    "titleMy":     "سجلاتي",
+    "titleSystem": "سجلات النظام",
+    "details": {
+      "title":         "حدث التدقيق",
+      "actor":         "المستخدم",
+      "target":        "الهدف",
+      "refNo":         "رقم المرجع",
+      "txHash":        "رقم المعاملة",
+      "reason":        "السبب",
+      "before":        "قبل",
+      "after":         "بعد"
+    },
+    "table": {
+      "time":     "الوقت",
+      "category": "الفئة",
+      "action":   "الإجراء",
+      "actor":    "المستخدم",
+      "target":   "الهدف",
+      "reason":   "السبب",
+      "refNo":    "رقم المرجع",
+      "empty":    "لا توجد أحداث تدقيق"
+    }
+  },
+  "dex": {
+    "title": "البورصة",
+    "listings": {
+      "title": "قوائم الأصول",
+      "add":   "إدراج أصل",
+      "table": {
+        "id":     "#",
+        "asset":  "الأصل",
+        "venues": "الأسواق",
+        "tier":   "المستوى",
+        "state":  "الحالة"
+      },
+      "details": {
+        "title": "تفاصيل القائمة",
+        "addVenue": "إضافة سوق",
+        "changeTier": "تغيير المستوى"
+      },
+      "createModal": {
+        "title":    "إدراج أصل",
+        "asset":    "الأصل",
+        "venues":   "الأسواق",
+        "tier":     "المستوى",
+        "submit":   "إدراج",
+        "submitting": "جارٍ الإدراج…"
+      },
+      "addVenueModal": {
+        "title":   "إضافة سوق إلى القائمة",
+        "venue":   "السوق",
+        "tier":    "المستوى",
+        "submit":  "إضافة",
+        "submitting": "جارٍ الإضافة…"
+      },
+      "changeTierModal": {
+        "title":   "تغيير مستوى السوق",
+        "tier":    "المستوى",
+        "submit":  "تحديث",
+        "submitting": "جارٍ التحديث…"
+      }
+    },
+    "orders": {
+      "title": "الأوامر",
+      "side": {
+        "buy":  "شراء",
+        "sell": "بيع"
+      },
+      "state": {
+        "open":     "مفتوح",
+        "filled":   "مُنفَّذ",
+        "cancelled":"ملغى",
+        "expired":  "منتهي"
+      },
+      "table": {
+        "id":         "#",
+        "venue":      "السوق",
+        "asset":      "الأصل",
+        "side":       "الجانب",
+        "price":      "السعر",
+        "amount":     "المبلغ",
+        "remaining":  "المتبقي",
+        "state":      "الحالة",
+        "createdAt":  "تاريخ الإنشاء"
+      }
+    },
+    "trades": {
+      "title": "الصفقات",
+      "table": {
+        "id":        "#",
+        "venue":     "السوق",
+        "asset":     "الأصل",
+        "price":     "السعر",
+        "amount":    "المبلغ",
+        "total":     "الإجمالي",
+        "tradedAt":  "وقت الصفقة"
+      }
+    },
+    "venues": {
+      "title": "الأسواق",
+      "table": {
+        "id":      "#",
+        "name":    "الاسم",
+        "service": "الخدمة",
+        "state":   "الحالة"
+      }
+    }
+  },
+  "modalResync": {
+    "title":   "إعادة المزامنة مع السلسلة",
+    "intro":   "تشغيل مزامنة كاملة بين API الجهة والسجلات على السلسلة.",
+    "status":  "الحالة",
+    "trigger": "تشغيل المزامنة",
+    "triggering": "جارٍ التشغيل…",
+    "successMsg": "بدأت المزامنة."
+  }
+}

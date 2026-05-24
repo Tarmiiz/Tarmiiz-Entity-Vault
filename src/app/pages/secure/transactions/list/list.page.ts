@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -31,7 +32,7 @@ import { AssetTransaction } from '../../../../shared/models/data.model';
     CommonModule, FormsModule,
     HeaderComponent,
     ModalTransactionInfoComponent,
-    ModalTransactionAddComponent,
+    ModalTransactionAddComponent, TranslatePipe,
   ]
 })
 export class ListPage implements OnInit {

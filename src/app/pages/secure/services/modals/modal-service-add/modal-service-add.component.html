@@ -1,9 +1,9 @@
-@if (addServiceService.isVisible()) {
+﻿@if (addServiceService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
 
       <!-- Header -->
-      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">Add New Service</h3>
         <p class="text-xs text-gray-400 mt-1">Step {{ currentStep() }} of {{ totalSteps() }} — {{ stepLabels()[currentStep() - 1] }}</p>
       </div>
@@ -17,7 +17,7 @@
                 [class]="step < currentStep()
                   ? 'bg-green-500 text-white'
                   : step === currentStep()
-                    ? 'bg-[#202a3b] text-white'
+                    ? 'bg-[var(--brand-primary)] text-white'
                     : 'bg-gray-200 text-gray-400'">
                 @if (step < currentStep()) {
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -83,6 +83,14 @@
               @if (addForm.get('regulator')?.touched && addForm.get('regulator')?.hasError('required')) {
                 <p class="mt-1 text-xs text-red-600">Regulator is required</p>
               }
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Visibility</label>
+              <select formControlName="visibility"
+                class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 border-gray-300">
+                <option [value]="1">Public — usable by any entity's services (subject to regulator approval)</option>
+                <option [value]="2">Private — only usable by this entity's own services</option>
+              </select>
             </div>
           }
 
@@ -181,6 +189,17 @@
                 }
               </select>
             </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Custodian</label>
+              <select formControlName="custodian"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <option [value]="SELF_CUSTODY">Self-custody (recommended)</option>
+                @for (c of custodians(); track c.address) {
+                  <option [value]="c.address">{{ c.name || c.address }}</option>
+                }
+              </select>
+              <p class="mt-1 text-xs text-gray-400">Self-custody lets this service hold its own assets. Pick an endorsed external custodian to delegate that role.</p>
+            </div>
           }
 
           <!-- Review & Confirm (last step) -->
@@ -249,6 +268,10 @@
                     <span class="text-gray-500">Payment Processor</span>
                     <span class="text-black font-medium">{{ getPaymentProcessorName() }}</span>
                   </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Custodian</span>
+                    <span class="text-black font-medium">{{ getCustodianDisplay() }}</span>
+                  </div>
                 </div>
               </div>
             }
@@ -283,12 +306,12 @@
             </button>
             @if (currentStep() < totalSteps()) {
               <button type="button" (click)="nextStep()" [disabled]="!isCurrentStepValid()"
-                class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Next
               </button>
             } @else {
               <button type="submit" [disabled]="!reviewConfirmed()"
-                class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Add Service
               </button>
             }

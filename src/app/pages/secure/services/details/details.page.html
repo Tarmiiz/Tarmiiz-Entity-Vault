@@ -1,4 +1,4 @@
-<app-header title="Service Details"></app-header>
+﻿<app-header [title]="'services.details.title' | translate"></app-header>
 
 <!-- breadcrumb -->
 <div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
@@ -77,6 +77,15 @@
           >
             Transactions
           </button>
+          <button (click)="setTab('liquidity')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'liquidity'"
+            [class.border-b-2]="activeTab() === 'liquidity'"
+            [class.border-blue-600]="activeTab() === 'liquidity'"
+            [class.bg-blue-600]="activeTab() === 'liquidity'"
+          >
+            Liquidity
+          </button>
         }
         <button (click)="setTab('docs')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -108,7 +117,16 @@
                 @if (v.suspended) {
                   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
                 }
+                <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                  [class]="v.visibility === 2 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
+                  {{ v.visibility === 2 ? 'Private' : 'Public' }}
+                </span>
                 <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ v.stateName }}</span>
+                <button type="button"
+                  class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
+                  (click)="onChangeVisibility()">
+                  Change Visibility
+                </button>
               </div>
             </div>
             @if (suspensionReason()) {
@@ -277,9 +295,25 @@
                   <div class="border-t pt-4">
                     <p class="text-sm font-medium text-gray-500">Validator</p>
                     @if (v.validator && v.validator !== '0x0000000000000000000000000000000000000000') {
-                      <p class="text-base">{{ validatorName() || v.validator }}</p>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-base">{{ validatorName() || v.validator }}</p>
+                        @if (v.validatorActive === false) {
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" title="The validator this service is bound to is no longer active. Existing operations still work; reassign before new subscriptions can be created.">
+                            Inactive
+                          </span>
+                        }
+                      </div>
                       @if (validatorName()) {
                         <p class="font-mono text-xs text-gray-400">{{ v.validator }}</p>
+                      }
+                      @if (v.validatorActive === false && entityActive && userInfo && userInfo.role !== 3 && isTokenIssuer()) {
+                        <button (click)="openChangeValidatorModal()"
+                          class="mt-2 text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9A8 8 0 0119 9M19 15a8 8 0 01-14 0" />
+                          </svg>
+                          Reassign Validator
+                        </button>
                       }
                     } @else {
                       <p class="text-base text-gray-400 italic">Not set</p>
@@ -291,6 +325,36 @@
                       <p class="text-base">{{ paymentProcessorName() || v.paymentProcessor }}</p>
                       @if (paymentProcessorName()) {
                         <p class="font-mono text-xs text-gray-400">{{ v.paymentProcessor }}</p>
+                      }
+                    } @else {
+                      <p class="text-base text-gray-400 italic">Not set</p>
+                    }
+                  </div>
+                  <div class="border-t pt-4">
+                    <p class="text-sm font-medium text-gray-500">Custodian</p>
+                    @if (isSelfCustody()) {
+                      <p class="text-base">Self-custody</p>
+                      <p class="font-mono text-xs text-gray-400">{{ v.address }}</p>
+                    } @else if (v.custodian && v.custodian !== '0x0000000000000000000000000000000000000000') {
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-base">{{ custodianName() || v.custodian }}</p>
+                        @if (v.custodianActive === false) {
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" title="The custodian this service is bound to is no longer active. Reassign before new operations rely on it.">
+                            Custodian inactive
+                          </span>
+                        }
+                      </div>
+                      @if (custodianName()) {
+                        <p class="font-mono text-xs text-gray-400">{{ v.custodian }}</p>
+                      }
+                      @if (v.custodianActive === false && entityActive && userInfo && userInfo.role !== 3) {
+                        <button (click)="openChangeCustodianModal()"
+                          class="mt-2 text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9A8 8 0 0119 9M19 15a8 8 0 01-14 0" />
+                          </svg>
+                          Reassign Custodian
+                        </button>
                       }
                     } @else {
                       <p class="text-base text-gray-400 italic">Not set</p>
@@ -310,9 +374,13 @@
                       class="text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-600">
                       Change Payment Processor
                     </button>
+                    <button (click)="openChangeCustodianModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-purple-600">
+                      Change Custodian
+                    </button>
                   }
                   <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-[#202a3b] text-white hover:bg-[#2c3648] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#202a3b]">
+                    class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                     Change State
                   </button>
                 </div>
@@ -380,12 +448,13 @@
                       <th scope="col" class="px-6 py-2">Issuer</th>
                       <th scope="col" class="px-6 py-2">Type</th>
                       <th scope="col" class="px-6 py-2">State</th>
+                      <th scope="col" class="px-6 py-2 text-right">Venue Fees</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredAssets().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="6" class="px-6 py-2">no data</td>
+                        <td colspan="7" class="px-6 py-2">no data</td>
                       </tr>
                     }
                     @else {
@@ -407,6 +476,14 @@
                                 </span>
                               }
                             </div>
+                          </td>
+                          <td class="px-6 py-2 text-right" (click)="$event.stopPropagation()">
+                            <button type="button"
+                                    (click)="openVenueFeeConfigModal(data.address, data.symbol)"
+                                    [disabled]="!entityActive"
+                                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                              Edit Venue Fees
+                            </button>
                           </td>
                         </tr>
                       }
@@ -491,13 +568,14 @@
                       <th scope="col" class="px-6 py-2">#</th>
                       <th scope="col" class="px-6 py-2">Date</th>
                       <th scope="col" class="px-6 py-2">Subscription</th>
+                      <th scope="col" class="px-6 py-2 text-right">Holdings</th>
                       <th scope="col" class="px-6 py-2">State</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredSubscriptions().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="4" class="px-6 py-2">no data</td>
+                        <td colspan="5" class="px-6 py-2">no data</td>
                       </tr>
                     }
                     @else {
@@ -506,6 +584,17 @@
                           <td class="px-6 py-2">{{ subPage() * subPageSize + i + 1 }}</td>
                           <td class="px-6 py-2">{{ sub.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2">{{ sub.subscription }}</td>
+                          <td class="px-6 py-2 text-right font-mono">
+                            @if (sub.holdingsByCurrency && sub.holdingsByCurrency.length > 0) {
+                              <div class="flex flex-col items-end gap-0.5">
+                                @for (h of sub.holdingsByCurrency; track h.currency) {
+                                  <span>{{ h.value | number:'1.2-2' }} <span class="text-[10px] text-gray-500">{{ h.currency }}</span></span>
+                                }
+                              </div>
+                            } @else {
+                              <span class="text-gray-300">—</span>
+                            }
+                          </td>
                           <td class="px-6 py-2">
                             <div class="flex items-center gap-1.5">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(sub.state)">
@@ -685,6 +774,154 @@
         }
 
 
+        <!-- liquidity tab -->
+        @if (activeTab() === 'liquidity') {
+          <div class="p-2 space-y-4">
+            <div class="flex items-baseline justify-between">
+              <h3 class="text-sm font-semibold text-gray-700">Service Liquidity</h3>
+              <button (click)="getLiquidity()"
+                class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                Refresh
+              </button>
+            </div>
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm text-left text-gray-700">
+                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                    <tr>
+                      <th class="px-6 py-2">Currency</th>
+                      <th class="px-6 py-2 text-right">Balance</th>
+                      <th class="px-6 py-2 text-right">Withheld</th>
+                      <th class="px-6 py-2 text-right">Available</th>
+                      <th class="px-6 py-2 text-right">Obligation</th>
+                      <th class="px-6 py-2 text-right">Shortfall</th>
+                      <th class="px-6 py-2">Coverage</th>
+                      <th class="px-6 py-2 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    @if (liquidityLoading()) {
+                      <tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">Loading…</td></tr>
+                    } @else if (liquidityBalances().length === 0) {
+                      <tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">No currencies configured</td></tr>
+                    } @else {
+                      @for (row of liquidityBalances(); track row.currencyCode; let isEven = $even) {
+                        @let tone = liquidityCoverageTone(row.coverageRatio);
+                        <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                          <td class="px-6 py-2">
+                            <span class="badge-currency">{{ row.currencyAlpha || row.currencySymbol }}</span>
+                            <span class="ml-2 text-gray-500">{{ row.currencyName }}</span>
+                          </td>
+                          <td class="px-6 py-2 text-right font-mono">{{ row.balance | number:'1.2-2' }}</td>
+                          <td class="px-6 py-2 text-right font-mono">
+                            @if (row.withheld > 0) { <span class="text-amber-700">{{ row.withheld | number:'1.2-2' }}</span> }
+                            @else { <span class="text-gray-300">—</span> }
+                          </td>
+                          <td class="px-6 py-2 text-right font-mono font-semibold">{{ row.available | number:'1.2-2' }}</td>
+                          <td class="px-6 py-2 text-right font-mono">
+                            @if (row.obligation > 0) { {{ row.obligation | number:'1.2-2' }} }
+                            @else { <span class="text-gray-300">—</span> }
+                          </td>
+                          <td class="px-6 py-2 text-right font-mono">
+                            @if (row.shortfall > 0) { <span class="text-red-700 font-semibold">{{ row.shortfall | number:'1.2-2' }}</span> }
+                            @else { <span class="text-gray-300">—</span> }
+                          </td>
+                          <td class="px-6 py-2">
+                            @if (row.coverageRatio !== null) {
+                              <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                                [class.bg-green-100]="tone === 'good'"   [class.text-green-800]="tone === 'good'"
+                                [class.bg-amber-100]="tone === 'warn'"  [class.text-amber-800]="tone === 'warn'"
+                                [class.bg-red-100]="tone === 'bad'"     [class.text-red-800]="tone === 'bad'">
+                                {{ (row.coverageRatio * 100) | number:'1.1-1' }}%
+                              </span>
+                            } @else {
+                              <span class="text-gray-300">—</span>
+                            }
+                          </td>
+                          <td class="px-6 py-2 text-right">
+                            <button (click)="openLiquidityModal('inject', row)" [disabled]="!entityActive"
+                              class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
+                              Inject
+                            </button>
+                            <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive || row.available <= 0"
+                              class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                              Withdraw
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500">
+              Inject adds credit to this service's on-chain liquidity pool. Withdraw burns credit from the pool. Both operations require the service to be active.
+            </p>
+          </div>
+
+          <!-- inline liquidity modal -->
+          @if (liquidityModalOpen()) {
+            <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="closeLiquidityModal()">
+              <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
+
+                <!-- Header -->
+                <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+                  <h3 class="text-xl leading-6 font-semibold text-gray-100">
+                    {{ liquidityModalAction() === 'inject' ? 'Inject Liquidity' : 'Withdraw Liquidity' }}
+                  </h3>
+                  <p class="text-xs text-gray-400 mt-1">
+                    {{ liquidityModalCurrency()?.name }} ({{ liquidityModalCurrency()?.symbol }})
+                  </p>
+                </div>
+
+                <!-- Body -->
+                <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                  @if (liquidityModalAction() === 'withdraw') {
+                    <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600">
+                      Available: <span class="font-mono font-semibold text-gray-800">{{ liquidityModalAvailable() | number:'1.2-2' }}</span>
+                      <span class="badge-currency ml-1">{{ liquidityModalCurrency()?.symbol }}</span>
+                    </div>
+                  }
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Amount</label>
+                    <input type="number" min="0" step="0.01" placeholder="0.00"
+                      [ngModel]="liquidityModalAmount()" (ngModelChange)="liquidityModalAmount.set($event)"
+                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Reference <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <input type="text" placeholder="bytes32 ref, or leave blank"
+                      [ngModel]="liquidityModalRefNo()" (ngModelChange)="liquidityModalRefNo.set($event)"
+                      class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
+                  </div>
+                  @if (liquidityModalError()) {
+                    <p class="text-sm text-red-700">{{ liquidityModalError() }}</p>
+                  }
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+                  <button type="button" (click)="closeLiquidityModal()" [disabled]="liquidityModalSubmitting()"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Cancel
+                  </button>
+                  <button type="button" (click)="submitLiquidity()" [disabled]="liquidityModalSubmitting()"
+                    class="text-xs px-3 py-1.5 rounded text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    [class.bg-blue-700]="liquidityModalAction() === 'inject'"
+                    [class.hover:bg-blue-800]="liquidityModalAction() === 'inject'"
+                    [class.bg-red-700]="liquidityModalAction() === 'withdraw'"
+                    [class.hover:bg-red-800]="liquidityModalAction() === 'withdraw'">
+                    {{ liquidityModalSubmitting() ? 'Submitting…' : (liquidityModalAction() === 'inject' ? 'Inject' : 'Withdraw') }}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          }
+        }
+
+
         <!-- docs tab -->
         @if (activeTab() === 'docs') {
           <div class="p-2">
@@ -713,4 +950,6 @@
 <app-modal-service-state></app-modal-service-state>
 <app-modal-service-validator></app-modal-service-validator>
 <app-modal-service-payment-processor></app-modal-service-payment-processor>
+<app-modal-service-custodian></app-modal-service-custodian>
+<app-modal-service-fee-config></app-modal-service-fee-config>
 <app-modal-transaction-info></app-modal-transaction-info>

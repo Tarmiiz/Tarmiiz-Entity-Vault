@@ -10,7 +10,11 @@ export interface AddAssetData {
   service: string;
   currency: number;
   regulator: string;
+  // tokenType: leaf-template kind (V1: 1 = T20; T3643 follow-up adds 2).
   tokenType: number;
+  // supplyMode: 1 = Fixed (initialSupply minted to contract at init), 2 = Dynamic (mint on subscribe).
+  supplyMode: number;
+  priceMode: number;
   assetType?: number;
   initialSupply?: number;
   creditSettlement: boolean;

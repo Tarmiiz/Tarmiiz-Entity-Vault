@@ -1,71 +1,51 @@
-<div class="flex items-center justify-center min-h-screen bg-gray-100 font-sans">
+﻿<div class="flex items-center justify-center min-h-screen bg-gray-100 font-sans">
   <div class="w-full max-w-5xl flex bg-white rounded-2xl shadow-2xl overflow-hidden my-8">
-    
+
     <!-- Left Decorative Panel -->
-    <div class="hidden md:flex w-2/5 bg-[#202a3b] p-10 flex-col justify-center items-start text-white">
+    <div class="hidden md:flex w-2/5 bg-[var(--brand-primary)] p-10 flex-col justify-center items-start text-white">
       <div class="mb-8">
         <img src="assets/images/logo.svg" alt="">
       </div>
-      <h2 class="text-3xl font-bold leading-tight mb-4">Welcome Back!</h2>
-      <p class="text-indigo-200 text-lg">Sign in to access the secure entity vault and manage your network.</p>
-
-      <!-- <div class="text-center pt-4" style="margin-top: 50px;">
-        <span class="text-sm text-yellow-500">Are you a new Entity? </span>
-        <a routerLink="/public/register/entity" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-          Register Now
-        </a>
-      </div> -->
-
-      <!-- <div class="text-center pt-1">
-        <span class="text-sm text-yellow-500">Are you a new Validator? </span>
-        <a routerLink="/public/register/validator" class="text-sm font-medium text-cyan-200 hover:text-indigo-500">
-          Register Now
-        </a>
-      </div>
-
-      <div class="text-center pt-1">
-        <span class="text-sm text-orange-500">Are you a new Service Provider? </span>
-        <a routerLink="/public/register/service" class="text-sm font-medium text-yellow-200 hover:text-indigo-500">
-          Register Now
-        </a>
-      </div> -->
+      <h2 class="text-3xl font-bold leading-tight mb-4">{{ 'login.welcomeBack' | translate }}</h2>
+      <p class="text-indigo-200 text-lg">{{ 'login.helperCopy' | translate }}</p>
 
     </div>
 
     <!-- Right Form Panel -->
     <div class="w-full md:w-3/5 p-8 sm:p-12 flex flex-col justify-center">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">Sign In</h1>
-      <p class="text-gray-500 mb-8">Please enter your credentials to continue.</p>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ 'login.title' | translate }}</h1>
+      <p class="text-gray-500 mb-8">{{ 'login.subtitle' | translate }}</p>
 
       <form [formGroup]="formLogin" (ngSubmit)="login()" class="space-y-5">
 
         <div class="relative">
-          <svg class="w-8 h-8 text-gray-400 absolute top-7 left-2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <svg class="w-8 h-8 text-gray-400 absolute top-7 left-2 rtl:left-auto rtl:right-2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M7 17v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-4a3 3 0 0 0-3 3Zm8-9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
           </svg>
-          <input type="text" autocomplete="username" placeholder="Username" formControlName="email" class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block pl-12 p-3.5 transition">
+          <input type="text" autocomplete="username" [placeholder]="'login.usernameLabel' | translate" formControlName="email" class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block pl-12 rtl:pl-3.5 rtl:pr-12 p-3.5 transition">
         </div>
-        
+
         <div class="relative">
-          <svg class="w-8 h-8 text-gray-400 absolute top-7 left-2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <svg class="w-8 h-8 text-gray-400 absolute top-7 left-2 rtl:left-auto rtl:right-2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 14v3m-3-6V7a3 3 0 1 1 6 0v4m-8 0h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z" />
           </svg>
-          <input type="password" autocomplete="current-password" placeholder="Password" formControlName="password" class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block pl-12 p-3.5 transition">
+          <input type="password" autocomplete="current-password" [placeholder]="'login.passwordLabel' | translate" formControlName="password" class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block pl-12 rtl:pl-3.5 rtl:pr-12 p-3.5 transition">
         </div>
-        
-        <!-- <div class="text-right pt-2">
-          <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-            Forgot Password?
-          </a>
-        </div> -->
-        
+
         <div class="pt-4">
-          <button type="submit" class="w-full bg-[#202a3b] hover:bg-[#2c3648] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            LOGIN
+          <button type="submit" class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 uppercase">
+            {{ 'login.submit' | translate }}
+          </button>
+        </div>
+
+        <div class="pt-2 flex justify-center">
+          <button type="button" (click)="toggleLang()"
+            class="text-xs font-semibold text-gray-600 hover:text-gray-900 px-4 py-1.5 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors"
+            [title]="lang === 'ar' ? 'English' : 'عربي'">
+            {{ lang === 'ar' ? 'English' : 'عربي' }}
           </button>
         </div>
       </form>
     </div>
   </div>
 </div>
-

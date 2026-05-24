@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 import jsPDF from 'jspdf';
@@ -20,7 +21,7 @@ import { DexTrade } from '../../../../../shared/models/data.model';
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
