@@ -36,6 +36,8 @@ import { ModalAssetPriceService } from '../modals/modal-asset-price/modal-asset-
 import { ModalAssetPriceComponent } from '../modals/modal-asset-price/modal-asset-price.component';
 import { ModalAssetFeeConfigService } from '../modals/modal-asset-fee-config/modal-asset-fee-config.service';
 import { ModalAssetFeeConfigComponent } from '../modals/modal-asset-fee-config/modal-asset-fee-config.component';
+import { ModalDistributionDeclareService } from '../modals/modal-distribution-declare/modal-distribution-declare.service';
+import { ModalDistributionDeclareComponent } from '../modals/modal-distribution-declare/modal-distribution-declare.component';
 import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models/data.model';
 
 
@@ -57,7 +59,8 @@ import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models
     LiveIndicatorComponent,
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
-    ModalAssetFeeConfigComponent, TranslatePipe,
+    ModalAssetFeeConfigComponent,
+    ModalDistributionDeclareComponent, TranslatePipe,
   ]
 })
 export class DetailsPage implements OnInit {
@@ -72,6 +75,7 @@ export class DetailsPage implements OnInit {
   private listingCreateModal = inject(ModalListingCreateService);
   private priceModal = inject(ModalAssetPriceService);
   private feeConfigModal = inject(ModalAssetFeeConfigService);
+  distributionDeclareModal = inject(ModalDistributionDeclareService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
   private socketService = inject(SocketService);
@@ -84,12 +88,27 @@ export class DetailsPage implements OnInit {
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
-  activeTab = signal<'overview' | 'info' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex'>('overview');
+  activeTab = signal<'overview' | 'info' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt'>('overview');
 
   // DEX listing state — populated lazily when the DEX tab opens.
   dexListing       = signal<DexAssetListing | undefined>(undefined);
   dexListingVenues = signal<DexAssetListingVenue[]>([]);
   dexListingLoaded = signal(false);
+
+  // Distributions state — populated lazily when the Distributions tab opens.
+  // distState codes: 1 Declared, 2 Executing, 3 Completed, 4 PartiallyCompleted.
+  distributions       = signal<any[]>([]);
+  distributionsLoaded = signal(false);
+  distributionsLoading = signal(false);
+
+  // Holders-at state — historical-balance reconstruction at a chosen block.
+  // Driven by ITarmiizAsset.balanceOfAt (ERC20Votes checkpointed balances) +
+  // the API's transaction-delta reconstruction of the holder set.
+  holdersAtBlockInput = signal<string>('');
+  holdersAt           = signal<{ account: string; balance: string }[]>([]);
+  holdersAtCount      = signal<number>(0);
+  holdersAtLoading    = signal(false);
+  holdersAtQueried    = signal<number | null>(null);
 
   loadingData: boolean = false;
   refreshing = signal(false);
@@ -412,7 +431,7 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex') {
+  setTab(tab: 'overview' | 'info' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
     if (tab === 'services') this.getAssetDetails();
@@ -420,6 +439,109 @@ export class DetailsPage implements OnInit {
     if (tab === 'holders') this.getHolders(1, 500);
     if (tab === 'trxs') this.getTransactions(1, 500);
     if (tab === 'dex') this.loadDexListing();
+    if (tab === 'distributions') this.loadDistributions();
+    // 'holdersAt' is user-driven (needs a block number) — no auto-load on tab open.
+  }
+
+  async loadHoldersAt() {
+    const blk = Number(this.holdersAtBlockInput().trim());
+    if (!blk || blk <= 0) {
+      this.alertService.show('Invalid block', 'Enter a positive block number.');
+      return;
+    }
+    this.holdersAtLoading.set(true);
+    try {
+      const r = await this.apiService.assetHoldersAt(this.assetAddress, blk, 0, 50);
+      this.holdersAt.set(r?.holders ?? []);
+      this.holdersAtCount.set(Number(r?.totalCount ?? 0));
+      this.holdersAtQueried.set(blk);
+    } finally {
+      this.holdersAtLoading.set(false);
+    }
+  }
+
+  async loadDistributions() {
+    this.distributionsLoading.set(true);
+    try {
+      const data = await this.apiService.distributionsList(this.assetAddress, 1, 50);
+      this.distributions.set(data?.distributions ?? []);
+      this.distributionsLoaded.set(true);
+    } finally {
+      this.distributionsLoading.set(false);
+    }
+  }
+
+  distStateName(state: number): string {
+    switch (Number(state)) {
+      case 1: return 'Declared';
+      case 2: return 'Executing';
+      case 3: return 'Completed';
+      case 4: return 'Partially Completed';
+      default: return 'Unknown';
+    }
+  }
+  distTypeName(t: number): string {
+    return Number(t) === 1 ? 'Credit Dividend' : Number(t) === 2 ? 'Stock Split' : 'Unknown';
+  }
+
+  async openDeclareDistribution() {
+    const data = await this.distributionDeclareModal.show(this.assetAddress);
+    if (!data) return;
+    this.loadingService.show('Declaring distribution…');
+    try {
+      const r = await this.apiService.distributionDeclare(this.assetAddress, {
+        distType:      data.distType,
+        amount:        data.amount,
+        recordBlock:   data.recordBlock,
+        sweepResidual: data.sweepResidual,
+      });
+      if (!r || r.error) {
+        this.alertService.show('Declare failed', r?.error || 'Could not declare distribution.');
+      } else {
+        this.alertService.show('Declared', `Distribution #${r.distribution?.distributionId} created.`);
+        await this.loadDistributions();
+      }
+    } catch (e: any) {
+      this.alertService.show('Error', e?.message || String(e));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async executeDistribution(distributionId: number) {
+    if (!confirm(`Execute all Pending legs for distribution #${distributionId}? This walks the holder set in chain-paginated chunks.`)) return;
+    this.loadingService.show(`Executing #${distributionId}…`);
+    try {
+      const r = await this.apiService.distributionExecute(this.assetAddress, distributionId);
+      if (!r || r.error) {
+        this.alertService.show('Execute failed', r?.error || 'Could not execute distribution.');
+      } else {
+        this.alertService.show('Executed', `Sent ${r.result?.sent ?? 0} / Failed ${r.result?.failed ?? 0}.`);
+        await this.loadDistributions();
+      }
+    } catch (e: any) {
+      this.alertService.show('Error', e?.message || String(e));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async finalizeDistribution(distributionId: number) {
+    if (!confirm(`Finalize distribution #${distributionId}? Remaining Pending legs flip to Skipped; residual (if any, Credit-only) is refunded when sweep is enabled.`)) return;
+    this.loadingService.show(`Finalizing #${distributionId}…`);
+    try {
+      const r = await this.apiService.distributionFinalize(this.assetAddress, distributionId);
+      if (!r || r.error) {
+        this.alertService.show('Finalize failed', r?.error || 'Could not finalize distribution.');
+      } else {
+        this.alertService.show('Finalized', `State: ${this.distStateName(r.result?.state)}.`);
+        await this.loadDistributions();
+      }
+    } catch (e: any) {
+      this.alertService.show('Error', e?.message || String(e));
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   async loadDexListing() {

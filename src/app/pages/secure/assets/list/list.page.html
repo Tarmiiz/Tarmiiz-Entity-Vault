@@ -1,5 +1,6 @@
 ﻿<app-header [title]="'assets.title' | translate"></app-header>
 <app-modal-asset-add></app-modal-asset-add>
+<app-modal-asset-register-existing></app-modal-asset-register-existing>
 <app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
@@ -84,6 +85,11 @@
           Export PDF
         </button>
         @if(userInfo && userInfo.role !== 3) {
+          <button (click)="openRegisterExistingModal()" [disabled]="!entityActive"
+            class="text-xs px-3 py-1.5 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Register a BYO contract you deployed yourself (Path B)">
+            Register Existing
+          </button>
           <button (click)="openAddModal()" [disabled]="!entityActive"
             class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
             + Add Asset

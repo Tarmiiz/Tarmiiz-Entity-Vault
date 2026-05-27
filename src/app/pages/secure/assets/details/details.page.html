@@ -114,6 +114,24 @@
             DEX
           </button>
         }
+        <button (click)="setTab('distributions')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'distributions'"
+          [class.border-b-2]="activeTab() === 'distributions'"
+          [class.border-blue-600]="activeTab() === 'distributions'"
+          [class.bg-blue-600]="activeTab() === 'distributions'"
+        >
+          Distributions
+        </button>
+        <button (click)="setTab('holdersAt')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'holdersAt'"
+          [class.border-b-2]="activeTab() === 'holdersAt'"
+          [class.border-blue-600]="activeTab() === 'holdersAt'"
+          [class.bg-blue-600]="activeTab() === 'holdersAt'"
+        >
+          Holders at Block
+        </button>
       </div>
     </div>
 
@@ -1036,6 +1054,164 @@
           </div>
         }
 
+        <!-- Distributions tab — read-only list of issuer-driven distributions on this asset.
+             Phase 2.5 BYO standard: Credit dividends (paid in the asset's own currency) +
+             Stock splits (mint pro-rata). Declared / executed / finalized via the API;
+             this view is the issuer's primary surface. Modal-based declare/execute/finalize
+             follow-on; for now declare + execute go through the API directly. -->
+        @if (activeTab() === 'distributions') {
+          <div class="px-2 py-2">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-base font-semibold text-gray-800">Distributions</h3>
+              <div class="flex items-center gap-2">
+                <button class="text-xs text-blue-600 hover:underline" (click)="loadDistributions()" [disabled]="distributionsLoading()">
+                  {{ distributionsLoading() ? 'Loading…' : 'Refresh' }}
+                </button>
+                <button class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40"
+                        (click)="openDeclareDistribution()"
+                        [disabled]="!entityActive">
+                  + Declare
+                </button>
+              </div>
+            </div>
+
+            @if (!distributionsLoaded() && distributionsLoading()) {
+              <div class="text-center py-8 text-sm text-gray-500">Loading distributions…</div>
+            }
+            @else if (distributions().length === 0) {
+              <div class="text-center py-8 text-sm text-gray-500">
+                No distributions declared on this asset yet.
+                <div class="text-xs text-gray-400 mt-2">
+                  Credit dividends (paid in this asset's currency) and stock splits (issued pro-rata) are
+                  declared via the API. Pre-fund the asset's credit account before declaring a Credit dividend.
+                </div>
+              </div>
+            }
+            @else {
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs text-gray-500 uppercase tracking-wide border-b">
+                      <th class="py-2 pr-3">#</th>
+                      <th class="py-2 pr-3">Type</th>
+                      <th class="py-2 pr-3 text-right">Amount</th>
+                      <th class="py-2 pr-3 text-right">Record Block</th>
+                      <th class="py-2 pr-3">State</th>
+                      <th class="py-2 pr-3 text-right">Legs (Sent / Failed / Total)</th>
+                      <th class="py-2 pr-3">Declared</th>
+                      <th class="py-2 pr-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (d of distributions(); track d.distributionId) {
+                      <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 pr-3 text-gray-700">{{ d.distributionId }}</td>
+                        <td class="py-2 pr-3 text-gray-700">{{ distTypeName(d.distType) }}</td>
+                        <td class="py-2 pr-3 text-right text-gray-700">{{ d.amount }}</td>
+                        <td class="py-2 pr-3 text-right text-gray-700">{{ d.recordBlock }}</td>
+                        <td class="py-2 pr-3">
+                          <span class="inline-flex px-2 py-0.5 text-xs rounded"
+                                [class.bg-gray-100]="d.state === 1"
+                                [class.text-gray-700]="d.state === 1"
+                                [class.bg-blue-100]="d.state === 2"
+                                [class.text-blue-700]="d.state === 2"
+                                [class.bg-green-100]="d.state === 3"
+                                [class.text-green-700]="d.state === 3"
+                                [class.bg-amber-100]="d.state === 4"
+                                [class.text-amber-700]="d.state === 4">
+                            {{ distStateName(d.state) }}
+                          </span>
+                        </td>
+                        <td class="py-2 pr-3 text-right text-gray-700">
+                          {{ d.legsSent }} / {{ d.legsFailed }} / {{ d.legsTotal }}
+                        </td>
+                        <td class="py-2 pr-3 text-xs text-gray-500" [title]="d.declaredBy">
+                          {{ d.declaredAt | date:'short' }}
+                        </td>
+                        <td class="py-2 pr-3 text-right">
+                          <div class="inline-flex gap-1">
+                            @if (d.state === 1 || d.state === 2) {
+                              <button class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
+                                      (click)="executeDistribution(d.distributionId)"
+                                      [disabled]="!entityActive">
+                                Execute
+                              </button>
+                              <button class="text-xs px-2 py-0.5 rounded bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-40"
+                                      (click)="finalizeDistribution(d.distributionId)"
+                                      [disabled]="!entityActive">
+                                Finalize
+                              </button>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Holders at Block tab — historical-balance reconstruction at any past block.
+             Backed by ITarmiizAsset.balanceOfAt (ERC20Votes checkpointed balances) and
+             the API's transaction-delta sum over the holder set. Useful for dividend
+             record dates and compliance reporting. -->
+        @if (activeTab() === 'holdersAt') {
+          <div class="px-2 py-2">
+            <div class="flex flex-wrap items-end gap-3 mb-3">
+              <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Block Number</label>
+                <input type="number" min="1" placeholder="e.g. 1234567"
+                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                  [ngModel]="holdersAtBlockInput()"
+                  (ngModelChange)="holdersAtBlockInput.set($event)">
+              </div>
+              <button class="text-xs px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40"
+                      (click)="loadHoldersAt()"
+                      [disabled]="holdersAtLoading() || !holdersAtBlockInput()">
+                {{ holdersAtLoading() ? 'Loading…' : 'Load Snapshot' }}
+              </button>
+            </div>
+
+            @if (holdersAtQueried() === null) {
+              <div class="text-center py-8 text-sm text-gray-500">
+                Enter a past block number to reconstruct the holder set at that point in time.
+              </div>
+            }
+            @else if (holdersAt().length === 0) {
+              <div class="text-center py-8 text-sm text-gray-500">
+                No holders at block {{ holdersAtQueried() }}.
+              </div>
+            }
+            @else {
+              <div class="text-xs text-gray-500 mb-2">
+                {{ holdersAtCount() }} holder(s) at block {{ holdersAtQueried() }} — showing top {{ holdersAt().length }}.
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs text-gray-500 uppercase tracking-wide border-b">
+                      <th class="py-2 pr-3">#</th>
+                      <th class="py-2 pr-3">Account</th>
+                      <th class="py-2 pr-3 text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (h of holdersAt(); track h.account; let i = $index) {
+                      <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 pr-3 text-gray-500">{{ i + 1 }}</td>
+                        <td class="py-2 pr-3 text-gray-700 font-mono text-xs" [title]="h.account">{{ h.account }}</td>
+                        <td class="py-2 pr-3 text-right text-gray-700 font-mono">{{ h.balance }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+
       }
       @else {
         <div class="text-center py-12 text-gray-500">
@@ -1055,4 +1231,5 @@
 <app-modal-listing-create></app-modal-listing-create>
 <app-modal-asset-price></app-modal-asset-price>
 <app-modal-asset-fee-config></app-modal-asset-fee-config>
+<app-modal-distribution-declare></app-modal-distribution-declare>
 <app-modal-transaction-info></app-modal-transaction-info>

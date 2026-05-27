@@ -505,6 +505,54 @@ export class ApiService {
     return data ? { count: data.count, holders: data.holders } : null;
   }
 
+  // ─── Distributions (BYO standard — Credit dividends + stock splits) ─────────────
+  // Mounted under /assets/... (not /vault/...) so they go through authGet/authPost.
+
+  async distributionsList(asset: string, start = 1, offset = 50) {
+    return this.authGet('/assets/' + asset + '/distributions', { start, offset });
+  }
+
+  async distributionGet(asset: string, distributionId: number | string) {
+    return this.authGet('/assets/' + asset + '/distributions/' + distributionId);
+  }
+
+  async distributionLegsList(asset: string, distributionId: number | string, start = 1, offset = 50) {
+    return this.authGet('/assets/' + asset + '/distributions/' + distributionId + '/legs', { start, offset });
+  }
+
+  async distributionDeclare(asset: string, body: { distType: number; amount: string; recordBlock?: number; sweepResidual?: boolean }) {
+    return this.authPost('/assets/' + asset + '/distributions', body);
+  }
+
+  async distributionExecute(asset: string, distributionId: number | string, holders?: string[]) {
+    return this.authPost('/assets/' + asset + '/distributions/' + distributionId + '/execute', holders?.length ? { holders } : {});
+  }
+
+  async distributionLegRetry(asset: string, distributionId: number | string, holder: string) {
+    return this.authPost('/assets/' + asset + '/distributions/' + distributionId + '/legs/' + holder + '/retry', {});
+  }
+
+  async distributionFinalize(asset: string, distributionId: number | string) {
+    return this.authPost('/assets/' + asset + '/distributions/' + distributionId + '/finalize', {});
+  }
+
+  async assetHoldersAt(asset: string, blockNumber: number, start = 0, offset = 50) {
+    return this.authGet('/assets/' + asset + '/holders-at', { blockNumber, start, offset });
+  }
+
+  async assetBalanceAt(asset: string, account: string, blockNumber: number) {
+    return this.authGet('/assets/' + asset + '/balance-at', { account, blockNumber });
+  }
+
+  // Path B — register an issuer's pre-deployed BYO contract.
+  async assetPreviewRegister(address: string) {
+    return this.authGet('/assets/preview-register', { address });
+  }
+
+  async assetRegisterExisting(address: string) {
+    return this.authPost('/assets/register-existing', { address });
+  }
+
   // ─── Vault — Transactions ─────────────────────────────────────────────────────
 
   async vaultGetTransactions(filters?: { asset?: string; service?: string; subscription?: string; startTime?: number; endTime?: number }, start = 0, offset = 50) {

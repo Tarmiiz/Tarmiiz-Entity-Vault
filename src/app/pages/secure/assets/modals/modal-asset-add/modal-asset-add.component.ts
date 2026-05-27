@@ -42,10 +42,18 @@ export class ModalAssetAddComponent {
   issuerName = signal('');
   managerName = signal('');
 
+  // Standards — BYO model exposes both T20 (Fund / RWA) and T3643 (Security Token).
+  // tokenType is set at deploy time and immutable thereafter (the asset's `getStandard()`
+  // returns "T20" or "T3643"; the factory chooses which impl to wrap in ERC1967Proxy).
+  readonly tokenTypes: { id: number; name: string; subtitle: string }[] = [
+    { id: 1, name: 'Tarmiiz T20',   subtitle: 'Fund / Real-World Asset' },
+    { id: 2, name: 'Tarmiiz T3643', subtitle: 'Security Token (ERC-3643)' },
+  ];
+
   // Wizard state
   currentStep = signal(1);
   readonly totalSteps = 6;
-  readonly stepLabels = ['Supply Mode', 'Identity', 'Metadata', 'Service', 'Roles', 'Review'];
+  readonly stepLabels = ['Standard & Supply', 'Identity', 'Metadata', 'Service', 'Roles', 'Review'];
   reviewConfirmed = signal(false);
 
   // Symbol availability check (on-chain via API)
@@ -58,6 +66,8 @@ export class ModalAssetAddComponent {
     manager: ['', Validators.required],
     name: ['', Validators.required],
     symbol: ['', Validators.required],
+    // tokenType: 1 = TarmiizT20, 2 = TarmiizT3643 (ERC-3643 security token). Default T20.
+    tokenType: ['1', Validators.required],
     // supplyMode: 1 = Fixed (initialSupply minted to contract at init), 2 = Dynamic (mint on subscribe).
     // Replaces the old leaf-template-encoded `tokenType` choice.
     supplyMode: ['', Validators.required],
@@ -184,7 +194,7 @@ export class ModalAssetAddComponent {
   // --- Step navigation ---
 
   private readonly stepFields: Record<number, string[]> = {
-    1: ['supplyMode', 'priceMode'],
+    1: ['tokenType', 'supplyMode', 'priceMode'],
     2: ['name', 'symbol', 'description'],
     3: [],
     4: ['service', 'currency'],
@@ -269,6 +279,10 @@ export class ModalAssetAddComponent {
   }
 
   // --- Display name resolvers ---
+
+  getTokenTypeName(): string {
+    return this.tokenTypes.find(t => t.id === Number(this.addForm.get('tokenType')?.value))?.name ?? '';
+  }
 
   getSupplyModeName(): string {
     return this.supplyModes().find(t => t.id === Number(this.addForm.get('supplyMode')?.value))?.name ?? '';
@@ -372,8 +386,8 @@ export class ModalAssetAddComponent {
     const formValue = this.addForm.getRawValue();
     const supplyMode = Number(formValue.supplyMode);
     const priceMode = Number(formValue.priceMode) || 2;
-    // tokenType: V1 only supports 1 (T20). T3643 follow-up adds 2.
-    const tokenType = 1;
+    // tokenType: 1 = TarmiizT20, 2 = TarmiizT3643. The API routes to the matching factory.
+    const tokenType = Number(formValue.tokenType) || 1;
     const data: AddAssetData = {
       owner: formValue.owner ?? '',
       issuer: formValue.issuer ?? '',

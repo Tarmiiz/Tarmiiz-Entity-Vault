@@ -19,6 +19,8 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { ModalAssetAddService } from '../modals/modal-asset-add/modal-asset-add.service';
 import { ModalAssetAddComponent } from '../modals/modal-asset-add/modal-asset-add.component';
+import { ModalAssetRegisterExistingService } from '../modals/modal-asset-register-existing/modal-asset-register-existing.service';
+import { ModalAssetRegisterExistingComponent } from '../modals/modal-asset-register-existing/modal-asset-register-existing.component';
 import { AuditService } from '../../../../shared/services/audit.service';
 
 import { Asset, User } from '../../../../shared/models/data.model';
@@ -34,7 +36,7 @@ import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
     CommonModule, FormsModule,
     HeaderComponent,
     LiveIndicatorComponent,
-    ModalAssetAddComponent, TranslatePipe,
+    ModalAssetAddComponent, ModalAssetRegisterExistingComponent, TranslatePipe,
   ]
 })
 export class ListPage implements OnInit {
@@ -44,6 +46,7 @@ export class ListPage implements OnInit {
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
   private assetAddService = inject(ModalAssetAddService);
+  assetRegisterExistingService = inject(ModalAssetRegisterExistingService);
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
@@ -210,6 +213,13 @@ export class ListPage implements OnInit {
       if (!silent) this.loadingService.hide();
       if (silent) this.refreshing.set(false);
     }
+  }
+
+  async openRegisterExistingModal() {
+    const r = await this.assetRegisterExistingService.show();
+    if (!r?.registered) return;
+    await this.listAssets();
+    this.alertService.show('Registered', `Asset ${r.address.slice(0, 6)}…${r.address.slice(-4)} registered.`);
   }
 
   async openAddModal() {
