@@ -19,6 +19,7 @@ export class ModalServiceAddComponent {
   private fb = inject(FormBuilder);
 
   serviceTypes = signal<{ variableId: number; name: string }[]>([]);
+  providerTypes = signal<{ variableId: number; name: string }[]>([]);
   verificationLevels = signal<{ variableId: number; name: string }[]>([]);
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
   allValidators = signal<{ address: string; name: string; validationLevel: number; state: number }[]>([]);
@@ -42,9 +43,14 @@ export class ModalServiceAddComponent {
   });
 
   isTokenIssuer = computed(() => this.selectedServiceType() === 1);
+  // serviceType 2 = Service Provider. The entity DECLARES its sub-type (providerType) here;
+  // the regulator confirms it later, after which it appears under that regulator's
+  // validators / payment processors / custodians / data providers list.
+  isServiceProvider = computed(() => this.selectedServiceType() === 2);
 
   addForm = this.fb.group({
     serviceType: ['', Validators.required],
+    providerType: [''],
     name: ['', Validators.required],
     description: ['', Validators.required],
     website: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+\..+/)]],
@@ -64,11 +70,12 @@ export class ModalServiceAddComponent {
         this.currentStep.set(1);
         this.reviewConfirmed.set(false);
         this.addForm.reset({
-          serviceType: '', name: '', description: '', website: '',
+          serviceType: '', providerType: '', name: '', description: '', website: '',
           email: '', mobile: '', verificationLevel: '', regulator: '',
           validator: '', paymentProcessor: '', custodian: SELF_CUSTODY_SENTINEL, visibility: 1,
         });
         this.loadServiceTypes();
+        this.loadProviderTypes();
         this.loadVerificationLevels();
         this.loadRegulators();
         this.loadValidators();
@@ -86,16 +93,32 @@ export class ModalServiceAddComponent {
 
     this.addForm.get('serviceType')!.valueChanges.subscribe(val => {
       this.selectedServiceType.set(Number(val) || 0);
+      const verificationLevel = this.addForm.get('verificationLevel')!;
+      const providerType = this.addForm.get('providerType')!;
       if (Number(val) !== 1) {
         this.addForm.get('validator')!.setValue('');
         this.addForm.get('paymentProcessor')!.setValue('');
         this.addForm.get('custodian')!.setValue('');
+        // Verification level only applies to token-issuer services — drop the requirement for others.
+        verificationLevel.setValue('');
+        verificationLevel.clearValidators();
+        verificationLevel.updateValueAndValidity();
       } else {
+        verificationLevel.setValidators(Validators.required);
+        verificationLevel.updateValueAndValidity();
         // Default type-1 services to self-custody and refresh endorsed custodian list.
         if (!this.addForm.get('custodian')!.value) {
           this.addForm.get('custodian')!.setValue(SELF_CUSTODY_SENTINEL);
         }
       }
+      // providerType is required ONLY for service providers (serviceType 2).
+      if (Number(val) === 2) {
+        providerType.setValidators(Validators.required);
+      } else {
+        providerType.setValue('');
+        providerType.clearValidators();
+      }
+      providerType.updateValueAndValidity();
     });
 
     // Refresh endorsed custodians whenever the regulator changes (since the picker is regulator-scoped).
@@ -111,6 +134,17 @@ export class ModalServiceAddComponent {
       this.serviceTypes.set(
         data
           .filter((item: any) => item.category === 'Service Type')
+          .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
+      );
+    }
+  }
+
+  async loadProviderTypes() {
+    const data = await this.apiService.vaultGetGlobalVariables();
+    if (data) {
+      this.providerTypes.set(
+        data
+          .filter((item: any) => item.category === 'Regulator Party Type')
           .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
       );
     }
@@ -136,25 +170,33 @@ export class ModalServiceAddComponent {
     }
   }
 
+  // Set of the entity's curated, active service-provider addresses for a given type
+  // (1=Validator, 2=PaymentProcessor, 3=Custodian). Service creation may only pick from
+  // this admin-curated subset — enforced on-chain too.
+  private async curatedAddresses(spType: number): Promise<Set<string>> {
+    const data = await this.apiService.vaultGetServiceProviders(spType, 'active');
+    return new Set((data?.providers ?? []).map((p: any) => p.address.toLowerCase()));
+  }
+
   async loadValidators() {
-    const data = await this.apiService.vaultGetValidators(1, 50);
+    const [data, curated] = await Promise.all([this.apiService.vaultGetValidators(1, 50), this.curatedAddresses(1)]);
     if (data?.validators) {
-      this.allValidators.set(data.validators.filter((v: any) => v.state === 2));
+      this.allValidators.set(data.validators.filter((v: any) => v.state === 2 && curated.has(v.address.toLowerCase())));
     }
   }
 
   async loadPaymentProcessors() {
-    const data = await this.apiService.vaultGetPaymentProcessors(1, 50);
+    const [data, curated] = await Promise.all([this.apiService.vaultGetPaymentProcessors(1, 50), this.curatedAddresses(2)]);
     if (data?.paymentProcessors) {
-      this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2));
+      this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2 && curated.has(s.address.toLowerCase())));
     }
   }
 
   async loadCustodians(regulator: string) {
     if (!regulator) { this.custodians.set([]); return; }
-    const data = await this.apiService.vaultGetEndorsedCustodians(regulator, 1, 50);
+    const [data, curated] = await Promise.all([this.apiService.vaultGetEndorsedCustodians(regulator, 1, 50), this.curatedAddresses(3)]);
     if (data?.custodians) {
-      this.custodians.set(data.custodians.filter((c: any) => c.state === 2 || c.state === 1 || c.state === true));
+      this.custodians.set(data.custodians.filter((c: any) => (c.state === 2 || c.state === 1 || c.state === true) && curated.has(c.address.toLowerCase())));
     } else {
       this.custodians.set([]);
     }
@@ -170,7 +212,11 @@ export class ModalServiceAddComponent {
 
   private stepFields(): string[] {
     const step = this.currentStep();
-    if (step === 1) return ['serviceType', 'verificationLevel', 'regulator'];
+    if (step === 1) {
+      if (this.isTokenIssuer()) return ['serviceType', 'verificationLevel', 'regulator'];
+      if (this.isServiceProvider()) return ['serviceType', 'providerType', 'regulator'];
+      return ['serviceType', 'regulator'];
+    }
     if (step === 2) return ['name', 'description'];
     if (step === 3) return ['website', 'email', 'mobile'];
     return [];
@@ -199,6 +245,10 @@ export class ModalServiceAddComponent {
 
   getServiceTypeName(): string {
     return this.serviceTypes().find(s => s.variableId === Number(this.addForm.get('serviceType')?.value))?.name ?? '';
+  }
+
+  getProviderTypeName(): string {
+    return this.providerTypes().find(p => p.variableId === Number(this.addForm.get('providerType')?.value))?.name ?? '';
   }
 
   getVerificationLevelName(): string {
@@ -243,6 +293,8 @@ export class ModalServiceAddComponent {
       mobile: formValue.mobile ?? '',
       verificationLevel: Number(formValue.verificationLevel),
       serviceType: Number(formValue.serviceType),
+      // providerType is the entity's declared sub-type — only meaningful for service providers (type 2).
+      providerType: Number(formValue.serviceType) === 2 ? Number(formValue.providerType) : 0,
       regulator: formValue.regulator ?? '',
       validator: formValue.validator ?? '',
       paymentProcessor: formValue.paymentProcessor ?? '',

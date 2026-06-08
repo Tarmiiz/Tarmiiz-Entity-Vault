@@ -15,7 +15,8 @@ export interface AddAssetData {
   // supplyMode: 1 = Fixed (initialSupply minted to contract at init), 2 = Dynamic (mint on subscribe).
   supplyMode: number;
   priceMode: number;
-  assetType?: number;
+  // Real-world asset category (1=Precious Metals … 6=Commodities). Required for all supply modes.
+  assetType: number;
   initialSupply?: number;
   creditSettlement: boolean;
   customMetadata: Record<string, string>;

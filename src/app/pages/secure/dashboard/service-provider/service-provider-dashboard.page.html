@@ -1,0 +1,167 @@
+<app-header [title]="'sidebar.home' | translate"></app-header>
+
+<div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
+
+  @if(userInfo) {
+
+    <!-- non-admin view (exec / viewer) -->
+    @if(userInfo.role != 1) {
+
+      <!-- Entity inactive warning -->
+      @if (!entityActive) {
+        <div class="rounded-xl shadow-md border border-red-300 bg-red-50 p-4 mb-6 flex items-center gap-3 badges">
+          <svg class="w-6 h-6 text-red-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div>
+            <p class="text-sm font-semibold text-red-800">Entity is {{ entityStateName || 'not active' }}</p>
+            <p class="text-xs text-red-600">All management actions are restricted. Contact your regulator to restore active status.</p>
+          </div>
+        </div>
+      }
+
+      <!-- Service portfolio banner -->
+      <div class="rounded-xl shadow-md border border-indigo-200 bg-linear-to-r from-indigo-600 to-indigo-800 text-white p-5 mb-6 badges">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">Service Portfolio</p>
+            <div class="flex items-baseline gap-2">
+              <p class="text-4xl font-bold">{{ totalServices() }}</p>
+              <span class="text-xs font-semibold text-indigo-200">service{{ totalServices() === 1 ? '' : 's' }}</span>
+            </div>
+            <p class="text-xs mt-1 text-indigo-200">
+              <span class="text-green-300 font-semibold">{{ activeServices() }}</span> active
+              · <span class="text-amber-200 font-semibold">{{ suspendedServices() }}</span> suspended
+              · <span class="text-indigo-100 font-semibold">{{ inactiveServices() }}</span> inactive
+            </p>
+          </div>
+
+          <div class="shrink-0 flex-1 md:border-l md:border-indigo-400/30 md:pl-4">
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">Provider Types</p>
+            @if (providerTypeCounts().length === 0) {
+              <p class="text-sm text-indigo-200 italic">No services yet</p>
+            } @else {
+              <div class="flex flex-wrap gap-2">
+                @for (pt of providerTypeCounts(); track pt.type) {
+                  <div class="rounded-lg bg-indigo-900/40 border border-indigo-400/30 px-3 py-2">
+                    <p class="text-lg font-bold leading-none">{{ pt.count }}</p>
+                    <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ pt.name }}</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="text-center shrink-0">
+            <p class="text-xs text-indigo-300 uppercase tracking-wider">Status</p>
+            <div class="flex items-center justify-center gap-1.5 mt-1">
+              <span class="w-2 h-2 rounded-full" [class]="socketService.connected() ? 'bg-green-400' : 'bg-red-400'"></span>
+              <span class="text-sm font-medium text-indigo-200">{{ socketService.connected() ? 'Live' : 'Offline' }}</span>
+            </div>
+            <p class="text-xs text-indigo-300 mt-1">{{ lastUpdated() ? (lastUpdated()! | date:'HH:mm:ss') : '—' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operational signals -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 badges">
+        @for (stat of opStats(); track stat.title) {
+          <div class="p-4 rounded-xl shadow-md border border-gray-200 flex flex-col cursor-pointer hover:bg-indigo-50 transition-colors"
+            [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" (click)="goTo(stat.path)">
+            <p class="text-xs font-medium text-gray-500 mb-1">{{ stat.title }}</p>
+            @if (loading()) {
+              <svg class="animate-spin h-5 w-5 text-blue-500 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            } @else {
+              <p class="text-xl font-bold" [class]="stat.value > 0 ? 'text-indigo-700' : 'text-gray-800'">{{ stat.value | number }}</p>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- My Services table -->
+      <div [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
+        <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+          <h2 class="text-xl font-semibold text-white">My Services</h2>
+          <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/services/list')">View all →</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+              <tr>
+                <th class="px-4 py-2">Name</th>
+                <th class="px-4 py-2">Provider Type</th>
+                <th class="px-4 py-2">Verification</th>
+                <th class="px-4 py-2">Regulator</th>
+                <th class="px-4 py-2">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (loading()) {
+                @for (i of [1,2,3,4,5]; track i) {
+                  <tr class="border-b">
+                    <td colspan="5" class="px-4 py-3"><div class="h-3 bg-gray-200 rounded w-full"></div></td>
+                  </tr>
+                }
+              } @else if (services().length === 0) {
+                <tr>
+                  <td colspan="5" class="px-4 py-4 text-center text-gray-400">No services found</td>
+                </tr>
+              } @else {
+                @for (s of services(); track s.address) {
+                  <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="viewService(s)">
+                    <td class="px-4 py-2 font-medium text-gray-800">{{ s.name }}</td>
+                    <td class="px-4 py-2">{{ providerTypeName(s) }}</td>
+                    <td class="px-4 py-2">{{ s.verificationLevelName }}</td>
+                    <td class="px-4 py-2">{{ s.regulatorName }}</td>
+                    <td class="px-4 py-2">
+                      <div class="flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getStateClass(s.state)">{{ s.stateName }}</span>
+                        @if (s.suspended) {
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    } @else {
+
+      <!-- Bootstrap-admin: no executive user yet -->
+      @if (showBootstrapNudge()) {
+        <div class="rounded-xl shadow-md border border-amber-300 bg-amber-50 p-4 mb-6 flex items-start gap-3 badges">
+          <svg class="w-6 h-6 text-amber-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div class="grow">
+            <p class="text-sm font-semibold text-amber-800">{{ 'dashboard.bootstrapAdminTitle' | translate }}</p>
+            <p class="text-xs text-amber-700 mt-1">{{ 'dashboard.bootstrapAdminBody' | translate }}</p>
+          </div>
+          <button (click)="goTo('/authorized/users/list')"
+            class="text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1 shrink-0">
+            {{ 'dashboard.bootstrapAdminCta' | translate }}
+          </button>
+        </div>
+      }
+
+      <!-- admin placeholder view -->
+      <div class="flex flex-col items-center justify-center py-24 text-center">
+        <svg class="w-16 h-16 text-gray-400 mb-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 17H4a1 1 0 0 1-1-1 3 3 0 0 1 3-3h1m0-3.05A2.5 2.5 0 1 1 9 5.5M19.5 17h.5a1 1 0 0 0 1-1 3 3 0 0 0-3-3h-1m0-3.05a2.5 2.5 0 1 0-2-4.45m.5 13.5h-7a1 1 0 0 1-1-1 3 3 0 0 1 3-3h3a3 3 0 0 1 3 3 1 1 0 0 1-1 1Zm-1-9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>
+        </svg>
+        <h2 class="text-xl font-semibold text-gray-600 mb-2">Admin Dashboard</h2>
+        <p class="text-sm text-gray-400">Use the Users menu to manage system users.</p>
+      </div>
+
+    }
+
+  }
+
+</div>

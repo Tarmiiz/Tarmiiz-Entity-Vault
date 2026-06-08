@@ -1,0 +1,48 @@
+@if (spAddService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          Add Service Provider
+        </h3>
+      </div>
+      <form [formGroup]="spForm" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4">
+          <div>
+            <label for="spType" class="block text-sm font-medium text-gray-700">Type</label>
+            <select id="spType" formControlName="spType" (change)="onTypeChange()"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+              <option [ngValue]="1">Validator</option>
+              <option [ngValue]="2">Payment Processor</option>
+              <option [ngValue]="3">Custodian</option>
+            </select>
+          </div>
+          <div>
+            <label for="provider" class="block text-sm font-medium text-gray-700">Service Provider</label>
+            <select id="provider" formControlName="provider"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+              <option value="">Select…</option>
+              @for (o of options(); track o.address) {
+                <option [value]="o.address">{{ o.name || o.address }}</option>
+              }
+            </select>
+            @if (loadingOptions()) {
+              <p class="mt-1 text-xs text-gray-400">Loading authorised providers…</p>
+            } @else if (options().length === 0) {
+              <p class="mt-1 text-xs text-gray-400">No available providers of this type from your regulator.</p>
+            }
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+          <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="!spForm.get('provider')?.value"
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50">
+            Add
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

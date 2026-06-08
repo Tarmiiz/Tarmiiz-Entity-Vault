@@ -93,7 +93,7 @@ export class ApiService {
     }
   }
 
-  async vaultFeatures(): Promise<{ dex: boolean } | null> {
+  async vaultFeatures(): Promise<{ dex: boolean; menu: Record<string, boolean> } | null> {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
@@ -101,10 +101,26 @@ export class ApiService {
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.data?.type !== 'success') return null;
-      return response.data.features ?? null;
+      const features = response.data.features ?? {};
+      return { dex: !!features.dex, menu: response.data.menu ?? {} };
     } catch {
       return null;
     }
+  }
+
+  // Menu config (admin Menu Settings page) — JWT-gated under /vault/...
+  async vaultMenuConfigList(): Promise<{ menuKey: string; enabled: boolean; updatedAt: number | null; updatedByUserId: string | null }[]> {
+    const data = await this.vaultGet('/menu-config');
+    return (data?.menu ?? []).map((r: any) => ({
+      menuKey: r.menu_key,
+      enabled: !!r.enabled,
+      updatedAt: r.updated_at != null ? Number(r.updated_at) : null,
+      updatedByUserId: r.updated_by_user_id ?? null,
+    }));
+  }
+
+  async vaultMenuConfigSet(key: string, enabled: boolean) {
+    return this.vaultPut('/menu-config/' + key, { enabled });
   }
 
   // ─── Vault helpers ────────────────────────────────────────────────────────────
@@ -827,9 +843,48 @@ export class ApiService {
     return data ? { count: data.count, paymentProcessors: data.paymentProcessors } : null;
   }
 
-  async vaultGetEndorsedCustodians(regulatorAddress: string, start = 1, offset = 50) {
-    const data = await this.vaultGet('/regulators/' + regulatorAddress + '/custodians/endorsed', { start, offset });
+  // `regulatorAddress` is accepted for call-site compatibility but no longer sent — the Entity API's
+  // /vault/custodians derives the entity's own regulator server-side and merges owned + endorsed,
+  // mirroring /validators and /payment-processors. (The old /regulators/:addr/custodians/endorsed
+  // route never existed, so the picker always came back empty.)
+  async vaultGetEndorsedCustodians(_regulatorAddress: string, start = 1, offset = 50) {
+    const data = await this.vaultGet('/custodians', { start, offset });
     return data ? { count: data.count, custodians: data.custodians } : null;
+  }
+
+  // ─── Vault — Entity-curated service providers ────────────────────────────────
+
+  // type: 1=Validator, 2=PaymentProcessor, 3=Custodian (optional). state: 'active' | 1 | 2 (optional).
+  async vaultGetServiceProviders(type?: number, state?: number | string) {
+    const params: Record<string, any> = {};
+    if (type !== undefined && type !== null) params['type'] = type;
+    if (state !== undefined && state !== null) params['state'] = state;
+    const data = await this.vaultGet('/service-providers', params);
+    return data ? { count: data.count, providers: data.providers } : null;
+  }
+
+  async vaultGetServiceProviderUsage(address: string) {
+    const data = await this.vaultGet('/service-providers/' + address + '/usage');
+    return data ? { inUse: data.inUse, count: data.count, services: data.services } : null;
+  }
+
+  // Read-only: currencies the regulator has approved this entity to operate in.
+  // Pass state='active' to get only currently-approved (non-suspended) currencies.
+  async vaultGetApprovedCurrencies(state?: number | string) {
+    const params: Record<string, any> = {};
+    if (state !== undefined && state !== null) params['state'] = state;
+    const data = await this.vaultGet('/approved-currencies', params);
+    return data ? { count: data.count, currencies: data.currencies } : null;
+  }
+
+  async vaultAddServiceProvider(provider: string, spType: number) {
+    const data = await this.vaultPost('/service-providers', { provider, sp_type: spType });
+    return data ?? null;
+  }
+
+  async vaultSetServiceProviderState(address: string, state: number) {
+    const data = await this.vaultPut('/service-providers/' + address + '/state', { state });
+    return data ?? null;
   }
 
   // ─── Vault — Subscription writes ─────────────────────────────────────────────
@@ -921,7 +976,19 @@ export class ApiService {
     return this._creditMutation('/credit/withdraw', body);
   }
 
-  private async _creditMutation(path: string, body: Record<string, any>): Promise<{ result?: any; error?: string }> {
+  // Bank hub move — the entity's Bank-level PP `service` moves an identity's credit between its
+  // bank-account hub and a spoke subscription (both same identity, enforced on-chain).
+  async bankTransfer(body: { service: string; from: string; to: string; currencyCode: number; amount: number; data?: any; refNo?: string }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+    return this._creditMutation('/credit/bank-transfer', body);
+  }
+
+  // Anonymous service-routed move — the entity's source `service` routes `fromSub`'s credit to the
+  // SAME identity's subscription at `destinationService` (resolved on-chain; the sibling sub + DID are never exposed).
+  async routeTransfer(body: { service: string; fromSub: string; destinationService: string; currencyCode: number; amount: number; data?: any; refNo?: string }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+    return this._creditMutation('/credit/route-transfer', body);
+  }
+
+  private async _creditMutation(path: string, body: Record<string, any>): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
@@ -937,7 +1004,8 @@ export class ApiService {
       if (response.status >= 400 || response.data?.error) {
         return { error: response.data?.error || ('HTTP ' + response.status) };
       }
-      return { result: response.data?.result };
+      // Maker/checker: when policy is on, the API returns { requestId, approvalState } instead of executing.
+      return { result: response.data?.result, requestId: response.data?.requestId, approvalState: response.data?.approvalState };
     } catch (e: any) {
       return { error: e?.message || 'Network error' };
     }
@@ -1010,7 +1078,12 @@ export class ApiService {
   // ─── Vault — Entity auth ──────────────────────────────────────────────────────
 
   async entityLogin(username: string, password: string, sessionDuration: number, saltOverride?: string, passwordIsRawBigInt: boolean = false) {
-    const payload = await this.ethersService.createLoginPayload(username, password, sessionDuration, saltOverride, passwordIsRawBigInt);
+    // Fetch the user's { nonce, commitment } from the API so proof generation never reads the RPC
+    // node directly — login routes entirely through the Entity API.
+    const loginHash   = await this.ethersService.computeLoginHash(username);
+    const credentials = await this.vaultUserCredentialsData(loginHash);
+    if (!credentials) return { success: false, error: 'Failed to fetch user credentials' };
+    const payload = await this.ethersService.createLoginPayload(username, password, sessionDuration, saltOverride, passwordIsRawBigInt, credentials);
     if (!payload) return { success: false, error: 'Proof generation failed' };
     const { key, ...rest } = payload;
     // Raw POST so we can surface the contract-level revert reason (nonce mismatch,
@@ -1059,6 +1132,20 @@ export class ApiService {
     } catch { return null; }
   }
 
+  // Fetch a user's { nonce, commitment } by loginHash so the ZK login circuit input can be built
+  // without a direct RPC read. PUBLIC endpoint — called pre-login (no JWT yet), same as claim-status.
+  async vaultUserCredentialsData(loginHash: string): Promise<{ nonce: string; commitment: string } | null> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/vault/users/credentials-data?loginHash=' + encodeURIComponent(loginHash),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data?.type === 'success') return response.data.credentials;
+      return null;
+    } catch { return null; }
+  }
+
   // Submit the claim transaction. Must be called immediately after a successful login with the
   // placeholder commitment — the just-established admin session is what authenticates the call
   // on chain (contract enforces authorizedUser[msg.sender] == 1).
@@ -1086,6 +1173,20 @@ export class ApiService {
     return data ?? null;
   }
 
+  // Fetch the entity DID's { nonce, commitment } so the claim wizard can build the DID login
+  // circuit input without a direct RPC read. PUBLIC endpoint — called pre-session in the wizard.
+  async vaultIdentityCredentialsData(identityAddress: string): Promise<{ nonce: string; commitment: string } | null> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/vault/identity/credentials-data?identityAddress=' + encodeURIComponent(identityAddress),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data?.type === 'success') return response.data.credentials;
+      return null;
+    } catch { return null; }
+  }
+
   async vaultGetEntityInfo() {
     const data = await this.vaultGet('/entity/info');
     return data?.entity ?? null;
@@ -1093,6 +1194,16 @@ export class ApiService {
 
   async vaultUpdateEntityMetadata(metadata: Record<string, any>) {
     const data = await this.vaultPut('/entity/metadata', { metadata });
+    return data ?? null;
+  }
+
+  async vaultUpdateAssetMetadata(address: string, metadata: Record<string, any>) {
+    const data = await this.vaultPut('/assets/' + address + '/metadata', { metadata });
+    return data ?? null;
+  }
+
+  async vaultUpdateServiceMetadata(address: string, metadata: Record<string, any>) {
+    const data = await this.vaultPut('/services/' + address + '/metadata', { metadata });
     return data ?? null;
   }
 
@@ -1244,6 +1355,22 @@ export class ApiService {
   }
   async documentFetchFile(id: any) {
     return this._fetchFileBlob('/documents/' + id + '/file');
+  }
+  // Cross-tenant inbound share: doc owned by another tenant (owner) and shared with this entity.
+  async documentFetchSharedFile(owner: string, id: any) {
+    return this._fetchFileBlob('/documents/shared/' + owner + '/' + id + '/file');
+  }
+  async documentSharedGet(owner: string, id: any) {
+    return await this.authGet('/documents/shared/' + owner + '/' + id);
+  }
+
+  // Inbound shares to one of this tenant's NON-entity templates (a service / subscription / asset).
+  // The API reads the doc AS that template (double-hop) since the entity isn't in its ACL.
+  async inboundDocumentsList(template: string) {
+    return await this.authGet('/documents/inbound/' + template);
+  }
+  async inboundDocumentFetchFile(template: string, owner: string, id: any) {
+    return this._fetchFileBlob('/documents/inbound/' + template + '/' + owner + '/' + id + '/file');
   }
 
   // Document signatures (this entity's own documents)
@@ -1418,8 +1545,8 @@ export class ApiService {
 
   // ─── Regulator Document Submissions ───────────────────────────────────────────
 
-  async regulatorDocumentSign(documentId: string, regulatorAddress: string, keyId: string, docHash: string) {
-    return await this.authPost('/regulator/documents/' + documentId + '/sign', { regulatorAddress, keyId, docHash });
+  async regulatorDocumentSign(documentId: string, regulatorAddress: string, keyId: string, docHash: string, title = '') {
+    return await this.authPost('/regulator/documents/' + documentId + '/sign', { regulatorAddress, keyId, docHash, title });
   }
 
   async regulatorSubmissionsList(regulatorAddress: string, start = 1, offset = 50) {

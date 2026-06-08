@@ -7,16 +7,18 @@
   <!-- Filters -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Verification Level</label>
-        <select [ngModel]="filterVerificationLevel()" (ngModelChange)="filterVerificationLevel.set($event)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-36">
-          <option value="">All</option>
-          @for (l of uniqueVerificationLevels(); track l[0]) {
-            <option [value]="l[0]">{{ l[1] }}</option>
-          }
-        </select>
-      </div>
+      @if(!isServiceProvider){
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Verification Level</label>
+          <select [ngModel]="filterVerificationLevel()" (ngModelChange)="filterVerificationLevel.set($event)"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-36">
+            <option value="">All</option>
+            @for (l of uniqueVerificationLevels(); track l[0]) {
+              <option [value]="l[0]">{{ l[1] }}</option>
+            }
+          </select>
+        </div>
+      }
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">State</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
@@ -68,12 +70,16 @@
                   <th scope="col" class="px-6 py-2">#</th>
                   <th scope="col" class="px-6 py-2">Name</th>
                   <th scope="col" class="px-6 py-2">Type</th>
-                  <th scope="col" class="px-6 py-2">Verification Level</th>
+                  @if(!isServiceProvider){
+                    <th scope="col" class="px-6 py-2">Verification Level</th>
+                  }
                   @if(showAllServices()){
                     <th scope="col" class="px-6 py-2">Regulator</th>
                   }
-                  <th scope="col" class="px-6 py-2">Coverage</th>
-                  <th scope="col" class="px-6 py-2 text-right">Shortfall</th>
+                  @if(!isServiceProvider){
+                    <th scope="col" class="px-6 py-2">Coverage</th>
+                    <th scope="col" class="px-6 py-2 text-right">Shortfall</th>
+                  }
                   <th scope="col" class="px-6 py-2">State</th>
               </tr>
           </thead>
@@ -94,35 +100,40 @@
                           <td class="px-6 py-2">{{ i + 1 }}</td>
                           <td class="px-6 py-2">{{ service.name }}</td>
                           <td class="px-6 py-2">{{ service.serviceTypeName }}</td>
-                          <td class="px-6 py-2">{{ service.verificationLevelName }}</td>
+                          @if(!isServiceProvider){
+                            <td class="px-6 py-2">{{ service.verificationLevelName }}</td>
+                          }
                           @if(showAllServices()){
                             <td class="px-6 py-2">{{ service.regulatorSymbol }}</td>
                           }
-                          <td class="px-6 py-2">
-                            @let cov = coverageFor(service.address);
-                            @if (cov && cov.minRatio !== null) {
-                              @let tone = coverageTone(cov.minRatio);
-                              <div class="flex items-center gap-1.5">
-                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
-                                  [class.bg-green-100]="tone === 'good'"   [class.text-green-800]="tone === 'good'"
-                                  [class.bg-amber-100]="tone === 'warn'"  [class.text-amber-800]="tone === 'warn'"
-                                  [class.bg-red-100]="tone === 'bad'"     [class.text-red-800]="tone === 'bad'">
-                                  {{ (cov.minRatio * 100) | number:'1.1-1' }}%
-                                </span>
-                                @if (cov.worstCurrency) { <span class="text-[10px] text-gray-500">{{ cov.worstCurrency }}</span> }
-                              </div>
-                            } @else {
-                              <span class="text-gray-300">—</span>
-                            }
-                          </td>
-                          <td class="px-6 py-2 text-right font-mono">
-                            @if (cov && cov.totalShortfall > 0) {
-                              <span class="text-red-700 font-semibold">{{ cov.totalShortfall | number:'1.2-2' }}</span>
-                              @if (cov.worstCurrency) { <span class="text-[10px] text-gray-500 ml-1">{{ cov.worstCurrency }}</span> }
-                            } @else {
-                              <span class="text-gray-300">—</span>
-                            }
-                          </td>
+                          @if(!isServiceProvider){
+                            <td class="px-6 py-2">
+                              @let cov = coverageFor(service.address);
+                              @if (cov && cov.minRatio !== null) {
+                                @let tone = coverageTone(cov.minRatio);
+                                <div class="flex items-center gap-1.5">
+                                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                                    [class.bg-green-100]="tone === 'good'"   [class.text-green-800]="tone === 'good'"
+                                    [class.bg-amber-100]="tone === 'warn'"  [class.text-amber-800]="tone === 'warn'"
+                                    [class.bg-red-100]="tone === 'bad'"     [class.text-red-800]="tone === 'bad'">
+                                    {{ (cov.minRatio * 100) | number:'1.1-1' }}%
+                                  </span>
+                                  @if (cov.worstCurrency) { <span class="text-[10px] text-gray-500">{{ cov.worstCurrency }}</span> }
+                                </div>
+                              } @else {
+                                <span class="text-gray-300">—</span>
+                              }
+                            </td>
+                            <td class="px-6 py-2 text-right font-mono">
+                              @let covSf = coverageFor(service.address);
+                              @if (covSf && covSf.totalShortfall > 0) {
+                                <span class="text-red-700 font-semibold">{{ covSf.totalShortfall | number:'1.2-2' }}</span>
+                                @if (covSf.worstCurrency) { <span class="text-[10px] text-gray-500 ml-1">{{ covSf.worstCurrency }}</span> }
+                              } @else {
+                                <span class="text-gray-300">—</span>
+                              }
+                            </td>
+                          }
                           <td class="px-6 py-2">
                             <div class="flex items-center gap-1.5">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">

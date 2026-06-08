@@ -38,7 +38,7 @@
 
           <!-- Step 1: Configuration -->
           @if (currentStep() === 1) {
-            <p class="text-sm text-gray-500 mb-2">Select the service type, verification level, and regulator.</p>
+            <p class="text-sm text-gray-500 mb-2">Select the service type and regulator.</p>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Service Type</label>
               <select formControlName="serviceType"
@@ -54,21 +54,41 @@
                 <p class="mt-1 text-xs text-red-600">Service type is required</p>
               }
             </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Verification Level</label>
-              <select formControlName="verificationLevel"
-                class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                [class.border-red-500]="addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.invalid"
-                [class.border-gray-300]="!(addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.invalid)">
-                <option value="" disabled selected hidden>Select verification level...</option>
-                @for (level of verificationLevels(); track level.variableId) {
-                  <option [value]="level.variableId">{{ level.name }}</option>
+            @if (isServiceProvider()) {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Provider Type</label>
+                <select formControlName="providerType"
+                  class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  [class.border-red-500]="addForm.get('providerType')?.touched && addForm.get('providerType')?.invalid"
+                  [class.border-gray-300]="!(addForm.get('providerType')?.touched && addForm.get('providerType')?.invalid)">
+                  <option value="" disabled selected hidden>Select provider type...</option>
+                  @for (pt of providerTypes(); track pt.variableId) {
+                    <option [value]="pt.variableId">{{ pt.name }}</option>
+                  }
+                </select>
+                <p class="mt-1 text-xs text-gray-400">Your regulator confirms this before the service is listed as a {{ getProviderTypeName() || 'provider' }}.</p>
+                @if (addForm.get('providerType')?.touched && addForm.get('providerType')?.hasError('required')) {
+                  <p class="mt-1 text-xs text-red-600">Provider type is required</p>
                 }
-              </select>
-              @if (addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.hasError('required')) {
-                <p class="mt-1 text-xs text-red-600">Verification level is required</p>
-              }
-            </div>
+              </div>
+            }
+            @if (isTokenIssuer()) {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Verification Level</label>
+                <select formControlName="verificationLevel"
+                  class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  [class.border-red-500]="addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.invalid"
+                  [class.border-gray-300]="!(addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.invalid)">
+                  <option value="" disabled selected hidden>Select verification level...</option>
+                  @for (level of verificationLevels(); track level.variableId) {
+                    <option [value]="level.variableId">{{ level.name }}</option>
+                  }
+                </select>
+                @if (addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.hasError('required')) {
+                  <p class="mt-1 text-xs text-red-600">Verification level is required</p>
+                }
+              </div>
+            }
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Regulator</label>
               <select formControlName="regulator"
@@ -213,10 +233,18 @@
                   <span class="text-gray-500">Service Type</span>
                   <span class="text-black font-medium">{{ getServiceTypeName() }}</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-500">Verification Level</span>
-                  <span class="text-black font-medium">{{ getVerificationLevelName() }}</span>
-                </div>
+                @if (isServiceProvider()) {
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Provider Type</span>
+                    <span class="text-black font-medium">{{ getProviderTypeName() }} <span class="text-amber-600">(pending regulator confirmation)</span></span>
+                  </div>
+                }
+                @if (isTokenIssuer()) {
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Verification Level</span>
+                    <span class="text-black font-medium">{{ getVerificationLevelName() }}</span>
+                  </div>
+                }
                 <div class="flex justify-between">
                   <span class="text-gray-500">Regulator</span>
                   <span class="text-black font-medium">{{ getRegulatorDisplay() }}</span>

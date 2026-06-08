@@ -177,9 +177,11 @@ export class ClaimPage implements OnInit {
         const didAddress = entityInfo?.didAddress;
         if (didAddress && !/^0x0+$/.test(didAddress)) {
           const DID_SESSION_DURATION = 5 * 60 * 1000; // 5 minutes — only used to bridge claim()
-          const idPayload = await this.ethersService.createIdentityLoginPayload(
-            didAddress, this.email(), this.otp(), DID_SESSION_DURATION, this.bootstrapSalt(), true
-          );
+          // Fetch the DID's nonce + commitment via the API so proof generation never reads the RPC node.
+          const idCredentials = await this.apiService.vaultIdentityCredentialsData(didAddress);
+          const idPayload = idCredentials ? await this.ethersService.createIdentityLoginPayload(
+            didAddress, this.email(), this.otp(), DID_SESSION_DURATION, this.bootstrapSalt(), true, idCredentials
+          ) : null;
           if (idPayload) {
             const didRes = await this.apiService.vaultIdentityAdminClaim({ ...idPayload, newCommitment });
             if (didRes && didRes.error) console.warn('DID claim returned error:', didRes.error);

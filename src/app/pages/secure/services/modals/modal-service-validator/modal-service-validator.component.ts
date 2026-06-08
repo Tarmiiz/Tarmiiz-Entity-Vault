@@ -34,10 +34,14 @@ export class ModalServiceValidatorComponent {
   }
 
   async loadValidators() {
-    const data = await this.apiService.vaultGetValidators(1, 50);
+    const [data, curated] = await Promise.all([
+      this.apiService.vaultGetValidators(1, 50),
+      this.apiService.vaultGetServiceProviders(1, 'active'),
+    ]);
     if (data?.validators) {
       const level = this.validatorService.verificationLevel();
-      this.validators.set(data.validators.filter((v: any) => v.state === 2 && v.validationLevel >= level));
+      const curatedSet = new Set((curated?.providers ?? []).map((p: any) => p.address.toLowerCase()));
+      this.validators.set(data.validators.filter((v: any) => v.state === 2 && v.validationLevel >= level && curatedSet.has(v.address.toLowerCase())));
     }
   }
 

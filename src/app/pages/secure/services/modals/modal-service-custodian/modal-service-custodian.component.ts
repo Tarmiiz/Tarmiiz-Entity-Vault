@@ -41,9 +41,13 @@ export class ModalServiceCustodianComponent {
       this.custodians.set([]);
       return;
     }
-    const data = await this.apiService.vaultGetEndorsedCustodians(regulator, 1, 50);
+    const [data, curated] = await Promise.all([
+      this.apiService.vaultGetEndorsedCustodians(regulator, 1, 50),
+      this.apiService.vaultGetServiceProviders(3, 'active'),
+    ]);
     if (data?.custodians) {
-      this.custodians.set(data.custodians.filter((c: any) => c.state === 2 || c.state === true || c.state === 1));
+      const curatedSet = new Set((curated?.providers ?? []).map((p: any) => p.address.toLowerCase()));
+      this.custodians.set(data.custodians.filter((c: any) => (c.state === 2 || c.state === true || c.state === 1) && curatedSet.has(c.address.toLowerCase())));
     } else {
       this.custodians.set([]);
     }

@@ -54,8 +54,12 @@ export class ListPage implements OnInit {
       this.apiService.vaultGetGlobalVariablesList('Document Type'),
       this.apiService.vaultGetGlobalVariablesList('Document State'),
     ]);
-    if (typesRes?.variables)  this.docTypes.set(typesRes.variables as GlobalVariable[]);
-    if (statesRes?.variables) this.docStates.set(statesRes.variables as GlobalVariable[]);
+    // API returns raw snake_case rows (`variable_id`); map to the camelCase model so
+    // `track v.variableId` gets a real key (else every option keys to "" → NG0955).
+    const map = (rows: any[]): GlobalVariable[] =>
+      (rows || []).map(v => new GlobalVariable(v.category, Number(v.variable_id), v.name, !!v.visible));
+    if (typesRes?.variables)  this.docTypes.set(map(typesRes.variables));
+    if (statesRes?.variables) this.docStates.set(map(statesRes.variables));
   }
 
   async list() {

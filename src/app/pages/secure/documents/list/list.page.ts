@@ -59,8 +59,12 @@ export class ListPage implements OnInit {
       this.apiService.vaultGetGlobalVariablesList('Document Type'),
       this.apiService.vaultGetGlobalVariablesList('Document State'),
     ]);
-    if (typesRes?.variables)  this.docTypes.set(typesRes.variables as GlobalVariable[]);
-    if (statesRes?.variables) this.docStates.set(statesRes.variables as GlobalVariable[]);
+    // API returns raw snake_case rows (`variable_id`); map to the camelCase model so
+    // `track v.variableId` gets a real key (else every option keys to "" → NG0955).
+    const map = (rows: any[]): GlobalVariable[] =>
+      (rows || []).map(v => new GlobalVariable(v.category, Number(v.variable_id), v.name, !!v.visible));
+    if (typesRes?.variables)  this.docTypes.set(map(typesRes.variables));
+    if (statesRes?.variables) this.docStates.set(map(statesRes.variables));
   }
 
   async checkIpfs() {
@@ -174,16 +178,9 @@ export class ListPage implements OnInit {
   }
 
   viewShared(share: DocumentShare) {
-    // Inbound shares live on another template — we can't navigate to our local details page for
-    // them (it'd 404). Fall back to viewing the file stream directly.
-    this.openSharedFile(share);
-  }
-
-  async openSharedFile(share: DocumentShare) {
-    // The /documents/:id/file endpoint is scoped to our entity's docs, so inbound shares don't
-    // resolve there. This is a placeholder — cross-template file viewing requires the service /
-    // asset / subscription file endpoints which are a deferred follow-up.
-    this.alertService.show('Coming soon', 'Viewing inbound shared files requires the per-template file endpoints (deferred).');
+    // Open the read-only shared-document details (title / description / type / CID + View File),
+    // mirroring "My Documents" details so the recipient can read the description, not just the file.
+    this.router.navigate(['/authorized/documents/shared/' + share.ownerAddress + '/' + share.documentId]);
   }
 
   async onAddClick() {

@@ -17,6 +17,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { Asset, AssetTransaction, Service, Subscription, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
 import { ModalServiceStateComponent } from "../modals/modal-service-state/modal-service-state.component";
@@ -32,6 +33,8 @@ import { ModalServiceCustodianService, SELF_CUSTODY_SENTINEL } from '../modals/m
 import { ModalServiceCustodianComponent } from '../modals/modal-service-custodian/modal-service-custodian.component';
 import { ModalServiceFeeConfigService } from '../modals/modal-service-fee-config/modal-service-fee-config.service';
 import { ModalServiceFeeConfigComponent } from '../modals/modal-service-fee-config/modal-service-fee-config.component';
+import { MetadataEditModalService } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.service';
+import { MetadataEditModalComponent } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
@@ -55,6 +58,7 @@ import { LiveIndicatorComponent } from '../../../../shared/components/live-indic
     ModalServicePaymentProcessorComponent,
     ModalServiceCustodianComponent,
     ModalServiceFeeConfigComponent,
+    MetadataEditModalComponent,
     DocumentsTabComponent,
     LiveIndicatorComponent, TranslatePipe,
 ]
@@ -73,9 +77,13 @@ export class DetailsPage implements OnInit {
   private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
   private custodianModalService = inject(ModalServiceCustodianService);
   private feeConfigModal = inject(ModalServiceFeeConfigService);
+  private metadataEditModal = inject(MetadataEditModalService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
+  private features = inject(FeaturesService);
+
+  get isServiceProvider() { return this.features.isServiceProvider(); }
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -228,7 +236,9 @@ export class DetailsPage implements OnInit {
     const requested = this.route.snapshot.queryParamMap.get('tab') as
       ('overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
     const allowed = ['overview', 'info', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
-    const initialTab = requested && (allowed as readonly string[]).includes(requested) ? requested : 'overview';
+    let initialTab = requested && (allowed as readonly string[]).includes(requested) ? requested : 'overview';
+    // Overview is hidden for service-provider tenants — fall back to Information.
+    if (this.isServiceProvider && initialTab === 'overview') initialTab = 'info';
     this.activeTab.set(initialTab);
     await this.reload();
     if (initialTab === 'liquidity') this.getLiquidity();
@@ -285,6 +295,8 @@ export class DetailsPage implements OnInit {
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
       serviceType: raw.service_type ?? 0,
       serviceTypeName: raw.service_type_name ?? '',
+      providerType: raw.provider_type ?? 0,
+      providerTypeName: raw.provider_type_name ?? '',
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
@@ -541,6 +553,42 @@ export class DetailsPage implements OnInit {
     } catch (error) {
       console.error('Failed to change visibility', error);
       this.alertService.show('Update Failed', 'There was an error updating the service visibility.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async openEditMetadataModal() {
+    const currentService = this.service();
+    if (!currentService) return;
+
+    // Parse the service's metadata JSON string into { description, entries } for the editor.
+    let description = '';
+    const entries: [string, string][] = [];
+    try {
+      const obj = JSON.parse(currentService.metadata || '{}');
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        description = typeof obj.description === 'string' ? obj.description : '';
+        for (const [k, val] of Object.entries(obj)) {
+          if (k === 'description') continue;
+          entries.push([k, typeof val === 'string' ? val : JSON.stringify(val)]);
+        }
+      }
+    } catch (_) { /* malformed metadata → start blank */ }
+
+    const result = await this.metadataEditModal.show({ title: 'Edit Service Metadata', description, entries });
+    if (!result) return;
+    this.loadingService.show('Updating metadata...');
+    try {
+      const res = await this.apiService.vaultUpdateServiceMetadata(currentService.address, result);
+      if (res?.error) {
+        this.alertService.show('Error', res.error || 'Failed to update metadata.');
+      } else {
+        await this.getServiceDetails();
+      }
+    } catch (error) {
+      console.error('Failed to update metadata', error);
+      this.alertService.show('Error', 'An unexpected error occurred.');
     } finally {
       this.loadingService.hide();
     }

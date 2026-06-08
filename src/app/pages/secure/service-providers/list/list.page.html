@@ -1,0 +1,116 @@
+<app-header [title]="'Service Providers'"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Search</label>
+        <input
+          type="text"
+          placeholder="Name, address, type..."
+          [ngModel]="filterSearch()"
+          (ngModelChange)="filterSearch.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">Type</label>
+        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+          <option value="">All</option>
+          <option value="1">Validator</option>
+          <option value="2">Payment Processor</option>
+          <option value="3">Custodian</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">State</label>
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
+          <option value="">All</option>
+          <option value="1">Active</option>
+          <option value="2">Suspended</option>
+        </select>
+      </div>
+      <div class="flex flex-col justify-end">
+        <button (click)="clearFilters()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Clear
+        </button>
+      </div>
+      @if (userInfo && userInfo.role === 1 && entityActive) {
+      <div class="flex ml-auto items-end">
+        <button (click)="openAddModal()"
+          class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+          + Add Service Provider
+        </button>
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Service Providers Table -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th scope="col" class="px-6 py-2">#</th>
+            <th scope="col" class="px-6 py-2">Name</th>
+            <th scope="col" class="px-6 py-2">Address</th>
+            <th scope="col" class="px-6 py-2">Type</th>
+            <th scope="col" class="px-6 py-2">State</th>
+            <th scope="col" class="px-6 py-2 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @if (loadingData) {}
+          @else {
+            @if (filteredProviders().length === 0) {
+              <tr class="bg-white border-b">
+                <td class="px-6 py-2" colspan="6">no data</td>
+              </tr>
+            }
+            @else {
+              @for (p of filteredProviders(); track p.address; let i = $index; let isEven = $even) {
+                <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                  <td class="px-6 py-2">{{ i + 1 }}</td>
+                  <td class="px-6 py-2">{{ p.name || '—' }}</td>
+                  <td class="px-6 py-2 font-mono">{{ p.address }}</td>
+                  <td class="px-6 py-2">{{ p.spTypeName }}</td>
+                  <td class="px-6 py-2">
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(p.state)">
+                      {{ p.stateName }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-2 text-right">
+                    @if (userInfo && userInfo.role === 1 && entityActive) {
+                      @if (p.state === 1) {
+                        <button (click)="suspend(p)"
+                          class="text-xs px-3 py-1.5 rounded border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors">
+                          Suspend
+                        </button>
+                      } @else {
+                        <button (click)="reactivate(p)"
+                          class="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 transition-colors">
+                          Re-activate
+                        </button>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center px-4 py-2 border-t">
+      <p class="text-xs font-medium text-gray-800">Showing {{ filteredProviders().length }} of Total {{ providers().length }} Service Providers</p>
+    </div>
+  </div>
+
+</div>
+
+<app-modal-sp-add></app-modal-sp-add>

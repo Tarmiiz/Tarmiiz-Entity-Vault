@@ -221,7 +221,7 @@
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Creator</p>
                   <p class="text-base text-gray-700">{{ nameFor(t.creator) || '—' }}</p>
-                  @if (t.createdByUserId && userByHash()[t.createdByUserId]; as creatorUser) {
+                  @if (isEntityCreator() && t.createdByUserId && userByHash()[t.createdByUserId]; as creatorUser) {
                     <p class="text-xs text-gray-600 mt-0.5">by {{ creatorUser.name }}</p>
                   }
                   <p class="text-xs text-gray-500 mt-1">

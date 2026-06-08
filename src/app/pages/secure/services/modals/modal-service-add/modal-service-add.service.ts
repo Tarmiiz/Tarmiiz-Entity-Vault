@@ -8,6 +8,8 @@ export interface AddServiceData {
   mobile: string;
   verificationLevel: number;
   serviceType: number;
+  // Entity-declared sub-type for service providers (1=Validator,2=PaymentProcessor,3=Custodian,4=DataProvider; 0=issuer).
+  providerType: number;
   regulator: string;
   validator: string;
   paymentProcessor: string;

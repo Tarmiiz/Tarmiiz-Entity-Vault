@@ -31,15 +31,17 @@
     <div class="bg-white rounded-t-lg shadow-md p-2">
       <div class="flex border-b border-gray-200">
 
-        <button (click)="setTab('overview')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'overview'"
-          [class.border-b-2]="activeTab() === 'overview'"
-          [class.border-blue-600]="activeTab() === 'overview'"
-          [class.bg-blue-600]="activeTab() === 'overview'"
-        >
-          Overview
-        </button>
+        @if (!isServiceProvider) {
+          <button (click)="setTab('overview')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'overview'"
+            [class.border-b-2]="activeTab() === 'overview'"
+            [class.border-blue-600]="activeTab() === 'overview'"
+            [class.bg-blue-600]="activeTab() === 'overview'"
+          >
+            Overview
+          </button>
+        }
         <button (click)="setTab('info')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'info'"
@@ -122,11 +124,6 @@
                   {{ v.visibility === 2 ? 'Private' : 'Public' }}
                 </span>
                 <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ v.stateName }}</span>
-                <button type="button"
-                  class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
-                  (click)="onChangeVisibility()">
-                  Change Visibility
-                </button>
               </div>
             </div>
             @if (suspensionReason()) {
@@ -235,6 +232,10 @@
                       Suspended
                     </span>
                   }
+                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                    [class]="v.visibility === 2 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
+                    {{ v.visibility === 2 ? 'Private' : 'Public' }}
+                  </span>
                   <span
                     class="px-4 py-1.5 text-sm font-semibold rounded-full"
                     [class]="getStateClass(v.state)"
@@ -379,6 +380,14 @@
                       Change Custodian
                     </button>
                   }
+                  <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-600 text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-600">
+                    Edit Metadata
+                  </button>
+                  <button (click)="onChangeVisibility()" [disabled]="!entityActive"
+                    class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
+                    Change Visibility
+                  </button>
                   <button (click)="openChangeStateModal()" [disabled]="!entityActive"
                     class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                     Change State
@@ -952,4 +961,5 @@
 <app-modal-service-payment-processor></app-modal-service-payment-processor>
 <app-modal-service-custodian></app-modal-service-custodian>
 <app-modal-service-fee-config></app-modal-service-fee-config>
+<app-metadata-edit-modal></app-metadata-edit-modal>
 <app-modal-transaction-info></app-modal-transaction-info>

@@ -147,7 +147,9 @@
     "myProfile":         "My Profile",
     "myLogs":            "My Logs",
     "systemLogs":        "System Logs",
-    "approvals":         "Approvals"
+    "approvals":         "Approvals",
+    "custody":           "Custody",
+    "menuSettings":      "Menu Settings"
   },
   "login": {
     "title":         "Sign In",

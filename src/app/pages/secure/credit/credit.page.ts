@@ -11,6 +11,10 @@ import { Subscription as RxSubscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { LiveIndicatorComponent } from '../../../shared/components/live-indicator/live-indicator.component';
+import { ModalBankTransferComponent } from './modals/modal-bank-transfer/modal-bank-transfer.component';
+import { ModalBankTransferService } from './modals/modal-bank-transfer/modal-bank-transfer.service';
+import { ModalRouteTransferComponent } from './modals/modal-route-transfer/modal-route-transfer.component';
+import { ModalRouteTransferService } from './modals/modal-route-transfer/modal-route-transfer.service';
 
 import { ApiService } from '../../../shared/services/api.service';
 import { AuthService } from '../../../shared/services/auth.service';
@@ -37,7 +41,7 @@ interface CreditRow {
   templateUrl: './credit.page.html',
   styleUrls: ['./credit.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, ModalBankTransferComponent, ModalRouteTransferComponent],
 })
 export class CreditPage implements OnInit {
   private apiService = inject(ApiService);
@@ -47,6 +51,8 @@ export class CreditPage implements OnInit {
   private loadingService = inject(LoadingService);
   utils = inject(UtilsService);
   private auditService = inject(AuditService);
+  bankTransferModal = inject(ModalBankTransferService);
+  routeTransferModal = inject(ModalRouteTransferService);
 
   loading = signal(false);
   refreshing = signal(false);
@@ -184,6 +190,16 @@ export class CreditPage implements OnInit {
 
   viewSubscription(address: string) {
     this.router.navigate(['/authorized/subscriptions/details/' + address]);
+  }
+
+  async openBankTransfer() {
+    const r = await this.bankTransferModal.show({ currencies: this.uniqueCurrencies() });
+    if (r?.ok) await this.load(true);
+  }
+
+  async openRouteTransfer() {
+    const r = await this.routeTransferModal.show({ currencies: this.uniqueCurrencies() });
+    if (r?.ok) await this.load(true);
   }
 
   exportExcel() {

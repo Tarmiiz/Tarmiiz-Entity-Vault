@@ -34,9 +34,13 @@ export class ModalServicePaymentProcessorComponent {
   }
 
   async loadPaymentProcessors() {
-    const data = await this.apiService.vaultGetPaymentProcessors(1, 50);
+    const [data, curated] = await Promise.all([
+      this.apiService.vaultGetPaymentProcessors(1, 50),
+      this.apiService.vaultGetServiceProviders(2, 'active'),
+    ]);
     if (data?.paymentProcessors) {
-      this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2));
+      const curatedSet = new Set((curated?.providers ?? []).map((p: any) => p.address.toLowerCase()));
+      this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2 && curatedSet.has(s.address.toLowerCase())));
     }
   }
 

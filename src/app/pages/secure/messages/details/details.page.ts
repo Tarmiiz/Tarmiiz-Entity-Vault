@@ -99,7 +99,6 @@ export class DetailsPage implements OnInit, OnDestroy {
       this.messages.set(msgsResp.messages);
       this.resolveMessageTexts(msgsResp.messages);
       this.resolveMessageSenders(msgsResp.messages);
-      this.resolveUserAttribution(msgsResp.messages.map((m: ConnectMessage) => m.createdByUserId).filter(Boolean) as string[]);
     }
     } finally {
       if (silent) this.refreshing.set(false);
@@ -137,9 +136,9 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   senderLabel(m: ConnectMessage): string {
     if (this.isMine(m)) return 'me';
-    const partyName = this.nameFor(m.sender) || ((m.sender || '').slice(0, 8) + '…');
-    const user = m.createdByUserId ? this.userByHash()[m.createdByUserId] : null;
-    return user ? `${user.name} (${partyName})` : partyName;
+    // createdByUserId is a tenant-local user id and cannot be resolved for an
+    // external sender — show the directory party name, truncated address fallback.
+    return this.nameFor(m.sender) || ((m.sender || '').slice(0, 8) + '…');
   }
 
   private async resolveDirectory(t: ConnectThread) {

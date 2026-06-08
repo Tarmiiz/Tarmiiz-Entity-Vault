@@ -1,0 +1,100 @@
+import { Component, OnInit, signal, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
+
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { ApiService } from '../../../../shared/services/api.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
+import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+
+interface MenuConfigRow {
+  menuKey: string;
+  enabled: boolean;
+  updatedAt: number | null;
+  updatedByUserId: string | null;
+}
+
+// Human labels for the toggleable menu keys — keep in sync with db.MENU_ITEMS.
+const MENU_LABELS: Record<string, string> = {
+  assets:         'Assets',
+  services:       'Services',
+  'service-providers': 'Service Providers',
+  custody:        'Custody',
+  subscriptions:  'Subscriptions',
+  transactions:   'Transactions',
+  credit:         'Credit',
+  analytics:      'Analytics',
+  dex:            'DEX',
+  documents:      'Documents',
+  'signer-keys':  'Signer Keys',
+  messages:       'Messages',
+  variables:      'System Variables',
+  approvals:      'Approvals',
+  logs:           'Audit Trail',
+};
+
+@Component({
+  selector: 'app-menu-settings',
+  templateUrl: './menu.page.html',
+  styleUrls: ['./menu.page.scss'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+})
+export class MenuSettingsPage implements OnInit {
+  private apiService     = inject(ApiService);
+  private features       = inject(FeaturesService);
+  private loadingService = inject(LoadingService);
+  private alertService   = inject(AlertService);
+
+  rows    = signal<MenuConfigRow[]>([]);
+  loading = signal(false);
+  saving  = signal<string | null>(null); // menu key currently saving
+
+  labelFor(key: string): string { return MENU_LABELS[key] || key; }
+
+  ngOnInit() {}
+
+  async ionViewDidEnter() {
+    await this.load();
+  }
+
+  async load() {
+    this.loading.set(true);
+    try {
+      const rows = (await this.apiService.vaultMenuConfigList())
+        .filter(r => this.features.modeAllows(r.menuKey)); // hide no-op toggles for the entity type
+      rows.sort((a, b) => this.labelFor(a.menuKey).localeCompare(this.labelFor(b.menuKey)));
+      this.rows.set(rows);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async toggle(row: MenuConfigRow, enabled: boolean) {
+    if (this.saving()) return;
+    const verb = enabled ? 'shown in the menu' : 'hidden from the menu and blocked';
+    const ok = await this.alertService.show(
+      'Confirm menu change',
+      `${this.labelFor(row.menuKey)} will be ${verb} for this entity. Continue?`,
+      'Save',
+    );
+    if (!ok) return;
+    this.saving.set(row.menuKey);
+    this.loadingService.show('Saving...');
+    try {
+      const res = await this.apiService.vaultMenuConfigSet(row.menuKey, enabled);
+      if (res?.error) {
+        this.alertService.show('Error', res.error);
+      } else {
+        // Refresh the live feature map so the sidebar reflects the change without a reload.
+        await this.features.refresh();
+        await this.load();
+      }
+    } finally {
+      this.loadingService.hide();
+      this.saving.set(null);
+    }
+  }
+}

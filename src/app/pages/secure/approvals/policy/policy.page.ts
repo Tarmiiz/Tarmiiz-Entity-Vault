@@ -19,6 +19,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   subscription_state:  'Subscription: state change',
   asset_state:         'Asset: state change',
   asset_service_state: 'Asset-service: per-service state',
+  entity_sp_add:       'Service provider: add',
+  entity_sp_state:     'Service provider: suspend / re-activate',
 };
 
 @Component({

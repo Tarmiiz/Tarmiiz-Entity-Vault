@@ -147,7 +147,9 @@
     "myProfile":         "ملفي الشخصي",
     "myLogs":            "سجلاتي",
     "systemLogs":        "سجلات النظام",
-    "approvals":         "الموافقات"
+    "approvals":         "الموافقات",
+    "custody":           "الحفظ",
+    "menuSettings":      "إعدادات القائمة"
   },
   "login": {
     "title":         "تسجيل الدخول",

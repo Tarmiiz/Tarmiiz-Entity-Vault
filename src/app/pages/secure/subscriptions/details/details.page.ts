@@ -796,6 +796,10 @@ export class DetailsPage implements OnInit {
     8: 'Cross Service Settle',
     9: 'Peer To Peer',
     10: 'Regulator Transfer',
+    11: 'Service Settle Fee',
+    12: 'Cross Service Settle Fee',
+    13: 'Bank Transfer',
+    14: 'Identity Route',
   };
   private originMap: Record<number, string> = {};
 

@@ -128,6 +128,74 @@
   </div>
 </div>
 
+<!-- Shared with this template (inbound) — docs a foreign party shared directly with this service/asset/subscription -->
+@if (inboundDocs().length > 0) {
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-4">
+    <div class="px-4 py-3 border-b">
+      <p class="text-sm font-semibold text-gray-800">Shared with this {{ resourceType }}</p>
+      <p class="text-xs text-gray-500">Documents another party shared directly with this {{ resourceType }} (read-only).</p>
+    </div>
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th scope="col" class="px-6 py-2">#</th>
+            <th scope="col" class="px-6 py-2">Title</th>
+            <th scope="col" class="px-6 py-2">From</th>
+            <th scope="col" class="px-6 py-2">Type</th>
+            <th scope="col" class="px-6 py-2">Signed</th>
+            <th scope="col" class="px-6 py-2">Shared At</th>
+            <th scope="col" class="px-6 py-2 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @for (doc of inboundDocs(); track doc.owner + ':' + doc.documentId; let i = $index; let isEven = $even) {
+            <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+              <td class="px-6 py-2">{{ i + 1 }}</td>
+              <td class="px-6 py-2 font-medium">{{ doc.title || '—' }}</td>
+              <td class="px-6 py-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-800">{{ doc.ownerName }}</span>
+                  @if (inboundKindLabel(doc.ownerPartyType); as label) {
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium" [class]="inboundKindBadgeClass(doc.ownerPartyType)">{{ label }}</span>
+                  }
+                </div>
+              </td>
+              <td class="px-6 py-2">
+                <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(doc.documentType)">
+                  {{ docTypeNames[doc.documentType] }}
+                </span>
+              </td>
+              <td class="px-6 py-2">
+                @if (doc.signed) {
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Signed by you</span>
+                } @else {
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">—</span>
+                }
+              </td>
+              <td class="px-6 py-2">{{ utils.formatDate(doc.sharedAt || doc.createdAt) }}</td>
+              <td class="px-6 py-2 text-right">
+                <div class="flex gap-1 justify-end">
+                  <button (click)="viewInbound(doc)"
+                    class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                    View
+                  </button>
+                  @if (canSignInbound(doc)) {
+                    <button (click)="signInbound(doc)"
+                      class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                      Sign
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
 <!-- Add / Edit / View Modal -->
 @if (modalVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"

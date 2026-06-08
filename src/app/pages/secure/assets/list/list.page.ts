@@ -61,18 +61,12 @@ export class ListPage implements OnInit {
 
   filterType = signal<string>('');
   filterState = signal<string>('');
-  filterService = signal<string>('');
   filterCurrency = signal<string>('');
   filterCirculatingOp = signal<'' | 'gt' | 'lt'>('');
   filterCirculatingAmt = signal<number | null>(null);
 
   uniqueTypes = computed(() =>
-    [...new Set(this.assets().map(a => a.assetTypeName).filter(Boolean))].sort()
-  );
-  uniqueServices = computed(() =>
-    [...new Map(
-      this.assets().flatMap(a => a.services.map(s => [s.service, s.serviceName] as [string, string]))
-    ).entries()].sort((a, b) => a[1].localeCompare(b[1]))
+    [...new Set(this.assets().map(a => a.supplyModeName).filter(Boolean))].sort()
   );
 
   uniqueCurrencies = computed(() =>
@@ -82,14 +76,12 @@ export class ListPage implements OnInit {
   filteredAssets = computed(() => {
     const type = this.filterType();
     const state = this.filterState();
-    const service = this.filterService();
     const currency = this.filterCurrency();
     const op = this.filterCirculatingOp();
     const amt = this.filterCirculatingAmt();
     return this.assets().filter(a => {
-      if (type && a.assetTypeName !== type) return false;
+      if (type && a.supplyModeName !== type) return false;
       if (state && String(a.state) !== state) return false;
-      if (service && !a.services.some(s => s.service === service)) return false;
       if (currency && a.currencyCode !== currency) return false;
       if (op && amt !== null) {
         if (op === 'gt' && a.circulating <= amt) return false;
@@ -102,7 +94,6 @@ export class ListPage implements OnInit {
   clearFilters() {
     this.filterType.set('');
     this.filterState.set('');
-    this.filterService.set('');
     this.filterCurrency.set('');
     this.filterCirculatingOp.set('');
     this.filterCirculatingAmt.set(null);
@@ -242,7 +233,11 @@ export class ListPage implements OnInit {
         supplyMode: data.supplyMode,
         priceMode: data.priceMode,
         creditSettlement: data.creditSettlement,
-        ...(data.supplyMode === 1 ? { assetType: data.assetType, initialSupply: data.initialSupply } : {}),
+        // assetType (real-world category) is part of the on-chain InitParams struct for BOTH supply
+        // modes and is now collected in the modal for every asset. `?? 0` guards against NaN, which
+        // ethers rejects when encoding the uint8 ("underflow value=NaN").
+        assetType: Number.isFinite(data.assetType) ? data.assetType : 0,
+        ...(data.supplyMode === 1 ? { initialSupply: data.initialSupply } : {}),
       });
       if (result?.type === 'success') {
         await this.listAssets();
@@ -265,8 +260,7 @@ export class ListPage implements OnInit {
       'Name': a.name,
       'Symbol': a.symbol,
       'Currency': a.currencyCode,
-      'Service': a.services.length > 0 ? a.services[0].serviceName : 'None',
-      'Type': a.assetTypeName,
+      'Type': a.supplyModeName,
       'Circulating': a.circulating,
       'State': a.stateName,
       'Suspended': a.suspended ? 'Yes' : 'No',
@@ -290,16 +284,12 @@ export class ListPage implements OnInit {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
 
-    const svcLabel = this.filterService()
-      ? (this.uniqueServices().find(s => s[0] === this.filterService())?.[1] ?? this.filterService())
-      : 'None';
     const circOp = this.filterCirculatingOp();
     const circAmt = this.filterCirculatingAmt();
     const circLabel = circOp && circAmt !== null ? `${circOp === 'gt' ? '>' : '<'} ${circAmt}` : 'None';
     const filterParts = [
       `Type: ${this.filterType() || 'None'}`,
       `State: ${this.filterState() || 'None'}`,
-      `Service: ${svcLabel}`,
       `Currency: ${this.filterCurrency() || 'None'}`,
       `Circulating: ${circLabel}`,
     ];
@@ -313,15 +303,14 @@ export class ListPage implements OnInit {
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      columnStyles: { 6: { halign: 'right' } },
-      head: [[ '#', 'Name', 'Symbol', 'Currency', 'Service', 'Type', { content: 'Circulating', styles: { halign: 'right' } }, 'State' ]],
+      columnStyles: { 5: { halign: 'right' } },
+      head: [[ '#', 'Name', 'Symbol', 'Currency', 'Type', { content: 'Circulating', styles: { halign: 'right' } }, 'State' ]],
       body: assets.map((a, i) => [
         i + 1,
         a.name,
         a.symbol,
         a.currencyCode,
-        a.services.length > 0 ? a.services[0].serviceName : 'None',
-        a.assetTypeName,
+        a.supplyModeName ?? (a.supplyMode === 2 ? 'Dynamic' : 'Fixed'),
         this.utils.formatTokens(a.circulating),
         a.suspended ? `${a.stateName} (Suspended)` : a.stateName,
       ]),

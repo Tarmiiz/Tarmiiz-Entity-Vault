@@ -24,10 +24,9 @@ export class ModalAssetAddComponent {
   services = signal<{ address: string; name: string; paymentProcessor: string | null }[]>([]);
   countries = signal<{ countryCode: number; nameShort: string; currencyCode: string }[]>([]);
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
-  // Supply modes — the 1 = Fixed / 2 = Dynamic choice that used to be `tokenType` on the
-  // two leaf templates. The on-chain T20Template carries it as immutable `_supplyMode`.
-  // The Global Variables registry still exposes these under the 'Asset Token Type' category
-  // for backward compat; the API translates between the two names.
+  // Supply modes — the 1 = Fixed / 2 = Dynamic choice that the on-chain T20Template carries
+  // as immutable `_supplyMode`. Sourced from the 'Asset Supply Mode' global category
+  // (distinct from 'Asset Token Type', which is the T20/T3643 standard).
   supplyModes = signal<{ id: number; name: string }[]>([]);
   assetTypes = signal<{ id: number; name: string }[]>([]);
   priceModes = signal<{ id: number; name: string }[]>([
@@ -72,13 +71,15 @@ export class ModalAssetAddComponent {
     // Replaces the old leaf-template-encoded `tokenType` choice.
     supplyMode: ['', Validators.required],
     priceMode: ['2', Validators.required],
-    assetType: [''],
+    // Asset Type (real-world category) applies to ALL assets regardless of supply mode.
+    assetType: ['', Validators.required],
     initialSupply: [''],
     description: ['', Validators.required],
     service: ['', Validators.required],
     currency: ['', Validators.required],
     regulator: ['', Validators.required],
-    creditSettlement: [false],
+    // Inverted UI control: checked = opt OUT of credit settlement. Credit settlement is the default (unchecked).
+    noCreditSettlement: [false],
     metadata: this.fb.array<FormGroup<{ key: FormControl<string>; value: FormControl<string> }>>([]),
   });
 
@@ -137,7 +138,7 @@ export class ModalAssetAddComponent {
     // Reset and load data each time the modal opens
     effect(() => {
       if (this.addAssetService.isVisible()) {
-        this.addForm.reset({ creditSettlement: false });
+        this.addForm.reset({ noCreditSettlement: false });
         this.metadataRows.clear();
         this.addMetadataRow();
         this.metadataError.set('');
@@ -159,34 +160,32 @@ export class ModalAssetAddComponent {
       this.metadataError.set(this.validateMetadata());
     });
 
-    // Auto-uncheck credit settlement when service changes to one without payment processor
+    // Force "opt out" when service changes to one without payment processor
+    // (credit settlement is impossible without a payment processor).
     this.addForm.get('service')!.valueChanges.subscribe(() => {
       if (!this.selectedServiceHasPaymentProcessor) {
-        this.addForm.get('creditSettlement')!.setValue(false);
+        this.addForm.get('noCreditSettlement')!.setValue(true);
       }
     });
 
     // Conditional validators driven by supplyMode (Fixed vs Dynamic).
+    // Note: assetType is required for ALL supply modes (it's the real-world category),
+    // so it is NOT touched here — only initialSupply + the priceMode default are.
     this.addForm.get('supplyMode')!.valueChanges.subscribe(val => {
-      const assetTypeCtrl = this.addForm.get('assetType')!;
       const initialSupplyCtrl = this.addForm.get('initialSupply')!;
       const priceModeCtrl = this.addForm.get('priceMode')!;
       if (val === '1') {
         // Fixed supply — initialSupply minted to contract at init.
-        assetTypeCtrl.setValidators(Validators.required);
         initialSupplyCtrl.setValidators([Validators.required, Validators.min(0)]);
         // Fixed supply defaults to BidAsk
         priceModeCtrl.setValue('2');
       } else {
         // Dynamic supply — totalSupply starts at 0, mint on subscribe.
-        assetTypeCtrl.clearValidators();
         initialSupplyCtrl.clearValidators();
-        assetTypeCtrl.setValue('');
         initialSupplyCtrl.setValue('');
         // Dynamic supply defaults to Single (NAV-style)
         if (val === '2') priceModeCtrl.setValue('1');
       }
-      assetTypeCtrl.updateValueAndValidity();
       initialSupplyCtrl.updateValueAndValidity();
     });
   }
@@ -194,7 +193,7 @@ export class ModalAssetAddComponent {
   // --- Step navigation ---
 
   private readonly stepFields: Record<number, string[]> = {
-    1: ['tokenType', 'supplyMode', 'priceMode'],
+    1: ['tokenType', 'supplyMode', 'priceMode', 'assetType'],
     2: ['name', 'symbol', 'description'],
     3: [],
     4: ['service', 'currency'],
@@ -206,7 +205,7 @@ export class ModalAssetAddComponent {
     if (step === 6) return this.addForm.valid && !this.metadataError();
     let fields = this.stepFields[step] ?? [];
     if (step === 1 && this.isFixedSupply) {
-      fields = [...fields, 'assetType', 'initialSupply'];
+      fields = [...fields, 'initialSupply'];
     }
     const fieldsValid = fields.every(f => this.addForm.get(f)?.valid ?? true);
     if (step === 3 && this.metadataError()) return false;
@@ -328,16 +327,23 @@ export class ModalAssetAddComponent {
   }
 
   async loadCountriesAndRegulators() {
-    const [countries, entity] = await Promise.all([
+    const [countries, entity, approved] = await Promise.all([
       this.apiService.vaultGetCountries(),
       this.apiService.vaultGetEntityInfo(),
+      this.apiService.vaultGetApprovedCurrencies('active'),
     ]);
     if (countries) {
-      this.countries.set(countries.map((c: any) => ({
-        countryCode: c.country_code,
-        nameShort: c.name_short,
-        currencyCode: c.currency_code,
-      })));
+      // Narrow the currency picker to the entity's regulator-approved currencies — the asset's
+      // currencyCode must be approved or on-chain registerAsset reverts. The picker is country-based
+      // (the country's code doubles as the asset currencyCode), so filter by that code.
+      const approvedSet = new Set((approved?.currencies ?? []).map((c: any) => Number(c.code)));
+      this.countries.set(countries
+        .filter((c: any) => approvedSet.has(Number(c.country_code)))
+        .map((c: any) => ({
+          countryCode: c.country_code,
+          nameShort: c.name_short,
+          currencyCode: c.currency_code,
+        })));
     }
     if (entity) {
       const regulators = await this.apiService.vaultGetRegulatorsByCountry(String(entity.country_code), 0, 100);
@@ -352,10 +358,11 @@ export class ModalAssetAddComponent {
   }
 
   async loadSupplyModesAndAssetTypes() {
-    // The Global Variables registry still exposes the 1=Fixed/2=Dynamic choice under the
-    // 'Asset Token Type' category for backward compat — the modal renders it as 'Supply Mode'.
+    // Supply Mode (1=Fixed / 2=Dynamic) comes from the 'Asset Supply Mode' global category.
+    // NB: do NOT read 'Asset Token Type' here — that category now holds the token *standard*
+    // (T20 / T3643), not the supply mode (relabeled 2026-06-06).
     const [supplyModesRaw, assetTypesRaw] = await Promise.all([
-      this.apiService.vaultGetGlobalVariablesByCategory('Asset Token Type'),
+      this.apiService.vaultGetGlobalVariablesByCategory('Asset Supply Mode'),
       this.apiService.vaultGetGlobalVariablesByCategory('Asset Type'),
     ]);
     if (supplyModesRaw) {
@@ -401,10 +408,12 @@ export class ModalAssetAddComponent {
       tokenType,
       supplyMode,
       priceMode,
-      creditSettlement: formValue.creditSettlement === true,
+      // Asset Type (real-world category) is collected for ALL supply modes.
+      assetType: Number(formValue.assetType),
+      creditSettlement: formValue.noCreditSettlement !== true,
       customMetadata,
+      // Initial supply is Fixed-supply-only (minted to the contract at init).
       ...(supplyMode === 1 ? {
-        assetType: Number(formValue.assetType),
         initialSupply: Number(formValue.initialSupply),
       } : {}),
     };

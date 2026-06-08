@@ -30,16 +30,6 @@
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Service</label>
-        <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
-          <option value="">All</option>
-          @for (s of uniqueServices(); track s[0]) {
-            <option [value]="s[0]">{{ s[1] }}</option>
-          }
-        </select>
-      </div>
-      <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">Currency</label>
         <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
@@ -109,7 +99,6 @@
                   <th scope="col" class="px-6 py-2">Name</th>
                   <th scope="col" class="px-6 py-2">Symbol</th>
                   <th scope="col" class="px-6 py-2">Currency</th>
-                  <th scope="col" class="px-6 py-2">Service</th>
                   <th scope="col" class="px-6 py-2">Type</th>
                   <th scope="col" class="px-6 py-2">Price Mode</th>
                   <th scope="col" class="px-6 py-2">Circulating</th>
@@ -134,8 +123,7 @@
                         <td class="px-6 py-2">{{ data.name }}</td>
                         <td class="px-6 py-2"><span class="badge-symbol">{{ data.symbol }}</span></td>
                         <td class="px-6 py-2"><span class="badge-currency">{{ data.currencyCode }}</span></td>
-                        <td class="px-6 py-2">{{ data.services.length > 0 ? data.services[0].serviceName : 'None' }}</td>
-                        <td class="px-6 py-2">{{ data.assetTypeName }}</td>
+                        <td class="px-6 py-2">{{ data.supplyModeName || (data.supplyMode === 2 ? 'Dynamic' : 'Fixed') }}</td>
                         <td class="px-6 py-2">
                           <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
                             [class]="data.priceMode === 1 ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'">

@@ -5,6 +5,8 @@ export interface AppConfig {
   socketURL: string;
   brandPrimary?: string;
   brandPrimaryHover?: string;
+  // Per-deployment entity-type default view. Absent ⇒ treated as 'issuer' (full access).
+  vaultMode?: 'issuer' | 'service-provider';
 }
 
 const BRAND_DEFAULTS = {

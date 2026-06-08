@@ -9,6 +9,7 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { from, of } from 'rxjs';
 
 import { ApiService } from '../../services/api.service';
+import { AuthService } from '../../services/auth.service';
 import { AlertService } from '../alerts/alert/alert.service';
 import { LoadingService } from '../alerts/loading/loading.service';
 import { UtilsService } from '../../services/utils.service';
@@ -36,6 +37,24 @@ interface DocFormState {
 
 const DOC_TYPE_PUBLIC  = 1;
 const DOC_TYPE_PRIVATE = 2;
+// DirectoryProxy party types: 2=Entity, 3=Regulator, 4=Service, 5=Subscription.
+const DIR_PARTY_REGULATOR = 3;
+
+// A document a foreign party (e.g. a regulator) shared directly with THIS template (the service /
+// asset / subscription this tab is showing). Read-only here; the owner holds the doc.
+interface InboundDoc {
+  documentId: number;
+  owner: string;
+  ownerName: string;
+  ownerPartyType: number;
+  title: string;
+  cid: string;
+  documentType: number;
+  documentState: number;
+  createdAt: number;
+  sharedAt: number;
+  signed: boolean;
+}
 
 @Component({
   selector: 'app-documents-tab',
@@ -50,12 +69,19 @@ export class DocumentsTabComponent implements OnChanges {
   @Input() entityActive = true;
 
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private shareModal = inject(ModalDocumentShareService);
   private signModal = inject(ModalDocumentSignService);
   private destroyRef = inject(DestroyRef);
   utils = inject(UtilsService);
+
+  // Only executive (role 2) users hold signer keys → only they can sign a regulator's inbound doc.
+  isExecutive = () => Number(this.authService.userInfo?.role) === 2;
+
+  // Documents a foreign party shared directly with THIS template (inbound, read-only).
+  inboundDocs = signal<InboundDoc[]>([]);
 
   // Current recipients for the document open in the view modal. Refreshed each time View opens
   // and after every share / unshare so the list stays in sync with on-chain state.
@@ -203,8 +229,122 @@ export class DocumentsTabComponent implements OnChanges {
       const docs: Document[] = (data?.documents ?? []).map((r: any) => this.mapDoc(r));
       this.documents.set(docs);
       this.loadSignedCounts(docs);
+      this.loadInbound();
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  // Docs a foreign party (e.g. a regulator) shared directly with this template. Read AS this template
+  // server-side (double-hop), so the entity's missing ACL membership doesn't block the read.
+  async loadInbound() {
+    this.inboundDocs.set([]);
+    try {
+      const res = await this.apiService.inboundDocumentsList(this.address);
+      const rows: any[] = res?.documents ?? [];
+      if (!rows.length) return;
+
+      // Resolve each distinct owner's directory name/party-type and (when a regulator) which of its
+      // docs THIS tenant has already signed — one submissions call per owner, not per doc.
+      const owners = Array.from(new Set(rows.map(r => String(r.owner).toLowerCase())));
+      const dirMap: Record<string, { name: string; partyType: number }> = {};
+      const signedSets: Record<string, Set<number>> = {};
+      await Promise.all(owners.map(async (o) => {
+        try {
+          const entry = await this.apiService.vaultDirectoryByAddress(o);
+          if (entry) dirMap[o] = { name: entry.name, partyType: Number(entry.partyType || 0) };
+        } catch { /* not in directory */ }
+        try {
+          const sub = await this.apiService.regulatorSubmissionsList(o, 1, 500);
+          signedSets[o] = new Set<number>((sub?.signatures ?? []).map((s: any) => Number(s.documentId)));
+        } catch { signedSets[o] = new Set<number>(); }
+      }));
+
+      const docs: InboundDoc[] = rows.map(r => {
+        const owner = String(r.owner).toLowerCase();
+        const id = Number(r.documentId ?? r.id);
+        return {
+          documentId:     id,
+          owner,
+          ownerName:      dirMap[owner]?.name ?? owner,
+          ownerPartyType: dirMap[owner]?.partyType ?? 0,
+          title:          r.title ?? '',
+          cid:            r.cid ?? '',
+          documentType:   Number(r.documentType ?? DOC_TYPE_PRIVATE),
+          documentState:  Number(r.documentState ?? 1),
+          createdAt:      Number(r.createdAt ?? 0),
+          sharedAt:       Number(r.sharedAt ?? 0),
+          signed:         signedSets[owner]?.has(id) ?? false,
+        } as InboundDoc;
+      });
+      this.inboundDocs.set(docs);
+    } catch { this.inboundDocs.set([]); }
+  }
+
+  inboundKindLabel(t: number): string {
+    switch (t) {
+      case 2: return 'Entity';
+      case 3: return 'Regulator';
+      case 4: return 'Service';
+      case 5: return 'Subscription';
+      default: return '';
+    }
+  }
+  inboundKindBadgeClass(t: number): string {
+    switch (t) {
+      case 2: return 'bg-blue-100 text-blue-800';
+      case 3: return 'bg-purple-100 text-purple-800';
+      case 4: return 'bg-amber-100 text-amber-800';
+      case 5: return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  }
+
+  // Signing only applies to a regulator's inbound doc (submitSignature targets a RegulatorTemplate),
+  // while the doc is active, by an executive who hasn't already signed it.
+  canSignInbound(doc: InboundDoc): boolean {
+    return doc.ownerPartyType === DIR_PARTY_REGULATOR && doc.documentState === 1 && this.isExecutive() && !doc.signed;
+  }
+
+  async viewInbound(doc: InboundDoc) {
+    this.loadingService.show('Fetching file...');
+    try {
+      const fetched = await this.apiService.inboundDocumentFetchFile(this.address, doc.owner, doc.documentId);
+      if (!fetched) { this.alertService.show('Error', 'Could not fetch the shared file.'); return; }
+      window.open(fetched.blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(fetched.blobUrl), 60_000);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // Sign a regulator's inbound doc: hash the decrypted plaintext (SHA-256) and submit the signature
+  // back to the regulator via the entity's signer key — same flow as the entity-level shared-details
+  // page (POST /regulator/documents/:id/sign → RegulatorTemplate.submitSignature via callExternal).
+  async signInbound(doc: InboundDoc) {
+    if (!this.canSignInbound(doc)) return;
+    const keyId = await this.signModal.show();
+    if (keyId === null) return;
+    this.loadingService.show('Hashing file + signing...');
+    try {
+      const fetched = await this.apiService.inboundDocumentFetchFile(this.address, doc.owner, doc.documentId);
+      if (!fetched) { this.alertService.show('Error', 'Could not fetch the shared file.'); return; }
+      let buf: ArrayBuffer;
+      try { buf = await (await fetch(fetched.blobUrl)).arrayBuffer(); }
+      finally { URL.revokeObjectURL(fetched.blobUrl); }
+      const digest  = await crypto.subtle.digest('SHA-256', buf);
+      const docHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const r = await this.apiService.regulatorDocumentSign(String(doc.documentId), doc.owner, String(keyId), docHash, doc.title || '');
+      // authPost returns null on any non-2xx (e.g. 403) — treat null OR an error body as failure.
+      if (!r || r.error) {
+        this.alertService.show('Signing failed', r?.error || 'The signature could not be submitted. Please try again.', 'OK', 'max-w-md', true);
+        return;
+      }
+      this.alertService.show('Document signed', 'Your signature was submitted to the regulator.', 'OK', 'max-w-md', true);
+      await this.loadInbound();
+    } finally {
+      this.loadingService.hide();
     }
   }
 

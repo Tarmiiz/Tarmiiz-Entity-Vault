@@ -94,26 +94,6 @@ export class EthersService {
     }
   }
 
-  async getGlobalVariableByCategory(category: string) {
-    try {
-      const result = await this.variablesProxyContract.variablesListByCategory(category);
-      if(result) {
-        const variables = result.map((variable: any) => ({
-          variableId: Number(variable[0]),
-          name: variable[1],
-          visible: variable[2],
-        }))
-        return { result: variables, error: ''};
-      }
-      else {
-        return { result: null, error: 'Error fetching variables list'};
-      }
-    }
-    catch (error: any) {
-      return { result: null, error: 'Error fetching variables list'};
-    }
-  }
-
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Entity Contract
 // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -142,14 +122,25 @@ export class EthersService {
     }
   }
 
+  // Pure (no chain): the bytes32 loginHash EntityTemplate keys a user's credentials by. ApiService
+  // uses this to fetch { nonce, commitment } from the Entity API before building the login payload,
+  // so login never reads the RPC node directly.
+  async computeLoginHash(username: string): Promise<string> {
+    await ParseProofUtils.init();
+    const usernameBigInt = ParseProofUtils.stringToBigInt(username);
+    return ParseProofUtils.hashStringForContract(usernameBigInt);
+  }
+
   // `saltOverride` lets the bootstrap admin claim wizard run a login proof against the regulator
   // API's salt (recorded on chain as EntityTemplate.bootstrapSalt) instead of the entity API's.
   // `passwordIsRawBigInt` — when true, treat `password` as a decimal numeric string (e.g. a 6-digit
   // OTP) and use `BigInt(password)` directly instead of `passwordToBigInt`. The Regulator API
   // computes the bootstrap commitment with `BigInt(otp)`, so the claim wizard must match.
-  async createLoginPayload(username: string, password: string, sessionDuration: number = 3600, saltOverride?: string, passwordIsRawBigInt: boolean = false) {
+  // `credentials` — { nonce, commitment } fetched by ApiService through the Entity API so login
+  // never hits the RPC node (the Vault has no route to it). Required.
+  async createLoginPayload(username: string, password: string, sessionDuration: number, saltOverride: string | undefined, passwordIsRawBigInt: boolean, credentials: { nonce: string | number; commitment: string }) {
     try {
-      if (!username || !password) return null;
+      if (!username || !password || !credentials) return null;
       if (!Number.isInteger(sessionDuration) || sessionDuration <= 0) return null;
 
       // Initialize ParseProofUtils
@@ -163,8 +154,9 @@ export class EthersService {
       // Generate contract lookup hash
       const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
 
-      // Get nonce and stored commitment
-      const { nonce, commitment: storedCommitmentHex } = await this.entityContract.getUserCredentialsData(usernameHashHex);
+      // Nonce + stored commitment, fetched by ApiService via the Entity API (login never reads
+      // the RPC node directly).
+      const { nonce, commitment: storedCommitmentHex } = credentials;
 
       // Convert stored commitment to circuit format
       const storedCommitmentBigInt = BigInt(storedCommitmentHex);
@@ -219,9 +211,11 @@ export class EthersService {
   // createLoginPayload: there's no per-template user table, so credentials live directly on
   // `_credentials.loginHash` / `commitment` / `nonce`. The login() signature on IdentityTemplate
   // omits the usernameHash arg.
-  async createIdentityLoginPayload(identityAddress: string, username: string, password: string, sessionDuration: number, saltOverride?: string, passwordIsRawBigInt: boolean = false) {
+  // `credentials` — { nonce, commitment } fetched by the caller through the Entity API so this
+  // never reads the RPC node directly (the Vault has no route to the RPC node).
+  async createIdentityLoginPayload(identityAddress: string, username: string, password: string, sessionDuration: number, saltOverride: string | undefined, passwordIsRawBigInt: boolean, credentials: { nonce: string | number; commitment: string }) {
     try {
-      if (!identityAddress || !username || !password) return null;
+      if (!identityAddress || !username || !password || !credentials) return null;
       if (!Number.isInteger(sessionDuration) || sessionDuration <= 0) return null;
 
       await ParseProofUtils.init();
@@ -232,15 +226,7 @@ export class EthersService {
 
       const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
 
-      const idIface = new ethers.Interface([
-        'function commitment() external view returns (bytes32)',
-        'function nonce() external view returns (uint256)',
-      ]);
-      const idContract = new ethers.Contract(identityAddress, idIface, this.signer);
-      const [storedCommitmentHex, nonceVal] = await Promise.all([
-        idContract['commitment'](),
-        idContract['nonce'](),
-      ]);
+      const { nonce: nonceVal, commitment: storedCommitmentHex } = credentials;
 
       const storedCommitmentString = BigInt(storedCommitmentHex).toString();
       const usernameHashString     = BigInt(usernameHashHex).toString();

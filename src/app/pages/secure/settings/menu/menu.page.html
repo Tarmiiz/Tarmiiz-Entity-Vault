@@ -1,0 +1,58 @@
+<app-header [title]="'sidebar.menuSettings' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
+    <h2 class="text-sm font-semibold text-gray-800 mb-1">Menu settings</h2>
+    <p class="text-xs text-gray-600">
+      Turn each module on or off for this entity. Disabled modules are hidden from the sidebar
+      and blocked if navigated to directly. Core pages (Home, Users, Entity Profile, Menu Settings)
+      are always available and aren't listed here. Role-based visibility still applies on top of these toggles.
+    </p>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-4 py-2">Menu item</th>
+            <th class="px-4 py-2">Key</th>
+            <th class="px-4 py-2">Enabled</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.menuKey; let i = $index) {
+            <tr [class.bg-gray-50]="i % 2 === 1">
+              <td class="px-4 py-2">{{ labelFor(row.menuKey) }}</td>
+              <td class="px-4 py-2 font-mono text-xs">{{ row.menuKey }}</td>
+              <td class="px-4 py-2">
+                <label class="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    [checked]="row.enabled"
+                    (change)="toggle(row, $any($event.target).checked)"
+                    [disabled]="saving() === row.menuKey"
+                    class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-600 transition-colors relative">
+                    <div class="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"
+                      [class.translate-x-5]="row.enabled"></div>
+                  </div>
+                  <span class="ml-2 text-xs text-gray-700">
+                    {{ row.enabled ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </label>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+                @if (loading()) { Loading… } @else { No menu items configured. }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

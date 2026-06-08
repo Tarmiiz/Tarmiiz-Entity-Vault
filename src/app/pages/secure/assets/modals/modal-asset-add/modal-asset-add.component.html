@@ -67,17 +67,18 @@
                 }
               </select>
             </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Asset Type</label>
+              <select formControlName="assetType"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="" disabled selected hidden>Select asset type...</option>
+                @for (at of assetTypes(); track at.id) {
+                  <option [value]="at.id">{{ at.name }}</option>
+                }
+              </select>
+              <p class="text-xs text-gray-400 mt-1">The real-world category this asset represents.</p>
+            </div>
             @if (isFixedSupply) {
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Asset Type</label>
-                <select formControlName="assetType"
-                  class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                  <option value="" disabled selected hidden>Select asset type...</option>
-                  @for (at of assetTypes(); track at.id) {
-                    <option [value]="at.id">{{ at.name }}</option>
-                  }
-                </select>
-              </div>
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Initial Supply</label>
                 <input type="number" placeholder="0" formControlName="initialSupply" min="0"
@@ -239,10 +240,10 @@
             </div>
             <div class="pt-2">
               <div class="flex items-center gap-2">
-                <input type="checkbox" id="creditSettlement" formControlName="creditSettlement"
+                <input type="checkbox" id="noCreditSettlement" formControlName="noCreditSettlement"
                   [attr.disabled]="selectedServiceHasPaymentProcessor ? null : true"
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-40">
-                <label for="creditSettlement" class="text-sm" [class]="selectedServiceHasPaymentProcessor ? 'text-gray-700' : 'text-gray-400'">Enable Credit Settlement</label>
+                <label for="noCreditSettlement" class="text-sm" [class]="selectedServiceHasPaymentProcessor ? 'text-gray-700' : 'text-gray-400'">Do not use Credit Settlement</label>
               </div>
               @if (!selectedServiceHasPaymentProcessor) {
                 <p class="text-xs text-gray-400 mt-1">The selected service does not have a payment processor configured.</p>
@@ -270,11 +271,11 @@
                   <span class="text-gray-500">Price Mode</span>
                   <span class="text-black font-medium">{{ getPriceModeName() }}</span>
                 </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Asset Type</span>
+                  <span class="text-black font-medium">{{ getAssetTypeName() }}</span>
+                </div>
                 @if (isFixedSupply) {
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">Asset Type</span>
-                    <span class="text-black font-medium">{{ getAssetTypeName() }}</span>
-                  </div>
                   <div class="flex justify-between">
                     <span class="text-gray-500">Initial Supply</span>
                     <span class="text-black font-medium">{{ utils.formatTokens(+(addForm.get('initialSupply')?.value ?? 0)) }}</span>
@@ -356,8 +357,8 @@
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">Credit Settlement</span>
-                  <span class="font-medium" [class]="addForm.get('creditSettlement')?.value ? 'text-green-600' : 'text-gray-400'">
-                    {{ addForm.get('creditSettlement')?.value ? 'Enabled' : 'Disabled' }}
+                  <span class="font-medium" [class]="!addForm.get('noCreditSettlement')?.value ? 'text-green-600' : 'text-gray-400'">
+                    {{ !addForm.get('noCreditSettlement')?.value ? 'Enabled' : 'Disabled' }}
                   </span>
                 </div>
               </div>

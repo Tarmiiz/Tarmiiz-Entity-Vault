@@ -218,6 +218,22 @@ export class Validator {
   ) {}
 }
 
+// Entity-curated service provider — the admin-managed subset of the regulator's
+// authorised SPs that the entity's services may select from.
+export class EntityServiceProvider {
+  constructor (
+    public address: string,
+    public spType: number,        // 1=Validator, 2=PaymentProcessor, 3=Custodian
+    public spTypeName: string,
+    public name: string,
+    public level: number,
+    public regulator: string,
+    public state: number,         // 1=Active, 2=Suspended
+    public stateName: string,
+    public updatedAt: number
+  ) {}
+}
+
 export class Entity {
   constructor (
     public address: string,
@@ -264,7 +280,11 @@ export class Service {
     public validatorActive: boolean = true,
     public visibility: number = 1,
     public custodian: string = '',
-    public custodianActive: boolean = true
+    public custodianActive: boolean = true,
+    // Entity-declared sub-type for service providers (serviceType 2): 1=Validator,
+    // 2=PaymentProcessor, 3=Custodian, 4=DataProvider; 0 for token issuers.
+    public providerType: number = 0,
+    public providerTypeName: string = ''
   ) {}
 }
 

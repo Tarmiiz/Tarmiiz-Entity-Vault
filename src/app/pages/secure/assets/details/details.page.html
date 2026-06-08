@@ -327,8 +327,12 @@
                   <p class="text-base">{{ v.countryName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Token Type</p>
-                  <p class="text-base">{{ v.tokenTypeName }}</p>
+                  <p class="text-sm font-medium text-gray-500">Contract Type</p>
+                  <p class="text-base">{{ v.tokenType === 2 ? 'T3643' : 'T20' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">Supply Mode</p>
+                  <p class="text-base">{{ v.supplyModeName || (v.supplyMode === 2 ? 'Dynamic' : 'Fixed') }}</p>
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">Asset Type</p>
@@ -370,6 +374,15 @@
         <!-- metadata tab -->
         @if (activeTab() === 'metadata') {
           <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto p-4 space-y-6">
+
+            @if (userInfo && userInfo.role !== 3) {
+              <div class="flex justify-end">
+                <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
+                  class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                  Edit Metadata
+                </button>
+              </div>
+            }
 
             <!-- Description -->
             <div>
@@ -1232,4 +1245,5 @@
 <app-modal-asset-price></app-modal-asset-price>
 <app-modal-asset-fee-config></app-modal-asset-fee-config>
 <app-modal-distribution-declare></app-modal-distribution-declare>
+<app-metadata-edit-modal></app-metadata-edit-modal>
 <app-modal-transaction-info></app-modal-transaction-info>

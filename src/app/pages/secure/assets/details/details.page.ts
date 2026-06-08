@@ -38,6 +38,8 @@ import { ModalAssetFeeConfigService } from '../modals/modal-asset-fee-config/mod
 import { ModalAssetFeeConfigComponent } from '../modals/modal-asset-fee-config/modal-asset-fee-config.component';
 import { ModalDistributionDeclareService } from '../modals/modal-distribution-declare/modal-distribution-declare.service';
 import { ModalDistributionDeclareComponent } from '../modals/modal-distribution-declare/modal-distribution-declare.component';
+import { MetadataEditModalService } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.service';
+import { MetadataEditModalComponent } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.component';
 import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models/data.model';
 
 
@@ -60,7 +62,8 @@ import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
     ModalAssetFeeConfigComponent,
-    ModalDistributionDeclareComponent, TranslatePipe,
+    ModalDistributionDeclareComponent,
+    MetadataEditModalComponent, TranslatePipe,
   ]
 })
 export class DetailsPage implements OnInit {
@@ -75,6 +78,7 @@ export class DetailsPage implements OnInit {
   private listingCreateModal = inject(ModalListingCreateService);
   private priceModal = inject(ModalAssetPriceService);
   private feeConfigModal = inject(ModalAssetFeeConfigService);
+  private metadataEditModal = inject(MetadataEditModalService);
   distributionDeclareModal = inject(ModalDistributionDeclareService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
@@ -841,6 +845,32 @@ export class DetailsPage implements OnInit {
       } finally {
         this.loadingService.hide();
       }
+    }
+  }
+
+  async openEditMetadataModal() {
+    const asset = this.asset();
+    if (!asset) return;
+    const pm = this.parsedMetadata();
+    const result = await this.metadataEditModal.show({
+      title: 'Edit Asset Metadata',
+      description: pm.description,
+      entries: pm.entries,
+    });
+    if (!result) return;
+    this.loadingService.show('Updating metadata...');
+    try {
+      const res = await this.apiService.vaultUpdateAssetMetadata(asset.address, result);
+      if (res?.error) {
+        this.alertService.show('Error', res.error || 'Failed to update metadata.');
+      } else {
+        await this.getAssetDetails();
+      }
+    } catch (error) {
+      console.error('Failed to update metadata', error);
+      this.alertService.show('Error', 'An unexpected error occurred.');
+    } finally {
+      this.loadingService.hide();
     }
   }
 

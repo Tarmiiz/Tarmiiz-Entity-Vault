@@ -24,6 +24,7 @@ import { ModalServiceAddComponent } from '../modals/modal-service-add/modal-serv
 import { Service, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 
 @Component({
@@ -49,6 +50,9 @@ export class ListPage implements OnInit {
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
+  private features = inject(FeaturesService);
+
+  get isServiceProvider() { return this.features.isServiceProvider(); }
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -146,6 +150,8 @@ export class ListPage implements OnInit {
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
       serviceType: raw.service_type ?? 0,
       serviceTypeName: raw.service_type_name ?? '',
+      providerType: raw.provider_type ?? 0,
+      providerTypeName: raw.provider_type_name ?? '',
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
@@ -193,6 +199,7 @@ export class ListPage implements OnInit {
         metadata: JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile }),
         verification_level: data.verificationLevel,
         service_type: data.serviceType,
+        providerType: data.providerType || 0,
         country_code: (entityInfo as any)?.country_code ?? 0,
         regulator: data.regulator,
         validator: data.validator || '',
@@ -232,7 +239,7 @@ export class ListPage implements OnInit {
   exportExcel() {
     const rows = this.filteredServices().map(s => ({
       'Name': s.name,
-      'Verification Level': s.verificationLevelName,
+      ...(this.isServiceProvider ? {} : { 'Verification Level': s.verificationLevelName }),
       ...(this.showAllServices() ? { 'Regulator': s.regulatorSymbol } : {}),
       'State': s.stateName,
       'Suspended': s.suspended ? 'Yes' : 'No',
@@ -257,7 +264,7 @@ export class ListPage implements OnInit {
     doc.setFont('helvetica', 'normal');
 
     const filterParts = [
-      `Verification Level: ${this.filterVerificationLevel() ? (this.uniqueVerificationLevels().find(l => String(l[0]) === this.filterVerificationLevel())?.[1] ?? this.filterVerificationLevel()) : 'None'}`,
+      ...(this.isServiceProvider ? [] : [`Verification Level: ${this.filterVerificationLevel() ? (this.uniqueVerificationLevels().find(l => String(l[0]) === this.filterVerificationLevel())?.[1] ?? this.filterVerificationLevel()) : 'None'}`]),
       `State: ${this.filterState() || 'None'}`,
     ];
     doc.setFontSize(8);
@@ -271,11 +278,11 @@ export class ListPage implements OnInit {
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [[ '#', 'Name', 'Verification Level', ...(showRegulator ? ['Regulator'] : []), 'State' ]],
+      head: [[ '#', 'Name', ...(this.isServiceProvider ? [] : ['Verification Level']), ...(showRegulator ? ['Regulator'] : []), 'State' ]],
       body: services.map((s, i) => [
         i + 1,
         s.name,
-        s.verificationLevelName,
+        ...(this.isServiceProvider ? [] : [s.verificationLevelName]),
         ...(showRegulator ? [s.regulatorSymbol] : []),
         s.suspended ? `${s.stateName} (Suspended)` : s.stateName,
       ]),

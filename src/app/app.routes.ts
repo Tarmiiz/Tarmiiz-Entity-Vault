@@ -4,9 +4,20 @@ import { AuthGuard } from './shared/guards/auth.guard';
 import { RoleGuard } from './shared/guards/role.guard';
 import { FeaturesService } from './shared/services/features.service';
 
-// Functional guard that hides /authorized/dex/... routes when DEX is disabled at the API.
-// Waits for the features service to load before deciding so a hard-refresh on a /authorized/dex/...
-// URL doesn't race the flag fetch.
+// Factory: guards a route behind an admin menu toggle. Blocks (→ dashboard) when the
+// tenant has the menu key disabled. Awaits the features fetch first so a hard-refresh
+// on a deep URL doesn't race the flag load.
+const menuFeatureGuard = (key: string): CanActivateFn => async () => {
+  const features = inject(FeaturesService);
+  const router   = inject(Router);
+  if (!features.loaded()) await features.refresh();
+  if (features.menuEnabled(key)) return true;
+  router.navigate(['/authorized/dashboard']);
+  return false;
+};
+
+// DEX has an extra env-level kill switch on top of the menu toggle (features.dex()
+// folds both together).
 const dexFeatureGuard: CanActivateFn = async () => {
   const features = inject(FeaturesService);
   const router   = inject(Router);
@@ -55,17 +66,20 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layouts/authorized-layout/authorized-layout.component').then(m => m.AuthorizedLayoutComponent),
     canActivate: [AuthGuard],
     children: [
-      // dashboard
+      // dashboard — issuer vs service-provider variant chosen by vaultMode
       {
         path: 'dashboard',
-        loadComponent: () => import('./pages/secure/dashboard/dashboard.page').then(m => m.DashboardPage),
+        loadComponent: () =>
+          inject(FeaturesService).isServiceProvider()
+            ? import('./pages/secure/dashboard/service-provider/service-provider-dashboard.page').then(m => m.ServiceProviderDashboardPage)
+            : import('./pages/secure/dashboard/dashboard.page').then(m => m.DashboardPage),
         canActivate: [AuthGuard, RoleGuard],
         data: { allowedRoles: [1, 2, 3] }
       },
       // analytics — issuer-side multi-chart dashboards
       {
         path: 'analytics',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('analytics')],
         data: { allowedRoles: [2, 3] },
         children: [
           { path: 'aum',         loadComponent: () => import('./pages/secure/analytics/aum-performance/aum-performance.page').then(m => m.AumPerformancePage), canActivate: [AuthGuard] },
@@ -80,7 +94,7 @@ export const routes: Routes = [
       // services
       {
         path: 'services',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('services')],
         data: { allowedRoles: [2, 3] },
         children: [
           {
@@ -110,10 +124,36 @@ export const routes: Routes = [
           },
         ]
       },
+      // service-providers — admin-curated subset of the regulator's authorised SPs that
+      // the entity's services may select from (validators / payment processors / custodians)
+      {
+        path: 'service-providers',
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('service-providers')],
+        data: { allowedRoles: [1] },
+        children: [
+          {
+            path: 'list',
+            loadComponent: () => import('./pages/secure/service-providers/list/list.page').then(m => m.ListPage),
+            canActivate: [AuthGuard]
+          },
+          {
+            path: '',
+            redirectTo: '/authorized/service-providers/list',
+            pathMatch: 'full',
+          },
+        ]
+      },
+      // custody — service-provider custodian overview (folded in from Service Dashboard)
+      {
+        path: 'custody',
+        loadComponent: () => import('./pages/secure/custody/custody.page').then(m => m.CustodyPage),
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('custody')],
+        data: { allowedRoles: [2, 3] },
+      },
       // assets
       {
         path: 'assets',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('assets')],
         data: { allowedRoles: [2, 3] },
         children: [
           {
@@ -193,7 +233,7 @@ export const routes: Routes = [
       // subscriptions
       {
         path: 'subscriptions',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('subscriptions')],
         data: { allowedRoles: [2, 3] },
         children: [
           {
@@ -216,7 +256,7 @@ export const routes: Routes = [
       // credit
       {
         path: 'credit',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('credit')],
         data: { allowedRoles: [2, 3] },
         children: [
           {
@@ -230,7 +270,7 @@ export const routes: Routes = [
       // documents
       {
         path: 'documents',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('documents')],
         data: { allowedRoles: [1, 2] },
         children: [
           {
@@ -244,6 +284,11 @@ export const routes: Routes = [
             canActivate: [AuthGuard]
           },
           {
+            path: 'shared/:owner/:id',
+            loadComponent: () => import('./pages/secure/documents/shared-details/shared-details.page').then(m => m.SharedDetailsPage),
+            canActivate: [AuthGuard]
+          },
+          {
             path: '',
             redirectTo: '/authorized/dashboard',
             pathMatch: 'full',
@@ -253,7 +298,7 @@ export const routes: Routes = [
       // signer-keys (issuer-only — used for document signing)
       {
         path: 'signer-keys',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('signer-keys')],
         data: { allowedRoles: [2] },
         children: [
           {
@@ -271,7 +316,7 @@ export const routes: Routes = [
       // messages
       {
         path: 'messages',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('messages')],
         data: { allowedRoles: [1, 2, 3] },
         children: [
           {
@@ -294,7 +339,7 @@ export const routes: Routes = [
       // transactions
       {
         path: 'transactions',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('transactions')],
         data: { allowedRoles: [2, 3] },
         children: [
           {
@@ -360,7 +405,7 @@ export const routes: Routes = [
       // approvals (maker/checker workflow)
       {
         path: 'approvals',
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, menuFeatureGuard('approvals')],
         children: [
           {
             path: 'list',
@@ -384,7 +429,7 @@ export const routes: Routes = [
       // logs (audit trail)
       {
         path: 'logs',
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, menuFeatureGuard('logs')],
         children: [
           {
             path: 'my',
@@ -414,7 +459,7 @@ export const routes: Routes = [
       // variables
       {
         path: 'variables',
-        canActivate: [AuthGuard, RoleGuard],
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('variables')],
         data: { allowedRoles: [1, 2, 3] },
         children: [
           {
@@ -425,6 +470,24 @@ export const routes: Routes = [
           {
             path: '',
             redirectTo: '/authorized/variables/system',
+            pathMatch: 'full',
+          },
+        ]
+      },
+      // settings (admin) — Menu Settings is a core page, never gated by a menu toggle
+      {
+        path: 'settings',
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: 'menu',
+            loadComponent: () => import('./pages/secure/settings/menu/menu.page').then(m => m.MenuSettingsPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            path: '',
+            redirectTo: 'menu',
             pathMatch: 'full',
           },
         ]

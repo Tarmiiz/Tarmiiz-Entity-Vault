@@ -23,7 +23,7 @@
               <input id="ask" type="number" step="any" min="0" formControlName="ask"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.000000" />
-              @if (form.value.bid != null && form.value.ask != null && +(form.value.ask ?? 0) < +(form.value.bid ?? 0)) {
+              @if (form.value.bid != null && form.value.ask != null && +form.value.ask < +form.value.bid) {
                 <p class="mt-1 text-xs text-red-600">Ask must be greater than or equal to Bid.</p>
               }
             </div>
