@@ -14,6 +14,22 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 <!-- newest first; each date-heading groups every change made that day across any number of sessions -->
 
+### 2026-06-21
+
+#### Added
+- **Multi-attach service providers (1:N).** The service-detail page lists all attached validators / payment processors / custodians per role, each with **+ Add** / **Remove** and an inactive pill ([src/app/pages/secure/services/details/details.page.ts](src/app/pages/secure/services/details/details.page.ts)). `api.service` gained `vaultGetServiceParties` / `vaultAttachServiceParty` / `vaultDetachServiceParty` ([src/app/shared/services/api.service.ts](src/app/shared/services/api.service.ts)); the legacy single-provider reassign modals are kept as replace-over-1:N compatibility wrappers.
+- **Credit deposit** modal: payment-processor picker restricted to the service's attached PPs + a required **Transaction Ref No** ([src/app/pages/secure/subscriptions/modals/modal-credit-deposit/modal-credit-deposit.component.ts](src/app/pages/secure/subscriptions/modals/modal-credit-deposit/modal-credit-deposit.component.ts)).
+- **Onboarding** modal: validator picker over the service's attached validators (required when the service has more than one) ([src/app/pages/secure/subscriptions/modals/modal-add-subscription/modal-add-subscription.component.ts](src/app/pages/secure/subscriptions/modals/modal-add-subscription/modal-add-subscription.component.ts)).
+
+### 2026-06-14
+
+#### Added
+- **Per-user Menu Access tab on User Details.** Admins can now hide individual top-level modules for a single user, layered on top of the tenant-wide Menu Settings. New **Menu Access** tab on [users/details/details.page.html](src/app/pages/secure/users/details/details.page.html) / [.ts](src/app/pages/secure/users/details/details.page.ts) (rendered only for non-admin role 2/3 targets — admins bypass menu gating). **Restrict-only:** a per-user toggle can only further hide a module the vault enables, never re-enable one disabled tenant-wide (the fold happens server-side). The tab lists only tenant-enabled + `features.modeAllows(key)` modules and notes that changes take effect on the user's next login. New `vaultMyFeatures()` / `vaultUserMenuConfigList()` / `vaultUserMenuConfigSet()` on [api.service.ts](src/app/shared/services/api.service.ts).
+
+#### Changed
+- **`FeaturesService.refresh()` now picks its source by auth state** ([shared/services/features.service.ts](src/app/shared/services/features.service.ts)) — a live session reads the effective per-user map (`GET /vault/features/me`); pre-login reads the public tenant map (`GET /vault/features`). `menuEnabled()` / `dex()` are unchanged (the server applies the restrict-only fold). `AuthService.login()` calls `features.refresh()` after the session is set, and `logout()` calls it again to fall back to the public map ([shared/services/auth.service.ts](src/app/shared/services/auth.service.ts)).
+- **Extracted the menu-key label map to a shared constant** ([shared/constants/menu-labels.ts](src/app/shared/constants/menu-labels.ts), `MENU_LABELS` + `menuLabelFor`), imported by both the Menu Settings page ([settings/menu/menu.page.ts](src/app/pages/secure/settings/menu/menu.page.ts)) and the new Menu Access tab instead of an inline copy.
+
 ### 2026-06-07
 
 #### Changed

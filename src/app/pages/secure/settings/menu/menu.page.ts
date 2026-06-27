@@ -8,6 +8,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+import { menuLabelFor } from '../../../../shared/constants/menu-labels';
 
 interface MenuConfigRow {
   menuKey: string;
@@ -15,25 +16,6 @@ interface MenuConfigRow {
   updatedAt: number | null;
   updatedByUserId: string | null;
 }
-
-// Human labels for the toggleable menu keys — keep in sync with db.MENU_ITEMS.
-const MENU_LABELS: Record<string, string> = {
-  assets:         'Assets',
-  services:       'Services',
-  'service-providers': 'Service Providers',
-  custody:        'Custody',
-  subscriptions:  'Subscriptions',
-  transactions:   'Transactions',
-  credit:         'Credit',
-  analytics:      'Analytics',
-  dex:            'DEX',
-  documents:      'Documents',
-  'signer-keys':  'Signer Keys',
-  messages:       'Messages',
-  variables:      'System Variables',
-  approvals:      'Approvals',
-  logs:           'Audit Trail',
-};
 
 @Component({
   selector: 'app-menu-settings',
@@ -52,7 +34,9 @@ export class MenuSettingsPage implements OnInit {
   loading = signal(false);
   saving  = signal<string | null>(null); // menu key currently saving
 
-  labelFor(key: string): string { return MENU_LABELS[key] || key; }
+  labelFor(key: string): string {
+    return menuLabelFor(key);
+  }
 
   ngOnInit() {}
 

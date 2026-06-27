@@ -42,6 +42,19 @@
             </select>
           </div>
 
+          @if (serviceValidators().length > 0) {
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Validator</label>
+              <select formControlName="validator" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
+                <option value="">Select the validator that verified this subscriber</option>
+                @for (vv of serviceValidators(); track vv.address) {
+                  <option [value]="vv.address">{{ vv.address }}{{ vv.active ? '' : ' (inactive)' }}</option>
+                }
+              </select>
+              <p class="text-xs text-gray-400 mt-1">This service has multiple validators — pick the one that validated this subscriber.</p>
+            </div>
+          }
+
           @if (mode() === 'A') {
             <div>
               <label class="block text-sm font-medium text-gray-700">DID Hash</label>

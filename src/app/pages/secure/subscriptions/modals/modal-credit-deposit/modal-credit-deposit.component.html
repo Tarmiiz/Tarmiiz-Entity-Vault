@@ -10,12 +10,18 @@
             <label class="block text-sm font-medium text-gray-700">Payment Processor</label>
             <select formControlName="paymentProcessor" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
               @if (processors().length === 0) {
-                <option value="" class="text-black bg-white">No approved processors</option>
+                <option value="" class="text-black bg-white">No payment processors attached to this service</option>
               }
               @for (p of processors(); track p.service) {
                 <option [value]="p.service" class="text-black bg-white">{{ p.name || p.service }}</option>
               }
             </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Transaction Ref No</label>
+            <input type="text" formControlName="trxRefNo"
+              class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
+              placeholder="e.g. bank transfer reference" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Currency</label>

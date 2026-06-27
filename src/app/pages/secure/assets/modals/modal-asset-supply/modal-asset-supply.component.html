@@ -1,0 +1,40 @@
+@if (modal.isVisible() && modal.input(); as input) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          {{ input.mode === 'mint' ? 'Mint Supply' : 'Burn Supply' }} &mdash; {{ input.symbol }}
+        </h3>
+        <p class="text-xs text-gray-400 mt-1">
+          {{ input.mode === 'mint'
+            ? 'New tokens are added to the asset treasury (total supply increases).'
+            : 'Tokens are removed from the asset treasury (total supply decreases).' }}
+        </p>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4">
+          <div>
+            <label for="tokens" class="block text-sm font-medium text-gray-700">Tokens</label>
+            <input id="tokens" type="number" step="1" min="1" formControlName="tokens"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="0" />
+            @if (input.mode === 'burn' && input.available != null) {
+              <p class="mt-1 text-xs text-gray-500">Treasury available to burn: {{ input.available }}</p>
+            }
+            @if (overCap()) {
+              <p class="mt-1 text-xs text-red-600">Amount exceeds the treasury balance available to burn.</p>
+            }
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
+          <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="!isValid()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ input.mode === 'mint' ? 'Mint' : 'Burn' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

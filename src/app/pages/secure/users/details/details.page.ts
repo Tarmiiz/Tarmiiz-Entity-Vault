@@ -25,6 +25,15 @@ import { ModalUserRoleService } from '../modals/modal-user-role/modal-user-role.
 import { ModalUserApprovalRoleService, ApprovalRoleValue } from '../modals/modal-user-approval-role/modal-user-approval-role.service';
 import { ModalUserApprovalRoleComponent } from '../modals/modal-user-approval-role/modal-user-approval-role.component';
 import { SocketService } from '../../../../shared/services/socket.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
+import { menuLabelFor } from '../../../../shared/constants/menu-labels';
+
+interface UserMenuRow {
+  menuKey: string;
+  tenantEnabled: boolean;
+  userEnabled: boolean | null; // null ⇒ inherit
+  effective: boolean;
+}
 
 
 @Component({
@@ -56,6 +65,7 @@ export class DetailsPage implements OnInit {
   private userRoleService = inject(ModalUserRoleService);
   private userApprovalRoleService = inject(ModalUserApprovalRoleService);
   private socketService = inject(SocketService);
+  private features = inject(FeaturesService);
 
   private _socketSub: Subscription | null = null;
   private _isBusy = false;
@@ -76,7 +86,69 @@ export class DetailsPage implements OnInit {
   approvalRole       = signal<'none' | 'maker' | 'checker'>('none');
   approvalRoleSaving = signal(false);
 
+  // Tabs: 'details' (default) + 'menu' (per-user Menu Access, role 2/3 only).
+  activeTab   = signal<'details' | 'menu'>('details');
+  menuRows    = signal<UserMenuRow[]>([]);
+  menuLoading = signal(false);
+  menuSaving  = signal<string | null>(null); // menu key currently saving
+  private menuLoaded = false;
+
   constructor() { }
+
+  labelFor(key: string): string { return menuLabelFor(key); }
+
+  /** Per-user Menu Access applies only to non-admin targets (admins bypass menu gating). */
+  showMenuTab(): boolean {
+    const role = Number(this.user()?.role);
+    return role === 2 || role === 3;
+  }
+
+  setTab(tab: 'details' | 'menu') {
+    this.activeTab.set(tab);
+    if (tab === 'menu' && !this.menuLoaded) this.loadMenuConfig();
+  }
+
+  async loadMenuConfig() {
+    this.menuLoading.set(true);
+    try {
+      const rows = (await this.apiService.vaultUserMenuConfigList(this.userId()))
+        // Restrict-only: a per-user override can only narrow the tenant menu, so only
+        // tenant-enabled + mode-allowed keys are actionable here. The rest are hidden
+        // for everyone regardless.
+        .filter(r => r.tenantEnabled && this.features.modeAllows(r.menuKey));
+      rows.sort((a, b) => this.labelFor(a.menuKey).localeCompare(this.labelFor(b.menuKey)));
+      this.menuRows.set(rows);
+      this.menuLoaded = true;
+    } finally {
+      this.menuLoading.set(false);
+    }
+  }
+
+  async toggleMenu(row: UserMenuRow, enabled: boolean) {
+    if (this.menuSaving()) return;
+    const u = this.user();
+    if (!u) return;
+    const verb = enabled ? 'shown in this user\'s menu' : 'hidden from this user\'s menu and blocked';
+    const ok = await this.alertService.show(
+      'Confirm per-user menu change',
+      `${this.labelFor(row.menuKey)} will be ${verb}. It takes effect on the user's next login. Continue?`,
+      'Save',
+    );
+    if (!ok) return;
+    this.menuSaving.set(row.menuKey);
+    this.loadingService.show('Saving...');
+    try {
+      const res = await this.apiService.vaultUserMenuConfigSet(u.userId, row.menuKey, enabled);
+      if (res?.error) {
+        this.alertService.show('Error', res.error);
+      } else {
+        await this.loadMenuConfig();
+      }
+    } finally {
+      this.loadingService.hide();
+      this.menuSaving.set(null);
+    }
+  }
 
   async ngOnInit() {}
 
@@ -85,6 +157,9 @@ export class DetailsPage implements OnInit {
     if (userId) {
       this.userId.set(Number(userId));
     }
+    this.activeTab.set('details');
+    this.menuLoaded = false;
+    this.menuRows.set([]);
     await this.getUserDetails();
     await this.loadApprovalRole();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => {

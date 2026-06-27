@@ -6,6 +6,7 @@ import { EthersService } from './ethers.service';
 import { ApiService } from './api.service';
 import { SocketService } from './socket.service';
 import { SessionService } from './session.service';
+import { FeaturesService } from './features.service';
 import { LoadingService } from '../components/alerts/loading/loading.service';
 import { AlertService } from '../components/alerts/alert/alert.service';
 import { Entity, User } from '../models/data.model';
@@ -23,6 +24,7 @@ export class AuthService {
   private apiService = inject(ApiService);
   private socketService = inject(SocketService);
   private sessionService = inject(SessionService);
+  private featuresService = inject(FeaturesService);
 
   entityInfo!: Entity;
   userInfo!: User;
@@ -120,6 +122,11 @@ export class AuthService {
           this.storageService.set('user', JSON.stringify(this.userInfo));
           this.storageService.set('wallet', key);
 
+          // Re-hydrate the menu feature map for THIS user — the eager pre-login fetch
+          // used the public tenant map; now pull /vault/features/me so per-user menu
+          // overrides take effect on the sidebar + route guards.
+          await this.featuresService.refresh();
+
           // connect real-time socket
           this.socketService.connect();
 
@@ -180,6 +187,8 @@ export class AuthService {
       this.storageService.remove('user'),
       this.sessionService.clear(),
     ]);
+    // Token gone — re-hydrate features back to the public tenant map.
+    await this.featuresService.refresh();
     await this.router.navigate(['/public/user/login']);
     this.loadingService.hide();
   }

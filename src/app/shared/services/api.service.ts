@@ -123,6 +123,32 @@ export class ApiService {
     return this.vaultPut('/menu-config/' + key, { enabled });
   }
 
+  // Authenticated per-user effective feature map (tenant folded with this user's
+  // restrict-only overrides). Same shape as vaultFeatures(); read once a session exists.
+  async vaultMyFeatures(): Promise<{ dex: boolean; menu: Record<string, boolean> } | null> {
+    const data = await this.vaultGet('/features/me');
+    if (!data) return null;
+    const features = data.features ?? {};
+    return { dex: !!features.dex, menu: data.menu ?? {} };
+  }
+
+  // Per-user menu overrides (admin Menu Access tab on User Details).
+  async vaultUserMenuConfigList(userId: string | number): Promise<
+    { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; effective: boolean }[]
+  > {
+    const data = await this.vaultGet('/users/' + userId + '/menu-config');
+    return (data?.menu ?? []).map((r: any) => ({
+      menuKey: r.menuKey,
+      tenantEnabled: !!r.tenantEnabled,
+      userEnabled: r.userEnabled === null || r.userEnabled === undefined ? null : !!r.userEnabled,
+      effective: !!r.effective,
+    }));
+  }
+
+  async vaultUserMenuConfigSet(userId: string | number, key: string, enabled: boolean) {
+    return this.vaultPut('/users/' + userId + '/menu-config/' + key, { enabled });
+  }
+
   // ─── Vault helpers ────────────────────────────────────────────────────────────
 
   private async vaultGet(path: string, params?: Record<string, any>) {
@@ -555,6 +581,12 @@ export class ApiService {
   async assetHoldersAt(asset: string, blockNumber: number, start = 0, offset = 50) {
     return this.authGet('/assets/' + asset + '/holders-at', { blockNumber, start, offset });
   }
+  // Date-based variant: the API resolves the unix-seconds timestamp to the block
+  // "as of" that moment, then reconstructs the holder set. Response carries the
+  // resolved blockNumber + blockTime so the UI can show what was actually used.
+  async assetHoldersAtDate(asset: string, timestampSec: number, start = 0, offset = 50) {
+    return this.authGet('/assets/' + asset + '/holders-at', { timestamp: timestampSec, start, offset });
+  }
 
   async assetBalanceAt(asset: string, account: string, blockNumber: number) {
     return this.authGet('/assets/' + asset + '/balance-at', { account, blockNumber });
@@ -769,6 +801,18 @@ export class ApiService {
     return data ?? null;
   }
 
+  // Fixed-supply only — mint/burn the asset's own treasury supply (manager-only on-chain).
+  // `tokens` is a plain integer token count (not wei).
+  async vaultMintAsset(address: string, tokens: number) {
+    const data = await this.vaultPost('/assets/' + address + '/mint', { tokens });
+    return data ?? null;
+  }
+
+  async vaultBurnAsset(address: string, tokens: number) {
+    const data = await this.vaultPost('/assets/' + address + '/burn', { tokens });
+    return data ?? null;
+  }
+
   async vaultAddAssetService(assetAddress: string, serviceAddress: string) {
     const data = await this.vaultPost('/assets/' + assetAddress + '/services', { service: serviceAddress });
     return data ?? null;
@@ -816,19 +860,52 @@ export class ApiService {
     return data ?? null;
   }
 
-  async vaultSetServiceValidator(address: string, validator: string) {
-    const data = await this.vaultPut('/services/' + address + '/validator', { validator });
+  // Service providers are 1:N. partyType: 1=Validator, 2=PaymentProcessor, 3=Custodian.
+
+  async vaultGetServiceParties(address: string): Promise<{ validators: Array<{ address: string; active: boolean }>; paymentProcessors: Array<{ address: string; active: boolean }>; custodians: Array<{ address: string; active: boolean }> } | null> {
+    const data = await this.vaultGet('/services/' + address + '/parties');
+    return data ? { validators: data.validators ?? [], paymentProcessors: data.paymentProcessors ?? [], custodians: data.custodians ?? [] } : null;
+  }
+
+  async vaultAttachServiceParty(address: string, partyType: number, party: string) {
+    const data = await this.vaultPost('/services/' + address + '/parties', { partyType, party });
     return data ?? null;
+  }
+
+  async vaultDetachServiceParty(address: string, partyType: number, party: string) {
+    const data = await this.vaultDelete('/services/' + address + '/parties?partyType=' + partyType + '&party=' + party);
+    return data ?? null;
+  }
+
+  // Replace-over-1:N: make `party` the sole attached provider of `partyType` on the service.
+  // Attaches the new one first (preserves the on-chain "type-1 keeps ≥1 custodian" invariant),
+  // then detaches every other of that role. Backs the legacy single-provider "reassign" modals
+  // until the multi-attach service-detail UI lands.
+  private async _replaceServiceParty(address: string, partyType: number, party: string) {
+    const parties = await this.vaultGetServiceParties(address);
+    const current = partyType === 1 ? parties?.validators : partyType === 2 ? parties?.paymentProcessors : parties?.custodians;
+    if (party) {
+      const res = await this.vaultAttachServiceParty(address, partyType, party);
+      if (res?.error) return res;
+    }
+    for (const c of (current ?? [])) {
+      if (!party || c.address.toLowerCase() !== party.toLowerCase()) {
+        await this.vaultDetachServiceParty(address, partyType, c.address);
+      }
+    }
+    return { type: 'success' };
+  }
+
+  async vaultSetServiceValidator(address: string, validator: string) {
+    return this._replaceServiceParty(address, 1, validator);
   }
 
   async vaultSetServicePaymentProcessor(address: string, paymentProcessor: string) {
-    const data = await this.vaultPut('/services/' + address + '/payment-processor', { payment_processor: paymentProcessor });
-    return data ?? null;
+    return this._replaceServiceParty(address, 2, paymentProcessor);
   }
 
   async vaultSetServiceCustodian(address: string, custodian: string) {
-    const data = await this.vaultPut('/services/' + address + '/custodian', { custodian });
-    return data ?? null;
+    return this._replaceServiceParty(address, 3, custodian);
   }
 
   // ─── Vault — Validators & Payment Processors ─────────────────────────────────
@@ -968,11 +1045,13 @@ export class ApiService {
     return data ? { count: data.count, services: data.services } : null;
   }
 
-  async creditDeposit(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; data?: any }): Promise<{ result?: any; error?: string }> {
+  // paymentProcessor (the chosen service-provider) + trxRefNo are required — a service may have
+  // multiple PPs, so the caller picks one (must be attached) and supplies a transaction reference.
+  async creditDeposit(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; trxRefNo: string; data?: any }): Promise<{ result?: any; error?: string }> {
     return this._creditMutation('/credit/deposit', body);
   }
 
-  async creditWithdraw(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; data?: any }): Promise<{ result?: any; error?: string }> {
+  async creditWithdraw(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; trxRefNo: string; data?: any }): Promise<{ result?: any; error?: string }> {
     return this._creditMutation('/credit/withdraw', body);
   }
 

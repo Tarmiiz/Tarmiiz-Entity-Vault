@@ -37,6 +37,7 @@
           <!-- Step 1: Standard & Supply Mode -->
           @if (currentStep() === 1) {
             <p class="text-sm text-gray-500 mb-2">Select the asset standard and supply mode.</p>
+            @if (features.menuEnabled('asset-t3643')) {
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Asset Standard</label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -57,6 +58,7 @@
                 (compliance hooks, agents, identity binding). Immutable after creation.
               </p>
             </div>
+            }
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Supply Mode</label>
               <select formControlName="supplyMode"

@@ -33,6 +33,7 @@ export class ModalCreditDepositComponent {
 
   form = this.fb.group({
     paymentProcessor: ['', Validators.required],
+    trxRefNo: ['', Validators.required],
     currencyCode: [null as number | null, Validators.required],
     amount: [null as number | null, [Validators.required, Validators.min(0.000001)]],
     note: [''],
@@ -44,24 +45,30 @@ export class ModalCreditDepositComponent {
         const list = this.modalService.currencies();
         const first = list[0]?.currencyCode ?? null;
         const defaultPp = (this.modalService.paymentProcessor() || '').toLowerCase();
-        this.form.reset({ paymentProcessor: defaultPp, currencyCode: first, amount: null, note: '' });
+        this.form.reset({ paymentProcessor: defaultPp, trxRefNo: '', currencyCode: first, amount: null, note: '' });
         void this.loadProcessors(defaultPp);
       }
     });
   }
 
+  // Restrict the picker to payment processors ATTACHED to this service (1:N). We still pull the
+  // approved list for display names/levels, then intersect with the service's attached PP set.
   private async loadProcessors(defaultPp: string) {
-    const list = await this.apiService.vaultGetApprovedPaymentProcessors();
-    if (!list) {
-      this.processors.set([]);
-      return;
-    }
+    const service = this.modalService.service();
+    const [approved, parties] = await Promise.all([
+      this.apiService.vaultGetApprovedPaymentProcessors(),
+      service ? this.apiService.vaultGetServiceParties(service) : Promise.resolve(null),
+    ]);
+    const attached = new Set((parties?.paymentProcessors ?? []).map(p => p.address.toLowerCase()));
+    const list = (approved ?? []).filter(p => attached.has(p.service.toLowerCase()));
     this.processors.set(list);
     const match = list.find(p => p.service.toLowerCase() === defaultPp);
     if (match) {
       this.form.patchValue({ paymentProcessor: match.service });
     } else if (list.length > 0) {
       this.form.patchValue({ paymentProcessor: list[0].service });
+    } else {
+      this.form.patchValue({ paymentProcessor: '' });
     }
   }
 
@@ -81,6 +88,7 @@ export class ModalCreditDepositComponent {
     const body = {
       service,
       paymentProcessor: v.paymentProcessor,
+      trxRefNo: (v.trxRefNo || '').trim(),
       subscriber: this.modalService.subscriptionAddress(),
       currencyCode: Number(v.currencyCode),
       amount: Number(v.amount),

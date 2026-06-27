@@ -18,6 +18,7 @@ import { ModalRouteTransferService } from './modals/modal-route-transfer/modal-r
 
 import { ApiService } from '../../../shared/services/api.service';
 import { AuthService } from '../../../shared/services/auth.service';
+import { FeaturesService } from '../../../shared/services/features.service';
 import { SocketService } from '../../../shared/services/socket.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../shared/services/utils.service';
@@ -50,6 +51,7 @@ export class CreditPage implements OnInit {
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   utils = inject(UtilsService);
+  features = inject(FeaturesService);
   private auditService = inject(AuditService);
   bankTransferModal = inject(ModalBankTransferService);
   routeTransferModal = inject(ModalRouteTransferService);

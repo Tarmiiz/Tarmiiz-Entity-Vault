@@ -40,6 +40,20 @@ const DOC_TYPE_PRIVATE = 2;
 // DirectoryProxy party types: 2=Entity, 3=Regulator, 4=Service, 5=Subscription.
 const DIR_PARTY_REGULATOR = 3;
 
+// Placeholder painted into the new tab while a document loads, so it doesn't read as an
+// accidental blank popup during the (potentially multi-second) IPFS fetch.
+const DOC_LOADING_HTML = `<!doctype html><html><head><meta charset="utf-8"><title>Loading document…</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#475569;background:#f8fafc}
+  .spinner{width:38px;height:38px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;
+           animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  p{margin:0;font-size:15px}
+</style></head>
+<body><div class="spinner"></div><p>Loading document…</p></body></html>`;
+
 // A document a foreign party (e.g. a regulator) shared directly with THIS template (the service /
 // asset / subscription this tab is showing). Read-only here; the owner holds the doc.
 interface InboundDoc {
@@ -307,15 +321,49 @@ export class DocumentsTabComponent implements OnChanges {
   }
 
   async viewInbound(doc: InboundDoc) {
+    const win = this._claimTab();   // claim the tab inside the click gesture
     this.loadingService.show('Fetching file...');
     try {
       const fetched = await this.apiService.inboundDocumentFetchFile(this.address, doc.owner, doc.documentId);
-      if (!fetched) { this.alertService.show('Error', 'Could not fetch the shared file.'); return; }
-      window.open(fetched.blobUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(fetched.blobUrl), 60_000);
+      if (!this._revealInTab(win, fetched)) {
+        this.alertService.show('Error', 'Could not fetch the shared file.');
+      }
     } finally {
       this.loadingService.hide();
     }
+  }
+
+  /**
+   * Open a tab synchronously within the click gesture and paint a "Loading…" placeholder into
+   * it. Must be called before the (multi-second) fetch await, or the popup blocker drops a
+   * deferred window.open() once the gesture window has elapsed. The placeholder makes the
+   * otherwise-blank tab visibly intentional while the file loads.
+   */
+  private _claimTab(): Window | null {
+    const win = window.open('', '_blank');
+    if (win) {
+      try { win.document.write(DOC_LOADING_HTML); win.document.close(); }
+      catch { /* some browsers disallow writing the new doc — harmless, tab just stays blank */ }
+    }
+    return win;
+  }
+
+  /**
+   * Reveal a fetched blob in a tab that was opened *synchronously* with the user's click.
+   * The IPFS fetch can take several seconds for large files; a window.open() deferred until
+   * after that await lands outside the user-gesture window and is silently dropped by the
+   * popup blocker. So callers open the tab first, then hand it here to navigate.
+   */
+  private _revealInTab(win: Window | null, fetched: { blobUrl: string } | null): boolean {
+    if (!fetched) { if (win) win.close(); return false; }
+    if (win) {
+      win.location.href = fetched.blobUrl;
+    } else {
+      // popup blocked outright — last-resort attempt (no worse than before)
+      window.open(fetched.blobUrl, '_blank');
+    }
+    setTimeout(() => URL.revokeObjectURL(fetched.blobUrl), 60_000);
+    return true;
   }
 
   // Sign a regulator's inbound doc: hash the decrypted plaintext (SHA-256) and submit the signature
@@ -654,6 +702,7 @@ export class DocumentsTabComponent implements OnChanges {
   }
 
   async viewFile(doc: Document) {
+    const win = this._claimTab();   // claim the tab inside the click gesture
     this.loadingService.show('Fetching file...');
     try {
       let fetched: { blobUrl: string; contentType: string } | null = null;
@@ -664,12 +713,9 @@ export class DocumentsTabComponent implements OnChanges {
       } else {
         fetched = await this.apiService.subscriptionDocumentFetchFile(this.address, doc.id);
       }
-      if (!fetched) {
+      if (!this._revealInTab(win, fetched)) {
         this.alertService.show('Error', 'Could not fetch file.');
-        return;
       }
-      window.open(fetched.blobUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(fetched!.blobUrl), 60_000);
     } finally {
       this.loadingService.hide();
     }

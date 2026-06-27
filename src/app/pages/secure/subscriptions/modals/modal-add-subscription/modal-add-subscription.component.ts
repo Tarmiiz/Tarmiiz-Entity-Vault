@@ -25,9 +25,13 @@ export class ModalAddSubscriptionComponent {
   mode = signal<'A' | 'B'>('A');
   services = signal<{ address: string; name: string }[]>([]);
   countries = signal<{ countryCode: number; name: string }[]>([]);
+  // Validators attached to the selected service (1:N). Mode B requires choosing which one
+  // validated the subscriber, so the on-chain subscribe gate passes.
+  serviceValidators = signal<{ address: string; active: boolean }[]>([]);
 
   form = this.fb.group({
     service: ['', Validators.required],
+    validator: [''],
     // Mode A
     didHash: [''],
     // Mode B
@@ -49,12 +53,25 @@ export class ModalAddSubscriptionComponent {
         this.loadCountries();
       }
     });
+    // Reload the attached-validator picker whenever the selected service changes.
+    this.form.get('service')!.valueChanges.subscribe((svc) => this.loadServiceValidators(svc || ''));
+  }
+
+  private async loadServiceValidators(service: string) {
+    this.form.patchValue({ validator: '' }, { emitEvent: false });
+    if (!service) { this.serviceValidators.set([]); return; }
+    const parties = await this.apiService.vaultGetServiceParties(service);
+    const validators = parties?.validators ?? [];
+    this.serviceValidators.set(validators);
+    if (validators.length === 1) this.form.patchValue({ validator: validators[0].address }, { emitEvent: false });
   }
 
   private resetForm() {
     this.mode.set('A');
+    this.serviceValidators.set([]);
     this.form.reset({
       service: '',
+      validator: '',
       didHash: '',
       uniqueIdHash: '',
       email: '',
@@ -102,7 +119,9 @@ export class ModalAddSubscriptionComponent {
 
   private isModeBValid(): boolean {
     const v = this.form.value;
-    return !!(v.service && v.uniqueIdHash && v.email && v.mobile && v.didType && v.countryCode && v.trxRefNo && v.trxTimestamp && v.level);
+    // When the service has attached validators, one must be chosen.
+    const validatorOk = this.serviceValidators().length === 0 || !!v.validator;
+    return !!(v.service && v.uniqueIdHash && v.email && v.mobile && v.didType && v.countryCode && v.trxRefNo && v.trxTimestamp && v.level && validatorOk);
   }
 
   canSubmit(): boolean {
@@ -113,6 +132,7 @@ export class ModalAddSubscriptionComponent {
     if (!this.canSubmit()) return;
     const v = this.form.value;
     const body: Record<string, any> = { service: v.service };
+    if (v.validator) body['validator'] = v.validator;
     if (this.mode() === 'A') {
       body['didHash'] = v.didHash;
     } else {

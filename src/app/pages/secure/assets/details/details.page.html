@@ -360,6 +360,17 @@
               
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <!-- Mint / Burn: fixed-supply only. Dynamic-supply tokens mint on subscribe / burn on redeem. -->
+                  @if (v.supplyMode === 1) {
+                    <button (click)="openMintModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-600">
+                      Mint Supply
+                    </button>
+                    <button (click)="openBurnModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600">
+                      Burn Supply
+                    </button>
+                  }
                   <button (click)="openChangeStateModal()" [disabled]="!entityActive"
                     class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                     Change State
@@ -1173,33 +1184,67 @@
         @if (activeTab() === 'holdersAt') {
           <div class="px-2 py-2">
             <div class="flex flex-wrap items-end gap-3 mb-3">
-              <div class="flex-1 min-w-[200px]">
-                <label class="block text-xs font-medium text-gray-500 mb-1">Block Number</label>
-                <input type="number" min="1" placeholder="e.g. 1234567"
-                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
-                  [ngModel]="holdersAtBlockInput()"
-                  (ngModelChange)="holdersAtBlockInput.set($event)">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Lookup by</label>
+                <div class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm">
+                  <button type="button" (click)="holdersAtMode.set('block')"
+                    class="px-3 py-2 transition-colors"
+                    [class.bg-indigo-600]="holdersAtMode() === 'block'"
+                    [class.text-white]="holdersAtMode() === 'block'"
+                    [class.text-gray-600]="holdersAtMode() !== 'block'">Block</button>
+                  <button type="button" (click)="holdersAtMode.set('date')"
+                    class="px-3 py-2 transition-colors border-l border-gray-300"
+                    [class.bg-indigo-600]="holdersAtMode() === 'date'"
+                    [class.text-white]="holdersAtMode() === 'date'"
+                    [class.text-gray-600]="holdersAtMode() !== 'date'">Date</button>
+                </div>
               </div>
+              @if (holdersAtMode() === 'block') {
+                <div class="flex-1 min-w-[200px]">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Block Number</label>
+                  <input type="number" min="1" placeholder="e.g. 1234567"
+                    class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                    [ngModel]="holdersAtBlockInput()"
+                    (ngModelChange)="holdersAtBlockInput.set($event)">
+                </div>
+              } @else {
+                <div class="flex-1 min-w-[200px]">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Date (as of end of day)</label>
+                  <input type="date"
+                    class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                    [ngModel]="holdersAtDateInput()"
+                    (ngModelChange)="holdersAtDateInput.set($event)">
+                </div>
+              }
               <button class="text-xs px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40"
                       (click)="loadHoldersAt()"
-                      [disabled]="holdersAtLoading() || !holdersAtBlockInput()">
+                      [disabled]="holdersAtLoading() || (holdersAtMode() === 'block' ? !holdersAtBlockInput() : !holdersAtDateInput())">
                 {{ holdersAtLoading() ? 'Loading…' : 'Load Snapshot' }}
               </button>
             </div>
 
-            @if (holdersAtQueried() === null) {
+            @if (holdersAtLoading()) {
+              <div class="flex flex-col items-center justify-center py-10 text-sm text-gray-500">
+                <svg class="animate-spin h-6 w-6 mb-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Reconstructing holder set…
+              </div>
+            }
+            @else if (holdersAtQueried() === null) {
               <div class="text-center py-8 text-sm text-gray-500">
-                Enter a past block number to reconstruct the holder set at that point in time.
+                Enter a past block number or pick a date to reconstruct the holder set at that point in time.
               </div>
             }
             @else if (holdersAt().length === 0) {
               <div class="text-center py-8 text-sm text-gray-500">
-                No holders at block {{ holdersAtQueried() }}.
+                No holders at block {{ holdersAtQueried() }}@if (holdersAtTime() !== null) {<span> ({{ (holdersAtTime()! * 1000) | date:'medium' }})</span>}.
               </div>
             }
             @else {
               <div class="text-xs text-gray-500 mb-2">
-                {{ holdersAtCount() }} holder(s) at block {{ holdersAtQueried() }} — showing top {{ holdersAt().length }}.
+                {{ holdersAtCount() }} holder(s) at block {{ holdersAtQueried() }}@if (holdersAtTime() !== null) {<span> · {{ (holdersAtTime()! * 1000) | date:'medium' }}</span>} — showing top {{ holdersAt().length }}.
               </div>
               <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -1243,6 +1288,7 @@
 <app-modal-asset-service-state></app-modal-asset-service-state>
 <app-modal-listing-create></app-modal-listing-create>
 <app-modal-asset-price></app-modal-asset-price>
+<app-modal-asset-supply></app-modal-asset-supply>
 <app-modal-asset-fee-config></app-modal-asset-fee-config>
 <app-modal-distribution-declare></app-modal-distribution-declare>
 <app-metadata-edit-modal></app-metadata-edit-modal>

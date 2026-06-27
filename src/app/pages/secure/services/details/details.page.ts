@@ -121,6 +121,8 @@ export class DetailsPage implements OnInit {
   validatorName = signal<string>('');
   paymentProcessorName = signal<string>('');
   custodianName = signal<string>('');
+  // 1:N provider attachments for this service (validators / payment processors / custodians).
+  serviceParties = signal<{ validators: { address: string; active: boolean }[]; paymentProcessors: { address: string; active: boolean }[]; custodians: { address: string; active: boolean }[] }>({ validators: [], paymentProcessors: [], custodians: [] });
   subscriptions = signal<Subscription[]>([]);
   assets = signal<Asset[]>([]);
   transactions = signal<AssetTransaction[]>([]);
@@ -407,6 +409,9 @@ export class DetailsPage implements OnInit {
       const service = this.mapVaultService(raw);
       this.service.set(service);
       this.resolveLinkedNames(raw.validator, raw.payment_processor, raw.custodian, raw.address);
+      this.apiService.vaultGetServiceParties(this.serviceAddress)
+        .then(p => this.serviceParties.set(p ?? { validators: [], paymentProcessors: [], custodians: [] }))
+        .catch(() => {});
       if (service.suspended) {
         const logs = await this.apiService.vaultGetStateChangeLogs(service.address, 1, 1);
         if (logs?.logs?.length > 0) {
@@ -613,6 +618,75 @@ export class DetailsPage implements OnInit {
             this.loadingService.hide();
         }
     }    
+  }
+
+  // ─── 1:N provider attach / detach ──────────────────────────────────────────
+  // partyType: 1=Validator, 2=PaymentProcessor, 3=Custodian. Reuses the existing picker
+  // modals to choose an address to ATTACH (a service may hold many of each role).
+
+  private async _attachParty(partyType: number, party: string) {
+    const currentService = this.service();
+    if (!currentService || !party) return;
+    this.loadingService.show('Attaching provider...');
+    try {
+      const res = await this.apiService.vaultAttachServiceParty(currentService.address, partyType, party);
+      if ((res as any)?.error) { this.alertService.show('Update Failed', (res as any).error); return; }
+      await this.getServiceDetails();
+      if ((res as any)?.requestId) this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+    } catch (error) {
+      console.error('Failed to attach provider', error);
+      this.alertService.show('Update Failed', 'There was an error attaching the provider.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async detachParty(partyType: number, party: string) {
+    const currentService = this.service();
+    if (!currentService) return;
+    const label = partyType === 1 ? 'validator' : partyType === 2 ? 'payment processor' : 'custodian';
+    const ok = await this.alertService.show('Remove provider', `Detach this ${label} from the service?`, 'Remove');
+    if (!ok) return;
+    this.loadingService.show('Detaching provider...');
+    try {
+      const res = await this.apiService.vaultDetachServiceParty(currentService.address, partyType, party);
+      if ((res as any)?.error) { this.alertService.show('Update Failed', (res as any).error); return; }
+      await this.getServiceDetails();
+      if ((res as any)?.requestId) this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+    } catch (error) {
+      console.error('Failed to detach provider', error);
+      this.alertService.show('Update Failed', 'There was an error detaching the provider.');
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async attachValidator() {
+    const currentService = this.service();
+    if (!currentService) return;
+    const chosen = await this.validatorModalService.show('', currentService.verificationLevel);
+    if (!chosen) return;
+    await this._attachParty(1, chosen);
+  }
+
+  async attachPaymentProcessor() {
+    const chosen = await this.paymentProcessorModalService.show('');
+    if (!chosen) return;
+    await this._attachParty(2, chosen);
+  }
+
+  async attachCustodian() {
+    const currentService = this.service();
+    if (!currentService) return;
+    const chosen = await this.custodianModalService.show(currentService.address, '', currentService.regulator);
+    if (!chosen) return;
+    await this._attachParty(3, chosen);
+  }
+
+  // Self-custody sentinel detection for the custodian list label.
+  isSelfCustodyAddress(party: string): boolean {
+    const s = this.service();
+    return !!s && party.toLowerCase() === s.address.toLowerCase();
   }
 
   async openChangeValidatorModal() {

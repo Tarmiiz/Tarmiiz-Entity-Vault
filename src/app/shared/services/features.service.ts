@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
 import { ConfigService } from './config.service';
+import { SessionService } from './session.service';
 
 // Toggleable menu keys a service-provider deployment may show. Everything else
 // (assets, subscriptions, transactions, credit, analytics, dex, custody, variables)
@@ -13,6 +14,7 @@ const SERVICE_PROVIDER_MENU = new Set([
 export class FeaturesService {
   private apiService = inject(ApiService);
   private config = inject(ConfigService);
+  private session = inject(SessionService);
 
   // env-level DEX kill switch, kept separate from the admin menu toggle.
   private envDex = signal(false);
@@ -51,7 +53,13 @@ export class FeaturesService {
     if (this.inflight) return this.inflight;
     this.inflight = (async () => {
       try {
-        const features = await this.apiService.vaultFeatures();
+        // Authenticated ⇒ read the per-user effective map (tenant folded with this
+        // user's restrict-only overrides); pre-login ⇒ the public tenant map. The
+        // server applies the restrict-only fold, so menuEnabled()/dex() are unchanged.
+        const token = await this.session.getActiveToken().catch(() => null);
+        const features = token
+          ? await this.apiService.vaultMyFeatures()
+          : await this.apiService.vaultFeatures();
         this.envDex.set(!!features?.dex);
         this.menu.set(features?.menu ?? {});
       } finally {

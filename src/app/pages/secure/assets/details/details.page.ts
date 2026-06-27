@@ -28,12 +28,15 @@ import { ModalTransactionInfoComponent } from '../../../../shared/components/mod
 import { ModalAssetServiceStateService } from '../modals/modal-asset-service-state/modal-asset-service-state.service';
 import { ModalAssetServiceStateComponent } from '../modals/modal-asset-service-state/modal-asset-service-state.component';
 import { AuditService } from '../../../../shared/services/audit.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ModalListingCreateService } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.service';
 import { ModalListingCreateComponent } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.component';
 import { ModalAssetPriceService } from '../modals/modal-asset-price/modal-asset-price.service';
 import { ModalAssetPriceComponent } from '../modals/modal-asset-price/modal-asset-price.component';
+import { ModalAssetSupplyService } from '../modals/modal-asset-supply/modal-asset-supply.service';
+import { ModalAssetSupplyComponent } from '../modals/modal-asset-supply/modal-asset-supply.component';
 import { ModalAssetFeeConfigService } from '../modals/modal-asset-fee-config/modal-asset-fee-config.service';
 import { ModalAssetFeeConfigComponent } from '../modals/modal-asset-fee-config/modal-asset-fee-config.component';
 import { ModalDistributionDeclareService } from '../modals/modal-distribution-declare/modal-distribution-declare.service';
@@ -61,6 +64,7 @@ import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models
     LiveIndicatorComponent,
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
+    ModalAssetSupplyComponent,
     ModalAssetFeeConfigComponent,
     ModalDistributionDeclareComponent,
     MetadataEditModalComponent, TranslatePipe,
@@ -77,6 +81,7 @@ export class DetailsPage implements OnInit {
   private serviceStateModal = inject(ModalAssetServiceStateService);
   private listingCreateModal = inject(ModalListingCreateService);
   private priceModal = inject(ModalAssetPriceService);
+  private supplyModal = inject(ModalAssetSupplyService);
   private feeConfigModal = inject(ModalAssetFeeConfigService);
   private metadataEditModal = inject(MetadataEditModalService);
   distributionDeclareModal = inject(ModalDistributionDeclareService);
@@ -85,6 +90,7 @@ export class DetailsPage implements OnInit {
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
+  private features = inject(FeaturesService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -108,11 +114,14 @@ export class DetailsPage implements OnInit {
   // Holders-at state — historical-balance reconstruction at a chosen block.
   // Driven by ITarmiizAsset.balanceOfAt (ERC20Votes checkpointed balances) +
   // the API's transaction-delta reconstruction of the holder set.
+  holdersAtMode       = signal<'block' | 'date'>('block');
   holdersAtBlockInput = signal<string>('');
+  holdersAtDateInput  = signal<string>('');   // yyyy-mm-dd from <input type="date">
   holdersAt           = signal<{ account: string; balance: string }[]>([]);
   holdersAtCount      = signal<number>(0);
   holdersAtLoading    = signal(false);
   holdersAtQueried    = signal<number | null>(null);
+  holdersAtTime       = signal<number | null>(null);  // block timestamp (unix seconds)
 
   loadingData: boolean = false;
   refreshing = signal(false);
@@ -448,17 +457,29 @@ export class DetailsPage implements OnInit {
   }
 
   async loadHoldersAt() {
-    const blk = Number(this.holdersAtBlockInput().trim());
-    if (!blk || blk <= 0) {
-      this.alertService.show('Invalid block', 'Enter a positive block number.');
-      return;
+    const dateMode = this.holdersAtMode() === 'date';
+    let blk = 0;
+    let tsSec = 0;
+    if (dateMode) {
+      const ds = this.holdersAtDateInput();
+      if (!ds) { this.alertService.show('Invalid date', 'Pick a date.'); return; }
+      // Interpret the picked day as END of that local day → holders "as of" that date.
+      tsSec = Math.floor(new Date(ds + 'T23:59:59').getTime() / 1000);
+      if (!tsSec || tsSec <= 0) { this.alertService.show('Invalid date', 'Pick a valid date.'); return; }
+    } else {
+      blk = Math.floor(Number(this.holdersAtBlockInput()));
+      if (!blk || blk <= 0) { this.alertService.show('Invalid block', 'Enter a positive block number.'); return; }
     }
     this.holdersAtLoading.set(true);
     try {
-      const r = await this.apiService.assetHoldersAt(this.assetAddress, blk, 0, 50);
+      const r = dateMode
+        ? await this.apiService.assetHoldersAtDate(this.assetAddress, tsSec, 0, 50)
+        : await this.apiService.assetHoldersAt(this.assetAddress, blk, 0, 50);
       this.holdersAt.set(r?.holders ?? []);
       this.holdersAtCount.set(Number(r?.totalCount ?? 0));
-      this.holdersAtQueried.set(blk);
+      // The API echoes the effective (resolved) block — show that for both modes.
+      this.holdersAtQueried.set(Number(r?.blockNumber ?? blk) || null);
+      this.holdersAtTime.set(r?.blockTime != null ? Number(r.blockTime) : null);
     } finally {
       this.holdersAtLoading.set(false);
     }
@@ -549,6 +570,15 @@ export class DetailsPage implements OnInit {
   }
 
   async loadDexListing() {
+    // Skip entirely when DEX is disabled for this tenant — the API gates every
+    // /dex/* endpoint with a 400 ('DEX is disabled'), so calling it just produces
+    // console noise. Mark loaded + empty so the DEX tab stays hidden.
+    if (!this.features.dex()) {
+      this.dexListing.set(undefined);
+      this.dexListingVenues.set([]);
+      this.dexListingLoaded.set(true);
+      return;
+    }
     this.dexListingLoaded.set(false);
     try {
       const listing = await this.apiService.vaultDexAssetListingInfo(this.assetAddress);
@@ -899,6 +929,41 @@ export class DetailsPage implements OnInit {
         return;
       }
       await this.getPriceHistory(1, 500);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // Mint / burn the asset's own treasury supply. Fixed-supply (supplyMode 1) only —
+  // dynamic-supply tokens mint on subscribe / burn on redeem, so they have no manual
+  // supply controls. Token quantities are plain integers (not wei).
+  async openMintModal() {
+    const asset = this.asset();
+    if (!asset) return;
+    const result = await this.supplyModal.show({ mode: 'mint', symbol: asset.symbol });
+    if (!result) return;
+    this.loadingService.show('Minting supply...');
+    try {
+      const r = await this.apiService.vaultMintAsset(this.assetAddress, result.tokens);
+      if ((r as any)?.error) { this.alertService.show('Mint failed', (r as any).error); return; }
+      await this.getAssetDetails();
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async openBurnModal() {
+    const asset = this.asset();
+    if (!asset) return;
+    // Treasury balance available to burn = totalSupply - circulating (held by the contract itself).
+    const available = Math.max(0, (asset.totalSupply ?? 0) - (asset.circulating ?? 0));
+    const result = await this.supplyModal.show({ mode: 'burn', symbol: asset.symbol, available });
+    if (!result) return;
+    this.loadingService.show('Burning supply...');
+    try {
+      const r = await this.apiService.vaultBurnAsset(this.assetAddress, result.tokens);
+      if ((r as any)?.error) { this.alertService.show('Burn failed', (r as any).error); return; }
+      await this.getAssetDetails();
     } finally {
       this.loadingService.hide();
     }

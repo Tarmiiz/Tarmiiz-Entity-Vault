@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormArray, FormGroup, FormControl, Va
 import { ModalAssetAddService, AddAssetData } from './modal-asset-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
+import { FeaturesService } from '../../../../../shared/services/features.service';
 
 @Component({
   selector: 'app-modal-asset-add',
@@ -19,6 +20,7 @@ export class ModalAssetAddComponent {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
   utils = inject(UtilsService);
+  features = inject(FeaturesService);
 
   // Reference data
   services = signal<{ address: string; name: string; paymentProcessor: string | null }[]>([]);
@@ -139,6 +141,12 @@ export class ModalAssetAddComponent {
     effect(() => {
       if (this.addAssetService.isVisible()) {
         this.addForm.reset({ noCreditSettlement: false });
+        // When the T3643 standard picker is disabled by admin, the step-1 selector is hidden
+        // and every new asset is a plain T20 — seed the (otherwise required) control so step 1
+        // validates without user input.
+        if (!this.features.menuEnabled('asset-t3643')) {
+          this.addForm.get('tokenType')!.setValue('1');
+        }
         this.metadataRows.clear();
         this.addMetadataRow();
         this.metadataError.set('');
