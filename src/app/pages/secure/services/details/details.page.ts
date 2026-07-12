@@ -122,7 +122,8 @@ export class DetailsPage implements OnInit {
   paymentProcessorName = signal<string>('');
   custodianName = signal<string>('');
   // 1:N provider attachments for this service (validators / payment processors / custodians).
-  serviceParties = signal<{ validators: { address: string; active: boolean }[]; paymentProcessors: { address: string; active: boolean }[]; custodians: { address: string; active: boolean }[] }>({ validators: [], paymentProcessors: [], custodians: [] });
+  // `name` is resolved lazily from the regulator-scoped registries (resolvePartyNames).
+  serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [] });
   subscriptions = signal<Subscription[]>([]);
   assets = signal<Asset[]>([]);
   transactions = signal<AssetTransaction[]>([]);
@@ -410,7 +411,7 @@ export class DetailsPage implements OnInit {
       this.service.set(service);
       this.resolveLinkedNames(raw.validator, raw.payment_processor, raw.custodian, raw.address);
       this.apiService.vaultGetServiceParties(this.serviceAddress)
-        .then(p => this.serviceParties.set(p ?? { validators: [], paymentProcessors: [], custodians: [] }))
+        .then(p => { this.serviceParties.set(p ?? { validators: [], paymentProcessors: [], custodians: [] }); this.resolvePartyNames(); })
         .catch(() => {});
       if (service.suspended) {
         const logs = await this.apiService.vaultGetStateChangeLogs(service.address, 1, 1);
@@ -461,6 +462,29 @@ export class DetailsPage implements OnInit {
       }
     }
     await Promise.all(promises);
+  }
+
+  // Enrich the 1:N provider lists with friendly names, resolved from the same regulator-scoped
+  // registries used for the legacy primary bindings. Validators / PPs are entity-cross type-2
+  // services (not in this entity's own services table), so we can't resolve them by a local join —
+  // we cross-reference the picker lists by address. Self-custody keeps its own label (no name).
+  private async resolvePartyNames() {
+    const parties = this.serviceParties();
+    const regulator = this.service()?.regulator;
+    const [valData, ppData, custData] = await Promise.all([
+      parties.validators.length ? this.apiService.vaultGetValidators(1, 200).catch(() => null) : Promise.resolve(null),
+      parties.paymentProcessors.length ? this.apiService.vaultGetPaymentProcessors(1, 200).catch(() => null) : Promise.resolve(null),
+      (parties.custodians.length && regulator) ? this.apiService.vaultGetEndorsedCustodians(regulator, 1, 200).catch(() => null) : Promise.resolve(null),
+    ]);
+    const nameFrom = (list: any[] | undefined, addr: string): string | undefined => {
+      const m = (list ?? []).find((x: any) => x.address?.toLowerCase() === addr.toLowerCase());
+      return m?.name || undefined;
+    };
+    this.serviceParties.set({
+      validators: parties.validators.map(p => ({ ...p, name: nameFrom(valData?.validators, p.address) })),
+      paymentProcessors: parties.paymentProcessors.map(p => ({ ...p, name: nameFrom(ppData?.paymentProcessors, p.address) })),
+      custodians: parties.custodians.map(p => ({ ...p, name: nameFrom(custData?.custodians, p.address) })),
+    });
   }
 
   isSelfCustody(): boolean {

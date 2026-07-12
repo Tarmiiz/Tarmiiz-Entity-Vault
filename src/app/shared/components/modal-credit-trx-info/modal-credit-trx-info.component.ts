@@ -5,7 +5,11 @@ import jsPDF from 'jspdf';
 
 import { UtilsService } from '../../services/utils.service';
 import { AuthService } from '../../services/auth.service';
+import { ApiService } from '../../services/api.service';
+import { AlertService } from '../alerts/alert/alert.service';
+import { LoadingService } from '../alerts/loading/loading.service';
 import { applyPdfFooter } from '../../utils/pdf-export.utils';
+import { CreditTransaction } from '../../models/data.model';
 import { ModalCreditTrxInfoService } from './modal-credit-trx-info.service';
 
 @Component({
@@ -20,6 +24,9 @@ export class ModalCreditTrxInfoComponent {
   private router = inject(Router);
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
+  private apiService = inject(ApiService);
+  private alertService = inject(AlertService);
+  private loadingService = inject(LoadingService);
 
   getTrxTypeClass(trxType: number): string {
     switch (trxType) {
@@ -41,8 +48,16 @@ export class ModalCreditTrxInfoComponent {
     }
   }
 
+  // Ledger-only routing marker for route transfers (origin 14) — mirrors the on-chain
+  // ROUTE_SWITCH constant (CreditProxy.routeSwitchAddress()). Never a real account.
+  private readonly ROUTE_SWITCH = '0xc3530d49773e8af0eb911ff424b5fd2bc23e07ea';
+
   isZero(addr: string): boolean {
     return !addr || /^0x0+$/i.test(addr);
+  }
+
+  isSwitch(addr: string): boolean {
+    return !!addr && addr.toLowerCase() === this.ROUTE_SWITCH;
   }
 
   isSubscription(addr: string): boolean {
@@ -57,6 +72,40 @@ export class ModalCreditTrxInfoComponent {
 
   onClose(): void {
     this.modalService.close();
+  }
+
+  // Open the SP-receipt document referenced by trx.dataCid. The receipt doc is owned by the
+  // SERVICE template, so it's resolved through the existing service-documents machinery:
+  // list the service's documents, match by CID, then stream via the standard file-view flow.
+  // The tab is claimed synchronously inside the click gesture (same pattern as documents-tab),
+  // or the deferred window.open is dropped by the popup blocker after the fetch await.
+  async viewReceipt(trx: CreditTransaction): Promise<void> {
+    if (!trx.dataCid || !trx.service) return;
+    const win = window.open('', '_blank');
+    this.loadingService.show('Fetching receipt...');
+    try {
+      const data = await this.apiService.serviceDocumentsList(trx.service, 1, 200);
+      const doc = (data?.documents ?? []).find((d: any) => d.cid === trx.dataCid);
+      if (!doc) {
+        if (win) win.close();
+        await this.alertService.show('Error', 'Receipt document not found on the service.');
+        return;
+      }
+      const fetched = await this.apiService.serviceDocumentFetchFile(trx.service, doc.id ?? doc.documentId);
+      if (!fetched) {
+        if (win) win.close();
+        await this.alertService.show('Error', 'Could not fetch the receipt file.');
+        return;
+      }
+      if (win) {
+        win.location.href = fetched.blobUrl;
+      } else {
+        window.open(fetched.blobUrl, '_blank');
+      }
+      setTimeout(() => URL.revokeObjectURL(fetched.blobUrl), 60_000);
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   exportPdf(): void {
@@ -116,12 +165,15 @@ export class ModalCreditTrxInfoComponent {
 
     row('Type', trx.trxTypeName);
     row('Currency', `${trx.currencySymbol} (${trx.currencyCode})`);
+    if (trx.trxRefNo) row('Reference No', trx.trxRefNo, true);
     if (trx.service) row('Service', trx.serviceName || trx.service, !trx.serviceName);
     divider();
 
     const label = trx.serviceName || trx.service;
     const fmtEndpoint = (addr: string, name: string, zeroTag: string) =>
-      this.isZero(addr) ? `${label} ${zeroTag}` : (name ? `${name}  ${addr}` : addr);
+      this.isZero(addr) ? `${label} ${zeroTag}`
+        : this.isSwitch(addr) ? 'Credit Switch (route transfer)'
+        : (name ? `${name}  ${addr}` : addr);
     if (trx.from) row('From', fmtEndpoint(trx.from, trx.fromName, '(mint)'), !this.isZero(trx.from) && !trx.fromName);
     if (trx.to)   row('To',   fmtEndpoint(trx.to,   trx.toName,   '(burn)'), !this.isZero(trx.to)   && !trx.toName);
     if (trx.trxData) {

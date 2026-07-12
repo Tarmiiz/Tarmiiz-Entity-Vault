@@ -115,7 +115,11 @@ export class AuditLog {
     public function_name: string | null = null,
     public function_signature: string | null = null,
     public contract_name: string | null = null,
-    public contract_kind: string | null = null
+    public contract_kind: string | null = null,
+    public action_label: string | null = null,
+    public prev_hash: string | null = null,
+    public row_hash: string | null = null,
+    public verified: boolean | null = null
   ) {}
 
   get categoryLabel(): string {
@@ -123,7 +127,9 @@ export class AuditLog {
   }
 
   get actionLabel(): string {
-    return (this.action || '').replace(/_/g, ' ');
+    // Persisted drain-time readable label ("Credit – Service Deposit");
+    // falls back to the raw decoded action for legacy rows.
+    return this.action_label || (this.action || '').replace(/_/g, ' ');
   }
 }
 
@@ -367,6 +373,54 @@ export interface FeeConfig {
   sellFeeDestination: string;
 }
 
+// External API integration row (admin settings; generalized from eKYC providers) —
+// param VALUES never reach the frontend; each key only carries `set` + `secret` flags.
+export interface IntegrationParam {
+  key: string;
+  label?: string;
+  secret: boolean;
+  set: boolean;
+}
+
+export interface ExternalIntegration {
+  name: string;
+  displayName: string;
+  category: string;
+  adapter: string | null;
+  enabled: boolean;
+  isDefault: boolean;
+  configured: boolean;
+  updatedAt: number | null;
+  capabilities: { verifyNID: boolean; transactionInquiry: boolean; fetchImages: boolean } | null;
+  linkedServices: number;
+  params: IntegrationParam[];
+}
+
+export interface IntegrationServiceLink {
+  service: string;
+  serviceName: string | null;
+  entity: string | null;
+  serviceType: number | null;
+  state: number | null;
+  updatedAt: number;
+}
+
+export interface IntegrationConsumer {
+  service: string;
+  serviceName: string | null;
+  entity: string | null;
+  viaProvider: string;
+  partyType: number;
+  active: boolean;
+}
+
+export interface IntegrationServiceCandidate {
+  address: string;
+  name: string;
+  entity: string;
+  state: number;
+}
+
 export class AssetHolder {
   constructor (
     public holder: string,
@@ -522,7 +576,13 @@ export class CreditTransaction {
     public updateTime: number,
     public assetTrxId: number = 0,
     public origin: number = 0,
-    public originName: string = ''
+    public originName: string = '',
+    // Fee-leg link (0 = principal row) — see CreditFeeOpsLib / Transactions.parentTrxId.
+    public parentTrxId?: number,
+    // External service-provider transaction reference (readable).
+    public trxRefNo?: string,
+    // IPFS CID of the SP-receipt document owned by the SERVICE template ('' when none).
+    public dataCid?: string
   ) {}
 }
 

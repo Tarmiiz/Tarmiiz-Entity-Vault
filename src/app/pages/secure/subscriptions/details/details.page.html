@@ -745,6 +745,7 @@
                     <tr>
                       <th scope="col" class="px-6 py-2">Date</th>
                       <th scope="col" class="px-6 py-2">Type</th>
+                      <th scope="col" class="px-6 py-2">Direction</th>
                       <th scope="col" class="px-6 py-2">Currency</th>
                       <th scope="col" class="px-6 py-2 text-right">Amount</th>
                       <th scope="col" class="px-6 py-2">State</th>
@@ -753,13 +754,21 @@
                   <tbody class="text-xs">
                     @if (filteredCreditTransactions().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="5" class="px-6 py-2 text-center text-gray-400">No credit transactions found</td>
+                        <td colspan="6" class="px-6 py-2 text-center text-gray-400">No credit transactions found</td>
                       </tr>
                     } @else {
                       @for (trx of pagedCreditTransactions(); track trx.trxId; let isEven = $even) {
                         <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" [class.row-new]="newCreditTrxIds().has(trx.trxId)" (click)="creditTrxInfoService.show(trx, subscriptionAddress)">
                           <td class="px-6 py-2">{{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span></td>
+                          <td class="px-6 py-2">
+                            @if (getCreditTrxDirection(trx); as dir) {
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                                [class]="dir === 'In' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'">{{ dir }}</span>
+                            } @else {
+                              <span class="text-gray-400">—</span>
+                            }
+                          </td>
                           <td class="px-6 py-2"><span class="badge-currency">{{ trx.currencySymbol }}</span></td>
                           <td class="px-6 py-2 text-right">{{ trx.amount | number: '1.2-2' }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span></td>

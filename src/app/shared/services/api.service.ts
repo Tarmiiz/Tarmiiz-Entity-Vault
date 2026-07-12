@@ -8,7 +8,7 @@ import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
-import { FeeConfig } from '../models/data.model';
+import { FeeConfig, ExternalIntegration, IntegrationServiceLink, IntegrationConsumer, IntegrationServiceCandidate } from '../models/data.model';
 
 @Injectable({
   providedIn: 'root'
@@ -40,19 +40,6 @@ export class ApiService {
   }
 
   private _authRef: any = null;
-  private formatReason(reason: string): string {
-    try {
-      // Lazy resolution to avoid circular dependency (AuthService ↔ ApiService)
-      if (!this._authRef) {
-        this._authRef = this.injector.get((require('./auth.service') as any).AuthService);
-      }
-      const user = this._authRef?.userInfo;
-      if (user?.userId) {
-        return `[userId:${user.userId}|${user.name || ''}] ${reason}`;
-      }
-    } catch (_) {}
-    return reason;
-  }
 
   apiURL = this.configService.get('apiURL');
 
@@ -63,6 +50,7 @@ export class ApiService {
 
   private getAuditHeaders(): Record<string, string> {
     try {
+      // Lazy resolution to avoid circular dependency (AuthService ↔ ApiService)
       if (!this._authRef) {
         this._authRef = this.injector.get((require('./auth.service') as any).AuthService);
       }
@@ -124,12 +112,13 @@ export class ApiService {
   }
 
   // Authenticated per-user effective feature map (tenant folded with this user's
-  // restrict-only overrides). Same shape as vaultFeatures(); read once a session exists.
-  async vaultMyFeatures(): Promise<{ dex: boolean; menu: Record<string, boolean> } | null> {
+  // restrict-only overrides). Same shape as vaultFeatures() plus the systemFunctions map;
+  // read once a session exists.
+  async vaultMyFeatures(): Promise<{ dex: boolean; menu: Record<string, boolean>; systemFunctions: Record<string, boolean> } | null> {
     const data = await this.vaultGet('/features/me');
     if (!data) return null;
     const features = data.features ?? {};
-    return { dex: !!features.dex, menu: data.menu ?? {} };
+    return { dex: !!features.dex, menu: data.menu ?? {}, systemFunctions: data.systemFunctions ?? {} };
   }
 
   // Per-user menu overrides (admin Menu Access tab on User Details).
@@ -147,6 +136,80 @@ export class ApiService {
 
   async vaultUserMenuConfigSet(userId: string | number, key: string, enabled: boolean) {
     return this.vaultPut('/users/' + userId + '/menu-config/' + key, { enabled });
+  }
+
+  // Per-user System Functions (admin System Functions tab on User Details). Returns only the
+  // functions applicable to the target user's role (empty ⇒ tab hidden).
+  async vaultUserSystemFunctionConfigList(userId: string | number): Promise<
+    { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; effective: boolean }[]
+  > {
+    const data = await this.vaultGet('/users/' + userId + '/system-functions');
+    return (data?.functions ?? []).map((r: any) => ({
+      functionKey: r.functionKey,
+      defaultEnabled: !!r.defaultEnabled,
+      userEnabled: r.userEnabled === null || r.userEnabled === undefined ? null : !!r.userEnabled,
+      effective: !!r.effective,
+    }));
+  }
+
+  async vaultUserSystemFunctionConfigSet(userId: string | number, key: string, enabled: boolean) {
+    return this.vaultPut('/users/' + userId + '/system-functions/' + key, { enabled });
+  }
+
+  // Settings backup (on-chain encrypted fallback for the DB-only settings tables) — admin page
+  async vaultSettingsBackupStatus(): Promise<{ name: string; localRows: number; chainCreatedAt: number | null; chainUpdatedAt: number | null }[]> {
+    const data = await this.vaultGet('/settings-backup/status');
+    return (data?.settings ?? []).map((r: any) => ({
+      name: r.name,
+      localRows: Number(r.localRows ?? 0),
+      chainCreatedAt: r.chainCreatedAt != null ? Number(r.chainCreatedAt) : null,
+      chainUpdatedAt: r.chainUpdatedAt != null ? Number(r.chainUpdatedAt) : null,
+    }));
+  }
+
+  async vaultSettingsBackupRun(name?: string) {
+    return this.vaultPost('/settings-backup/backup', name ? { name } : {});
+  }
+
+  async vaultSettingsBackupRestore(name?: string) {
+    return this.vaultPost('/settings-backup/restore', name ? { name } : {});
+  }
+
+  // External API integrations (admin-managed params; encrypted in DB, chain-backed) — admin page
+  async vaultIntegrations(): Promise<ExternalIntegration[]> {
+    const data = await this.vaultGet('/integrations');
+    return (data?.integrations ?? []) as ExternalIntegration[];
+  }
+
+  async vaultIntegrationCreate(body: { name: string; displayName?: string; category: string; adapter?: string; enabled?: boolean; isDefault?: boolean; params?: Record<string, { value?: string; secret?: boolean } | null> }) {
+    return this.vaultPost('/integrations', body);
+  }
+
+  async vaultIntegrationUpdate(name: string, body: { displayName?: string; enabled?: boolean; isDefault?: boolean; params?: Record<string, { value?: string; secret?: boolean } | null> }) {
+    return this.vaultPut('/integrations/' + name, body);
+  }
+
+  async vaultIntegrationDelete(name: string) {
+    return this.vaultDelete('/integrations/' + name);
+  }
+
+  async vaultIntegrationTest(name: string): Promise<{ connected: boolean; error?: string }> {
+    const data = await this.vaultPost('/integrations/' + name + '/test', {});
+    return { connected: !!data?.connected, error: data?.error };
+  }
+
+  async vaultIntegrationLinks(name: string): Promise<{ links: IntegrationServiceLink[]; consumers: IntegrationConsumer[] }> {
+    const data = await this.vaultGet('/integrations/' + name + '/services');
+    return { links: data?.links ?? [], consumers: data?.consumers ?? [] };
+  }
+
+  async vaultIntegrationLinksSet(name: string, services: string[]) {
+    return this.vaultPut('/integrations/' + name + '/services', { services });
+  }
+
+  async vaultIntegrationServiceCandidates(): Promise<IntegrationServiceCandidate[]> {
+    const data = await this.vaultGet('/integrations/service-candidates');
+    return (data?.services ?? []) as IntegrationServiceCandidate[];
   }
 
   // ─── Vault helpers ────────────────────────────────────────────────────────────
@@ -797,7 +860,7 @@ export class ApiService {
   }
 
   async vaultUpdateAssetState(address: string, state: number, reason = '') {
-    const data = await this.vaultPut('/assets/' + address + '/state', { state, reason: this.formatReason(reason) });
+    const data = await this.vaultPut('/assets/' + address + '/state', { state, reason });
     return data ?? null;
   }
 
@@ -824,7 +887,7 @@ export class ApiService {
   }
 
   async vaultSetAssetServiceState(assetAddress: string, serviceAddress: string, state: number, reason = '') {
-    const data = await this.vaultPut('/assets/' + assetAddress + '/services/' + serviceAddress + '/state', { state, reason: this.formatReason(reason) });
+    const data = await this.vaultPut('/assets/' + assetAddress + '/services/' + serviceAddress + '/state', { state, reason });
     return data ?? null;
   }
 
@@ -851,7 +914,7 @@ export class ApiService {
   }
 
   async vaultUpdateServiceState(address: string, state: number, reason = '') {
-    const data = await this.vaultPut('/services/' + address + '/state', { state, reason: this.formatReason(reason) });
+    const data = await this.vaultPut('/services/' + address + '/state', { state, reason });
     return data ?? null;
   }
 
@@ -967,7 +1030,7 @@ export class ApiService {
   // ─── Vault — Subscription writes ─────────────────────────────────────────────
 
   async vaultUpdateSubscriptionState(address: string, state: number, reason = '') {
-    const data = await this.vaultPut('/subscriptions/' + address + '/state', { state, reason: this.formatReason(reason) });
+    const data = await this.vaultPut('/subscriptions/' + address + '/state', { state, reason });
     return data ?? null;
   }
 
@@ -1057,13 +1120,15 @@ export class ApiService {
 
   // Bank hub move — the entity's Bank-level PP `service` moves an identity's credit between its
   // bank-account hub and a spoke subscription (both same identity, enforced on-chain).
-  async bankTransfer(body: { service: string; from: string; to: string; currencyCode: number; amount: number; data?: any; refNo?: string }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+  // trxRefNo (the SP's external transaction reference) is required; timestamp (unix seconds)
+  // optionally backdates the ledger row; `data` is pinned as an encrypted IPFS receipt document.
+  async bankTransfer(body: { service: string; from: string; to: string; currencyCode: number; amount: number; trxRefNo: string; timestamp?: number; data?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
     return this._creditMutation('/credit/bank-transfer', body);
   }
 
   // Anonymous service-routed move — the entity's source `service` routes `fromSub`'s credit to the
   // SAME identity's subscription at `destinationService` (resolved on-chain; the sibling sub + DID are never exposed).
-  async routeTransfer(body: { service: string; fromSub: string; destinationService: string; currencyCode: number; amount: number; data?: any; refNo?: string }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+  async routeTransfer(body: { service: string; fromSub: string; destinationService: string; currencyCode: number; amount: number; trxRefNo: string; timestamp?: number; data?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
     return this._creditMutation('/credit/route-transfer', body);
   }
 
@@ -1107,11 +1172,14 @@ export class ApiService {
     }
   }
 
-  async usersOnboard(body: Record<string, any>): Promise<{ subscriptionAddress?: string; error?: string }> {
+  // mode 'did' = returning claimed user by DID hash; 'ref' = new/unclaimed identity from a prior
+  // eKYC verification reference. (The API's one-call /users/onboard/new multipart variant is for
+  // server-to-server integrations; the Vault modal collects the reference fields directly.)
+  async usersOnboard(body: Record<string, any>, mode: 'did' | 'ref'): Promise<{ subscriptionAddress?: string; error?: string }> {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
-        url: this.apiURL + '/users/onboard',
+        url: this.apiURL + '/users/onboard/' + mode,
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),

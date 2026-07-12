@@ -142,6 +142,7 @@
     "system":            "النظام",
     "signerKeys":        "مفاتيح التوقيع",
     "auditTrail":        "سجل التدقيق",
+    "activityLogs":      "سجلات النشاط",
     "systemVariables":   "متغيرات النظام",
     "entityProfile":     "ملف الجهة",
     "myProfile":         "ملفي الشخصي",

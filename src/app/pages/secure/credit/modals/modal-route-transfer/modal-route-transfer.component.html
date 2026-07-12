@@ -44,6 +44,18 @@
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
           </div>
           <div>
+            <label class="block text-sm font-medium text-gray-700">Reference No</label>
+            <input type="text" formControlName="trxRefNo"
+              class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
+              placeholder="e.g. bank transfer reference" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Transaction date (optional)</label>
+            <input type="datetime-local" formControlName="trxDate"
+              class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+            <p class="text-xs text-gray-500 mt-1">Backdates the ledger row. Leave empty to use the current time.</p>
+          </div>
+          <div>
             <label class="block text-sm font-medium text-gray-700">Note (optional)</label>
             <textarea formControlName="note" rows="2"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"

@@ -17,10 +17,14 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { AuditLog } from '../../../../shared/models/data.model';
 
+// Full taxonomy — keep in sync with the API's services/audit.js AUDIT_CATEGORIES.
 const AUDIT_CATEGORIES = [
   'User', 'Role', 'Auth', 'State', 'Config', 'Document', 'Entity',
   'Service', 'Subscription', 'Asset', 'Credit', 'DEX', 'Identity',
-  'Connect', 'Regulator', 'Validator', 'Payment Processor'
+  'Regulator', 'Validator', 'Payment Processor', 'Connect', 'SignerKey',
+  'Directory', 'Validator Endorsement', 'Payment Processor Endorsement',
+  'Custodian', 'Custodian Endorsement', 'Data Provider',
+  'Data Provider Endorsement', 'Currency', 'Distribution', 'ServiceProvider'
 ];
 
 @Component({
@@ -117,7 +121,7 @@ export class MyPage implements OnInit {
     }, 500);
   }
 
-  protected buildFilters() {
+  protected buildFilters(page: number = this.page(), pageSize: number = this.pageSize) {
     return {
       from: this.filterFrom() || undefined,
       to: this.filterTo() || undefined,
@@ -126,13 +130,37 @@ export class MyPage implements OnInit {
       actor: this.filterActor() || undefined,
       contract: this.filterContract() || undefined,
       refNo: this.filterRefNo() || undefined,
-      page: this.page(),
-      pageSize: this.pageSize,
+      page,
+      pageSize,
     };
   }
 
-  protected fetch() {
-    return this.apiService.auditMe(this.buildFilters());
+  protected fetch(page?: number, pageSize?: number) {
+    return this.apiService.auditMe(this.buildFilters(page, pageSize));
+  }
+
+  // Fetch EVERY row matching the current filters for export (the table itself
+  // stays paged) — 500-row chunks fit under the API's pageSize cap; the hard
+  // cap keeps a runaway filterless export bounded.
+  protected async loadAllForExport(): Promise<AuditLog[]> {
+    const CHUNK = 500;
+    const HARD_CAP = 20000;
+    const all: AuditLog[] = [];
+    this.loadingService.show('Preparing export...');
+    try {
+      let page = 1;
+      while (all.length < HARD_CAP) {
+        const data = await this.fetch(page, CHUNK);
+        const rows = (data?.rows || []).map((r: any) => this.mapRow(r));
+        all.push(...rows);
+        const total = Number(data?.total ?? 0);
+        if (rows.length === 0 || all.length >= total) break;
+        page++;
+      }
+    } finally {
+      this.loadingService.hide();
+    }
+    return all;
   }
 
   async load(silent = false) {
@@ -184,6 +212,10 @@ export class MyPage implements OnInit {
       pick('function_signature', 'functionSignature') ?? null,
       pick('contract_name', 'contractName') ?? null,
       pick('contract_kind', 'contractKind') ?? null,
+      pick('action_label', 'actionLabel') ?? null,
+      pick('prev_hash', 'prevHash') ?? null,
+      pick('row_hash', 'rowHash') ?? null,
+      pick('verified') ?? null,
     );
   }
 
@@ -232,7 +264,13 @@ export class MyPage implements OnInit {
   }
 
   actionLabel(r: AuditLog): string {
-    return (r.action || '').replace(/_/g, ' ');
+    // Persisted drain-time readable label ("Credit – Service Deposit");
+    // falls back to the raw decoded action for legacy rows.
+    return r.action_label || (r.action || '').replace(/_/g, ' ');
+  }
+
+  userLabel(r: AuditLog): string {
+    return r.actor_user_name || (r.actor_user_id ? this.shortAddr(r.actor_user_id) : '');
   }
 
   openDetails(r: AuditLog) {
@@ -248,13 +286,15 @@ export class MyPage implements OnInit {
     return !refNo || /^0x0+$/i.test(refNo);
   }
 
-  exportExcel() {
-    const rows = this.rows().map(r => ({
+  async exportExcel() {
+    const rows = (await this.loadAllForExport()).map(r => ({
       'Time': this.utils.formatDate(r.chain_time || r.created_at),
       'Category': r.category,
-      'Action': r.action,
+      'Action': this.actionLabel(r),
       'Function': this.functionLabel(r),
       'Actor': this.actorLabel(r),
+      'User': r.actor_user_name || '',
+      'Client IP': r.client_ip || '',
       'Contract': r.contract,
       'RefNo': r.ref_no,
       'TxHash': r.tx_hash,
@@ -266,8 +306,8 @@ export class MyPage implements OnInit {
     XLSX.writeFile(wb, `${this.exportName()}_${stamp}.xlsx`);
   }
 
-  exportPdf() {
-    const rows = this.rows();
+  async exportPdf() {
+    const rows = await this.loadAllForExport();
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
@@ -278,12 +318,14 @@ export class MyPage implements OnInit {
       startY: 26,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [['Time', 'Category', 'Action', 'Function', 'Actor', 'Contract', 'RefNo']],
+      head: [['Time', 'Category', 'Action', 'Function', 'Actor', 'User', 'Client IP', 'Contract', 'RefNo']],
       body: rows.map(r => [
         this.utils.formatDate(r.chain_time || r.created_at),
-        r.category, r.action,
+        r.category, this.actionLabel(r),
         this.functionLabel(r),
         this.actorLabel(r),
+        r.actor_user_name || '',
+        r.client_ip || '',
         this.shortAddr(r.contract),
         this.shortAddr(r.ref_no),
       ]),

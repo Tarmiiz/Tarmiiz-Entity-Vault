@@ -24,6 +24,11 @@ export class FeaturesService {
   // so core/unknown items never disappear.
   menu = signal<Record<string, boolean>>({});
 
+  // Per-user System Functions map { key: enabled } (action-button gating). Populated only
+  // once authenticated (from /vault/features/me); absent key ⇒ enabled (matters only before
+  // the post-login refresh, since these buttons live on authenticated pages).
+  systemFunctions = signal<Record<string, boolean>>({});
+
   private inflight: Promise<void> | null = null;
 
   constructor() {
@@ -49,6 +54,12 @@ export class FeaturesService {
     return key in m ? m[key] : true;           // admin toggle
   }
 
+  /** Whether a per-user System Function (action button) is enabled. Unknown keys default to enabled. */
+  systemFunctionEnabled(key: string): boolean {
+    const m = this.systemFunctions();
+    return key in m ? m[key] : true;
+  }
+
   refresh(): Promise<void> {
     if (this.inflight) return this.inflight;
     this.inflight = (async () => {
@@ -62,6 +73,8 @@ export class FeaturesService {
           : await this.apiService.vaultFeatures();
         this.envDex.set(!!features?.dex);
         this.menu.set(features?.menu ?? {});
+        // System functions only come back on the authenticated (per-user) call.
+        this.systemFunctions.set((features as any)?.systemFunctions ?? {});
       } finally {
         this.loaded.set(true);
         this.inflight = null;

@@ -393,7 +393,7 @@ export const routes: Routes = [
             path: 'my-profile',
             loadComponent: () => import('./pages/secure/users/my-profile/my-profile.page').then( m => m.MyProfilePage),
             canActivate: [AuthGuard, RoleGuard],
-            data: { allowedRoles: [2, 3] }
+            data: { allowedRoles: [2, 3, 4] }
           },
           {
             path: '',
@@ -426,7 +426,7 @@ export const routes: Routes = [
           },
         ]
       },
-      // logs (audit trail)
+      // logs (audit trail) — Security officer (4) only
       {
         path: 'logs',
         canActivate: [AuthGuard, menuFeatureGuard('logs')],
@@ -435,23 +435,29 @@ export const routes: Routes = [
             path: 'my',
             loadComponent: () => import('./pages/secure/logs/my/my.page').then(m => m.MyPage),
             canActivate: [AuthGuard, RoleGuard],
-            data: { allowedRoles: [1, 2, 3] }
+            data: { allowedRoles: [4] }
           },
           {
             path: 'system',
             loadComponent: () => import('./pages/secure/logs/system/system.page').then(m => m.SystemPage),
             canActivate: [AuthGuard, RoleGuard],
-            data: { allowedRoles: [1] }
+            data: { allowedRoles: [4] }
+          },
+          {
+            path: 'activity',
+            loadComponent: () => import('./pages/secure/logs/activity/activity.page').then(m => m.ActivityPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [4] }
           },
           {
             path: 'details/:id',
             loadComponent: () => import('./pages/secure/logs/details/details.page').then(m => m.DetailsPage),
             canActivate: [AuthGuard, RoleGuard],
-            data: { allowedRoles: [1, 2, 3] }
+            data: { allowedRoles: [4] }
           },
           {
             path: '',
-            redirectTo: 'my',
+            redirectTo: 'system',
             pathMatch: 'full',
           },
         ]
@@ -484,6 +490,23 @@ export const routes: Routes = [
             loadComponent: () => import('./pages/secure/settings/menu/menu.page').then(m => m.MenuSettingsPage),
             canActivate: [AuthGuard, RoleGuard],
             data: { allowedRoles: [1] },
+          },
+          {
+            path: 'backup',
+            loadComponent: () => import('./pages/secure/settings/backup/backup.page').then(m => m.SettingsBackupPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            path: 'external-integrations',
+            loadComponent: () => import('./pages/secure/settings/external-integrations/external-integrations.page').then(m => m.ExternalIntegrationsPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            // Legacy alias for the pre-rename eKYC Providers page.
+            path: 'ekyc-providers',
+            redirectTo: 'external-integrations',
           },
           {
             path: '',

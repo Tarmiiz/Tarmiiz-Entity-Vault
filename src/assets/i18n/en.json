@@ -142,6 +142,7 @@
     "system":            "System",
     "signerKeys":        "Signer Keys",
     "auditTrail":        "Audit Trail",
+    "activityLogs":      "Activity Logs",
     "systemVariables":   "System Variables",
     "entityProfile":     "Entity Profile",
     "myProfile":         "My Profile",

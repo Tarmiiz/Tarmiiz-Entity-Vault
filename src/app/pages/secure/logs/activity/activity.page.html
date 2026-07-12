@@ -1,0 +1,140 @@
+<app-header [title]="title"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Tab bar -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-2 mb-3">
+    <div class="flex border-b border-gray-200">
+      <button (click)="setTab('activity')"
+        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+        [class.text-white]="activeTab() === 'activity'"
+        [class.border-b-2]="activeTab() === 'activity'"
+        [class.border-blue-600]="activeTab() === 'activity'"
+        [class.bg-blue-600]="activeTab() === 'activity'">
+        Activity
+      </button>
+      <button (click)="setTab('state')"
+        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+        [class.text-white]="activeTab() === 'state'"
+        [class.border-b-2]="activeTab() === 'state'"
+        [class.border-blue-600]="activeTab() === 'state'"
+        [class.bg-blue-600]="activeTab() === 'state'">
+        State Changes
+      </button>
+      <div class="flex gap-2 ml-auto items-center pr-2">
+        <button (click)="exportExcel()"
+          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">Export Excel</button>
+        <button (click)="exportPdf()"
+          class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">Export PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters (activity tab only) -->
+  @if (activeTab() === 'activity') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+      <div class="flex flex-wrap gap-2 items-end">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Category</label>
+          <input type="text" [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event); applyFilters()" placeholder="e.g. auth, approval"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40" />
+        </div>
+        <div class="flex flex-col justify-end">
+          <button (click)="clearFilters()"
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+
+      @if (activeTab() === 'activity') {
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th scope="col" class="px-4 py-2">#</th>
+              <th scope="col" class="px-4 py-2">Time</th>
+              <th scope="col" class="px-4 py-2">Category</th>
+              <th scope="col" class="px-4 py-2">Action</th>
+              <th scope="col" class="px-4 py-2">Target</th>
+              <th scope="col" class="px-4 py-2">User</th>
+              <th scope="col" class="px-4 py-2">Client IP</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            @if (activityRows().length === 0) {
+              <tr class="bg-white border-b"><td colspan="7" class="px-4 py-8 text-center text-gray-400">no data</td></tr>
+            }
+            @for (r of activityRows(); track r.id; let i = $index; let isEven = $even) {
+              <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2">{{ i + 1 }}</td>
+                <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatDate(r.created_at) }}</td>
+                <td class="px-4 py-2">
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">{{ r.category }}</span>
+                </td>
+                <td class="px-4 py-2 capitalize">{{ r.action }}</td>
+                <td class="px-4 py-2 font-mono break-all" [title]="r.details">{{ r.target }}</td>
+                <td class="px-4 py-2 whitespace-nowrap">{{ r.user_name || r.user_id || '' }}</td>
+                <td class="px-4 py-2 font-mono whitespace-nowrap">{{ r.client_ip || '' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th scope="col" class="px-4 py-2">#</th>
+              <th scope="col" class="px-4 py-2">Time</th>
+              <th scope="col" class="px-4 py-2">Type</th>
+              <th scope="col" class="px-4 py-2">Action</th>
+              <th scope="col" class="px-4 py-2">Address</th>
+              <th scope="col" class="px-4 py-2">New Value</th>
+              <th scope="col" class="px-4 py-2">User</th>
+              <th scope="col" class="px-4 py-2">Client IP</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            @if (stateRows().length === 0) {
+              <tr class="bg-white border-b"><td colspan="8" class="px-4 py-8 text-center text-gray-400">no data</td></tr>
+            }
+            @for (r of stateRows(); track r.id; let i = $index; let isEven = $even) {
+              <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2">{{ i + 1 }}</td>
+                <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatDate(r.created_at) }}</td>
+                <td class="px-4 py-2">
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">{{ r.type }}</span>
+                </td>
+                <td class="px-4 py-2 capitalize">{{ (r.action || '').replaceAll('_', ' ') }}</td>
+                <td class="px-4 py-2 font-mono" [title]="r.address">{{ shortAddr(r.address) }}</td>
+                <td class="px-4 py-2 break-all" [title]="r.reason">{{ r.new_value }}</td>
+                <td class="px-4 py-2 whitespace-nowrap">{{ r.user_name || r.user_id || '' }}</td>
+                <td class="px-4 py-2 font-mono whitespace-nowrap">{{ r.client_ip || '' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-2 border-t">
+      <p class="text-xs font-medium text-gray-800">
+        Showing {{ activeTab() === 'activity' ? activityRows().length : stateRows().length }} of Total {{ total() }} Records
+      </p>
+      @if (totalPages() > 1) {
+        <div class="flex items-center gap-3 text-xs text-gray-600">
+          <span>Page {{ page() }} of {{ totalPages() }}</span>
+          <div class="flex gap-2">
+            <button (click)="prevPage()" [disabled]="page() === 1"
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
+            <button (click)="nextPage()" [disabled]="page() >= totalPages()"
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

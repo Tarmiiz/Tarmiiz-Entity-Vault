@@ -15,12 +15,21 @@ export class RoleGuard implements CanActivate {
     state: RouterStateSnapshot): Promise<boolean | UrlTree> {
     const allowedRoles: number[] = next.data['allowedRoles'] ?? [];
 
+    const userRaw = await this.storageService.get('user');
+    const role: number = userRaw ? JSON.parse(userRaw)?.role : null;
+
+    // Security officer (4) is deny-by-default: routes with no allowedRoles
+    // are open to every other role, but role 4 may only enter routes that
+    // explicitly include it. Redirect to the audit trail (not the dashboard,
+    // which excludes role 4 and would loop). The server enforces the same
+    // allowlist — this is UX, not the security boundary.
+    if (role === 4) {
+      return allowedRoles.includes(4) ? true : this.router.parseUrl('authorized/logs/system');
+    }
+
     if (allowedRoles.length === 0) {
       return true;
     }
-
-    const userRaw = await this.storageService.get('user');
-    const role: number = userRaw ? JSON.parse(userRaw)?.role : null;
 
     if (allowedRoles.includes(role)) {
       return true;

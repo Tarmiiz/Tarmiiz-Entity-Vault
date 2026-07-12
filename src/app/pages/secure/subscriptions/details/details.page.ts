@@ -827,6 +827,9 @@ export class DetailsPage implements OnInit {
       assetTrxId: Number(raw.assetTrxId ?? 0),
       origin: Number(raw.origin ?? 0),
       originName: this.originMap[raw.origin] ?? this.creditOriginNames[raw.origin] ?? (raw.origin ? `Origin #${raw.origin}` : ''),
+      parentTrxId: Number(raw.parentTrxId ?? 0),
+      trxRefNo: raw.trxRefNo ?? '',
+      dataCid: raw.dataCid ?? '',
     } as CreditTransaction;
   }
 
@@ -914,6 +917,21 @@ export class DetailsPage implements OnInit {
       case 4: return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  }
+
+  // Direction of a credit row relative to THIS subscription. Deposits are always In,
+  // withdrawals Out; transfers compare from/to against the subscription address
+  // (covers route-transfer legs where the counterparty is the Credit Switch).
+  // Withholds lock funds in place — no direction.
+  getCreditTrxDirection(trx: { trxType: number; from?: string; to?: string }): 'In' | 'Out' | '' {
+    if (trx.trxType === 1) return 'In';
+    if (trx.trxType === 2) return 'Out';
+    if (trx.trxType === 3) {
+      const sub = this.subscriptionAddress.toLowerCase();
+      if ((trx.from || '').toLowerCase() === sub) return 'Out';
+      if ((trx.to || '').toLowerCase() === sub) return 'In';
+    }
+    return '';
   }
 
   getCreditTrxStateClass(state: number): string {

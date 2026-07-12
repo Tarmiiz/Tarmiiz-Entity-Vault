@@ -58,6 +58,9 @@
               <p class="text-xs font-medium text-gray-500">From</p>
               @if (isZero(trx.from)) {
                 <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(mint)</span></p>
+              } @else if (isSwitch(trx.from)) {
+                <p><span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Credit Switch</span>
+                   <span class="text-xs text-gray-400 ml-1">(routed from another service)</span></p>
               } @else if (isSubscription(trx.from)) {
                 <p class="text-gray-700">Subscription</p>
                 <p class="font-mono text-xs text-gray-400 break-all">{{ trx.from }}</p>
@@ -74,6 +77,9 @@
               <p class="text-xs font-medium text-gray-500">To</p>
               @if (isZero(trx.to)) {
                 <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(burn)</span></p>
+              } @else if (isSwitch(trx.to)) {
+                <p><span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Credit Switch</span>
+                   <span class="text-xs text-gray-400 ml-1">(routed to another service)</span></p>
               } @else if (isSubscription(trx.to)) {
                 <p class="text-gray-700">Subscription</p>
                 <p class="font-mono text-xs text-gray-400 break-all">{{ trx.to }}</p>
@@ -86,6 +92,16 @@
             </div>
           }
 
+          @if (trx.origin === 14) {
+            <div class="col-span-2 rounded-lg bg-purple-50 border border-purple-200 px-3 py-2">
+              <p class="text-xs text-purple-800">
+                Route transfer — this leg moves credit through the platform's Credit Switch to that
+                same identity's account at another service. The counterparty subscription is resolved
+                on-chain and is not visible at the entity level.
+              </p>
+            </div>
+          }
+
           @if (trx.trxData) {
             <div class="border-t pt-3 col-span-2">
               <p class="text-xs font-medium text-gray-500">Data</p>
@@ -93,10 +109,30 @@
             </div>
           }
 
+          @if (trx.trxRefNo) {
+            <div class="border-t pt-3">
+              <p class="text-xs font-medium text-gray-500">Reference No</p>
+              <p class="font-mono break-all">{{ trx.trxRefNo }}</p>
+            </div>
+          }
+
           @if (trx.origin) {
             <div class="border-t pt-3">
               <p class="text-xs font-medium text-gray-500">Origin</p>
               <p>{{ trx.originName || ('Origin #' + trx.origin) }}</p>
+            </div>
+          }
+
+          @if (trx.dataCid) {
+            <div class="border-t pt-3 col-span-2">
+              <p class="text-xs font-medium text-gray-500">SP Receipt</p>
+              <div class="flex items-center justify-between gap-3">
+                <p class="font-mono text-xs text-gray-400 break-all" [title]="trx.dataCid">{{ trx.dataCid }}</p>
+                <button type="button" (click)="viewReceipt(trx)"
+                  class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors shrink-0">
+                  View SP receipt
+                </button>
+              </div>
             </div>
           }
 

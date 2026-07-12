@@ -17,7 +17,6 @@ export const MENU_LABELS: Record<string, string> = {
   variables:      'System Variables',
   approvals:      'Approvals',
   logs:           'Audit Trail',
-  'credit-operator-actions': 'Credit Operator Actions',
   'asset-t3643':  'Asset T3643 Standard',
 };
 

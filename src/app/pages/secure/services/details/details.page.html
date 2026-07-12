@@ -305,7 +305,12 @@
                     </div>
                     @for (p of serviceParties().validators; track p.address) {
                       <div class="flex items-center gap-2 flex-wrap mt-2">
-                        <span class="font-mono text-xs break-all">{{ p.address }}</span>
+                        @if (p.name) {
+                          <span class="text-base">{{ p.name }}</span>
+                          <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
+                        } @else {
+                          <span class="font-mono text-xs break-all">{{ p.address }}</span>
+                        }
                         @if (!p.active) {
                           <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" title="No longer active for this regulator. Existing operations still work; new subscriptions through it are blocked.">Inactive</span>
                         }
@@ -328,7 +333,12 @@
                     </div>
                     @for (p of serviceParties().paymentProcessors; track p.address) {
                       <div class="flex items-center gap-2 flex-wrap mt-2">
-                        <span class="font-mono text-xs break-all">{{ p.address }}</span>
+                        @if (p.name) {
+                          <span class="text-base">{{ p.name }}</span>
+                          <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
+                        } @else {
+                          <span class="font-mono text-xs break-all">{{ p.address }}</span>
+                        }
                         @if (canEdit) {
                           <button (click)="detachParty(2, p.address)" class="text-xs text-red-600 hover:text-red-800">Remove</button>
                         }
@@ -350,6 +360,9 @@
                       <div class="flex items-center gap-2 flex-wrap mt-2">
                         @if (isSelfCustodyAddress(p.address)) {
                           <span class="text-base">Self-custody</span>
+                          <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
+                        } @else if (p.name) {
+                          <span class="text-base">{{ p.name }}</span>
                           <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
                         } @else {
                           <span class="font-mono text-xs break-all">{{ p.address }}</span>

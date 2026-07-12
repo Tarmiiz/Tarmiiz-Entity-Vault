@@ -60,9 +60,11 @@ export class ModalAssetAddServiceComponent {
     const q = this.query().trim().toLowerCase();
     this.searching.set(true);
     try {
-      const resp = await this.apiService.vaultGetServicesOwn(1, 200);
+      const resp = await this.apiService.vaultGetServicesOwn(0, 200);
+      const attached = new Set(this.addServiceModal.currentServices().map(a => a.toLowerCase()));
       const all = ((resp?.services || []) as any[])
-        .filter(s => Number(s.service_type ?? s.serviceType) === 1);
+        .filter(s => Number(s.service_type ?? s.serviceType) === 1)
+        .filter(s => !attached.has((s.address || '').toLowerCase()));
       const filtered = q
         ? all.filter(s =>
             (s.name || '').toLowerCase().includes(q) ||

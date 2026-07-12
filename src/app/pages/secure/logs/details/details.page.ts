@@ -44,7 +44,10 @@ export class DetailsPage implements OnInit {
       focusEvent = stateRow instanceof AuditLog ? stateRow : this.mapRow(stateRow);
     }
 
-    if (!focusEvent && id) {
+    // Authoritative fetch by id — also carries the server-computed per-row
+    // `verified` tamper check, which list rows don't have. Falls back to the
+    // Router-state row (and the feed scans) when it fails.
+    if (id) {
       try {
         const byIdData: any = await (this.apiService as any).auditById(id);
         if (byIdData?.row) focusEvent = this.mapRow(byIdData.row);
@@ -127,6 +130,10 @@ export class DetailsPage implements OnInit {
       pick('function_signature', 'functionSignature') ?? null,
       pick('contract_name', 'contractName') ?? null,
       pick('contract_kind', 'contractKind') ?? null,
+      pick('action_label', 'actionLabel') ?? null,
+      pick('prev_hash', 'prevHash') ?? null,
+      pick('row_hash', 'rowHash') ?? null,
+      pick('verified') ?? null,
     );
   }
 
@@ -148,16 +155,18 @@ export class DetailsPage implements OnInit {
   }
 
   actionLabel(r: AuditLog): string {
-    return (r.action || '').replace(/_/g, ' ');
+    // Persisted drain-time readable label ("Credit – Service Deposit");
+    // falls back to the raw decoded action for legacy rows.
+    return r.action_label || (r.action || '').replace(/_/g, ' ');
   }
 
   filterByActor(addr: string | null | undefined) {
     if (!addr) return;
-    this.router.navigate(['/authorized/logs/my'], { queryParams: { actor: addr } });
+    this.router.navigate(['/authorized/logs/system'], { queryParams: { actor: addr } });
   }
 
   filterByContract(addr: string | null | undefined) {
     if (!addr) return;
-    this.router.navigate(['/authorized/logs/my'], { queryParams: { contract: addr } });
+    this.router.navigate(['/authorized/logs/system'], { queryParams: { contract: addr } });
   }
 }

@@ -14,8 +14,8 @@ import { MyPage } from '../my/my.page';
   imports: [CommonModule, FormsModule, HeaderComponent]
 })
 export class SystemPage extends MyPage {
-  protected override fetch() {
-    return this.apiService.auditSystem(this.buildFilters());
+  protected override fetch(page?: number, pageSize?: number) {
+    return this.apiService.auditSystem(this.buildFilters(page, pageSize));
   }
 
   protected override exportName(): string { return 'audit_system'; }

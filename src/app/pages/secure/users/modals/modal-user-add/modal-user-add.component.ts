@@ -38,6 +38,7 @@ export class ModalUserAddComponent {
     { variableId: 1, name: 'Admin' },
     { variableId: 2, name: 'Executive' },
     { variableId: 3, name: 'Viewer' },
+    { variableId: 4, name: 'Security' },
   ];
 
   constructor() {

@@ -27,10 +27,18 @@ import { ModalUserApprovalRoleComponent } from '../modals/modal-user-approval-ro
 import { SocketService } from '../../../../shared/services/socket.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { menuLabelFor } from '../../../../shared/constants/menu-labels';
+import { systemFunctionLabelFor } from '../../../../shared/constants/system-function-labels';
 
 interface UserMenuRow {
   menuKey: string;
   tenantEnabled: boolean;
+  userEnabled: boolean | null; // null ⇒ inherit
+  effective: boolean;
+}
+
+interface UserSystemFunctionRow {
+  functionKey: string;
+  defaultEnabled: boolean;
   userEnabled: boolean | null; // null ⇒ inherit
   effective: boolean;
 }
@@ -74,7 +82,7 @@ export class DetailsPage implements OnInit {
     1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated'
   };
   private readonly roleNames: Record<number, string> = {
-    1: 'Admin', 2: 'Executive', 3: 'Viewer'
+    1: 'Admin', 2: 'Executive', 3: 'Viewer', 4: 'Security'
   };
 
   loadingData: boolean = false;
@@ -86,16 +94,23 @@ export class DetailsPage implements OnInit {
   approvalRole       = signal<'none' | 'maker' | 'checker'>('none');
   approvalRoleSaving = signal(false);
 
-  // Tabs: 'details' (default) + 'menu' (per-user Menu Access, role 2/3 only).
-  activeTab   = signal<'details' | 'menu'>('details');
+  // Tabs: 'details' (default) + 'menu' (per-user Menu Access, role 2/3 only)
+  // + 'system-functions' (per-user action-button gating; shown only when the target
+  // user's role has applicable functions — the list drives visibility).
+  activeTab   = signal<'details' | 'menu' | 'system-functions'>('details');
   menuRows    = signal<UserMenuRow[]>([]);
   menuLoading = signal(false);
   menuSaving  = signal<string | null>(null); // menu key currently saving
   private menuLoaded = false;
 
+  sysFnRows    = signal<UserSystemFunctionRow[]>([]);
+  sysFnLoading = signal(false);
+  sysFnSaving  = signal<string | null>(null); // function key currently saving
+
   constructor() { }
 
   labelFor(key: string): string { return menuLabelFor(key); }
+  fnLabelFor(key: string): string { return systemFunctionLabelFor(key); }
 
   /** Per-user Menu Access applies only to non-admin targets (admins bypass menu gating). */
   showMenuTab(): boolean {
@@ -103,9 +118,53 @@ export class DetailsPage implements OnInit {
     return role === 2 || role === 3;
   }
 
-  setTab(tab: 'details' | 'menu') {
+  setTab(tab: 'details' | 'menu' | 'system-functions') {
     this.activeTab.set(tab);
     if (tab === 'menu' && !this.menuLoaded) this.loadMenuConfig();
+  }
+
+  /** Content-driven: the tab shows only when a function applies to this user's role. */
+  showSystemFunctionsTab(): boolean {
+    return this.sysFnRows().length > 0;
+  }
+
+  async loadSystemFunctionsConfig() {
+    this.sysFnLoading.set(true);
+    try {
+      const rows = await this.apiService.vaultUserSystemFunctionConfigList(this.userId());
+      rows.sort((a, b) => this.fnLabelFor(a.functionKey).localeCompare(this.fnLabelFor(b.functionKey)));
+      this.sysFnRows.set(rows);
+    } catch {
+      this.sysFnRows.set([]);
+    } finally {
+      this.sysFnLoading.set(false);
+    }
+  }
+
+  async toggleSystemFunction(row: UserSystemFunctionRow, enabled: boolean) {
+    if (this.sysFnSaving()) return;
+    const u = this.user();
+    if (!u) return;
+    const verb = enabled ? 'available to this user' : 'hidden from this user and blocked';
+    const ok = await this.alertService.show(
+      'Confirm per-user function change',
+      `${this.fnLabelFor(row.functionKey)} will be ${verb}. It takes effect on the user's next login. Continue?`,
+      'Save',
+    );
+    if (!ok) return;
+    this.sysFnSaving.set(row.functionKey);
+    this.loadingService.show('Saving...');
+    try {
+      const res = await this.apiService.vaultUserSystemFunctionConfigSet(u.userId, row.functionKey, enabled);
+      if (res?.error) {
+        this.alertService.show('Error', res.error);
+      } else {
+        await this.loadSystemFunctionsConfig();
+      }
+    } finally {
+      this.loadingService.hide();
+      this.sysFnSaving.set(null);
+    }
   }
 
   async loadMenuConfig() {
@@ -160,8 +219,12 @@ export class DetailsPage implements OnInit {
     this.activeTab.set('details');
     this.menuLoaded = false;
     this.menuRows.set([]);
+    this.sysFnRows.set([]);
     await this.getUserDetails();
     await this.loadApprovalRole();
+    // Eager-load so the tab can decide its own visibility (server returns only the
+    // functions applicable to this user's role — empty ⇒ tab hidden).
+    await this.loadSystemFunctionsConfig();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => {
       if (!this._isBusy) this.getUserDetails(true);
     });

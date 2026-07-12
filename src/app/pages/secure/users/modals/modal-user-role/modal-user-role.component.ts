@@ -20,6 +20,7 @@ export class ModalUserRoleComponent {
     { value: 1, name: 'Admin' },
     { value: 2, name: 'Executive' },
     { value: 3, name: 'Viewer' },
+    { value: 4, name: 'Security' },
   ];
 
   roleForm = this.fb.group({

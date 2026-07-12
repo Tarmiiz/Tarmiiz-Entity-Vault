@@ -1,0 +1,367 @@
+<app-header title="External API Integrations"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3 flex items-start justify-between gap-4">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-800 mb-1">External API integrations</h2>
+      <p class="text-xs text-gray-600">
+        Admin-managed connections to external APIs, grouped by category — eKYC verifications run
+        through the default 'ekyc' integration (requests can override per call). Parameters are
+        flexible key/value pairs, encrypted in this dashboard's database — never stored in
+        configuration files — and included in the on-chain settings backup, so they survive a
+        database rebuild. Editing a parameter replaces it; leaving it empty keeps the stored value.
+        Integrations can be linked to service providers (type-2 services) so their usage by entity
+        services is traceable.
+      </p>
+    </div>
+    <button (click)="openCreate()" [disabled]="busy()"
+      class="shrink-0 text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50">
+      <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
+      </svg>
+      Add Integration
+    </button>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th scope="col" class="px-6 py-2">#</th>
+            <th scope="col" class="px-6 py-2">Integration</th>
+            <th scope="col" class="px-6 py-2">Category</th>
+            <th scope="col" class="px-6 py-2">Status</th>
+            <th scope="col" class="px-6 py-2">Default</th>
+            <th scope="col" class="px-6 py-2">Parameters</th>
+            <th scope="col" class="px-6 py-2">Linked Services</th>
+            <th scope="col" class="px-6 py-2">Capabilities</th>
+            <th scope="col" class="px-6 py-2">Last Updated</th>
+            <th scope="col" class="px-6 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @if (integrations().length == 0) {
+            <tr class="bg-white border-b">
+              <td class="px-6 py-2" colspan="10">
+                @if (loading()) { Loading… } @else { no data }
+              </td>
+            </tr>
+          } @else {
+            @for (p of integrations(); track p.name; let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors"
+                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-6 py-2">{{ i + 1 }}</td>
+                <td class="px-6 py-2">
+                  <span class="font-medium">{{ p.displayName }}</span>
+                  <span class="text-gray-400 font-mono ml-1">({{ p.name }})</span>
+                  @if (p.adapter && p.adapter !== p.name) {
+                    <span class="text-gray-400 ml-1">via {{ p.adapter }}</span>
+                  }
+                </td>
+                <td class="px-6 py-2">
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                        [class]="p.category === 'ekyc' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'">
+                    {{ p.category }}
+                  </span>
+                </td>
+                <td class="px-6 py-2">
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                        [class]="p.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
+                    {{ p.enabled ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </td>
+                <td class="px-6 py-2">
+                  @if (p.isDefault) {
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Default</span>
+                  } @else { — }
+                </td>
+                <td class="px-6 py-2">
+                  <span [class]="p.configured ? '' : 'text-amber-600'">{{ paramsSetCount(p) }} set</span>
+                </td>
+                <td class="px-6 py-2">
+                  @if (p.configured) {
+                    <button (click)="openLinks(p)" [disabled]="busy()"
+                      class="underline decoration-dotted text-blue-800 hover:text-blue-600 disabled:opacity-50">
+                      {{ p.linkedServices }} linked
+                    </button>
+                  } @else { — }
+                </td>
+                <td class="px-6 py-2">
+                  <span class="text-gray-500">{{ capabilitiesLabel(p) }}</span>
+                </td>
+                <td class="px-6 py-2">
+                  @if (p.updatedAt != null) { {{ p.updatedAt | date:'medium' }} } @else { — }
+                </td>
+                <td class="px-6 py-2">
+                  <div class="flex gap-2">
+                    <button (click)="edit(p)" [disabled]="busy()"
+                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50">
+                      Edit
+                    </button>
+                    @if (p.adapter) {
+                      <button (click)="test(p)" [disabled]="busy() || !p.configured"
+                        class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-50">
+                        Test
+                      </button>
+                    }
+                    @if (!p.isDefault) {
+                      <button (click)="makeDefault(p)" [disabled]="busy() || !p.enabled"
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                        Set Default
+                      </button>
+                    }
+                    <button (click)="toggleEnabled(p)"
+                      [disabled]="busy() || (!p.enabled && p.category === 'ekyc' && p.linkedServices === 0)"
+                      [title]="(!p.enabled && p.category === 'ekyc' && p.linkedServices === 0) ? 'Link this provider\'s on-chain validator service first — the verification validator is derived from it' : ''"
+                      class="text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+                      [class]="p.enabled ? 'bg-red-700 text-white hover:bg-red-800' : 'bg-green-700 text-white hover:bg-green-800'">
+                      {{ p.enabled ? 'Disable' : 'Enable' }}
+                    </button>
+                    @if (p.configured) {
+                      <button (click)="remove(p)" [disabled]="busy()"
+                        class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50">
+                        Delete
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center px-4 py-2 border-t">
+      <p class="text-xs font-medium text-gray-800">Showing {{ integrations().length }} of Total {{ integrations().length }} Records</p>
+    </div>
+  </div>
+</div>
+
+<!-- Create / edit integration modal -->
+@if (editVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
+       (click)="closeEdit()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4"
+         (click)="$event.stopPropagation()">
+
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          {{ createMode() ? 'Add Integration' : 'Edit ' + (editing()?.displayName || '') }}
+        </h3>
+        <p class="text-xs text-gray-400 mt-1">Parameter values are write-only — leave a field empty to keep its stored value.</p>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+        @if (createMode()) {
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Name <span class="text-gray-400 font-normal">(slug — a-z, 0-9, -, _)</span></label>
+            <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)"
+              placeholder="e.g. my-payment-api" autocomplete="off"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+          </div>
+        }
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Display Name</label>
+          <input type="text" [ngModel]="editDisplayName()" (ngModelChange)="editDisplayName.set($event)"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Category</label>
+            @if (createMode()) {
+              <input type="text" list="category-suggestions"
+                [ngModel]="editCategory()" (ngModelChange)="editCategory.set($event)"
+                autocomplete="off"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              <datalist id="category-suggestions">
+                @for (c of categorySuggestions; track c) { <option [value]="c"></option> }
+              </datalist>
+            } @else {
+              <input type="text" [ngModel]="editCategory()" disabled
+                class="mt-1 block w-full border border-gray-200 bg-gray-50 rounded-md py-2 px-3 sm:text-sm text-gray-500">
+            }
+          </div>
+          @if (editCategory().trim().toLowerCase() === 'ekyc') {
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Adapter</label>
+              @if (createMode()) {
+                <select [ngModel]="editAdapter()" (ngModelChange)="editAdapter.set($event)"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+                  <option value="">— none —</option>
+                  @for (a of adapters(); track a) { <option [value]="a">{{ a }}</option> }
+                </select>
+              } @else {
+                <input type="text" [ngModel]="editAdapter() || '—'" disabled
+                  class="mt-1 block w-full border border-gray-200 bg-gray-50 rounded-md py-2 px-3 sm:text-sm text-gray-500">
+              }
+            </div>
+          }
+        </div>
+
+        <div class="flex items-center gap-6">
+          <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input type="checkbox" [ngModel]="editEnabled()" (ngModelChange)="editEnabled.set($event)"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            Enabled
+          </label>
+          <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input type="checkbox" [ngModel]="editDefault()" (ngModelChange)="editDefault.set($event)"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            Default for category
+          </label>
+        </div>
+
+        <div class="border-t pt-4 space-y-4">
+          <!-- Existing / schema params (write-only inputs) -->
+          @for (f of editing()?.params ?? []; track f.key) {
+            <div [class.opacity-50]="isRemoved(f.key)">
+              <label class="block text-sm font-medium text-gray-700 flex items-center">
+                <span [class.line-through]="isRemoved(f.key)">{{ f.label || f.key }}</span>
+                @if (f.set) {
+                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">set</span>
+                } @else {
+                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800">not set</span>
+                }
+                @if (f.secret) {
+                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-600">secret</span>
+                }
+                @if (f.set) {
+                  <button type="button" (click)="toggleRemoved(f.key)"
+                    class="ml-auto text-[10px] px-2 py-0.5 rounded border transition-colors"
+                    [class]="isRemoved(f.key) ? 'border-gray-300 text-gray-600 hover:bg-gray-100' : 'border-red-300 text-red-700 hover:bg-red-50'">
+                    {{ isRemoved(f.key) ? 'Restore' : 'Remove' }}
+                  </button>
+                }
+              </label>
+              <input [type]="f.secret ? 'password' : 'text'"
+                [ngModel]="paramValues()[f.key] || ''" (ngModelChange)="setParam(f.key, $event)"
+                [placeholder]="f.set ? '••••••••  (unchanged)' : ''"
+                [disabled]="isRemoved(f.key)"
+                autocomplete="off"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+            </div>
+          }
+
+          <!-- New key/value rows -->
+          @for (row of newParams(); track $index; let idx = $index) {
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                @if (idx === 0) { <label class="block text-xs font-medium text-gray-500">Key</label> }
+                <input type="text" [ngModel]="row.key" (ngModelChange)="updateNewParam(idx, 'key', $event)"
+                  placeholder="parameter key" autocomplete="off"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
+              </div>
+              <div class="flex-1">
+                @if (idx === 0) { <label class="block text-xs font-medium text-gray-500">Value</label> }
+                <input [type]="row.secret ? 'password' : 'text'" [ngModel]="row.value" (ngModelChange)="updateNewParam(idx, 'value', $event)"
+                  placeholder="value" autocomplete="off"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              </div>
+              <label class="flex items-center gap-1 text-xs font-medium text-gray-600 pb-2.5">
+                <input type="checkbox" [ngModel]="row.secret" (ngModelChange)="updateNewParam(idx, 'secret', $event)"
+                  class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                secret
+              </label>
+              <button type="button" (click)="removeNewParamRow(idx)"
+                class="text-xs px-2 py-2 rounded border border-gray-300 text-gray-500 hover:bg-gray-100 transition-colors mb-0.5">
+                ✕
+              </button>
+            </div>
+          }
+
+          <button type="button" (click)="addNewParamRow()"
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
+            </svg>
+            Add parameter
+          </button>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="closeEdit()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Cancel
+        </button>
+        <button type="button" (click)="saveEdit()" [disabled]="busy()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ createMode() ? 'Create' : 'Save' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- Link services modal -->
+@if (linkVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
+       (click)="closeLinks()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4"
+         (click)="$event.stopPropagation()">
+
+      <div class="p-6 border-b bg-[#202a3b] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">Linked Services — {{ linkTarget()?.displayName }}</h3>
+        <p class="text-xs text-gray-400 mt-1">Link this integration to the service providers (type-2 services) that use it.</p>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+        <input type="text" [ngModel]="linkFilter()" (ngModelChange)="linkFilter.set($event)"
+          placeholder="Filter by name or address..." autocomplete="off"
+          class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+
+        @if (filteredCandidates().length === 0) {
+          <p class="text-xs text-gray-500">No service providers (type-2 services) available to link.</p>
+        } @else {
+          <div class="border rounded-md divide-y max-h-60 overflow-y-auto">
+            @for (c of filteredCandidates(); track c.address) {
+              <label class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" [checked]="isLinked(c.address)" (change)="toggleLink(c.address)"
+                  class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <span class="font-medium">{{ c.name || '—' }}</span>
+                <span class="text-gray-400 font-mono text-xs truncate">{{ c.address }}</span>
+              </label>
+            }
+          </div>
+        }
+
+        @if (consumers().length > 0) {
+          <div class="border-t pt-3">
+            <h4 class="text-xs font-semibold text-gray-700 mb-2">Consumed by (via attached provider)</h4>
+            <div class="space-y-1">
+              @for (u of consumers(); track u.service + u.viaProvider) {
+                <div class="text-xs text-gray-600">
+                  <span class="font-medium">{{ u.serviceName || u.service }}</span>
+                  <span class="text-gray-400"> — via {{ partyTypeLabel(u.partyType) }}</span>
+                  @if (!u.active) {
+                    <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800">inactive</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex items-center justify-between rounded-b-xl">
+        <p class="text-xs text-gray-500">{{ selectedLinkCount() }} selected</p>
+        <div class="flex space-x-3">
+          <button type="button" (click)="closeLinks()"
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button type="button" (click)="saveLinks()" [disabled]="busy()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+            Save
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+}

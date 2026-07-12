@@ -31,6 +31,8 @@ export class ModalRouteTransferComponent {
     destinationService: ['', [Validators.required, Validators.pattern(/^0x[a-fA-F0-9]{40}$/)]],
     currencyCode:       [null as number | null, Validators.required],
     amount:             [null as number | null, [Validators.required, Validators.min(0.000001)]],
+    trxRefNo:           ['', Validators.required],
+    trxDate:            [''],
     note:               [''],
   });
 
@@ -38,7 +40,7 @@ export class ModalRouteTransferComponent {
     effect(() => {
       if (this.modalService.isVisible()) {
         const first = this.modalService.currencies()[0]?.currencyCode ?? null;
-        this.form.reset({ service: '', fromSub: '', destinationService: '', currencyCode: first, amount: null, note: '' });
+        this.form.reset({ service: '', fromSub: '', destinationService: '', currencyCode: first, amount: null, trxRefNo: '', trxDate: '', note: '' });
         void this.loadSourceServices();
       }
     });
@@ -47,7 +49,7 @@ export class ModalRouteTransferComponent {
   private async loadSourceServices() {
     const data = await this.apiService.vaultGetServicesOwn(0, 200);
     const list = (data?.services || [])
-      .filter((s: any) => Number(s.serviceType) === 1)
+      .filter((s: any) => Number(s.service_type ?? s.serviceType) === 1)
       .map((s: any) => ({ address: s.address, name: s.name || s.address }));
     this.sourceServices.set(list);
   }
@@ -61,12 +63,15 @@ export class ModalRouteTransferComponent {
     }
 
     this.loadingService.show('Submitting route transfer...');
+    const timestamp = v.trxDate ? Math.floor(new Date(v.trxDate).getTime() / 1000) : undefined;
     const res = await this.apiService.routeTransfer({
       service:            v.service!,
       fromSub:            v.fromSub!,
       destinationService: v.destinationService!,
       currencyCode:       Number(v.currencyCode),
       amount:             Number(v.amount),
+      trxRefNo:           (v.trxRefNo || '').trim(),
+      ...(timestamp ? { timestamp } : {}),
       data:               v.note ? { note: v.note } : {},
     });
     this.loadingService.hide();

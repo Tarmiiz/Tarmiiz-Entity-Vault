@@ -25,8 +25,9 @@ export class ModalAddSubscriptionComponent {
   mode = signal<'A' | 'B'>('A');
   services = signal<{ address: string; name: string }[]>([]);
   countries = signal<{ countryCode: number; name: string }[]>([]);
-  // Validators attached to the selected service (1:N). Mode B requires choosing which one
-  // validated the subscriber, so the on-chain subscribe gate passes.
+  // Validators attached to the selected service (1:N). Mode A (existing-DID reference relay)
+  // asks which one validated the subscriber; Mode B never picks — the API derives the
+  // validator from the eKYC provider that ran the cached verification (I2).
   serviceValidators = signal<{ address: string; active: boolean }[]>([]);
 
   form = this.fb.group({
@@ -119,9 +120,9 @@ export class ModalAddSubscriptionComponent {
 
   private isModeBValid(): boolean {
     const v = this.form.value;
-    // When the service has attached validators, one must be chosen.
-    const validatorOk = this.serviceValidators().length === 0 || !!v.validator;
-    return !!(v.service && v.uniqueIdHash && v.email && v.mobile && v.didType && v.countryCode && v.trxRefNo && v.trxTimestamp && v.level && validatorOk);
+    // Mode B: the on-chain validator is DERIVED server-side from the eKYC provider that ran
+    // the cached verification — no validator choice here.
+    return !!(v.service && v.uniqueIdHash && v.email && v.mobile && v.didType && v.countryCode && v.trxRefNo && v.trxTimestamp && v.level);
   }
 
   canSubmit(): boolean {
@@ -132,8 +133,10 @@ export class ModalAddSubscriptionComponent {
     if (!this.canSubmit()) return;
     const v = this.form.value;
     const body: Record<string, any> = { service: v.service };
-    if (v.validator) body['validator'] = v.validator;
     if (this.mode() === 'A') {
+      // Mode A relays a reference to an EXTERNAL validation — the caller names the validator.
+      // Mode B sends none: the API derives it from the eKYC provider (I2).
+      if (v.validator) body['validator'] = v.validator;
       body['didHash'] = v.didHash;
     } else {
       body['uniqueIdHash'] = v.uniqueIdHash;
@@ -147,7 +150,7 @@ export class ModalAddSubscriptionComponent {
     }
 
     this.loadingService.show('Creating subscription...');
-    const res = await this.apiService.usersOnboard(body);
+    const res = await this.apiService.usersOnboard(body, this.mode() === 'A' ? 'did' : 'ref');
     this.loadingService.hide();
 
     if (res.error || !res.subscriptionAddress) {

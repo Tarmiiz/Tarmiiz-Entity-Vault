@@ -5,7 +5,7 @@
   <nav class="flex" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/logs/my"
+        <a routerLink="/authorized/logs/system"
           class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
           Audit Trail
         </a>
@@ -59,7 +59,12 @@
               <div class="flex items-start justify-between mb-4">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ e.category || '—' }}</span>
-                  <h2 class="text-lg font-bold text-gray-800 capitalize">{{ actionLabel(e) }}</h2>
+                  <h2 class="text-lg font-bold text-gray-800">{{ actionLabel(e) }}</h2>
+                  @if (e.verified === true) {
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Verified &#10003;</span>
+                  } @else if (e.verified === false) {
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Tampered &#10007;</span>
+                  }
                 </div>
                 <div class="text-right">
                   <p class="text-xs text-gray-500 mt-1">{{ utils.formatDate(e.chain_time || e.created_at) }}</p>
@@ -123,6 +128,13 @@
                   <p class="text-base text-gray-700 font-mono break-all">
                     @if (isZeroRef(e.ref_no)) { — } @else { {{ e.ref_no }} }
                   </p>
+                </div>
+
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Row Hash <span class="text-xs text-gray-400">(tamper-evidence chain)</span></p>
+                  <p class="text-xs text-gray-700 font-mono break-all">{{ e.row_hash || '—' }}</p>
+                  <p class="text-sm font-medium text-gray-500 mt-2">Prev Hash</p>
+                  <p class="text-xs text-gray-700 font-mono break-all">{{ e.prev_hash || '—' }}</p>
                 </div>
 
               </div>

@@ -47,7 +47,7 @@ export class ListPage implements OnInit {
     1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated'
   };
   private readonly roleNames: Record<number, string> = {
-    1: 'Admin', 2: 'Executive', 3: 'Viewer'
+    1: 'Admin', 2: 'Executive', 3: 'Viewer', 4: 'Security'
   };
 
   constructor() {}
