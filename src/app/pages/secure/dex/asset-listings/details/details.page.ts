@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../../shared/services/api.service';
+import { AuthService } from '../../../../../shared/services/auth.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
@@ -31,6 +32,9 @@ export class DetailsPage implements OnInit {
   private addVenueModal = inject(ModalListingVenueAddService);
   private tierChangeModal = inject(ModalListingVenueTierChangeService);
   utils = inject(UtilsService);
+  private authService = inject(AuthService);
+
+  get userInfo() { return this.authService.userInfo; }
 
   baseAsset  = signal<string>('');
   listing    = signal<DexAssetListing | undefined>(undefined);

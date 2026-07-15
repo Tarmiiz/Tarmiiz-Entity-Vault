@@ -34,26 +34,24 @@ export class MyProfilePage {
   showCredentialsForm = signal(false);
 
   credentialsForm = this.fb.group({
-    username: ['', Validators.required],
+    currentPassword: ['', Validators.required],
     password: ['', Validators.required],
     password2: ['', Validators.required],
   });
 
   ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
-    this.credentialsForm.patchValue({ username: this.userInfo?.username ?? '' });
   }
 
   toggleCredentialsForm() {
     if (!this.showCredentialsForm()) {
       this.credentialsForm.reset();
-      this.credentialsForm.patchValue({ username: this.userInfo?.username ?? '' });
     }
     this.showCredentialsForm.update(v => !v);
   }
 
   async saveCredentials() {
-    const { password, password2, username } = this.credentialsForm.value;
+    const { currentPassword, password, password2 } = this.credentialsForm.value;
 
     if (password !== password2) {
       this.alertService.show('Passwords Mismatch', 'The passwords you entered do not match.');
@@ -63,26 +61,23 @@ export class MyProfilePage {
     if (!this.credentialsForm.valid) return;
 
     try {
-      this.loadingService.show('Updating credentials...');
-      await this.apiService.vaultUpdateUserCredentials(
-        String(this.userInfo.userId),
-        { username: username ?? '', password: password ?? '' }
-      );
-
-      this.loadingService.show('Updating profile...');
-      await this.apiService.vaultUpdateUserData(String(this.userInfo.userId), {
-        name: this.userInfo.name,
-        email: this.userInfo.email,
-        username: username ?? this.userInfo.username,
-        did: this.userInfo.did,
+      this.loadingService.show('Updating password...');
+      // The API verifies the current password, then rotates the commitment (password-only).
+      const res: any = await this.apiService.vaultUserSelfCredentials(String(this.userInfo.userId), {
+        currentPassword: currentPassword ?? '',
+        password: password ?? '',
       });
 
-      this.userInfo.username = username ?? this.userInfo.username;
-      this.authService.userInfo = this.userInfo;
+      // ApiService returns { error } rather than throwing (e.g. wrong current password).
+      if (res?.error) {
+        this.alertService.show('Update Failed', res.error);
+        return;
+      }
+
       this.showCredentialsForm.set(false);
-      this.alertService.show('Success', 'Your credentials have been updated.');
+      this.alertService.show('Success', 'Your password has been updated.');
     } catch (error) {
-      this.alertService.show('Update Failed', 'There was an error updating your credentials.');
+      this.alertService.show('Update Failed', 'There was an error updating your password.');
     } finally {
       this.loadingService.hide();
     }

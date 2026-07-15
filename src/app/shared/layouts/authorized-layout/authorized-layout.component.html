@@ -131,6 +131,9 @@
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 9h10M7 13h7m-7 4.5V20l3.5-3H19a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z"/>
               </svg>
               <ion-label>{{ 'sidebar.messages' | translate }}</ion-label>
+              @if (unreadMessagesCount() > 0) {
+                <span slot="end" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{{ unreadMessagesCount() }}</span>
+              }
             </ion-item>
           }
 
@@ -340,6 +343,5 @@
   <div id="main-content" class="ion-page">
     <ion-router-outlet></ion-router-outlet>
     <app-modal-new-thread></app-modal-new-thread>
-    <app-modal-resync></app-modal-resync>
   </div>
 </ion-split-pane>

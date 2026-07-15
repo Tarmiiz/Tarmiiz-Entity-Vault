@@ -7,10 +7,9 @@ import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 import { SocketService } from '../../services/socket.service';
 import { AlertService } from '../alerts/alert/alert.service';
-import { ModalResyncService } from '../modal-resync/modal-resync.service';
 import { MenuController } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-header',
@@ -27,11 +26,8 @@ export class HeaderComponent  implements OnInit, OnDestroy {
   private socketService = inject(SocketService);
   private router = inject(Router);
   private vaultSub?: Subscription;
-  private resyncService = inject(ModalResyncService);
-  private translate = inject(TranslateService);
 
   unreadCount = signal(0);
-  syncing = signal(false);
 
   get userInfo() {
     return this.authService.userInfo;
@@ -53,43 +49,17 @@ export class HeaderComponent  implements OnInit, OnDestroy {
   private menuController = inject(MenuController);
 
   get profileRoute(): string {
-    const user = this.authService.userInfo;
-    return user?.role === 1
-      ? '/authorized/users/details/' + user.userId
-      : '/authorized/users/my-profile';
+    // Every role lands on their personal My Profile page (view details + change password).
+    return '/authorized/users/my-profile';
   }
 
   constructor() {}
 
   ngOnInit() {
     this.vaultSub = this.socketService.vaultUpdated$.subscribe((payload: any) => {
-      if (this.syncing()) this.syncing.set(false);
       if (payload?.type === 'connect' || payload?.type === 'all') this.refreshUnread();
     });
     this.refreshUnread();
-  }
-
-  async openResyncModal() {
-    try {
-      const res: any = await this.apiService.vaultSyncStatus();
-      const currentBlock    = Number(res?.current_block ?? 0);
-      const lastSyncedBlock = Number(res?.last_synced_block ?? 0);
-      const isSyncing       = res?.is_syncing ?? false;
-
-      if (isSyncing) this.syncing.set(true);
-
-      const resyncResult = await this.resyncService.show(currentBlock, lastSyncedBlock, isSyncing);
-      if (resyncResult !== null) {
-        const result: any = await this.apiService.vaultSyncResync(resyncResult.fromBlock, resyncResult.mode);
-        if (result?.error || result?.type === 'error') {
-          await this.alertService.show(this.translate.instant('alerts.failed'), result?.error || this.translate.instant('alerts.unexpected'));
-        } else {
-          this.syncing.set(true);
-        }
-      }
-    } catch (err: any) {
-      await this.alertService.show(this.translate.instant('alerts.error'), err?.message || this.translate.instant('alerts.unexpected'));
-    }
   }
 
   ngOnDestroy() { this.vaultSub?.unsubscribe(); }

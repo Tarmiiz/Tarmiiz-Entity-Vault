@@ -11,6 +11,7 @@ import * as XLSX from 'xlsx';
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
 import { LiveIndicatorComponent } from '../../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../../shared/services/api.service';
+import { FeaturesService } from '../../../../../shared/services/features.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { SocketService } from '../../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
@@ -29,6 +30,7 @@ export class ListPage implements OnInit, OnDestroy {
   private router = inject(Router);
   private socket = inject(SocketService);
   utils = inject(UtilsService);
+  features = inject(FeaturesService);
 
   trades = signal<DexTrade[]>([]);
   refreshing = signal(false);

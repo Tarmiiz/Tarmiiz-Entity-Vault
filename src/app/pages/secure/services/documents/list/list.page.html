@@ -24,6 +24,8 @@
 
 <div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
+  @if (features.systemFunctionEnabled('view-documents')) {
+
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
@@ -57,13 +59,15 @@
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
       </div>
       <div class="flex ml-auto items-end gap-2">
-        <button (click)="add()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-          </svg>
-          Add Document
-        </button>
+        @if (userInfo && userInfo.role !== 3) {
+          <button (click)="add()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Document
+          </button>
+        }
       </div>
     </div>
   </div>
@@ -112,6 +116,11 @@
       <p class="text-xs font-medium text-gray-800">Showing {{ filtered().length }} of Total {{ documents().length }} Documents</p>
     </div>
   </div>
+
+  } @else {
+    <p class="text-center text-sm text-gray-500 py-10">Document viewing is disabled for your account.</p>
+  }
+
 </div>
 
 <app-modal-document-add />

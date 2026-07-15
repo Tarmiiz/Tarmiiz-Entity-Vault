@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -106,6 +106,17 @@ export class DetailsPage implements OnInit {
   sysFnRows    = signal<UserSystemFunctionRow[]>([]);
   sysFnLoading = signal(false);
   sysFnSaving  = signal<string | null>(null); // function key currently saving
+  sysFnFilter  = signal('');                  // free-text filter over label + key
+
+  /** sysFnRows narrowed by the free-text filter (matches label or raw key, case-insensitive). */
+  filteredSysFnRows = computed(() => {
+    const q = this.sysFnFilter().trim().toLowerCase();
+    const rows = this.sysFnRows();
+    if (!q) return rows;
+    return rows.filter(r =>
+      this.fnLabelFor(r.functionKey).toLowerCase().includes(q) ||
+      r.functionKey.toLowerCase().includes(q));
+  });
 
   constructor() { }
 
@@ -116,6 +127,11 @@ export class DetailsPage implements OnInit {
   showMenuTab(): boolean {
     const role = Number(this.user()?.role);
     return role === 2 || role === 3;
+  }
+
+  /** Viewer targets are allow-list: modules/functions start blocked and the admin grants them. */
+  isViewerTarget(): boolean {
+    return Number(this.user()?.role) === 3;
   }
 
   setTab(tab: 'details' | 'menu' | 'system-functions') {
@@ -220,6 +236,7 @@ export class DetailsPage implements OnInit {
     this.menuLoaded = false;
     this.menuRows.set([]);
     this.sysFnRows.set([]);
+    this.sysFnFilter.set('');
     await this.getUserDetails();
     await this.loadApprovalRole();
     // Eager-load so the tab can decide its own visibility (server returns only the

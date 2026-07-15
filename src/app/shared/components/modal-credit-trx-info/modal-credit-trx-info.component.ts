@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 
 import { UtilsService } from '../../services/utils.service';
 import { AuthService } from '../../services/auth.service';
+import { FeaturesService } from '../../services/features.service';
 import { ApiService } from '../../services/api.service';
 import { AlertService } from '../alerts/alert/alert.service';
 import { LoadingService } from '../alerts/loading/loading.service';
@@ -21,6 +22,7 @@ import { ModalCreditTrxInfoService } from './modal-credit-trx-info.service';
 })
 export class ModalCreditTrxInfoComponent {
   modalService = inject(ModalCreditTrxInfoService);
+  features = inject(FeaturesService);
   private router = inject(Router);
   private utils = inject(UtilsService);
   private authService = inject(AuthService);

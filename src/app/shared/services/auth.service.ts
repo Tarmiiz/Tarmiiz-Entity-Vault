@@ -76,9 +76,13 @@ export class AuthService {
         }
       } catch { /* fall through to normal login */ }
 
-      // 1 hour in milliseconds
-      const SESSION_DURATION = 60 * 60 * 1000;
-      const expiryTime = new Date().getTime() + SESSION_DURATION;
+      // On-chain session duration (SECONDS) for the login proof — the ONLY thing
+      // sessionDuration still drives (the off-chain refresh window is server-owned + sliding;
+      // see SessionService / the API's sessions.js). It MUST stay >= the API's
+      // SESSION_MAX_TTL_SEC (8h) so the on-chain admin session (_adminSigner) stays valid for
+      // the whole sliding off-chain session — every user-management / signer-key / document-
+      // signing / config call relays through it and would revert once the on-chain session lapsed.
+      const SESSION_DURATION = 12 * 60 * 60; // 12 hours, in SECONDS (> the 8h off-chain cap)
 
       // A cold first attempt can fail on the chain side ("invalid zk proof" from
       // un-warmed snarkjs, or stale "nonce mismatch" / "commitment mismatch" from
@@ -115,7 +119,6 @@ export class AuthService {
           this.entityActive.set(entityData.state === 2);
 
           // set storage variables
-          await this.storageService.set('sessionExpiry', expiryTime.toString());
           this.storageService.set('rpcNode', config.rpcNode);
           this.storageService.set('variablesProxyContract', config.globalVariablesProxyContract);
           this.storageService.set('contract', config.entityContract);

@@ -81,7 +81,7 @@ export class DetailsPage implements OnInit {
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
-  private features = inject(FeaturesService);
+  features = inject(FeaturesService);
 
   get isServiceProvider() { return this.features.isServiceProvider(); }
 

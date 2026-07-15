@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 
 import { UtilsService } from '../../services/utils.service';
 import { AuthService } from '../../services/auth.service';
+import { FeaturesService } from '../../services/features.service';
 import { applyPdfFooter } from '../../utils/pdf-export.utils';
 import { ModalTransactionInfoService } from './modal-transaction-info.service';
 
@@ -17,6 +18,7 @@ import { ModalTransactionInfoService } from './modal-transaction-info.service';
 })
 export class ModalTransactionInfoComponent {
   modalService = inject(ModalTransactionInfoService);
+  features = inject(FeaturesService);
   private router = inject(Router);
   private utils = inject(UtilsService);
   private authService = inject(AuthService);

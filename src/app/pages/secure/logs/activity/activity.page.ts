@@ -54,8 +54,12 @@ export class ActivityPage implements OnInit {
   stateTotal = signal(0);
 
   filterCategory = signal<string>('');
+  stateTypeFilter = signal<string>('');
   page = signal(1);
   readonly pageSize = 25;
+
+  readonly activityCategories = ['navigation', 'export', 'filter', 'view', 'auth', 'action', 'approval', 'admin'];
+  readonly stateTypes = ['asset', 'asset_service', 'service', 'subscription', 'user'];
 
   total = computed(() => this.activeTab() === 'activity' ? this.activityTotal() : this.stateTotal());
   totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
@@ -82,7 +86,7 @@ export class ActivityPage implements OnInit {
         this.activityRows.set(data?.logs || []);
         this.activityTotal.set(Number(data?.count ?? 0));
       } else {
-        const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, this.pageSize);
+        const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, this.pageSize, this.stateTypeFilter() || undefined);
         this.stateRows.set(data?.logs || []);
         this.stateTotal.set(Number(data?.count ?? 0));
       }
@@ -98,6 +102,7 @@ export class ActivityPage implements OnInit {
 
   clearFilters() {
     this.filterCategory.set('');
+    this.stateTypeFilter.set('');
     this.applyFilters();
   }
 
@@ -146,7 +151,7 @@ export class ActivityPage implements OnInit {
     const all: StateChangeLog[] = [];
     let start = 1;
     while (all.length < ActivityPage.EXPORT_CAP) {
-      const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, ActivityPage.EXPORT_CHUNK);
+      const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, ActivityPage.EXPORT_CHUNK, this.stateTypeFilter() || undefined);
       const logs = data?.logs || [];
       all.push(...logs);
       const count = Number(data?.count ?? 0);

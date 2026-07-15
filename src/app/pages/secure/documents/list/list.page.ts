@@ -5,6 +5,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
+import { AuthService } from '../../../../shared/services/auth.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
@@ -29,6 +31,10 @@ export class ListPage implements OnInit {
   private alertService = inject(AlertService);
   addModal = inject(ModalDocumentAddService);
   utils = inject(UtilsService);
+  private authService = inject(AuthService);
+  features = inject(FeaturesService);
+
+  get userInfo() { return this.authService.userInfo; }
 
   loading = false;
   activeTab = signal<Tab>('mine');

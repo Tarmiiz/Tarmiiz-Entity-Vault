@@ -393,7 +393,7 @@ export const routes: Routes = [
             path: 'my-profile',
             loadComponent: () => import('./pages/secure/users/my-profile/my-profile.page').then( m => m.MyProfilePage),
             canActivate: [AuthGuard, RoleGuard],
-            data: { allowedRoles: [2, 3, 4] }
+            data: { allowedRoles: [1, 2, 3, 4] }
           },
           {
             path: '',

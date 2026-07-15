@@ -112,7 +112,6 @@
     "title":         "Tarmiiz Vault",
     "welcome":       "Welcome, {{name}}",
     "logout":        "Logout",
-    "resync":        "Resync",
     "profile":       "Profile",
     "messages":      "Messages",
     "sync": {
@@ -935,13 +934,5 @@
         "state":   "State"
       }
     }
-  },
-  "modalResync": {
-    "title":   "Resync With Chain",
-    "intro":   "Trigger a full resync of the entity API's mirror against the on-chain registries.",
-    "status":  "Status",
-    "trigger": "Trigger Resync",
-    "triggering": "Triggering…",
-    "successMsg": "Resync started."
   }
 }

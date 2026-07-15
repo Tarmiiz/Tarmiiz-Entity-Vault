@@ -128,7 +128,7 @@
                   Change Role
                 </button>
                 @if (isExecutive(v.role)) {
-                  <button (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()" class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()" class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Change Approval Role
                   </button>
                 }
@@ -147,10 +147,18 @@
               <div class="mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Menu Access</h3>
                 <p class="text-sm text-gray-500 mt-1">
-                  Hide top-level modules from <span class="font-medium">{{ v.name }}</span> only. This can
-                  only further restrict the vault-wide
-                  <a routerLink="/authorized/settings/menu" class="text-indigo-600 hover:underline">Menu Settings</a> —
-                  it cannot show a module that is disabled for the whole entity. Changes take effect on the user's next login.
+                  @if (isViewerTarget()) {
+                    <span class="font-medium">{{ v.name }}</span> is a viewer account: every module starts
+                    <span class="font-medium">hidden</span> — enable the modules this viewer should see.
+                    A module disabled in the vault-wide
+                    <a routerLink="/authorized/settings/menu" class="text-indigo-600 hover:underline">Menu Settings</a>
+                    still cannot be shown. Changes take effect on the user's next login.
+                  } @else {
+                    Hide top-level modules from <span class="font-medium">{{ v.name }}</span> only. This can
+                    only further restrict the vault-wide
+                    <a routerLink="/authorized/settings/menu" class="text-indigo-600 hover:underline">Menu Settings</a> —
+                    it cannot show a module that is disabled for the whole entity. Changes take effect on the user's next login.
+                  }
                 </p>
               </div>
 
@@ -207,6 +215,10 @@
                   (e.g. credit transfers). Only functions available to this user's role are listed.
                   A disabled function is hidden in the app and blocked server-side. Changes take effect
                   on the user's next login.
+                  @if (isViewerTarget()) {
+                    <span class="font-medium">Viewer accounts start with every function blocked</span> —
+                    enable the ones this viewer should have.
+                  }
                 </p>
               </div>
 
@@ -215,6 +227,29 @@
               } @else if (sysFnRows().length === 0) {
                 <div class="text-center py-10 text-gray-500"><p>No system functions available to configure.</p></div>
               } @else {
+                <div class="mb-3">
+                  <div class="relative w-full sm:w-72">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      [value]="sysFnFilter()"
+                      (input)="sysFnFilter.set($any($event.target).value)"
+                      placeholder="Filter functions..."
+                      class="w-full pl-9 pr-8 py-2 text-sm bg-white text-gray-800 placeholder-gray-400 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @if (sysFnFilter()) {
+                      <button type="button" (click)="sysFnFilter.set('')"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </button>
+                    }
+                  </div>
+                </div>
                 <div class="overflow-x-auto">
                   <table class="min-w-full divide-y divide-gray-200">
                     <thead>
@@ -225,7 +260,7 @@
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                      @for (row of sysFnRows(); track row.functionKey) {
+                      @for (row of filteredSysFnRows(); track row.functionKey) {
                         <tr>
                           <td class="px-4 py-3 text-sm text-gray-800">{{ fnLabelFor(row.functionKey) }}</td>
                           <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ row.functionKey }}</td>
@@ -243,6 +278,10 @@
                               <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-disabled:opacity-50"></div>
                             </label>
                           </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-400">No functions match "{{ sysFnFilter() }}".</td>
                         </tr>
                       }
                     </tbody>

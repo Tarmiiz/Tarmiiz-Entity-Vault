@@ -8,6 +8,8 @@ import * as XLSX from 'xlsx';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../../shared/services/api.service';
+import { AuthService } from '../../../../../shared/services/auth.service';
+import { FeaturesService } from '../../../../../shared/services/features.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
@@ -30,6 +32,10 @@ export class ListPage implements OnInit {
   private alertService = inject(AlertService);
   utils = inject(UtilsService);
   private listingCreateService = inject(ModalListingCreateService);
+  private authService = inject(AuthService);
+  features = inject(FeaturesService);
+
+  get userInfo() { return this.authService.userInfo; }
 
   loadingListings = false;
   listings = signal<DexAssetListing[]>([]);

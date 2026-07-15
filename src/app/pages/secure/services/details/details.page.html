@@ -89,15 +89,17 @@
             Liquidity
           </button>
         }
-        <button (click)="setTab('docs')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'docs'"
-          [class.border-b-2]="activeTab() === 'docs'"
-          [class.border-blue-600]="activeTab() === 'docs'"
-          [class.bg-blue-600]="activeTab() === 'docs'"
-        >
-          Documents
-        </button>
+        @if (features.systemFunctionEnabled('view-documents')) {
+          <button (click)="setTab('docs')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'docs'"
+            [class.border-b-2]="activeTab() === 'docs'"
+            [class.border-blue-600]="activeTab() === 'docs'"
+            [class.bg-blue-600]="activeTab() === 'docs'"
+          >
+            Documents
+          </button>
+        }
       </div>
     </div>
 
@@ -299,8 +301,8 @@
                   <div class="border-t pt-4 sm:col-span-2">
                     <div class="flex items-center justify-between">
                       <p class="text-sm font-medium text-gray-500">Validators ({{ serviceParties().validators.length }})</p>
-                      @if (canEdit) {
-                        <button (click)="attachValidator()" class="text-xs px-2.5 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">+ Add</button>
+                      @if (canEdit && features.systemFunctionEnabled('service-add-validator')) {
+                        <button (click)="attachValidator()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add</button>
                       }
                     </div>
                     @for (p of serviceParties().validators; track p.address) {
@@ -327,8 +329,8 @@
                   <div class="border-t pt-4 sm:col-span-2">
                     <div class="flex items-center justify-between">
                       <p class="text-sm font-medium text-gray-500">Payment Processors ({{ serviceParties().paymentProcessors.length }})</p>
-                      @if (canEdit) {
-                        <button (click)="attachPaymentProcessor()" class="text-xs px-2.5 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">+ Add</button>
+                      @if (canEdit && features.systemFunctionEnabled('service-add-payment-processor')) {
+                        <button (click)="attachPaymentProcessor()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add</button>
                       }
                     </div>
                     @for (p of serviceParties().paymentProcessors; track p.address) {
@@ -352,8 +354,8 @@
                   <div class="border-t pt-4 sm:col-span-2">
                     <div class="flex items-center justify-between">
                       <p class="text-sm font-medium text-gray-500">Custodians ({{ serviceParties().custodians.length }})</p>
-                      @if (canEdit) {
-                        <button (click)="attachCustodian()" class="text-xs px-2.5 py-1 rounded bg-purple-600 text-white hover:bg-purple-700 transition-colors">+ Add</button>
+                      @if (canEdit && features.systemFunctionEnabled('service-add-custodian')) {
+                        <button (click)="attachCustodian()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add</button>
                       }
                     </div>
                     @for (p of serviceParties().custodians; track p.address) {
@@ -383,18 +385,24 @@
 
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-600 text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-600">
-                    Edit Metadata
-                  </button>
-                  <button (click)="onChangeVisibility()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
-                    Change Visibility
-                  </button>
-                  <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                    Change State
-                  </button>
+                  @if (features.systemFunctionEnabled('service-edit-metadata')) {
+                    <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-600 text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-600">
+                      Edit Metadata
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('service-change-visibility')) {
+                    <button (click)="onChangeVisibility()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
+                      Change Visibility
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('service-change-state')) {
+                    <button (click)="openChangeStateModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      Change State
+                    </button>
+                  }
                 </div>
               }
 
@@ -431,20 +439,24 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="exportAssetsExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportAssetsPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportAssetsExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportAssetsPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>
@@ -490,12 +502,14 @@
                             </div>
                           </td>
                           <td class="px-6 py-2 text-right" (click)="$event.stopPropagation()">
-                            <button type="button"
-                                    (click)="openVenueFeeConfigModal(data.address, data.symbol)"
-                                    [disabled]="!entityActive"
-                                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                              Edit Venue Fees
-                            </button>
+                            @if (userInfo && userInfo.role !== 3) {
+                              <button type="button"
+                                      (click)="openVenueFeeConfigModal(data.address, data.symbol)"
+                                      [disabled]="!entityActive"
+                                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                                Edit Venue Fees
+                              </button>
+                            }
                           </td>
                         </tr>
                       }
@@ -554,20 +568,24 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="exportSubsExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportSubsPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportSubsExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportSubsPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>
@@ -710,20 +728,24 @@
                 </button>
               </div>
               <div class="flex gap-2 ml-auto">
-                <button (click)="exportTrxExcel()"
-                  class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                  </svg>
-                  Export Excel
-                </button>
-                <button (click)="exportTrxPdf()"
-                  class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                  </svg>
-                  Export PDF
-                </button>
+                @if (features.systemFunctionEnabled('export-excel')) {
+                  <button (click)="exportTrxExcel()"
+                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export Excel
+                  </button>
+                }
+                @if (features.systemFunctionEnabled('export-pdf')) {
+                  <button (click)="exportTrxPdf()"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                    </svg>
+                    Export PDF
+                  </button>
+                }
               </div>
             </div>
           </div>
@@ -851,14 +873,16 @@
                             }
                           </td>
                           <td class="px-6 py-2 text-right">
-                            <button (click)="openLiquidityModal('inject', row)" [disabled]="!entityActive"
-                              class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
-                              Inject
-                            </button>
-                            <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive || row.available <= 0"
-                              class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                              Withdraw
-                            </button>
+                            @if (userInfo && userInfo.role !== 3) {
+                              <button (click)="openLiquidityModal('inject', row)" [disabled]="!entityActive"
+                                class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
+                                Inject
+                              </button>
+                              <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive || row.available <= 0"
+                                class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                Withdraw
+                              </button>
+                            }
                           </td>
                         </tr>
                       }

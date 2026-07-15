@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
 import { LiveIndicatorComponent } from '../../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../../shared/services/api.service';
+import { AuthService } from '../../../../../shared/services/auth.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { SocketService } from '../../../../../shared/services/socket.service';
@@ -28,6 +29,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   private alertService = inject(AlertService);
   private socket = inject(SocketService);
   utils = inject(UtilsService);
+  private authService = inject(AuthService);
 
   orderId = signal<number>(0);
   order = signal<DexOrder | undefined>(undefined);
@@ -99,7 +101,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   canCancel = computed(() => {
     const o = this.order();
     if (!o) return false;
-    return Number(o.status) === 1 || Number(o.status) === 2;
+    return (Number(o.status) === 1 || Number(o.status) === 2) && Number(this.authService.userInfo?.role) !== 3;
   });
 
   async cancel() {

@@ -92,7 +92,7 @@ export class ClaimPage implements OnInit {
       await this.ethersService.init();
 
       // Real ZK login against the placeholder commitment, using the bootstrap salt.
-      const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes — short, claim is expected to be quick
+      const SESSION_DURATION = 30 * 60; // 30 minutes, in SECONDS — short, claim is expected to be quick
       const result: any = await this.apiService.entityLogin(email, otp, SESSION_DURATION, config.bootstrapSalt, true);
       if (!result.success) {
         const err = String(result.error ?? '');
@@ -152,7 +152,7 @@ export class ClaimPage implements OnInit {
       // password against the rotated commitment, then call PUT /vault/users/1/credentials.
       if (username && String(username).trim() && String(username).trim() !== this.email()) {
         try {
-          const REKEY_SESSION = 5 * 60 * 1000;
+          const REKEY_SESSION = 5 * 60; // 5 minutes, in SECONDS — one-shot login to rotate the username
           const loginRes: any = await this.apiService.entityLogin(this.email(), password, REKEY_SESSION);
           if (loginRes?.success && loginRes.token) {
             await this.sessionService.setSession(loginRes.token, loginRes.expiresAt, loginRes.refreshExpiresAt);
@@ -176,7 +176,7 @@ export class ClaimPage implements OnInit {
         const entityInfo = await this.apiService.vaultGetEntityInfo();
         const didAddress = entityInfo?.didAddress;
         if (didAddress && !/^0x0+$/.test(didAddress)) {
-          const DID_SESSION_DURATION = 5 * 60 * 1000; // 5 minutes — only used to bridge claim()
+          const DID_SESSION_DURATION = 5 * 60; // 5 minutes, in SECONDS — only used to bridge claim()
           // Fetch the DID's nonce + commitment via the API so proof generation never reads the RPC node.
           const idCredentials = await this.apiService.vaultIdentityCredentialsData(didAddress);
           const idPayload = idCredentials ? await this.ethersService.createIdentityLoginPayload(

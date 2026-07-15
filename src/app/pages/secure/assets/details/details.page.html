@@ -94,15 +94,17 @@
         >
           Transactions
         </button>
-        <button (click)="setTab('docs')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'docs'"
-          [class.border-b-2]="activeTab() === 'docs'"
-          [class.border-blue-600]="activeTab() === 'docs'"
-          [class.bg-blue-600]="activeTab() === 'docs'"
-        >
-          Documents
-        </button>
+        @if (features.systemFunctionEnabled('view-documents')) {
+          <button (click)="setTab('docs')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'docs'"
+            [class.border-b-2]="activeTab() === 'docs'"
+            [class.border-blue-600]="activeTab() === 'docs'"
+            [class.bg-blue-600]="activeTab() === 'docs'"
+          >
+            Documents
+          </button>
+        }
         @if (!dexListingLoaded() || dexListing()) {
           <button (click)="setTab('dex')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -371,10 +373,12 @@
                       Burn Supply
                     </button>
                   }
-                  <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                    Change State
-                  </button>
+                  @if (features.systemFunctionEnabled('asset-change-state')) {
+                    <button (click)="openChangeStateModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      Change State
+                    </button>
+                  }
                 </div>
               }
     
@@ -500,20 +504,24 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="exportPricesExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportPricesPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportPricesExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportPricesPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>
@@ -613,20 +621,24 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="exportHoldersExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportHoldersPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportHoldersExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportHoldersPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>
@@ -779,20 +791,24 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="exportExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>
@@ -1091,11 +1107,16 @@
                 <button class="text-xs text-blue-600 hover:underline" (click)="loadDistributions()" [disabled]="distributionsLoading()">
                   {{ distributionsLoading() ? 'Loading…' : 'Refresh' }}
                 </button>
-                <button class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40"
-                        (click)="openDeclareDistribution()"
-                        [disabled]="!entityActive">
-                  + Declare
-                </button>
+                @if (userInfo && userInfo.role !== 3) {
+                  <button class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40"
+                          (click)="openDeclareDistribution()"
+                          [disabled]="!entityActive">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Declare
+                  </button>
+                }
               </div>
             </div>
 
@@ -1154,7 +1175,7 @@
                         </td>
                         <td class="py-2 pr-3 text-right">
                           <div class="inline-flex gap-1">
-                            @if (d.state === 1 || d.state === 2) {
+                            @if ((d.state === 1 || d.state === 2) && userInfo && userInfo.role !== 3) {
                               <button class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
                                       (click)="executeDistribution(d.distributionId)"
                                       [disabled]="!entityActive">
@@ -1216,7 +1237,7 @@
                     (ngModelChange)="holdersAtDateInput.set($event)">
                 </div>
               }
-              <button class="text-xs px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40"
+              <button class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-40"
                       (click)="loadHoldersAt()"
                       [disabled]="holdersAtLoading() || (holdersAtMode() === 'block' ? !holdersAtBlockInput() : !holdersAtDateInput())">
                 {{ holdersAtLoading() ? 'Loading…' : 'Load Snapshot' }}

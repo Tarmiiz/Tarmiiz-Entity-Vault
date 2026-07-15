@@ -25,6 +25,7 @@ import { AuditService } from '../../../../shared/services/audit.service';
 
 import { Asset, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 
 @Component({
@@ -50,6 +51,7 @@ export class ListPage implements OnInit {
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
+  features = inject(FeaturesService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }

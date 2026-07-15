@@ -8,10 +8,12 @@ import { ethers } from 'ethers';
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 import { LiveIndicatorComponent } from "../../../../../shared/components/live-indicator/live-indicator.component";
 import { ApiService } from '../../../../../shared/services/api.service';
+import { AuthService } from '../../../../../shared/services/auth.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { SocketService } from '../../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
+import { FeaturesService } from '../../../../../shared/services/features.service';
 import { DexVenue, DexOrder, DexTrade } from '../../../../../shared/models/data.model';
 
 import { ModalVenueStateService } from '../modals/modal-venue-state/modal-venue-state.service';
@@ -32,7 +34,11 @@ export class DetailsPage implements OnInit, OnDestroy {
   private alertService = inject(AlertService);
   private socket = inject(SocketService);
   utils = inject(UtilsService);
+  features = inject(FeaturesService);
   private stateModal = inject(ModalVenueStateService);
+  private authService = inject(AuthService);
+
+  get userInfo() { return this.authService.userInfo; }
 
   serviceAddress = signal<string>('');
   venue = signal<DexVenue | undefined>(undefined);

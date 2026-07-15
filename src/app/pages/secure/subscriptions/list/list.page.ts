@@ -14,6 +14,7 @@ import { LiveIndicatorComponent } from "../../../../shared/components/live-indic
 
 import { ApiService } from '../../../../shared/services/api.service';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
@@ -24,7 +25,7 @@ import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalAddSubscriptionComponent } from '../modals/modal-add-subscription/modal-add-subscription.component';
 import { ModalAddSubscriptionService } from '../modals/modal-add-subscription/modal-add-subscription.service';
 
-import { Subscription } from '../../../../shared/models/data.model';
+import { Subscription, User } from '../../../../shared/models/data.model';
 
 @Component({
   selector: 'app-list',
@@ -48,7 +49,9 @@ export class ListPage implements OnInit {
   utils = inject(UtilsService);
   private auditService = inject(AuditService);
   private addSubscriptionService = inject(ModalAddSubscriptionService);
+  features = inject(FeaturesService);
 
+  userInfo!: User;
   loadingServices: boolean = false;
   refreshing = signal(false);
 
@@ -70,6 +73,7 @@ export class ListPage implements OnInit {
   ngOnInit() {}
 
   async ionViewWillEnter() {
+    this.userInfo = this.authService.userInfo;
     this.subscriptions.set([]);
     this.subscriptionsCount = 0;
   }

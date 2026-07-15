@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs';
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../shared/services/api.service';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
@@ -45,6 +46,9 @@ export class ListPage implements OnInit {
   private modalTransactionAddService = inject(ModalTransactionAddService);
   private alertService = inject(AlertService);
   private auditService = inject(AuditService);
+  features = inject(FeaturesService);
+
+  get userInfo() { return this.authService.userInfo; }
 
   transactions = signal<AssetTransaction[]>([]);
   totalCount = signal<number>(0);

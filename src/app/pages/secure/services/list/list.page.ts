@@ -50,7 +50,7 @@ export class ListPage implements OnInit {
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
-  private features = inject(FeaturesService);
+  features = inject(FeaturesService);
 
   get isServiceProvider() { return this.features.isServiceProvider(); }
 

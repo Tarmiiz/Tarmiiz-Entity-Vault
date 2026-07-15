@@ -194,7 +194,7 @@ export class DetailsPage implements OnInit {
   }
 
   async deleteDocument() {
-    if (!confirm('Soft-delete this document?')) return;
+    if (!(await this.alertService.show('Delete Document', 'Soft-delete this document?', 'Delete'))) return;
     this.loadingService.show('Updating...');
     try {
       const r = await this.apiService.documentSetState(this.id(), 2);
@@ -224,7 +224,7 @@ export class DetailsPage implements OnInit {
   }
 
   async unshare(account: string) {
-    if (!confirm('Revoke access for ' + account + '?')) return;
+    if (!(await this.alertService.show('Revoke Access', 'Revoke access for ' + account + '?', 'Revoke'))) return;
     this.loadingService.show('Updating...');
     try {
       const r = await this.apiService.documentUnshare(this.id(), account);
@@ -334,10 +334,12 @@ export class DetailsPage implements OnInit {
       this.alertService.show('Not applicable', 'Only Private documents can be published.');
       return;
     }
-    const ok = confirm(
+    const ok = await this.alertService.show(
+      'Publish Document',
       'Make this document Public?\n\n' +
       'The file will be re-uploaded to IPFS as plaintext — anyone with the CID will be able to read it. ' +
-      'This cannot be undone: Public → Private conversion is not supported.'
+      'This cannot be undone: Public → Private conversion is not supported.',
+      'Publish'
     );
     if (!ok) return;
     this.loadingService.show('Publishing...');

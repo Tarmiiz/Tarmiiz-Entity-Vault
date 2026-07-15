@@ -86,10 +86,12 @@
               </div>
 
               <div class="mt-6 flex justify-end gap-2">
-                <button (click)="openStateModal()" [disabled]="v.state === 4"
-                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  Change State
-                </button>
+                @if (features.systemFunctionEnabled('venue-change-state')) {
+                  <button (click)="openStateModal()" [disabled]="v.state === 4"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Change State
+                  </button>
+                }
               </div>
 
               @if (v.suspended) {
@@ -109,7 +111,7 @@
                       <p class="text-sm font-semibold text-gray-700">{{ tierLabel($any(tier)) }}</p>
                       <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                             [class]="tierStatus($any(tier)).cls">{{ tierStatus($any(tier)).label }}</span>
-                      @if (tierStatus($any(tier)).label === 'Not requested') {
+                      @if (tierStatus($any(tier)).label === 'Not requested' && userInfo && userInfo.role !== 3) {
                         <div class="mt-3">
                           <button (click)="requestTier($any(tier))"
                             class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">

@@ -832,14 +832,6 @@ export class ApiService {
     return data?.status ?? data ?? null;
   }
 
-  async vaultSyncStatus() {
-    return this.vaultGet('/sync/status');
-  }
-
-  async vaultSyncResync(fromBlock: number, mode: string) {
-    return this.vaultPost('/sync/resync', { fromBlock, mode });
-  }
-
   // ─── Vault — Asset writes ─────────────────────────────────────────────────────
 
   async vaultCreateAsset(body: Record<string, any>): Promise<{ type: string; error?: string; address?: string } | null> {
@@ -1098,6 +1090,13 @@ export class ApiService {
 
   async vaultUpdateUserCredentials(id: string, body: Record<string, any>) {
     const data = await this.vaultPut('/users/' + id + '/credentials', body);
+    return data ?? null;
+  }
+
+  // Self-service password change (My Profile) — verifies the caller's current password
+  // server-side before rotating (password-only; keeps the username).
+  async vaultUserSelfCredentials(id: string, body: { currentPassword: string; password: string }) {
+    const data = await this.vaultPut('/users/' + id + '/self-credentials', body);
     return data ?? null;
   }
 

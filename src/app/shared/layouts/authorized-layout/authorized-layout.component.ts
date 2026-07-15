@@ -13,7 +13,6 @@ import { FeaturesService } from '../../services/features.service';
 import { ApiService } from '../../services/api.service';
 import { Entity, User } from '../../models/data.model';
 import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/modal-new-thread/modal-new-thread.component";
-import { ModalResyncComponent } from "../../components/modal-resync/modal-resync.component";
 
 @Component({
   selector: 'app-authorized-layout',
@@ -36,7 +35,6 @@ import { ModalResyncComponent } from "../../components/modal-resync/modal-resync
     RouterModule,
     TranslatePipe,
     ModalNewThreadComponent,
-    ModalResyncComponent,
   ],
 })
 export class AuthorizedLayoutComponent {
@@ -60,15 +58,22 @@ export class AuthorizedLayoutComponent {
   toggleAnalytics() { this.analyticsExpanded.update(v => !v); }
 
   pendingApprovalsCount = signal(0);
+  unreadMessagesCount = signal(0);
 
   constructor() {
     this.socketService.connect();
     this.socketService.approvalsCreated$.subscribe(() => this.refreshPendingCount());
     this.socketService.approvalsDecided$.subscribe(() => this.refreshPendingCount());
+    // Refresh the unread-messages badge on any Connect update (new inbound
+    // message, or a message marked read elsewhere) — mirrors the messages list page.
+    this.socketService.vaultUpdated$.subscribe(p => {
+      if (p.type === 'connect' || p.type === 'all') this.refreshUnreadMessages();
+    });
   }
 
   ionViewWillEnter() {
     this.refreshPendingCount();
+    this.refreshUnreadMessages();
   }
 
   private async refreshPendingCount() {
@@ -79,6 +84,17 @@ export class AuthorizedLayoutComponent {
     try {
       const res = await this.apiService.vaultApprovalsList({ state: 1, offset: 1 });
       this.pendingApprovalsCount.set(Number(res?.count ?? 0));
+    } catch { /* swallow */ }
+  }
+
+  private async refreshUnreadMessages() {
+    const u = this.userInfo;
+    if (!u) return;
+    // Security officers (role 4) don't see Messages — skip the poll.
+    if (Number(u.role) === 4) { this.unreadMessagesCount.set(0); return; }
+    try {
+      const res: any = await this.apiService.connectInboxInfo();
+      this.unreadMessagesCount.set(Number(res?.inbox?.unread ?? 0));
     } catch { /* swallow */ }
   }
   

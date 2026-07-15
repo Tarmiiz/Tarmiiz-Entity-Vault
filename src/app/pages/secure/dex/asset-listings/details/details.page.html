@@ -128,23 +128,25 @@
           <div class="p-2">
 
             <!-- Add-venue picker: a venue is added at an initial tier; you can change it afterwards. -->
-            <div class="flex flex-wrap items-center gap-2 mb-4">
-              <span class="text-xs text-gray-500 mr-2">Initial tier when adding a venue:</span>
-              @for (t of [1, 2, 3]; track t) {
-                <button (click)="setAddInitialTier($any(t))"
-                  class="text-xs px-3 py-1.5 rounded transition-colors"
-                  [class]="addInitialTier() === t
-                    ? 'bg-[var(--brand-primary)] text-white'
-                    : 'border border-gray-300 text-gray-600 hover:bg-gray-100'">
-                  {{ tierLabel($any(t)) }}
+            @if (userInfo && userInfo.role !== 3) {
+              <div class="flex flex-wrap items-center gap-2 mb-4">
+                <span class="text-xs text-gray-500 mr-2">Initial tier when adding a venue:</span>
+                @for (t of [1, 2, 3]; track t) {
+                  <button (click)="setAddInitialTier($any(t))"
+                    class="text-xs px-3 py-1.5 rounded transition-colors"
+                    [class]="addInitialTier() === t
+                      ? 'bg-[var(--brand-primary)] text-white'
+                      : 'border border-gray-300 text-gray-600 hover:bg-gray-100'">
+                    {{ tierLabel($any(t)) }}
+                  </button>
+                }
+                <button (click)="openAdd()"
+                  class="ml-auto text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Add venue
                 </button>
-              }
-              <button (click)="openAdd()"
-                class="ml-auto text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                Add venue
-              </button>
-            </div>
+              </div>
+            }
 
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div class="overflow-x-auto rounded-lg">
@@ -184,14 +186,16 @@
                             </span>
                           </td>
                           <td class="px-6 py-2 text-right whitespace-nowrap">
-                            <button (click)="openTierChange(v)"
-                              class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">
-                              Change tier
-                            </button>
-                            <button (click)="removeVenue(v)"
-                              class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
-                              Remove
-                            </button>
+                            @if (userInfo && userInfo.role !== 3) {
+                              <button (click)="openTierChange(v)"
+                                class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">
+                                Change tier
+                              </button>
+                              <button (click)="removeVenue(v)"
+                                class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                                Remove
+                              </button>
+                            }
                           </td>
                         </tr>
                       }

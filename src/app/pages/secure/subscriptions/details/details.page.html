@@ -76,15 +76,17 @@
         >
           Credit
         </button>
-        <button (click)="setTab('docs')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'docs'"
-          [class.border-b-2]="activeTab() === 'docs'"
-          [class.border-blue-600]="activeTab() === 'docs'"
-          [class.bg-blue-600]="activeTab() === 'docs'"
-        >
-          Documents
-        </button>
+        @if (features.systemFunctionEnabled('view-documents')) {
+          <button (click)="setTab('docs')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'docs'"
+            [class.border-b-2]="activeTab() === 'docs'"
+            [class.border-blue-600]="activeTab() === 'docs'"
+            [class.bg-blue-600]="activeTab() === 'docs'"
+          >
+            Documents
+          </button>
+        }
       </div>
     </div>
 
@@ -268,10 +270,12 @@
               
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                    class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                    Change State
-                  </button>
+                  @if (features.systemFunctionEnabled('subscription-change-state')) {
+                    <button (click)="openChangeStateModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      Change State
+                    </button>
+                  }
                 </div>
               }
     
@@ -326,20 +330,24 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="exportHoldingsExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportHoldingsPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportHoldingsExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportHoldingsPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>
@@ -554,20 +562,24 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="exportExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>
@@ -712,27 +724,33 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  <button (click)="openCreditDeposit()"
-                    class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Credit
-                  </button>
-                  <button (click)="exportCreditExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export Excel
-                  </button>
-                  <button (click)="exportCreditPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
-                    </svg>
-                    Export PDF
-                  </button>
+                  @if (userInfo && userInfo.role !== 3) {
+                    <button (click)="openCreditDeposit()"
+                      class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Credit
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-excel')) {
+                    <button (click)="exportCreditExcel()"
+                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export Excel
+                    </button>
+                  }
+                  @if (features.systemFunctionEnabled('export-pdf')) {
+                    <button (click)="exportCreditPdf()"
+                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
+                      </svg>
+                      Export PDF
+                    </button>
+                  }
                 </div>
               </div>
             </div>

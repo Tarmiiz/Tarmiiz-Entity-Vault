@@ -90,7 +90,7 @@ export class DetailsPage implements OnInit {
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
-  private features = inject(FeaturesService);
+  features = inject(FeaturesService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -534,7 +534,7 @@ export class DetailsPage implements OnInit {
   }
 
   async executeDistribution(distributionId: number) {
-    if (!confirm(`Execute all Pending legs for distribution #${distributionId}? This walks the holder set in chain-paginated chunks.`)) return;
+    if (!(await this.alertService.show('Execute Distribution', `Execute all Pending legs for distribution #${distributionId}? This walks the holder set in chain-paginated chunks.`, 'Execute'))) return;
     this.loadingService.show(`Executing #${distributionId}…`);
     try {
       const r = await this.apiService.distributionExecute(this.assetAddress, distributionId);
@@ -552,7 +552,7 @@ export class DetailsPage implements OnInit {
   }
 
   async finalizeDistribution(distributionId: number) {
-    if (!confirm(`Finalize distribution #${distributionId}? Remaining Pending legs flip to Skipped; residual (if any, Credit-only) is refunded when sweep is enabled.`)) return;
+    if (!(await this.alertService.show('Finalize Distribution', `Finalize distribution #${distributionId}? Remaining Pending legs flip to Skipped; residual (if any, Credit-only) is refunded when sweep is enabled.`, 'Finalize'))) return;
     this.loadingService.show(`Finalizing #${distributionId}…`);
     try {
       const r = await this.apiService.distributionFinalize(this.assetAddress, distributionId);

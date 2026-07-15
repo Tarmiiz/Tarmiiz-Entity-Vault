@@ -30,6 +30,7 @@ import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
+import { FeaturesService } from '../../../../shared/services/features.service';
 
 
 
@@ -64,6 +65,7 @@ export class DetailsPage implements OnInit {
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
+  features = inject(FeaturesService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }

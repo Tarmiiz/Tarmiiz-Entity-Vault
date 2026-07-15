@@ -21,7 +21,40 @@
         [class.bg-blue-600]="activeTab() === 'state'">
         State Changes
       </button>
-      <div class="flex gap-2 ml-auto items-center pr-2">
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      @if (activeTab() === 'activity') {
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Category</label>
+          <select [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event); applyFilters()"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            <option value="">All</option>
+            @for (c of activityCategories; track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Type</label>
+          <select [ngModel]="stateTypeFilter()" (ngModelChange)="stateTypeFilter.set($event); applyFilters()"
+            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            <option value="">All</option>
+            @for (t of stateTypes; track t) {
+              <option [value]="t">{{ t }}</option>
+            }
+          </select>
+        </div>
+      }
+      <div class="flex flex-col justify-end">
+        <button (click)="clearFilters()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
+      </div>
+      <div class="flex gap-2 ml-auto items-end">
         <button (click)="exportExcel()"
           class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">Export Excel</button>
         <button (click)="exportPdf()"
@@ -30,23 +63,7 @@
     </div>
   </div>
 
-  <!-- Filters (activity tab only) -->
-  @if (activeTab() === 'activity') {
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
-      <div class="flex flex-wrap gap-2 items-end">
-        <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">Category</label>
-          <input type="text" [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event); applyFilters()" placeholder="e.g. auth, approval"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40" />
-        </div>
-        <div class="flex flex-col justify-end">
-          <button (click)="clearFilters()"
-            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
-        </div>
-      </div>
-    </div>
-  }
-
+  <!-- Table -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
 
@@ -68,7 +85,7 @@
               <tr class="bg-white border-b"><td colspan="7" class="px-4 py-8 text-center text-gray-400">no data</td></tr>
             }
             @for (r of activityRows(); track r.id; let i = $index; let isEven = $even) {
-              <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                 <td class="px-4 py-2">{{ i + 1 }}</td>
                 <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatDate(r.created_at) }}</td>
                 <td class="px-4 py-2">
@@ -101,7 +118,7 @@
               <tr class="bg-white border-b"><td colspan="8" class="px-4 py-8 text-center text-gray-400">no data</td></tr>
             }
             @for (r of stateRows(); track r.id; let i = $index; let isEven = $even) {
-              <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                 <td class="px-4 py-2">{{ i + 1 }}</td>
                 <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatDate(r.created_at) }}</td>
                 <td class="px-4 py-2">

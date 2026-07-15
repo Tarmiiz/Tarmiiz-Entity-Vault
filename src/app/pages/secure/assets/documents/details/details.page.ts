@@ -125,7 +125,7 @@ export class DetailsPage implements OnInit {
   }
 
   async deleteDocument() {
-    if (!confirm('Soft-delete this document?')) return;
+    if (!(await this.alertService.show('Delete Document', 'Soft-delete this document?', 'Delete'))) return;
     this.loadingService.show('Updating...');
     try {
       const r = await this.apiService.assetDocumentSetState(this.assetAddress(), this.id(), 2);
@@ -155,7 +155,7 @@ export class DetailsPage implements OnInit {
   }
 
   async unshare(account: string) {
-    if (!confirm('Revoke access for ' + account + '?')) return;
+    if (!(await this.alertService.show('Revoke Access', 'Revoke access for ' + account + '?', 'Revoke'))) return;
     this.loadingService.show('Updating...');
     try {
       const r = await this.apiService.assetDocumentUnshare(this.assetAddress(), this.id(), account);

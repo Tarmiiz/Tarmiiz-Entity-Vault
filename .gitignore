@@ -70,6 +70,9 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Per-deployment runtime config (may hold private keys / salts / tokens) — commit config.json.sample instead
+src/assets/config.json
+
 /www
 /src/environments
 /old

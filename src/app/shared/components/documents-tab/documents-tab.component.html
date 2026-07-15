@@ -1,4 +1,6 @@
-﻿<!-- Filter Bar -->
+﻿@if (features.systemFunctionEnabled('view-documents')) {
+
+<!-- Filter Bar -->
 <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
   <div class="flex flex-wrap gap-2 items-end">
 
@@ -27,7 +29,7 @@
     </div>
 
     <div class="flex ml-auto items-end gap-2">
-      @if (entityActive) {
+      @if (entityActive && !isViewer()) {
         <button (click)="openAdd()"
           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -94,7 +96,7 @@
                     class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                     View
                   </button>
-                  @if (entityActive) {
+                  @if (entityActive && !isViewer()) {
                     <button (click)="openEdit(doc)"
                       class="text-xs px-2 py-1 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
                       Edit
@@ -242,7 +244,7 @@
             <div class="border-t pt-4">
               <div class="flex items-center justify-between mb-2">
                 <p class="text-sm font-medium text-gray-500">Shared with ({{ sharedWith().length }})</p>
-                @if (entityActive) {
+                @if (entityActive && !isViewer()) {
                   <button (click)="shareDocument(formState().doc!)"
                     class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -271,7 +273,7 @@
                       </div>
                       @if (isSelfShare(acc)) {
                         <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Owner</span>
-                      } @else if (entityActive) {
+                      } @else if (entityActive && !isViewer()) {
                         <button (click)="unshareAccount(formState().doc!, acc)"
                           class="text-xs px-2 py-0.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors shrink-0">
                           Revoke
@@ -427,7 +429,7 @@
 
       <!-- Footer -->
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-        @if (isViewMode && entityActive && formState().doc) {
+        @if (isViewMode && entityActive && !isViewer() && formState().doc) {
           <button type="button" (click)="signDocument(formState().doc!)"
             class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -454,4 +456,8 @@
 
 <app-modal-document-share />
 <app-modal-document-sign />
+
+} @else {
+  <p class="text-center text-sm text-gray-500 py-10">Document viewing is disabled for your account.</p>
+}
 

@@ -10,6 +10,7 @@ import { from, of } from 'rxjs';
 
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
+import { FeaturesService } from '../../services/features.service';
 import { AlertService } from '../alerts/alert/alert.service';
 import { LoadingService } from '../alerts/loading/loading.service';
 import { UtilsService } from '../../services/utils.service';
@@ -90,9 +91,12 @@ export class DocumentsTabComponent implements OnChanges {
   private signModal = inject(ModalDocumentSignService);
   private destroyRef = inject(DestroyRef);
   utils = inject(UtilsService);
+  features = inject(FeaturesService);
 
   // Only executive (role 2) users hold signer keys → only they can sign a regulator's inbound doc.
   isExecutive = () => Number(this.authService.userInfo?.role) === 2;
+  // Viewers (role 3) are read-only — hides the write buttons (Add / Edit / Share / Publish / Remove / Unshare / Sign).
+  isViewer = () => Number(this.authService.userInfo?.role) === 3;
 
   // Documents a foreign party shared directly with THIS template (inbound, read-only).
   inboundDocs = signal<InboundDoc[]>([]);
