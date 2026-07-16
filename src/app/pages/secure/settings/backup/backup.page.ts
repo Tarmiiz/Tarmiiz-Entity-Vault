@@ -19,7 +19,6 @@ const SETTING_LABELS: Record<string, string> = {
   approval_policy:     'Approval Policy',
   approval_user_roles: 'Approval User Roles',
   external_integrations: 'External API Integrations',
-  integration_services:  'Integration Service Links',
   user_system_function_config: 'Per-User System Functions',
 };
 

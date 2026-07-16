@@ -26,7 +26,6 @@ export class ModalUserAddComponent {
   addForm = this.fb.group({
     name:         ['', Validators.required],
     email:        ['', [Validators.required, Validators.email]],
-    did:          [''],
     username:     ['', Validators.required],
     password:     ['', Validators.required],
     password2:    ['', Validators.required],
@@ -74,7 +73,6 @@ export class ModalUserAddComponent {
       const addData: AddUserData = {
         name: formValue.name ?? '',
         email: formValue.email ?? '',
-        did: formValue.did ?? '',
         role: formValue.role ?? '',
         username: formValue.username ?? '',
         password: formValue.password ?? '',

@@ -239,6 +239,7 @@ export class DetailsPage implements OnInit {
     this.sysFnFilter.set('');
     await this.getUserDetails();
     await this.loadApprovalRole();
+    await this.loadHandle();
     // Eager-load so the tab can decide its own visibility (server returns only the
     // functions applicable to this user's role — empty ⇒ tab hidden).
     await this.loadSystemFunctionsConfig();
@@ -252,6 +253,59 @@ export class DetailsPage implements OnInit {
       const res = await this.apiService.vaultUserApprovalRoleGet(this.userId());
       this.approvalRole.set((res?.approvalRole as any) || 'none');
     } catch { this.approvalRole.set('none'); }
+  }
+
+  // ── Connect handle (the "alice" in alice@entityX — admin-assigned) ─────────
+  handle       = signal<string | null>(null);
+  handleFull   = signal<string | null>(null);
+  handleInput  = signal('');
+  handleSaving = signal(false);
+
+  async loadHandle() {
+    try {
+      const res = await this.apiService.vaultUserHandleGet(this.userId());
+      this.handle.set(res?.handle || null);
+      this.handleFull.set(res?.fullAddress || null);
+      this.handleInput.set(res?.handle || '');
+    } catch {
+      this.handle.set(null);
+      this.handleFull.set(null);
+    }
+  }
+
+  async saveHandle() {
+    const h = this.handleInput().trim().toLowerCase();
+    if (!h || this.handleSaving()) return;
+    if (!/^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$/.test(h)) {
+      this.alertService.show('Invalid handle', 'Handle must be 3-32 characters of a-z 0-9 . _ - with an alphanumeric first and last character.');
+      return;
+    }
+    this.handleSaving.set(true);
+    this.loadingService.show('Saving handle on-chain...');
+    try {
+      const res = await this.apiService.vaultUserHandleSet(this.userId(), h);
+      if (res?.error) this.alertService.show('Error', res.error);
+      else await this.loadHandle();
+    } finally {
+      this.loadingService.hide();
+      this.handleSaving.set(false);
+    }
+  }
+
+  async clearHandle() {
+    if (this.handleSaving() || !this.handle()) return;
+    const ok = await this.alertService.show('Clear handle', `Release "${this.handle()}"? Direct messages can no longer be addressed to this user until a new handle is set.`, 'Clear');
+    if (!ok) return;
+    this.handleSaving.set(true);
+    this.loadingService.show('Clearing handle on-chain...');
+    try {
+      const res = await this.apiService.vaultUserHandleClear(this.userId());
+      if (res?.error) this.alertService.show('Error', res.error);
+      else await this.loadHandle();
+    } finally {
+      this.loadingService.hide();
+      this.handleSaving.set(false);
+    }
   }
 
   isExecutive(role: number | string | undefined): boolean {

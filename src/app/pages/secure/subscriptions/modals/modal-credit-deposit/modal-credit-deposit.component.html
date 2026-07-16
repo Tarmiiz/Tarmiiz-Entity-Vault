@@ -7,8 +7,8 @@
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="p-6 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Payment Processor</label>
-            <select formControlName="paymentProcessor" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
+            <label class="block text-sm font-medium text-gray-700">Provider (Payment Processor)</label>
+            <select formControlName="provider" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
               @if (processors().length === 0) {
                 <option value="" class="text-black bg-white">No payment processors attached to this service</option>
               }
@@ -18,10 +18,15 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Transaction Ref No</label>
-            <input type="text" formControlName="trxRefNo"
+            <label class="block text-sm font-medium text-gray-700">Provider Trx Ref No</label>
+            <input type="text" formControlName="providerTrxRefNo"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
               placeholder="e.g. bank transfer reference" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Provider Trx Time <span class="text-gray-400">(optional)</span></label>
+            <input type="datetime-local" formControlName="providerTrxTime"
+              class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Currency</label>

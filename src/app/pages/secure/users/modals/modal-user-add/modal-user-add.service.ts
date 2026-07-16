@@ -4,7 +4,6 @@ import { User } from '../../../../../shared/models/data.model';
 export interface AddUserData {
   name: string;
   email: string;
-  did: string;
   username: string;
   password: string;
   role: string;

@@ -63,16 +63,16 @@ export class ModalRouteTransferComponent {
     }
 
     this.loadingService.show('Submitting route transfer...');
-    const timestamp = v.trxDate ? Math.floor(new Date(v.trxDate).getTime() / 1000) : undefined;
+    const providerTrxTime = v.trxDate ? Math.floor(new Date(v.trxDate).getTime() / 1000) : undefined;
     const res = await this.apiService.routeTransfer({
       service:            v.service!,
       fromSub:            v.fromSub!,
       destinationService: v.destinationService!,
       currencyCode:       Number(v.currencyCode),
       amount:             Number(v.amount),
-      trxRefNo:           (v.trxRefNo || '').trim(),
-      ...(timestamp ? { timestamp } : {}),
-      data:               v.note ? { note: v.note } : {},
+      providerTrxRefNo:   (v.trxRefNo || '').trim(),
+      ...(providerTrxTime ? { providerTrxTime } : {}),
+      raw:                v.note ? { note: v.note } : {},
     });
     this.loadingService.hide();
 

@@ -135,6 +135,7 @@
     "dexOrders":         "الأوامر",
     "dexTrades":         "الصفقات",
     "dexVenues":         "الأسواق",
+    "dexOrderBook":      "دفتر الأوامر",
     "documents":         "المستندات",
     "users":             "المستخدمون",
     "messages":          "الرسائل",
@@ -582,6 +583,21 @@
       "asset":   "الأصل",
       "range":   "النطاق",
       "empty":   "اختر أصلاً لعرض منحنى الأصول تحت الإدارة."
+    },
+    "creditLiquidity": {
+      "title": "الائتمان والسيولة"
+    },
+    "dexSecondary": {
+      "title": "السوق الثانوي للبورصة"
+    },
+    "flows": {
+      "title": "التدفقات"
+    },
+    "investors": {
+      "title": "المستثمرون"
+    },
+    "operationalRisk": {
+      "title": "المخاطر التشغيلية"
     }
   },
   "documents": {
@@ -647,6 +663,9 @@
       "body":    "النشر يجعل المستند عاماً على IPFS. هذا الإجراء لا يمكن التراجع عنه.",
       "confirm": "نشر",
       "cancel":  "إلغاء"
+    },
+    "details": {
+      "title": "تفاصيل المستند"
     }
   },
   "messages": {

@@ -129,7 +129,6 @@ export class ListPage implements OnInit {
           username: result.username,
           password: result.password,
           role: Number(result.role),
-          did: result.did,
         });
         await this.listUsers();
         if (Number(result.role) === 2 && result.approvalRole && result.approvalRole !== 'none') {

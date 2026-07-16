@@ -373,11 +373,11 @@ export interface FeeConfig {
   sellFeeDestination: string;
 }
 
-// External API integration row (admin settings; generalized from eKYC providers) —
-// param VALUES never reach the frontend; each key only carries `set` + `secret` flags.
+// External API integration row (admin settings; pure-config records — the former eKYC
+// adapter binding / service links are gone) — param VALUES never reach the frontend;
+// each key only carries `set` + `secret` flags.
 export interface IntegrationParam {
   key: string;
-  label?: string;
   secret: boolean;
   set: boolean;
 }
@@ -386,39 +386,10 @@ export interface ExternalIntegration {
   name: string;
   displayName: string;
   category: string;
-  adapter: string | null;
   enabled: boolean;
   isDefault: boolean;
-  configured: boolean;
   updatedAt: number | null;
-  capabilities: { verifyNID: boolean; transactionInquiry: boolean; fetchImages: boolean } | null;
-  linkedServices: number;
   params: IntegrationParam[];
-}
-
-export interface IntegrationServiceLink {
-  service: string;
-  serviceName: string | null;
-  entity: string | null;
-  serviceType: number | null;
-  state: number | null;
-  updatedAt: number;
-}
-
-export interface IntegrationConsumer {
-  service: string;
-  serviceName: string | null;
-  entity: string | null;
-  viaProvider: string;
-  partyType: number;
-  active: boolean;
-}
-
-export interface IntegrationServiceCandidate {
-  address: string;
-  name: string;
-  entity: string;
-  state: number;
 }
 
 export class AssetHolder {
@@ -596,7 +567,9 @@ export class CreditTransaction {
 export class ConnectParticipant {
   constructor(
     public address: string,
-    public partyType: number | null
+    public partyType: number | null,
+    // Connect v2 mutable membership: 1 = active, 2 = removed/left (history retained)
+    public state: number = 1
   ) {}
 }
 
@@ -619,17 +592,37 @@ export class ConnectThread {
   ) {}
 }
 
+// One resolved Target of a Connect v2 message. userId is the bytes32 hex
+// (zero-hash = the whole party); handle is the addressed user's Connect
+// handle when the mirror knows one.
+export interface ConnectMessageRecipient {
+  party: string;
+  userId: string;
+  handle?: string | null;
+  readAt?: number | null;
+  readByUserId?: string | null;
+}
+
+// Attachment metadata decoded from the encrypted envelope by the API.
+export interface ConnectAttachmentMeta {
+  cid: string;
+  name?: string;
+  fileType?: string;
+  size?: number;
+}
+
 export class ConnectMessage {
   constructor(
     public id: number,
     public threadId: number,
     public sender: string,
-    public recipient: string,
+    public recipients: ConnectMessageRecipient[],
     public contentCid: string,
+    public attachmentCids: string[],
     public contentType: number,
     public state: number,
     public sentAt: number,
-    public readAt: number | null,
+    public isDirect: boolean = false,
     public createdByUserId: string | null = null
   ) {}
 }

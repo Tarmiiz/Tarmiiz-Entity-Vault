@@ -8,7 +8,7 @@ import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
-import { FeeConfig, ExternalIntegration, IntegrationServiceLink, IntegrationConsumer, IntegrationServiceCandidate } from '../models/data.model';
+import { FeeConfig, ExternalIntegration } from '../models/data.model';
 
 @Injectable({
   providedIn: 'root'
@@ -175,13 +175,14 @@ export class ApiService {
     return this.vaultPost('/settings-backup/restore', name ? { name } : {});
   }
 
-  // External API integrations (admin-managed params; encrypted in DB, chain-backed) — admin page
+  // External API integrations (admin-managed params; encrypted in DB, chain-backed) — admin page.
+  // Pure config records — the former eKYC adapter binding / test / service links are gone.
   async vaultIntegrations(): Promise<ExternalIntegration[]> {
     const data = await this.vaultGet('/integrations');
     return (data?.integrations ?? []) as ExternalIntegration[];
   }
 
-  async vaultIntegrationCreate(body: { name: string; displayName?: string; category: string; adapter?: string; enabled?: boolean; isDefault?: boolean; params?: Record<string, { value?: string; secret?: boolean } | null> }) {
+  async vaultIntegrationCreate(body: { name: string; displayName?: string; category: string; enabled?: boolean; isDefault?: boolean; params?: Record<string, { value?: string; secret?: boolean } | null> }) {
     return this.vaultPost('/integrations', body);
   }
 
@@ -191,25 +192,6 @@ export class ApiService {
 
   async vaultIntegrationDelete(name: string) {
     return this.vaultDelete('/integrations/' + name);
-  }
-
-  async vaultIntegrationTest(name: string): Promise<{ connected: boolean; error?: string }> {
-    const data = await this.vaultPost('/integrations/' + name + '/test', {});
-    return { connected: !!data?.connected, error: data?.error };
-  }
-
-  async vaultIntegrationLinks(name: string): Promise<{ links: IntegrationServiceLink[]; consumers: IntegrationConsumer[] }> {
-    const data = await this.vaultGet('/integrations/' + name + '/services');
-    return { links: data?.links ?? [], consumers: data?.consumers ?? [] };
-  }
-
-  async vaultIntegrationLinksSet(name: string, services: string[]) {
-    return this.vaultPut('/integrations/' + name + '/services', { services });
-  }
-
-  async vaultIntegrationServiceCandidates(): Promise<IntegrationServiceCandidate[]> {
-    const data = await this.vaultGet('/integrations/service-candidates');
-    return (data?.services ?? []) as IntegrationServiceCandidate[];
   }
 
   // ─── Vault helpers ────────────────────────────────────────────────────────────
@@ -1107,27 +1089,30 @@ export class ApiService {
     return data ? { count: data.count, services: data.services } : null;
   }
 
-  // paymentProcessor (the chosen service-provider) + trxRefNo are required — a service may have
-  // multiple PPs, so the caller picks one (must be attached) and supplies a transaction reference.
-  async creditDeposit(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; trxRefNo: string; data?: any }): Promise<{ result?: any; error?: string }> {
+  // provider (the payment-processor service that ran the transaction) + providerTrxRefNo are
+  // required — a service may have multiple PPs, so the caller picks one (must be attached) and
+  // supplies the SP's transaction reference. `raw` is the optional unprocessed SP result,
+  // pinned as an encrypted receipt document; providerTrxTime backdates the ledger row.
+  async creditDeposit(body: { service: string; provider: string; providerName?: string; subscriber: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any }): Promise<{ result?: any; error?: string }> {
     return this._creditMutation('/credit/deposit', body);
   }
 
-  async creditWithdraw(body: { service: string; paymentProcessor: string; subscriber: string; currencyCode: number; amount: number; trxRefNo: string; data?: any }): Promise<{ result?: any; error?: string }> {
+  async creditWithdraw(body: { service: string; provider: string; providerName?: string; subscriber: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any }): Promise<{ result?: any; error?: string }> {
     return this._creditMutation('/credit/withdraw', body);
   }
 
   // Bank hub move — the entity's Bank-level PP `service` moves an identity's credit between its
   // bank-account hub and a spoke subscription (both same identity, enforced on-chain).
-  // trxRefNo (the SP's external transaction reference) is required; timestamp (unix seconds)
-  // optionally backdates the ledger row; `data` is pinned as an encrypted IPFS receipt document.
-  async bankTransfer(body: { service: string; from: string; to: string; currencyCode: number; amount: number; trxRefNo: string; timestamp?: number; data?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+  // providerTrxRefNo (the SP's external transaction reference) is required; providerTrxTime
+  // (unix seconds) optionally backdates the ledger row; `raw` is pinned as an encrypted IPFS
+  // receipt document.
+  async bankTransfer(body: { service: string; from: string; to: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
     return this._creditMutation('/credit/bank-transfer', body);
   }
 
   // Anonymous service-routed move — the entity's source `service` routes `fromSub`'s credit to the
   // SAME identity's subscription at `destinationService` (resolved on-chain; the sibling sub + DID are never exposed).
-  async routeTransfer(body: { service: string; fromSub: string; destinationService: string; currencyCode: number; amount: number; trxRefNo: string; timestamp?: number; data?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+  async routeTransfer(body: { service: string; fromSub: string; destinationService: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
     return this._creditMutation('/credit/route-transfer', body);
   }
 
@@ -1171,10 +1156,9 @@ export class ApiService {
     }
   }
 
-  // mode 'did' = returning claimed user by DID hash; 'ref' = new/unclaimed identity from a prior
-  // eKYC verification reference. (The API's one-call /users/onboard/new multipart variant is for
-  // server-to-server integrations; the Vault modal collects the reference fields directly.)
-  async usersOnboard(body: Record<string, any>, mode: 'did' | 'ref'): Promise<{ subscriptionAddress?: string; error?: string }> {
+  // mode 'did' = returning claimed user by DID hash; 'new' = new/unclaimed identity from a
+  // caller-supplied canonical eKYC result (the ekyc envelope — the API never calls a provider).
+  async usersOnboard(body: Record<string, any>, mode: 'did' | 'new'): Promise<{ subscriptionAddress?: string; error?: string }> {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
@@ -1709,36 +1693,6 @@ export class ApiService {
     return await this.authPost('/transactions/redeem', body);
   }
 
-  // ─── eKYC ─────────────────────────────────────────────────────────────────────
-
-  async ekycTransactionInquiry(transactionId: string) {
-    return await this.authGet('/ekyc/transaction', { transactionId });
-  }
-
-  async ekycFetchImages(transactionId: string, isCropped = false) {
-    return await this.authGet('/ekyc/images', { transactionId, isCropped: String(isCropped) });
-  }
-
-  async ekycVerifyNID(idFrontFile: File, idBackFile: File) {
-    try {
-      const formData = new FormData();
-      formData.append('idFront', idFrontFile);
-      formData.append('idBack', idBackFile);
-
-      const response = await fetch(this.apiURL + '/ekyc/nid/verify', {
-        method: 'POST',
-        headers: await this.authHeader(),
-        body: formData
-      });
-
-      const data = await response.json();
-      if (!response.ok || data?.error) return null;
-      return data;
-    } catch {
-      return null;
-    }
-  }
-
   // ─── Vault — Global controller ────────────────────────────────────────────────
 
   async vaultGetGlobalCountries(search?: string) {
@@ -2064,16 +2018,82 @@ export class ApiService {
   async connectThreadCreate(body: any)               { return this.vaultPost('/connect/threads', body); }
   async connectThreadGet(id: number)                 { return this.vaultGet ('/connect/threads/' + id); }
   async connectThreadClose(id: number, reason = '')  { return this.vaultPost(`/connect/threads/${id}/close`, { reason }); }
-  async connectThreadBroadcast(id: number, text: string, contentType = 4) {
-    return this.vaultPost(`/connect/threads/${id}/broadcast`, { text, contentType });
+  async connectThreadBroadcast(id: number, text: string, contentType = 4, subject?: string) {
+    return this.vaultPost(`/connect/threads/${id}/broadcast`, { text, contentType, subject });
+  }
+
+  // Connect v2 — participant mutation (any participant may add; creator or the
+  // country regulator removes; anyone but the creator may leave). Adding ALWAYS
+  // shares the thread history this tenant can decrypt with the newcomers.
+  async connectThreadAddParticipants(id: number, targets: any[]) {
+    return this.vaultPost(`/connect/threads/${id}/participants`, { targets });
+  }
+  async connectThreadRemoveParticipant(id: number, address: string, reason = '') {
+    return this.vaultDelete(`/connect/threads/${id}/participants/${address}`);
+  }
+  async connectThreadLeave(id: number) {
+    return this.vaultPost(`/connect/threads/${id}/leave`, {});
   }
 
   async connectMessagesList(threadId: number, start = 1, offset = 100) {
     return this.vaultGet(`/connect/threads/${threadId}/messages?start=${start}&offset=${offset}`);
   }
-  async connectMessageSend(threadId: number, body: { recipient?: string; subscriptionAddr?: string; text: string; contentType?: number }) {
+  // Connect v2 send: ONE row addressed to to[] — bare addresses, {party, userId?},
+  // "alice@partyName" handle strings, or {subscriptionAddr}. Empty/omitted to = reply-all.
+  async connectMessageSend(threadId: number, body: { to?: any[]; text: string; subject?: string; contentType?: number }) {
     return this.vaultPost(`/connect/threads/${threadId}/messages`, body);
   }
+  // Multipart variant when attachments ride along (≤10 files, encrypted with the
+  // same per-message DEK server-side).
+  async connectMessageSendMultipart(
+    threadId: number,
+    body: { to?: any[]; text: string; subject?: string; contentType?: number },
+    files: File[],
+    onProgress?: (percent: number) => void,
+  ): Promise<any> {
+    const token = await this.sessionService.getActiveToken();
+    if (!token) {
+      this._handleAuthFailure();
+      return { error: 'Session expired. Please log in again.', status: 401 };
+    }
+    return new Promise<any>((resolve) => {
+      try {
+        const form = new FormData();
+        for (const f of files || []) form.append('attachments', f, f.name);
+        form.append('text', body.text);
+        if (body.subject) form.append('subject', body.subject);
+        if (body.contentType != null) form.append('contentType', String(body.contentType));
+        if (body.to && body.to.length) form.append('to', JSON.stringify(body.to));
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', this.apiURL + `/vault/connect/threads/${threadId}/messages`);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        const audit = this.getAuditHeaders();
+        for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
+        xhr.upload.onprogress = (e) => {
+          if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch { resolve({ error: 'Invalid response', status: xhr.status }); }
+        };
+        xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.send(form);
+      } catch (err: any) {
+        resolve({ error: err?.message || 'upload failed', status: 0 });
+      }
+    });
+  }
+  // Message-scoped decrypted content (DM-visibility-gated server-side).
+  async connectMessageContentById(id: number) {
+    return this.vaultGet(`/connect/messages/${id}/content`);
+  }
+  // Attachment blob URL (decrypted server-side after the visibility gate).
+  // _fetchFileBlob paths are apiURL-relative — the /vault prefix must be explicit.
+  async connectMessageAttachment(id: number, idx: number) {
+    return this._fetchFileBlob(`/vault/connect/messages/${id}/attachments/${idx}`);
+  }
+  // Legacy raw-cid fetch — thread metadataCid only (message cids 403).
   async connectMessageContent(cid: string) {
     return this.vaultGet('/connect/content/' + encodeURIComponent(cid));
   }
@@ -2081,9 +2101,15 @@ export class ApiService {
   async connectMessagesMarkBatchRead(messageIds: number[]) { return this.vaultPost('/connect/messages/read-batch', { messageIds }); }
   async connectMessageTombstone(id: number)          { return this.vaultPost(`/connect/messages/${id}/tombstone`, {}); }
 
-  async connectRecipientsSearch(type: 'entity' | 'regulator' | 'subscription' | 'service', q: string) {
+  async connectRecipientsSearch(type: 'entity' | 'regulator' | 'subscription' | 'service' | 'user', q: string) {
     return this.vaultGet(`/connect/recipients/search?type=${type}&q=${encodeURIComponent(q)}`);
   }
+
+  // Connect v2 — per-user handles (the "alice" in alice@entityX; admin-assigned).
+  async connectHandlesResolve(q: string) { return this.vaultGet('/connect/handles/resolve?q=' + encodeURIComponent(q)); }
+  async vaultUserHandleGet(userId: number | string) { return this.vaultGet(`/users/${userId}/handle`); }
+  async vaultUserHandleSet(userId: number | string, handle: string) { return this.vaultPut(`/users/${userId}/handle`, { handle }); }
+  async vaultUserHandleClear(userId: number | string) { return this.vaultDelete(`/users/${userId}/handle`); }
 
   // ─── Directory (unified address → name/partyType resolver) ────────────────
   async directoryByAddress(address: string) { return this.vaultGet('/directory/by-address/' + address); }

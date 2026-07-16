@@ -63,16 +63,16 @@ export class ModalBankTransferComponent {
     }
 
     this.loadingService.show('Submitting bank transfer...');
-    const timestamp = v.trxDate ? Math.floor(new Date(v.trxDate).getTime() / 1000) : undefined;
+    const providerTrxTime = v.trxDate ? Math.floor(new Date(v.trxDate).getTime() / 1000) : undefined;
     const res = await this.apiService.bankTransfer({
-      service:      v.service!,
-      from:         v.from!,
-      to:           v.to!,
-      currencyCode: Number(v.currencyCode),
-      amount:       Number(v.amount),
-      trxRefNo:     (v.trxRefNo || '').trim(),
-      ...(timestamp ? { timestamp } : {}),
-      data:         v.note ? { note: v.note } : {},
+      service:          v.service!,
+      from:             v.from!,
+      to:               v.to!,
+      currencyCode:     Number(v.currencyCode),
+      amount:           Number(v.amount),
+      providerTrxRefNo: (v.trxRefNo || '').trim(),
+      ...(providerTrxTime ? { providerTrxTime } : {}),
+      raw:              v.note ? { note: v.note } : {},
     });
     this.loadingService.hide();
 

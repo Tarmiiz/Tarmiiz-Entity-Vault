@@ -115,6 +115,31 @@
                   <p class="text-sm font-medium text-gray-500">Last Modified</p>
                   <p class="text-base">{{ v.lastModifiedAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
                 </div>
+
+                <!-- Connect handle — the user's direct-message address (alice@entityX) -->
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">Connect Handle</p>
+                  @if (handle()) {
+                    <p class="text-base font-mono">{{ handleFull() || handle() }}</p>
+                  } @else {
+                    <p class="text-base text-gray-400 italic">No handle — this user cannot receive direct messages yet.</p>
+                  }
+                  <div class="mt-2 flex items-center gap-2">
+                    <input type="text" [ngModel]="handleInput()" (ngModelChange)="handleInput.set($event)"
+                           class="border border-gray-300 rounded-md py-1.5 px-3 text-sm text-black w-56 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="e.g. alice">
+                    <button (click)="saveHandle()" [disabled]="handleSaving() || !handleInput()"
+                            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                      {{ handle() ? 'Rename' : 'Set Handle' }}
+                    </button>
+                    @if (handle()) {
+                      <button (click)="clearHandle()" [disabled]="handleSaving()"
+                              class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        Clear
+                      </button>
+                    }
+                  </div>
+                </div>
               </div>
               
               <div class="mt-8 pt-6 border-t flex flex-wrap items-center justify-end gap-3">

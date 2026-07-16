@@ -1,4 +1,4 @@
-﻿@if (modalService.isVisible()) {
+@if (modalService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
@@ -27,7 +27,7 @@
               [class.text-gray-700]="mode() !== 'B'"
               [class.border-gray-300]="mode() !== 'B'"
               [class.hover:bg-gray-100]="mode() !== 'B'">
-              New User (eKYC)
+              New User (eKYC Result)
             </button>
           </div>
 
@@ -42,36 +42,47 @@
             </select>
           </div>
 
-          @if (mode() === 'A' && serviceValidators().length > 0) {
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Validator</label>
-              <select formControlName="validator" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
-                <option value="">Select the validator that verified this subscriber</option>
-                @for (vv of serviceValidators(); track vv.address) {
-                  <option [value]="vv.address">{{ vv.address }}{{ vv.active ? '' : ' (inactive)' }}</option>
-                }
-              </select>
-              <p class="text-xs text-gray-400 mt-1">This service has multiple validators — pick the one that validated this subscriber.</p>
-            </div>
-          }
-          @if (mode() === 'B') {
-            <p class="text-xs text-gray-400">The on-chain validator is derived automatically from the eKYC provider that ran the verification.</p>
-          }
-
           @if (mode() === 'A') {
             <div>
               <label class="block text-sm font-medium text-gray-700">DID Hash</label>
               <input type="text" formControlName="didHash"
                 placeholder="0x..."
                 class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
+              <p class="text-xs text-gray-400 mt-1">A returning claimed user is already verified — the subscription reuses the identity's existing validation.</p>
             </div>
           } @else {
+            <p class="text-xs text-gray-400">Enter the eKYC result you obtained from your service provider — the platform never calls the provider itself.</p>
+
+            <!-- Provider envelope -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Unique ID Hash</label>
-              <input type="text" formControlName="uniqueIdHash"
-                placeholder="0x..."
-                class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
+              <label class="block text-sm font-medium text-gray-700">Provider (validator service)</label>
+              <select formControlName="provider" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
+                <option value="">Select the provider that performed the verification</option>
+                @for (vv of serviceValidators(); track vv.address) {
+                  <option [value]="vv.address">{{ vv.address }}{{ vv.active ? '' : ' (inactive)' }}</option>
+                }
+              </select>
+              <p class="text-xs text-gray-400 mt-1">Must be a validator attached to the selected service.</p>
             </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Provider Name <span class="text-gray-400">(optional)</span></label>
+              <input type="text" formControlName="providerName"
+                class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Provider Trx Ref No</label>
+                <input type="text" formControlName="providerTrxRefNo"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Provider Trx Time <span class="text-gray-400">(optional)</span></label>
+                <input type="datetime-local" formControlName="providerTrxTime"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+            </div>
+
+            <!-- Subscriber -->
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-sm font-medium text-gray-700">Email</label>
@@ -103,18 +114,6 @@
                 </select>
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Trx Ref No</label>
-                <input type="text" formControlName="trxRefNo"
-                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Trx Timestamp</label>
-                <input type="datetime-local" formControlName="trxTimestamp"
-                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
-              </div>
-            </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">Verification Level</label>
               <select formControlName="level" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
@@ -123,6 +122,90 @@
                 <option [ngValue]="3">Level 3</option>
               </select>
             </div>
+
+            <!-- Canonical identity data -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">National ID</label>
+                <input type="text" formControlName="uniqueId"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                <input type="text" formControlName="nameFull"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+            </div>
+
+            <button type="button" (click)="toggleMoreIdentity()"
+              class="text-xs text-indigo-600 hover:text-indigo-800 transition-colors">
+              {{ showMoreIdentity() ? '− Hide' : '+ More' }} identity fields
+            </button>
+
+            @if (showMoreIdentity()) {
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">First Name</label>
+                  <input type="text" formControlName="nameFirst" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Last Name</label>
+                  <input type="text" formControlName="nameLast" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Gender</label>
+                  <input type="text" formControlName="gender" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <input type="text" formControlName="dateOfBirth" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Marital Status</label>
+                  <input type="text" formControlName="maritalStatus" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Religion</label>
+                  <input type="text" formControlName="religion" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Profession</label>
+                  <input type="text" formControlName="profession" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Husband Name</label>
+                  <input type="text" formControlName="husbandName" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">ID Serial</label>
+                  <input type="text" formControlName="nationalIdSerial" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">ID Release Date</label>
+                  <input type="text" formControlName="idReleaseDate" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">ID Expiry Date</label>
+                  <input type="text" formControlName="idExpiryDate" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Street</label>
+                  <input type="text" formControlName="addressStreet" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">District</label>
+                  <input type="text" formControlName="addressDistrict" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Governorate</label>
+                  <input type="text" formControlName="addressGovernorate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Birth Governorate</label>
+                  <input type="text" formControlName="birthGovernorate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+              </div>
+            }
           }
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">

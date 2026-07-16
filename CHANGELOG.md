@@ -16,6 +16,25 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 <!-- newest first; each date-heading groups every change made that day across any number of sessions -->
 
+### 2026-07-16
+
+#### Added
+- **Connect v2 messages UI (twin of the Regulator Dashboard change, same day; production build green).** Messages detail page ([details.page.ts](src/app/pages/secure/messages/details/details.page.ts) + [.html](src/app/pages/secure/messages/details/details.page.html)) rewritten: per-message To chips + purple Direct/lock styling on DMs + "read by X of N" receipts; compose with reply-all default (empty `to[]` = on-chain snapshot), per-message "Reply privately", cross-tenant **direct-To handle picker** (`type=user` search → `{party, userId}` chips), and an attachments picker (≤10, multipart) with per-message DM-gated downloads; Participants tab with Add (entity / regulator / **subscription** search — subscriptions join as the subscriber's identity via `{subscriptionAddr}` targets; newcomers automatically receive the decryptable history), Active/Removed status, creator-only Remove, non-creator Leave. The separate subscriber-broadcast box is gone — v2 reply-all covers it.
+- **Connect Handle card** on User Details ([users/details](src/app/pages/secure/users/details/details.page.ts)) — set/rename/clear the user's direct-message handle (admin-only page), showing the composed `handle@entityName` full address.
+
+#### Changed
+- [api.service.ts](src/app/shared/services/api.service.ts): v2 connect block (multipart send to `/vault/connect/threads/:id/messages`, message-scoped content + attachment blob fetch — `_fetchFileBlob` needs the explicit `/vault` prefix — participants add/remove/leave, `vaultUserHandle*`, handles resolve, `type=user` search). [data.model.ts](src/app/shared/models/data.model.ts): `ConnectMessage` v2 (`recipients[]`, `attachmentCids[]`, `isDirect`), new `ConnectMessageRecipient`/`ConnectAttachmentMeta`, `ConnectParticipant.state`. New-thread modal: 99-recipient cap for all kinds; v2 `initialMessage {text, contentType}` goes to all participants.
+
+### 2026-07-15
+
+#### Changed
+- **Add Subscription modal redesigned for the SP-canonical model** ([modal-add-subscription](src/app/pages/secure/subscriptions/modals/modal-add-subscription/)): Mode A (existing DID) lost its dead validator picker; Mode B is now a canonical-result entry form — provider picker (the attached validator that performed the verification), optional provider name, `providerTrxRefNo`/`providerTrxTime`, raw national ID, and a structured canonical identity section (required National ID + Full Name, expandable extra fields) posting to `/users/onboard/new`.
+- **Credit modals renamed onto the unified envelope**: the deposit modal's PP picker submits `provider` + `providerTrxRefNo` + a new optional `providerTrxTime` backdate field (`note` → `raw:{note}`); the bank/route transfer modals send `providerTrxRefNo`/`providerTrxTime`/`raw` ([api.service.ts](src/app/shared/services/api.service.ts) credit methods retyped).
+- External Integrations settings page reduced to the pure-config surface (no adapter/capabilities/Test/link-services UI); `ExternalIntegration` model trimmed; the Settings Backup page dropped the `integration_services` label.
+
+#### Removed
+- Dead `ekycVerifyNID` / `ekycTransactionInquiry` / `ekycFetchImages` API-service methods (never called) and the integrations test/links/candidates methods + models.
+
 ### 2026-07-14
 
 #### Changed

@@ -135,6 +135,7 @@
     "dexOrders":         "Orders",
     "dexTrades":         "Trades",
     "dexVenues":         "Venues",
+    "dexOrderBook":      "Order Book",
     "documents":         "Documents",
     "users":             "Users",
     "messages":          "Messages",
@@ -582,6 +583,21 @@
       "asset":   "Asset",
       "range":   "Range",
       "empty":   "Pick an asset to see its AUM curve."
+    },
+    "creditLiquidity": {
+      "title": "Credit & Liquidity"
+    },
+    "dexSecondary": {
+      "title": "DEX Secondary Market"
+    },
+    "flows": {
+      "title": "Flows"
+    },
+    "investors": {
+      "title": "Investors"
+    },
+    "operationalRisk": {
+      "title": "Operational Risk"
     }
   },
   "documents": {
@@ -647,6 +663,9 @@
       "body":    "Publishing makes this document public on IPFS. This is irreversible.",
       "confirm": "Publish",
       "cancel":  "Cancel"
+    },
+    "details": {
+      "title": "Document Details"
     }
   },
   "messages": {

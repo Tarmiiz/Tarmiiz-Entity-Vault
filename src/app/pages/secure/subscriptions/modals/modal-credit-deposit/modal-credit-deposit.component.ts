@@ -32,8 +32,9 @@ export class ModalCreditDepositComponent {
   processors = signal<ApprovedProcessor[]>([]);
 
   form = this.fb.group({
-    paymentProcessor: ['', Validators.required],
-    trxRefNo: ['', Validators.required],
+    provider: ['', Validators.required],
+    providerTrxRefNo: ['', Validators.required],
+    providerTrxTime: [''],
     currencyCode: [null as number | null, Validators.required],
     amount: [null as number | null, [Validators.required, Validators.min(0.000001)]],
     note: [''],
@@ -45,7 +46,7 @@ export class ModalCreditDepositComponent {
         const list = this.modalService.currencies();
         const first = list[0]?.currencyCode ?? null;
         const defaultPp = (this.modalService.paymentProcessor() || '').toLowerCase();
-        this.form.reset({ paymentProcessor: defaultPp, trxRefNo: '', currencyCode: first, amount: null, note: '' });
+        this.form.reset({ provider: defaultPp, providerTrxRefNo: '', providerTrxTime: '', currencyCode: first, amount: null, note: '' });
         void this.loadProcessors(defaultPp);
       }
     });
@@ -64,11 +65,11 @@ export class ModalCreditDepositComponent {
     this.processors.set(list);
     const match = list.find(p => p.service.toLowerCase() === defaultPp);
     if (match) {
-      this.form.patchValue({ paymentProcessor: match.service });
+      this.form.patchValue({ provider: match.service });
     } else if (list.length > 0) {
-      this.form.patchValue({ paymentProcessor: list[0].service });
+      this.form.patchValue({ provider: list[0].service });
     } else {
-      this.form.patchValue({ paymentProcessor: '' });
+      this.form.patchValue({ provider: '' });
     }
   }
 
@@ -80,19 +81,24 @@ export class ModalCreditDepositComponent {
       await this.alertService.show('Error', 'Token-issuer service is missing.');
       return;
     }
-    if (!v.paymentProcessor) {
+    if (!v.provider) {
       await this.alertService.show('Error', 'Please select a payment processor.');
       return;
     }
 
+    const providerRow = this.processors().find(p => p.service.toLowerCase() === String(v.provider).toLowerCase());
     const body = {
       service,
-      paymentProcessor: v.paymentProcessor,
-      trxRefNo: (v.trxRefNo || '').trim(),
+      provider: v.provider,
+      ...(providerRow?.name ? { providerName: providerRow.name } : {}),
+      providerTrxRefNo: (v.providerTrxRefNo || '').trim(),
+      ...(v.providerTrxTime
+        ? { providerTrxTime: Math.floor(new Date(v.providerTrxTime as string).getTime() / 1000) }
+        : {}),
       subscriber: this.modalService.subscriptionAddress(),
       currencyCode: Number(v.currencyCode),
       amount: Number(v.amount),
-      data: v.note ? { note: v.note } : {},
+      raw: v.note ? { note: v.note } : {},
     };
 
     this.loadingService.show('Depositing credit...');

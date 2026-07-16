@@ -40,7 +40,8 @@ export class ModalNewThreadComponent {
   error        = signal('');
   searching    = signal(false);
 
-  maxRecipients = computed(() => this.kind() === 'subscription' ? 9 : 1);
+  // Connect v2: threads take up to 100 participants (self + 99 others), any kind.
+  maxRecipients = computed(() => 99);
   atCapacity    = computed(() => this.selected().length >= this.maxRecipients());
 
   constructor() {
@@ -124,11 +125,8 @@ export class ModalNewThreadComponent {
         targets: sel.map(s => s.address),
       };
       if (this.initialText()) {
-        if (this.kind() === 'subscription') {
-          body.initialMessage = { subscriptionAddr: sel[0].address, text: this.initialText(), contentType: 1 };
-        } else {
-          body.initialMessage = { recipient: sel[0].address, text: this.initialText(), contentType: 1 };
-        }
+        // v2: the initial message goes to ALL participants (on-chain snapshot).
+        body.initialMessage = { text: this.initialText(), contentType: 1 };
       }
       const resp = await this.apiService.connectThreadCreate(body);
       if (resp?.threadId != null) {

@@ -97,17 +97,51 @@
                   @for (m of messages(); track m.id) {
                     <div class="flex" [class.justify-end]="isMine(m)">
                       <div class="max-w-[70%] rounded-lg px-3 py-2 text-xs"
-                           [ngClass]="isMine(m) ? 'bg-indigo-100 text-indigo-900' : 'bg-gray-100 text-gray-800'">
-                        <div class="text-[10px] text-gray-500 mb-1">
+                           [ngClass]="isDirect(m)
+                             ? (isMine(m) ? 'bg-purple-100 text-purple-900 border border-purple-300' : 'bg-purple-50 text-purple-900 border border-purple-300')
+                             : (isMine(m) ? 'bg-indigo-100 text-indigo-900' : 'bg-gray-100 text-gray-800')">
+                        <div class="text-[10px] text-gray-500 mb-1 flex items-center gap-1 flex-wrap">
+                          @if (isDirect(m)) {
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-purple-700" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-purple-700 font-semibold">Direct</span> ·
+                          }
                           {{ senderLabel(m) }}
                           · {{ utils.formatDate(m.sentAt) }}
                           @if (m.state === 2) { · <span class="italic">deleted</span> }
                         </div>
+                        <!-- To chips -->
+                        @if (m.recipients && m.recipients.length > 0) {
+                          <div class="flex flex-wrap gap-1 mb-1">
+                            <span class="text-[9px] text-gray-400 mt-0.5">To:</span>
+                            @for (r of m.recipients; track r.party + r.userId) {
+                              <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-white/70 border border-gray-300 text-gray-700">
+                                {{ recipientLabel(r) }}
+                              </span>
+                            }
+                          </div>
+                        }
                         <div class="whitespace-pre-wrap break-words">
                           {{ textFor(m) }}
                         </div>
+                        <!-- Attachments -->
+                        @if (attachmentsFor(m).length > 0) {
+                          <div class="flex flex-wrap gap-1.5 mt-1.5">
+                            @for (a of attachmentsFor(m); track a.cid; let ai = $index) {
+                              <button (click)="downloadAttachment(m, ai)"
+                                      [disabled]="isDownloading(m.id + ':' + ai)"
+                                      class="text-[10px] px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 inline-flex items-center gap-1 disabled:opacity-60">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                </svg>
+                                {{ a.name || 'attachment' }}
+                              </button>
+                            }
+                          </div>
+                        }
                         <div class="flex gap-3 mt-1 text-[10px]">
-                          @if (!isMine(m) && !m.readAt) {
+                          @if (isRecipient(m) && !myReadAt(m)) {
                             <button class="text-indigo-700 hover:underline inline-flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
                                     [disabled]="isMarkingRead(m.id)"
                                     (click)="markRead(m)">
@@ -121,6 +155,9 @@
                                 <span>Mark read</span>
                               }
                             </button>
+                          }
+                          @if (!isMine(m) && t.state === 1) {
+                            <button class="text-purple-700 hover:underline" (click)="setReplyPrivately(m)">Reply privately</button>
                           }
                           @if (isMine(m) && m.state === 1) {
                             <button class="text-red-700 hover:underline inline-flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -137,8 +174,11 @@
                               }
                             </button>
                           }
-                          @if (m.readAt) {
-                            <span class="text-gray-400">read {{ utils.formatDate(m.readAt) }}</span>
+                          @if (myReadAt(m)) {
+                            <span class="text-gray-400">read {{ utils.formatDate(myReadAt(m)!) }}</span>
+                          }
+                          @if (isMine(m) && m.recipients && m.recipients.length > 0) {
+                            <span class="text-gray-400">read by {{ readCount(m) }} of {{ m.recipients.length }}</span>
                           }
                         </div>
                       </div>
@@ -150,14 +190,67 @@
                 </div>
               </div>
 
-              <!-- Compose -->
-              @if (t.state === 1) {
+              <!-- Compose (reply-all default; reply-privately targets one message's sender) -->
+              @if (t.state === 1 && isEntityParticipant()) {
                 <div class="border-t pt-4 mt-4">
-                  <label class="text-sm font-medium text-gray-500">Send message</label>
+                  <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium text-gray-500">
+                      @if (toTargets().length > 0) {
+                        Direct message to selected user(s)
+                      } @else if (replyMode() === 'sender' && replyToMessage(); as rm) {
+                        Replying privately to <span class="font-semibold text-purple-700">{{ senderLabel(rm) }}</span>
+                        <button class="ml-2 text-xs text-gray-500 underline" (click)="clearReplyMode()">switch to reply-all</button>
+                      } @else {
+                        Send message (to all participants)
+                      }
+                    </label>
+                  </div>
+
+                  <!-- Direct-To picker: search cross-tenant handles (alice@partyName) -->
+                  <div class="relative mt-1">
+                    <div class="flex flex-wrap items-center gap-1.5 border border-gray-300 rounded-md py-1.5 px-2 bg-white">
+                      <span class="text-[10px] text-gray-400">To:</span>
+                      @for (x of toTargets(); track x.label; let xi = $index) {
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 border border-purple-300 text-purple-800 inline-flex items-center gap-1">
+                          {{ x.label }}
+                          <button (click)="removeToTarget(xi)" class="text-red-600 font-bold">×</button>
+                        </span>
+                      }
+                      <input type="text" [ngModel]="toSearchTerm()" (ngModelChange)="onToSearch($event)"
+                             class="flex-1 min-w-[160px] text-xs text-black focus:outline-none"
+                             placeholder="everyone — or type a handle (alice@…) for a direct message">
+                    </div>
+                    @if (toSearchResults().length > 0) {
+                      <div class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto">
+                        @for (r of toSearchResults(); track r.party + r.userId) {
+                          <button (click)="selectToResult(r)"
+                                  class="block w-full text-left px-3 py-2 text-xs hover:bg-purple-50">
+                            <span class="font-medium">{{ r.fullAddress }}</span>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
                   <textarea rows="3" [ngModel]="composeText()" (ngModelChange)="composeText.set($event)"
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
-                            placeholder="Type your message (stored on-chain as content CID)…"></textarea>
-                  <div class="mt-2 flex justify-end">
+                            placeholder="Type your message (encrypted; stored on-chain as content CID)…"></textarea>
+
+                  <!-- Attachments picker -->
+                  <div class="mt-2 flex items-center gap-2 flex-wrap">
+                    <label class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1 cursor-pointer">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                      </svg>
+                      Attach
+                      <input type="file" multiple class="hidden" (change)="onFilesSelected($event)">
+                    </label>
+                    @for (f of composeFiles(); track f.name; let fi = $index) {
+                      <span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 border border-gray-300 text-gray-700 inline-flex items-center gap-1">
+                        {{ f.name }}
+                        <button (click)="removeComposeFile(fi)" class="text-red-600 font-bold">×</button>
+                      </span>
+                    }
+                    <div class="flex-1"></div>
                     <button (click)="send()" [disabled]="!composeText()"
                             class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -167,24 +260,6 @@
                     </button>
                   </div>
                 </div>
-
-                @if (hasSubscriptionParticipants()) {
-                  <div class="border-t pt-4 mt-4">
-                    <label class="text-sm font-medium text-gray-500">Broadcast to all subscribers in this thread</label>
-                    <textarea rows="2" [ngModel]="broadcastText()" (ngModelChange)="broadcastText.set($event)"
-                              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
-                              placeholder="Broadcast message (fans out to every subscription participant)…"></textarea>
-                    <div class="mt-2 flex justify-end">
-                      <button (click)="broadcast()" [disabled]="!broadcastText()"
-                              class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
-                        </svg>
-                        Broadcast
-                      </button>
-                    </div>
-                  </div>
-                }
               }
 
             </div>
@@ -264,6 +339,49 @@
         <!-- Participants tab -->
         @if (activeTab() === 'participants') {
           <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+
+            <!-- Add participants (any current participant; history is ALWAYS shared) -->
+            @if (t.state === 1 && isEntityParticipant()) {
+              <div class="p-4 border-b bg-gray-50">
+                <label class="text-sm font-medium text-gray-500">Add participants</label>
+                <p class="text-[11px] text-gray-400 mb-1">Newcomers automatically receive this thread's history you can decrypt. Subscriptions join as the subscriber's identity.</p>
+                <div class="relative">
+                  <input type="text" [ngModel]="addSearchTerm()" (ngModelChange)="onAddSearch($event)"
+                         class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
+                         placeholder="Search entities / regulators / subscriptions by name or address…">
+                  @if (addSearchResults().length > 0) {
+                    <div class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
+                      @for (r of addSearchResults(); track r.address) {
+                        <button (click)="selectAddResult(r)"
+                                class="block w-full text-left px-3 py-2 text-xs hover:bg-indigo-50">
+                          <span class="font-medium">{{ r.name }}</span>
+                          <span class="text-gray-400 ml-2 font-mono">{{ r.address.slice(0, 12) }}…</span>
+                          <span class="ml-2 text-[10px] px-1.5 rounded-full bg-gray-100 border">{{ r.type }}</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (addSelected().length > 0) {
+                  <div class="flex flex-wrap gap-1.5 mt-2">
+                    @for (s of addSelected(); track s.address; let si = $index) {
+                      <span class="text-[10px] px-2 py-1 rounded-full bg-indigo-100 border border-indigo-300 text-indigo-800 inline-flex items-center gap-1">
+                        {{ s.name }}
+                        <button (click)="unselectAdd(si)" class="text-red-600 font-bold">×</button>
+                      </span>
+                    }
+                    <button (click)="addParticipants()" [disabled]="adding()"
+                            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                      </svg>
+                      Add to thread
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
@@ -272,12 +390,14 @@
                     <th scope="col" class="px-6 py-2">Name</th>
                     <th scope="col" class="px-6 py-2">Party Type</th>
                     <th scope="col" class="px-6 py-2">Address</th>
+                    <th scope="col" class="px-6 py-2">Status</th>
+                    <th scope="col" class="px-6 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (t.participants.length === 0) {
                     <tr class="bg-white border-b">
-                      <td class="px-6 py-2" colspan="4">no data</td>
+                      <td class="px-6 py-2" colspan="6">no data</td>
                     </tr>
                   } @else {
                     @for (p of t.participants; track p.address; let i = $index; let isEven = $even) {
@@ -287,14 +407,37 @@
                         <td class="px-6 py-2">{{ nameFor(p.address) || '—' }}</td>
                         <td class="px-6 py-2">{{ participantType(resolvedPartyType(p.address, p.partyType)) }}</td>
                         <td class="px-6 py-2 font-mono break-all">{{ p.address }}</td>
+                        <td class="px-6 py-2">
+                          @if (p.state === 1) {
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                          } @else {
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-600">Removed</span>
+                          }
+                        </td>
+                        <td class="px-6 py-2">
+                          @if (t.state === 1 && p.state === 1 && isEntityCreator()
+                               && p.address.toLowerCase() !== t.creator.toLowerCase()) {
+                            <button (click)="removeParticipant(p.address)"
+                                    class="text-red-700 hover:underline text-[11px]">Remove</button>
+                          }
+                        </td>
                       </tr>
                     }
                   }
                 </tbody>
               </table>
             </div>
-            <div class="flex items-center px-4 py-2 border-t">
+            <div class="flex items-center justify-between px-4 py-2 border-t">
               <p class="text-xs font-medium text-gray-800">Showing {{ t.participants.length }} of Total {{ t.participants.length }} Records</p>
+              @if (t.state === 1 && isEntityParticipant() && !isEntityCreator()) {
+                <button (click)="leaveThread()"
+                        class="text-xs px-3 py-1.5 rounded bg-orange-700 text-white hover:bg-orange-800 transition-colors flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  </svg>
+                  Leave Thread
+                </button>
+              }
             </div>
           </div>
         }
