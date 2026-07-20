@@ -1,5 +1,6 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 
 /**
  * Live / Refreshing data indicator.
@@ -29,17 +30,17 @@ import { NgTemplateOutlet } from '@angular/common';
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
-          <span>Refreshing data…</span>
+          <span>{{ 'shared.liveIndicator.refreshing' | translate }}</span>
         } @else {
           <svg class="w-3.5 h-3.5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="4"></circle>
           </svg>
-          <span>Live</span>
+          <span>{{ 'common.live' | translate }}</span>
         }
       </div>
     </ng-template>
   `,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, TranslatePipe],
 })
 export class LiveIndicatorComponent {
   @Input() refreshing = false;

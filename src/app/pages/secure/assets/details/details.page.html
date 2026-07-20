@@ -7,7 +7,7 @@
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
         <li class="inline-flex items-center">
           <a routerLink="/authorized/assets/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
-            Assets
+            {{ 'assets.title' | translate }}
           </a>
         </li>
         <li>
@@ -38,7 +38,7 @@
           [class.border-blue-600]="activeTab() === 'overview'"
           [class.bg-blue-600]="activeTab() === 'overview'"
         >
-          Overview
+          {{ 'assets.details.tabs.overview' | translate }}
         </button>
         <button (click)="setTab('info')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -47,7 +47,7 @@
           [class.border-blue-600]="activeTab() === 'info'"
           [class.bg-blue-600]="activeTab() === 'info'"
         >
-          Information
+          {{ 'assets.details.tabs.info' | translate }}
         </button>
         <button (click)="setTab('metadata')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -56,7 +56,7 @@
           [class.border-blue-600]="activeTab() === 'metadata'"
           [class.bg-blue-600]="activeTab() === 'metadata'"
         >
-          Metadata
+          {{ 'common.metadata' | translate }}
         </button>
         <button (click)="setTab('services')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -65,7 +65,7 @@
           [class.border-blue-600]="activeTab() === 'services'"
           [class.bg-blue-600]="activeTab() === 'services'"
         >
-          Services
+          {{ 'assets.details.tabs.services' | translate }}
         </button>
         <button (click)="setTab('price')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -74,7 +74,7 @@
           [class.border-blue-600]="activeTab() === 'price'"
           [class.bg-blue-600]="activeTab() === 'price'"
         >
-          Price
+          {{ 'assets.details.tabs.price' | translate }}
         </button>
         <button (click)="setTab('holders')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -83,7 +83,7 @@
           [class.border-blue-600]="activeTab() === 'holders'"
           [class.bg-blue-600]="activeTab() === 'holders'"
         >
-          Holders
+          {{ 'assets.details.tabs.holders' | translate }}
         </button>
         <button (click)="setTab('trxs')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -92,7 +92,7 @@
           [class.border-blue-600]="activeTab() === 'trxs'"
           [class.bg-blue-600]="activeTab() === 'trxs'"
         >
-          Transactions
+          {{ 'assets.details.tabs.transactions' | translate }}
         </button>
         @if (features.systemFunctionEnabled('view-documents')) {
           <button (click)="setTab('docs')"
@@ -102,7 +102,7 @@
             [class.border-blue-600]="activeTab() === 'docs'"
             [class.bg-blue-600]="activeTab() === 'docs'"
           >
-            Documents
+            {{ 'assets.details.tabs.documents' | translate }}
           </button>
         }
         @if (!dexListingLoaded() || dexListing()) {
@@ -113,7 +113,7 @@
             [class.border-blue-600]="activeTab() === 'dex'"
             [class.bg-blue-600]="activeTab() === 'dex'"
           >
-            DEX
+            {{ 'assets.details.tabs.dex' | translate }}
           </button>
         }
         <button (click)="setTab('distributions')"
@@ -123,7 +123,7 @@
           [class.border-blue-600]="activeTab() === 'distributions'"
           [class.bg-blue-600]="activeTab() === 'distributions'"
         >
-          Distributions
+          {{ 'assets.details.tabs.distributions' | translate }}
         </button>
         <button (click)="setTab('holdersAt')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -132,7 +132,7 @@
           [class.border-blue-600]="activeTab() === 'holdersAt'"
           [class.bg-blue-600]="activeTab() === 'holdersAt'"
         >
-          Holders at Block
+          {{ 'assets.details.tabs.holdersAtBlock' | translate }}
         </button>
       </div>
     </div>
@@ -154,44 +154,44 @@
                 </div>
                 <div class="flex items-center gap-2">
                   @if (v.suspended) {
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'assets.details.info.suspended' | translate }}</span>
                   }
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ v.stateName }}</span>
                 </div>
               </div>
               @if (suspensionReason()) {
-                <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+                <p class="text-xs text-red-600 mt-1">{{ 'assets.details.reasonLabel' | translate: { reason: suspensionReason() } }}</p>
               }
 
               <!-- Supply & Market row -->
               <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Total Supply</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.info.totalSupply' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ v.totalSupply | number:'1.0-0' }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Circulating</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.info.circulating' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ v.circulating | number:'1.0-0' }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Total Withheld</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.overview.totalWithheld' | translate }}</p>
                   <p class="text-base font-semibold text-amber-700">{{ assetTotalWithheld() | number:'1.0-0' }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Market Value</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.overview.marketValue' | translate }}</p>
                   @if (marketValue(); as mv) {
                     <p class="text-base font-semibold text-indigo-700">{{ mv | number:'1.2-2' }}</p>
-                    <p class="text-xs text-gray-400">{{ v.currencyCode }} @ bid</p>
+                    <p class="text-xs text-gray-400">{{ 'assets.details.overview.atBid' | translate: { code: v.currencyCode } }}</p>
                   } @else {
-                    <p class="text-base font-semibold text-gray-400">—</p>
+                    <p class="text-base font-semibold text-gray-400">{{ 'common.notSet' | translate }}</p>
                   }
                 </div>
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Holders</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.tabs.holders' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ holders().length }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Currency</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.info.currency' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ v.currencyCode }}</p>
                   <p class="text-xs text-gray-400">{{ v.currencyName }}</p>
                 </div>
@@ -199,49 +199,49 @@
 
               <!-- Price row -->
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Current Price</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'assets.details.overview.currentPrice' | translate }}</p>
                 @if (latestPrice(); as lp) {
                   <div class="grid grid-cols-3 gap-3">
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">Bid</p>
+                      <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.price.bid' | translate }}</p>
                       <p class="text-base font-semibold text-indigo-700">{{ lp.bid | number:'1.6-6' }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">Ask</p>
+                      <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.price.ask' | translate }}</p>
                       <p class="text-base font-semibold text-emerald-700">{{ lp.ask | number:'1.6-6' }}</p>
                     </div>
                     <div>
-                      <p class="text-xs text-gray-500 mb-1">Last Updated</p>
+                      <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.overview.lastUpdated' | translate }}</p>
                       <p class="text-xs font-medium text-gray-700">{{ lp.timestamp * 1000 | date:'dd/MM/yyyy HH:mm' }}</p>
                     </div>
                   </div>
                 } @else {
-                  <p class="text-xs text-gray-400">No price data available</p>
+                  <p class="text-xs text-gray-400">{{ 'assets.details.overview.noPriceData' | translate }}</p>
                 }
               </div>
 
               <!-- Transactions row -->
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Transactions</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'assets.details.tabs.transactions' | translate }}</p>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">Total</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.overview.total' | translate }}</p>
                     <p class="text-base font-semibold text-gray-800">{{ transactions().length }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">Subscribes</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.overview.subscribes' | translate }}</p>
                     <p class="text-base font-semibold text-green-700">{{ subscribeCount() }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">Redeems</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.overview.redeems' | translate }}</p>
                     <p class="text-base font-semibold text-orange-600">{{ redeemCount() }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">Last Transaction</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'assets.details.overview.lastTransaction' | translate }}</p>
                     @if (lastTrx(); as lt) {
                       <p class="text-xs font-medium text-gray-700">{{ lt.time * 1000 | date:'dd/MM/yyyy HH:mm' }}</p>
                     } @else {
-                      <p class="text-xs text-gray-400">—</p>
+                      <p class="text-xs text-gray-400">{{ 'common.notSet' | translate }}</p>
                     }
                   </div>
                 </div>
@@ -263,11 +263,11 @@
                 <div class="flex items-center gap-2">
                   <span class="px-3 py-1.5 text-xs font-semibold rounded-full"
                     [class]="v.priceMode === 1 ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'">
-                    {{ v.priceModeName || (v.priceMode === 1 ? 'Single' : 'Bid/Ask') }}
+                    {{ v.priceModeName || ((v.priceMode === 1 ? 'assets.details.info.priceModeSingle' : 'assets.details.info.priceModeBidAsk') | translate) }}
                   </span>
                   @if (v.suspended) {
                     <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">
-                      Suspended
+                      {{ 'assets.details.info.suspended' | translate }}
                     </span>
                   }
                   <span
@@ -279,83 +279,83 @@
                 </div>
               </div>
               @if (suspensionReason()) {
-                <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+                <p class="text-xs text-red-600 mt-1">{{ 'assets.details.reasonLabel' | translate: { reason: suspensionReason() } }}</p>
               }
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Asset Address</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.address' | translate }}</p>
                   <p class="font-mono text-base">{{ v.address }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Services</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.services' | translate }}</p>
                   <p class="text-base">
-                    {{ v.services.length }} service{{ v.services.length !== 1 ? 's' : '' }} assigned
-                    <button (click)="setTab('services')" class="text-indigo-600 hover:text-indigo-800 text-sm ml-2">View all &rarr;</button>
+                    {{ 'assets.details.info.servicesAssignedCount' | translate: { count: v.services.length } }}
+                    <button (click)="setTab('services')" class="text-indigo-600 hover:text-indigo-800 text-sm ml-2">{{ 'common.viewAll' | translate }}</button>
                   </p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Issuer</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.issuer' | translate }}</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoLink(v.issuer)">{{ v.issuerName }}</p>
                   @if (v.issuer) {
                     <p class="font-mono text-xs text-gray-400">{{ v.issuer }}</p>
                   }
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Manager</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.manager' | translate }}</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoLink(v.manager)">{{ v.managerName }}</p>
                   @if (v.manager) {
                     <p class="font-mono text-xs text-gray-400">{{ v.manager }}</p>
                   }
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Created On</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.createdAt' | translate }}</p>
                   <p class="text-base">{{ v.createdOn * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Circulating</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.circulating' | translate }}</p>
                   <p class="text-base">{{ v.circulating | number: '1.0-0'  }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Total Supply</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.totalSupply' | translate }}</p>
                   <p class="text-base">{{ v.totalSupply | number: '1.0-0' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Currency</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.currency' | translate }}</p>
                   <p class="text-base">{{ v.currencyName }} ({{ v.currencyCode }})</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                   <p class="text-base">{{ v.countryName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Contract Type</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.contractType' | translate }}</p>
                   <p class="text-base">{{ v.tokenType === 2 ? 'T3643' : 'T20' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Supply Mode</p>
-                  <p class="text-base">{{ v.supplyModeName || (v.supplyMode === 2 ? 'Dynamic' : 'Fixed') }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.supplyMode' | translate }}</p>
+                  <p class="text-base">{{ v.supplyModeName || ((v.supplyMode === 2 ? 'assets.details.info.supplyModeDynamic' : 'assets.details.info.supplyModeFixed') | translate) }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Asset Type</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.assetType' | translate }}</p>
                   <p class="text-base">{{ v.assetTypeName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Price Mode</p>
-                  <p class="text-base">{{ v.priceModeName || (v.priceMode === 1 ? 'Single' : 'Bid/Ask') }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.priceMode' | translate }}</p>
+                  <p class="text-base">{{ v.priceModeName || ((v.priceMode === 1 ? 'assets.details.info.priceModeSingle' : 'assets.details.info.priceModeBidAsk') | translate) }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Regulator</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.regulator' | translate }}</p>
                   <p class="text-base">{{ v.regulatorName }}{{ v.regulatorSymbol ? ' (' + v.regulatorSymbol + ')' : '' }}</p>
                   @if (v.regulator) {
                     <p class="font-mono text-xs text-gray-400">{{ v.regulator }}</p>
                   }
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Credit Settlement</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.creditSettlement' | translate }}</p>
                   <span class="px-2 py-1 text-xs font-semibold rounded-full"
                     [class]="v.creditSettlement ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'">
-                    {{ v.creditSettlement ? 'Enabled' : 'Disabled' }}
+                    {{ (v.creditSettlement ? 'assets.details.info.enabled' : 'assets.details.info.disabled') | translate }}
                   </span>
                 </div>
               </div>
@@ -366,17 +366,17 @@
                   @if (v.supplyMode === 1) {
                     <button (click)="openMintModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-600">
-                      Mint Supply
+                      {{ 'assets.details.info.mintSupply' | translate }}
                     </button>
                     <button (click)="openBurnModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600">
-                      Burn Supply
+                      {{ 'assets.details.info.burnSupply' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('asset-change-state')) {
                     <button (click)="openChangeStateModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                      Change State
+                      {{ 'assets.details.changeStateBtn' | translate }}
                     </button>
                   }
                 </div>
@@ -390,43 +390,48 @@
         @if (activeTab() === 'metadata') {
           <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto p-4 space-y-6">
 
-            @if (userInfo && userInfo.role !== 3) {
-              <div class="flex justify-end">
+            <div class="flex justify-between items-center">
+              <button (click)="openViewAssetModal()"
+                class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                {{ 'assets.details.publicView.button' | translate }}
+              </button>
+              @if (userInfo && userInfo.role !== 3) {
                 <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
                   class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                  Edit Metadata
+                  {{ 'assets.details.metadata.edit' | translate }}
                 </button>
-              </div>
-            }
+              }
+            </div>
 
             <!-- Description -->
             <div>
-              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Description</h4>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'common.description' | translate }}</h4>
               @if (parsedMetadata().description) {
                 <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ parsedMetadata().description }}</p>
               } @else {
-                <p class="text-sm text-gray-400 italic">No description provided.</p>
+                <p class="text-sm text-gray-400 italic">{{ 'assets.details.metadata.noDescription' | translate }}</p>
               }
             </div>
 
             <!-- Additional fields -->
             <div>
-              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Additional Fields</h4>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.details.metadata.additionalFields' | translate }}</h4>
               @if (!parsedMetadata().valid) {
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <p class="text-xs text-gray-500 mb-2">The metadata field is not valid JSON. Showing raw value:</p>
+                  <p class="text-xs text-gray-500 mb-2">{{ 'assets.details.metadata.invalidJson' | translate }}</p>
                   <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap break-all">{{ parsedMetadata().raw }}</pre>
                 </div>
               } @else if (parsedMetadata().entries.length === 0) {
-                <p class="text-sm text-gray-400 italic">No additional metadata recorded.</p>
+                <p class="text-sm text-gray-400 italic">{{ 'assets.details.metadata.noAdditional' | translate }}</p>
               } @else {
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                   <div class="overflow-x-auto rounded-lg">
                     <table class="w-full text-sm text-left text-gray-700">
                       <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                         <tr>
-                          <th scope="col" class="px-6 py-2 w-1/3">Key</th>
-                          <th scope="col" class="px-6 py-2">Value</th>
+                          <th scope="col" class="px-6 py-2 w-1/3">{{ 'assets.details.metadata.key' | translate }}</th>
+                          <th scope="col" class="px-6 py-2">{{ 'assets.details.metadata.value' | translate }}</th>
                         </tr>
                       </thead>
                       <tbody class="text-xs">
@@ -443,6 +448,68 @@
               }
             </div>
 
+            <!-- Images (public media — avatar / banner / gallery) -->
+            @if (features.systemFunctionEnabled('view-documents')) {
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'assets.details.media.heading' | translate }}</h4>
+                  @if (userInfo && userInfo.role !== 3) {
+                    <button (click)="openAddImageModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      {{ 'assets.details.media.uploadButton' | translate }}
+                    </button>
+                  }
+                </div>
+                @if (mediaImages().length === 0) {
+                  <p class="text-sm text-gray-400 italic">{{ 'assets.details.media.noImages' | translate }}</p>
+                } @else {
+                  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    @for (row of mediaImages(); track row.entry.documentId) {
+                      <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="aspect-video bg-gray-100 flex items-center justify-center">
+                          @if (mediaImageUrls()[row.entry.documentId]) {
+                            <img [src]="mediaImageUrls()[row.entry.documentId]" [alt]="row.entry.title" class="w-full h-full object-cover">
+                          } @else {
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                          }
+                        </div>
+                        <div class="p-2">
+                          <div class="flex items-center justify-between gap-1">
+                            <span class="text-xs text-black font-medium truncate">{{ row.entry.title }}</span>
+                            @if (row.role !== 'gallery') {
+                              <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
+                                [class]="row.role === 'avatar' ? 'bg-indigo-100 text-indigo-700' : 'bg-cyan-100 text-cyan-700'">
+                                {{ (row.role === 'avatar' ? 'assets.addModal.wizard.roleAvatar' : 'assets.addModal.wizard.roleBanner') | translate }}
+                              </span>
+                            }
+                          </div>
+                          @if (userInfo && userInfo.role !== 3) {
+                            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                              @if (row.role !== 'avatar') {
+                                <button (click)="changeMediaRole(row.entry.documentId, 'avatar')" [disabled]="!entityActive"
+                                  class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'assets.details.media.setAvatar' | translate }}</button>
+                              }
+                              @if (row.role !== 'banner') {
+                                <button (click)="changeMediaRole(row.entry.documentId, 'banner')" [disabled]="!entityActive"
+                                  class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'assets.details.media.setBanner' | translate }}</button>
+                              }
+                              @if (row.role !== 'gallery') {
+                                <button (click)="changeMediaRole(row.entry.documentId, 'gallery')" [disabled]="!entityActive"
+                                  class="text-[10px] text-gray-500 hover:text-gray-700 disabled:opacity-40">{{ 'assets.details.media.unsetRole' | translate }}</button>
+                              }
+                              <button (click)="removeMediaImage(row)" [disabled]="!entityActive"
+                                class="text-[10px] text-red-500 hover:text-red-700 disabled:opacity-40">{{ 'common.remove' | translate }}</button>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+                <p class="text-xs text-gray-400 mt-2">{{ 'assets.details.media.hint' | translate }}</p>
+              </div>
+            }
+
           </div>
         }
 
@@ -451,11 +518,11 @@
 
           <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
             <h3 class="text-sm font-semibold text-gray-700 pl-10">
-              Price History@if (showWindowSuffix()) { — Last 30 × {{ activeIntervalLabel() }} }
+              {{ 'assets.details.price.title' | translate }}@if (showWindowSuffix()) { {{ 'assets.details.price.last30Suffix' | translate: { interval: activeIntervalLabel() } }} }
             </h3>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
-                <label class="text-xs font-medium text-gray-500">Interval</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'assets.details.price.interval' | translate }}</label>
                 <select [ngModel]="priceInterval()" (ngModelChange)="setPriceInterval($event)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   @for (i of intervalOptions; track i.value) {
@@ -466,7 +533,7 @@
               @if (userInfo && userInfo.role !== 3) {
                 <button (click)="openAddPriceModal()" [disabled]="!entityActive"
                   class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                  + Add Price
+                  + {{ 'assets.details.price.addPrice' | translate }}
                 </button>
               }
             </div>
@@ -480,7 +547,7 @@
               </div>
             } @else {
               <div class="flex items-center justify-center h-40 text-gray-400 text-sm">
-                No price data available to chart.
+                {{ 'assets.details.price.noChartData' | translate }}
               </div>
             }
 
@@ -488,19 +555,19 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mt-6">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">From</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
                   <input type="date" [ngModel]="filterPriceStartDate()" (ngModelChange)="filterPriceStartDate.set($event); pricePage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">To</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
                   <input type="date" [ngModel]="filterPriceEndDate()" (ngModelChange)="filterPriceEndDate.set($event); pricePage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearPriceFilter()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -510,7 +577,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -519,7 +586,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -532,12 +599,12 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th scope="col" class="px-6 py-2">Date</th>
+                      <th scope="col" class="px-6 py-2">{{ 'assets.details.price.date' | translate }}</th>
                       @if (asset()?.priceMode === 1) {
-                        <th scope="col" class="px-6 py-2">Price</th>
+                        <th scope="col" class="px-6 py-2">{{ 'assets.details.price.priceColumn' | translate }}</th>
                       } @else {
-                        <th scope="col" class="px-6 py-2">Bid</th>
-                        <th scope="col" class="px-6 py-2">Ask</th>
+                        <th scope="col" class="px-6 py-2">{{ 'assets.details.price.bid' | translate }}</th>
+                        <th scope="col" class="px-6 py-2">{{ 'assets.details.price.ask' | translate }}</th>
                       }
                     </tr>
                   </thead>
@@ -545,7 +612,7 @@
                       <!-- no data -->
                       @if(filteredPriceTable().length === 0) {
                           <tr class="bg-white border-b hover:bg-gray-50">
-                              <td class="px-6 py-2">no data</td>
+                              <td class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                           </tr>
                       }
                       @else {
@@ -565,18 +632,18 @@
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedPriceHistory().length }} of {{ filteredPriceTable().length }} Price Records</p>
+                <p class="text-xs font-medium text-gray-800">{{ 'assets.details.price.showingRecords' | translate: { showing: pagedPriceHistory().length, total: filteredPriceTable().length } }}</p>
                 @if (totalPricePages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>Page {{ pricePage() + 1 }} of {{ totalPricePages() }}</span>
+                    <span>{{ 'common.pageOf' | translate: { page: pricePage() + 1, pages: totalPricePages() } }}</span>
                     <div class="flex gap-2">
                       <button (click)="pricePage.set(pricePage() - 1)" [disabled]="pricePage() === 0"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Prev
+                        {{ 'common.prev' | translate }}
                       </button>
                       <button (click)="pricePage.set(pricePage() + 1)" [disabled]="pricePage() >= totalPricePages() - 1"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Next
+                        {{ 'common.next' | translate }}
                       </button>
                     </div>
                   </div>
@@ -586,7 +653,7 @@
 
           </div>
 
-        }        
+        }
 
         <!-- holders tab -->
         @if (activeTab() === 'holders') {
@@ -595,29 +662,29 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Holder Address</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.holders.holderAddress' | translate }}</label>
                   <input type="text" [ngModel]="filterHolder()" (ngModelChange)="filterHolder.set($event); holderPage.set(0)"
-                    placeholder="Search by address..."
+                    [placeholder]="'assets.details.holders.searchPlaceholder' | translate"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Balance</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.holders.balance' | translate }}</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterBalanceOp()" (ngModelChange)="filterBalanceOp.set($event); holderPage.set(0)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                      <option value="">Any</option>
+                      <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
                     <input type="number" min="0" [ngModel]="filterBalanceAmt()" (ngModelChange)="filterBalanceAmt.set($event === '' || $event === null ? null : +$event); holderPage.set(0)"
-                      placeholder="Amount"
+                      [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
                   </div>
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearHolderFilter()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -627,7 +694,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -636,7 +703,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -648,18 +715,18 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th scope="col" class="px-6 py-2">Holder</th>
-                    <th scope="col" class="px-6 py-2 text-right">Balance</th>
-                    <th scope="col" class="px-6 py-2 text-right">Cost</th>
-                    <th scope="col" class="px-6 py-2 text-right">Value</th>
-                    <th scope="col" class="px-6 py-2 text-right">P/L</th>
-                    <th scope="col" class="px-6 py-2 text-right">P/L %</th>
+                    <th scope="col" class="px-6 py-2">{{ 'assets.details.holders.holder' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.holders.balance' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.holders.costHeader' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.holders.value' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.holders.pl' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.holders.plPercent' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                     @if(filteredHolders().length === 0) {
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td colspan="6" class="px-6 py-2">no data</td>
+                            <td colspan="6" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                         </tr>
                     }
                     @else {
@@ -682,7 +749,7 @@
                                   @if (h.cost > 0) {
                                     {{ (h.balance * currentBid() - h.cost) / h.cost * 100 | number: '1.2-2' }}%
                                   } @else {
-                                    —
+                                    {{ 'common.notSet' | translate }}
                                   }
                                 </td>
                             </tr>
@@ -692,18 +759,18 @@
               </table>
             </div>
             <div class="flex items-center justify-between px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ pagedHolders().length }} of {{ filteredHolders().length }} Holders</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'assets.details.holders.showingRecords' | translate: { showing: pagedHolders().length, total: filteredHolders().length } }}</p>
               @if (totalHolderPages() > 1) {
                 <div class="flex items-center gap-3 text-xs text-gray-600">
-                  <span>Page {{ holderPage() + 1 }} of {{ totalHolderPages() }}</span>
+                  <span>{{ 'common.pageOf' | translate: { page: holderPage() + 1, pages: totalHolderPages() } }}</span>
                   <div class="flex gap-2">
                     <button (click)="holderPage.set(holderPage() - 1)" [disabled]="holderPage() === 0"
                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      Prev
+                      {{ 'common.prev' | translate }}
                     </button>
                     <button (click)="holderPage.set(holderPage() + 1)" [disabled]="holderPage() >= totalHolderPages() - 1"
                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      Next
+                      {{ 'common.next' | translate }}
                     </button>
                   </div>
                 </div>
@@ -720,74 +787,74 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Type</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.trxType' | translate }}</label>
                   <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
-                    <option value="Subscribe">Subscribe</option>
-                    <option value="Redeem">Redeem</option>
-                    <option value="Trade">Trade</option>
-                    <option value="Transfer">Transfer</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
+                    <option value="Subscribe">{{ 'assets.details.transactions.types.subscribe' | translate }}</option>
+                    <option value="Redeem">{{ 'assets.details.transactions.types.redeem' | translate }}</option>
+                    <option value="Trade">{{ 'assets.details.transactions.types.trade' | translate }}</option>
+                    <option value="Transfer">{{ 'assets.details.transactions.types.transfer' | translate }}</option>
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Service</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.service' | translate }}</label>
                   <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (svc of uniqueServices(); track svc[0]) {
                       <option [value]="svc[0]">{{ svc[1] }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Subscription</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.subscription' | translate }}</label>
                   <select [ngModel]="filterSubscription()" (ngModelChange)="filterSubscription.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (sub of uniqueSubscriptions(); track sub) {
                       <option [value]="sub">{{ sub }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.currency' | translate }}</label>
                   <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueCurrencies(); track c) {
                       <option [value]="c">{{ c }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Tokens</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.tokens' | translate }}</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterTokensOp()" (ngModelChange)="filterTokensOp.set($event); trxPage.set(0)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                      <option value="">Any</option>
+                      <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
                     <input type="number" min="0" [ngModel]="filterTokensAmt()" (ngModelChange)="filterTokensAmt.set($event === '' || $event === null ? null : +$event); trxPage.set(0)"
-                      placeholder="Amount"
+                      [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">From</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
                   <input type="date" [ngModel]="filterStartDate()" (ngModelChange)="filterStartDate.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">To</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
                   <input type="date" [ngModel]="filterEndDate()" (ngModelChange)="filterEndDate.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearFilters()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -797,7 +864,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -806,7 +873,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -819,27 +886,27 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th scope="col" class="px-6 py-2">Date</th>
-                      <th scope="col" class="px-6 py-2">Type</th>
-                      <th scope="col" class="px-6 py-2">Service</th>
-                      <th scope="col" class="px-6 py-2">Subscription</th>
-                      <th scope="col" class="px-6 py-2 text-center">Currency</th>
-                      <th scope="col" class="px-6 py-2 text-right">Tokens</th>
-                      <th scope="col" class="px-6 py-2 text-right">Price</th>
-                      <th scope="col" class="px-6 py-2 text-right">Total</th>
+                      <th scope="col" class="px-6 py-2">{{ 'assets.details.transactions.date' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'assets.details.transactions.trxType' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'assets.details.transactions.service' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'assets.details.transactions.subscription' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-center">{{ 'assets.details.transactions.currency' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.transactions.tokens' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.transactions.price' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'assets.details.transactions.total' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredTransactions().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="8" class="px-6 py-2 text-center text-gray-400">No transactions found</td>
+                        <td colspan="8" class="px-6 py-2 text-center text-gray-400">{{ 'assets.details.transactions.noneFound' | translate }}</td>
                       </tr>
                     }
                     @else {
                       @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
                         <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="showTransactionInfo(trx)">
                           <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
+                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ ('assets.details.transactions.types.' + trx.trxType.toLowerCase()) | translate }}</span></td>
                           <td class="px-6 py-2">{{ trx.serviceName }}</td>
                           <td class="px-6 py-2 font-mono text-xs">{{ trxParty(trx) }}</td>
                           <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
@@ -853,18 +920,18 @@
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedTransactions().length }} of {{ filteredTransactions().length }} Transactions</p>
+                <p class="text-xs font-medium text-gray-800">{{ 'assets.details.transactions.showingRecords' | translate: { showing: pagedTransactions().length, total: filteredTransactions().length } }}</p>
                 @if (totalTrxPages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
+                    <span>{{ 'common.pageOf' | translate: { page: trxPage() + 1, pages: totalTrxPages() } }}</span>
                     <div class="flex gap-2">
                       <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Prev
+                        {{ 'common.prev' | translate }}
                       </button>
                       <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Next
+                        {{ 'common.next' | translate }}
                       </button>
                     </div>
                   </div>
@@ -879,26 +946,26 @@
           <div class="bg-white rounded-b-lg shadow-md border border-gray-200 overflow-hidden">
             @if (asset(); as v) {
               <div class="flex items-center justify-between p-4 border-b">
-                <h3 class="text-lg font-semibold text-gray-800">Services</h3>
+                <h3 class="text-lg font-semibold text-gray-800">{{ 'assets.details.tabs.services' | translate }}</h3>
                 @if (userInfo && userInfo.role !== 3) {
                   <button (click)="openAddServiceModal()" [disabled]="!entityActive"
                     class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                    + Add Service
+                    + {{ 'assets.details.services.addService' | translate }}
                   </button>
                 }
               </div>
               @if (v.services.length === 0) {
-                <p class="text-gray-400 py-8 text-center">No services assigned to this asset.</p>
+                <p class="text-gray-400 py-8 text-center">{{ 'assets.details.services.emptyAssigned' | translate }}</p>
               } @else {
                 <div class="overflow-x-auto">
                   <table class="w-full text-sm text-left text-gray-700">
                     <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                       <tr>
-                        <th scope="col" class="px-6 py-2">Service</th>
-                        <th scope="col" class="px-6 py-2">Address</th>
-                        <th scope="col" class="px-6 py-2">State</th>
-                        <th scope="col" class="px-6 py-2" title="Whether this service is allowed to set its own per-trade price; otherwise trades clear at the asset's current bid/ask.">Price Quoting</th>
-                        <th scope="col" class="px-6 py-2" title="Issuer fee charged on credit-settled flows distributed by this service.">Fee Config</th>
+                        <th scope="col" class="px-6 py-2">{{ 'assets.details.services.service' | translate }}</th>
+                        <th scope="col" class="px-6 py-2">{{ 'common.address' | translate }}</th>
+                        <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+                        <th scope="col" class="px-6 py-2" [title]="'assets.details.services.priceQuotingTooltip' | translate">{{ 'assets.details.services.priceQuotingHeader' | translate }}</th>
+                        <th scope="col" class="px-6 py-2" [title]="'assets.details.services.feeConfigTooltip' | translate">{{ 'assets.details.services.feeConfigHeader' | translate }}</th>
                         @if (userInfo && userInfo.role !== 3) {
                           <th scope="col" class="px-6 py-2 w-12"></th>
                         }
@@ -913,7 +980,7 @@
                           <td class="px-6 py-3 font-mono text-xs text-gray-500">{{ svc.service }}</td>
                           <td class="px-6 py-3">
                             <span class="px-2 py-1 text-xs font-semibold rounded-full" [ngClass]="getServiceStateClass(svc.state)">
-                              {{ serviceStateNames[svc.state] || 'Unknown' }}
+                              {{ getServiceStateName(svc.state) }}
                             </span>
                           </td>
                           <td class="px-6 py-3">
@@ -927,12 +994,12 @@
                                 [class.bg-gray-200]="!svc.canQuote"
                                 [class.text-gray-700]="!svc.canQuote"
                                 [class.hover:bg-gray-300]="!svc.canQuote && entityActive"
-                                [title]="svc.canQuote ? 'Click to revoke price-quoting permission' : 'Click to allow this service to quote its own per-trade price'">
-                                {{ svc.canQuote ? 'Allowed' : 'Pinned to issuer' }}
+                                [title]="(svc.canQuote ? 'assets.details.services.revokeQuotingTooltip' : 'assets.details.services.allowQuotingTooltip') | translate">
+                                {{ (svc.canQuote ? 'assets.details.services.allowed' : 'assets.details.services.pinnedToIssuer') | translate }}
                               </button>
                             } @else {
                               <span class="px-2 py-1 text-xs rounded-full" [class.bg-green-100]="svc.canQuote" [class.text-green-800]="svc.canQuote" [class.bg-gray-200]="!svc.canQuote" [class.text-gray-700]="!svc.canQuote">
-                                {{ svc.canQuote ? 'Allowed' : 'Pinned to issuer' }}
+                                {{ (svc.canQuote ? 'assets.details.services.allowed' : 'assets.details.services.pinnedToIssuer') | translate }}
                               </span>
                             }
                           </td>
@@ -940,25 +1007,25 @@
                             @if (svc.feeConfig && (svc.feeConfig.buyFeeMode || svc.feeConfig.sellFeeMode)) {
                               <div class="flex flex-col gap-1">
                                 <span class="text-xs text-gray-700">
-                                  <span class="text-gray-500">Buy:</span>
+                                  <span class="text-gray-500">{{ 'assets.details.services.buyLabel' | translate }}</span>
                                   {{ feeModeName(svc.feeConfig.buyFeeMode) }}
                                   @if (svc.feeConfig.buyFeeMode) { &middot; {{ feeValueDisplay(svc.feeConfig.buyFeeMode, svc.feeConfig.buyFeeValue) }} }
                                 </span>
                                 <span class="text-xs text-gray-700">
-                                  <span class="text-gray-500">Sell:</span>
+                                  <span class="text-gray-500">{{ 'assets.details.services.sellLabel' | translate }}</span>
                                   {{ feeModeName(svc.feeConfig.sellFeeMode) }}
                                   @if (svc.feeConfig.sellFeeMode) { &middot; {{ feeValueDisplay(svc.feeConfig.sellFeeMode, svc.feeConfig.sellFeeValue) }} }
                                 </span>
                               </div>
                             } @else {
-                              <span class="text-xs text-gray-400">—</span>
+                              <span class="text-xs text-gray-400">{{ 'common.notSet' | translate }}</span>
                             }
                             @if (userInfo && userInfo.role !== 3) {
                               <button (click)="openFeeConfigModal(svc.service, svc.serviceName)"
                                 [disabled]="!entityActive || !svc.canQuote"
                                 class="mt-1 text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                                [title]="svc.canQuote ? 'Edit issuer fee config for this service' : 'Allow price quoting first to set a fee config'">
-                                Edit Fees
+                                [title]="(svc.canQuote ? 'assets.details.services.editFeesTooltip' : 'assets.details.services.setFeesTooltip') | translate">
+                                {{ 'assets.details.services.editFees' | translate }}
                               </button>
                             }
                           </td>
@@ -967,7 +1034,7 @@
                               <button (click)="openServiceStateModal(svc.service, svc.serviceName, svc.state)"
                                 [disabled]="!entityActive"
                                 class="text-gray-400 hover:text-indigo-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                title="Change state">
+                                [title]="'assets.details.changeStateBtn' | translate">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                               </button>
                             </td>
@@ -997,18 +1064,18 @@
         @if (activeTab() === 'dex') {
           <div class="p-4">
             @if (!dexListingLoaded()) {
-              <p class="text-sm text-gray-500">Loading DEX listing…</p>
+              <p class="text-sm text-gray-500">{{ 'assets.details.dex.loading' | translate }}</p>
             } @else if (!dexListing()) {
               <!-- Empty state — issuer hasn't listed this asset yet. -->
               <div class="bg-white border border-gray-200 rounded-lg p-6 text-center max-w-2xl mx-auto">
-                <h3 class="text-base font-semibold text-gray-800 mb-2">This asset is not listed on the DEX</h3>
+                <h3 class="text-base font-semibold text-gray-800 mb-2">{{ 'assets.details.dex.notListedTitle' | translate }}</h3>
                 <p class="text-sm text-gray-500 mb-4">
-                  Listing makes the asset eligible to trade. After you submit, the asset's regulator must approve each requested tier before orders can place at that scope.
+                  {{ 'assets.details.dex.notListedDesc' | translate }}
                 </p>
                 <button (click)="openDexListingCreate()"
                   [disabled]="!entityActive"
                   class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  List asset on DEX
+                  {{ 'assets.details.dex.listAssetBtn' | translate }}
                 </button>
               </div>
             } @else {
@@ -1021,33 +1088,33 @@
                 }
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                   <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">Tier 1 — Venue</p>
+                    <p class="text-sm font-semibold text-gray-700">{{ 'assets.details.dex.tier1' | translate }}</p>
                     <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                           [class]="l.venueApproved ? 'bg-green-100 text-green-800' : (l.venuePending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ l.venueApproved ? 'Approved' : (l.venuePending ? 'Pending regulator approval' : 'Not requested') }}
+                      {{ (l.venueApproved ? 'assets.details.dex.approved' : (l.venuePending ? 'assets.details.dex.pendingApproval' : 'assets.details.dex.notRequested')) | translate }}
                     </span>
                   </div>
                   <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">Tier 2 — Country</p>
+                    <p class="text-sm font-semibold text-gray-700">{{ 'assets.details.dex.tier2' | translate }}</p>
                     <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                           [class]="l.countryApproved ? 'bg-green-100 text-green-800' : (l.countryPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ l.countryApproved ? 'Approved' : (l.countryPending ? 'Pending regulator approval' : 'Not requested') }}
+                      {{ (l.countryApproved ? 'assets.details.dex.approved' : (l.countryPending ? 'assets.details.dex.pendingApproval' : 'assets.details.dex.notRequested')) | translate }}
                     </span>
                   </div>
                   <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">Tier 3 — Global</p>
+                    <p class="text-sm font-semibold text-gray-700">{{ 'assets.details.dex.tier3' | translate }}</p>
                     <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                           [class]="l.globalApproved ? 'bg-green-100 text-green-800' : (l.globalPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ l.globalApproved ? 'Approved' : (l.globalPending ? 'Pending regulator approval' : 'Not requested') }}
+                      {{ (l.globalApproved ? 'assets.details.dex.approved' : (l.globalPending ? 'assets.details.dex.pendingApproval' : 'assets.details.dex.notRequested')) | translate }}
                     </span>
                   </div>
                 </div>
 
                 <div class="flex items-center justify-between mb-3">
-                  <h3 class="text-base font-semibold text-gray-800">Enabled Venues</h3>
+                  <h3 class="text-base font-semibold text-gray-800">{{ 'assets.details.dex.enabledVenues' | translate }}</h3>
                   <button (click)="goDexListing()"
                     class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-                    Manage on DEX
+                    {{ 'assets.details.dex.manageOnDex' | translate }}
                   </button>
                 </div>
 
@@ -1056,25 +1123,25 @@
                     <table class="w-full text-sm text-left text-gray-700">
                       <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                         <tr>
-                          <th class="px-6 py-2">#</th>
-                          <th class="px-6 py-2">Venue</th>
-                          <th class="px-6 py-2">Entity</th>
-                          <th class="px-6 py-2">Country</th>
-                          <th class="px-6 py-2">Tier</th>
-                          <th class="px-6 py-2">Address</th>
+                          <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                          <th class="px-6 py-2">{{ 'dex.orders.table.venue' | translate }}</th>
+                          <th class="px-6 py-2">{{ 'assets.details.dex.entityColumn' | translate }}</th>
+                          <th class="px-6 py-2">{{ 'common.country' | translate }}</th>
+                          <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
+                          <th class="px-6 py-2">{{ 'common.address' | translate }}</th>
                         </tr>
                       </thead>
                       <tbody class="text-xs">
                         @if (dexListingVenues().length === 0) {
-                          <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="6">No venues enabled yet. Use "Manage on DEX" to add some.</td></tr>
+                          <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="6">{{ 'assets.details.dex.noVenues' | translate }}</td></tr>
                         } @else {
                           @for (v of dexListingVenues(); track v.dexService; let i = $index; let isEven = $even) {
                             <tr class="border-b transition-colors"
                                 [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                               <td class="px-6 py-2">{{ i + 1 }}</td>
-                              <td class="px-6 py-2">{{ v.dexServiceName || '—' }}</td>
-                              <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
-                              <td class="px-6 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
+                              <td class="px-6 py-2">{{ v.dexServiceName || ('common.notSet' | translate) }}</td>
+                              <td class="px-6 py-2">{{ v.entityName || ('common.notSet' | translate) }}</td>
+                              <td class="px-6 py-2">{{ v.countryName || v.countryCode || ('common.notSet' | translate) }}</td>
                               <td class="px-6 py-2">
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="dexTierBadgeClass(v.tier)">{{ dexTierLabel(v.tier) }}</span>
                               </td>
@@ -1086,7 +1153,7 @@
                     </table>
                   </div>
                   <div class="flex items-center px-4 py-2 border-t">
-                    <p class="text-xs font-medium text-gray-800">Showing {{ dexListingVenues().length }} of Total {{ dexListingVenues().length }} Records</p>
+                    <p class="text-xs font-medium text-gray-800">{{ 'assets.details.dex.showingVenues' | translate: { showing: dexListingVenues().length, total: dexListingVenues().length } }}</p>
                   </div>
                 </div>
               }
@@ -1102,33 +1169,36 @@
         @if (activeTab() === 'distributions') {
           <div class="px-2 py-2">
             <div class="flex items-center justify-between mb-3">
-              <h3 class="text-base font-semibold text-gray-800">Distributions</h3>
+              <h3 class="text-base font-semibold text-gray-800">{{ 'assets.details.tabs.distributions' | translate }}</h3>
               <div class="flex items-center gap-2">
-                <button class="text-xs text-blue-600 hover:underline" (click)="loadDistributions()" [disabled]="distributionsLoading()">
-                  {{ distributionsLoading() ? 'Loading…' : 'Refresh' }}
+                <button class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors inline-flex items-center gap-1 disabled:opacity-40"
+                        (click)="loadDistributions()" [disabled]="distributionsLoading()">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" [class.animate-spin]="distributionsLoading()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  {{ (distributionsLoading() ? 'common.loading' : 'common.refresh') | translate }}
                 </button>
-                @if (userInfo && userInfo.role !== 3) {
+                @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-add-distribution')) {
                   <button class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40"
                           (click)="openDeclareDistribution()"
                           [disabled]="!entityActive">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                     </svg>
-                    Declare
+                    {{ 'assets.details.distributions.declare' | translate }}
                   </button>
                 }
               </div>
             </div>
 
             @if (!distributionsLoaded() && distributionsLoading()) {
-              <div class="text-center py-8 text-sm text-gray-500">Loading distributions…</div>
+              <div class="text-center py-8 text-sm text-gray-500">{{ 'assets.details.distributions.loadingList' | translate }}</div>
             }
             @else if (distributions().length === 0) {
               <div class="text-center py-8 text-sm text-gray-500">
-                No distributions declared on this asset yet.
+                {{ 'assets.details.distributions.emptyTitle' | translate }}
                 <div class="text-xs text-gray-400 mt-2">
-                  Credit dividends (paid in this asset's currency) and stock splits (issued pro-rata) are
-                  declared via the API. Pre-fund the asset's credit account before declaring a Credit dividend.
+                  {{ 'assets.details.distributions.emptyDesc' | translate }}
                 </div>
               </div>
             }
@@ -1137,14 +1207,14 @@
                 <table class="min-w-full text-sm">
                   <thead>
                     <tr class="text-left text-xs text-gray-500 uppercase tracking-wide border-b">
-                      <th class="py-2 pr-3">#</th>
-                      <th class="py-2 pr-3">Type</th>
-                      <th class="py-2 pr-3 text-right">Amount</th>
-                      <th class="py-2 pr-3 text-right">Record Block</th>
-                      <th class="py-2 pr-3">State</th>
-                      <th class="py-2 pr-3 text-right">Legs (Sent / Failed / Total)</th>
-                      <th class="py-2 pr-3">Declared</th>
-                      <th class="py-2 pr-3 text-right">Actions</th>
+                      <th class="py-2 pr-3">{{ 'common.id' | translate }}</th>
+                      <th class="py-2 pr-3">{{ 'common.type' | translate }}</th>
+                      <th class="py-2 pr-3 text-right">{{ 'common.amount' | translate }}</th>
+                      <th class="py-2 pr-3 text-right">{{ 'assets.details.distributions.recordBlock' | translate }}</th>
+                      <th class="py-2 pr-3">{{ 'common.state' | translate }}</th>
+                      <th class="py-2 pr-3 text-right">{{ 'assets.details.distributions.legsHeader' | translate }}</th>
+                      <th class="py-2 pr-3">{{ 'assets.details.distributions.declaredHeader' | translate }}</th>
+                      <th class="py-2 pr-3 text-right">{{ 'common.actions' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1179,12 +1249,12 @@
                               <button class="text-xs px-2 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
                                       (click)="executeDistribution(d.distributionId)"
                                       [disabled]="!entityActive">
-                                Execute
+                                {{ 'assets.details.distributions.execute' | translate }}
                               </button>
                               <button class="text-xs px-2 py-0.5 rounded bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-40"
                                       (click)="finalizeDistribution(d.distributionId)"
                                       [disabled]="!entityActive">
-                                Finalize
+                                {{ 'assets.details.distributions.finalize' | translate }}
                               </button>
                             }
                           </div>
@@ -1206,31 +1276,31 @@
           <div class="px-2 py-2">
             <div class="flex flex-wrap items-end gap-3 mb-3">
               <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Lookup by</label>
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.details.holdersAt.lookupBy' | translate }}</label>
                 <div class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm">
                   <button type="button" (click)="holdersAtMode.set('block')"
                     class="px-3 py-2 transition-colors"
                     [class.bg-indigo-600]="holdersAtMode() === 'block'"
                     [class.text-white]="holdersAtMode() === 'block'"
-                    [class.text-gray-600]="holdersAtMode() !== 'block'">Block</button>
+                    [class.text-gray-600]="holdersAtMode() !== 'block'">{{ 'assets.details.holdersAt.blockOption' | translate }}</button>
                   <button type="button" (click)="holdersAtMode.set('date')"
                     class="px-3 py-2 transition-colors border-l border-gray-300"
                     [class.bg-indigo-600]="holdersAtMode() === 'date'"
                     [class.text-white]="holdersAtMode() === 'date'"
-                    [class.text-gray-600]="holdersAtMode() !== 'date'">Date</button>
+                    [class.text-gray-600]="holdersAtMode() !== 'date'">{{ 'assets.details.holdersAt.dateOption' | translate }}</button>
                 </div>
               </div>
               @if (holdersAtMode() === 'block') {
                 <div class="flex-1 min-w-[200px]">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Block Number</label>
-                  <input type="number" min="1" placeholder="e.g. 1234567"
+                  <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.details.holdersAt.blockNumber' | translate }}</label>
+                  <input type="number" min="1" [placeholder]="'assets.details.holdersAt.blockPlaceholder' | translate"
                     class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
                     [ngModel]="holdersAtBlockInput()"
                     (ngModelChange)="holdersAtBlockInput.set($event)">
                 </div>
               } @else {
                 <div class="flex-1 min-w-[200px]">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Date (as of end of day)</label>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.details.holdersAt.dateLabel' | translate }}</label>
                   <input type="date"
                     class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
                     [ngModel]="holdersAtDateInput()"
@@ -1240,7 +1310,7 @@
               <button class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-40"
                       (click)="loadHoldersAt()"
                       [disabled]="holdersAtLoading() || (holdersAtMode() === 'block' ? !holdersAtBlockInput() : !holdersAtDateInput())">
-                {{ holdersAtLoading() ? 'Loading…' : 'Load Snapshot' }}
+                {{ (holdersAtLoading() ? 'common.loading' : 'assets.details.holdersAt.loadSnapshot') | translate }}
               </button>
             </div>
 
@@ -1250,30 +1320,30 @@
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                 </svg>
-                Reconstructing holder set…
+                {{ 'assets.details.holdersAt.reconstructing' | translate }}
               </div>
             }
             @else if (holdersAtQueried() === null) {
               <div class="text-center py-8 text-sm text-gray-500">
-                Enter a past block number or pick a date to reconstruct the holder set at that point in time.
+                {{ 'assets.details.holdersAt.emptyPrompt' | translate }}
               </div>
             }
             @else if (holdersAt().length === 0) {
               <div class="text-center py-8 text-sm text-gray-500">
-                No holders at block {{ holdersAtQueried() }}@if (holdersAtTime() !== null) {<span> ({{ (holdersAtTime()! * 1000) | date:'medium' }})</span>}.
+                {{ 'assets.details.holdersAt.noHoldersAtBlock' | translate: { block: holdersAtQueried() } }}@if (holdersAtTime() !== null) {<span> ({{ (holdersAtTime()! * 1000) | date:'medium' }})</span>}.
               </div>
             }
             @else {
               <div class="text-xs text-gray-500 mb-2">
-                {{ holdersAtCount() }} holder(s) at block {{ holdersAtQueried() }}@if (holdersAtTime() !== null) {<span> · {{ (holdersAtTime()! * 1000) | date:'medium' }}</span>} — showing top {{ holdersAt().length }}.
+                {{ 'assets.details.holdersAt.summaryPrefix' | translate: { count: holdersAtCount(), block: holdersAtQueried() } }}@if (holdersAtTime() !== null) {<span> · {{ (holdersAtTime()! * 1000) | date:'medium' }}</span>} {{ 'assets.details.holdersAt.summarySuffix' | translate: { shown: holdersAt().length } }}.
               </div>
               <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                   <thead>
                     <tr class="text-left text-xs text-gray-500 uppercase tracking-wide border-b">
-                      <th class="py-2 pr-3">#</th>
-                      <th class="py-2 pr-3">Account</th>
-                      <th class="py-2 pr-3 text-right">Balance</th>
+                      <th class="py-2 pr-3">{{ 'common.id' | translate }}</th>
+                      <th class="py-2 pr-3">{{ 'assets.details.holdersAt.account' | translate }}</th>
+                      <th class="py-2 pr-3 text-right">{{ 'assets.details.holders.balance' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1294,7 +1364,7 @@
       }
       @else {
         <div class="text-center py-12 text-gray-500">
-          <p>Loading asset details...</p>
+          <p>{{ 'assets.details.loadingAsset' | translate }}</p>
         </div>
       }
 
@@ -1313,4 +1383,6 @@
 <app-modal-asset-fee-config></app-modal-asset-fee-config>
 <app-modal-distribution-declare></app-modal-distribution-declare>
 <app-metadata-edit-modal></app-metadata-edit-modal>
+<app-modal-asset-image-add></app-modal-asset-image-add>
+<app-modal-asset-public-view></app-modal-asset-public-view>
 <app-modal-transaction-info></app-modal-transaction-info>

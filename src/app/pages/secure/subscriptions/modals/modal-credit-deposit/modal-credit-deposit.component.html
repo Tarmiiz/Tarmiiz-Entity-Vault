@@ -2,15 +2,15 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Credit</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'subscriptions.creditDepositModal.title' | translate }}</h3>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="p-6 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Provider (Payment Processor)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.creditDepositModal.provider' | translate }}</label>
             <select formControlName="provider" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
               @if (processors().length === 0) {
-                <option value="" class="text-black bg-white">No payment processors attached to this service</option>
+                <option value="" class="text-black bg-white">{{ 'subscriptions.creditDepositModal.noProcessors' | translate }}</option>
               }
               @for (p of processors(); track p.service) {
                 <option [value]="p.service" class="text-black bg-white">{{ p.name || p.service }}</option>
@@ -18,18 +18,18 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Provider Trx Ref No</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.creditDepositModal.providerTrxRefNo' | translate }}</label>
             <input type="text" formControlName="providerTrxRefNo"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
-              placeholder="e.g. bank transfer reference" />
+              [placeholder]="'subscriptions.creditDepositModal.trxRefPlaceholder' | translate" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Provider Trx Time <span class="text-gray-400">(optional)</span></label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.creditDepositModal.providerTrxTime' | translate }} <span class="text-gray-400">({{ 'common.optional' | translate }})</span></label>
             <input type="datetime-local" formControlName="providerTrxTime"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Currency</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.table.currency' | translate }}</label>
             <select formControlName="currencyCode" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
               @for (c of modalService.currencies(); track c.currencyCode) {
                 <option [ngValue]="c.currencyCode" class="text-black bg-white">{{ c.currencyName }} ({{ c.currencySymbol }})</option>
@@ -37,23 +37,23 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Amount</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'common.amount' | translate }}</label>
             <input type="number" min="0" step="0.01" formControlName="amount"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Note (optional)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.creditDepositModal.note' | translate }} <span class="text-gray-400">({{ 'common.optional' | translate }})</span></label>
             <textarea formControlName="note" rows="2"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
-              placeholder="Reference / memo..."></textarea>
+              [placeholder]="'subscriptions.creditDepositModal.notePlaceholder' | translate"></textarea>
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!form.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Deposit
+            {{ 'subscriptions.creditDepositModal.submit' | translate }}
           </button>
         </div>
       </form>

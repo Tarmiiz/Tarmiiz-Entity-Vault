@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalAssetAddServiceService } from './modal-asset-add-service.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -21,7 +22,7 @@ interface ServicePreview {
   selector: 'app-modal-asset-add-service',
   templateUrl: './modal-asset-add-service.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
 })
 export class ModalAssetAddServiceComponent {
 

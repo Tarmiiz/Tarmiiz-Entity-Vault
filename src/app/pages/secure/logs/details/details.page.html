@@ -2,12 +2,12 @@
 
 <!-- Breadcrumb -->
 <div class="px-6 py-4 border-b bg-gray-200">
-  <nav class="flex" aria-label="Breadcrumb">
+  <nav class="flex" [attr.aria-label]="'logs.details.breadcrumbAria' | translate">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
         <a routerLink="/authorized/logs/system"
           class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
-          Audit Trail
+          {{ 'logs.title' | translate }}
         </a>
       </li>
       <li>
@@ -15,7 +15,7 @@
           <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
           </svg>
-          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Event #{{ event()?.id || '—' }}</span>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ 'logs.details.eventNumber' | translate: { id: (event()?.id || '—') } }}</span>
         </div>
       </li>
     </ol>
@@ -35,7 +35,7 @@
             [class.border-b-2]="activeTab() === 'info'"
             [class.border-blue-600]="activeTab() === 'info'"
             [class.bg-blue-600]="activeTab() === 'info'">
-            Information
+            {{ 'logs.details.tabInfo' | translate }}
           </button>
           @if (chain().length > 0) {
             <button (click)="setTab('chain')"
@@ -44,7 +44,7 @@
               [class.border-b-2]="activeTab() === 'chain'"
               [class.border-blue-600]="activeTab() === 'chain'"
               [class.bg-blue-600]="activeTab() === 'chain'">
-              RefNo Chain ({{ chain().length }})
+              {{ 'logs.details.tabChain' | translate: { count: chain().length } }}
             </button>
           }
         </div>
@@ -61,9 +61,9 @@
                   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ e.category || '—' }}</span>
                   <h2 class="text-lg font-bold text-gray-800">{{ actionLabel(e) }}</h2>
                   @if (e.verified === true) {
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Verified &#10003;</span>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'logs.details.verified' | translate }}</span>
                   } @else if (e.verified === false) {
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Tampered &#10007;</span>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'logs.details.tampered' | translate }}</span>
                   }
                 </div>
                 <div class="text-right">
@@ -74,7 +74,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
 
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Function</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.table.function' | translate }}</p>
                   <p class="text-base text-gray-700">{{ functionLabel(e) }}</p>
                   @if (e.function_signature) {
                     <p class="text-xs text-gray-500 font-mono break-all">{{ e.function_signature }}</p>
@@ -82,7 +82,7 @@
                 </div>
 
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Contract</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.table.contract' | translate }}</p>
                   <a class="text-base text-indigo-600 hover:underline break-all cursor-pointer" (click)="filterByContract(e.contract)">
                     {{ e.contract_name || (e.contract || '—') }}
                     @if (e.contract_kind) { <span class="text-xs text-gray-500">· {{ e.contract_kind }}</span> }
@@ -93,7 +93,7 @@
                 </div>
 
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Actor</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.details.actor' | translate }}</p>
                   <a class="text-base text-indigo-600 hover:underline break-all cursor-pointer" (click)="filterByActor(e.actor_address)">{{ e.actor_name || e.actor_address || '—' }}@if (e.actor_kind) { <span class="text-xs text-gray-500">· {{ e.actor_kind }}</span> }</a>
                   @if (e.actor_name && e.actor_address) {
                     <p class="text-xs text-gray-500 font-mono break-all">{{ e.actor_address }}</p>
@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Logged-in user</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.details.loggedInUser' | translate }}</p>
                   <p class="text-base text-gray-700">{{ e.actor_user_name || '—' }}</p>
                   @if (e.actor_user_address) {
                     <p class="text-xs text-gray-500 font-mono break-all">{{ e.actor_user_address }}</p>
@@ -109,31 +109,31 @@
                 </div>
 
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Client IP</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.table.clientIp' | translate }}</p>
                   <p class="text-base text-gray-700 font-mono">{{ e.client_ip || '—' }}</p>
                 </div>
 
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Block / Log Index</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.details.blockLogIndex' | translate }}</p>
                   <p class="text-base text-gray-700 font-mono">{{ e.block_number || '—' }} / {{ e.log_index || 0 }}</p>
                 </div>
 
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Tx Hash</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.details.txHash' | translate }}</p>
                   <p class="text-base text-gray-700 font-mono break-all">{{ e.tx_hash || '—' }}</p>
                 </div>
 
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">RefNo</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.details.refNo' | translate }}</p>
                   <p class="text-base text-gray-700 font-mono break-all">
                     @if (isZeroRef(e.ref_no)) { — } @else { {{ e.ref_no }} }
                   </p>
                 </div>
 
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Row Hash <span class="text-xs text-gray-400">(tamper-evidence chain)</span></p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'logs.details.rowHash' | translate }} <span class="text-xs text-gray-400">{{ 'logs.details.tamperEvidenceChain' | translate }}</span></p>
                   <p class="text-xs text-gray-700 font-mono break-all">{{ e.row_hash || '—' }}</p>
-                  <p class="text-sm font-medium text-gray-500 mt-2">Prev Hash</p>
+                  <p class="text-sm font-medium text-gray-500 mt-2">{{ 'logs.details.prevHash' | translate }}</p>
                   <p class="text-xs text-gray-700 font-mono break-all">{{ e.prev_hash || '—' }}</p>
                 </div>
 
@@ -146,18 +146,18 @@
         @if (activeTab() === 'chain' && chain().length > 0) {
           <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="px-4 py-2 border-b bg-gray-50">
-              <p class="text-[11px] font-mono text-gray-500 break-all">RefNo: {{ refNo() }}</p>
+              <p class="text-[11px] font-mono text-gray-500 break-all">{{ 'logs.details.refNoChainHeader' | translate: { refNo: refNo() } }}</p>
             </div>
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th scope="col" class="px-6 py-2">Time</th>
-                    <th scope="col" class="px-6 py-2">Category</th>
-                    <th scope="col" class="px-6 py-2">Action</th>
-                    <th scope="col" class="px-6 py-2">Function</th>
-                    <th scope="col" class="px-6 py-2">Actor</th>
-                    <th scope="col" class="px-6 py-2">Contract</th>
+                    <th scope="col" class="px-6 py-2">{{ 'logs.table.time' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'logs.table.category' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'logs.table.action' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'logs.table.function' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'logs.table.actor' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'logs.table.contract' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
@@ -180,7 +180,7 @@
               </table>
             </div>
             <div class="flex items-center px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ chain().length }} of Total {{ chain().length }} Records</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: chain().length, total: chain().length } }}</p>
             </div>
           </div>
         }
@@ -188,7 +188,7 @@
       </div>
 
     } @else {
-      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center text-gray-400 text-sm">Event not found</div>
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center text-gray-400 text-sm">{{ 'logs.details.notFound' | translate }}</div>
     }
 
   </div>

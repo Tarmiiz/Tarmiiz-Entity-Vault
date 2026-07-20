@@ -4,7 +4,7 @@
   <nav class="flex" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/dex/asset-listings/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX</a>
+        <a routerLink="/authorized/dex/asset-listings/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.title' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -23,54 +23,54 @@
     <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
       <div class="flex flex-wrap gap-2 items-end">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">Asset</label>
+          <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.asset' | translate }}</label>
           <input type="text" [ngModel]="baseAsset()" (ngModelChange)="baseAsset.set($event)"
             class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">Scope</label>
+          <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.scope' | translate }}</label>
           <select [ngModel]="scope()" (ngModelChange)="scope.set($event)"
             class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-            <option value="venue">Tier 1 — Venue</option>
-            <option value="country">Tier 2 — Country</option>
-            <option value="global">Tier 3 — Global</option>
+            <option value="venue">{{ 'dex.orderBook.filters.scopeOptions.venue' | translate }}</option>
+            <option value="country">{{ 'dex.orderBook.filters.scopeOptions.country' | translate }}</option>
+            <option value="global">{{ 'dex.orderBook.filters.scopeOptions.global' | translate }}</option>
           </select>
         </div>
         @if (scope() === 'venue') {
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">Venue Address</label>
+            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.venueAddress' | translate }}</label>
             <input type="text" [ngModel]="dexService()" (ngModelChange)="dexService.set($event)"
               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
           </div>
         }
         @if (scope() === 'country') {
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">Country Code</label>
+            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.countryCode' | translate }}</label>
             <input type="number" [ngModel]="countryCode()" (ngModelChange)="countryCode.set($event)"
               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">Currency Code</label>
+            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.currencyCode' | translate }}</label>
             <input type="number" [ngModel]="currencyCode()" (ngModelChange)="currencyCode.set($event)"
               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
           </div>
         }
         @if (scope() === 'global') {
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">Currency Code</label>
+            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.currencyCode' | translate }}</label>
             <input type="number" [ngModel]="currencyCode()" (ngModelChange)="currencyCode.set($event)"
               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
           </div>
         }
         <div class="flex flex-col justify-end">
           <button (click)="refresh()"
-            class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">Refresh</button>
+            class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">{{ 'common.refresh' | translate }}</button>
         </div>
         <div class="flex ml-auto items-end gap-2">
           @if (isExec()) {
             <button (click)="match()" [disabled]="!canMatch()"
               class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              Match Selected
+              {{ 'dex.orderBook.matchSelected' | translate }}
             </button>
           }
         </div>
@@ -79,43 +79,43 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
       <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
-        <p class="text-xs font-medium text-gray-500 mb-1">Best Bid</p>
+        <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dex.orderBook.bestBid' | translate }}</p>
         @if (bestBid()) {
           <p class="text-xl font-bold text-green-700">{{ fmtPrice(bestBid()!.price) }}</p>
-          <p class="text-xs text-gray-500 font-mono">Order #{{ bestBid()!.orderId }}</p>
+          <p class="text-xs text-gray-500 font-mono">{{ 'dex.orderBook.orderRef' | translate: { id: bestBid()!.orderId } }}</p>
         } @else { <p class="text-xl font-bold text-gray-400">—</p> }
       </div>
       <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
-        <p class="text-xs font-medium text-gray-500 mb-1">Best Ask</p>
+        <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dex.orderBook.bestAsk' | translate }}</p>
         @if (bestAsk()) {
           <p class="text-xl font-bold text-orange-700">{{ fmtPrice(bestAsk()!.price) }}</p>
-          <p class="text-xs text-gray-500 font-mono">Order #{{ bestAsk()!.orderId }}</p>
+          <p class="text-xs text-gray-500 font-mono">{{ 'dex.orderBook.orderRef' | translate: { id: bestAsk()!.orderId } }}</p>
         } @else { <p class="text-xl font-bold text-gray-400">—</p> }
       </div>
       <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
-        <p class="text-xs font-medium text-gray-500 mb-1">As Of</p>
+        <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dex.orderBook.asOf' | translate }}</p>
         <p class="text-base text-gray-700">{{ asOf() ? utils.formatDate(asOf()) : '—' }}</p>
-        <p class="text-xs text-gray-500">Auto-refresh every 5s</p>
+        <p class="text-xs text-gray-500">{{ 'dex.orderBook.autoRefresh' | translate }}</p>
       </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div class="px-4 py-2 bg-green-700 text-white text-sm font-semibold">Bids ({{ bids().length }})</div>
+        <div class="px-4 py-2 bg-green-700 text-white text-sm font-semibold">{{ 'dex.orderBook.bidsHeader' | translate: { count: bids().length } }}</div>
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left text-gray-700">
             <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
               <tr>
                 <th class="px-3 py-2"></th>
-                <th class="px-3 py-2">Order</th>
-                <th class="px-3 py-2">Price</th>
-                <th class="px-3 py-2">Remaining</th>
-                <th class="px-3 py-2">Subscription</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.order' | translate }}</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.price' | translate }}</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.remaining' | translate }}</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.subscription' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               @if (bids().length === 0) {
-                <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">no bids</td></tr>
+                <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">{{ 'dex.orderBook.noBids' | translate }}</td></tr>
               } @else {
                 @for (b of bids(); track b.orderId; let isEven = $even) {
                   <tr class="border-b hover:bg-gray-100 cursor-pointer"
@@ -139,21 +139,21 @@
       </div>
 
       <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div class="px-4 py-2 bg-orange-700 text-white text-sm font-semibold">Asks ({{ asks().length }})</div>
+        <div class="px-4 py-2 bg-orange-700 text-white text-sm font-semibold">{{ 'dex.orderBook.asksHeader' | translate: { count: asks().length } }}</div>
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left text-gray-700">
             <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
               <tr>
                 <th class="px-3 py-2"></th>
-                <th class="px-3 py-2">Order</th>
-                <th class="px-3 py-2">Price</th>
-                <th class="px-3 py-2">Remaining</th>
-                <th class="px-3 py-2">Subscription</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.order' | translate }}</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.price' | translate }}</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.remaining' | translate }}</th>
+                <th class="px-3 py-2">{{ 'dex.orderBook.table.subscription' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               @if (asks().length === 0) {
-                <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">no asks</td></tr>
+                <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">{{ 'dex.orderBook.noAsks' | translate }}</td></tr>
               } @else {
                 @for (a of asks(); track a.orderId; let isEven = $even) {
                   <tr class="border-b hover:bg-gray-100 cursor-pointer"

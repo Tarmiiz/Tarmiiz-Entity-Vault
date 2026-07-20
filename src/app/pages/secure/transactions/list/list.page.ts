@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -47,6 +47,7 @@ export class ListPage implements OnInit {
   private alertService = inject(AlertService);
   private auditService = inject(AuditService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   get userInfo() { return this.authService.userInfo; }
 
@@ -159,7 +160,7 @@ export class ListPage implements OnInit {
   }
 
   async load(silent = false) {
-    if (!silent) this.loadingService.show('Loading transactions...');
+    if (!silent) this.loadingService.show(this.translate.instant('transactions.loadingMessage'));
     try {
       const result = await this.apiService.vaultGetTransactions(undefined, 0, 500);
       if (result) {
@@ -354,7 +355,8 @@ export class ListPage implements OnInit {
     const data = await this.modalTransactionAddService.show();
     if (!data) return;
 
-    this.loadingService.show(`Submitting ${data.trxType.toLowerCase()}...`);
+    const typeLabel = this.translate.instant('transactions.types.' + data.trxType.toLowerCase());
+    this.loadingService.show(this.translate.instant('transactions.alerts.submitting', { type: typeLabel }));
     let result: { result?: any; error?: string };
     try {
       const body = {
@@ -374,12 +376,12 @@ export class ListPage implements OnInit {
     }
 
     if (result.error) {
-      await this.alertService.show('Transaction Failed', result.error);
+      await this.alertService.show(this.translate.instant('transactions.alerts.failedTitle'), result.error);
       return;
     }
     await this.alertService.show(
-      `${data.trxType} Submitted`,
-      `Transaction submitted successfully${result.result?.transactionHash ? '\n\nTx: ' + result.result.transactionHash : ''}`
+      this.translate.instant('transactions.alerts.submittedTitle', { type: typeLabel }),
+      this.translate.instant('transactions.alerts.submittedMessage') + (result.result?.transactionHash ? '\n\n' + this.translate.instant('transactions.alerts.txPrefix') + ' ' + result.result.transactionHash : '')
     );
     this.auditService.logView('transaction-add', { trxType: data.trxType, asset: data.asset, service: data.service, subscription: data.subscription, tokens: data.tokens });
     await this.load(true);

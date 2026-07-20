@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -18,12 +19,13 @@ const SLUG = /^[a-z0-9_-]{2,32}$/;
   templateUrl: './external-integrations.page.html',
   styleUrls: ['./external-integrations.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
 })
 export class ExternalIntegrationsPage implements OnInit {
   private apiService     = inject(ApiService);
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
+  private translate      = inject(TranslateService);
 
   integrations = signal<ExternalIntegration[]>([]);
   loading      = signal(false);
@@ -147,10 +149,22 @@ export class ExternalIntegrationsPage implements OnInit {
     if (this.createMode()) {
       const name = this.editName().trim().toLowerCase();
       const category = this.editCategory().trim().toLowerCase();
-      if (!SLUG.test(name)) { this.alertService.show('Invalid Name', 'Name must be a 2-32 character slug (a-z, 0-9, -, _).'); return; }
-      if (!SLUG.test(category)) { this.alertService.show('Invalid Category', 'Category must be a 2-32 character slug (a-z, 0-9, -, _).'); return; }
+      if (!SLUG.test(name)) {
+        this.alertService.show(
+          this.translate.instant('settings.externalIntegrations.invalidNameTitle'),
+          this.translate.instant('settings.externalIntegrations.invalidSlugMessage', { field: this.translate.instant('settings.externalIntegrations.nameLabel') }),
+        );
+        return;
+      }
+      if (!SLUG.test(category)) {
+        this.alertService.show(
+          this.translate.instant('settings.externalIntegrations.invalidCategoryTitle'),
+          this.translate.instant('settings.externalIntegrations.invalidSlugMessage', { field: this.translate.instant('settings.externalIntegrations.categoryLabel') }),
+        );
+        return;
+      }
       this.busy.set(true);
-      this.loadingService.show('Creating integration...');
+      this.loadingService.show(this.translate.instant('settings.externalIntegrations.creatingIntegration'));
       try {
         const res = await this.apiService.vaultIntegrationCreate({
           name,
@@ -160,7 +174,7 @@ export class ExternalIntegrationsPage implements OnInit {
           isDefault: this.editDefault(),
           ...(Object.keys(params).length ? { params } : {}),
         });
-        if (res?.error) { this.alertService.show('Create Failed', res.error); return; }
+        if (res?.error) { this.alertService.show(this.translate.instant('settings.externalIntegrations.createFailedTitle'), res.error); return; }
         this.closeEdit();
         await this.load();
       } finally {
@@ -173,7 +187,7 @@ export class ExternalIntegrationsPage implements OnInit {
     const p = this.editing();
     if (!p) return;
     this.busy.set(true);
-    this.loadingService.show('Saving integration...');
+    this.loadingService.show(this.translate.instant('settings.externalIntegrations.savingIntegration'));
     try {
       const res = await this.apiService.vaultIntegrationUpdate(p.name, {
         displayName: this.editDisplayName(),
@@ -181,7 +195,7 @@ export class ExternalIntegrationsPage implements OnInit {
         isDefault:   this.editDefault(),
         ...(Object.keys(params).length ? { params } : {}),
       });
-      if (res?.error) { this.alertService.show('Save Failed', res.error); return; }
+      if (res?.error) { this.alertService.show(this.translate.instant('settings.externalIntegrations.saveFailedTitle'), res.error); return; }
       this.closeEdit();
       await this.load();
     } finally {
@@ -195,16 +209,16 @@ export class ExternalIntegrationsPage implements OnInit {
   async makeDefault(p: ExternalIntegration) {
     if (this.busy() || p.isDefault) return;
     const ok = await this.alertService.show(
-      'Change default integration',
-      `${p.displayName} becomes the default for the '${p.category}' category. Continue?`,
-      'Set Default',
+      this.translate.instant('settings.externalIntegrations.changeDefaultTitle'),
+      this.translate.instant('settings.externalIntegrations.changeDefaultMessage', { name: p.displayName, category: p.category }),
+      this.translate.instant('settings.externalIntegrations.setDefault'),
     );
     if (!ok) return;
     this.busy.set(true);
-    this.loadingService.show('Updating...');
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const res = await this.apiService.vaultIntegrationUpdate(p.name, { isDefault: true });
-      if (res?.error) this.alertService.show('Update Failed', res.error);
+      if (res?.error) this.alertService.show(this.translate.instant('settings.externalIntegrations.updateFailedTitle'), res.error);
       await this.load();
     } finally {
       this.loadingService.hide();
@@ -214,21 +228,21 @@ export class ExternalIntegrationsPage implements OnInit {
 
   async toggleEnabled(p: ExternalIntegration) {
     if (this.busy()) return;
-    const verb = p.enabled ? 'Disable' : 'Enable';
-    const consequence = p.enabled
-      ? 'Consumers referencing this integration will fail.'
-      : 'It becomes usable again.';
+    const verb = this.translate.instant(p.enabled ? 'settings.externalIntegrations.disableAction' : 'settings.externalIntegrations.enableAction');
+    const consequence = this.translate.instant(p.enabled
+      ? 'settings.externalIntegrations.disableConsequence'
+      : 'settings.externalIntegrations.enableConsequence');
     const ok = await this.alertService.show(
-      `${verb} integration`,
-      `${verb} ${p.displayName}? ${consequence}`,
+      this.translate.instant('settings.externalIntegrations.toggleTitle', { verb }),
+      this.translate.instant('settings.externalIntegrations.toggleMessage', { verb, name: p.displayName, consequence }),
       verb,
     );
     if (!ok) return;
     this.busy.set(true);
-    this.loadingService.show('Updating...');
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const res = await this.apiService.vaultIntegrationUpdate(p.name, { enabled: !p.enabled });
-      if (res?.error) this.alertService.show('Update Failed', res.error);
+      if (res?.error) this.alertService.show(this.translate.instant('settings.externalIntegrations.updateFailedTitle'), res.error);
       await this.load();
     } finally {
       this.loadingService.hide();
@@ -239,16 +253,16 @@ export class ExternalIntegrationsPage implements OnInit {
   async remove(p: ExternalIntegration) {
     if (this.busy()) return;
     const ok = await this.alertService.show(
-      'Delete integration',
-      `Delete ${p.displayName} and its stored parameters? This cannot be undone.`,
-      'Delete',
+      this.translate.instant('settings.externalIntegrations.deleteTitle'),
+      this.translate.instant('settings.externalIntegrations.deleteMessage', { name: p.displayName }),
+      this.translate.instant('common.delete'),
     );
     if (!ok) return;
     this.busy.set(true);
-    this.loadingService.show('Deleting...');
+    this.loadingService.show(this.translate.instant('common.deleting'));
     try {
       const res = await this.apiService.vaultIntegrationDelete(p.name);
-      if (res?.error) { this.alertService.show('Delete Failed', res.error); return; }
+      if (res?.error) { this.alertService.show(this.translate.instant('settings.externalIntegrations.deleteFailedTitle'), res.error); return; }
       await this.load();
     } finally {
       this.loadingService.hide();

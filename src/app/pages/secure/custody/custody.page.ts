@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { ApiService } from '../../../shared/services/api.service';
@@ -20,6 +20,7 @@ export class CustodyPage implements OnInit {
   private apiService     = inject(ApiService);
   private authService    = inject(AuthService);
   private loadingService = inject(LoadingService);
+  private translate = inject(TranslateService);
   private router         = inject(Router);
 
   userInfo!: User;
@@ -59,7 +60,7 @@ export class CustodyPage implements OnInit {
   }
 
   private async loadOwnCustodianServices() {
-    this.loadingService.show('Loading data...');
+    this.loadingService.show(this.translate.instant('common.loadingData'));
     try {
       const list = await this.apiService.vaultGetServicesOwn(0, 500);
       const all: Service[] = Array.isArray(list?.services) ? list!.services.map((s: any) => this.mapService(s)) : [];

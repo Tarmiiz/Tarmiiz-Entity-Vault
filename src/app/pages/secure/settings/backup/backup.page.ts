@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -13,13 +14,17 @@ interface BackupStatusRow {
   chainUpdatedAt: number | null;
 }
 
-const SETTING_LABELS: Record<string, string> = {
-  menu_config:         'Menu Configuration',
-  user_menu_config:    'Per-User Menu Overrides',
-  approval_policy:     'Approval Policy',
-  approval_user_roles: 'Approval User Roles',
-  external_integrations: 'External API Integrations',
-  user_system_function_config: 'Per-User System Functions',
+const SETTING_LABEL_KEYS: Record<string, string> = {
+  menu_config:         'settings.backup.settingLabels.menuConfig',
+  user_menu_config:    'settings.backup.settingLabels.userMenuConfig',
+  approval_policy:     'settings.backup.settingLabels.approvalPolicy',
+  approval_user_roles: 'settings.backup.settingLabels.approvalUserRoles',
+  external_integrations: 'settings.backup.settingLabels.externalIntegrations',
+  user_system_function_config: 'settings.backup.settingLabels.userSystemFunctionConfig',
+  user_groups:                       'settings.backup.settingLabels.userGroups',
+  user_group_menu_config:            'settings.backup.settingLabels.userGroupMenuConfig',
+  user_group_system_function_config: 'settings.backup.settingLabels.userGroupSystemFunctionConfig',
+  user_group_members:                'settings.backup.settingLabels.userGroupMembers',
 };
 
 @Component({
@@ -27,19 +32,21 @@ const SETTING_LABELS: Record<string, string> = {
   templateUrl: './backup.page.html',
   styleUrls: ['./backup.page.scss'],
   standalone: true,
-  imports: [CommonModule, HeaderComponent],
+  imports: [CommonModule, TranslatePipe, HeaderComponent],
 })
 export class SettingsBackupPage implements OnInit {
   private apiService     = inject(ApiService);
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
+  private translate      = inject(TranslateService);
 
   rows    = signal<BackupStatusRow[]>([]);
   loading = signal(false);
   busy    = signal(false);
 
   labelFor(name: string): string {
-    return SETTING_LABELS[name] ?? name;
+    const key = SETTING_LABEL_KEYS[name];
+    return key ? this.translate.instant(key) : name;
   }
 
   ngOnInit() {}
@@ -60,18 +67,18 @@ export class SettingsBackupPage implements OnInit {
   async backupAll() {
     if (this.busy()) return;
     const ok = await this.alertService.show(
-      'Backup settings',
-      'All settings tables will be encrypted and backed up on-chain now. Continue?',
-      'Backup',
+      this.translate.instant('settings.backup.confirmBackupTitle'),
+      this.translate.instant('settings.backup.confirmBackupMessage'),
+      this.translate.instant('settings.backup.confirmBackupButton'),
     );
     if (!ok) return;
     this.busy.set(true);
-    this.loadingService.show('Backing up...');
+    this.loadingService.show(this.translate.instant('settings.backup.backingUp'));
     try {
       const res = await this.apiService.vaultSettingsBackupRun();
       const failed = (res?.results ?? []).filter((r: any) => r.error);
       if (res?.error || failed.length) {
-        this.alertService.show('Error', res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
+        this.alertService.show(this.translate.instant('alerts.error'), res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
       }
       await this.load();
     } finally {
@@ -83,23 +90,28 @@ export class SettingsBackupPage implements OnInit {
   async restore(row: BackupStatusRow) {
     if (this.busy()) return;
     if (row.chainUpdatedAt == null) {
-      this.alertService.show('No backup', `No on-chain backup exists yet for ${this.labelFor(row.name)}.`);
+      this.alertService.show(
+        this.translate.instant('settings.backup.noBackupTitle'),
+        this.translate.instant('settings.backup.noBackupMessage', { name: this.labelFor(row.name) }),
+      );
       return;
     }
     const ok = await this.alertService.show(
-      'Restore from chain',
-      `${this.labelFor(row.name)} will be REPLACED with the on-chain backup from ` +
-      `${new Date(row.chainUpdatedAt).toLocaleString()}. Current local settings for this table will be overwritten. Continue?`,
-      'Restore',
+      this.translate.instant('settings.backup.confirmRestoreTitle'),
+      this.translate.instant('settings.backup.confirmRestoreMessage', {
+        name: this.labelFor(row.name),
+        date: new Date(row.chainUpdatedAt).toLocaleString(),
+      }),
+      this.translate.instant('settings.backup.restore'),
     );
     if (!ok) return;
     this.busy.set(true);
-    this.loadingService.show('Restoring...');
+    this.loadingService.show(this.translate.instant('settings.backup.restoring'));
     try {
       const res = await this.apiService.vaultSettingsBackupRestore(row.name);
       const failed = (res?.results ?? []).filter((r: any) => r.error);
       if (res?.error || failed.length) {
-        this.alertService.show('Error', res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
+        this.alertService.show(this.translate.instant('alerts.error'), res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
       }
       await this.load();
     } finally {

@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -39,7 +39,17 @@ import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
+import { ModalImageAddService } from '../../../../shared/components/modal-image-add/modal-image-add.service';
+import { ModalImageAddComponent } from '../../../../shared/components/modal-image-add/modal-image-add.component';
 
+// Entry inside a metadata `media` key (server-owned public docs/images index).
+export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
+export interface MediaIndex {
+  avatar?: MediaEntry;
+  banner?: MediaEntry;
+  images?: MediaEntry[];
+  documents?: MediaEntry[];
+}
 
 
 @Component({
@@ -60,6 +70,7 @@ import { LiveIndicatorComponent } from '../../../../shared/components/live-indic
     ModalServiceFeeConfigComponent,
     MetadataEditModalComponent,
     DocumentsTabComponent,
+    ModalImageAddComponent,
     LiveIndicatorComponent, TranslatePipe,
 ]
 })
@@ -78,10 +89,12 @@ export class DetailsPage implements OnInit {
   private custodianModalService = inject(ModalServiceCustodianService);
   private feeConfigModal = inject(ModalServiceFeeConfigService);
   private metadataEditModal = inject(MetadataEditModalService);
+  private imageAddModal = inject(ModalImageAddService);
   private socketService = inject(SocketService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   get isServiceProvider() { return this.features.isServiceProvider(); }
 
@@ -251,6 +264,7 @@ export class DetailsPage implements OnInit {
   ionViewWillLeave() {
     this._socketSub?.unsubscribe();
     this._socketSub = null;
+    this.revokeMediaImageUrls();
   }
 
   private async reload(silent = false) {
@@ -292,6 +306,17 @@ export class DetailsPage implements OnInit {
       email: meta.email ?? '',
       mobile: meta.mobile ?? '',
       website: meta.website ?? '',
+      contact: (meta.contact && typeof meta.contact === 'object') ? {
+        email:   meta.contact.email   ?? '',
+        phone:   meta.contact.phone   ?? '',
+        website: meta.contact.website ?? '',
+        address: meta.contact.address ?? '',
+      } : {
+        email:   meta.email ?? '',
+        phone:   meta.telephone ?? meta.mobile ?? '',
+        website: meta.website ?? '',
+        address: meta.address ?? '',
+      },
       countryCode: raw.country_code ?? 0,
       countryName: raw.country_name ?? '',
       verificationLevel: raw.verification_level ?? 0,
@@ -397,7 +422,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getServiceDetails(silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const [raw, summary] = await Promise.all([
       this.apiService.vaultGetService(this.serviceAddress),
       this.apiService.vaultGetServiceWithheldSummary(this.serviceAddress).catch(() => null),
@@ -421,8 +446,118 @@ export class DetailsPage implements OnInit {
       } else {
         this.suspensionReason.set('');
       }
+      this.loadMediaImages();
     }
     if (!silent) this.loadingService.hide();
+  }
+
+  // ─── Images (public media — avatar / banner / gallery) ──────────────────────
+  // Parsed `media` index from the service metadata JSON string.
+  serviceMedia = computed<MediaIndex | null>(() => {
+    const raw = this.service()?.metadata || '';
+    if (!raw) return null;
+    try {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object' && !Array.isArray(obj) && obj.media && typeof obj.media === 'object' && !Array.isArray(obj.media)) {
+        return obj.media as MediaIndex;
+      }
+    } catch { /* non-JSON metadata */ }
+    return null;
+  });
+
+  mediaImages = computed<{ entry: MediaEntry; role: 'avatar' | 'banner' | 'gallery' }[]>(() => {
+    const media = this.serviceMedia();
+    if (!media) return [];
+    const rows: { entry: MediaEntry; role: 'avatar' | 'banner' | 'gallery' }[] = [];
+    if (media.avatar) rows.push({ entry: media.avatar, role: 'avatar' });
+    if (media.banner) rows.push({ entry: media.banner, role: 'banner' });
+    for (const img of media.images ?? []) rows.push({ entry: img, role: 'gallery' });
+    return rows;
+  });
+
+  mediaImageUrls = signal<Record<number, string>>({});
+  mediaImagesLoading = signal(false);
+
+  async loadMediaImages() {
+    const rows = this.mediaImages();
+    if (!rows.length) return;
+    const current = this.mediaImageUrls();
+    const missing = rows.filter(r => !current[r.entry.documentId]);
+    if (!missing.length) return;
+    this.mediaImagesLoading.set(true);
+    try {
+      for (const r of missing) {
+        const res = await this.apiService.serviceDocumentFetchFile(this.serviceAddress, r.entry.documentId);
+        if (res?.blobUrl) this.mediaImageUrls.update(m => ({ ...m, [r.entry.documentId]: res.blobUrl }));
+      }
+    } finally {
+      this.mediaImagesLoading.set(false);
+    }
+  }
+
+  private revokeMediaImageUrls() {
+    for (const url of Object.values(this.mediaImageUrls())) URL.revokeObjectURL(url);
+    this.mediaImageUrls.set({});
+  }
+
+  private async refreshMediaImages() {
+    this.revokeMediaImageUrls();
+    await this.getServiceDetails(true);
+    await this.loadMediaImages();
+  }
+
+  async openAddImageModal() {
+    const data = await this.imageAddModal.show();
+    if (!data) return;
+    this.loadingService.show(this.translate.instant('media.uploading'));
+    try {
+      const res = await this.apiService.serviceDocumentAddMultipart(this.serviceAddress, data.file, {
+        title: data.title,
+        description: '',
+        fileType: data.file.type,
+        documentType: data.documentType,
+        documentState: 1,
+        ...(data.role !== 'gallery' ? { imageRole: data.role } : {}),
+      });
+      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      else await this.refreshMediaImages();
+    } catch {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async changeMediaRole(documentId: number, role: 'avatar' | 'banner' | 'gallery') {
+    this.loadingService.show(this.translate.instant('media.updatingRole'));
+    try {
+      const res = await this.apiService.vaultSetServiceMediaRole(this.serviceAddress, documentId, role);
+      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      else await this.refreshMediaImages();
+    } catch {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async removeMediaImage(row: { entry: MediaEntry; role: string }) {
+    const confirmed = await this.alertService.show(
+      this.translate.instant('media.removeConfirmTitle'),
+      this.translate.instant('media.removeConfirmMessage', { title: row.entry.title }),
+      this.translate.instant('common.remove'),
+    );
+    if (!confirmed) return;
+    this.loadingService.show(this.translate.instant('media.removing'));
+    try {
+      const res = await this.apiService.serviceDocumentRemove(this.serviceAddress, row.entry.documentId);
+      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      else await this.refreshMediaImages();
+    } catch {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   private async resolveLinkedNames(validator: string, paymentProcessor: string, custodian: string, serviceAddress: string) {
@@ -509,7 +644,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getAssets(silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetAssets(0, 500, this.serviceAddress);
     if (data?.assets) this.assets.set(data.assets.map((a: any) => this.mapVaultAsset(a)));
     if (!silent) this.loadingService.hide();
@@ -520,7 +655,7 @@ export class DetailsPage implements OnInit {
   }
   
   async getSubscriptions(silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetSubscriptions(this.serviceAddress, 0, 500);
     if (data?.subscriptions) this.subscriptions.set(data.subscriptions.map((s: any) => this.mapVaultSubscription(s)));
     if (!silent) this.loadingService.hide();
@@ -532,17 +667,15 @@ export class DetailsPage implements OnInit {
 
     const result = await this.serviceEditService.show(currentService);
     if (result) {
-      this.loadingService.show('Updating service...');
+      this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingService'));
       try {
         // Execute updates SEQUENTIALLY instead of in parallel
         if (result.name !== currentService.name) {
           await this.apiService.vaultUpdateServiceName(currentService.address, result.name!);
         }
 
-        const dataChanged = result.email !== currentService.email || result.mobile !== currentService.mobile || result.website !== currentService.website;
-        if (dataChanged) {
-          await this.apiService.vaultUpdateServiceData(currentService.address, { email: result.email!, mobile: result.mobile!, website: result.website! });
-        }
+        // Contact info (email / phone / website / address) is edited via the "Edit Metadata"
+        // flow (nested `contact` key) — this modal only edits name + validator + payment processor.
 
         // Normalize current values: treat zero address and empty string as equivalent
         const zeroAddr = '0x0000000000000000000000000000000000000000';
@@ -561,7 +694,7 @@ export class DetailsPage implements OnInit {
 
       } catch (error) {
         console.error('Failed to update service', error);
-        this.alertService.show('Update Failed', 'There was an error updating the service details.');
+        this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateServiceError'));
       } finally {
         this.loadingService.hide();
       }
@@ -572,16 +705,16 @@ export class DetailsPage implements OnInit {
     const currentService = this.service();
     if (!currentService) return;
     const next = currentService.visibility === 2 ? 1 : 2;
-    this.loadingService.show('Updating visibility...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingVisibility'));
     try {
       const res = await this.apiService.vaultSetServiceVisibility(currentService.address, next);
       await this.getServiceDetails();
       if (res?.requestId) {
-        this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to change visibility', error);
-      this.alertService.show('Update Failed', 'There was an error updating the service visibility.');
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateVisibilityError'));
     } finally {
       this.loadingService.hide();
     }
@@ -591,33 +724,43 @@ export class DetailsPage implements OnInit {
     const currentService = this.service();
     if (!currentService) return;
 
-    // Parse the service's metadata JSON string into { description, entries } for the editor.
+    // Parse the service's metadata JSON string into { description, contact, entries } for the
+    // editor. `contact` (nested) + legacy flat contact keys are excluded from the KV entries.
     let description = '';
+    let contact = { email: '', phone: '', website: '', address: '' };
     const entries: [string, string][] = [];
+    const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address']);
     try {
       const obj = JSON.parse(currentService.metadata || '{}');
       if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
         description = typeof obj.description === 'string' ? obj.description : '';
+        const c = (obj.contact && typeof obj.contact === 'object') ? obj.contact : {};
+        contact = {
+          email:   c.email   ?? obj.email   ?? '',
+          phone:   c.phone   ?? obj.telephone ?? obj.mobile ?? '',
+          website: c.website ?? obj.website ?? '',
+          address: c.address ?? obj.address ?? '',
+        };
         for (const [k, val] of Object.entries(obj)) {
-          if (k === 'description') continue;
+          if (RESERVED.has(k)) continue;
           entries.push([k, typeof val === 'string' ? val : JSON.stringify(val)]);
         }
       }
     } catch (_) { /* malformed metadata → start blank */ }
 
-    const result = await this.metadataEditModal.show({ title: 'Edit Service Metadata', description, entries });
+    const result = await this.metadataEditModal.show({ title: this.translate.instant('services.details.info.editMetadataModalTitle'), description, contact, entries });
     if (!result) return;
-    this.loadingService.show('Updating metadata...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingMetadata'));
     try {
       const res = await this.apiService.vaultUpdateServiceMetadata(currentService.address, result);
       if (res?.error) {
-        this.alertService.show('Error', res.error || 'Failed to update metadata.');
+        this.alertService.show(this.translate.instant('alerts.error'), res.error || this.translate.instant('services.details.info.updateMetadataError'));
       } else {
         await this.getServiceDetails();
       }
     } catch (error) {
       console.error('Failed to update metadata', error);
-      this.alertService.show('Error', 'An unexpected error occurred.');
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -629,12 +772,12 @@ export class DetailsPage implements OnInit {
 
     const result = await this.serviceStateService.show(currentService.state);
     if (result !== null && result.state !== currentService.state) {
-        this.loadingService.show('Changing state...');
+        this.loadingService.show(this.translate.instant('services.details.loadingMsgs.changingState'));
         try {
             const res = await this.apiService.vaultUpdateServiceState(currentService.address, result.state, result.reason);
             await this.getServiceDetails();
             if (res?.requestId) {
-              this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+              this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
             }
         } catch (error) {
             console.error('Failed to change state', error);
@@ -651,15 +794,15 @@ export class DetailsPage implements OnInit {
   private async _attachParty(partyType: number, party: string) {
     const currentService = this.service();
     if (!currentService || !party) return;
-    this.loadingService.show('Attaching provider...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.attachingProvider'));
     try {
       const res = await this.apiService.vaultAttachServiceParty(currentService.address, partyType, party);
-      if ((res as any)?.error) { this.alertService.show('Update Failed', (res as any).error); return; }
+      if ((res as any)?.error) { this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error); return; }
       await this.getServiceDetails();
-      if ((res as any)?.requestId) this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+      if ((res as any)?.requestId) this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
     } catch (error) {
       console.error('Failed to attach provider', error);
-      this.alertService.show('Update Failed', 'There was an error attaching the provider.');
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.attachProviderError'));
     } finally {
       this.loadingService.hide();
     }
@@ -668,18 +811,19 @@ export class DetailsPage implements OnInit {
   async detachParty(partyType: number, party: string) {
     const currentService = this.service();
     if (!currentService) return;
-    const label = partyType === 1 ? 'validator' : partyType === 2 ? 'payment processor' : 'custodian';
-    const ok = await this.alertService.show('Remove provider', `Detach this ${label} from the service?`, 'Remove');
+    const labelKey = partyType === 1 ? 'services.details.info.partyLabelValidator' : partyType === 2 ? 'services.details.info.partyLabelPaymentProcessor' : 'services.details.info.partyLabelCustodian';
+    const label = this.translate.instant(labelKey);
+    const ok = await this.alertService.show(this.translate.instant('services.details.info.removeProviderTitle'), this.translate.instant('services.details.info.detachConfirm', { label }), this.translate.instant('common.remove'));
     if (!ok) return;
-    this.loadingService.show('Detaching provider...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.detachingProvider'));
     try {
       const res = await this.apiService.vaultDetachServiceParty(currentService.address, partyType, party);
-      if ((res as any)?.error) { this.alertService.show('Update Failed', (res as any).error); return; }
+      if ((res as any)?.error) { this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error); return; }
       await this.getServiceDetails();
-      if ((res as any)?.requestId) this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+      if ((res as any)?.requestId) this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
     } catch (error) {
       console.error('Failed to detach provider', error);
-      this.alertService.show('Update Failed', 'There was an error detaching the provider.');
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.detachProviderError'));
     } finally {
       this.loadingService.hide();
     }
@@ -724,13 +868,13 @@ export class DetailsPage implements OnInit {
     const currentNormalized = (currentService.validator && currentService.validator !== zeroAddr) ? currentService.validator : '';
     if (newValidator === currentNormalized) return;
 
-    this.loadingService.show('Updating validator...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingValidator'));
     try {
       await this.apiService.vaultSetServiceValidator(currentService.address, newValidator);
       await this.getServiceDetails();
     } catch (error) {
       console.error('Failed to change validator', error);
-      this.alertService.show('Update Failed', 'There was an error updating the validator.');
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateValidatorError'));
     } finally {
       this.loadingService.hide();
     }
@@ -747,13 +891,13 @@ export class DetailsPage implements OnInit {
     const currentNormalized = (currentService.paymentProcessor && currentService.paymentProcessor !== zeroAddr) ? currentService.paymentProcessor : '';
     if (newPaymentProcessor === currentNormalized) return;
 
-    this.loadingService.show('Updating payment processor...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingPaymentProcessor'));
     try {
       await this.apiService.vaultSetServicePaymentProcessor(currentService.address, newPaymentProcessor);
       await this.getServiceDetails();
     } catch (error) {
       console.error('Failed to change payment processor', error);
-      this.alertService.show('Update Failed', 'There was an error updating the payment processor.');
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updatePaymentProcessorError'));
     } finally {
       this.loadingService.hide();
     }
@@ -776,16 +920,16 @@ export class DetailsPage implements OnInit {
     const currentNormalized = (currentService.custodian && currentService.custodian !== zeroAddr) ? currentService.custodian : '';
     if (newCustodian === currentNormalized) return;
 
-    this.loadingService.show('Updating custodian...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingCustodian'));
     try {
       const res = await this.apiService.vaultSetServiceCustodian(currentService.address, newCustodian);
       await this.getServiceDetails();
       if (res?.requestId) {
-        this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to change custodian', error);
-      this.alertService.show('Update Failed', 'There was an error updating the custodian.');
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateCustodianError'));
     } finally {
       this.loadingService.hide();
     }
@@ -806,11 +950,11 @@ export class DetailsPage implements OnInit {
       feeConfig: current,
     });
     if (!result) return;
-    this.loadingService.show('Saving venue fee config...');
+    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.savingVenueFeeConfig'));
     try {
       const r = await this.apiService.vaultSetServiceFeeConfig(currentService.address, assetAddress, result.feeConfig);
       if ((r as any)?.error) {
-        this.alertService.show('Error', (r as any).error);
+        this.alertService.show(this.translate.instant('alerts.error'), (r as any).error);
         return;
       }
       await this.getServiceDetails();
@@ -836,7 +980,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getTransactions(start: number, offset: number, silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetTransactions({ service: this.serviceAddress }, start - 1, offset);
     if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
     this.trxPage.set(0);
@@ -873,11 +1017,11 @@ export class DetailsPage implements OnInit {
     const cur = this.liquidityModalCurrency();
     const amt = Number(this.liquidityModalAmount());
     if (!cur || !Number.isFinite(amt) || amt <= 0) {
-      this.liquidityModalError.set('Enter a positive amount.');
+      this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.positiveAmount'));
       return;
     }
     if (this.liquidityModalAction() === 'withdraw' && amt > this.liquidityModalAvailable()) {
-      this.liquidityModalError.set(`Cannot withdraw more than available (${this.liquidityModalAvailable()}).`);
+      this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.exceedsAvailable', { available: this.liquidityModalAvailable() }));
       return;
     }
     this.liquidityModalSubmitting.set(true);
@@ -891,13 +1035,13 @@ export class DetailsPage implements OnInit {
         : this.apiService.vaultServiceLiquidityWithdraw.bind(this.apiService);
       const result = await fn(this.serviceAddress, body);
       if (!result || result.error || result.type === 'error') {
-        this.liquidityModalError.set(result?.error || 'Operation failed.');
+        this.liquidityModalError.set(result?.error || this.translate.instant('alerts.failed'));
       } else {
         this.liquidityModalOpen.set(false);
         await this.getLiquidity();
       }
     } catch (e: any) {
-      this.liquidityModalError.set(e?.message || 'Operation failed.');
+      this.liquidityModalError.set(e?.message || this.translate.instant('alerts.failed'));
     } finally {
       this.liquidityModalSubmitting.set(false);
     }

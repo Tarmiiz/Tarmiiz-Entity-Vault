@@ -3,13 +3,9 @@
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
-    <h2 class="text-sm font-semibold text-gray-800 mb-1">Menu settings</h2>
+    <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'settings.menu.title' | translate }}</h2>
     <p class="text-xs text-gray-600">
-      Turn each module on or off for this entity. Disabled modules are hidden from the sidebar
-      and blocked if navigated to directly. A few entries (e.g. Credit Operator Actions, Asset T3643
-      Standard) toggle a section within a page rather than a sidebar module. Core pages (Home, Users,
-      Entity Profile, Menu Settings) are always available and aren't listed here. Role-based visibility
-      still applies on top of these toggles.
+      {{ 'settings.menu.description' | translate }}
     </p>
   </div>
 
@@ -18,9 +14,9 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th class="px-4 py-2">Menu item</th>
-            <th class="px-4 py-2">Key</th>
-            <th class="px-4 py-2">Enabled</th>
+            <th class="px-4 py-2">{{ 'settings.menu.table.menuItem' | translate }}</th>
+            <th class="px-4 py-2">{{ 'settings.menu.table.key' | translate }}</th>
+            <th class="px-4 py-2">{{ 'settings.menu.enabledState' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -41,7 +37,7 @@
                       [class.translate-x-5]="row.enabled"></div>
                   </div>
                   <span class="ml-2 text-xs text-gray-700">
-                    {{ row.enabled ? 'Enabled' : 'Disabled' }}
+                    {{ (row.enabled ? 'settings.menu.enabledState' : 'settings.menu.disabledState') | translate }}
                   </span>
                 </label>
               </td>
@@ -49,7 +45,7 @@
           } @empty {
             <tr>
               <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
-                @if (loading()) { Loading… } @else { No menu items configured. }
+                @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'settings.menu.noItems' | translate }} }
               </td>
             </tr>
           }

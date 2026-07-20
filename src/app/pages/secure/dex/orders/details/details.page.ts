@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
@@ -30,6 +30,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   private socket = inject(SocketService);
   utils = inject(UtilsService);
   private authService = inject(AuthService);
+  private translate = inject(TranslateService);
 
   orderId = signal<number>(0);
   order = signal<DexOrder | undefined>(undefined);
@@ -57,7 +58,7 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   async load(silent = false) {
     if (silent) this.refreshing.set(true);
-    if (!silent) this.loadingService.show('Loading order...');
+    if (!silent) this.loadingService.show(this.translate.instant('dex.orders.details.loadingOrder'));
     try {
       const o = await this.apiService.vaultDexOrderInfo(this.orderId());
       if (o) {
@@ -108,15 +109,15 @@ export class DetailsPage implements OnInit, OnDestroy {
     const o = this.order();
     if (!o) return;
     const ok = await this.alertService.show(
-      'Cancel order',
-      `Cancel order #${o.orderId}? Locked credit or asset will be released back to the subscription. This cannot be undone.`,
-      'Cancel Order'
+      this.translate.instant('dex.orders.cancelConfirm.title'),
+      this.translate.instant('dex.orders.cancelConfirm.message', { id: o.orderId }),
+      this.translate.instant('dex.orders.cancelConfirm.confirm')
     );
     if (!ok) return;
-    this.loadingService.show('Cancelling order...');
+    this.loadingService.show(this.translate.instant('dex.orders.cancelConfirm.loading'));
     try {
       const r = await this.apiService.vaultDexCancelOrder(o.orderId);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.load();
     } finally { this.loadingService.hide(); }
   }

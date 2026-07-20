@@ -3,29 +3,29 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
 
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Service</h3>
-        <p class="text-xs text-gray-400 mt-1">Pick one of your services by name, or enter an address manually.</p>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'assets.details.services.addService' | translate }}</h3>
+        <p class="text-xs text-gray-400 mt-1">{{ 'assets.addServiceModal.subtitle' | translate }}</p>
       </div>
 
       <div class="p-6 overflow-y-auto flex flex-col gap-4">
 
         @if (!manualMode()) {
           <div>
-            <label for="addServiceSearch" class="block text-sm font-medium text-gray-700">Search</label>
+            <label for="addServiceSearch" class="block text-sm font-medium text-gray-700">{{ 'common.search' | translate }}</label>
             <div class="flex gap-2 mt-1">
               <input id="addServiceSearch" type="text"
                      [ngModel]="query()" (ngModelChange)="query.set($event)"
                      (keyup.enter)="search()"
-                     placeholder="Service name or address (leave blank to list all)..."
+                     [placeholder]="'assets.addServiceModal.searchPlaceholder' | translate"
                      class="flex-1 pl-3 pr-3 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
               <button type="button" (click)="search()"
                       class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">
-                Search
+                {{ 'common.search' | translate }}
               </button>
             </div>
 
             @if (searching()) {
-              <p class="text-xs text-gray-500 mt-2">Searching...</p>
+              <p class="text-xs text-gray-500 mt-2">{{ 'assets.addServiceModal.searching' | translate }}</p>
             } @else if (results().length > 0) {
               <div class="mt-2 border border-gray-200 rounded-md max-h-48 overflow-auto">
                 @for (r of results(); track r.address) {
@@ -44,14 +44,14 @@
                 }
               </div>
             } @else if (query().length > 0) {
-              <p class="text-xs text-gray-400 mt-2">No matches. Try a shorter term, or enter an address manually below.</p>
+              <p class="text-xs text-gray-400 mt-2">{{ 'assets.addServiceModal.noMatches' | translate }}</p>
             }
           </div>
         }
 
         @if (manualMode()) {
           <div>
-            <label for="serviceAddress" class="block text-sm font-medium text-gray-700">Service Address</label>
+            <label for="serviceAddress" class="block text-sm font-medium text-gray-700">{{ 'assets.addServiceModal.serviceAddressLabel' | translate }}</label>
             <div class="mt-1 flex gap-2">
               <input id="serviceAddress" type="text"
                      [ngModel]="manualAddress()" (ngModelChange)="manualAddress.set($event)"
@@ -60,18 +60,18 @@
               <button type="button" (click)="onLookup()"
                       [disabled]="!manualAddress() || isLooking()"
                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
-                {{ isLooking() ? 'Looking up...' : 'Look Up' }}
+                {{ (isLooking() ? 'assets.addServiceModal.lookingUp' : 'assets.addServiceModal.lookUp') | translate }}
               </button>
             </div>
           </div>
         }
 
         <button type="button" class="text-xs text-indigo-600 hover:underline self-start" (click)="toggleManual()">
-          {{ manualMode() ? 'Back to search' : 'Or enter an address manually' }}
+          {{ (manualMode() ? 'assets.addServiceModal.backToSearch' : 'assets.addServiceModal.enterManually') | translate }}
         </button>
 
         @if (isLooking() && !manualMode()) {
-          <p class="text-xs text-gray-500">Looking up service...</p>
+          <p class="text-xs text-gray-500">{{ 'assets.addServiceModal.lookingUpService' | translate }}</p>
         }
 
         @if (lookupError()) {
@@ -80,7 +80,7 @@
 
         @if (lookedUpService(); as svc) {
           <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-2">
-            <p class="text-xs font-semibold uppercase tracking-widest text-gray-400">Service Found</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-gray-400">{{ 'assets.addServiceModal.serviceFound' | translate }}</p>
             <p class="text-base font-semibold text-gray-800">{{ svc.name }}</p>
             <p class="text-xs font-mono text-gray-500 break-all">{{ svc.address }}</p>
             <span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ svc.stateName }}</span>
@@ -92,11 +92,11 @@
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
         <button type="button" (click)="onCancel()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Cancel
+          {{ 'common.cancel' | translate }}
         </button>
         <button type="button" (click)="onConfirm()" [disabled]="!isValid()"
           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          Add Service
+          {{ 'assets.details.services.addService' | translate }}
         </button>
       </div>
     </div>

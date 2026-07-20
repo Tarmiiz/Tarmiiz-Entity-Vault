@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalAssetServiceStateService } from './modal-asset-service-state.service';
 
@@ -9,7 +10,7 @@ import { ModalAssetServiceStateService } from './modal-asset-service-state.servi
   templateUrl: './modal-asset-service-state.component.html',
   styleUrls: ['./modal-asset-service-state.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalAssetServiceStateComponent {
 

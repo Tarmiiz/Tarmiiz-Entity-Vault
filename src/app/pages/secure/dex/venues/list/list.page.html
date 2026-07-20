@@ -5,46 +5,46 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Search</label>
-        <input type="text" placeholder="Service, address..."
+        <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
+        <input type="text" [placeholder]="'dex.venues.list.searchPlaceholder' | translate"
           [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">State</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="">All</option>
-          <option value="1">Registered</option>
-          <option value="2">Active</option>
-          <option value="3">Paused</option>
-          <option value="4">Deregistered</option>
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'state.registered' | translate }}</option>
+          <option value="2">{{ 'state.active' | translate }}</option>
+          <option value="3">{{ 'state.paused' | translate }}</option>
+          <option value="4">{{ 'state.deregistered' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.clear' | translate }}</button>
       </div>
       <div class="flex ml-auto items-end gap-2">
         @if (features.systemFunctionEnabled('export-excel')) {
           <button (click)="exportExcel()"
             class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
-            Export Excel
+            {{ 'common.exportExcel' | translate }}
           </button>
         }
         @if (features.systemFunctionEnabled('export-pdf')) {
           <button (click)="exportPdf()"
             class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
-            Export PDF
+            {{ 'common.exportPdf' | translate }}
           </button>
         }
         @if (userInfo && userInfo.role !== 3) {
           <button (click)="createVenue()"
             class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Create Venue
+            {{ 'dex.venues.list.createButton' | translate }}
           </button>
         }
       </div>
@@ -56,20 +56,20 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th scope="col" class="px-6 py-2">#</th>
-            <th scope="col" class="px-6 py-2">Service</th>
-            <th scope="col" class="px-6 py-2">Entity</th>
-            <th scope="col" class="px-6 py-2">Country</th>
-            <th scope="col" class="px-6 py-2">Tiers</th>
-            <th scope="col" class="px-6 py-2">State</th>
-            <th scope="col" class="px-6 py-2">Suspended</th>
-            <th scope="col" class="px-6 py-2">Registered</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'dex.venues.table.service' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'partyType.entity' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.country' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'dex.venues.table.tiers' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'state.suspended' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'dex.venues.table.registered' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filteredVenues().length == 0) {
             <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="8">no data</td>
+              <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
             @for (v of filteredVenues(); track v.serviceAddress; let i = $index; let isEven = $even) {
@@ -85,17 +85,17 @@
                     @if (v.tier1Approved || v.tier1Pending) {
                       <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
                         [class]="v.tier1Approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
-                        [title]="v.tier1Approved ? 'Tier 1 — Approved' : 'Tier 1 — Pending'">T1</span>
+                        [title]="v.tier1Approved ? ('dex.venues.tier.approvedTitle' | translate: { n: 1 }) : ('dex.venues.tier.pendingTitle' | translate: { n: 1 })">T1</span>
                     }
                     @if (v.tier2Approved || v.tier2Pending) {
                       <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
                         [class]="v.tier2Approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
-                        [title]="v.tier2Approved ? 'Tier 2 — Approved' : 'Tier 2 — Pending'">T2</span>
+                        [title]="v.tier2Approved ? ('dex.venues.tier.approvedTitle' | translate: { n: 2 }) : ('dex.venues.tier.pendingTitle' | translate: { n: 2 })">T2</span>
                     }
                     @if (v.tier3Approved || v.tier3Pending) {
                       <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
                         [class]="v.tier3Approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
-                        [title]="v.tier3Approved ? 'Tier 3 — Approved' : 'Tier 3 — Pending'">T3</span>
+                        [title]="v.tier3Approved ? ('dex.venues.tier.approvedTitle' | translate: { n: 3 }) : ('dex.venues.tier.pendingTitle' | translate: { n: 3 })">T3</span>
                     }
                     @if (!v.tier1Approved && !v.tier1Pending && !v.tier2Approved && !v.tier2Pending && !v.tier3Approved && !v.tier3Pending) {
                       <span class="text-gray-400">—</span>
@@ -107,9 +107,9 @@
                 </td>
                 <td class="px-6 py-2">
                   @if (v.suspended) {
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Yes</span>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'common.yes' | translate }}</span>
                   } @else {
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">No</span>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">{{ 'common.no' | translate }}</span>
                   }
                 </td>
                 <td class="px-6 py-2">{{ v.registeredAt ? utils.formatDate(v.registeredAt) : '—' }}</td>
@@ -120,7 +120,7 @@
       </table>
     </div>
     <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ filteredVenues().length }} of Total {{ venues().length }} Venues</p>
+      <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.list.footer' | translate: { shown: filteredVenues().length, total: venues().length } }}</p>
     </div>
   </div>
 

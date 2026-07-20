@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
@@ -24,6 +24,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   private router = inject(Router);
   private apiService = inject(ApiService);
   private loadingService = inject(LoadingService);
+  private translate = inject(TranslateService);
   private socket = inject(SocketService);
   utils = inject(UtilsService);
 
@@ -51,7 +52,7 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   async load(silent = false) {
     if (silent) this.refreshing.set(true);
-    if (!silent) this.loadingService.show('Loading trade...');
+    if (!silent) this.loadingService.show(this.translate.instant('dex.trades.loadingOne'));
     try {
       const t = await this.apiService.vaultDexTradeInfo(this.tradeId());
       if (t) this.trade.set(t);

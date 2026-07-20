@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -21,8 +21,8 @@ interface CurrencyExposure {
     <app-header [title]="'analytics.creditLiquidity.title' | translate"></app-header>
     <div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
       <app-analytics-card
-        title="Currency exposure"
-        subtitle="Net subscription value per currency (subscribe inflow − redeem outflow), all-time."
+        [title]="'analytics.creditLiquidity.chart.title' | translate"
+        [subtitle]="'analytics.creditLiquidity.chart.subtitle' | translate"
         [loading]="loading()"
         [empty]="!loading() && rows().length === 0">
         <div class="grid md:grid-cols-2 gap-6">
@@ -33,11 +33,11 @@ interface CurrencyExposure {
             <table class="min-w-full text-sm">
               <thead class="bg-gray-50 text-left text-gray-600">
                 <tr>
-                  <th class="px-3 py-2 font-medium">Currency</th>
-                  <th class="px-3 py-2 font-medium text-right">Inflow</th>
-                  <th class="px-3 py-2 font-medium text-right">Outflow</th>
-                  <th class="px-3 py-2 font-medium text-right">Net</th>
-                  <th class="px-3 py-2 font-medium text-right">Share</th>
+                  <th class="px-3 py-2 font-medium">{{ 'analytics.creditLiquidity.table.currency' | translate }}</th>
+                  <th class="px-3 py-2 font-medium text-right">{{ 'analytics.creditLiquidity.table.inflow' | translate }}</th>
+                  <th class="px-3 py-2 font-medium text-right">{{ 'analytics.creditLiquidity.table.outflow' | translate }}</th>
+                  <th class="px-3 py-2 font-medium text-right">{{ 'analytics.creditLiquidity.table.net' | translate }}</th>
+                  <th class="px-3 py-2 font-medium text-right">{{ 'analytics.creditLiquidity.table.share' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -63,6 +63,7 @@ interface CurrencyExposure {
 })
 export class CreditLiquidityPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private translate = inject(TranslateService);
 
   @ViewChild('chart') chartRef?: ElementRef<HTMLCanvasElement>;
 
@@ -109,7 +110,7 @@ export class CreditLiquidityPage implements OnInit, OnDestroy {
         cutout: '60%',
         plugins: {
           legend: { position: 'right' },
-          title: { display: true, text: 'Net exposure share (positive only)' },
+          title: { display: true, text: this.translate.instant('analytics.creditLiquidity.chart.shareTitle') },
         },
       },
     });

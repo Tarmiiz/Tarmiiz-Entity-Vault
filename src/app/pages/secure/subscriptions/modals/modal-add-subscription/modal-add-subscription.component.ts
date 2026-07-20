@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { ModalAddSubscriptionService } from './modal-add-subscription.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -21,7 +22,7 @@ const CANONICAL_EXTRA_FIELDS = [
   styleUrls: ['./modal-add-subscription.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
 })
 export class ModalAddSubscriptionComponent {
   modalService = inject(ModalAddSubscriptionService);
@@ -29,6 +30,7 @@ export class ModalAddSubscriptionComponent {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private fb = inject(FormBuilder);
+  private translate = inject(TranslateService);
 
   mode = signal<'A' | 'B'>('A');
   services = signal<{ address: string; name: string }[]>([]);
@@ -202,12 +204,12 @@ export class ModalAddSubscriptionComponent {
       };
     }
 
-    this.loadingService.show('Creating subscription...');
+    this.loadingService.show(this.translate.instant('subscriptions.addModal.creating'));
     const res = await this.apiService.usersOnboard(body, this.mode() === 'A' ? 'did' : 'new');
     this.loadingService.hide();
 
     if (res.error || !res.subscriptionAddress) {
-      await this.alertService.show('Error', res.error || 'Failed to create subscription');
+      await this.alertService.show(this.translate.instant('alerts.error'), res.error || this.translate.instant('subscriptions.addModal.errorFailed'));
       return;
     }
     this.modalService.confirm(res.subscriptionAddress);

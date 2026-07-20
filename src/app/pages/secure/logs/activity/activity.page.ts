@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -38,12 +39,13 @@ interface StateChangeLog {
   templateUrl: './activity.page.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent]
+  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe]
 })
 export class ActivityPage implements OnInit {
   protected apiService = inject(ApiService);
   protected authService = inject(AuthService);
   protected loadingService = inject(LoadingService);
+  protected translate = inject(TranslateService);
   utils = inject(UtilsService);
 
   activeTab = signal<'activity' | 'state'>('activity');
@@ -78,7 +80,7 @@ export class ActivityPage implements OnInit {
   }
 
   async load() {
-    this.loadingService.show('Loading logs...');
+    this.loadingService.show(this.translate.instant('logs.activity.loading'));
     const start = (this.page() - 1) * this.pageSize + 1;
     try {
       if (this.activeTab() === 'activity') {
@@ -163,7 +165,7 @@ export class ActivityPage implements OnInit {
 
   async exportExcel() {
     const isState = this.activeTab() === 'state';
-    this.loadingService.show('Preparing export...');
+    this.loadingService.show(this.translate.instant('common.preparingExport'));
     let stateRows: StateChangeLog[] = [];
     let activityRows: ActivityLog[] = [];
     try {
@@ -172,36 +174,48 @@ export class ActivityPage implements OnInit {
     } finally {
       this.loadingService.hide();
     }
+    const timeLabel = this.translate.instant('logs.table.time');
+    const typeLabel = this.translate.instant('common.type');
+    const actionLabel = this.translate.instant('logs.table.action');
+    const addressLabel = this.translate.instant('common.address');
+    const newValueLabel = this.translate.instant('logs.activity.newValue');
+    const reasonLabel = this.translate.instant('logs.table.reason');
+    const userLabel = this.translate.instant('logs.table.user');
+    const clientIpLabel = this.translate.instant('logs.table.clientIp');
+    const txHashLabel = this.translate.instant('logs.details.txHash');
+    const categoryLabel = this.translate.instant('logs.table.category');
+    const targetLabel = this.translate.instant('logs.table.target');
+    const detailsLabel = this.translate.instant('logs.activity.details');
     const rows = isState
       ? stateRows.map(r => ({
-          'Time': this.utils.formatDate(r.created_at),
-          'Type': r.type,
-          'Action': (r.action || '').replaceAll('_', ' '),
-          'Address': r.address,
-          'New Value': r.new_value,
-          'Reason': r.reason,
-          'User': this.userExportLabel(r),
-          'Client IP': r.client_ip || '',
-          'Tx Hash': r.tx_hash,
+          [timeLabel]: this.utils.formatDate(r.created_at),
+          [typeLabel]: r.type,
+          [actionLabel]: (r.action || '').replaceAll('_', ' '),
+          [addressLabel]: r.address,
+          [newValueLabel]: r.new_value,
+          [reasonLabel]: r.reason,
+          [userLabel]: this.userExportLabel(r),
+          [clientIpLabel]: r.client_ip || '',
+          [txHashLabel]: r.tx_hash,
         }))
       : activityRows.map(r => ({
-          'Time': this.utils.formatDate(r.created_at),
-          'Category': r.category,
-          'Action': r.action,
-          'Target': r.target,
-          'Details': r.details,
-          'User': this.userExportLabel(r),
-          'Client IP': r.client_ip || '',
+          [timeLabel]: this.utils.formatDate(r.created_at),
+          [categoryLabel]: r.category,
+          [actionLabel]: r.action,
+          [targetLabel]: r.target,
+          [detailsLabel]: r.details,
+          [userLabel]: this.userExportLabel(r),
+          [clientIpLabel]: r.client_ip || '',
         }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, isState ? 'State Changes' : 'Activity');
+    XLSX.utils.book_append_sheet(wb, ws, this.translate.instant(isState ? 'logs.activity.tabState' : 'logs.activity.tabActivity'));
     XLSX.writeFile(wb, `${isState ? 'state_change_logs' : 'activity_logs'}_${this.exportStamp()}.xlsx`);
   }
 
   async exportPdf() {
     const isState = this.activeTab() === 'state';
-    this.loadingService.show('Preparing export...');
+    this.loadingService.show(this.translate.instant('common.preparingExport'));
     let stateRows: StateChangeLog[] = [];
     let activityRows: ActivityLog[] = [];
     try {
@@ -213,7 +227,7 @@ export class ActivityPage implements OnInit {
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(isState ? 'State Change Logs' : 'Activity Logs', 14, 15);
+    doc.text(this.translate.instant(isState ? 'logs.activity.exportTitleState' : 'sidebar.activityLogs'), 14, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     autoTable(doc, {
@@ -221,8 +235,25 @@ export class ActivityPage implements OnInit {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
       head: [isState
-        ? ['Time', 'Type', 'Action', 'Address', 'New Value', 'Reason', 'User', 'Client IP']
-        : ['Time', 'Category', 'Action', 'Target', 'Details', 'User', 'Client IP']],
+        ? [
+            this.translate.instant('logs.table.time'),
+            this.translate.instant('common.type'),
+            this.translate.instant('logs.table.action'),
+            this.translate.instant('common.address'),
+            this.translate.instant('logs.activity.newValue'),
+            this.translate.instant('logs.table.reason'),
+            this.translate.instant('logs.table.user'),
+            this.translate.instant('logs.table.clientIp'),
+          ]
+        : [
+            this.translate.instant('logs.table.time'),
+            this.translate.instant('logs.table.category'),
+            this.translate.instant('logs.table.action'),
+            this.translate.instant('logs.table.target'),
+            this.translate.instant('logs.activity.details'),
+            this.translate.instant('logs.table.user'),
+            this.translate.instant('logs.table.clientIp'),
+          ]],
       body: isState
         ? stateRows.map(r => [
             this.utils.formatDate(r.created_at),
@@ -248,5 +279,5 @@ export class ActivityPage implements OnInit {
     doc.save(`${isState ? 'state_change_logs' : 'activity_logs'}_${this.exportStamp()}.pdf`);
   }
 
-  get title(): string { return 'Activity Logs'; }
+  get title(): string { return this.translate.instant('sidebar.activityLogs'); }
 }

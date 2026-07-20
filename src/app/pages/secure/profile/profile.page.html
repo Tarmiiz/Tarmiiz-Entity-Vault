@@ -13,16 +13,16 @@
         [class.border-blue-600]="activeTab() === 'info'"
         [class.bg-blue-600]="activeTab() === 'info'"
       >
-        Information
+        {{ 'profile.tabs.info' | translate }}
       </button>
-      <button (click)="setTab('api')"
+      <button (click)="setTab('images')"
         class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'api'"
-        [class.border-b-2]="activeTab() === 'api'"
-        [class.border-blue-600]="activeTab() === 'api'"
-        [class.bg-blue-600]="activeTab() === 'api'"
+        [class.text-white]="activeTab() === 'images'"
+        [class.border-b-2]="activeTab() === 'images'"
+        [class.border-blue-600]="activeTab() === 'images'"
+        [class.bg-blue-600]="activeTab() === 'images'"
       >
-        API
+        {{ 'media.tabTitle' | translate }}
       </button>
     </div>
   </div>
@@ -50,27 +50,37 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
               <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">Contract Address</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.contractAddress' | translate }}</p>
                 <p class="font-mono text-base">{{ v.address }}</p>
               </div>
+              @if (profileView().description) {
+                <div class="border-t pt-4 md:col-span-2">
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.description' | translate }}</p>
+                  <p class="text-base whitespace-pre-wrap">{{ profileView().description }}</p>
+                </div>
+              }
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Email</p>
-                <p class="text-base">{{ v.email }}</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.email' | translate }}</p>
+                <p class="text-base">{{ profileView().email }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Mobile</p>
-                <p class="text-base">{{ v.mobile }}</p>
-              </div>
-              <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">Website</p>
-                <p class="text-base">{{ v.website }}</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.mobile' | translate }}</p>
+                <p class="text-base">{{ profileView().phone }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Country</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.website' | translate }}</p>
+                <p class="text-base">{{ profileView().website }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">{{ 'common.address' | translate }}</p>
+                <p class="text-base">{{ profileView().address }}</p>
+              </div>
+              <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.country' | translate }}</p>
                 <p class="text-base">{{ v.countryName }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Regulator</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.regulator' | translate }}</p>
                 <p class="text-base">{{ v.regulatorName }}</p>
                 <p class="font-mono text-xs text-gray-400">{{ v.regulator }}</p>
               </div>
@@ -78,7 +88,7 @@
 
             <div class="mt-8 pt-6 border-t flex justify-end">
               <button (click)="openEditMetadataModal()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-                Edit Details
+                {{ 'profile.info.editDetails' | translate }}
               </button>
             </div>
 
@@ -86,26 +96,62 @@
         </div>
       }
 
-      <!-- api tab -->
-      @if (activeTab() === 'api') {
+      <!-- images tab -->
+      @if (activeTab() === 'images') {
         <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
           <div class="p-4">
-            <div class="flex items-start justify-between mb-4">
-              <h2 class="text-3xl font-bold text-gray-800">API Endpoint</h2>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
-              <div class="border-t pt-4 md:col-span-2">
-                <p class="text-sm font-medium text-gray-500">API Address</p>
-                <p class="font-mono text-base">{{ api() }}</p>
-              </div>
-            </div>
-            <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-              <button (click)="openChangeApiModal()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-                Change API
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-3xl font-bold text-gray-800">{{ 'media.heading' | translate }}</h2>
+              <button (click)="openAddImageModal()" [disabled]="!entityActive"
+                class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                {{ 'media.uploadButton' | translate }}
               </button>
             </div>
-
+            @if (mediaImages().length === 0) {
+              <p class="text-sm text-gray-400 italic">{{ 'media.noImages' | translate }}</p>
+            } @else {
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                @for (row of mediaImages(); track row.entry.documentId) {
+                  <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="aspect-video bg-gray-100 flex items-center justify-center">
+                      @if (mediaImageUrls()[row.entry.documentId]) {
+                        <img [src]="mediaImageUrls()[row.entry.documentId]" [alt]="row.entry.title" class="w-full h-full object-cover">
+                      } @else {
+                        <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                      }
+                    </div>
+                    <div class="p-2">
+                      <div class="flex items-center justify-between gap-1">
+                        <span class="text-xs text-black font-medium truncate">{{ row.entry.title }}</span>
+                        @if (row.role !== 'gallery') {
+                          <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
+                            [class]="row.role === 'avatar' ? 'bg-indigo-100 text-indigo-700' : 'bg-cyan-100 text-cyan-700'">
+                            {{ (row.role === 'avatar' ? 'media.roleAvatar' : 'media.roleBanner') | translate }}
+                          </span>
+                        }
+                      </div>
+                      <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                        @if (row.role !== 'avatar') {
+                          <button (click)="changeMediaRole(row.entry.documentId, 'avatar')" [disabled]="!entityActive"
+                            class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setAvatar' | translate }}</button>
+                        }
+                        @if (row.role !== 'banner') {
+                          <button (click)="changeMediaRole(row.entry.documentId, 'banner')" [disabled]="!entityActive"
+                            class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setBanner' | translate }}</button>
+                        }
+                        @if (row.role !== 'gallery') {
+                          <button (click)="changeMediaRole(row.entry.documentId, 'gallery')" [disabled]="!entityActive"
+                            class="text-[10px] text-gray-500 hover:text-gray-700 disabled:opacity-40">{{ 'media.unsetRole' | translate }}</button>
+                        }
+                        <button (click)="removeMediaImage(row)" [disabled]="!entityActive"
+                          class="text-[10px] text-red-500 hover:text-red-700 disabled:opacity-40">{{ 'common.remove' | translate }}</button>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+            <p class="text-xs text-gray-400 mt-3">{{ 'media.hint' | translate }}</p>
           </div>
         </div>
       }
@@ -113,7 +159,7 @@
     }
     @else {
       <div class="text-center py-12 text-gray-500">
-        <p>Loading entity details...</p>
+        <p>{{ 'profile.loadingDetails' | translate }}</p>
       </div>
     }
 
@@ -121,5 +167,5 @@
 
 </div>
 
-<app-modal-profile-operator-edit></app-modal-profile-operator-edit>
 <app-modal-profile-metadata-edit></app-modal-profile-metadata-edit>
+<app-modal-image-add></app-modal-image-add>

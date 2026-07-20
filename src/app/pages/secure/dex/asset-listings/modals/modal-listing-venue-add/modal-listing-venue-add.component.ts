@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { ApiService } from '../../../../../../shared/services/api.service';
 import { LoadingService } from '../../../../../../shared/components/alerts/loading/loading.service';
@@ -20,7 +21,7 @@ interface AvailableVenue {
 @Component({
   selector: 'app-modal-listing-venue-add',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './modal-listing-venue-add.component.html',
 })
@@ -29,6 +30,7 @@ export class ModalListingVenueAddComponent {
   private apiService = inject(ApiService);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
+  private translate = inject(TranslateService);
 
   search        = signal('');
   countryFilter = signal<number | ''>('');
@@ -37,15 +39,20 @@ export class ModalListingVenueAddComponent {
 
   tierLabel = computed(() => {
     const t = this.modalService.input()?.tier;
-    return t === 1 ? 'Tier 1 — Venue' : t === 2 ? 'Tier 2 — Country' : t === 3 ? 'Tier 3 — Global' : '';
+    return t === 1 ? this.translate.instant('dex.listings.tierLabels.tier1')
+         : t === 2 ? this.translate.instant('dex.listings.tierLabels.tier2')
+         : t === 3 ? this.translate.instant('dex.listings.tierLabels.tier3')
+         : '';
   });
 
   tierHint = computed(() => {
     const inp = this.modalService.input();
     if (!inp) return '';
-    if (inp.tier === 1) return 'Pick from your own entity\'s venues. The service must have an active payment processor.';
-    if (inp.tier === 2) return `Add venues in ${inp.assetCountryName || 'the asset\'s country'} for country-scoped trading. The venue service must have a full-scope (level 2) payment processor.`;
-    return 'Add venues anywhere globally for cross-border routing. The venue service must have a full-scope (level 2) payment processor.';
+    if (inp.tier === 1) return this.translate.instant('dex.listings.addVenueModal.tier1Hint');
+    if (inp.tier === 2) return this.translate.instant('dex.listings.addVenueModal.tier2Hint', {
+      country: inp.assetCountryName || this.translate.instant('dex.listings.addVenueModal.assetCountryFallback')
+    });
+    return this.translate.instant('dex.listings.addVenueModal.tier3Hint');
   });
 
   constructor() {
@@ -79,16 +86,16 @@ export class ModalListingVenueAddComponent {
     const inp = this.modalService.input();
     if (!inp) return;
     const ok = await this.alertService.show(
-      'Enable venue',
-      `Enable "${v.serviceName || v.serviceAddress}" for ${this.tierLabel()} trading on this asset?`,
-      'Enable'
+      this.translate.instant('dex.listings.addVenueModal.enableVenueTitle'),
+      this.translate.instant('dex.listings.addVenueModal.enableVenueMessage', { name: v.serviceName || v.serviceAddress, tier: this.tierLabel() }),
+      this.translate.instant('dex.listings.addVenueModal.enableButton')
     );
     if (!ok) return;
-    this.loadingService.show('Enabling venue...');
+    this.loadingService.show(this.translate.instant('dex.listings.addVenueModal.enablingVenue'));
     let listed = false;
     try {
       const r = await this.apiService.vaultDexAssetListingVenueAdd(inp.asset, v.serviceAddress, inp.tier);
-      if (r?.error) { this.alertService.show('Error', r.error); return; }
+      if (r?.error) { this.alertService.show(this.translate.instant('alerts.error'), r.error); return; }
       listed = true;
     } finally {
       this.loadingService.hide();
@@ -99,27 +106,27 @@ export class ModalListingVenueAddComponent {
     // service must have canQuote = true on this asset. Default the prompt to yes — denying it leaves
     // the venue listed but unable to settle matched trades.
     const allowQuote = await this.alertService.show(
-      'Allow venue to clear at matched price?',
-      `For DEX settlement to work normally, "${v.serviceName || v.serviceAddress}" needs permission to clear trades at the matched-order price on this asset. Grant it now? (You can revoke this later from the asset's Services tab.)`,
-      'Allow quoting'
+      this.translate.instant('dex.listings.addVenueModal.allowQuoteTitle'),
+      this.translate.instant('dex.listings.addVenueModal.allowQuoteMessage', { name: v.serviceName || v.serviceAddress }),
+      this.translate.instant('dex.listings.addVenueModal.allowQuotingButton')
     );
     if (allowQuote) {
-      this.loadingService.show('Granting price-quoting permission...');
+      this.loadingService.show(this.translate.instant('dex.listings.addVenueModal.grantingQuotingPermission'));
       try {
         await this.apiService.vaultSetAssetServiceCanQuote(inp.asset, v.serviceAddress, true);
       } catch (err) {
         console.error('Failed to grant canQuote', err);
         this.alertService.show(
-          'Quoting permission not granted',
-          'The venue is listed but cannot clear trades at the matched price yet. Open the asset\'s Services tab and toggle Price Quoting to "Allowed" before any trade is matched.'
+          this.translate.instant('dex.listings.addVenueModal.quotingNotGrantedTitle'),
+          this.translate.instant('dex.listings.addVenueModal.quotingNotGrantedMessage')
         );
       } finally {
         this.loadingService.hide();
       }
     } else {
       this.alertService.show(
-        'Heads up',
-        'The venue is listed but pinned to your asset price. DEX matched-price settlement will revert until you grant quoting permission from the asset\'s Services tab.'
+        this.translate.instant('dex.listings.addVenueModal.headsUpTitle'),
+        this.translate.instant('dex.listings.addVenueModal.headsUpMessage')
       );
     }
     this.modalService.hide(true);

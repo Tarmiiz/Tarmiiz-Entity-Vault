@@ -3,42 +3,42 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100 capitalize">
-          Edit {{ title() }}
+          {{ 'profile.operatorModal.editTitle' | translate: { field: title() } }}
         </h3>
       </div>
       @if (!confirming()) {
         <form [formGroup]="editForm" (ngSubmit)="onSave()">
           <div class="p-6 space-y-4">
             <div>
-              <label for="address" class="block text-sm font-medium text-gray-700">Contract Address</label>
+              <label for="address" class="block text-sm font-medium text-gray-700">{{ 'profile.operatorModal.contractAddress' | translate }}</label>
               <input type="text" id="address" formControlName="address" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
             </div>
           </div>
           <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
             <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-              Cancel
+              {{ 'common.cancel' | translate }}
             </button>
             <button type="submit" [disabled]="!editForm.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              Next
+              {{ 'common.next' | translate }}
             </button>
           </div>
         </form>
       } @else {
         <div class="p-6 space-y-4">
           <div class="rounded-md bg-yellow-50 border border-yellow-200 px-3 py-2 text-xs text-yellow-800">
-            This will update the on-chain API contract address. Please confirm the new address is correct.
+            {{ 'profile.operatorModal.confirmWarning' | translate }}
           </div>
           <div>
-            <p class="text-sm font-medium text-gray-500">New Address</p>
+            <p class="text-sm font-medium text-gray-500">{{ 'profile.operatorModal.newAddress' | translate }}</p>
             <p class="mt-1 font-mono text-sm text-gray-800 break-all">{{ pendingAddress() }}</p>
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onBack()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Back
+            {{ 'common.back' | translate }}
           </button>
           <button type="button" (click)="onConfirm()" class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors">
-            Confirm Change
+            {{ 'profile.operatorModal.confirmChange' | translate }}
           </button>
         </div>
       }

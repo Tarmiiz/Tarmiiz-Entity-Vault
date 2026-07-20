@@ -1,0 +1,46 @@
+@if (addGroupService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          {{ 'settings.userGroups.addModal.title' | translate }}
+        </h3>
+      </div>
+      <form [formGroup]="addForm" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4">
+          <div>
+            <label for="groupName" class="block text-sm font-medium text-gray-700">{{ 'settings.userGroups.addModal.name' | translate }}</label>
+            <input id="groupName" type="text" formControlName="name"
+              class="mt-1 block w-full py-2 px-3 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+          </div>
+          <div>
+            <label for="groupDescription" class="block text-sm font-medium text-gray-700">{{ 'settings.userGroups.addModal.description' | translate }}</label>
+            <input id="groupDescription" type="text" formControlName="description"
+              class="mt-1 block w-full py-2 px-3 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+          </div>
+          <div>
+            <label for="groupRole" class="block text-sm font-medium text-gray-700">{{ 'settings.userGroups.addModal.role' | translate }}</label>
+            <select id="groupRole" formControlName="role"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+              <option value="" disabled>{{ 'settings.userGroups.addModal.rolePlaceholder' | translate }}</option>
+              @for (role of roles; track role.variableId) {
+                <option [value]="role.variableId">{{ role.name }}</option>
+              }
+            </select>
+            <p class="text-xs text-gray-500 mt-2">{{ 'settings.userGroups.addModal.roleHint' | translate }}</p>
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+          <button type="button" (click)="onCancel()"
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button type="submit" [disabled]="!addForm.valid"
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'settings.userGroups.addModal.submit' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

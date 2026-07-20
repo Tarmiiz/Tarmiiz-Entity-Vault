@@ -2,13 +2,14 @@ import { Component, inject, OnInit } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { StorageService } from '../../../../shared/services/storage.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { CryptoService } from '../../../../shared/services/crypto.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { LanguageService } from '../../../../shared/services/language.service';
+import { ApiService } from '../../../../shared/services/api.service';
 
 
 @Component({
@@ -30,12 +31,20 @@ export class LoginPage implements OnInit {
   private cryptoService = inject(CryptoService);
   private authService = inject(AuthService);
   private languageService = inject(LanguageService);
+  private translate = inject(TranslateService);
+  apiService = inject(ApiService);
 
   formLogin!: FormGroup;
   isLoading = false;
 
   get lang() { return this.languageService.lang(); }
   toggleLang() { this.languageService.toggle(); }
+
+  // Fall back to the static brand logo when the tenant has no avatar (endpoint 404s).
+  onLogoError(ev: Event) {
+    const img = ev.target as HTMLImageElement;
+    if (img && !img.src.endsWith('assets/images/logo.svg')) img.src = 'assets/images/logo.svg';
+  }
 
   constructor(
   ) { 
@@ -54,7 +63,7 @@ export class LoginPage implements OnInit {
 
  async login() {
     if (!this.formLogin.valid) {
-      await this.alertService.show('Invalid Form', 'Please enter a valid email and password.');
+      await this.alertService.show(this.translate.instant('login.errors.invalidFormTitle'), this.translate.instant('login.errors.invalidFormMessage'));
       return;
     }
 
@@ -72,46 +81,46 @@ export class LoginPage implements OnInit {
       }
       else {
         console.error('Login failed:', loginResult.error);
-        let errorMessage = 'An unexpected error occurred during login.';
+        let errorMessage = this.translate.instant('login.errors.unexpectedDuringLogin');
         const errStr = String(loginResult.error ?? '');
         if (errStr) {
           if (errStr.includes('User not found')) {
-            errorMessage = 'User not found. Please check your credentials or register first.';
+            errorMessage = this.translate.instant('login.errors.userNotFound');
           } else if (errStr.includes('proof')) {
-            errorMessage = 'Failed to generate authentication proof. Please try again.';
+            errorMessage = this.translate.instant('login.errors.proofFailed');
           } else if (errStr.includes('network')) {
-            errorMessage = 'Network error. Please check your internet connection.';
+            errorMessage = this.translate.instant('login.errors.networkError');
           } else if (errStr.includes('Error: Assert Failed')) {
-            errorMessage = 'Login Failed. Please check your credentials.';
+            errorMessage = this.translate.instant('login.errors.credentialsInvalid');
           } else if (errStr.includes('Error: execution reverted')) {
-            errorMessage = 'Login Failed. Please check your credentials.';
+            errorMessage = this.translate.instant('login.errors.credentialsInvalid');
           } else {
-            errorMessage = 'Login Failed. Please check your credentials.';
+            errorMessage = this.translate.instant('login.errors.credentialsInvalid');
           }
         }
-        await this.alertService.show('Login Failed', errorMessage);
+        await this.alertService.show(this.translate.instant('login.errors.loginFailedTitle'), errorMessage);
       }
 
-    } 
+    }
     catch (error: any) {
-      let errorMessage = 'An unexpected error occurred during login.';
+      let errorMessage = this.translate.instant('login.errors.unexpectedDuringLogin');
       if (error.message) {
         if (error.message.includes('User not found')) {
-          errorMessage = 'User not found. Please check your credentials or register first.';
+          errorMessage = this.translate.instant('login.errors.userNotFound');
         } else if (error.message.includes('proof')) {
-          errorMessage = 'Failed to generate authentication proof. Please try again.';
+          errorMessage = this.translate.instant('login.errors.proofFailed');
         } else if (error.message.includes('network')) {
-          errorMessage = 'Network error. Please check your internet connection.';
+          errorMessage = this.translate.instant('login.errors.networkError');
         } else if (error.message.includes('Error: Assert Failed')) {
-          errorMessage = 'Login Failed. Please check your credentials.';
+          errorMessage = this.translate.instant('login.errors.credentialsInvalid');
         } else if (error.message.includes('Error: execution reverted')) {
-          errorMessage = 'Login Failed. Please check your credentials.';
+          errorMessage = this.translate.instant('login.errors.credentialsInvalid');
         } else {
           errorMessage = error.message;
         }
       }
-      
-      await this.alertService.show('Login Error', errorMessage);
+
+      await this.alertService.show(this.translate.instant('login.errors.loginErrorTitle'), errorMessage);
     }
     finally {
       this.isLoading = false;

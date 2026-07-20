@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, effect, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { ethers } from 'ethers';
 
@@ -11,7 +12,7 @@ import { DexAssetListing, DexVenue } from '../../../../../../shared/models/data.
   templateUrl: './modal-place-order.component.html',
   styleUrls: ['./modal-place-order.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
 })
 export class ModalPlaceOrderComponent {
   modalService = inject(ModalPlaceOrderService);

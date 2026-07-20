@@ -2,12 +2,13 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 
 import { User } from '../../../../shared/models/data.model';
@@ -30,8 +31,10 @@ export class ListPage implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
+  private alertService = inject(AlertService);
   private authService = inject(AuthService);
   private userAddService = inject(ModalUserAddService);
+  private translate = inject(TranslateService);
 
   userInfo!: User;
   loadingData: boolean = false;
@@ -43,11 +46,11 @@ export class ListPage implements OnInit {
   filterRole  = signal<string>('');
   filterState = signal<string>('');
 
-  private readonly stateNames: Record<number, string> = {
-    1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated'
+  private readonly stateKeys: Record<number, string> = {
+    1: 'state.initiated', 2: 'state.active', 3: 'state.suspended', 4: 'state.deactivated'
   };
-  private readonly roleNames: Record<number, string> = {
-    1: 'Admin', 2: 'Executive', 3: 'Viewer', 4: 'Security'
+  private readonly roleKeys: Record<number, string> = {
+    1: 'role.admin', 2: 'users.roles.executive', 3: 'role.viewer', 4: 'users.roles.security'
   };
 
   constructor() {}
@@ -79,18 +82,18 @@ export class ListPage implements OnInit {
   } 
 
   async listUsers() {
-    this.loadingService.show('Loading data...');
+    this.loadingService.show(this.translate.instant('common.loadingData'));
     const result = await this.apiService.vaultGetUsers(0, 100);
     if (result) {
       this.usersCount = result.count;
       this.users.set(result.users.map((u: any) => ({
         ...u,
-        stateName: this.stateNames[u.state] ?? String(u.state ?? ''),
-        roleName:  this.roleNames[u.role]   ?? String(u.role  ?? ''),
+        stateName: this.stateKeys[u.state] ? this.translate.instant(this.stateKeys[u.state]) : String(u.state ?? ''),
+        roleName:  this.roleKeys[u.role]   ? this.translate.instant(this.roleKeys[u.role])   : String(u.role  ?? ''),
       })));
     }
     this.loadingService.hide();
-  }  
+  }
 
   viewDetails(user: User) {
     this.router.navigate(['/authorized/users/details/' + user.userId]);  
@@ -121,25 +124,62 @@ export class ListPage implements OnInit {
   async openAddModal() {
     const result = await this.userAddService.show();
     if (result) {
-      this.loadingService.show('Adding new user...');
+      this.loadingService.show(this.translate.instant('users.list.addingUser'));
       try {
-        await this.apiService.vaultCreateUser({
+        const createRes = await this.apiService.vaultCreateUser({
           name: result.name,
           email: result.email,
           username: result.username,
           password: result.password,
           role: Number(result.role),
         });
+        // Surface a create failure (e.g. the entity is not active — user creation is
+        // blocked server-side by the entityActive gate) instead of silently no-op'ing.
+        if (createRes?.error) {
+          this.alertService.show(this.translate.instant('users.addModal.errorTitle'), createRes.error);
+          return;
+        }
         await this.listUsers();
-        if (Number(result.role) === 2 && result.approvalRole && result.approvalRole !== 'none') {
-          const created = this.users().find(u => u.username === result.username);
-          if (created) {
-            try {
-              await this.apiService.vaultUserApprovalRoleSet(created.userId, result.approvalRole);
-              await this.listUsers();
-            } catch (e) {
-              console.error('Failed to set approval role', e);
-            }
+        const created = this.users().find(u => u.username === result.username);
+        if (created && Number(result.role) === 2 && result.approvalRole && result.approvalRole !== 'none') {
+          try {
+            await this.apiService.vaultUserApprovalRoleSet(created.userId, result.approvalRole);
+            await this.listUsers();
+          } catch (e) {
+            console.error('Failed to set approval role', e);
+          }
+        }
+        // Assign the picked User Group (same post-create follow-up pattern as approval role).
+        if (created && result.groupId) {
+          try {
+            const res = await this.apiService.vaultUserGroupMembershipSet(created.userId, result.groupId);
+            if (res?.error) console.error('Failed to assign user group', res.error);
+          } catch (e) {
+            console.error('Failed to assign user group', e);
+          }
+        }
+        // Grant a Security officer (role 4) read-only Messages access (default is
+        // OFF — only write an override when the admin ticked the toggle).
+        if (created && Number(result.role) === 4 && result.messagesEnabled === true) {
+          try {
+            await this.apiService.vaultUserMenuConfigSet(created.userId, 'messages', true);
+          } catch (e) {
+            console.error('Failed to grant messages access', e);
+          }
+        }
+        // Default the Connect handle to (a sanitized form of) the username so the
+        // user can receive direct messages immediately. Best-effort / non-fatal —
+        // a collision or invalid value just leaves the handle unset for the admin
+        // to set manually on the User Details page.
+        if (created && result.handle) {
+          try {
+            await this.apiService.vaultUserHandleSet(created.userId, result.handle);
+          } catch (e) {
+            console.error('Failed to set default handle', e);
+            this.alertService.show(
+              this.translate.instant('users.list.handleDefaultFailedTitle'),
+              this.translate.instant('users.list.handleDefaultFailedMessage'),
+            );
           }
         }
         this.loadingService.hide();

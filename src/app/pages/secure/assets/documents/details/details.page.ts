@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ethers } from 'ethers';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
@@ -33,6 +33,7 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
   private authService = inject(AuthService);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
 
   private shareModal = inject(ModalDocumentShareService);
@@ -62,7 +63,7 @@ export class DetailsPage implements OnInit {
   async ionViewDidEnter() { await this.loadAll(); }
 
   async loadAll() {
-    this.loadingService.show('Loading document...');
+    this.loadingService.show(this.translate.instant('assets.documents.details.loading'));
     try {
       await Promise.all([this.loadDocument(), this.loadShared(), this.loadSignatures(), this.loadGlobals()]);
     } finally { this.loadingService.hide(); }
@@ -125,20 +126,20 @@ export class DetailsPage implements OnInit {
   }
 
   async deleteDocument() {
-    if (!(await this.alertService.show('Delete Document', 'Soft-delete this document?', 'Delete'))) return;
-    this.loadingService.show('Updating...');
+    if (!(await this.alertService.show(this.translate.instant('assets.documents.details.deleteConfirm.title'), this.translate.instant('assets.documents.details.deleteConfirm.body'), this.translate.instant('common.delete')))) return;
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.assetDocumentSetState(this.assetAddress(), this.id(), 2);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
 
   async restoreDocument() {
-    this.loadingService.show('Updating...');
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.assetDocumentSetState(this.assetAddress(), this.id(), 1);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
@@ -146,20 +147,20 @@ export class DetailsPage implements OnInit {
   async shareWithNew() {
     const account = await this.shareModal.show();
     if (!account) return;
-    this.loadingService.show('Sharing...');
+    this.loadingService.show(this.translate.instant('documents.shareModal.sharing'));
     try {
       const r = await this.apiService.assetDocumentShare(this.assetAddress(), this.id(), account);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
 
   async unshare(account: string) {
-    if (!(await this.alertService.show('Revoke Access', 'Revoke access for ' + account + '?', 'Revoke'))) return;
-    this.loadingService.show('Updating...');
+    if (!(await this.alertService.show(this.translate.instant('assets.documents.details.revokeConfirm.title'), this.translate.instant('assets.documents.details.revokeConfirm.body', { account }), this.translate.instant('assets.documents.details.revoke')))) return;
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.assetDocumentUnshare(this.assetAddress(), this.id(), account);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
@@ -186,10 +187,10 @@ export class DetailsPage implements OnInit {
     if (!doc?.cid) return;
     const keyId = await this.signModal.show();
     if (keyId === null) return;
-    this.loadingService.show('Hashing file + signing...');
+    this.loadingService.show(this.translate.instant('assets.documents.details.hashingSigning'));
     try {
       const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) { this.alertService.show('Error', 'Could not fetch file from IPFS for hashing.'); return; }
+      if (!r?.success || !r?.data) { this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('assets.documents.details.ipfsFetchErrorHashing')); return; }
       const base64 = typeof r.data === 'string' ? r.data : '';
       const byteString = atob(base64);
       const bytes = new Uint8Array(byteString.length);
@@ -198,7 +199,7 @@ export class DetailsPage implements OnInit {
       const docHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 
       const signRes = await this.apiService.assetDocumentSign(this.assetAddress(), this.id(), keyId, docHash);
-      if (signRes?.error) this.alertService.show('Error', signRes.error);
+      if (signRes?.error) this.alertService.show(this.translate.instant('alerts.error'), signRes.error);
       else { await this.loadSignatures(); this.activeTab.set('signatures'); }
     } finally { this.loadingService.hide(); }
   }
@@ -206,10 +207,10 @@ export class DetailsPage implements OnInit {
   async verifySignature(sig: DocumentSignature) {
     const doc = this.document();
     if (!doc?.cid) return;
-    this.loadingService.show('Verifying signature...');
+    this.loadingService.show(this.translate.instant('assets.documents.details.verifyingSignature'));
     try {
       const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) { this.alertService.show('Error', 'Could not fetch file from IPFS.'); return; }
+      if (!r?.success || !r?.data) { this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('assets.documents.details.ipfsFetchError')); return; }
       const byteString = atob(typeof r.data === 'string' ? r.data : '');
       const bytes = new Uint8Array(byteString.length);
       for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
@@ -222,27 +223,27 @@ export class DetailsPage implements OnInit {
       const signerMatches = recovered.toLowerCase() === (sig.signer || '').toLowerCase();
       const ok = hashMatches && signerMatches;
       const lines = [
-        ok ? '✅ Signature is VALID' : '❌ Signature is INVALID',
+        ok ? this.translate.instant('assets.documents.details.verifyResult.valid') : this.translate.instant('assets.documents.details.verifyResult.invalid'),
         '',
-        'Signer (expected):  ' + sig.signer,
-        'Signer (recovered): ' + (recovered || '—'),
-        'Hash  (attested):   ' + sig.docHash,
-        'Hash  (current):    ' + currentHash,
+        this.translate.instant('assets.documents.details.verifyResult.signerExpected') + sig.signer,
+        this.translate.instant('assets.documents.details.verifyResult.signerRecovered') + (recovered || '—'),
+        this.translate.instant('assets.documents.details.verifyResult.hashAttested') + sig.docHash,
+        this.translate.instant('assets.documents.details.verifyResult.hashCurrent') + currentHash,
         '',
-        hashMatches ? 'File hash matches — content has not changed since signing.' : '⚠ File hash has changed — content differs from what was signed.',
-        signerMatches ? 'Signer recovered from signature matches the expected signer.' : '⚠ Recovered signer does NOT match the expected signer.',
+        hashMatches ? this.translate.instant('assets.documents.details.verifyResult.hashMatches') : this.translate.instant('assets.documents.details.verifyResult.hashMismatch'),
+        signerMatches ? this.translate.instant('assets.documents.details.verifyResult.signerMatches') : this.translate.instant('assets.documents.details.verifyResult.signerMismatch'),
       ];
-      this.alertService.show(ok ? 'Signature Valid' : 'Signature Check Failed', lines.join('\n'));
+      this.alertService.show(ok ? this.translate.instant('assets.documents.details.verifyResult.titleValid') : this.translate.instant('assets.documents.details.verifyResult.titleInvalid'), lines.join('\n'));
     } finally { this.loadingService.hide(); }
   }
 
   async viewFile() {
     const doc = this.document();
     if (!doc?.cid) return;
-    this.loadingService.show('Fetching file...');
+    this.loadingService.show(this.translate.instant('assets.documents.details.fetchingFile'));
     try {
       const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) { this.alertService.show('Error', 'Could not fetch file from IPFS.'); return; }
+      if (!r?.success || !r?.data) { this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('assets.documents.details.ipfsFetchError')); return; }
       const base64 = typeof r.data === 'string' ? r.data : '';
       const byteString = atob(base64);
       const bytes = new Uint8Array(byteString.length);

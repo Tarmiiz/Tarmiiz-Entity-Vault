@@ -1,9 +1,13 @@
 import { Injectable, signal } from '@angular/core';
 
 export interface EntityMetadata {
-  email: string;
-  mobile: string;
-  website: string;
+  description: string;
+  contact: {
+    email: string;
+    phone: string;
+    website: string;
+    address: string;
+  };
 }
 
 @Injectable({

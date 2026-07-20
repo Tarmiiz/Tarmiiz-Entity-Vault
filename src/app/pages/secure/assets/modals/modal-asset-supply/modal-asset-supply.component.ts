@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalAssetSupplyService } from './modal-asset-supply.service';
 
@@ -7,7 +8,7 @@ import { ModalAssetSupplyService } from './modal-asset-supply.service';
   selector: 'app-modal-asset-supply',
   templateUrl: './modal-asset-supply.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalAssetSupplyComponent {
 

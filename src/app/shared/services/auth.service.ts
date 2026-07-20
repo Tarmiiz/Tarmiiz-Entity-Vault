@@ -1,5 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 
 import { StorageService } from './storage.service';
 import { EthersService } from './ethers.service';
@@ -18,6 +19,7 @@ import { ParseProofUtils } from '../utils/parse-proof.utils';
 export class AuthService {
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
+  private translate = inject(TranslateService);
   private router = inject(Router);
   private storageService = inject(StorageService);
   private ethersService = inject(EthersService);
@@ -51,7 +53,7 @@ export class AuthService {
   async login(username: string, password: string) {
     try {
 
-      this.loadingService.show('Generating zero-knowledge proof — connecting...');
+      this.loadingService.show(this.translate.instant('auth.zk.connecting'));
 
       // Fetch blockchain config from API
       const config = await this.apiService.vaultGetConfig();
@@ -87,7 +89,7 @@ export class AuthService {
       // A cold first attempt can fail on the chain side ("invalid zk proof" from
       // un-warmed snarkjs, or stale "nonce mismatch" / "commitment mismatch" from
       // a prior pending logout). Regenerate + resubmit once on transient errors.
-      this.loadingService.show('Generating zero-knowledge proof — verifying credentials...');
+      this.loadingService.show(this.translate.instant('auth.zk.verifying'));
       let loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
       const transient = /nonce mismatch|commitment mismatch|invalid zk proof|No UserAccess event|Login API call failed/i;
       if (!(loginResult.success && loginResult.userId) && transient.test(String(loginResult.error ?? ''))) {
@@ -104,7 +106,7 @@ export class AuthService {
         const key = JSON.stringify(loginResult.key)
 
         // get user info
-        this.loadingService.show('Generating zero-knowledge proof — fetching profile...');
+        this.loadingService.show(this.translate.instant('auth.zk.fetchingProfile'));
         const userId = Number(loginResult.userId);
         const user = await this.apiService.vaultGetUser(String(userId));
         if (user && user.state === 2) {
@@ -134,7 +136,7 @@ export class AuthService {
           this.socketService.connect();
 
           // keep loading spinner visible — the dashboard will hide it after loading
-          this.loadingService.show('Generating zero-knowledge proof — loading dashboard...');
+          this.loadingService.show(this.translate.instant('auth.zk.loadingDashboard'));
           return { success: true, error: '' };
 
         }
@@ -173,7 +175,7 @@ export class AuthService {
   }
 
   async logout() {
-    const confirmed = await this.alertService.show('Logout', 'Are you sure you want to logout?');
+    const confirmed = await this.alertService.show(this.translate.instant('header.logout'), this.translate.instant('auth.logoutConfirm'));
     if(!confirmed) return;
     this.loadingService.show('Closing session...');
     this.socketService.disconnect();

@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { MyPage } from '../my/my.page';
@@ -11,7 +12,7 @@ import { MyPage } from '../my/my.page';
   styleUrls: ['./system.page.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent]
+  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe]
 })
 export class SystemPage extends MyPage {
   protected override fetch(page?: number, pageSize?: number) {
@@ -19,6 +20,6 @@ export class SystemPage extends MyPage {
   }
 
   protected override exportName(): string { return 'audit_system'; }
-  protected override exportTitle(): string { return 'System Audit Activity'; }
-  protected override pageTitle(): string { return 'System Activity'; }
+  protected override exportTitle(): string { return this.translate.instant('logs.system.exportTitle'); }
+  protected override pageTitle(): string { return this.translate.instant('logs.system.pageTitle'); }
 }

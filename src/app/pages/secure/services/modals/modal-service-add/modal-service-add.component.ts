@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect, computed } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalServiceAddService, AddServiceData, SELF_CUSTODY_SENTINEL } from './modal-service-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -10,7 +11,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-service-add.component.html',
   styleUrls: ['./modal-service-add.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalServiceAddComponent {
 

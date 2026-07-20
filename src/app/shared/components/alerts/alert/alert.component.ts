@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { AlertService } from './alert.service';
 
@@ -8,7 +9,7 @@ import { AlertService } from './alert.service';
   styleUrls: ['./alert.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [],
+  imports: [TranslatePipe],
 })
 export class AlertComponent {
 

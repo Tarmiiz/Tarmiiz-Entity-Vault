@@ -1,8 +1,7 @@
 import { Component, OnDestroy, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -28,7 +27,7 @@ export class ListPage implements OnInit, OnDestroy {
   private socketService  = inject(SocketService);
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
-  private router         = inject(Router);
+  private translate      = inject(TranslateService);
 
   approvals = signal<PendingApproval[]>([]);
   count     = signal(0);
@@ -113,12 +112,14 @@ export class ListPage implements OnInit, OnDestroy {
   }
 
   async approve(a: PendingApproval) {
-    const ok = await this.alertService.show('Approve', `Approve ${a.actionCategory} on ${a.targetLabel || a.targetAddress}? This will run the on-chain call now.`, 'Approve');
+    const approveLabel = this.translate.instant('approvals.list.approve');
+    const message = this.translate.instant('approvals.list.approveConfirm', { category: a.actionCategory, target: a.targetLabel || a.targetAddress });
+    const ok = await this.alertService.show(approveLabel, message, approveLabel);
     if (!ok) return;
-    this.loadingService.show('Approving...');
+    this.loadingService.show(this.translate.instant('approvals.list.approving'));
     try {
       const res = await this.apiService.vaultApprovalApprove(a.requestId);
-      if (res?.error) this.alertService.show('Error', res.error);
+      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
       else            await this.load();
     } finally {
       this.loadingService.hide();
@@ -126,14 +127,16 @@ export class ListPage implements OnInit, OnDestroy {
   }
 
   async reject(a: PendingApproval) {
-    const reason = window.prompt('Reject reason (required):', '');
+    const reason = window.prompt(this.translate.instant('approvals.list.rejectReasonPrompt'), '');
     if (!reason || !reason.trim()) return;
-    const ok = await this.alertService.show('Reject', `Reject ${a.actionCategory} on ${a.targetLabel || a.targetAddress}?`, 'Reject');
+    const rejectLabel = this.translate.instant('approvals.list.reject');
+    const message = this.translate.instant('approvals.list.rejectConfirm', { category: a.actionCategory, target: a.targetLabel || a.targetAddress });
+    const ok = await this.alertService.show(rejectLabel, message, rejectLabel);
     if (!ok) return;
-    this.loadingService.show('Rejecting...');
+    this.loadingService.show(this.translate.instant('approvals.list.rejecting'));
     try {
       const res = await this.apiService.vaultApprovalReject(a.requestId, reason.trim());
-      if (res?.error) this.alertService.show('Error', res.error);
+      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
       else            await this.load();
     } finally {
       this.loadingService.hide();
@@ -141,20 +144,18 @@ export class ListPage implements OnInit, OnDestroy {
   }
 
   async cancel(a: PendingApproval) {
-    const ok = await this.alertService.show('Cancel request', `Withdraw your request ${a.requestId.slice(0, 8)}?`, 'Withdraw');
+    const withdrawLabel = this.translate.instant('approvals.list.withdraw');
+    const message = this.translate.instant('approvals.list.cancelConfirm', { id: a.requestId.slice(0, 8) });
+    const ok = await this.alertService.show(this.translate.instant('approvals.list.cancelRequestTitle'), message, withdrawLabel);
     if (!ok) return;
-    this.loadingService.show('Cancelling...');
+    this.loadingService.show(this.translate.instant('approvals.list.cancelling'));
     try {
       const res = await this.apiService.vaultApprovalCancel(a.requestId);
-      if (res?.error) this.alertService.show('Error', res.error);
+      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
       else            await this.load();
     } finally {
       this.loadingService.hide();
     }
-  }
-
-  openPolicy() {
-    this.router.navigate(['/authorized/approvals/policy']);
   }
 
   formatDate(ms: number | null): string {

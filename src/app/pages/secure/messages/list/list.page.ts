@@ -2,12 +2,13 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../shared/services/api.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
@@ -25,8 +26,13 @@ export class ListPage implements OnInit, OnDestroy {
   private socketService  = inject(SocketService);
   private router         = inject(Router);
   private loadingService = inject(LoadingService);
+  private translate = inject(TranslateService);
   private modalNewThread = inject(ModalNewThreadService);
+  private authService    = inject(AuthService);
   utils                  = inject(UtilsService);
+
+  // Security officer (role 4) — read-only full-audit view: no compose surface.
+  get isReadOnly(): boolean { return Number(this.authService.userInfo?.role) === 4; }
 
   threads        = signal<ConnectThread[]>([]);
   threadsCount   = 0;
@@ -61,7 +67,7 @@ export class ListPage implements OnInit, OnDestroy {
 
   async loadThreads(silent = false) {
     if (silent) this.refreshing.set(true);
-    if (!silent) this.loadingService.show('Loading messages...');
+    if (!silent) this.loadingService.show(this.translate.instant('messages.loadingList'));
     try {
       const result = await this.apiService.connectThreadsList(1, 100);
       if (result?.threads) {

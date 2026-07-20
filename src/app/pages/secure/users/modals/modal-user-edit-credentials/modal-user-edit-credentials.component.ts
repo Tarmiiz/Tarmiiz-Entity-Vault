@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { ModalUserCredentialsService, CredentialsUserData } from './modal-user-edit-credentials.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 
@@ -9,10 +10,11 @@ import { AlertService } from '../../../../../shared/components/alerts/alert/aler
   templateUrl: './modal-user-edit-credentials.component.html',
   styleUrls: ['./modal-user-edit-credentials.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],  
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalUserEditCredentialsComponent {
   private alertService = inject(AlertService);
+  private translate = inject(TranslateService);
 
   editUserCredentialsService = inject(ModalUserCredentialsService);
   private fb: FormBuilder = inject(FormBuilder);
@@ -44,7 +46,7 @@ export class ModalUserEditCredentialsComponent {
 
   onSave(): void {
     if (this.editForm.value.password !== this.editForm.value.password2) {
-      this.alertService.show('Passwords Mismatch', 'Passwords do not match.');
+      this.alertService.show(this.translate.instant('users.editCredentialsModal.passwordsMismatchTitle'), this.translate.instant('users.editCredentialsModal.passwordsMismatchMessage'));
       return;
     }
 
@@ -52,11 +54,11 @@ export class ModalUserEditCredentialsComponent {
       const currentUsername = this.editUserCredentialsService.user()?.username ?? '';
       const newUsername = this.editForm.value.username ?? '';
       if (!newUsername) {
-        this.alertService.show('Invalid Username', 'Please enter a new username.');
+        this.alertService.show(this.translate.instant('users.editCredentialsModal.invalidUsernameTitle'), this.translate.instant('users.editCredentialsModal.invalidUsernameRequiredMessage'));
         return;
       }
       if (newUsername === currentUsername) {
-        this.alertService.show('Invalid Username', 'The new username must be different from the current one.');
+        this.alertService.show(this.translate.instant('users.editCredentialsModal.invalidUsernameTitle'), this.translate.instant('users.editCredentialsModal.invalidUsernameSameMessage'));
         return;
       }
     }

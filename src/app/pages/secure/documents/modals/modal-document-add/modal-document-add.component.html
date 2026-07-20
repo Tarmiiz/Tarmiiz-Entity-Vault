@@ -3,56 +3,66 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
 
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Document</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'documents.addModal.title' | translate }}</h3>
       </div>
 
       <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">File <span class="text-red-500">*</span></label>
+          <label class="block text-sm font-medium text-gray-700">{{ 'documents.addModal.fileLabel' | translate }} <span class="text-red-500">*</span></label>
           <input type="file" (change)="onFileSelected($event)"
             class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-indigo-700 file:text-white hover:file:bg-indigo-800 cursor-pointer">
           @if (selectedFile()) {
-            <p class="text-xs text-gray-500 mt-1">Selected: {{ selectedFile()!.name }} ({{ selectedFile()!.type || 'unknown type' }})</p>
+            <p class="text-xs text-gray-500 mt-1">{{ 'documents.addModal.selectedFilePrefix' | translate }} {{ selectedFile()!.name }} ({{ selectedFile()!.type || ('documents.addModal.unknownType' | translate) }})</p>
           }
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Title <span class="text-red-500">*</span></label>
-          <input type="text" placeholder="Document title"
+          <label class="block text-sm font-medium text-gray-700">{{ 'documents.addModal.titleLabel' | translate }} <span class="text-red-500">*</span></label>
+          <input type="text" [placeholder]="'documents.addModal.titlePlaceholder' | translate"
             [ngModel]="title()" (ngModelChange)="title.set($event)"
             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Description</label>
-          <textarea rows="3" placeholder="Optional description"
+          <label class="block text-sm font-medium text-gray-700">{{ 'common.description' | translate }}</label>
+          <textarea rows="3" [placeholder]="'documents.addModal.descriptionPlaceholder' | translate"
             [ngModel]="description()" (ngModelChange)="description.set($event)"
             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none">
           </textarea>
         </div>
 
         <div class="flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700">Visibility</label>
+          <label class="text-sm font-medium text-gray-700">{{ 'documents.addModal.visibilityLabel' | translate }}</label>
           <div class="flex gap-4">
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="radio" name="visibility" [value]="1"
                 [checked]="documentType() === 1" (change)="documentType.set(1)"
                 class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-sm text-gray-700">Public</span>
+              <span class="text-sm text-gray-700">{{ 'documents.type.public' | translate }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="radio" name="visibility" [value]="2"
                 [checked]="documentType() === 2" (change)="documentType.set(2)"
                 class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-sm text-gray-700">Private</span>
+              <span class="text-sm text-gray-700">{{ 'documents.type.private' | translate }}</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="visibility" [value]="3"
+                [checked]="documentType() === 3" (change)="documentType.set(3)"
+                class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-sm text-gray-700">{{ 'documents.type.internal' | translate }}</span>
             </label>
           </div>
         </div>
 
+        @if (documentType() === 3) {
+          <p class="text-xs text-gray-500">{{ 'documents.addModal.internalHint' | translate }}</p>
+        }
+
         @if (isPrivate()) {
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Share with (optional)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ 'documents.addModal.shareWithOptional' | translate }}</label>
 
             <div class="flex flex-wrap gap-1 mb-2">
               @for (k of ['entity','regulator','service','subscription']; track k) {
@@ -66,13 +76,13 @@
                   [class.border-gray-300]="recipientKind() !== k"
                   [class.hover:bg-gray-50]="recipientKind() !== k"
                   (click)="setRecipientKind($any(k))">
-                  {{ recipientKindLabel($any(k)) }}
+                  {{ ('partyType.' + $any(k)) | translate }}
                 </button>
               }
             </div>
 
             <div class="relative">
-              <input type="text" placeholder="Name or address…"
+              <input type="text" [placeholder]="'documents.addModal.recipientSearchPlaceholder' | translate"
                 [ngModel]="recipientQuery()" (ngModelChange)="recipientQuery.set($event)"
                 class="w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
               @if (recipientSearching()) {
@@ -91,7 +101,7 @@
                        (click)="toggleRecipient(r)">
                     <div class="min-w-0 flex items-center gap-2">
                       <span class="px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0" [class]="recipientKindBadgeClass(r.type)">
-                        {{ recipientKindLabel(r.type) }}
+                        {{ ('partyType.' + r.type) | translate }}
                       </span>
                       <div class="min-w-0">
                         <div class="text-sm font-medium text-gray-800 truncate">{{ r.name }}</div>
@@ -105,19 +115,19 @@
                 }
               </div>
             } @else if (recipientQuery().length >= 2 && !recipientSearching()) {
-              <p class="mt-2 text-[11px] text-gray-500">No matches.</p>
+              <p class="mt-2 text-[11px] text-gray-500">{{ 'documents.addModal.noMatches' | translate }}</p>
             }
 
             @if (recipientSelected().length > 0) {
               <div class="mt-3">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-gray-500">Selected ({{ recipientSelected().length }})</span>
+                  <span class="text-xs text-gray-500">{{ 'documents.addModal.selectedCount' | translate:{ count: recipientSelected().length } }}</span>
                 </div>
                 <div class="flex flex-wrap gap-1">
                   @for (s of recipientSelected(); track s.address) {
                     <span class="inline-flex items-center gap-1 bg-indigo-100 text-indigo-800 pl-1 pr-2 py-0.5 rounded text-xs">
                       <span class="px-1.5 py-0.5 rounded text-[10px] font-medium" [class]="recipientKindBadgeClass(s.type)">
-                        {{ recipientKindLabel(s.type) }}
+                        {{ ('partyType.' + s.type) | translate }}
                       </span>
                       {{ s.name }}
                       <button type="button" class="ml-0.5 text-red-600 hover:text-red-800" (click)="toggleRecipient(s)">✕</button>
@@ -127,7 +137,7 @@
               </div>
             }
 
-            <p class="text-xs text-gray-500 mt-2">Each recipient must have published an encryption public key on-chain.</p>
+            <p class="text-xs text-gray-500 mt-2">{{ 'documents.addModal.recipientKeyHint' | translate }}</p>
           </div>
         }
 
@@ -136,11 +146,11 @@
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="onCancel()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Cancel
+          {{ 'common.cancel' | translate }}
         </button>
         <button type="button" (click)="onSave()" [disabled]="!isValid()"
           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
-          Add Document
+          {{ 'documents.addModal.title' | translate }}
         </button>
       </div>
 

@@ -1,10 +1,10 @@
 <app-header [title]="'dex.orders.title' | translate"></app-header>
 
 <div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
-  <nav class="flex" aria-label="Breadcrumb">
+  <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/dex/orders/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX Orders</a>
+        <a routerLink="/authorized/dex/orders/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.orders.details.breadcrumb' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -25,12 +25,12 @@
         <button (click)="setTab('info')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'info'" [class.border-b-2]="activeTab() === 'info'" [class.border-blue-600]="activeTab() === 'info'" [class.bg-blue-600]="activeTab() === 'info'">
-          Information
+          {{ 'dex.orders.details.tabs.info' | translate }}
         </button>
         <button (click)="setTab('trades')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'trades'" [class.border-b-2]="activeTab() === 'trades'" [class.border-blue-600]="activeTab() === 'trades'" [class.bg-blue-600]="activeTab() === 'trades'">
-          Linked Trades ({{ linkedTrades().length }})
+          {{ 'dex.orders.details.tabs.linkedTrades' | translate: { count: linkedTrades().length } }}
         </button>
       </div>
     </div>
@@ -42,39 +42,39 @@
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
-                  <h2 class="text-1xl font-bold text-gray-800">Order #{{ o.orderId }}</h2>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ 'dex.orders.details.heading' | translate: { id: o.orderId } }}</h2>
                   <p class="text-xs text-gray-500 mt-0.5">{{ o.assetName || o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</p>
                 </div>
                 <div class="flex flex-col items-end gap-2">
                   <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStatusClass(o.status)">{{ o.statusName || o.status }}</span>
-                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? 'Buy' : 'Sell') }}</span>
+                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || ((o.side === 1 ? 'dex.orders.side.buy' : 'dex.orders.side.sell') | translate) }}</span>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Asset</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.table.asset' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.assetName || '—' }} <span class="text-gray-500">({{ o.assetSymbol || '—' }})</span></p>
                   <p class="text-xs text-gray-500 font-mono break-all">{{ o.baseAsset }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Market Scope</p>
-                  <p class="text-base text-gray-700">{{ o.marketScopeName || ('Tier ' + o.marketScope) }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.marketScope' | translate }}</p>
+                  <p class="text-base text-gray-700">{{ o.marketScopeName || ('dex.tierFallback' | translate: { n: o.marketScope }) }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Price</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.table.price' | translate }}</p>
                   <p class="text-base text-gray-700">{{ fmtPrice(o.price) }} {{ o.currencyName || '' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Currency</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.currency' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.currencyName || o.currencyCode || '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Amount</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.table.amount' | translate }}</p>
                   <p class="text-base text-gray-700">{{ fmtAmount(o.amount) }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Filled / Remaining</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.filledRemaining' | translate }}</p>
                   <div class="flex items-center gap-2 mt-1">
                     <div class="flex-1 bg-gray-200 rounded-full h-2">
                       <div class="bg-indigo-500 h-2 rounded-full" [style.width.%]="fillPct(o)"></div>
@@ -83,37 +83,37 @@
                   </div>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Credit Withheld</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.creditWithheld' | translate }}</p>
                   <p class="text-base text-gray-700">{{ fmtPrice(o.creditWithheld) }} {{ o.currencyName || '' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Asset Withheld</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.assetWithheld' | translate }}</p>
                   <p class="text-base text-gray-700">{{ fmtAmount(o.assetWithheld) }}</p>
                 </div>
                 <div class="border-t pt-4 col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Venue</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.table.venue' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.dexServiceName || '—' }}</p>
                   <p class="text-xs text-gray-500 font-mono break-all">{{ o.dexService }}</p>
                 </div>
                 <div class="border-t pt-4 col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Subscription</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.subscription' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.subscriptionName || '—' }}</p>
                   <p class="text-xs text-gray-500 font-mono break-all">{{ o.subscription }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.countryName || '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Withhold Trx ID</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.withholdTrxId' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.withholdTrxId || '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Created</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.createdAt' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Last Updated</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.lastUpdated' | translate }}</p>
                   <p class="text-base text-gray-700">{{ o.updatedAt ? utils.formatDate(o.updatedAt) : '—' }}</p>
                 </div>
               </div>
@@ -121,7 +121,7 @@
               <div class="mt-6 flex justify-end gap-2">
                 <button (click)="cancel()" [disabled]="!canCancel()"
                   class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  Cancel Order
+                  {{ 'dex.orders.cancelConfirm.confirm' | translate }}
                 </button>
               </div>
             </div>
@@ -134,17 +134,17 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th class="px-6 py-2">Executed</th>
-                    <th class="px-6 py-2">Seller</th>
-                    <th class="px-6 py-2">Buyer</th>
-                    <th class="px-6 py-2 text-right">Amount</th>
-                    <th class="px-6 py-2 text-right">Price</th>
-                    <th class="px-6 py-2 text-right">Credit</th>
+                    <th class="px-6 py-2">{{ 'dex.orders.details.trades.executed' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.orders.details.trades.seller' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.orders.details.trades.buyer' | translate }}</th>
+                    <th class="px-6 py-2 text-right">{{ 'dex.orders.table.amount' | translate }}</th>
+                    <th class="px-6 py-2 text-right">{{ 'dex.orders.table.price' | translate }}</th>
+                    <th class="px-6 py-2 text-right">{{ 'dex.orders.details.trades.credit' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (linkedTrades().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="6">no trades for this order</td></tr>
+                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="6">{{ 'dex.orders.details.trades.empty' | translate }}</td></tr>
                   } @else {
                     @for (t of linkedTrades(); track t.tradeId) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors bg-white"
@@ -162,7 +162,7 @@
               </table>
             </div>
             <div class="flex items-center px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ linkedTrades().length }} Trades</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'dex.orders.details.trades.footer' | translate: { count: linkedTrades().length } }}</p>
             </div>
           </div>
         }

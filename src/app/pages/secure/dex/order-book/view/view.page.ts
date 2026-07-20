@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
@@ -31,6 +31,7 @@ export class ViewPage implements OnInit, OnDestroy {
   private socket = inject(SocketService);
   private auth = inject(AuthService);
   utils = inject(UtilsService);
+  private translate = inject(TranslateService);
 
   baseAsset = signal<string>('');
   scope = signal<'venue' | 'country' | 'global'>('venue');
@@ -121,15 +122,15 @@ export class ViewPage implements OnInit, OnDestroy {
     const sell = this.selectedSell();
     if (buy === null || sell === null) return;
     const ok = await this.alertService.show(
-      'Match orders',
-      `Match buy #${buy} with sell #${sell}? This will execute a trade if prices cross — the seller's price wins.`,
-      'Match'
+      this.translate.instant('dex.orderBook.matchConfirm.title'),
+      this.translate.instant('dex.orderBook.matchConfirm.message', { buy, sell }),
+      this.translate.instant('dex.orderBook.matchConfirm.confirm')
     );
     if (!ok) return;
-    this.loadingService.show('Matching orders...');
+    this.loadingService.show(this.translate.instant('dex.orderBook.matchingOrders'));
     try {
       const r = await this.apiService.vaultDexMatchOrders(buy, sell);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       this.selectedBuy.set(null);
       this.selectedSell.set(null);
       await this.refresh();

@@ -3,11 +3,11 @@
 <!-- breadcrumb -->
 <div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
   @if (subscription(); as op) {
-    <nav class="flex" aria-label="Breadcrumb">
+    <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
         <li class="inline-flex items-center">
           <a routerLink="/authorized/subscriptions/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
-            Subscriptions
+            {{ 'subscriptions.title' | translate }}
           </a>
         </li>
         <li>
@@ -38,7 +38,7 @@
           [class.border-blue-600]="activeTab() === 'overview'"
           [class.bg-blue-600]="activeTab() === 'overview'"
         >
-          Overview
+          {{ 'subscriptions.details.tabs.overview' | translate }}
         </button>
         <button (click)="setTab('info')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -47,7 +47,7 @@
           [class.border-blue-600]="activeTab() === 'info'"
           [class.bg-blue-600]="activeTab() === 'info'"
         >
-          Information
+          {{ 'subscriptions.details.tabs.info' | translate }}
         </button>
         <button (click)="setTab('holdings')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -56,7 +56,7 @@
           [class.border-blue-600]="activeTab() === 'holdings'"
           [class.bg-blue-600]="activeTab() === 'holdings'"
         >
-          Holdings
+          {{ 'subscriptions.details.tabs.holdings' | translate }}
         </button>
         <button (click)="setTab('trxs')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -65,7 +65,7 @@
           [class.border-blue-600]="activeTab() === 'trxs'"
           [class.bg-blue-600]="activeTab() === 'trxs'"
         >
-          Transactions
+          {{ 'subscriptions.details.tabs.transactions' | translate }}
         </button>
         <button (click)="setTab('credit')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -74,7 +74,7 @@
           [class.border-blue-600]="activeTab() === 'credit'"
           [class.bg-blue-600]="activeTab() === 'credit'"
         >
-          Credit
+          {{ 'subscriptions.details.tabs.credit' | translate }}
         </button>
         @if (features.systemFunctionEnabled('view-documents')) {
           <button (click)="setTab('docs')"
@@ -84,7 +84,7 @@
             [class.border-blue-600]="activeTab() === 'docs'"
             [class.bg-blue-600]="activeTab() === 'docs'"
           >
-            Documents
+            {{ 'subscriptions.details.tabs.documents' | translate }}
           </button>
         }
       </div>
@@ -103,40 +103,40 @@
               <p class="text-xs text-gray-400 font-mono">{{ v.subscription }}</p>
               <div class="flex items-center gap-2">
                 @if (v.suspended) {
-                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'state.suspended' | translate }}</span>
                 }
                 <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ v.stateName }}</span>
               </div>
             </div>
             @if (suspensionReason()) {
-              <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+              <p class="text-xs text-red-600 mt-1">{{ 'common.reason' | translate }}: {{ suspensionReason() }}</p>
             }
 
             <!-- Portfolio summary -->
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
               <div class="flex items-center justify-between mb-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Portfolio</p>
-                <p class="text-xs text-gray-500">Assets Held: <span class="font-semibold text-gray-800">{{ holdings().length }}</span></p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ 'subscriptions.details.overview.portfolio' | translate }}</p>
+                <p class="text-xs text-gray-500">{{ 'subscriptions.details.overview.assetsHeld' | translate }} <span class="font-semibold text-gray-800">{{ holdings().length }}</span></p>
               </div>
               @if (holdingsByCurrency().length === 0) {
-                <p class="text-xs text-gray-400">No holdings</p>
+                <p class="text-xs text-gray-400">{{ 'subscriptions.details.holdings.empty' | translate }}</p>
               }
               @for (row of holdingsByCurrency(); track row.currencyCode) {
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-2 pb-2 border-b border-gray-200 last:border-b-0 last:mb-0 last:pb-0">
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">Currency</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.currency' | translate }}</p>
                     <p class="text-base font-semibold text-gray-700">{{ row.currencyCode }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">Market Value</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.marketValue' | translate }}</p>
                     <p class="text-base font-semibold text-indigo-700">{{ row.marketValue | number:'1.2-2' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">Cost Basis</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.costBasis' | translate }}</p>
                     <p class="text-base font-semibold text-gray-800">{{ row.cost | number:'1.2-2' }}</p>
                   </div>
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">P/L</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.pl' | translate }}</p>
                     <p class="text-base font-semibold"
                       [class.text-green-600]="row.pl > 0"
                       [class.text-red-600]="row.pl < 0"
@@ -145,7 +145,7 @@
                     </p>
                   </div>
                   <div>
-                    <p class="text-xs text-gray-500 mb-1">P/L %</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.plPercent' | translate }}</p>
                     @if (row.plPct !== null) {
                       <p class="text-base font-semibold"
                         [class.text-green-600]="row.pl > 0"
@@ -164,14 +164,14 @@
             <!-- Credit balance summary -->
             @if (activeCreditBalances().length > 0) {
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Credit Balance</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'subscriptions.details.overview.creditBalance' | translate }}</p>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                   @for (bal of activeCreditBalances(); track bal.currencyCode) {
                     <div>
                       <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} <span class="badge-currency">{{ bal.currencySymbol }}</span></p>
                       <p class="text-base font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</p>
-                      <p class="text-xs text-gray-500 mt-1">Withheld: <span class="font-semibold text-amber-700">{{ bal.withheld | number:'1.2-2' }}</span></p>
-                      <p class="text-xs text-gray-500">Available: <span class="font-semibold text-green-700">{{ bal.available | number:'1.2-2' }}</span></p>
+                      <p class="text-xs text-gray-500 mt-1">{{ 'subscriptions.details.withheld' | translate }}: <span class="font-semibold text-amber-700">{{ bal.withheld | number:'1.2-2' }}</span></p>
+                      <p class="text-xs text-gray-500">{{ 'subscriptions.details.available' | translate }}: <span class="font-semibold text-green-700">{{ bal.available | number:'1.2-2' }}</span></p>
                     </div>
                   }
                 </div>
@@ -180,22 +180,22 @@
 
             <!-- Transactions summary -->
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Transactions</p>
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'subscriptions.details.tabs.transactions' | translate }}</p>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Total</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.total' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ transactions().length }}</p>
                 </div>
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Subscribes</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.subscribes' | translate }}</p>
                   <p class="text-base font-semibold text-green-700">{{ subscribeCount() }}</p>
                 </div>
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Redeems</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.redeems' | translate }}</p>
                   <p class="text-base font-semibold text-orange-600">{{ redeemCount() }}</p>
                 </div>
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Last Transaction</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.lastTransaction' | translate }}</p>
                   @if (lastTrx(); as lt) {
                     <p class="text-xs font-medium text-gray-700">{{ lt.time * 1000 | date:'dd/MM/yyyy HH:mm' }}</p>
                   } @else {
@@ -219,7 +219,7 @@
                 <div class="flex items-center gap-2">
                   @if (v.suspended) {
                     <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">
-                      Suspended
+                      {{ 'state.suspended' | translate }}
                     </span>
                   }
                   <span
@@ -231,39 +231,39 @@
                 </div>
               </div>
               @if (suspensionReason()) {
-                <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+                <p class="text-xs text-red-600 mt-1">{{ 'common.reason' | translate }}: {{ suspensionReason() }}</p>
               }
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Service</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'subscriptions.details.info.service' | translate }}</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(v.service)">{{ v.serviceName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Created At</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'subscriptions.details.info.createdAt' | translate }}</p>
                   <p class="text-base">{{ v.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Validator</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'subscriptions.details.info.validator' | translate }}</p>
                   <div class="flex items-center gap-2 flex-wrap">
                     <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoService(v.validator)">{{ v.validatorName }}</p>
                     @if (v.validatorActive === false) {
-                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" title="The validator that verified this subscriber is no longer active. The subscription remains operable; a fresh verification is needed before any new subscription can be created.">
-                        Inactive
+                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" [title]="'subscriptions.details.info.validatorInactiveTooltip' | translate">
+                        {{ 'subscriptions.details.info.inactive' | translate }}
                       </span>
                     }
                   </div>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Validator Verification</p>
-                  <p class="text-base">ID: {{ v.validatorVerificationId }} &mdash; {{ v.validatorTimestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'subscriptions.details.info.validatorVerification' | translate }}</p>
+                  <p class="text-base">{{ 'subscriptions.details.info.verificationIdPrefix' | translate }}: {{ v.validatorVerificationId }} &mdash; {{ v.validatorTimestamp * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Regulator</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'subscriptions.details.info.regulator' | translate }}</p>
                   <p class="text-base">{{ v.regulatorName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Entity</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'subscriptions.details.info.entity' | translate }}</p>
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoEntity(v.entity)">{{ v.entityName }}</p>
                 </div>
               </div>
@@ -273,7 +273,7 @@
                   @if (features.systemFunctionEnabled('subscription-change-state')) {
                     <button (click)="openChangeStateModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                      Change State
+                      {{ 'subscriptions.details.info.changeState' | translate }}
                     </button>
                   }
                 </div>
@@ -290,43 +290,43 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Asset</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.holdings.asset' | translate }}</label>
                   <select [ngModel]="filterHoldingAsset()" (ngModelChange)="filterHoldingAsset.set($event); holdingPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (a of uniqueHoldingAssets(); track a[0]) {
                       <option [value]="a[0]">{{ a[1] }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.currency' | translate }}</label>
                   <select [ngModel]="filterHoldingCurrency()" (ngModelChange)="filterHoldingCurrency.set($event); holdingPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueHoldingCurrencies(); track c) {
                       <option [value]="c">{{ c }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Balance</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.holdings.balance' | translate }}</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterHoldingBalanceOp()" (ngModelChange)="filterHoldingBalanceOp.set($event); holdingPage.set(0)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                      <option value="">Any</option>
+                      <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
                     <input type="number" min="0" [ngModel]="filterHoldingBalanceAmt()" (ngModelChange)="filterHoldingBalanceAmt.set($event === '' || $event === null ? null : +$event); holdingPage.set(0)"
-                      placeholder="Amount"
+                      [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearHoldingFilters()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -336,7 +336,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -345,7 +345,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -358,24 +358,24 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th scope="col" class="px-6 py-2">Asset</th>
-                    <th scope="col" class="px-6 py-2">Symbol</th>
-                    <th scope="col" class="px-6 py-2">Currency</th>
-                    <th scope="col" class="px-6 py-2 text-right">Balance</th>
-                    <th scope="col" class="px-6 py-2 text-right">Withheld</th>
-                    <th scope="col" class="px-6 py-2 text-right">Held</th>
-                    <th scope="col" class="px-6 py-2 text-right">Available</th>
-                    <th scope="col" class="px-6 py-2 text-right">Cost</th>
-                    <th scope="col" class="px-6 py-2 text-right">Value</th>
-                    <th scope="col" class="px-6 py-2 text-right">P/L</th>
-                    <th scope="col" class="px-6 py-2 text-right">P/L %</th>
+                    <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.holdings.asset' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.currency' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.holdings.balance' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.withheld' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.holdings.held' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.available' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.holdings.cost' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.value' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.pl' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.plPercent' | translate }}</th>
                     <th scope="col" class="px-6 py-2 text-center"></th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (filteredHoldings().length === 0) {
                     <tr class="bg-white border-b hover:bg-gray-50">
-                      <td colspan="12" class="px-6 py-2">no data</td>
+                      <td colspan="12" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                     </tr>
                   } @else {
                     @for (h of pagedHoldings(); track h.asset; let isEven = $even) {
@@ -416,8 +416,8 @@
                           @if ((h.regulatorActiveHolds ?? 0) > 0 || (h.regulatorHeld ?? 0) > 0) {
                             <button (click)="toggleHoldsRow(h, $event)"
                               class="text-[11px] px-2 py-1 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors"
-                              title="View regulator holds on this position">
-                              {{ expandedHoldsAsset() === h.asset ? 'Hide' : 'View' }}
+                              [title]="'subscriptions.details.holdings.viewHoldsTooltip' | translate">
+                              {{ (expandedHoldsAsset() === h.asset ? 'subscriptions.details.holdings.hide' : 'common.view') | translate }}
                             </button>
                           }
                         </td>
@@ -425,20 +425,20 @@
                       @if (expandedHoldsAsset() === h.asset) {
                         <tr class="bg-amber-50 border-b">
                           <td colspan="12" class="px-6 py-3">
-                            <div class="text-xs font-semibold text-amber-900 mb-2">Regulator Holds on {{ h.assetSymbol || h.assetName }}</div>
+                            <div class="text-xs font-semibold text-amber-900 mb-2">{{ 'subscriptions.details.holdings.regulatorHoldsOn' | translate }} {{ h.assetSymbol || h.assetName }}</div>
                             @if ((holdsByAsset()[h.asset]?.length ?? 0) === 0) {
-                              <div class="text-xs text-gray-500">No holds recorded.</div>
+                              <div class="text-xs text-gray-500">{{ 'subscriptions.details.holdings.noHoldsRecorded' | translate }}</div>
                             } @else {
                               <table class="w-full text-xs">
                                 <thead class="text-[11px] uppercase text-gray-600">
                                   <tr>
-                                    <th class="px-2 py-1 text-left">#</th>
-                                    <th class="px-2 py-1 text-right">Amount</th>
-                                    <th class="px-2 py-1 text-right">Released</th>
-                                    <th class="px-2 py-1 text-right">Remaining</th>
-                                    <th class="px-2 py-1 text-left">State</th>
-                                    <th class="px-2 py-1 text-left">Reason</th>
-                                    <th class="px-2 py-1 text-left">Created</th>
+                                    <th class="px-2 py-1 text-left">{{ 'common.id' | translate }}</th>
+                                    <th class="px-2 py-1 text-right">{{ 'common.amount' | translate }}</th>
+                                    <th class="px-2 py-1 text-right">{{ 'subscriptions.details.holdings.released' | translate }}</th>
+                                    <th class="px-2 py-1 text-right">{{ 'subscriptions.details.holdings.remaining' | translate }}</th>
+                                    <th class="px-2 py-1 text-left">{{ 'common.state' | translate }}</th>
+                                    <th class="px-2 py-1 text-left">{{ 'common.reason' | translate }}</th>
+                                    <th class="px-2 py-1 text-left">{{ 'common.createdAt' | translate }}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -475,18 +475,18 @@
               </table>
             </div>
             <div class="flex items-center justify-between px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ pagedHoldings().length }} of {{ filteredHoldings().length }} Holdings</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: pagedHoldings().length, total: filteredHoldings().length } }} {{ 'subscriptions.details.tabs.holdings' | translate }}</p>
               @if (totalHoldingPages() > 1) {
                 <div class="flex items-center gap-3 text-xs text-gray-600">
-                  <span>Page {{ holdingPage() + 1 }} of {{ totalHoldingPages() }}</span>
+                  <span>{{ 'common.pageOf' | translate: { page: holdingPage() + 1, pages: totalHoldingPages() } }}</span>
                   <div class="flex gap-2">
                     <button (click)="holdingPage.set(holdingPage() - 1)" [disabled]="holdingPage() === 0"
                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      Prev
+                      {{ 'common.prev' | translate }}
                     </button>
                     <button (click)="holdingPage.set(holdingPage() + 1)" [disabled]="holdingPage() >= totalHoldingPages() - 1"
                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      Next
+                      {{ 'common.next' | translate }}
                     </button>
                   </div>
                 </div>
@@ -503,62 +503,62 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Type</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
                   <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
-                    <option value="Subscribe">Subscribe</option>
-                    <option value="Redeem">Redeem</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
+                    <option value="Subscribe">{{ 'subscriptions.details.transactions.subscribeOption' | translate }}</option>
+                    <option value="Redeem">{{ 'subscriptions.details.transactions.redeemOption' | translate }}</option>
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Asset</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.holdings.asset' | translate }}</label>
                   <select [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (a of uniqueAssets(); track a[0]) {
                       <option [value]="a[0]">{{ a[1] }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Tokens</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.transactions.tokens' | translate }}</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterTokensOp()" (ngModelChange)="filterTokensOp.set($event); trxPage.set(0)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                      <option value="">Any</option>
+                      <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
                     <input type="number" min="0" [ngModel]="filterTokensAmt()" (ngModelChange)="filterTokensAmt.set($event === '' || $event === null ? null : +$event); trxPage.set(0)"
-                      placeholder="Amount"
+                      [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.currency' | translate }}</label>
                   <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueCurrencies(); track c) {
                       <option [value]="c">{{ c }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">From</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
                   <input type="date" [ngModel]="filterStartDate()" (ngModelChange)="filterStartDate.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">To</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
                   <input type="date" [ngModel]="filterEndDate()" (ngModelChange)="filterEndDate.set($event); trxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearFilters()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -568,7 +568,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -577,7 +577,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -590,20 +590,20 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th scope="col" class="px-6 py-2">Date</th>
-                      <th scope="col" class="px-6 py-2">Type</th>
-                      <th scope="col" class="px-6 py-2">Asset</th>
-                      <th scope="col" class="px-6 py-2">Symbol</th>
-                      <th scope="col" class="px-6 py-2 text-center">Currency</th>
-                      <th scope="col" class="px-6 py-2 text-right">Tokens</th>
-                      <th scope="col" class="px-6 py-2 text-right">Price</th>
-                      <th scope="col" class="px-6 py-2 text-right">Total</th>
+                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.date' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.holdings.asset' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-center">{{ 'subscriptions.details.currency' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.transactions.tokens' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.transactions.price' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.total' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredTransactions().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="8" class="px-6 py-2 text-center text-gray-400">No transactions found</td>
+                        <td colspan="8" class="px-6 py-2 text-center text-gray-400">{{ 'subscriptions.details.transactions.empty' | translate }}</td>
                       </tr>
                     }
                     @else {
@@ -624,18 +624,18 @@
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedTransactions().length }} of {{ filteredTransactions().length }} Transactions</p>
+                <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: pagedTransactions().length, total: filteredTransactions().length } }} {{ 'subscriptions.details.tabs.transactions' | translate }}</p>
                 @if (totalTrxPages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
+                    <span>{{ 'common.pageOf' | translate: { page: trxPage() + 1, pages: totalTrxPages() } }}</span>
                     <div class="flex gap-2">
                       <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Prev
+                        {{ 'common.prev' | translate }}
                       </button>
                       <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Next
+                        {{ 'common.next' | translate }}
                       </button>
                     </div>
                   </div>
@@ -651,9 +651,9 @@
 
             <!-- Balance Cards -->
             <div class="bg-gray-50 rounded-lg border border-gray-200 px-3 py-2 flex items-center gap-3 flex-wrap">
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Credit Balances</p>
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ 'subscriptions.details.credit.balancesTitle' | translate }}</p>
               @if (activeCreditBalances().length === 0) {
-                <p class="text-xs text-gray-400 ml-auto">No credit balances</p>
+                <p class="text-xs text-gray-400 ml-auto">{{ 'subscriptions.details.credit.noBalances' | translate }}</p>
               } @else {
                 <div class="flex flex-wrap gap-2 ml-auto">
                   @for (bal of activeCreditBalances(); track bal.currencyCode) {
@@ -661,8 +661,8 @@
                       <span class="text-xs text-gray-500">{{ bal.currencyName }}</span>
                       <span class="badge-currency">{{ bal.currencySymbol }}</span>
                       <span class="text-sm font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</span>
-                      <span class="text-[10px] text-amber-700">W: {{ bal.withheld | number:'1.2-2' }}</span>
-                      <span class="text-[10px] text-green-700">A: {{ bal.available | number:'1.2-2' }}</span>
+                      <span class="text-[10px] text-amber-700">{{ 'subscriptions.details.credit.withheldAbbr' | translate }} {{ bal.withheld | number:'1.2-2' }}</span>
+                      <span class="text-[10px] text-green-700">{{ 'subscriptions.details.credit.availableAbbr' | translate }} {{ bal.available | number:'1.2-2' }}</span>
                     </div>
                   }
                 </div>
@@ -673,54 +673,54 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Type</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
                   <select [ngModel]="filterCreditType()" (ngModelChange)="filterCreditType.set($event); creditTrxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
-                    <option value="Deposit">Deposit</option>
-                    <option value="Withdraw">Withdraw</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="Withhold">Withhold</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
+                    <option value="Deposit">{{ 'subscriptions.details.credit.depositOption' | translate }}</option>
+                    <option value="Withdraw">{{ 'subscriptions.details.credit.withdrawOption' | translate }}</option>
+                    <option value="Transfer">{{ 'subscriptions.details.credit.transferOption' | translate }}</option>
+                    <option value="Withhold">{{ 'subscriptions.details.credit.withholdOption' | translate }}</option>
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.currency' | translate }}</label>
                   <select [ngModel]="filterCreditCurrency()" (ngModelChange)="filterCreditCurrency.set($event); creditTrxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueCreditCurrencies(); track c) {
                       <option [value]="c">{{ c }}</option>
                     }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Amount</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.amount' | translate }}</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterCreditAmountOp()" (ngModelChange)="filterCreditAmountOp.set($event); creditTrxPage.set(0)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                      <option value="">Any</option>
+                      <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
                     <input type="number" min="0" [ngModel]="filterCreditAmountVal()" (ngModelChange)="filterCreditAmountVal.set($event === '' || $event === null ? null : +$event); creditTrxPage.set(0)"
-                      placeholder="Amount"
+                      [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">From</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
                   <input type="date" [ngModel]="filterCreditStartDate()" (ngModelChange)="filterCreditStartDate.set($event); creditTrxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">To</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
                   <input type="date" [ngModel]="filterCreditEndDate()" (ngModelChange)="filterCreditEndDate.set($event); creditTrxPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearCreditFilters()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -730,7 +730,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
-                      Add Credit
+                      {{ 'subscriptions.details.credit.addCredit' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-excel')) {
@@ -739,7 +739,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -748,7 +748,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -761,18 +761,18 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th scope="col" class="px-6 py-2">Date</th>
-                      <th scope="col" class="px-6 py-2">Type</th>
-                      <th scope="col" class="px-6 py-2">Direction</th>
-                      <th scope="col" class="px-6 py-2">Currency</th>
-                      <th scope="col" class="px-6 py-2 text-right">Amount</th>
-                      <th scope="col" class="px-6 py-2">State</th>
+                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.date' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.credit.direction' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.currency' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'common.amount' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if (filteredCreditTransactions().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="6" class="px-6 py-2 text-center text-gray-400">No credit transactions found</td>
+                        <td colspan="6" class="px-6 py-2 text-center text-gray-400">{{ 'subscriptions.details.credit.empty' | translate }}</td>
                       </tr>
                     } @else {
                       @for (trx of pagedCreditTransactions(); track trx.trxId; let isEven = $even) {
@@ -797,18 +797,18 @@
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedCreditTransactions().length }} of {{ filteredCreditTransactions().length }} Credit Transactions</p>
+                <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: pagedCreditTransactions().length, total: filteredCreditTransactions().length } }} {{ 'subscriptions.details.credit.creditTransactionsLabel' | translate }}</p>
                 @if (totalCreditTrxPages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>Page {{ creditTrxPage() + 1 }} of {{ totalCreditTrxPages() }}</span>
+                    <span>{{ 'common.pageOf' | translate: { page: creditTrxPage() + 1, pages: totalCreditTrxPages() } }}</span>
                     <div class="flex gap-2">
                       <button (click)="creditTrxPage.set(creditTrxPage() - 1)" [disabled]="creditTrxPage() === 0"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Prev
+                        {{ 'common.prev' | translate }}
                       </button>
                       <button (click)="creditTrxPage.set(creditTrxPage() + 1)" [disabled]="creditTrxPage() >= totalCreditTrxPages() - 1"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Next
+                        {{ 'common.next' | translate }}
                       </button>
                     </div>
                   </div>
@@ -833,7 +833,7 @@
       }
       @else {
         <div class="text-center py-12 text-gray-500">
-          <p>Loading subscription details...</p>
+          <p>{{ 'subscriptions.details.loadingSubscription' | translate }}</p>
         </div>
       }
 

@@ -3,66 +3,66 @@
 
     <div class="hidden md:flex w-2/5 bg-[var(--brand-primary)] p-10 flex-col justify-center items-start text-white">
       <div class="mb-8">
-        <img src="assets/images/logo.png" alt="">
+        <img src="assets/images/logo.svg" alt="">
       </div>
-      <h2 class="text-3xl font-bold leading-tight mb-4">Claim your admin account</h2>
-      <p class="text-indigo-200 text-lg">Your regulator has registered this entity and emailed you a one-time activation code. Use it once to set your own password.</p>
+      <h2 class="text-3xl font-bold leading-tight mb-4">{{ 'claim.leftPanel.title' | translate }}</h2>
+      <p class="text-indigo-200 text-lg">{{ 'claim.leftPanel.subtitle' | translate }}</p>
     </div>
 
     <div class="w-full md:w-3/5 p-8 sm:p-12 flex flex-col justify-center">
 
       @if (step() === 1) {
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Step 1 — Activation</h1>
-        <p class="text-gray-500 mb-8">Enter your email and the 6-digit activation code from your inbox.</p>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ 'claim.step1.title' | translate }}</h1>
+        <p class="text-gray-500 mb-8">{{ 'claim.step1.subtitle' | translate }}</p>
 
         <form [formGroup]="formActivation" (ngSubmit)="submitActivation()" class="space-y-5">
-          <input type="email" autocomplete="username" placeholder="Email" formControlName="email"
+          <input type="email" autocomplete="username" [placeholder]="'common.email' | translate" formControlName="email"
                  class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition">
 
-          <input type="text" inputmode="numeric" maxlength="6" placeholder="6-digit activation code" formControlName="otp"
+          <input type="text" inputmode="numeric" maxlength="6" [placeholder]="'claim.step1.otpPlaceholder' | translate" formControlName="otp"
                  class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition tracking-[0.5em] text-center font-mono">
 
           <div class="pt-4">
             <button type="submit" [disabled]="isSubmitting()"
                     class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out disabled:opacity-50">
-              VERIFY
+              {{ 'claim.step1.verifyButton' | translate }}
             </button>
           </div>
         </form>
       }
 
       @if (step() === 2) {
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Step 2 — Set your password</h1>
-        <p class="text-gray-500 mb-8">Activated as <strong>{{ email() }}</strong>. Choose a password — at least 8 characters.</p>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ 'claim.step2.title' | translate }}</h1>
+        <p class="text-gray-500 mb-8">{{ 'claim.step2.activatedAs' | translate }} <strong>{{ email() }}</strong>. {{ 'claim.step2.passwordHint' | translate }}</p>
 
         <form [formGroup]="formPassword" (ngSubmit)="submitPassword()" class="space-y-5">
-          <input type="text" autocomplete="name" placeholder="Full name" formControlName="name"
+          <input type="text" autocomplete="name" [placeholder]="'claim.step2.namePlaceholder' | translate" formControlName="name"
                  class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition">
 
-          <input type="text" autocomplete="username" placeholder="Username" formControlName="username"
+          <input type="text" autocomplete="username" [placeholder]="'claim.step2.usernamePlaceholder' | translate" formControlName="username"
                  class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition">
 
-          <input type="password" autocomplete="new-password" placeholder="New password" formControlName="password"
+          <input type="password" autocomplete="new-password" [placeholder]="'claim.step2.newPasswordPlaceholder' | translate" formControlName="password"
                  class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition">
 
-          <input type="password" autocomplete="new-password" placeholder="Confirm password" formControlName="confirm"
+          <input type="password" autocomplete="new-password" [placeholder]="'claim.step2.confirmPasswordPlaceholder' | translate" formControlName="confirm"
                  class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 transition">
 
           <div class="pt-4">
             <button type="submit" [disabled]="isSubmitting()"
                     class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out disabled:opacity-50">
-              CLAIM ACCOUNT
+              {{ 'claim.step2.submitButton' | translate }}
             </button>
           </div>
         </form>
       }
 
       @if (step() === 'done') {
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Account claimed</h1>
-        <p class="text-gray-500 mb-8">Your password is set. Sign in with your email and new password to enter the vault.</p>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ 'claim.done.title' | translate }}</h1>
+        <p class="text-gray-500 mb-8">{{ 'claim.done.subtitle' | translate }}</p>
         <button type="button" (click)="goToLogin()"
                 class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out">
-          GO TO SIGN IN
+          {{ 'claim.done.goToSignIn' | translate }}
         </button>
       }
 

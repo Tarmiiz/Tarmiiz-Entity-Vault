@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
@@ -10,7 +11,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-subscription-state.component.html',
   styleUrls: ['./modal-subscription-state.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalSubscriptionStateComponent {
 

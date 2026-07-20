@@ -5,7 +5,7 @@
 
         <!-- header -->
         <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl flex items-center justify-between">
-          <h3 class="text-xl leading-6 font-semibold text-gray-100">Credit Transaction Details</h3>
+          <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'credit.trxInfoModal.title' | translate }}</h3>
           <div class="flex items-center gap-2">
             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span>
             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span>
@@ -16,26 +16,26 @@
         <div class="p-6 grid grid-cols-2 gap-x-8 gap-y-4 text-sm text-gray-700">
 
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Trx ID</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.trxId' | translate }}</p>
             <p class="font-mono">{{ trx.trxId }}</p>
           </div>
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Currency</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.currency' | translate }}</p>
             <p><span class="font-semibold">{{ trx.currencySymbol }}</span></p>
           </div>
 
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Date & Time</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.dateTime' | translate }}</p>
             <p>{{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
           </div>
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Last Update</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.lastUpdate' | translate }}</p>
             <p>{{ trx.updateTime ? (trx.updateTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}</p>
           </div>
 
           @if (trx.service) {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">Service</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.service' | translate }}</p>
               <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors"
                  (click)="navigate('/authorized/services/details/' + trx.service)">
                 {{ trx.serviceName || trx.service }}
@@ -45,7 +45,7 @@
 
           @if (trx.paymentProcessor && !isZero(trx.paymentProcessor)) {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">Payment Processor</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.paymentProcessor' | translate }}</p>
               <p class="text-gray-700">{{ trx.paymentProcessorName || trx.paymentProcessor }}</p>
               @if (trx.paymentProcessorName) {
                 <p class="font-mono text-xs text-gray-400 break-all">{{ trx.paymentProcessor }}</p>
@@ -55,14 +55,14 @@
 
           @if (trx.from) {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">From</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</p>
               @if (isZero(trx.from)) {
-                <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(mint)</span></p>
+                <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">({{ 'credit.trxInfoModal.mint' | translate }})</span></p>
               } @else if (isSwitch(trx.from)) {
-                <p><span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Credit Switch</span>
-                   <span class="text-xs text-gray-400 ml-1">(routed from another service)</span></p>
+                <p><span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">{{ 'credit.trxInfoModal.creditSwitch' | translate }}</span>
+                   <span class="text-xs text-gray-400 ml-1">({{ 'credit.trxInfoModal.routedFrom' | translate }})</span></p>
               } @else if (isSubscription(trx.from)) {
-                <p class="text-gray-700">Subscription</p>
+                <p class="text-gray-700">{{ 'credit.trxInfoModal.subscription' | translate }}</p>
                 <p class="font-mono text-xs text-gray-400 break-all">{{ trx.from }}</p>
               } @else if (trx.fromName) {
                 <p class="text-gray-700">{{ trx.fromName }}</p>
@@ -74,14 +74,14 @@
           }
           @if (trx.to) {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">To</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</p>
               @if (isZero(trx.to)) {
-                <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">(burn)</span></p>
+                <p class="text-gray-700">{{ trx.serviceName || trx.service }} <span class="text-xs text-gray-400">({{ 'credit.trxInfoModal.burn' | translate }})</span></p>
               } @else if (isSwitch(trx.to)) {
-                <p><span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Credit Switch</span>
-                   <span class="text-xs text-gray-400 ml-1">(routed to another service)</span></p>
+                <p><span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">{{ 'credit.trxInfoModal.creditSwitch' | translate }}</span>
+                   <span class="text-xs text-gray-400 ml-1">({{ 'credit.trxInfoModal.routedTo' | translate }})</span></p>
               } @else if (isSubscription(trx.to)) {
-                <p class="text-gray-700">Subscription</p>
+                <p class="text-gray-700">{{ 'credit.trxInfoModal.subscription' | translate }}</p>
                 <p class="font-mono text-xs text-gray-400 break-all">{{ trx.to }}</p>
               } @else if (trx.toName) {
                 <p class="text-gray-700">{{ trx.toName }}</p>
@@ -95,42 +95,40 @@
           @if (trx.origin === 14) {
             <div class="col-span-2 rounded-lg bg-purple-50 border border-purple-200 px-3 py-2">
               <p class="text-xs text-purple-800">
-                Route transfer — this leg moves credit through the platform's Credit Switch to that
-                same identity's account at another service. The counterparty subscription is resolved
-                on-chain and is not visible at the entity level.
+                {{ 'credit.trxInfoModal.routeTransferNote' | translate }}
               </p>
             </div>
           }
 
           @if (trx.trxData) {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">Data</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.data' | translate }}</p>
               <p class="text-xs break-all whitespace-pre-wrap">{{ trx.trxData }}</p>
             </div>
           }
 
           @if (trx.trxRefNo) {
             <div class="border-t pt-3">
-              <p class="text-xs font-medium text-gray-500">Reference No</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.referenceNo' | translate }}</p>
               <p class="font-mono break-all">{{ trx.trxRefNo }}</p>
             </div>
           }
 
           @if (trx.origin) {
             <div class="border-t pt-3">
-              <p class="text-xs font-medium text-gray-500">Origin</p>
-              <p>{{ trx.originName || ('Origin #' + trx.origin) }}</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.origin' | translate }}</p>
+              <p>{{ trx.originName || (('credit.trxInfoModal.originPrefix' | translate) + trx.origin) }}</p>
             </div>
           }
 
           @if (trx.dataCid) {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">SP Receipt</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.spReceipt' | translate }}</p>
               <div class="flex items-center justify-between gap-3">
                 <p class="font-mono text-xs text-gray-400 break-all" [title]="trx.dataCid">{{ trx.dataCid }}</p>
                 <button type="button" (click)="viewReceipt(trx)"
                   class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors shrink-0">
-                  View SP receipt
+                  {{ 'credit.trxInfoModal.viewSpReceipt' | translate }}
                 </button>
               </div>
             </div>
@@ -138,13 +136,13 @@
 
           @if (trx.assetTrxId) {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">Linked Asset Transaction</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.linkedAssetTrx' | translate }}</p>
               <p class="font-mono">#{{ trx.assetTrxId }}</p>
             </div>
           }
 
           <div class="border-t pt-3 col-span-2">
-            <p class="text-xs font-medium text-gray-500">Amount</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'common.amount' | translate }}</p>
             <p class="text-right font-semibold text-base">{{ trx.amount | number: '1.2-2' }} <span class="text-gray-500 font-normal text-sm">{{ trx.currencySymbol }}</span></p>
           </div>
 
@@ -158,13 +156,13 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
             </svg>
-            Export PDF
+            {{ 'common.exportPdf' | translate }}
           </button>
           } @else {
           <span></span>
           }
           <button type="button" (click)="onClose()" class="px-4 py-2 bg-[var(--brand-primary)] text-white border border-transparent rounded-md shadow-sm hover:bg-[var(--brand-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Close
+            {{ 'common.close' | translate }}
           </button>
         </div>
 

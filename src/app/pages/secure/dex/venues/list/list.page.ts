@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -34,6 +34,7 @@ export class ListPage implements OnInit {
   private venueCreateService = inject(ModalVenueCreateService);
   private authService = inject(AuthService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   get userInfo() { return this.authService.userInfo; }
 
@@ -51,7 +52,7 @@ export class ListPage implements OnInit {
   }
 
   async listVenues() {
-    this.loadingService.show('Loading venues...');
+    this.loadingService.show(this.translate.instant('dex.venues.list.loadingVenues'));
     const result = await this.apiService.vaultDexVenuesList(1, 50);
     if (result?.venues) this.venues.set(result.venues);
     this.loadingService.hide();
@@ -70,10 +71,10 @@ export class ListPage implements OnInit {
 
   stateName(s: number): string {
     switch (s) {
-      case 1: return 'Registered';
-      case 2: return 'Active';
-      case 3: return 'Paused';
-      case 4: return 'Deregistered';
+      case 1: return this.translate.instant('state.registered');
+      case 2: return this.translate.instant('state.active');
+      case 3: return this.translate.instant('state.paused');
+      case 4: return this.translate.instant('state.deregistered');
       default: return String(s);
     }
   }
@@ -101,24 +102,30 @@ export class ListPage implements OnInit {
   async createVenue() {
     const result = await this.venueCreateService.show();
     if (!result) return;
-    this.loadingService.show('Creating venue...');
+    this.loadingService.show(this.translate.instant('dex.venues.list.creatingVenue'));
     try {
       const r = await this.apiService.vaultDexVenueCreate(result.serviceAddress);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.listVenues();
     } finally { this.loadingService.hide(); }
   }
 
   exportExcel() {
+    const serviceLabel = this.translate.instant('dex.venues.table.service');
+    const stateLabel = this.translate.instant('common.state');
+    const suspendedLabel = this.translate.instant('state.suspended');
+    const registeredLabel = this.translate.instant('dex.venues.table.registered');
+    const yesLabel = this.translate.instant('common.yes');
+    const noLabel = this.translate.instant('common.no');
     const rows = this.filteredVenues().map(v => ({
-      'Service':   v.serviceName || v.serviceAddress,
-      'State':     this.stateName(v.state),
-      'Suspended': v.suspended ? 'Yes' : 'No',
-      'Registered': v.registeredAt ? this.utils.formatDate(v.registeredAt) : '—',
+      [serviceLabel]:    v.serviceName || v.serviceAddress,
+      [stateLabel]:      this.stateName(v.state),
+      [suspendedLabel]:  v.suspended ? yesLabel : noLabel,
+      [registeredLabel]: v.registeredAt ? this.utils.formatDate(v.registeredAt) : '—',
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'DEX Venues');
+    XLSX.utils.book_append_sheet(wb, ws, this.translate.instant('dex.venues.fullTitle'));
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `dex_venues_${stamp}.xlsx`);
   }
@@ -128,18 +135,24 @@ export class ListPage implements OnInit {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pad = 14;
     doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-    doc.text('DEX Venues', pad, 15);
+    doc.text(this.translate.instant('dex.venues.fullTitle'), pad, 15);
     autoTable(doc, {
       startY: 28,
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [[ '#', 'Service', 'State', 'Suspended', 'Registered' ]],
+      head: [[
+        this.translate.instant('common.id'),
+        this.translate.instant('dex.venues.table.service'),
+        this.translate.instant('common.state'),
+        this.translate.instant('state.suspended'),
+        this.translate.instant('dex.venues.table.registered'),
+      ]],
       body: venues.map((v, i) => [
         i + 1,
         v.serviceName || v.serviceAddress,
         this.stateName(v.state),
-        v.suspended ? 'Yes' : 'No',
+        v.suspended ? this.translate.instant('common.yes') : this.translate.instant('common.no'),
         v.registeredAt ? this.utils.formatDate(v.registeredAt) : '—',
       ]),
     });

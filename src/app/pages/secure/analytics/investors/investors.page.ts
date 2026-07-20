@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -20,8 +20,8 @@ interface Row {
     <app-header [title]="'analytics.investors.title' | translate"></app-header>
     <div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
       <app-analytics-card
-        title="Holder concentration"
-        subtitle="Top-10 holders' share of circulating supply, per asset. Higher = more concentrated."
+        [title]="'analytics.investors.chart.title' | translate"
+        [subtitle]="'analytics.investors.chart.subtitle' | translate"
         [loading]="loading()"
         [empty]="!loading() && rows().length === 0">
         <div class="h-96">
@@ -33,6 +33,7 @@ interface Row {
 })
 export class InvestorsPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private translate = inject(TranslateService);
 
   @ViewChild('chart') chartRef?: ElementRef<HTMLCanvasElement>;
 
@@ -72,7 +73,7 @@ export class InvestorsPage implements OnInit, OnDestroy {
     this.chartInstance?.destroy();
     this.chartInstance = new Chart(this.chartRef.nativeElement, {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'Top-10 holders %', data: values, backgroundColor: colors }] },
+      data: { labels, datasets: [{ label: this.translate.instant('analytics.investors.chart.datasetLabel'), data: values, backgroundColor: colors }] },
       options: {
         indexAxis: 'y',
         responsive: true,
@@ -82,15 +83,15 @@ export class InvestorsPage implements OnInit, OnDestroy {
             label: (ctx: any) => {
               const r = rows[ctx.dataIndex];
               return [
-                `${ctx.parsed.x.toFixed(2)}% of supply`,
-                `Holders: ${r.holderCount}`,
-                `Top-10 balance: ${r.top10Balance.toLocaleString()}`,
+                this.translate.instant('analytics.investors.chart.tooltipSupply', { pct: ctx.parsed.x.toFixed(2) }),
+                this.translate.instant('analytics.investors.chart.tooltipHolders', { count: r.holderCount }),
+                this.translate.instant('analytics.investors.chart.tooltipTop10Balance', { balance: r.top10Balance.toLocaleString() }),
               ];
             },
           },
         } },
         scales: {
-          x: { beginAtZero: true, max: 100, title: { display: true, text: 'Top-10 % of circulating' } },
+          x: { beginAtZero: true, max: 100, title: { display: true, text: this.translate.instant('analytics.investors.chart.axisTitle') } },
         },
       },
     });

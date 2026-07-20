@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -10,18 +11,27 @@ import { ModalNewThreadService } from './modal-new-thread.service';
 
 type Kind = 'entity' | 'regulator' | 'subscription';
 
+const ZERO_HASH = '0x' + '0'.repeat(64);
+
 interface Candidate {
   address: string;
   name: string;
   type: Kind;
   partyType: number;
+  // Connect v2 handle targeting: a candidate can be a whole party OR a specific
+  // user within an entity/regulator tenant (alice@entityX). `party` is the
+  // messageable party address; `userId`/`handle` are set only for user picks.
+  party?: string;
+  userId?: string;
+  handle?: string;
+  isUser?: boolean;
 }
 
 @Component({
   selector: 'app-modal-new-thread',
   templateUrl: './modal-new-thread.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalNewThreadComponent {
@@ -35,6 +45,7 @@ export class ModalNewThreadComponent {
   selected     = signal<Candidate[]>([]);
   subject      = signal('');
   initialText  = signal('');
+  composeFiles = signal<File[]>([]);
   working      = signal(false);
   stage        = signal('');
   error        = signal('');
@@ -55,21 +66,53 @@ export class ModalNewThreadComponent {
           return of(null);
         }
         this.searching.set(true);
-        return from(this.apiService.connectRecipientsSearch(this.kind(), q));
+        return from(this.runSearch(q));
       }),
       takeUntilDestroyed(this.destroyRef),
-    ).subscribe(resp => {
+    ).subscribe(rows => {
       this.searching.set(false);
-      if (!resp) return;
-      const partyType = this.kindToPartyType(this.kind());
-      const rows: Candidate[] = (resp?.results || []).map((r: any) => ({
-        address: r.address,
-        name:    r.name || r.address,
-        type:    this.kind(),
-        partyType,
-      }));
+      if (!rows) return;
       this.results.set(rows);
     });
+  }
+
+  // Entity/regulator kinds run a UNIFIED search — parties (whole tenants) AND
+  // specific users (handles like alice@entityX) merged into one list.
+  // Subscription kind stays party-only (subscriptions have no sub-users).
+  private async runSearch(q: string): Promise<Candidate[]> {
+    const k = this.kind();
+    const pResp = await this.apiService.connectRecipientsSearch(k, q);
+    const parties: Candidate[] = (pResp?.results || []).map((r: any) => ({
+      address:   r.address,
+      party:     r.address,
+      name:      r.name || r.address,
+      type:      k,
+      partyType: this.kindToPartyType(k),
+    }));
+    if (k === 'subscription') return parties;
+    const uResp = await this.apiService.connectRecipientsSearch('user', q.split('@')[0]);
+    const users: Candidate[] = (uResp?.results || []).map((r: any) => ({
+      address:   r.party,
+      party:     r.party,
+      userId:    r.userId,
+      handle:    r.handle,
+      name:      r.fullAddress || (r.handle + '@' + (r.partyName || r.party)),
+      type:      k,
+      partyType: this.kindToPartyType(k),
+      isUser:    true,
+    }));
+    return [...parties, ...users];
+  }
+
+  onFilesSelected(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const files = [...this.composeFiles(), ...Array.from(input.files || [])].slice(0, 10);
+    this.composeFiles.set(files);
+    input.value = '';
+  }
+
+  removeComposeFile(idx: number) {
+    this.composeFiles.update(f => f.filter((_, i) => i !== idx));
   }
 
   private kindToPartyType(k: Kind): number {
@@ -84,10 +127,17 @@ export class ModalNewThreadComponent {
     this.error.set('');
   }
 
+  // Selection identity — a whole party and a specific user under the SAME party
+  // are distinct picks, so the key folds in userId.
+  keyOf(c: Candidate): string {
+    return (c.party || c.address || '').toLowerCase() + '|' + (c.userId || '');
+  }
+
   toggle(c: Candidate) {
+    const key = this.keyOf(c);
     const cur = this.selected();
-    if (cur.some(x => x.address === c.address)) {
-      this.selected.set(cur.filter(x => x.address !== c.address));
+    if (cur.some(x => this.keyOf(x) === key)) {
+      this.selected.set(cur.filter(x => this.keyOf(x) !== key));
       this.error.set('');
       return;
     }
@@ -97,7 +147,8 @@ export class ModalNewThreadComponent {
   }
 
   isSelected(c: Candidate): boolean {
-    return this.selected().some(x => x.address === c.address);
+    const key = this.keyOf(c);
+    return this.selected().some(x => this.keyOf(x) === key);
   }
 
   partyTypeLabel(pt: number): string {
@@ -115,20 +166,33 @@ export class ModalNewThreadComponent {
   async create() {
     const sel = this.selected();
     if (sel.length === 0) { this.error.set('Pick at least one recipient.'); return; }
+    const files = this.composeFiles();
+    const hasInitial = !!this.initialText() || files.length > 0;
+    const handleKind = this.kind() === 'entity' || this.kind() === 'regulator';
     this.working.set(true);
     this.error.set('');
-    this.stage.set(this.initialText() ? 'Creating thread and sending initial message…' : 'Creating thread…');
+    this.stage.set(hasInitial ? 'Creating thread and sending initial message…' : 'Creating thread…');
     try {
       const body: any = {
         kind: this.kind(),
         subject: this.subject(),
-        targets: sel.map(s => s.address),
+        // Participants = distinct party addresses. A user pick (alice@entityX)
+        // contributes its party as a participant.
+        targets: [...new Set(sel.map(s => (s.party || s.address || '').toLowerCase()).filter(Boolean))],
       };
-      if (this.initialText()) {
-        // v2: the initial message goes to ALL participants (on-chain snapshot).
-        body.initialMessage = { text: this.initialText(), contentType: 1 };
+      if (hasInitial) {
+        const im: any = { text: this.initialText(), contentType: 1 };
+        // If ANY recipient is a specific user, the initial message targets each
+        // pick explicitly (whole party ⇒ userId 0), making it a DM to those
+        // users. Otherwise omit `to` for a reply-all to every participant.
+        if (handleKind && sel.some(s => !!s.userId)) {
+          im.to = sel.map(s => ({ party: (s.party || s.address), userId: s.userId || ZERO_HASH }));
+        }
+        body.initialMessage = im;
       }
-      const resp = await this.apiService.connectThreadCreate(body);
+      const resp = files.length > 0
+        ? await this.apiService.connectThreadCreateMultipart(body, files)
+        : await this.apiService.connectThreadCreate(body);
       if (resp?.threadId != null) {
         this.stage.set('');
         this.modalService.confirm({ threadId: resp.threadId });
@@ -154,6 +218,7 @@ export class ModalNewThreadComponent {
     this.selected.set([]);
     this.subject.set('');
     this.initialText.set('');
+    this.composeFiles.set([]);
     this.error.set('');
     this.stage.set('');
     this.searching.set(false);

@@ -9,7 +9,7 @@ import { SocketService } from '../../services/socket.service';
 import { AlertService } from '../alerts/alert/alert.service';
 import { MenuController } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-header',
@@ -47,6 +47,7 @@ export class HeaderComponent  implements OnInit, OnDestroy {
 
   private alertService = inject(AlertService);
   private menuController = inject(MenuController);
+  private translate = inject(TranslateService);
 
   get profileRoute(): string {
     // Every role lands on their personal My Profile page (view details + change password).
@@ -77,7 +78,12 @@ export class HeaderComponent  implements OnInit, OnDestroy {
   }
 
   showReasonAlert() {
-    this.alertService.show('State Change Reason', this.entityStateReason || 'No reason provided.', 'OK', 'max-w-3xl');
+    this.alertService.show(
+      this.translate.instant('header.stateReasonAlert.title'),
+      this.entityStateReason || this.translate.instant('header.stateReasonAlert.noReason'),
+      this.translate.instant('alerts.ok'),
+      'max-w-3xl'
+    );
   }
 
   async logout() {

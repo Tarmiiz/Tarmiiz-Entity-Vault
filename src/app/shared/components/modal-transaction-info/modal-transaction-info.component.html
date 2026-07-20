@@ -5,7 +5,7 @@
 
         <!-- header -->
         <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl flex items-center justify-between">
-          <h3 class="text-xl leading-6 font-semibold text-gray-100">Transaction Details</h3>
+          <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'transactions.infoModal.title' | translate }}</h3>
           <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span>
         </div>
 
@@ -13,7 +13,7 @@
         <div class="p-6 grid grid-cols-2 gap-x-8 gap-y-4 text-sm text-gray-700">
 
           <div class="border-t pt-3 col-span-2">
-            <p class="text-xs font-medium text-gray-500">Asset</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.asset' | translate }}</p>
             <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors font-semibold"
                (click)="navigate('/authorized/assets/details/' + trx.asset)">
               {{ assetName() }} @if (assetSymbol()) { <span class="text-gray-500 font-normal">({{ assetSymbol() }})</span> }
@@ -22,32 +22,32 @@
           </div>
 
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Global Trx ID</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.globalTrxId' | translate }}</p>
             <p class="font-mono">{{ trx.trxId }}</p>
           </div>
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Service Trx ID</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.serviceTrxId' | translate }}</p>
             <p class="font-mono">{{ trx.serviceTrxId }}</p>
           </div>
 
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Date & Time</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.dateTime' | translate }}</p>
             <p>{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
           </div>
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Ref No</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.refNo' | translate }}</p>
             <p class="font-mono">{{ trx.trxRefNo || '—' }}</p>
           </div>
 
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Service</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.service' | translate }}</p>
             <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors"
                (click)="navigate('/authorized/services/details/' + trx.service)">
               {{ trx.serviceName }}
             </p>
           </div>
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Manager</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.manager' | translate }}</p>
             <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors"
                (click)="navigate('/authorized/entities/details/' + trx.manager)">
               {{ trx.managerName }}
@@ -56,7 +56,7 @@
 
           @if (trx.trxType === 'Subscribe') {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">Subscription</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.subscription' | translate }}</p>
               <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors font-mono text-xs break-all"
                  (click)="navigate('/authorized/subscriptions/details/' + trx.to)">
                 {{ trx.to }}
@@ -64,7 +64,7 @@
             </div>
           } @else if (trx.trxType === 'Redeem') {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">Subscription</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.subscription' | translate }}</p>
               <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors font-mono text-xs break-all"
                  (click)="navigate('/authorized/subscriptions/details/' + trx.from)">
                 {{ trx.from }}
@@ -72,14 +72,14 @@
             </div>
           } @else if (trx.trxType === 'Trade') {
             <div class="border-t pt-3">
-              <p class="text-xs font-medium text-gray-500">Seller (Subscription)</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.seller' | translate }}</p>
               <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors font-mono text-xs break-all"
                  (click)="navigate('/authorized/subscriptions/details/' + trx.from)">
                 {{ trx.from }}
               </p>
             </div>
             <div class="border-t pt-3">
-              <p class="text-xs font-medium text-gray-500">Buyer (Subscription)</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.buyer' | translate }}</p>
               <p class="text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors font-mono text-xs break-all"
                  (click)="navigate('/authorized/subscriptions/details/' + trx.to)">
                 {{ trx.to }}
@@ -87,30 +87,30 @@
             </div>
           } @else {
             <div class="border-t pt-3 col-span-2">
-              <p class="text-xs font-medium text-gray-500">Sender</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.sender' | translate }}</p>
               <p class="font-mono text-xs break-all">{{ trx.sender }}</p>
             </div>
             <div class="border-t pt-3">
-              <p class="text-xs font-medium text-gray-500">From</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</p>
               <p class="font-mono text-xs break-all">{{ trx.from }}</p>
             </div>
             <div class="border-t pt-3">
-              <p class="text-xs font-medium text-gray-500">To</p>
+              <p class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</p>
               <p class="font-mono text-xs break-all">{{ trx.to }}</p>
             </div>
           }
 
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Tokens</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.tokens' | translate }}</p>
             <p class="text-right font-semibold">{{ trx.tokens | number: '1.0-2' }}</p>
           </div>
           <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">Token Price</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.tokenPrice' | translate }}</p>
             <p class="text-right font-semibold">{{ trx.price | number: '1.6-6' }}</p>
           </div>
 
           <div class="border-t pt-3 col-span-2">
-            <p class="text-xs font-medium text-gray-500">Total</p>
+            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.total' | translate }}</p>
             <p class="text-right font-semibold text-base">{{ trx.totalPrice | number: '1.6-6' }}</p>
           </div>
 
@@ -124,13 +124,13 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
             </svg>
-            Export PDF
+            {{ 'common.exportPdf' | translate }}
           </button>
           } @else {
           <span></span>
           }
           <button type="button" (click)="onClose()" class="px-4 py-2 bg-[var(--brand-primary)] text-white border border-transparent rounded-md shadow-sm hover:bg-[var(--brand-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Close
+            {{ 'common.close' | translate }}
           </button>
         </div>
 

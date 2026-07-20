@@ -3,10 +3,10 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4" (click)="$event.stopPropagation()">
 
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Place Order</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'dex.orders.placeModal.title' | translate }}</h3>
         <p class="text-xs text-gray-400 mt-1">
-          Step {{ step() }} of {{ totalSteps }} —
-          {{ step() === 1 ? 'Subscription, venue, asset & scope' : step() === 2 ? 'Side, price & amount' : 'Review & submit' }}
+          {{ 'dex.orders.placeModal.stepOf' | translate: { current: step(), total: totalSteps } }} —
+          {{ (step() === 1 ? 'dex.orders.placeModal.step1Desc' : step() === 2 ? 'dex.orders.placeModal.step2Desc' : 'dex.orders.placeModal.step3Desc') | translate }}
         </p>
       </div>
 
@@ -31,10 +31,10 @@
 
         @if (step() === 1) {
           <div>
-            <label class="block text-sm font-medium text-gray-700">Subscription</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.subscription' | translate }}</label>
             <select [ngModel]="subscription()" (ngModelChange)="setSubscription($event)"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-              <option value="">— Select a subscription —</option>
+              <option value="">{{ 'dex.orders.placeModal.selectSubscription' | translate }}</option>
               @for (s of subscriptions(); track s.subscription) {
                 <option [value]="s.subscription">{{ s.subscriberName || s.identityName || s.subscription }} — {{ s.serviceName || (s.service?.slice(0,10) + '…') }}</option>
               }
@@ -42,10 +42,10 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Venue</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.venue' | translate }}</label>
             <select [ngModel]="dexService()" (ngModelChange)="setVenue($event)"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-              <option value="">— Select an active venue —</option>
+              <option value="">{{ 'dex.orders.placeModal.selectVenue' | translate }}</option>
               @for (v of venues(); track v.serviceAddress) {
                 <option [value]="v.serviceAddress">{{ v.serviceName || (v.serviceAddress.slice(0,10) + '…') }}</option>
               }
@@ -53,10 +53,10 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Asset</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.asset' | translate }}</label>
             <select [ngModel]="baseAsset()" (ngModelChange)="pickAssetByAddress($event)"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-              <option value="">— Select a listed asset —</option>
+              <option value="">{{ 'dex.orders.placeModal.selectAsset' | translate }}</option>
               @for (l of approvedListings(); track l.baseAsset) {
                 <option [value]="l.baseAsset">
                   {{ l.assetSymbol || '?' }} — {{ l.assetName || (l.baseAsset.slice(0,10) + '…') }}
@@ -67,18 +67,18 @@
             </select>
             @if (selectedListing(); as l) {
               <p class="text-xs text-gray-500 mt-1">
-                Currency: {{ l.assetCurrencyName }} ·
-                Approved tiers:
-                @if (l.venueApproved) { <span class="text-green-700 font-semibold">Venue</span> }
-                @if (l.countryApproved) { <span class="text-green-700 font-semibold ml-1">Country</span> }
-                @if (l.globalApproved) { <span class="text-green-700 font-semibold ml-1">Global</span> }
+                {{ 'dex.orders.placeModal.currency' | translate }}: {{ l.assetCurrencyName }} ·
+                {{ 'dex.orders.placeModal.approvedTiers' | translate }}
+                @if (l.venueApproved) { <span class="text-green-700 font-semibold">{{ 'dex.orders.placeModal.venue' | translate }}</span> }
+                @if (l.countryApproved) { <span class="text-green-700 font-semibold ml-1">{{ 'dex.orders.placeModal.tierCountry' | translate }}</span> }
+                @if (l.globalApproved) { <span class="text-green-700 font-semibold ml-1">{{ 'dex.orders.placeModal.tierGlobal' | translate }}</span> }
               </p>
             }
           </div>
 
           @if (availableScopes().length) {
             <div>
-              <label class="block text-sm font-medium text-gray-700">Market Scope</label>
+              <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.marketScope' | translate }}</label>
               <div class="mt-1 flex flex-wrap gap-2">
                 @for (s of availableScopes(); track s) {
                   <button type="button" (click)="marketScope.set(s)"
@@ -95,48 +95,52 @@
 
         @if (step() === 2) {
           <div>
-            <label class="block text-sm font-medium text-gray-700">Side</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.side' | translate }}</label>
             <div class="mt-1 flex gap-2">
               <button type="button" (click)="side.set(1)"
                 class="flex-1 text-sm px-3 py-2 rounded border transition-colors"
                 [class.bg-green-700]="side() === 1" [class.text-white]="side() === 1" [class.border-green-700]="side() === 1"
                 [class.border-gray-300]="side() !== 1" [class.text-gray-700]="side() !== 1">
-                Buy
+                {{ 'dex.orders.side.buy' | translate }}
               </button>
               <button type="button" (click)="side.set(2)"
                 class="flex-1 text-sm px-3 py-2 rounded border transition-colors"
                 [class.bg-orange-700]="side() === 2" [class.text-white]="side() === 2" [class.border-orange-700]="side() === 2"
                 [class.border-gray-300]="side() !== 2" [class.text-gray-700]="side() !== 2">
-                Sell
+                {{ 'dex.orders.side.sell' | translate }}
               </button>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Price ({{ selectedListingCurrency() }})</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.priceLabel' | translate: { currency: selectedListingCurrency() } }}</label>
             <input type="number" step="any" min="0"
               [ngModel]="priceText()" (ngModelChange)="priceText.set($event)"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
               placeholder="0.0">
-            <p class="text-xs text-gray-500 mt-1">Price per unit, in {{ selectedListingCurrency() || 'asset currency' }}.</p>
+            @if (selectedListingCurrency()) {
+              <p class="text-xs text-gray-500 mt-1">{{ 'dex.orders.placeModal.pricePerUnit' | translate: { currency: selectedListingCurrency() } }}</p>
+            } @else {
+              <p class="text-xs text-gray-500 mt-1">{{ 'dex.orders.placeModal.pricePerUnitGeneric' | translate }}</p>
+            }
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Amount</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'common.amount' | translate }}</label>
             <input type="number" step="1" min="0"
               [ngModel]="amountText()" (ngModelChange)="amountText.set($event)"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
               placeholder="0">
-            <p class="text-xs text-gray-500 mt-1">Token quantity (whole units).</p>
+            <p class="text-xs text-gray-500 mt-1">{{ 'dex.orders.placeModal.amountHint' | translate }}</p>
           </div>
 
           <div class="bg-gray-50 rounded p-3">
-            <p class="text-xs text-gray-500">Estimated total</p>
+            <p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.estimatedTotal' | translate }}</p>
             <p class="text-sm font-semibold text-gray-800">{{ estimatedTotal() }} {{ selectedListingCurrency() }}</p>
             @if (side() === 1) {
-              <p class="text-xs text-gray-500 mt-2">On submit, credit will be locked from the subscription's account in this currency to settle the trade.</p>
+              <p class="text-xs text-gray-500 mt-2">{{ 'dex.orders.placeModal.buyNotice' | translate }}</p>
             } @else {
-              <p class="text-xs text-gray-500 mt-2">On submit, the asset balance will be locked on the subscription until the order matches or is cancelled.</p>
+              <p class="text-xs text-gray-500 mt-2">{{ 'dex.orders.placeModal.sellNotice' | translate }}</p>
             }
           </div>
         }
@@ -144,19 +148,25 @@
         @if (step() === 3) {
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-xs text-gray-500">Subscription</p><p class="text-sm font-mono break-all">{{ subscription() }}</p></div>
-              <div><p class="text-xs text-gray-500">Venue</p><p class="text-sm font-mono break-all">{{ dexService() }}</p></div>
-              <div><p class="text-xs text-gray-500">Asset</p><p class="text-sm">{{ selectedListing()?.assetSymbol || '?' }} — {{ selectedListing()?.assetName || '' }}</p></div>
-              <div><p class="text-xs text-gray-500">Currency</p><p class="text-sm">{{ selectedListingCurrency() }}</p></div>
-              <div><p class="text-xs text-gray-500">Scope</p><p class="text-sm">{{ scopeName(marketScope()) }}</p></div>
-              <div><p class="text-xs text-gray-500">Side</p><p class="text-sm font-semibold" [class.text-green-700]="side() === 1" [class.text-orange-700]="side() === 2">{{ side() === 1 ? 'Buy' : 'Sell' }}</p></div>
-              <div><p class="text-xs text-gray-500">Price</p><p class="text-sm">{{ priceText() }} {{ selectedListingCurrency() }}</p></div>
-              <div><p class="text-xs text-gray-500">Amount</p><p class="text-sm">{{ amountText() }}</p></div>
-              <div class="col-span-2"><p class="text-xs text-gray-500">Estimated total</p><p class="text-base font-bold">{{ estimatedTotal() }} {{ selectedListingCurrency() }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.subscription' | translate }}</p><p class="text-sm font-mono break-all">{{ subscription() }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.venue' | translate }}</p><p class="text-sm font-mono break-all">{{ dexService() }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.asset' | translate }}</p><p class="text-sm">{{ selectedListing()?.assetSymbol || '?' }} — {{ selectedListing()?.assetName || '' }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.currency' | translate }}</p><p class="text-sm">{{ selectedListingCurrency() }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.scope' | translate }}</p><p class="text-sm">{{ scopeName(marketScope()) }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.side' | translate }}</p><p class="text-sm font-semibold" [class.text-green-700]="side() === 1" [class.text-orange-700]="side() === 2">{{ (side() === 1 ? 'dex.orders.side.buy' : 'dex.orders.side.sell') | translate }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.price' | translate }}</p><p class="text-sm">{{ priceText() }} {{ selectedListingCurrency() }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'common.amount' | translate }}</p><p class="text-sm">{{ amountText() }}</p></div>
+              <div class="col-span-2"><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.estimatedTotal' | translate }}</p><p class="text-base font-bold">{{ estimatedTotal() }} {{ selectedListingCurrency() }}</p></div>
             </div>
             <label class="flex items-start gap-2 mt-4 cursor-pointer">
               <input type="checkbox" [checked]="reviewConfirmed()" (change)="reviewConfirmed.set($any($event.target).checked)" class="mt-1">
-              <span class="text-sm text-gray-700">I have reviewed the order details and confirm that the subscription has the required {{ side() === 1 ? 'credit' : 'asset' }} balance available.</span>
+              <span class="text-sm text-gray-700">
+                @if (side() === 1) {
+                  {{ 'dex.orders.placeModal.reviewConfirmCredit' | translate }}
+                } @else {
+                  {{ 'dex.orders.placeModal.reviewConfirmAsset' | translate }}
+                }
+              </span>
             </label>
           </div>
         }
@@ -167,18 +177,18 @@
         <div>
           @if (step() > 1) {
             <button type="button" (click)="prev()"
-              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Back</button>
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.back' | translate }}</button>
           }
         </div>
         <div class="flex space-x-3">
           <button type="button" (click)="onCancel()"
-            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Cancel</button>
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
           @if (step() < totalSteps) {
             <button type="button" (click)="next()" [disabled]="(step() === 1 && !isStep1Valid()) || (step() === 2 && !isStep2Valid())"
-              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.next' | translate }}</button>
           } @else {
             <button type="button" (click)="onSave()" [disabled]="!reviewConfirmed()"
-              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Submit</button>
+              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.submit' | translate }}</button>
           }
         </div>
       </div>

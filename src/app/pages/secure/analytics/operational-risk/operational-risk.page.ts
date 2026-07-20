@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -32,17 +32,17 @@ interface Reliance {
           </svg>
           <div>
             <p class="text-sm font-semibold text-red-800">
-              Single point of failure: {{ data()!.topValidator?.name }}
-              ({{ data()!.topValidator?.sharePct | number:'1.0-1' }}% of active subscriptions)
+              {{ 'analytics.operationalRisk.singlePointOfFailurePrefix' | translate }} {{ data()!.topValidator?.name }}
+              ({{ data()!.topValidator?.sharePct | number:'1.0-1' }}{{ 'analytics.operationalRisk.singlePointOfFailureSuffix' | translate }})
             </p>
-            <p class="text-xs text-red-700">Consider distributing subscriptions across additional validators to reduce concentration risk.</p>
+            <p class="text-xs text-red-700">{{ 'analytics.operationalRisk.singlePointOfFailureHint' | translate }}</p>
           </div>
         </div>
       }
 
       <app-analytics-card
-        title="Validator reliance"
-        subtitle="Share of active subscriptions per validator. Threshold for single-point-of-failure flag is 70%."
+        [title]="'analytics.operationalRisk.chart.title' | translate"
+        [subtitle]="'analytics.operationalRisk.chart.subtitle' | translate"
         [loading]="loading()"
         [empty]="!loading() && (data()?.validators?.length ?? 0) === 0">
         <div class="grid md:grid-cols-2 gap-6">
@@ -53,9 +53,9 @@ interface Reliance {
             <table class="min-w-full text-sm">
               <thead class="bg-gray-50 text-left text-gray-600">
                 <tr>
-                  <th class="px-3 py-2 font-medium">Validator</th>
-                  <th class="px-3 py-2 font-medium text-right">Active subs</th>
-                  <th class="px-3 py-2 font-medium text-right">Share</th>
+                  <th class="px-3 py-2 font-medium">{{ 'analytics.operationalRisk.table.validator' | translate }}</th>
+                  <th class="px-3 py-2 font-medium text-right">{{ 'analytics.operationalRisk.table.activeSubs' | translate }}</th>
+                  <th class="px-3 py-2 font-medium text-right">{{ 'analytics.operationalRisk.table.share' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -72,7 +72,7 @@ interface Reliance {
               </tbody>
               <tfoot>
                 <tr class="border-t bg-gray-50">
-                  <td class="px-3 py-2 font-semibold">Total active</td>
+                  <td class="px-3 py-2 font-semibold">{{ 'analytics.operationalRisk.table.totalActive' | translate }}</td>
                   <td class="px-3 py-2 text-right font-semibold" colspan="2">{{ data()?.totalActiveSubs ?? 0 }}</td>
                 </tr>
               </tfoot>
@@ -85,6 +85,7 @@ interface Reliance {
 })
 export class OperationalRiskPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private translate = inject(TranslateService);
 
   @ViewChild('chart') chartRef?: ElementRef<HTMLCanvasElement>;
 
@@ -135,7 +136,7 @@ export class OperationalRiskPage implements OnInit, OnDestroy {
             callbacks: {
               label: (ctx: any) => {
                 const v = d.validators[ctx.dataIndex];
-                return ` ${v.name}: ${v.activeSubs} subs (${v.sharePct.toFixed(1)}%)`;
+                return this.translate.instant('analytics.operationalRisk.chart.tooltip', { name: v.name, subs: v.activeSubs, share: v.sharePct.toFixed(1) });
               },
             },
           },

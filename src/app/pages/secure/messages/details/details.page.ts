@@ -2,12 +2,13 @@ import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ApiService } from '../../../../shared/services/api.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
@@ -29,7 +30,13 @@ export class DetailsPage implements OnInit, OnDestroy {
   private router         = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
+  private translate      = inject(TranslateService);
+  private authService    = inject(AuthService);
   utils                  = inject(UtilsService);
+
+  // Security officer (role 4) — read-only full-audit view: no write surface,
+  // and viewing must not mutate read-state (passive audit).
+  get isReadOnly(): boolean { return Number(this.authService.userInfo?.role) === 4; }
 
   threadId  = 0;
   thread    = signal<ConnectThread | null>(null);
@@ -79,7 +86,10 @@ export class DetailsPage implements OnInit, OnDestroy {
   setTab(tab: 'conversation' | 'info' | 'participants') { this.activeTab.set(tab); }
 
   stateName(state: number | undefined): string {
-    return state === 1 ? 'Open' : state === 2 ? 'Closed' : state === 3 ? 'Archived' : '—';
+    return state === 1 ? this.translate.instant('state.open')
+         : state === 2 ? this.translate.instant('state.closed')
+         : state === 3 ? this.translate.instant('state.archived')
+         : this.translate.instant('state.unknown');
   }
 
   getStateClass(state: number | undefined): string {
@@ -158,7 +168,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   senderLabel(m: ConnectMessage): string {
-    if (this.isMine(m)) return 'me';
+    if (this.isMine(m)) return this.translate.instant('messages.details.me');
     // createdByUserId is a tenant-local user id and cannot be resolved for an
     // external sender — show the directory party name, truncated address fallback.
     return this.nameFor(m.sender) || ((m.sender || '').slice(0, 8) + '…');
@@ -182,7 +192,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   nameFor(address: string): string {
-    if (!address) return '—';
+    if (!address) return this.translate.instant('common.notSet');
     return this.directory()[address.toLowerCase()]?.name || '';
   }
 
@@ -207,7 +217,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   textFor(m: ConnectMessage): string {
-    if (m.state === 2) return '(message deleted)';
+    if (m.state === 2) return this.translate.instant('messages.details.messageDeleted');
     return this.messageContents()[m.id]?.text ?? '…';
   }
 
@@ -229,7 +239,10 @@ export class DetailsPage implements OnInit, OnDestroy {
         a.click();
         setTimeout(() => URL.revokeObjectURL(res.blobUrl), 30000);
       } else {
-        this.alertService.show('Attachment', 'Could not download this attachment.', 'OK');
+        this.alertService.show(
+          this.translate.instant('messages.details.alerts.attachmentTitle'),
+          this.translate.instant('messages.details.alerts.attachmentFailed'),
+          this.translate.instant('messages.details.alerts.ok'));
       }
     } finally {
       this.downloading.update(s => { const { [key]: _, ...rest } = s; return rest; });
@@ -240,7 +253,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   recipientLabel(r: ConnectMessageRecipient): string {
     const partyName = this.nameFor(r.party) || (r.party || '').slice(0, 8) + '…';
     if (r.userId && r.userId !== ZERO_HASH) {
-      return (r.handle || 'user') + '@' + partyName;
+      return (r.handle || this.translate.instant('messages.details.userFallback')) + '@' + partyName;
     }
     return partyName;
   }
@@ -268,11 +281,11 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   participantType(partyType: number | null): string {
-    return partyType === 1 ? 'Identity'
-         : partyType === 2 ? 'Entity'
-         : partyType === 3 ? 'Regulator'
-         : partyType === 4 ? 'Service'
-         : '—';
+    return partyType === 1 ? this.translate.instant('partyType.identity')
+         : partyType === 2 ? this.translate.instant('partyType.entity')
+         : partyType === 3 ? this.translate.instant('partyType.regulator')
+         : partyType === 4 ? this.translate.instant('partyType.service')
+         : this.translate.instant('partyType.unknown');
   }
 
   isEntityCreator(): boolean {
@@ -297,6 +310,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   setReplyPrivately(m: ConnectMessage) {
+    if (this.isReadOnly) return;
     this.replyMode.set('sender');
     this.replyToMessage.set(m);
     this.activeTab.set('conversation');
@@ -333,6 +347,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   async send() {
+    if (this.isReadOnly) return;
     const t = this.thread();
     if (!t || !this.composeText()) return;
 
@@ -352,7 +367,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     const text = this.composeText();
     const files = this.composeFiles();
 
-    this.loadingService.show('Sending...');
+    this.loadingService.show(this.translate.instant('messages.details.loading.sending'));
     let resp: any;
     if (files.length > 0) {
       resp = await this.apiService.connectMessageSendMultipart(t.id, { to, text, subject: t.subject, contentType: 1 }, files);
@@ -361,7 +376,10 @@ export class DetailsPage implements OnInit, OnDestroy {
     }
     this.loadingService.hide();
     if (resp?.error) {
-      this.alertService.show('Send failed', resp.error, 'OK');
+      this.alertService.show(
+        this.translate.instant('messages.details.alerts.sendFailedTitle'),
+        resp.error,
+        this.translate.instant('messages.details.alerts.ok'));
       return;
     }
     this.composeText.set('');
@@ -372,36 +390,54 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   async closeThread() {
-    const ok = await this.alertService.show('Close thread', 'Close this thread? Participants will no longer be able to send messages.', 'Close');
+    if (this.isReadOnly) return;
+    const ok = await this.alertService.show(
+      this.translate.instant('messages.details.closeThread'),
+      this.translate.instant('messages.details.alerts.closeThreadConfirm'),
+      this.translate.instant('common.close'));
     if (!ok) return;
-    this.loadingService.show('Closing...');
+    this.loadingService.show(this.translate.instant('messages.details.loading.closing'));
     await this.apiService.connectThreadClose(this.threadId, '');
     this.loadingService.hide();
     await this.reload();
   }
 
   async leaveThread() {
-    const ok = await this.alertService.show('Leave thread', 'Leave this thread? You will stop receiving new messages (history stays visible).', 'Leave');
+    if (this.isReadOnly) return;
+    const ok = await this.alertService.show(
+      this.translate.instant('messages.details.leaveThread'),
+      this.translate.instant('messages.details.alerts.leaveThreadConfirm'),
+      this.translate.instant('messages.details.alerts.leaveButton'));
     if (!ok) return;
-    this.loadingService.show('Leaving...');
+    this.loadingService.show(this.translate.instant('messages.details.loading.leaving'));
     const resp = await this.apiService.connectThreadLeave(this.threadId);
     this.loadingService.hide();
     if (resp?.error) {
-      this.alertService.show('Leave failed', resp.error, 'OK');
+      this.alertService.show(
+        this.translate.instant('messages.details.alerts.leaveFailed'),
+        resp.error,
+        this.translate.instant('messages.details.alerts.ok'));
       return;
     }
     this.router.navigate(['/authorized/messages/list']);
   }
 
   async removeParticipant(address: string) {
+    if (this.isReadOnly) return;
     const label = this.nameFor(address) || address;
-    const ok = await this.alertService.show('Remove participant', `Remove ${label} from this thread? Their history stays; they can be re-added later.`, 'Remove');
+    const ok = await this.alertService.show(
+      this.translate.instant('messages.details.alerts.removeParticipantTitle'),
+      this.translate.instant('messages.details.alerts.removeParticipantConfirm', { label }),
+      this.translate.instant('common.remove'));
     if (!ok) return;
-    this.loadingService.show('Removing...');
+    this.loadingService.show(this.translate.instant('messages.details.loading.removing'));
     const resp = await this.apiService.connectThreadRemoveParticipant(this.threadId, address, '');
     this.loadingService.hide();
     if (resp?.error) {
-      this.alertService.show('Remove failed', resp.error, 'OK');
+      this.alertService.show(
+        this.translate.instant('messages.details.alerts.removeFailed'),
+        resp.error,
+        this.translate.instant('messages.details.alerts.ok'));
       return;
     }
     await this.reload();
@@ -414,16 +450,31 @@ export class DetailsPage implements OnInit, OnDestroy {
     clearTimeout(this.searchTimer);
     if (!term || term.length < 2) { this.addSearchResults.set([]); return; }
     this.searchTimer = setTimeout(async () => {
-      const [entities, regulators, subscriptions] = await Promise.all([
+      const [entities, regulators, subscriptions, users] = await Promise.all([
         this.apiService.connectRecipientsSearch('entity', term),
         this.apiService.connectRecipientsSearch('regulator', term),
         this.apiService.connectRecipientsSearch('subscription', term),
+        this.apiService.connectRecipientsSearch('user', term.split('@')[0]),
       ]);
+      // Handle help: a user pick (alice@party) resolves to its PARTY — thread
+      // participants are parties, not sub-users — so surface the party address.
+      const userRows = (users?.results || []).map((r: any) => ({
+        address: r.party, name: r.fullAddress, type: 'user',
+      }));
+      // Dedupe by address so a party matched by NAME wins over a handle row for
+      // the same party (and a party never appears twice).
+      const seen = new Set<string>();
       const results = [
         ...(entities?.results || []),
         ...(regulators?.results || []),
         ...(subscriptions?.results || []),
-      ].filter(r => !this.addSelected().some(s => s.address === r.address));
+        ...userRows,
+      ].filter(r => {
+        const key = (r.address || '').toLowerCase();
+        if (!key || seen.has(key) || this.addSelected().some(s => s.address === r.address)) return false;
+        seen.add(key);
+        return true;
+      });
       this.addSearchResults.set(results.slice(0, 10));
     }, 300);
   }
@@ -439,17 +490,21 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   async addParticipants() {
+    if (this.isReadOnly) return;
     // Subscription rows join as the subscriber's IDENTITY — the on-chain sugar
     // resolves {subscriptionAddr} so the DID holder (not the entity) can decrypt.
     const targets = this.addSelected().map(s =>
       s.type === 'subscription' ? { subscriptionAddr: s.address } : s.address);
     if (targets.length === 0) return;
     this.adding.set(true);
-    this.loadingService.show('Adding participants + sharing history...');
+    this.loadingService.show(this.translate.instant('messages.details.loading.addingParticipants'));
     try {
       const resp = await this.apiService.connectThreadAddParticipants(this.threadId, targets);
       if (resp?.error) {
-        this.alertService.show('Add failed', resp.error, 'OK');
+        this.alertService.show(
+          this.translate.instant('messages.details.alerts.addFailedTitle'),
+          resp.error,
+          this.translate.instant('messages.details.alerts.ok'));
         return;
       }
       this.addSelected.set([]);
@@ -461,6 +516,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   async markRead(m: ConnectMessage) {
+    if (this.isReadOnly) return;   // passive audit — role 4 never mutates read-state
     if (this.myReadAt(m) || this.isMine(m) || !this.isRecipient(m)) return;
     const key = String(m.id);
     if (this.markingRead()[key]) return;
@@ -477,10 +533,14 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   async tombstone(m: ConnectMessage) {
+    if (this.isReadOnly) return;
     if (m.sender.toLowerCase() !== this.entityAddress) return;
     const key = String(m.id);
     if (this.deleting()[key]) return;
-    const ok = await this.alertService.show('Delete message', 'Delete this message? This cannot be undone.', 'Delete');
+    const ok = await this.alertService.show(
+      this.translate.instant('messages.details.alerts.deleteMessageTitle'),
+      this.translate.instant('messages.details.alerts.deleteMessageConfirm'),
+      this.translate.instant('common.delete'));
     if (!ok) return;
     this.deleting.update(s => ({ ...s, [key]: true }));
     try {

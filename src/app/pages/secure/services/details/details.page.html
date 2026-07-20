@@ -3,11 +3,11 @@
 <!-- breadcrumb -->
 <div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
   @if (service(); as op) {
-    <nav class="flex" aria-label="Breadcrumb">
+    <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
         <li class="inline-flex items-center">
           <a routerLink="/authorized/services/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
-            Services
+            {{ 'services.title' | translate }}
           </a>
         </li>
         <li>
@@ -39,7 +39,7 @@
             [class.border-blue-600]="activeTab() === 'overview'"
             [class.bg-blue-600]="activeTab() === 'overview'"
           >
-            Overview
+            {{ 'services.details.tabs.overview' | translate }}
           </button>
         }
         <button (click)="setTab('info')"
@@ -49,7 +49,7 @@
           [class.border-blue-600]="activeTab() === 'info'"
           [class.bg-blue-600]="activeTab() === 'info'"
         >
-          Information
+          {{ 'services.details.tabs.info' | translate }}
         </button>
         @if (isTokenIssuer()) {
           <button (click)="setTab('assets')"
@@ -59,7 +59,7 @@
             [class.border-blue-600]="activeTab() === 'assets'"
             [class.bg-blue-600]="activeTab() === 'assets'"
           >
-            Assets
+            {{ 'services.details.tabs.assets' | translate }}
           </button>
           <button (click)="setTab('subscriptions')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -68,7 +68,7 @@
             [class.border-blue-600]="activeTab() === 'subscriptions'"
             [class.bg-blue-600]="activeTab() === 'subscriptions'"
           >
-            Subscriptions
+            {{ 'services.details.tabs.subscriptions' | translate }}
           </button>
           <button (click)="setTab('trxs')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -77,7 +77,7 @@
             [class.border-blue-600]="activeTab() === 'trxs'"
             [class.bg-blue-600]="activeTab() === 'trxs'"
           >
-            Transactions
+            {{ 'services.details.tabs.transactions' | translate }}
           </button>
           <button (click)="setTab('liquidity')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -86,7 +86,7 @@
             [class.border-blue-600]="activeTab() === 'liquidity'"
             [class.bg-blue-600]="activeTab() === 'liquidity'"
           >
-            Liquidity
+            {{ 'services.details.tabs.liquidity' | translate }}
           </button>
         }
         @if (features.systemFunctionEnabled('view-documents')) {
@@ -97,7 +97,7 @@
             [class.border-blue-600]="activeTab() === 'docs'"
             [class.bg-blue-600]="activeTab() === 'docs'"
           >
-            Documents
+            {{ 'services.details.tabs.documents' | translate }}
           </button>
         }
       </div>
@@ -119,41 +119,41 @@
               </div>
               <div class="flex items-center gap-2">
                 @if (v.suspended) {
-                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'state.suspended' | translate }}</span>
                 }
                 <span class="px-3 py-1 text-xs font-semibold rounded-full"
                   [class]="v.visibility === 2 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
-                  {{ v.visibility === 2 ? 'Private' : 'Public' }}
+                  {{ (v.visibility === 2 ? 'services.details.visibilityPrivate' : 'services.details.visibilityPublic') | translate }}
                 </span>
                 <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ v.stateName }}</span>
               </div>
             </div>
             @if (suspensionReason()) {
-              <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+              <p class="text-xs text-red-600 mt-1">{{ 'common.reason' | translate }}: {{ suspensionReason() }}</p>
             }
 
             <!-- Counts row -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
               @if (isTokenIssuer()) {
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Assets</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.tabs.assets' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ assets().length }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                  <p class="text-xs text-gray-500 mb-1">Subscriptions</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.tabs.subscriptions' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ subscriptions().length }}</p>
                 </div>
               }
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs text-gray-500 mb-1">Service Type</p>
+                <p class="text-xs text-gray-500 mb-1">{{ 'services.details.info.serviceType' | translate }}</p>
                 <p class="text-base font-semibold text-gray-800">{{ v.serviceTypeName }}</p>
               </div>
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs text-gray-500 mb-1">Country</p>
+                <p class="text-xs text-gray-500 mb-1">{{ 'common.country' | translate }}</p>
                 <p class="text-base font-semibold text-gray-800">{{ v.countryName }}</p>
               </div>
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs text-gray-500 mb-1">Verification Level</p>
+                <p class="text-xs text-gray-500 mb-1">{{ 'services.details.info.verificationLevel' | translate }}</p>
                 <p class="text-base font-semibold text-gray-800">{{ v.verificationLevelName }}</p>
               </div>
             </div>
@@ -161,9 +161,9 @@
             <!-- Currently Withheld -->
             @if (isTokenIssuer() && (withheldCredit().length > 0 || withheldAssets().length > 0)) {
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Currently Withheld</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'services.details.overview.currentlyWithheld' | translate }}</p>
                 @if (withheldCredit().length > 0) {
-                  <p class="text-xs text-gray-500 mb-1">Credit</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.overview.credit' | translate }}</p>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                     @for (c of withheldCredit(); track c.currencyCode) {
                       <div>
@@ -174,7 +174,7 @@
                   </div>
                 }
                 @if (withheldAssets().length > 0) {
-                  <p class="text-xs text-gray-500 mb-1">Assets</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.tabs.assets' | translate }}</p>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     @for (a of withheldAssets(); track a.asset) {
                       <div>
@@ -190,22 +190,22 @@
             <!-- Transactions summary -->
             @if (isTokenIssuer()) {
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Transactions</p>
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'services.details.tabs.transactions' | translate }}</p>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Total</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.common.total' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ transactions().length }}</p>
                 </div>
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Subscribes</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.overview.subscribes' | translate }}</p>
                   <p class="text-base font-semibold text-green-700">{{ subscribeCount() }}</p>
                 </div>
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Redeems</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.overview.redeems' | translate }}</p>
                   <p class="text-base font-semibold text-orange-600">{{ redeemCount() }}</p>
                 </div>
                 <div>
-                  <p class="text-xs text-gray-500 mb-1">Last Transaction</p>
+                  <p class="text-xs text-gray-500 mb-1">{{ 'services.details.overview.lastTransaction' | translate }}</p>
                   @if (lastTrx(); as lt) {
                     <p class="text-xs font-medium text-gray-700">{{ lt.time * 1000 | date:'dd/MM/yyyy HH:mm' }}</p>
                   } @else {
@@ -231,12 +231,12 @@
                 <div class="flex items-center gap-2">
                   @if (v.suspended) {
                     <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">
-                      Suspended
+                      {{ 'state.suspended' | translate }}
                     </span>
                   }
                   <span class="px-4 py-1.5 text-sm font-semibold rounded-full"
                     [class]="v.visibility === 2 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
-                    {{ v.visibility === 2 ? 'Private' : 'Public' }}
+                    {{ (v.visibility === 2 ? 'services.details.visibilityPrivate' : 'services.details.visibilityPublic') | translate }}
                   </span>
                   <span
                     class="px-4 py-1.5 text-sm font-semibold rounded-full"
@@ -247,40 +247,44 @@
                 </div>
               </div>
               @if (suspensionReason()) {
-                <p class="text-xs text-red-600 mt-1">Reason: {{ suspensionReason() }}</p>
+                <p class="text-xs text-red-600 mt-1">{{ 'common.reason' | translate }}: {{ suspensionReason() }}</p>
               }
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Service Address</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.address' | translate }}</p>
                   <p class="font-mono text-base">{{ v.address }}</p>
                 </div>
                 <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">Description</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.description' | translate }}</p>
                   <p class="text-base">{{ v.description }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Email</p>
-                  <p class="text-base">{{ v.email }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.email' | translate }}</p>
+                  <p class="text-base">{{ v.contact?.email }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Mobile</p>
-                  <p class="text-base">{{ v.mobile }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.mobile' | translate }}</p>
+                  <p class="text-base">{{ v.contact?.phone }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Website</p>
-                  <p class="text-base">{{ v.website }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.website' | translate }}</p>
+                  <p class="text-base">{{ v.contact?.website }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.address' | translate }}</p>
+                  <p class="text-base">{{ v.contact?.address }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                   <p class="text-base">{{ v.countryName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Service Type</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.serviceType' | translate }}</p>
                   <p class="text-base">{{ v.serviceTypeName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Verification Level</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.verificationLevel' | translate }}</p>
                   <p class="text-base">{{ v.verificationLevelName }}</p>
                 </div>
                 <!-- <div class="border-t pt-4">
@@ -288,7 +292,7 @@
                   <p class="text-base text-indigo-800 hover:text-indigo-600 cursor-pointer transition-colors" (click)="gotoEntity(v.entity)">{{ v.entityName }}</p>
                 </div> -->
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Regulator</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.regulator' | translate }}</p>
                   <p class="text-base">{{ v.regulatorName }}</p>
                   @if (v.regulator) {
                     <p class="font-mono text-xs text-gray-400">{{ v.regulator }}</p>
@@ -300,9 +304,9 @@
                   <!-- Validators (1:N) -->
                   <div class="border-t pt-4 sm:col-span-2">
                     <div class="flex items-center justify-between">
-                      <p class="text-sm font-medium text-gray-500">Validators ({{ serviceParties().validators.length }})</p>
+                      <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.validatorsCount' | translate: { count: serviceParties().validators.length } }}</p>
                       @if (canEdit && features.systemFunctionEnabled('service-add-validator')) {
-                        <button (click)="attachValidator()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add</button>
+                        <button (click)="attachValidator()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>{{ 'common.add' | translate }}</button>
                       }
                     </div>
                     @for (p of serviceParties().validators; track p.address) {
@@ -314,23 +318,23 @@
                           <span class="font-mono text-xs break-all">{{ p.address }}</span>
                         }
                         @if (!p.active) {
-                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" title="No longer active for this regulator. Existing operations still work; new subscriptions through it are blocked.">Inactive</span>
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" [title]="'services.details.info.validatorInactiveTooltip' | translate">{{ 'services.details.info.inactive' | translate }}</span>
                         }
                         @if (canEdit) {
-                          <button (click)="detachParty(1, p.address)" class="text-xs text-red-600 hover:text-red-800">Remove</button>
+                          <button (click)="detachParty(1, p.address)" class="text-xs text-red-600 hover:text-red-800">{{ 'common.remove' | translate }}</button>
                         }
                       </div>
                     } @empty {
-                      <p class="text-base text-gray-400 italic mt-1">None attached — any regulator-endorsed validator may verify subscribers.</p>
+                      <p class="text-base text-gray-400 italic mt-1">{{ 'services.details.info.noValidatorsAttached' | translate }}</p>
                     }
                   </div>
 
                   <!-- Payment processors (1:N) -->
                   <div class="border-t pt-4 sm:col-span-2">
                     <div class="flex items-center justify-between">
-                      <p class="text-sm font-medium text-gray-500">Payment Processors ({{ serviceParties().paymentProcessors.length }})</p>
+                      <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.paymentProcessorsCount' | translate: { count: serviceParties().paymentProcessors.length } }}</p>
                       @if (canEdit && features.systemFunctionEnabled('service-add-payment-processor')) {
-                        <button (click)="attachPaymentProcessor()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add</button>
+                        <button (click)="attachPaymentProcessor()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>{{ 'common.add' | translate }}</button>
                       }
                     </div>
                     @for (p of serviceParties().paymentProcessors; track p.address) {
@@ -342,26 +346,26 @@
                           <span class="font-mono text-xs break-all">{{ p.address }}</span>
                         }
                         @if (canEdit) {
-                          <button (click)="detachParty(2, p.address)" class="text-xs text-red-600 hover:text-red-800">Remove</button>
+                          <button (click)="detachParty(2, p.address)" class="text-xs text-red-600 hover:text-red-800">{{ 'common.remove' | translate }}</button>
                         }
                       </div>
                     } @empty {
-                      <p class="text-base text-gray-400 italic mt-1">None attached.</p>
+                      <p class="text-base text-gray-400 italic mt-1">{{ 'services.details.info.noneAttached' | translate }}</p>
                     }
                   </div>
 
                   <!-- Custodians (1:N, ≥1 required) -->
                   <div class="border-t pt-4 sm:col-span-2">
                     <div class="flex items-center justify-between">
-                      <p class="text-sm font-medium text-gray-500">Custodians ({{ serviceParties().custodians.length }})</p>
+                      <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.custodiansCount' | translate: { count: serviceParties().custodians.length } }}</p>
                       @if (canEdit && features.systemFunctionEnabled('service-add-custodian')) {
-                        <button (click)="attachCustodian()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Add</button>
+                        <button (click)="attachCustodian()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>{{ 'common.add' | translate }}</button>
                       }
                     </div>
                     @for (p of serviceParties().custodians; track p.address) {
                       <div class="flex items-center gap-2 flex-wrap mt-2">
                         @if (isSelfCustodyAddress(p.address)) {
-                          <span class="text-base">Self-custody</span>
+                          <span class="text-base">{{ 'services.details.info.selfCustody' | translate }}</span>
                           <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
                         } @else if (p.name) {
                           <span class="text-base">{{ p.name }}</span>
@@ -370,14 +374,14 @@
                           <span class="font-mono text-xs break-all">{{ p.address }}</span>
                         }
                         @if (!p.active) {
-                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" title="No longer active for this regulator.">Inactive</span>
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" [title]="'services.details.info.custodianInactiveTooltip' | translate">{{ 'services.details.info.inactive' | translate }}</span>
                         }
                         @if (canEdit && serviceParties().custodians.length > 1) {
-                          <button (click)="detachParty(3, p.address)" class="text-xs text-red-600 hover:text-red-800">Remove</button>
+                          <button (click)="detachParty(3, p.address)" class="text-xs text-red-600 hover:text-red-800">{{ 'common.remove' | translate }}</button>
                         }
                       </div>
                     } @empty {
-                      <p class="text-base text-gray-400 italic mt-1">None attached.</p>
+                      <p class="text-base text-gray-400 italic mt-1">{{ 'services.details.info.noneAttached' | translate }}</p>
                     }
                   </div>
                 }
@@ -388,28 +392,90 @@
                   @if (features.systemFunctionEnabled('service-edit-metadata')) {
                     <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-gray-600 text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-600">
-                      Edit Metadata
+                      {{ 'services.details.info.editMetadata' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('service-change-visibility')) {
                     <button (click)="onChangeVisibility()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
-                      Change Visibility
+                      {{ 'services.details.info.changeVisibility' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('service-change-state')) {
                     <button (click)="openChangeStateModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                      Change State
+                      {{ 'services.details.info.changeState' | translate }}
                     </button>
                   }
+                </div>
+              }
+
+              <!-- Images (public media — avatar / banner / gallery) -->
+              @if (features.systemFunctionEnabled('view-documents')) {
+                <div class="mt-8 pt-6 border-t">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'media.heading' | translate }}</h4>
+                    @if (userInfo && userInfo.role !== 3) {
+                      <button (click)="openAddImageModal()" [disabled]="!entityActive"
+                        class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                        {{ 'media.uploadButton' | translate }}
+                      </button>
+                    }
+                  </div>
+                  @if (mediaImages().length === 0) {
+                    <p class="text-sm text-gray-400 italic">{{ 'media.noImages' | translate }}</p>
+                  } @else {
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      @for (row of mediaImages(); track row.entry.documentId) {
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                          <div class="aspect-video bg-gray-100 flex items-center justify-center">
+                            @if (mediaImageUrls()[row.entry.documentId]) {
+                              <img [src]="mediaImageUrls()[row.entry.documentId]" [alt]="row.entry.title" class="w-full h-full object-cover">
+                            } @else {
+                              <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            }
+                          </div>
+                          <div class="p-2">
+                            <div class="flex items-center justify-between gap-1">
+                              <span class="text-xs text-black font-medium truncate">{{ row.entry.title }}</span>
+                              @if (row.role !== 'gallery') {
+                                <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
+                                  [class]="row.role === 'avatar' ? 'bg-indigo-100 text-indigo-700' : 'bg-cyan-100 text-cyan-700'">
+                                  {{ (row.role === 'avatar' ? 'media.roleAvatar' : 'media.roleBanner') | translate }}
+                                </span>
+                              }
+                            </div>
+                            @if (userInfo && userInfo.role !== 3) {
+                              <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                                @if (row.role !== 'avatar') {
+                                  <button (click)="changeMediaRole(row.entry.documentId, 'avatar')" [disabled]="!entityActive"
+                                    class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setAvatar' | translate }}</button>
+                                }
+                                @if (row.role !== 'banner') {
+                                  <button (click)="changeMediaRole(row.entry.documentId, 'banner')" [disabled]="!entityActive"
+                                    class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setBanner' | translate }}</button>
+                                }
+                                @if (row.role !== 'gallery') {
+                                  <button (click)="changeMediaRole(row.entry.documentId, 'gallery')" [disabled]="!entityActive"
+                                    class="text-[10px] text-gray-500 hover:text-gray-700 disabled:opacity-40">{{ 'media.unsetRole' | translate }}</button>
+                                }
+                                <button (click)="removeMediaImage(row)" [disabled]="!entityActive"
+                                  class="text-[10px] text-red-500 hover:text-red-700 disabled:opacity-40">{{ 'common.remove' | translate }}</button>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                  <p class="text-xs text-gray-400 mt-2">{{ 'media.hint' | translate }}</p>
                 </div>
               }
 
             </div>
           </div>
         }
-        
+
         <!-- assets tab -->
         @if (activeTab() === 'assets') {
           <div class="space-y-3">
@@ -417,16 +483,16 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Name / Symbol</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'services.details.assets.filterNameSymbol' | translate }}</label>
                   <input type="text" [ngModel]="filterAssetName()" (ngModelChange)="filterAssetName.set($event); assetPage.set(0)"
-                    placeholder="Search..."
+                    [placeholder]="'services.details.assets.searchPlaceholder' | translate"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">State</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
                   <select [ngModel]="filterAssetState()" (ngModelChange)="filterAssetState.set($event); assetPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (s of uniqueAssetStates(); track s) {
                       <option [value]="s">{{ s }}</option>
                     }
@@ -435,7 +501,7 @@
                 <div class="flex flex-col justify-end">
                   <button (click)="clearAssetFilters()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -445,7 +511,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -454,7 +520,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -466,19 +532,19 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th scope="col" class="px-6 py-2">#</th>
-                      <th scope="col" class="px-6 py-2">Name</th>
-                      <th scope="col" class="px-6 py-2">Symbol</th>
-                      <th scope="col" class="px-6 py-2">Issuer</th>
-                      <th scope="col" class="px-6 py-2">Type</th>
-                      <th scope="col" class="px-6 py-2">State</th>
-                      <th scope="col" class="px-6 py-2 text-right">Venue Fees</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.name' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'services.details.assets.issuer' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'services.details.assets.venueFees' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredAssets().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="7" class="px-6 py-2">no data</td>
+                        <td colspan="7" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                       </tr>
                     }
                     @else {
@@ -496,7 +562,7 @@
                               </span>
                               @if (data.suspended) {
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                  Suspended
+                                  {{ 'state.suspended' | translate }}
                                 </span>
                               }
                             </div>
@@ -507,7 +573,7 @@
                                       (click)="openVenueFeeConfigModal(data.address, data.symbol)"
                                       [disabled]="!entityActive"
                                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                                Edit Venue Fees
+                                {{ 'services.details.assets.editVenueFees' | translate }}
                               </button>
                             }
                           </td>
@@ -518,18 +584,18 @@
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedAssets().length }} of {{ filteredAssets().length }} Assets</p>
+                <p class="text-xs font-medium text-gray-800">{{ 'services.details.assets.showing' | translate: { showing: pagedAssets().length, total: filteredAssets().length } }}</p>
                 @if (totalAssetPages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>Page {{ assetPage() + 1 }} of {{ totalAssetPages() }}</span>
+                    <span>{{ 'common.pageOf' | translate: { page: assetPage() + 1, pages: totalAssetPages() } }}</span>
                     <div class="flex gap-2">
                       <button (click)="assetPage.set(assetPage() - 1)" [disabled]="assetPage() === 0"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Prev
+                        {{ 'common.prev' | translate }}
                       </button>
                       <button (click)="assetPage.set(assetPage() + 1)" [disabled]="assetPage() >= totalAssetPages() - 1"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Next
+                        {{ 'common.next' | translate }}
                       </button>
                     </div>
                   </div>
@@ -546,16 +612,16 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">Subscription Address</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'services.details.subscriptions.filterAddress' | translate }}</label>
                   <input type="text" [ngModel]="filterSubAddress()" (ngModelChange)="filterSubAddress.set($event); subPage.set(0)"
-                    placeholder="Search by address..."
+                    [placeholder]="'services.details.subscriptions.searchPlaceholder' | translate"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">State</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
                   <select [ngModel]="filterSubState()" (ngModelChange)="filterSubState.set($event); subPage.set(0)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                    <option value="">All</option>
+                    <option value="">{{ 'common.all' | translate }}</option>
                     @for (s of uniqueSubStates(); track s) {
                       <option [value]="s">{{ s }}</option>
                     }
@@ -564,7 +630,7 @@
                 <div class="flex flex-col justify-end">
                   <button (click)="clearSubFilters()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Clear
+                    {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
@@ -574,7 +640,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export Excel
+                      {{ 'common.exportExcel' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
@@ -583,7 +649,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
-                      Export PDF
+                      {{ 'common.exportPdf' | translate }}
                     </button>
                   }
                 </div>
@@ -595,17 +661,17 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th scope="col" class="px-6 py-2">#</th>
-                      <th scope="col" class="px-6 py-2">Date</th>
-                      <th scope="col" class="px-6 py-2">Subscription</th>
-                      <th scope="col" class="px-6 py-2 text-right">Holdings</th>
-                      <th scope="col" class="px-6 py-2">State</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'services.details.common.date' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'services.details.common.subscription' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'services.details.subscriptions.holdings' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredSubscriptions().length === 0) {
                       <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="5" class="px-6 py-2">no data</td>
+                        <td colspan="5" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                       </tr>
                     }
                     @else {
@@ -632,7 +698,7 @@
                               </span>
                               @if (sub.suspended) {
                                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                  Suspended
+                                  {{ 'state.suspended' | translate }}
                                 </span>
                               }
                             </div>
@@ -644,18 +710,18 @@
                 </table>
               </div>
               <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ pagedSubscriptions().length }} of {{ filteredSubscriptions().length }} Subscriptions</p>
+                <p class="text-xs font-medium text-gray-800">{{ 'services.details.subscriptions.showing' | translate: { showing: pagedSubscriptions().length, total: filteredSubscriptions().length } }}</p>
                 @if (totalSubPages() > 1) {
                   <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>Page {{ subPage() + 1 }} of {{ totalSubPages() }}</span>
+                    <span>{{ 'common.pageOf' | translate: { page: subPage() + 1, pages: totalSubPages() } }}</span>
                     <div class="flex gap-2">
                       <button (click)="subPage.set(subPage() - 1)" [disabled]="subPage() === 0"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Prev
+                        {{ 'common.prev' | translate }}
                       </button>
                       <button (click)="subPage.set(subPage() + 1)" [disabled]="subPage() >= totalSubPages() - 1"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        Next
+                        {{ 'common.next' | translate }}
                       </button>
                     </div>
                   </div>
@@ -672,59 +738,59 @@
           <div class="border border-gray-200 rounded-lg p-3 mb-3">
             <div class="flex flex-wrap gap-2 items-end">
               <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500">Type</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
                 <select [ngModel]="filterTrxType()" (ngModelChange)="filterTrxType.set($event); trxPage.set(0)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                  <option value="">All</option>
-                  <option value="Subscribe">Subscribe</option>
-                  <option value="Redeem">Redeem</option>
-                  <option value="Transfer">Transfer</option>
+                  <option value="">{{ 'common.all' | translate }}</option>
+                  <option value="Subscribe">{{ 'services.details.trxs.typeSubscribe' | translate }}</option>
+                  <option value="Redeem">{{ 'services.details.trxs.typeRedeem' | translate }}</option>
+                  <option value="Transfer">{{ 'services.details.trxs.typeTransfer' | translate }}</option>
                 </select>
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500">Asset</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'services.details.common.asset' | translate }}</label>
                 <select [ngModel]="filterTrxAsset()" (ngModelChange)="filterTrxAsset.set($event); trxPage.set(0)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
-                  <option value="">All</option>
+                  <option value="">{{ 'common.all' | translate }}</option>
                   @for (a of uniqueTrxAssets(); track a[0]) {
                     <option [value]="a[0]">{{ a[1] }}</option>
                   }
                 </select>
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500">Subscription</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'services.details.common.subscription' | translate }}</label>
                 <select [ngModel]="filterTrxSubscription()" (ngModelChange)="filterTrxSubscription.set($event); trxPage.set(0)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44">
-                  <option value="">All</option>
+                  <option value="">{{ 'common.all' | translate }}</option>
                   @for (sub of uniqueTrxSubscriptions(); track sub) {
                     <option [value]="sub">{{ sub }}</option>
                   }
                 </select>
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500">Currency</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'services.details.common.currency' | translate }}</label>
                 <select [ngModel]="filterTrxCurrency()" (ngModelChange)="filterTrxCurrency.set($event); trxPage.set(0)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-                  <option value="">All</option>
+                  <option value="">{{ 'common.all' | translate }}</option>
                   @for (c of uniqueTrxCurrencies(); track c) {
                     <option [value]="c">{{ c }}</option>
                   }
                 </select>
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500">From</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
                 <input type="date" [ngModel]="filterTrxStartDate()" (ngModelChange)="filterTrxStartDate.set($event); trxPage.set(0)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-500">To</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
                 <input type="date" [ngModel]="filterTrxEndDate()" (ngModelChange)="filterTrxEndDate.set($event); trxPage.set(0)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
               <div class="flex flex-col justify-end">
                 <button (click)="clearTrxFilters()"
                   class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                  Clear
+                  {{ 'common.clear' | translate }}
                 </button>
               </div>
               <div class="flex gap-2 ml-auto">
@@ -734,7 +800,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                     </svg>
-                    Export Excel
+                    {{ 'common.exportExcel' | translate }}
                   </button>
                 }
                 @if (features.systemFunctionEnabled('export-pdf')) {
@@ -743,7 +809,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                     </svg>
-                    Export PDF
+                    {{ 'common.exportPdf' | translate }}
                   </button>
                 }
               </div>
@@ -755,19 +821,19 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th scope="col" class="px-6 py-2">Date</th>
-                    <th scope="col" class="px-6 py-2">Type</th>
-                    <th scope="col" class="px-6 py-2">Asset</th>
-                    <th scope="col" class="px-6 py-2 text-center">Currency</th>
-                    <th scope="col" class="px-6 py-2 text-right">Tokens</th>
-                    <th scope="col" class="px-6 py-2 text-right">Price</th>
-                    <th scope="col" class="px-6 py-2 text-right">Total</th>
+                    <th scope="col" class="px-6 py-2">{{ 'services.details.common.date' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
+                    <th scope="col" class="px-6 py-2">{{ 'services.details.common.asset' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-center">{{ 'services.details.common.currency' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'services.details.trxs.tokens' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'services.details.trxs.price' | translate }}</th>
+                    <th scope="col" class="px-6 py-2 text-right">{{ 'services.details.common.total' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                     @if(transactions().length === 0) {
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td colspan="7" class="px-6 py-2">no data</td>
+                            <td colspan="7" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                         </tr>
                     }
                     @else {
@@ -787,18 +853,18 @@
               </table>
             </div>
             <div class="flex items-center justify-between px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ pagedTransactions().length }} of {{ filteredTrxs().length }} Transactions ({{ transactions().length }} total)</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'services.details.trxs.showing' | translate: { showing: pagedTransactions().length, total: filteredTrxs().length, grandTotal: transactions().length } }}</p>
               @if (totalTrxPages() > 1) {
                 <div class="flex items-center gap-3 text-xs text-gray-600">
-                  <span>Page {{ trxPage() + 1 }} of {{ totalTrxPages() }}</span>
+                  <span>{{ 'common.pageOf' | translate: { page: trxPage() + 1, pages: totalTrxPages() } }}</span>
                   <div class="flex gap-2">
                     <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      Prev
+                      {{ 'common.prev' | translate }}
                     </button>
                     <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
                       class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      Next
+                      {{ 'common.next' | translate }}
                     </button>
                   </div>
                 </div>
@@ -812,10 +878,10 @@
         @if (activeTab() === 'liquidity') {
           <div class="p-2 space-y-4">
             <div class="flex items-baseline justify-between">
-              <h3 class="text-sm font-semibold text-gray-700">Service Liquidity</h3>
+              <h3 class="text-sm font-semibold text-gray-700">{{ 'services.details.liquidity.title' | translate }}</h3>
               <button (click)="getLiquidity()"
                 class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                Refresh
+                {{ 'common.refresh' | translate }}
               </button>
             </div>
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -823,21 +889,21 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th class="px-6 py-2">Currency</th>
-                      <th class="px-6 py-2 text-right">Balance</th>
-                      <th class="px-6 py-2 text-right">Withheld</th>
-                      <th class="px-6 py-2 text-right">Available</th>
-                      <th class="px-6 py-2 text-right">Obligation</th>
-                      <th class="px-6 py-2 text-right">Shortfall</th>
-                      <th class="px-6 py-2">Coverage</th>
-                      <th class="px-6 py-2 text-right">Actions</th>
+                      <th class="px-6 py-2">{{ 'services.details.common.currency' | translate }}</th>
+                      <th class="px-6 py-2 text-right">{{ 'services.details.liquidity.balance' | translate }}</th>
+                      <th class="px-6 py-2 text-right">{{ 'services.details.liquidity.withheld' | translate }}</th>
+                      <th class="px-6 py-2 text-right">{{ 'services.details.liquidity.available' | translate }}</th>
+                      <th class="px-6 py-2 text-right">{{ 'services.details.liquidity.obligation' | translate }}</th>
+                      <th class="px-6 py-2 text-right">{{ 'services.details.liquidity.shortfall' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'services.details.liquidity.coverage' | translate }}</th>
+                      <th class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if (liquidityLoading()) {
-                      <tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">Loading…</td></tr>
+                      <tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">{{ 'common.loading' | translate }}</td></tr>
                     } @else if (liquidityBalances().length === 0) {
-                      <tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">No currencies configured</td></tr>
+                      <tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">{{ 'services.details.liquidity.noCurrencies' | translate }}</td></tr>
                     } @else {
                       @for (row of liquidityBalances(); track row.currencyCode; let isEven = $even) {
                         @let tone = liquidityCoverageTone(row.coverageRatio);
@@ -876,11 +942,11 @@
                             @if (userInfo && userInfo.role !== 3) {
                               <button (click)="openLiquidityModal('inject', row)" [disabled]="!entityActive"
                                 class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
-                                Inject
+                                {{ 'services.details.liquidity.inject' | translate }}
                               </button>
                               <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive || row.available <= 0"
                                 class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                Withdraw
+                                {{ 'services.details.liquidity.withdraw' | translate }}
                               </button>
                             }
                           </td>
@@ -892,7 +958,7 @@
               </div>
             </div>
             <p class="text-xs text-gray-500">
-              Inject adds credit to this service's on-chain liquidity pool. Withdraw burns credit from the pool. Both operations require the service to be active.
+              {{ 'services.details.liquidity.helpText' | translate }}
             </p>
           </div>
 
@@ -904,7 +970,7 @@
                 <!-- Header -->
                 <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
                   <h3 class="text-xl leading-6 font-semibold text-gray-100">
-                    {{ liquidityModalAction() === 'inject' ? 'Inject Liquidity' : 'Withdraw Liquidity' }}
+                    {{ (liquidityModalAction() === 'inject' ? 'services.details.liquidity.injectTitle' : 'services.details.liquidity.withdrawTitle') | translate }}
                   </h3>
                   <p class="text-xs text-gray-400 mt-1">
                     {{ liquidityModalCurrency()?.name }} ({{ liquidityModalCurrency()?.symbol }})
@@ -915,19 +981,19 @@
                 <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                   @if (liquidityModalAction() === 'withdraw') {
                     <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600">
-                      Available: <span class="font-mono font-semibold text-gray-800">{{ liquidityModalAvailable() | number:'1.2-2' }}</span>
+                      {{ 'services.details.liquidity.available' | translate }}: <span class="font-mono font-semibold text-gray-800">{{ liquidityModalAvailable() | number:'1.2-2' }}</span>
                       <span class="badge-currency ml-1">{{ liquidityModalCurrency()?.symbol }}</span>
                     </div>
                   }
                   <div>
-                    <label class="block text-sm font-medium text-gray-700">Amount</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ 'common.amount' | translate }}</label>
                     <input type="number" min="0" step="0.01" placeholder="0.00"
                       [ngModel]="liquidityModalAmount()" (ngModelChange)="liquidityModalAmount.set($event)"
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700">Reference <span class="text-gray-400 font-normal">(optional)</span></label>
-                    <input type="text" placeholder="bytes32 ref, or leave blank"
+                    <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.reference' | translate }} <span class="text-gray-400 font-normal">{{ 'services.details.liquidity.optional' | translate }}</span></label>
+                    <input type="text" [placeholder]="'services.details.liquidity.refPlaceholder' | translate"
                       [ngModel]="liquidityModalRefNo()" (ngModelChange)="liquidityModalRefNo.set($event)"
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
                   </div>
@@ -940,7 +1006,7 @@
                 <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
                   <button type="button" (click)="closeLiquidityModal()" [disabled]="liquidityModalSubmitting()"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    Cancel
+                    {{ 'common.cancel' | translate }}
                   </button>
                   <button type="button" (click)="submitLiquidity()" [disabled]="liquidityModalSubmitting()"
                     class="text-xs px-3 py-1.5 rounded text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -948,7 +1014,7 @@
                     [class.hover:bg-blue-800]="liquidityModalAction() === 'inject'"
                     [class.bg-red-700]="liquidityModalAction() === 'withdraw'"
                     [class.hover:bg-red-800]="liquidityModalAction() === 'withdraw'">
-                    {{ liquidityModalSubmitting() ? 'Submitting…' : (liquidityModalAction() === 'inject' ? 'Inject' : 'Withdraw') }}
+                    {{ liquidityModalSubmitting() ? ('services.details.liquidity.submitting' | translate) : ((liquidityModalAction() === 'inject' ? 'services.details.liquidity.inject' : 'services.details.liquidity.withdraw') | translate) }}
                   </button>
                 </div>
 
@@ -972,7 +1038,7 @@
       }
       @else {
         <div class="text-center py-12 text-gray-500">
-          <p>Loading service details...</p>
+          <p>{{ 'services.details.loading' | translate }}</p>
         </div>
       }
 
@@ -989,4 +1055,5 @@
 <app-modal-service-custodian></app-modal-service-custodian>
 <app-modal-service-fee-config></app-modal-service-fee-config>
 <app-metadata-edit-modal></app-metadata-edit-modal>
+<app-modal-image-add></app-modal-image-add>
 <app-modal-transaction-info></app-modal-transaction-info>

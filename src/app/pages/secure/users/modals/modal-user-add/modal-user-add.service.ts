@@ -8,6 +8,9 @@ export interface AddUserData {
   password: string;
   role: string;
   approvalRole: 'none' | 'maker' | 'checker';
+  groupId: string | null; // User Group to assign post-create (roles 2/3 only)
+  messagesEnabled: boolean; // grant read-only Messages access post-create (role 4 only)
+  handle: string; // Connect direct-message handle to set post-create ('' = skip)
 }
 
 @Injectable({

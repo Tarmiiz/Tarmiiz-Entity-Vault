@@ -1,0 +1,132 @@
+<app-header [title]="'sidebar.systemConfiguration' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Intro card -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
+    <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'settings.appConfig.title' | translate }}</h2>
+    <p class="text-xs text-gray-600">{{ 'settings.appConfig.description' | translate }}</p>
+  </div>
+
+  <!-- API Endpoint (on-chain external-contract registration, not an app_config value).
+       Read-only: this address MUST match the wallet the Entity API signs with; changing it
+       without rotating that key would brick the API's writes, so rotation is an ops task. -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
+    <div class="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-700">{{ 'profile.api.endpointTitle' | translate }}</h3>
+    </div>
+    <div class="flex flex-col md:flex-row md:items-center gap-2 px-4 py-3">
+      <div class="text-sm font-medium text-gray-800 md:flex-1 min-w-0">{{ 'profile.api.address' | translate }}</div>
+      <div class="text-[11px] font-mono text-gray-500 break-all md:text-right md:shrink-0">{{ apiAddress() || '—' }}</div>
+    </div>
+  </div>
+
+  @if (categories().length === 0) {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center text-sm text-gray-500">
+      @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'common.noData' | translate }} }
+    </div>
+  }
+
+  <!-- One card per category -->
+  @for (group of categories(); track group.category) {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
+      <div class="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
+        <h3 class="text-sm font-semibold text-gray-800">{{ categoryLabel(group.category) }}</h3>
+      </div>
+
+      <ul class="divide-y divide-gray-100">
+        @for (item of group.items; track item.key) {
+          <li class="px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+
+            <!-- Left: label + key + badges -->
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-medium text-gray-800">{{ item.label }}</div>
+              <div class="text-[11px] font-mono text-gray-400 break-all">{{ item.key }}</div>
+              <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                @if (item.restartRequired) {
+                  <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800">
+                    {{ 'settings.appConfig.restartRequired' | translate }}
+                  </span>
+                }
+                @if (item.isDefault) {
+                  <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-600">
+                    {{ 'settings.appConfig.default' | translate }}
+                  </span>
+                } @else {
+                  <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                    {{ 'settings.appConfig.customized' | translate }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Right: control by type -->
+            <div class="flex items-center gap-2 shrink-0">
+
+              @switch (item.type) {
+
+                @case ('bool') {
+                  <label class="inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [checked]="item.value === 'true'"
+                      (change)="toggleBool(item, $any($event.target).checked)"
+                      [disabled]="saving() === item.key"
+                      class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-600 transition-colors relative">
+                      <div class="absolute top-0.5 left-0.5 rtl:left-auto rtl:right-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"
+                        [class.translate-x-5]="item.value === 'true'"
+                        [class.rtl:-translate-x-5]="item.value === 'true'"></div>
+                    </div>
+                  </label>
+                }
+
+                @case ('secret') {
+                  <input type="password" autocomplete="off"
+                    [ngModel]="editValue(item.key)" (ngModelChange)="setEdit(item.key, $event)"
+                    [placeholder]="(item.set ? 'settings.appConfig.secretConfigured' : 'settings.appConfig.secretNotSet') | translate"
+                    class="block w-56 max-w-[55vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+                  <button type="button" (click)="saveValue(item)"
+                    [disabled]="saving() === item.key || (editValue(item.key) === '')"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ 'settings.appConfig.save' | translate }}
+                  </button>
+                }
+
+                @case ('number') {
+                  <input type="number" step="any"
+                    [ngModel]="editValue(item.key)" (ngModelChange)="setEdit(item.key, $event)"
+                    class="block w-40 max-w-[45vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+                  <button type="button" (click)="saveValue(item)"
+                    [disabled]="saving() === item.key || !isDirty(item)"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ 'settings.appConfig.save' | translate }}
+                  </button>
+                }
+
+                @default {
+                  <input type="text" autocomplete="off"
+                    [ngModel]="editValue(item.key)" (ngModelChange)="setEdit(item.key, $event)"
+                    class="block w-56 max-w-[55vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+                  <button type="button" (click)="saveValue(item)"
+                    [disabled]="saving() === item.key || !isDirty(item)"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ 'settings.appConfig.save' | translate }}
+                  </button>
+                }
+              }
+
+              @if (!item.isDefault) {
+                <button type="button" (click)="reset(item)"
+                  [disabled]="saving() === item.key"
+                  class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                  {{ 'settings.appConfig.reset' | translate }}
+                </button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>

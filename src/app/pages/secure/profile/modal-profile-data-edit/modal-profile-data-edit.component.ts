@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { EditProfileData, ModalProfileDataEditService } from './modal-profile-data-edit.service';
@@ -8,7 +9,7 @@ import { EditProfileData, ModalProfileDataEditService } from './modal-profile-da
   templateUrl: './modal-profile-data-edit.component.html',
   styleUrls: ['./modal-profile-data-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],  
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],  
 })
 export class ModalProfileDataEditComponent {
 

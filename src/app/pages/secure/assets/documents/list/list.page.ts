@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -27,6 +27,7 @@ export class ListPage implements OnInit {
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
   private addModal = inject(ModalDocumentAddService);
   private authService = inject(AuthService);
@@ -69,7 +70,7 @@ export class ListPage implements OnInit {
   }
 
   async list() {
-    this.loadingService.show('Loading documents...');
+    this.loadingService.show(this.translate.instant('assets.documents.list.loading'));
     const result = await this.apiService.assetDocumentsList(this.assetAddress(), 1, 100);
     if (result?.documents) this.documents.set(result.documents);
     this.loadingService.hide();
@@ -109,10 +110,10 @@ export class ListPage implements OnInit {
   async add() {
     const result = await this.addModal.show();
     if (!result) return;
-    this.loadingService.show('Adding document...');
+    this.loadingService.show(this.translate.instant('assets.documents.list.adding'));
     try {
       const response = await this.apiService.assetDocumentAdd(this.assetAddress(), result);
-      if (response?.error) this.alertService.show('Error', response.error);
+      if (response?.error) this.alertService.show(this.translate.instant('alerts.error'), response.error);
       else await this.list();
     } finally { this.loadingService.hide(); }
   }

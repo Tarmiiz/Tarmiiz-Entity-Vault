@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 import jsPDF from 'jspdf';
@@ -39,6 +39,7 @@ export class ListPage implements OnInit, OnDestroy {
   utils = inject(UtilsService);
   private authService = inject(AuthService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   get userInfo() { return this.authService.userInfo; }
 
@@ -65,7 +66,7 @@ export class ListPage implements OnInit, OnDestroy {
 
   async refresh(silent = false) {
     if (silent) this.refreshing.set(true);
-    if (!silent) this.loadingService.show('Loading orders...');
+    if (!silent) this.loadingService.show(this.translate.instant('dex.orders.list.loadingOrders'));
     try {
       const r = await this.apiService.vaultDexOrdersList({ start: 1, offset: 200 });
       if (r?.orders) this.orders.set(r.orders);
@@ -131,15 +132,15 @@ export class ListPage implements OnInit, OnDestroy {
   async cancel(o: DexOrder, ev: Event) {
     ev.stopPropagation();
     const ok = await this.alertService.show(
-      'Cancel order',
-      `Cancel order #${o.orderId}? Locked credit or asset will be released back to the subscription. This cannot be undone.`,
-      'Cancel Order'
+      this.translate.instant('dex.orders.cancelConfirm.title'),
+      this.translate.instant('dex.orders.cancelConfirm.message', { id: o.orderId }),
+      this.translate.instant('dex.orders.cancelConfirm.confirm')
     );
     if (!ok) return;
-    this.loadingService.show('Cancelling order...');
+    this.loadingService.show(this.translate.instant('dex.orders.cancelConfirm.loading'));
     try {
       const r = await this.apiService.vaultDexCancelOrder(o.orderId);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.refresh();
     } finally { this.loadingService.hide(); }
   }
@@ -147,10 +148,10 @@ export class ListPage implements OnInit, OnDestroy {
   async openPlaceOrder() {
     const result = await this.placeOrderModal.show();
     if (!result) return;
-    this.loadingService.show('Placing order...');
+    this.loadingService.show(this.translate.instant('dex.orders.list.placingOrder'));
     try {
       const r = await this.apiService.vaultDexPlaceOrder(result);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.refresh();
     } finally { this.loadingService.hide(); }
   }

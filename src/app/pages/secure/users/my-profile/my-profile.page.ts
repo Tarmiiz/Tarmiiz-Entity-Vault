@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 
@@ -29,9 +29,13 @@ export class MyProfilePage {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private fb = inject(FormBuilder);
+  private translate = inject(TranslateService);
 
   userInfo!: User;
   showCredentialsForm = signal(false);
+
+  handle = signal<string | null>(null);
+  handleFull = signal<string | null>(null);
 
   credentialsForm = this.fb.group({
     currentPassword: ['', Validators.required],
@@ -41,6 +45,18 @@ export class MyProfilePage {
 
   ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
+    this.loadHandle();
+  }
+
+  async loadHandle() {
+    try {
+      const res = await this.apiService.vaultUserHandleGet(this.userInfo.userId);
+      this.handle.set(res?.handle || null);
+      this.handleFull.set(res?.fullAddress || null);
+    } catch {
+      this.handle.set(null);
+      this.handleFull.set(null);
+    }
   }
 
   toggleCredentialsForm() {
@@ -54,14 +70,14 @@ export class MyProfilePage {
     const { currentPassword, password, password2 } = this.credentialsForm.value;
 
     if (password !== password2) {
-      this.alertService.show('Passwords Mismatch', 'The passwords you entered do not match.');
+      this.alertService.show(this.translate.instant('users.myProfile.passwordsMismatchTitle'), this.translate.instant('users.myProfile.passwordsMismatchMsg'));
       return;
     }
 
     if (!this.credentialsForm.valid) return;
 
     try {
-      this.loadingService.show('Updating password...');
+      this.loadingService.show(this.translate.instant('users.myProfile.updatingPassword'));
       // The API verifies the current password, then rotates the commitment (password-only).
       const res: any = await this.apiService.vaultUserSelfCredentials(String(this.userInfo.userId), {
         currentPassword: currentPassword ?? '',
@@ -70,14 +86,14 @@ export class MyProfilePage {
 
       // ApiService returns { error } rather than throwing (e.g. wrong current password).
       if (res?.error) {
-        this.alertService.show('Update Failed', res.error);
+        this.alertService.show(this.translate.instant('users.myProfile.updateFailedTitle'), res.error);
         return;
       }
 
       this.showCredentialsForm.set(false);
-      this.alertService.show('Success', 'Your password has been updated.');
+      this.alertService.show(this.translate.instant('alerts.success'), this.translate.instant('users.myProfile.passwordUpdatedMsg'));
     } catch (error) {
-      this.alertService.show('Update Failed', 'There was an error updating your password.');
+      this.alertService.show(this.translate.instant('users.myProfile.updateFailedTitle'), this.translate.instant('users.myProfile.updateFailedMsg'));
     } finally {
       this.loadingService.hide();
     }

@@ -1,0 +1,198 @@
+<app-header [title]="'settings.userGroups.details.title' | translate"></app-header>
+
+<!-- breadcrumb -->
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+  @if (group(); as g) {
+    <nav class="flex">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a routerLink="/authorized/settings/user-groups" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+            {{ 'sidebar.userGroups' | translate }}
+          </a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ g.name }}</span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+  } @else {
+    <div class="h-[20px] bg-gray-200 rounded-full w-48 animate-pulse"></div>
+  }
+</div>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto space-y-4">
+    @if (group(); as g) {
+
+      <!-- info card -->
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+        <div class="flex items-start justify-between mb-3">
+          <h2 class="text-lg font-semibold text-gray-800">{{ 'settings.userGroups.details.infoTitle' | translate }}</h2>
+          <span class="px-3 py-1 text-xs font-semibold rounded-full"
+            [class.bg-sky-100]="isViewerGroup()" [class.text-sky-800]="isViewerGroup()"
+            [class.bg-indigo-100]="!isViewerGroup()" [class.text-indigo-800]="!isViewerGroup()">
+            {{ roleLabel(g.role) }}
+          </span>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">
+          @if (isViewerGroup()) {
+            {{ 'settings.userGroups.details.viewerHint' | translate }}
+          } @else {
+            {{ 'settings.userGroups.details.executiveHint' | translate }}
+          }
+          {{ 'settings.userGroups.details.liveHint' | translate }}
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'settings.userGroups.addModal.name' | translate }}</label>
+            <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)"
+              class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'settings.userGroups.addModal.description' | translate }}</label>
+            <input type="text" [ngModel]="editDescription()" (ngModelChange)="editDescription.set($event)"
+              class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end gap-3">
+          <button (click)="deleteGroup()"
+            class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors">
+            {{ 'settings.userGroups.details.deleteGroup' | translate }}
+          </button>
+          <button (click)="saveInfo()" [disabled]="infoSaving() || !editName().trim()"
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'common.save' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Menu Access -->
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div class="p-4 pb-2">
+          <h3 class="text-sm font-semibold text-gray-800">{{ 'users.details.menu.title' | translate }}</h3>
+          <p class="text-xs text-gray-500 mt-1">{{ 'settings.userGroups.details.menuHint' | translate }}</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-700">
+            <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <tr>
+                <th class="px-4 py-2">{{ 'settings.menu.table.menuItem' | translate }}</th>
+                <th class="px-4 py-2">{{ 'settings.menu.table.key' | translate }}</th>
+                <th class="px-4 py-2 text-right">{{ 'users.details.menu.table.visible' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of menuRows(); track row.menuKey; let i = $index) {
+                <tr [class.bg-gray-50]="i % 2 === 1">
+                  <td class="px-4 py-2">{{ labelFor(row.menuKey) }}</td>
+                  <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ row.menuKey }}</td>
+                  <td class="px-4 py-2 text-right">
+                    <label class="inline-flex items-center cursor-pointer">
+                      <span class="mr-3 text-xs font-medium" [class.text-green-700]="row.effective" [class.text-gray-400]="!row.effective">
+                        {{ (row.effective ? 'users.details.menu.shown' : 'users.details.menu.hidden') | translate }}
+                      </span>
+                      <input type="checkbox" class="sr-only peer"
+                        [checked]="row.effective"
+                        [disabled]="menuSaving() === row.menuKey"
+                        (change)="toggleMenu(row, !row.effective)">
+                      <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-disabled:opacity-50"></div>
+                    </label>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+                    @if (menuLoading()) { {{ 'common.loading' | translate }} } @else { {{ 'users.details.menu.empty' | translate }} }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- System Functions -->
+      @if (sysFnRows().length > 0 || sysFnLoading()) {
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div class="p-4 pb-2">
+            <h3 class="text-sm font-semibold text-gray-800">{{ 'users.details.sysfn.title' | translate }}</h3>
+            <p class="text-xs text-gray-500 mt-1">{{ 'settings.userGroups.details.sysFnHint' | translate }}</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-700">
+              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <tr>
+                  <th class="px-4 py-2">{{ 'users.details.sysfn.table.function' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'settings.menu.table.key' | translate }}</th>
+                  <th class="px-4 py-2 text-right">{{ 'users.details.sysfn.table.available' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of sysFnRows(); track row.functionKey; let i = $index) {
+                  <tr [class.bg-gray-50]="i % 2 === 1">
+                    <td class="px-4 py-2">{{ fnLabelFor(row.functionKey) }}</td>
+                    <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ row.functionKey }}</td>
+                    <td class="px-4 py-2 text-right">
+                      <label class="inline-flex items-center cursor-pointer">
+                        <span class="mr-3 text-xs font-medium" [class.text-green-700]="row.effective" [class.text-gray-400]="!row.effective">
+                          {{ (row.effective ? 'users.details.sysfn.allowed' : 'users.details.sysfn.blocked') | translate }}
+                        </span>
+                        <input type="checkbox" class="sr-only peer"
+                          [checked]="row.effective"
+                          [disabled]="sysFnSaving() === row.functionKey"
+                          (change)="toggleSystemFunction(row, !row.effective)">
+                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-disabled:opacity-50"></div>
+                      </label>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Members -->
+      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div class="p-4 pb-2">
+          <h3 class="text-sm font-semibold text-gray-800">{{ 'settings.userGroups.details.membersTitle' | translate }}</h3>
+          <p class="text-xs text-gray-500 mt-1">{{ 'settings.userGroups.details.membersHint' | translate }}</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-700">
+            <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <tr>
+                <th class="px-4 py-2">{{ 'settings.userGroups.details.memberUserId' | translate }}</th>
+                <th class="px-4 py-2">{{ 'settings.userGroups.details.memberAssignedAt' | translate }}</th>
+                <th class="px-4 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (member of members(); track member.userId; let i = $index) {
+                <tr [class.bg-gray-50]="i % 2 === 1">
+                  <td class="px-4 py-2 font-mono">{{ member.userId }}</td>
+                  <td class="px-4 py-2 text-xs text-gray-500">{{ member.assignedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="px-4 py-2 text-right">
+                    <a [routerLink]="['/authorized/users/details', member.userId]" class="text-xs text-indigo-600 hover:underline">
+                      {{ 'settings.userGroups.details.viewUser' | translate }}
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+                    @if (membersLoading()) { {{ 'common.loading' | translate }} } @else { {{ 'settings.userGroups.details.noMembers' | translate }} }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    }
+  </div>
+</main>

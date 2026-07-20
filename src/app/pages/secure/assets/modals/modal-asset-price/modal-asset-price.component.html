@@ -3,46 +3,46 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">
-          Add Price &mdash; {{ input.symbol }}
+          {{ 'assets.priceModal.addTitle' | translate: { symbol: input.symbol } }}
         </h3>
         <p class="text-xs text-gray-400 mt-1">
-          Price mode: {{ input.priceMode === 1 ? 'Single' : 'Bid/Ask' }}
+          {{ 'assets.priceModal.priceModeLine' | translate: { mode: (input.priceMode === 1 ? ('assets.priceModal.single' | translate) : ('assets.priceModal.bidAsk' | translate)) } }}
         </p>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSave()">
         <div class="p-6 space-y-4">
           @if (input.priceMode === 2) {
             <div>
-              <label for="bid" class="block text-sm font-medium text-gray-700">Bid</label>
+              <label for="bid" class="block text-sm font-medium text-gray-700">{{ 'assets.priceModal.bid' | translate }}</label>
               <input id="bid" type="number" step="any" min="0" formControlName="bid"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.000000" />
             </div>
             <div>
-              <label for="ask" class="block text-sm font-medium text-gray-700">Ask</label>
+              <label for="ask" class="block text-sm font-medium text-gray-700">{{ 'assets.priceModal.ask' | translate }}</label>
               <input id="ask" type="number" step="any" min="0" formControlName="ask"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.000000" />
               @if (form.value.bid != null && form.value.ask != null && +form.value.ask < +form.value.bid) {
-                <p class="mt-1 text-xs text-red-600">Ask must be greater than or equal to Bid.</p>
+                <p class="mt-1 text-xs text-red-600">{{ 'assets.priceModal.askMustBeGreater' | translate }}</p>
               }
             </div>
           } @else {
             <div>
-              <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+              <label for="price" class="block text-sm font-medium text-gray-700">{{ 'assets.priceModal.priceLabel' | translate }}</label>
               <input id="price" type="number" step="any" min="0" formControlName="price"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.000000" />
-              <p class="mt-1 text-xs text-gray-500">In Single-price mode the same value is recorded as both bid and ask.</p>
+              <p class="mt-1 text-xs text-gray-500">{{ 'assets.priceModal.singleModeHint' | translate }}</p>
             </div>
           }
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!isValid()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Save Price
+            {{ 'assets.priceModal.save' | translate }}
           </button>
         </div>
       </form>

@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -52,6 +52,7 @@ export class ListPage implements OnInit {
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -136,11 +137,14 @@ export class ListPage implements OnInit {
     }
   }
 
-  private readonly stateNames: Record<number, string> = {
-    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
-  };
-
   private mapVaultAsset(raw: any): Asset {
+    const stateNames: Record<number, string> = {
+      0: this.translate.instant('state.inactive'),
+      1: this.translate.instant('state.initiated'),
+      2: this.translate.instant('state.active'),
+      3: this.translate.instant('state.suspended'),
+      4: this.translate.instant('state.deactivated'),
+    };
     return {
       address: raw.address,
       name: raw.name,
@@ -168,18 +172,18 @@ export class ListPage implements OnInit {
       suspended: raw.suspended === true || raw.suspended === 1,
       creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
-      stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      stateName: raw.asset_state_name ?? stateNames[raw.state] ?? String(raw.state ?? ''),
       priceMode: raw.priceMode ?? raw.price_mode ?? 2,
-      priceModeName: raw.priceModeName ?? raw.price_mode_name ?? (Number(raw.priceMode ?? raw.price_mode ?? 2) === 1 ? 'Single' : 'Bid/Ask'),
+      priceModeName: raw.priceModeName ?? raw.price_mode_name ?? (Number(raw.priceMode ?? raw.price_mode ?? 2) === 1 ? this.translate.instant('assets.enums.priceMode.single') : this.translate.instant('assets.enums.priceMode.bidAsk')),
       supplyMode: raw.supplyMode ?? raw.supply_mode ?? 1,
-      supplyModeName: raw.supplyModeName ?? raw.supply_mode_name ?? (Number(raw.supplyMode ?? raw.supply_mode ?? 1) === 2 ? 'Dynamic' : 'Fixed'),
+      supplyModeName: raw.supplyModeName ?? raw.supply_mode_name ?? (Number(raw.supplyMode ?? raw.supply_mode ?? 1) === 2 ? this.translate.instant('assets.enums.supplyMode.dynamic') : this.translate.instant('assets.enums.supplyMode.fixed')),
     };
   }
 
   async listAssets(silent = false) {
     if (silent) this.refreshing.set(true);
     if (!silent) {
-      this.loadingService.show('Loading data...');
+      this.loadingService.show(this.translate.instant('common.loadingData'));
       this.assets.set([]);
     }
     try {
@@ -212,14 +216,17 @@ export class ListPage implements OnInit {
     const r = await this.assetRegisterExistingService.show();
     if (!r?.registered) return;
     await this.listAssets();
-    this.alertService.show('Registered', `Asset ${r.address.slice(0, 6)}…${r.address.slice(-4)} registered.`);
+    this.alertService.show(
+      this.translate.instant('assets.list.registeredTitle'),
+      this.translate.instant('assets.list.registeredMessage', { address: `${r.address.slice(0, 6)}…${r.address.slice(-4)}` })
+    );
   }
 
   async openAddModal() {
     const data = await this.assetAddService.show();
     if (!data) return;
 
-    this.loadingService.show('Creating asset...');
+    this.loadingService.show(this.translate.instant('assets.addModal.submitting'));
     try {
       const result = await this.apiService.vaultCreateAsset({
         owner: data.owner,
@@ -242,14 +249,50 @@ export class ListPage implements OnInit {
         ...(data.supplyMode === 1 ? { initialSupply: data.initialSupply } : {}),
       });
       if (result?.type === 'success') {
+        // Attachments upload AFTER create — documents attach to the new asset's address.
+        // The API auto-folds public docs/images into the asset metadata's `media` key per upload.
+        if (result.address && (data.documents.length || data.images.length)) {
+          await this.uploadAssetAttachments(result.address, data);
+        }
         await this.listAssets();
       } else {
-        this.alertService.show('Error', result?.error || 'Failed to create asset.');
+        this.alertService.show(this.translate.instant('alerts.error'), result?.error || this.translate.instant('assets.list.createFailed'));
       }
     } catch (error) {
-      this.alertService.show('Error', 'An unexpected error occurred.');
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
+    }
+  }
+
+  // Sequential post-create upload of the wizard's documents + images. Continues past
+  // per-file failures (the asset already exists) and reports them in one summary alert —
+  // failed files can be re-added from the asset's Documents tab / Images section.
+  private async uploadAssetAttachments(address: string, data: { documents: any[]; images: any[] }) {
+    const queue = [
+      ...data.documents.map(d => ({ ...d, imageRole: undefined })),
+      ...data.images.map(d => ({ ...d, imageRole: d.role !== 'gallery' ? d.role : undefined })),
+    ];
+    const failures: string[] = [];
+    for (let i = 0; i < queue.length; i++) {
+      const item = queue[i];
+      const label = item.title || item.file.name;
+      this.loadingService.show(this.translate.instant('assets.addModal.uploadingAttachment', { current: i + 1, total: queue.length, name: label }));
+      const res = await this.apiService.assetDocumentAddMultipart(address, item.file, {
+        title: item.title,
+        description: item.description,
+        fileType: item.file.type,
+        documentType: item.documentType,
+        documentState: 1,
+        ...(item.imageRole ? { imageRole: item.imageRole } : {}),
+      });
+      if (res?.error) failures.push(`${label}: ${res.error}`);
+    }
+    if (failures.length) {
+      this.alertService.show(
+        this.translate.instant('assets.addModal.attachmentFailuresTitle'),
+        this.translate.instant('assets.addModal.attachmentFailuresMessage', { failed: failures.length, total: queue.length }) + '\n' + failures.join('\n')
+      );
     }
   }
 
@@ -258,18 +301,28 @@ export class ListPage implements OnInit {
   }
 
   exportExcel() {
+    const nameLabel = this.translate.instant('assets.table.name');
+    const symbolLabel = this.translate.instant('assets.table.symbol');
+    const currencyLabel = this.translate.instant('assets.table.currency');
+    const typeLabel = this.translate.instant('assets.table.type');
+    const circulatingLabel = this.translate.instant('assets.table.circulating');
+    const stateLabel = this.translate.instant('assets.table.state');
+    const suspendedLabel = this.translate.instant('assets.table.suspended');
+    const yesLabel = this.translate.instant('common.yes');
+    const noLabel = this.translate.instant('common.no');
+
     const rows = this.filteredAssets().map(a => ({
-      'Name': a.name,
-      'Symbol': a.symbol,
-      'Currency': a.currencyCode,
-      'Type': a.supplyModeName,
-      'Circulating': a.circulating,
-      'State': a.stateName,
-      'Suspended': a.suspended ? 'Yes' : 'No',
+      [nameLabel]: a.name,
+      [symbolLabel]: a.symbol,
+      [currencyLabel]: a.currencyCode,
+      [typeLabel]: a.supplyModeName,
+      [circulatingLabel]: a.circulating,
+      [stateLabel]: a.stateName,
+      [suspendedLabel]: a.suspended ? yesLabel : noLabel,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Assets');
+    XLSX.utils.book_append_sheet(wb, ws, this.translate.instant('assets.title'));
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `assets_${stamp}.xlsx`);
     this.auditService.logExport('excel', 'assets');
@@ -280,24 +333,26 @@ export class ListPage implements OnInit {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pad = 14;
 
+    const noneLabel = this.translate.instant('common.none');
+
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Assets', pad, 15);
+    doc.text(this.translate.instant('assets.title'), pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
 
     const circOp = this.filterCirculatingOp();
     const circAmt = this.filterCirculatingAmt();
-    const circLabel = circOp && circAmt !== null ? `${circOp === 'gt' ? '>' : '<'} ${circAmt}` : 'None';
+    const circLabel = circOp && circAmt !== null ? `${circOp === 'gt' ? '>' : '<'} ${circAmt}` : noneLabel;
     const filterParts = [
-      `Type: ${this.filterType() || 'None'}`,
-      `State: ${this.filterState() || 'None'}`,
-      `Currency: ${this.filterCurrency() || 'None'}`,
-      `Circulating: ${circLabel}`,
+      `${this.translate.instant('assets.filters.type')}: ${this.filterType() || noneLabel}`,
+      `${this.translate.instant('assets.filters.state')}: ${this.filterState() || noneLabel}`,
+      `${this.translate.instant('assets.filters.currency')}: ${this.filterCurrency() || noneLabel}`,
+      `${this.translate.instant('assets.filters.circulating')}: ${circLabel}`,
     ];
     doc.setFontSize(8);
     doc.setTextColor(100);
-    doc.text(`Filters: ${filterParts.join('  |  ')}`, pad, 27);
+    doc.text(`${this.translate.instant('common.filters')}: ${filterParts.join('  |  ')}`, pad, 27);
     doc.setTextColor(0);
 
     autoTable(doc, {
@@ -306,15 +361,23 @@ export class ListPage implements OnInit {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
       columnStyles: { 5: { halign: 'right' } },
-      head: [[ '#', 'Name', 'Symbol', 'Currency', 'Type', { content: 'Circulating', styles: { halign: 'right' } }, 'State' ]],
+      head: [[
+        this.translate.instant('assets.table.id'),
+        this.translate.instant('assets.table.name'),
+        this.translate.instant('assets.table.symbol'),
+        this.translate.instant('assets.table.currency'),
+        this.translate.instant('assets.table.type'),
+        { content: this.translate.instant('assets.table.circulating'), styles: { halign: 'right' } },
+        this.translate.instant('assets.table.state'),
+      ]],
       body: assets.map((a, i) => [
         i + 1,
         a.name,
         a.symbol,
         a.currencyCode,
-        a.supplyModeName ?? (a.supplyMode === 2 ? 'Dynamic' : 'Fixed'),
+        a.supplyModeName ?? (a.supplyMode === 2 ? this.translate.instant('assets.enums.supplyMode.dynamic') : this.translate.instant('assets.enums.supplyMode.fixed')),
         this.utils.formatTokens(a.circulating),
-        a.suspended ? `${a.stateName} (Suspended)` : a.stateName,
+        a.suspended ? `${a.stateName} ${this.translate.instant('assets.list.suspendedSuffix')}` : a.stateName,
       ]),
     });
 

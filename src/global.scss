@@ -181,7 +181,7 @@ ion-header {
 html.lang-ar,
 html.lang-ar body,
 html.lang-ar ion-app {
-  font-family: 'Cairo', 'Inter', 'Montserrat', sans-serif;
+  font-family: 'Noto Kufi Arabic', 'Inter', 'Montserrat', sans-serif;
   /* Arabic glyphs render smaller than Latin at the same nominal size — bump
      the root to keep visual weight in lockstep with the English UI. All
      Tailwind text-* utilities are rem-based so this flows down globally. */

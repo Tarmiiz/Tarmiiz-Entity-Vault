@@ -317,7 +317,7 @@ export const routes: Routes = [
       {
         path: 'messages',
         canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('messages')],
-        data: { allowedRoles: [1, 2, 3] },
+        data: { allowedRoles: [1, 2, 3, 4] }, // role 4 = Security officer, read-only full-audit view
         children: [
           {
             path: 'list',
@@ -402,7 +402,8 @@ export const routes: Routes = [
           },
         ]
       },
-      // approvals (maker/checker workflow)
+      // approvals — the approval-request queue (maker/checker workflow). The
+      // policy/settings page moved to /authorized/settings/approval-policy.
       {
         path: 'approvals',
         canActivate: [AuthGuard, menuFeatureGuard('approvals')],
@@ -412,12 +413,6 @@ export const routes: Routes = [
             loadComponent: () => import('./pages/secure/approvals/list/list.page').then( m => m.ListPage),
             canActivate: [AuthGuard, RoleGuard],
             data: { allowedRoles: [1, 2] },
-          },
-          {
-            path: 'policy',
-            loadComponent: () => import('./pages/secure/approvals/policy/policy.page').then( m => m.PolicyPage),
-            canActivate: [AuthGuard, RoleGuard],
-            data: { allowedRoles: [1] },
           },
           {
             path: '',
@@ -492,6 +487,26 @@ export const routes: Routes = [
             data: { allowedRoles: [1] },
           },
           {
+            // Approval Settings — admin only, core page (never menu-gated); the
+            // maker/checker policy toggles, decoupled from the 'approvals' module.
+            path: 'approval-policy',
+            loadComponent: () => import('./pages/secure/approvals/policy/policy.page').then(m => m.PolicyPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            path: 'user-groups',
+            loadComponent: () => import('./pages/secure/settings/user-groups/list/user-groups.page').then(m => m.UserGroupsPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            path: 'user-groups/details/:groupId',
+            loadComponent: () => import('./pages/secure/settings/user-groups/details/details.page').then(m => m.UserGroupDetailsPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
             path: 'backup',
             loadComponent: () => import('./pages/secure/settings/backup/backup.page').then(m => m.SettingsBackupPage),
             canActivate: [AuthGuard, RoleGuard],
@@ -500,6 +515,12 @@ export const routes: Routes = [
           {
             path: 'external-integrations',
             loadComponent: () => import('./pages/secure/settings/external-integrations/external-integrations.page').then(m => m.ExternalIntegrationsPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            path: 'app-config',
+            loadComponent: () => import('./pages/secure/settings/app-config/app-config.page').then(m => m.AppConfigPage),
             canActivate: [AuthGuard, RoleGuard],
             data: { allowedRoles: [1] },
           },

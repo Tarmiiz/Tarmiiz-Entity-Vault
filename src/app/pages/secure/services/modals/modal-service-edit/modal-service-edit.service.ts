@@ -3,9 +3,6 @@ import { Service } from '../../../../../shared/models/data.model';
 
 export interface EditServiceData {
   name: string;
-  website: string;
-  email: string;
-  mobile: string;
   validator: string;
   paymentProcessor: string;
 }

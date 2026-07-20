@@ -1,11 +1,11 @@
 ﻿<app-header [title]="'dex.venues.title' | translate"></app-header>
 
 <div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
-  <nav class="flex" aria-label="Breadcrumb">
+  <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
         <a routerLink="/authorized/dex/venues/list"
-          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX Venues</a>
+          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.venues.fullTitle' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -26,22 +26,22 @@
         <button (click)="setTab('info')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'info'" [class.border-b-2]="activeTab() === 'info'" [class.border-blue-600]="activeTab() === 'info'" [class.bg-blue-600]="activeTab() === 'info'">
-          Information
+          {{ 'dex.venues.details.tabs.info' | translate }}
         </button>
         <button (click)="setTab('assets')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'assets'" [class.border-b-2]="activeTab() === 'assets'" [class.border-blue-600]="activeTab() === 'assets'" [class.bg-blue-600]="activeTab() === 'assets'">
-          Assets ({{ venueAssets().length }})
+          {{ 'dex.venues.details.tabs.assets' | translate }} ({{ venueAssets().length }})
         </button>
         <button (click)="setTab('orders')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'orders'" [class.border-b-2]="activeTab() === 'orders'" [class.border-blue-600]="activeTab() === 'orders'" [class.bg-blue-600]="activeTab() === 'orders'">
-          Orders ({{ venueOrders().length }})
+          {{ 'dex.venues.details.tabs.orders' | translate }} ({{ venueOrders().length }})
         </button>
         <button (click)="setTab('trades')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'trades'" [class.border-b-2]="activeTab() === 'trades'" [class.border-blue-600]="activeTab() === 'trades'" [class.bg-blue-600]="activeTab() === 'trades'">
-          Trades ({{ venueTrades().length }})
+          {{ 'dex.venues.details.tabs.trades' | translate }} ({{ venueTrades().length }})
         </button>
       </div>
     </div>
@@ -53,33 +53,33 @@
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
-                  <h2 class="text-1xl font-bold text-gray-800">{{ v.serviceName || 'Unnamed Service' }}</h2>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ v.serviceName || ('dex.venues.details.unnamedService' | translate) }}</h2>
                   <p class="text-xs text-gray-500 mt-0.5 font-mono break-all">{{ v.serviceAddress }}</p>
                 </div>
                 <div class="flex flex-row items-center gap-2">
                   <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStateClass(v.state)">{{ stateName(v.state) }}</span>
                   @if (v.suspended) {
-                    <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                    <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">{{ 'state.suspended' | translate }}</span>
                   }
                 </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                   <p class="text-base text-gray-700">{{ v.countryName || '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Registered</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.venues.table.registered' | translate }}</p>
                   <p class="text-base text-gray-700">{{ v.registeredAt ? utils.formatDate(v.registeredAt) : '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Last Updated</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.updatedAt' | translate }}</p>
                   <p class="text-base text-gray-700">{{ formatMs(v.updatedAt) }}</p>
                 </div>
                 @if (v.suspended) {
                   <div class="border-t pt-4 col-span-2">
-                    <p class="text-sm font-medium text-gray-500">Suspension Reason</p>
+                    <p class="text-sm font-medium text-gray-500">{{ 'dex.venues.details.suspensionReason' | translate }}</p>
                     <p class="text-base text-gray-700">{{ v.suspendedReason || '—' }}</p>
                   </div>
                 }
@@ -89,21 +89,21 @@
                 @if (features.systemFunctionEnabled('venue-change-state')) {
                   <button (click)="openStateModal()" [disabled]="v.state === 4"
                     class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    Change State
+                    {{ 'dex.venues.details.changeState' | translate }}
                   </button>
                 }
               </div>
 
               @if (v.suspended) {
                 <div class="mt-6 px-3 py-2 rounded bg-yellow-50 border border-yellow-200 text-xs text-yellow-800">
-                  Awaiting regulator clearance — orders cannot place on this venue until the regulator clears the suspension.
+                  {{ 'dex.venues.details.suspendedWarning' | translate }}
                 </div>
               }
 
               <div class="mt-8 border-t pt-4">
-                <h3 class="text-base font-semibold text-gray-800 mb-3">Tiers</h3>
+                <h3 class="text-base font-semibold text-gray-800 mb-3">{{ 'dex.venues.table.tiers' | translate }}</h3>
                 <p class="text-xs text-gray-500 mb-3">
-                  Request which scopes this venue may host trading at. Approval is granted by the venue's regulator.
+                  {{ 'dex.venues.details.tiersHint' | translate }}
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   @for (tier of [1, 2, 3]; track tier) {
@@ -111,11 +111,11 @@
                       <p class="text-sm font-semibold text-gray-700">{{ tierLabel($any(tier)) }}</p>
                       <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                             [class]="tierStatus($any(tier)).cls">{{ tierStatus($any(tier)).label }}</span>
-                      @if (tierStatus($any(tier)).label === 'Not requested' && userInfo && userInfo.role !== 3) {
+                      @if (tierStatus($any(tier)).code === 'none' && userInfo && userInfo.role !== 3) {
                         <div class="mt-3">
                           <button (click)="requestTier($any(tier))"
                             class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-                            Request approval
+                            {{ 'dex.venues.tier.requestApproval' | translate }}
                           </button>
                         </div>
                       }
@@ -133,18 +133,18 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th class="px-6 py-2">#</th>
-                    <th class="px-6 py-2">Asset</th>
-                    <th class="px-6 py-2">Symbol</th>
-                    <th class="px-6 py-2">Tier</th>
-                    <th class="px-6 py-2">Issuer</th>
-                    <th class="px-6 py-2">Address</th>
-                    <th class="px-6 py-2">Enabled</th>
+                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.issuer' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'common.address' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.enabled' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueAssets().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">No assets are enabled to trade on this venue.</td></tr>
+                    <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">{{ 'dex.venues.details.assetsTable.noAssets' | translate }}</td></tr>
                   } @else {
                     @for (a of venueAssets(); track a.baseAsset + '-' + a.tier; let i = $index; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
@@ -164,7 +164,7 @@
               </table>
             </div>
             <div class="flex items-center px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ venueAssets().length }} of Total {{ venueAssets().length }} Records</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.details.assetsTable.footer' | translate: { shown: venueAssets().length, total: venueAssets().length } }}</p>
             </div>
           </div>
         }
@@ -175,20 +175,20 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th class="px-6 py-2">#</th>
-                    <th class="px-6 py-2">ID</th>
-                    <th class="px-6 py-2">Asset</th>
-                    <th class="px-6 py-2">Side</th>
-                    <th class="px-6 py-2">Price</th>
-                    <th class="px-6 py-2">Amount</th>
-                    <th class="px-6 py-2">Filled</th>
-                    <th class="px-6 py-2">Status</th>
-                    <th class="px-6 py-2">Created</th>
+                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.ordersTable.orderId' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.orders.table.side' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.orders.table.price' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'common.amount' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.ordersTable.filled' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.ordersTable.status' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'common.createdAt' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueOrders().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">no orders for this venue</td></tr>
+                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">{{ 'dex.venues.details.ordersTable.noOrders' | translate }}</td></tr>
                   } @else {
                     @for (o of venueOrders(); track o.orderId; let i = $index; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
@@ -197,7 +197,7 @@
                         <td class="px-6 py-2">{{ i + 1 }}</td>
                         <td class="px-6 py-2 font-mono">#{{ o.orderId }}</td>
                         <td class="px-6 py-2">{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
-                        <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? 'Buy' : 'Sell') }}</span></td>
+                        <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? ('dex.orders.side.buy' | translate) : ('dex.orders.side.sell' | translate)) }}</span></td>
                         <td class="px-6 py-2">{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
                         <td class="px-6 py-2">{{ fmtAmount(o.amount) }}</td>
                         <td class="px-6 py-2">{{ fmtAmount(o.filled) }}</td>
@@ -210,7 +210,7 @@
               </table>
             </div>
             <div class="flex items-center px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ venueOrders().length }} Orders</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.details.ordersTable.footer' | translate: { shown: venueOrders().length } }}</p>
             </div>
           </div>
         }
@@ -221,20 +221,20 @@
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                   <tr>
-                    <th class="px-6 py-2">#</th>
-                    <th class="px-6 py-2">ID</th>
-                    <th class="px-6 py-2">Asset</th>
-                    <th class="px-6 py-2">Amount</th>
-                    <th class="px-6 py-2">Price</th>
-                    <th class="px-6 py-2">Credit</th>
-                    <th class="px-6 py-2">Buyer</th>
-                    <th class="px-6 py-2">Seller</th>
-                    <th class="px-6 py-2">Executed</th>
+                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.tradeId' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'common.amount' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.trades.table.price' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.credit' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.buyer' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.seller' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.executed' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueTrades().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">no trades for this venue</td></tr>
+                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">{{ 'dex.venues.details.tradesTable.noTrades' | translate }}</td></tr>
                   } @else {
                     @for (t of venueTrades(); track t.tradeId; let i = $index; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
@@ -256,7 +256,7 @@
               </table>
             </div>
             <div class="flex items-center px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">Showing {{ venueTrades().length }} Trades</p>
+              <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.details.tradesTable.footer' | translate: { shown: venueTrades().length } }}</p>
             </div>
           </div>
         }

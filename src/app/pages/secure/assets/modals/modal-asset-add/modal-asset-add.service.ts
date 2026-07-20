@@ -1,5 +1,21 @@
 import { Injectable, signal } from '@angular/core';
 
+// Attachment collected in the wizard's Documents step — uploaded AFTER the asset is
+// created (docs attach to the asset address, which doesn't exist until create returns).
+export interface WizardDocFile {
+  file: File;
+  title: string;
+  description: string;
+  documentType: number; // 1 = Public, 2 = Private (entity-only at creation)
+}
+
+// Images step row — same pipeline as documents plus a media role. Avatar/banner are
+// public-only (they land in the asset's public metadata `media` index).
+export interface WizardImageFile extends WizardDocFile {
+  role: 'avatar' | 'banner' | 'gallery';
+  previewUrl: string;
+}
+
 export interface AddAssetData {
   owner: string;
   issuer: string;
@@ -20,6 +36,9 @@ export interface AddAssetData {
   initialSupply?: number;
   creditSettlement: boolean;
   customMetadata: Record<string, string>;
+  // Optional attachments — uploaded post-create by the list page (documents first, then images).
+  documents: WizardDocFile[];
+  images: WizardImageFile[];
 }
 
 @Injectable({

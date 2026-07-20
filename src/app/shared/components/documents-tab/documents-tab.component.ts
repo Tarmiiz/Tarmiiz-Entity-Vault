@@ -5,6 +5,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { from, of } from 'rxjs';
 
@@ -36,14 +37,17 @@ interface DocFormState {
   doc: Document | null;
 }
 
-const DOC_TYPE_PUBLIC  = 1;
-const DOC_TYPE_PRIVATE = 2;
+const DOC_TYPE_PUBLIC   = 1;
+const DOC_TYPE_PRIVATE  = 2;
+const DOC_TYPE_INTERNAL = 3; // encrypted for this tenant only — never shareable
 // DirectoryProxy party types: 2=Entity, 3=Regulator, 4=Service, 5=Subscription.
 const DIR_PARTY_REGULATOR = 3;
 
 // Placeholder painted into the new tab while a document loads, so it doesn't read as an
-// accidental blank popup during the (potentially multi-second) IPFS fetch.
-const DOC_LOADING_HTML = `<!doctype html><html><head><meta charset="utf-8"><title>Loading document…</title>
+// accidental blank popup during the (potentially multi-second) IPFS fetch. Built per-call (not a
+// module-level const) so the label can go through TranslateService.
+function buildDocLoadingHtml(label: string): string {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${label}</title>
 <style>
   html,body{height:100%;margin:0}
   body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
@@ -53,7 +57,8 @@ const DOC_LOADING_HTML = `<!doctype html><html><head><meta charset="utf-8"><titl
   @keyframes spin{to{transform:rotate(360deg)}}
   p{margin:0;font-size:15px}
 </style></head>
-<body><div class="spinner"></div><p>Loading document…</p></body></html>`;
+<body><div class="spinner"></div><p>${label}</p></body></html>`;
+}
 
 // A document a foreign party (e.g. a regulator) shared directly with THIS template (the service /
 // asset / subscription this tab is showing). Read-only here; the owner holds the doc.
@@ -76,7 +81,7 @@ interface InboundDoc {
   templateUrl: './documents-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalDocumentShareComponent, ModalDocumentSignComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, ModalDocumentShareComponent, ModalDocumentSignComponent],
 })
 export class DocumentsTabComponent implements OnChanges {
   @Input() resourceType!: ResourceType;
@@ -90,6 +95,7 @@ export class DocumentsTabComponent implements OnChanges {
   private shareModal = inject(ModalDocumentShareService);
   private signModal = inject(ModalDocumentSignService);
   private destroyRef = inject(DestroyRef);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
   features = inject(FeaturesService);
 
@@ -152,16 +158,20 @@ export class DocumentsTabComponent implements OnChanges {
     return false;
   });
 
+  // Values are translation KEYS (not literal text) — template usages pipe through `| translate`;
+  // the TS-side mapDoc() usage resolves it via translate.instant() at call time.
   readonly docTypeNames: Record<number, string> = {
-    [DOC_TYPE_PUBLIC]:  'Public',
-    [DOC_TYPE_PRIVATE]: 'Private',
+    [DOC_TYPE_PUBLIC]:   'documentsTab.docType.public',
+    [DOC_TYPE_PRIVATE]:  'documentsTab.docType.private',
+    [DOC_TYPE_INTERNAL]: 'documentsTab.docType.internal',
   };
 
   getDocTypeClass(type: number): string {
     switch (type) {
-      case DOC_TYPE_PUBLIC:  return 'bg-blue-100 text-blue-800';
-      case DOC_TYPE_PRIVATE: return 'bg-yellow-100 text-yellow-800';
-      default:               return 'bg-gray-100 text-gray-800';
+      case DOC_TYPE_PUBLIC:   return 'bg-blue-100 text-blue-800';
+      case DOC_TYPE_PRIVATE:  return 'bg-yellow-100 text-yellow-800';
+      case DOC_TYPE_INTERNAL: return 'bg-purple-100 text-purple-800';
+      default:                return 'bg-gray-100 text-gray-800';
     }
   }
 
@@ -224,7 +234,7 @@ export class DocumentsTabComponent implements OnChanges {
   }
 
   recipientKindLabel(k: RecipientKind): string {
-    return k.charAt(0).toUpperCase() + k.slice(1);
+    return this.translate.instant('partyType.' + k);
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -301,10 +311,10 @@ export class DocumentsTabComponent implements OnChanges {
 
   inboundKindLabel(t: number): string {
     switch (t) {
-      case 2: return 'Entity';
-      case 3: return 'Regulator';
-      case 4: return 'Service';
-      case 5: return 'Subscription';
+      case 2: return this.translate.instant('partyType.entity');
+      case 3: return this.translate.instant('partyType.regulator');
+      case 4: return this.translate.instant('partyType.service');
+      case 5: return this.translate.instant('partyType.subscription');
       default: return '';
     }
   }
@@ -326,11 +336,11 @@ export class DocumentsTabComponent implements OnChanges {
 
   async viewInbound(doc: InboundDoc) {
     const win = this._claimTab();   // claim the tab inside the click gesture
-    this.loadingService.show('Fetching file...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.fetchingFile'));
     try {
       const fetched = await this.apiService.inboundDocumentFetchFile(this.address, doc.owner, doc.documentId);
       if (!this._revealInTab(win, fetched)) {
-        this.alertService.show('Error', 'Could not fetch the shared file.');
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchSharedFailed'));
       }
     } finally {
       this.loadingService.hide();
@@ -346,7 +356,10 @@ export class DocumentsTabComponent implements OnChanges {
   private _claimTab(): Window | null {
     const win = window.open('', '_blank');
     if (win) {
-      try { win.document.write(DOC_LOADING_HTML); win.document.close(); }
+      try {
+        win.document.write(buildDocLoadingHtml(this.translate.instant('documentsTab.loadingDocumentTab')));
+        win.document.close();
+      }
       catch { /* some browsers disallow writing the new doc — harmless, tab just stays blank */ }
     }
     return win;
@@ -377,10 +390,13 @@ export class DocumentsTabComponent implements OnChanges {
     if (!this.canSignInbound(doc)) return;
     const keyId = await this.signModal.show();
     if (keyId === null) return;
-    this.loadingService.show('Hashing file + signing...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.hashingSigning'));
     try {
       const fetched = await this.apiService.inboundDocumentFetchFile(this.address, doc.owner, doc.documentId);
-      if (!fetched) { this.alertService.show('Error', 'Could not fetch the shared file.'); return; }
+      if (!fetched) {
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchSharedFailed'));
+        return;
+      }
       let buf: ArrayBuffer;
       try { buf = await (await fetch(fetched.blobUrl)).arrayBuffer(); }
       finally { URL.revokeObjectURL(fetched.blobUrl); }
@@ -390,10 +406,18 @@ export class DocumentsTabComponent implements OnChanges {
       const r = await this.apiService.regulatorDocumentSign(String(doc.documentId), doc.owner, String(keyId), docHash, doc.title || '');
       // authPost returns null on any non-2xx (e.g. 403) — treat null OR an error body as failure.
       if (!r || r.error) {
-        this.alertService.show('Signing failed', r?.error || 'The signature could not be submitted. Please try again.', 'OK', 'max-w-md', true);
+        this.alertService.show(
+          this.translate.instant('documentsTab.errors.signingFailedTitle'),
+          r?.error || this.translate.instant('documentsTab.errors.signingFailedMsg'),
+          this.translate.instant('alerts.ok'), 'max-w-md', true,
+        );
         return;
       }
-      this.alertService.show('Document signed', 'Your signature was submitted to the regulator.', 'OK', 'max-w-md', true);
+      this.alertService.show(
+        this.translate.instant('documentsTab.success.docSignedTitle'),
+        this.translate.instant('documentsTab.success.docSignedMsg'),
+        this.translate.instant('alerts.ok'), 'max-w-md', true,
+      );
       await this.loadInbound();
     } finally {
       this.loadingService.hide();
@@ -429,7 +453,7 @@ export class DocumentsTabComponent implements OnChanges {
       r.created_by_user_id ?? r.createdByUserId ?? 0,
       r.created_at ?? r.createdAt ?? 0,
       r.updated_at ?? r.lastModified ?? r.updatedAt ?? 0,
-      this.docTypeNames[r.document_type ?? r.documentType ?? DOC_TYPE_PRIVATE],
+      this.translate.instant(this.docTypeNames[r.document_type ?? r.documentType ?? DOC_TYPE_PRIVATE]),
       (r.document_state ?? r.documentState) === 1 ? 'Active' : 'Deleted',
     );
   }
@@ -521,10 +545,10 @@ export class DocumentsTabComponent implements OnChanges {
     const entry = this.sharedWithDirectory()[address.toLowerCase()];
     if (!entry) return '';
     switch (entry.partyType) {
-      case 2: return 'Entity';
-      case 3: return 'Regulator';
-      case 4: return 'Service';
-      case 5: return 'Subscription';
+      case 2: return this.translate.instant('partyType.entity');
+      case 3: return this.translate.instant('partyType.regulator');
+      case 4: return this.translate.instant('partyType.service');
+      case 5: return this.translate.instant('partyType.subscription');
       default: return '';
     }
   }
@@ -545,12 +569,12 @@ export class DocumentsTabComponent implements OnChanges {
   // on-chain encryptionPublicKey; failure usually means the target hasn't published a key yet.
   async shareDocument(doc: Document) {
     if (doc.documentType !== DOC_TYPE_PRIVATE) {
-      this.alertService.show('Not applicable', 'Only Private documents can be shared.');
+      this.alertService.show(this.translate.instant('documentsTab.errors.notApplicable'), this.translate.instant('documentsTab.errors.onlyPrivateShareable'));
       return;
     }
     const account = await this.shareModal.show();
     if (!account) return;
-    this.loadingService.show('Sharing...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.sharing'));
     try {
       let res: any = null;
       if (this.resourceType === 'service') {
@@ -561,7 +585,7 @@ export class DocumentsTabComponent implements OnChanges {
         res = await this.apiService.subscriptionDocumentShare(this.address, doc.id, account);
       }
       if (!res) {
-        this.alertService.show('Error', 'Share failed. The recipient may not have an encryption public key published on-chain.');
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.shareFailed'));
       } else {
         await this.loadSharedWith(doc);
       }
@@ -572,12 +596,12 @@ export class DocumentsTabComponent implements OnChanges {
 
   async unshareAccount(doc: Document, account: string) {
     const ok = await this.alertService.show(
-      'Revoke access',
-      `Remove ${account} from the recipient list? They will lose decryption capability for this document.`,
-      'Revoke',
+      this.translate.instant('documentsTab.confirm.revokeAccessTitle'),
+      this.translate.instant('documentsTab.confirm.revokeAccessMsg', { account }),
+      this.translate.instant('documentsTab.modal.revoke'),
     );
     if (!ok) return;
-    this.loadingService.show('Revoking...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.revoking'));
     try {
       if (this.resourceType === 'service') {
         await this.apiService.serviceDocumentUnshare(this.address, doc.id, account);
@@ -628,7 +652,7 @@ export class DocumentsTabComponent implements OnChanges {
       sharedWith,
     };
     this.formUploadProgress.set(0);
-    this.loadingService.show('Uploading document...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.uploadingDocument'));
     try {
       const onProgress = (p: number) => this.formUploadProgress.set(p);
       let res: any;
@@ -643,7 +667,7 @@ export class DocumentsTabComponent implements OnChanges {
         // 401 is already handled globally (clears session + redirects to login),
         // so don't surface a duplicate alert in that case.
         if (res?.status !== 401) {
-          this.alertService.show('Error', res?.error || 'Failed to add document.');
+          this.alertService.show(this.translate.instant('alerts.error'), res?.error || this.translate.instant('documentsTab.errors.addFailed'));
         }
         return;
       }
@@ -667,7 +691,7 @@ export class DocumentsTabComponent implements OnChanges {
       documentType:  doc.documentType,
       documentState: doc.documentState,
     };
-    this.loadingService.show('Updating document...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.updatingDocument'));
     try {
       if (this.resourceType === 'service') {
         await this.apiService.serviceDocumentUpdate(this.address, doc.id, body);
@@ -685,12 +709,12 @@ export class DocumentsTabComponent implements OnChanges {
 
   async removeDocument(doc: Document) {
     const confirmed = await this.alertService.show(
-      'Remove Document',
-      `Are you sure you want to remove "${doc.title}"?`,
-      'Remove'
+      this.translate.instant('documentsTab.confirm.removeTitle'),
+      this.translate.instant('documentsTab.confirm.removeMsg', { title: doc.title }),
+      this.translate.instant('common.remove'),
     );
     if (!confirmed) return;
-    this.loadingService.show('Removing document...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.removingDocument'));
     try {
       if (this.resourceType === 'service') {
         await this.apiService.serviceDocumentRemove(this.address, doc.id);
@@ -707,7 +731,7 @@ export class DocumentsTabComponent implements OnChanges {
 
   async viewFile(doc: Document) {
     const win = this._claimTab();   // claim the tab inside the click gesture
-    this.loadingService.show('Fetching file...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.fetchingFile'));
     try {
       let fetched: { blobUrl: string; contentType: string } | null = null;
       if (this.resourceType === 'service') {
@@ -718,7 +742,7 @@ export class DocumentsTabComponent implements OnChanges {
         fetched = await this.apiService.subscriptionDocumentFetchFile(this.address, doc.id);
       }
       if (!this._revealInTab(win, fetched)) {
-        this.alertService.show('Error', 'Could not fetch file.');
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchFileFailed'));
       }
     } finally {
       this.loadingService.hide();
@@ -735,7 +759,7 @@ export class DocumentsTabComponent implements OnChanges {
       fetched = await this.apiService.subscriptionDocumentFetchFile(this.address, doc.id);
     }
     if (!fetched) {
-      this.alertService.show('Error', 'Could not fetch file.');
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchFileFailed'));
       return null;
     }
     try {
@@ -750,7 +774,7 @@ export class DocumentsTabComponent implements OnChanges {
     if (!doc?.cid) return;
     const keyId = await this.signModal.show();
     if (keyId === null) return;
-    this.loadingService.show('Hashing file + signing...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.hashingSigning'));
     try {
       const buf = await this._fetchFileBytes(doc);
       if (!buf) return;
@@ -766,9 +790,9 @@ export class DocumentsTabComponent implements OnChanges {
         signRes = await this.apiService.subscriptionDocumentSign(this.address, doc.id, keyId, docHash);
       }
       if (signRes?.error) {
-        this.alertService.show('Error', signRes.error);
+        this.alertService.show(this.translate.instant('alerts.error'), signRes.error);
       } else {
-        this.alertService.show('Signed', 'Document signed successfully.');
+        this.alertService.show(this.translate.instant('documentsTab.success.signedTitle'), this.translate.instant('documentsTab.success.signedMsg'));
       }
     } finally {
       this.loadingService.hide();
@@ -776,18 +800,17 @@ export class DocumentsTabComponent implements OnChanges {
   }
 
   async publishDocument(doc: Document) {
-    if (doc.documentType !== DOC_TYPE_PRIVATE) {
-      this.alertService.show('Not applicable', 'Only Private documents can be published.');
+    if (doc.documentType !== DOC_TYPE_PRIVATE && doc.documentType !== DOC_TYPE_INTERNAL) {
+      this.alertService.show(this.translate.instant('documentsTab.errors.notApplicable'), this.translate.instant('documentsTab.errors.onlyPrivatePublishable'));
       return;
     }
     const ok = await this.alertService.show(
-      'Make this document Public?',
-      'The file will be re-uploaded to IPFS as plaintext — anyone with the CID will be able to read it. ' +
-      'This cannot be undone.',
-      'Publish',
+      this.translate.instant('documentsTab.confirm.publishTitle'),
+      this.translate.instant('documentsTab.confirm.publishMsg'),
+      this.translate.instant('documentsTab.actions.publish'),
     );
     if (!ok) return;
-    this.loadingService.show('Publishing...');
+    this.loadingService.show(this.translate.instant('documentsTab.loading.publishing'));
     try {
       let res: any;
       if (this.resourceType === 'service') {
@@ -798,7 +821,7 @@ export class DocumentsTabComponent implements OnChanges {
         res = await this.apiService.subscriptionDocumentPublish(this.address, doc.id);
       }
       if (!res) {
-        this.alertService.show('Error', 'Publish failed.');
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.publishFailed'));
       } else {
         this.closeModal();
         await this.loadDocuments();
@@ -810,9 +833,9 @@ export class DocumentsTabComponent implements OnChanges {
 
   get modalTitle(): string {
     const mode = this.formState().mode;
-    if (mode === 'add') return 'Add Document';
-    if (mode === 'edit') return 'Edit Document';
-    return 'Document Details';
+    if (mode === 'add') return this.translate.instant('documentsTab.addDocument');
+    if (mode === 'edit') return this.translate.instant('documentsTab.modal.titleEdit');
+    return this.translate.instant('documentsTab.modal.titleView');
   }
 
   get isViewMode(): boolean {

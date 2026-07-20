@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, effect, computed, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ethers } from 'ethers';
 
 import { ModalAssetFeeConfigService } from './modal-asset-fee-config.service';
@@ -19,7 +20,7 @@ const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
   selector: 'app-modal-asset-fee-config',
   templateUrl: './modal-asset-fee-config.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalAssetFeeConfigComponent {
 

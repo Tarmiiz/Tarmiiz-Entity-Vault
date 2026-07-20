@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { ModalBankTransferService } from './modal-bank-transfer.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -12,7 +13,7 @@ import { LoadingService } from '../../../../../shared/components/alerts/loading/
   templateUrl: './modal-bank-transfer.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
 })
 export class ModalBankTransferComponent {
   modalService = inject(ModalBankTransferService);
@@ -20,6 +21,7 @@ export class ModalBankTransferComponent {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private fb = inject(FormBuilder);
+  private translate = inject(TranslateService);
 
   // The entity's own type-2 (service-provider) services — one of which must be a Bank-level PP.
   // The on-chain `bankTransfer` rejects a non-Bank caller, so we don't filter by level here.
@@ -58,11 +60,11 @@ export class ModalBankTransferComponent {
     if (!this.form.valid) return;
     const v = this.form.value;
     if ((v.from || '').toLowerCase() === (v.to || '').toLowerCase()) {
-      await this.alertService.show('Error', 'Source and destination subscriptions must differ.');
+      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('credit.bankTransferModal.mismatchError'));
       return;
     }
 
-    this.loadingService.show('Submitting bank transfer...');
+    this.loadingService.show(this.translate.instant('credit.bankTransferModal.submitting'));
     const providerTrxTime = v.trxDate ? Math.floor(new Date(v.trxDate).getTime() / 1000) : undefined;
     const res = await this.apiService.bankTransfer({
       service:          v.service!,
@@ -76,11 +78,15 @@ export class ModalBankTransferComponent {
     });
     this.loadingService.hide();
 
-    if (res.error) { await this.alertService.show('Error', res.error); return; }
+    if (res.error) { await this.alertService.show(this.translate.instant('alerts.error'), res.error); return; }
     if (res.requestId) {
-      await this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+      await this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
     } else {
-      await this.alertService.show('Success', 'Bank transfer executed.' + (res.result?.transactionHash ? ' Tx: ' + res.result.transactionHash : ''), 'OK');
+      await this.alertService.show(
+        this.translate.instant('alerts.success'),
+        this.translate.instant('credit.bankTransferModal.successMsg') + (res.result?.transactionHash ? ' ' + this.translate.instant('credit.txLabel') + ' ' + res.result.transactionHash : ''),
+        this.translate.instant('alerts.ok')
+      );
     }
     this.modalService.confirm();
   }

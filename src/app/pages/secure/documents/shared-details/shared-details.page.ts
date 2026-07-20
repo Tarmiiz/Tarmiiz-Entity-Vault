@@ -1,5 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { ethers } from 'ethers';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -10,7 +12,7 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { ModalDocumentSignService } from '../modals/modal-document-sign/modal-document-sign.service';
 import { ModalDocumentSignComponent } from '../modals/modal-document-sign/modal-document-sign.component';
 
-import { Document } from '../../../../shared/models/data.model';
+import { Document, DocumentSignature } from '../../../../shared/models/data.model';
 
 const DOC_TYPE_PRIVATE = 2;
 // DirectoryProxy party types (NOT the Connect convention): 2=Entity, 3=Regulator, 4=Service.
@@ -25,7 +27,7 @@ const DIR_PARTY_REGULATOR = 3;
   templateUrl: './shared-details.page.html',
   styleUrls: ['./shared-details.page.scss'],
   standalone: true,
-  imports: [RouterLink, HeaderComponent, ModalDocumentSignComponent]
+  imports: [RouterLink, HeaderComponent, ModalDocumentSignComponent, TranslatePipe]
 })
 export class SharedDetailsPage implements OnInit {
   private apiService = inject(ApiService);
@@ -34,6 +36,7 @@ export class SharedDetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
   private signModal = inject(ModalDocumentSignService);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
 
   // Only executive (role 2) users hold signer keys; signing a regulator's document submits a
@@ -45,6 +48,10 @@ export class SharedDetailsPage implements OnInit {
   id = signal<string>('');
   document = signal<Document | null>(null);
   signatureCount = signal<number>(0);
+  // ALL signatures on the shared doc (the central registry's signature reads admit
+  // recipients), each enriched with reviewStateName — so the recipient can verify the
+  // sender's signature and see the review verdict.
+  signatures = signal<DocumentSignature[]>([]);
   // This entity's own signature on the doc (read from getSubmissionsByEntity), if it has signed.
   mySignature = signal<{ signer: string; signedAt: number } | null>(null);
 
@@ -53,6 +60,7 @@ export class SharedDetailsPage implements OnInit {
 
   docTypes = signal<{ id: number; name: string }[]>([]);
   docStates = signal<{ id: number; name: string }[]>([]);
+  reviewStates = signal<{ id: number; name: string }[]>([]);
 
   isPrivate = computed(() => this.document()?.documentType === DOC_TYPE_PRIVATE);
 
@@ -71,7 +79,19 @@ export class SharedDetailsPage implements OnInit {
   }
 
   async ionViewDidEnter() {
-    await Promise.all([this.loadDocument(), this.loadGlobals(), this.loadOwner(), this.loadMySubmission()]);
+    await Promise.all([this.loadDocument(), this.loadGlobals(), this.loadOwner(), this.loadMySubmission(), this.loadSignatures()]);
+  }
+
+  // Recipient-facing signature read (GET /documents/shared/:owner/:id/signatures) — the
+  // DocumentsProxy signature reads pass for writer OR recipient OR controller-of-recipient.
+  async loadSignatures() {
+    try {
+      const r = await this.apiService.documentSharedSignatures(this.ownerAddress(), this.id(), 1, 100);
+      if (r?.signatures) {
+        this.signatures.set(r.signatures as DocumentSignature[]);
+        this.signatureCount.set(Number(r.count ?? r.signatures.length));
+      }
+    } catch { /* best effort — the count from sharedGet remains */ }
   }
 
   // Read this entity's own submissions to the owner (getSubmissionsByEntity) and surface whether it
@@ -89,13 +109,15 @@ export class SharedDetailsPage implements OnInit {
   }
 
   async loadGlobals() {
-    const [typesRes, statesRes] = await Promise.all([
+    const [typesRes, statesRes, reviewRes] = await Promise.all([
       this.apiService.vaultGetGlobalVariablesList('Document Type'),
       this.apiService.vaultGetGlobalVariablesList('Document State'),
+      this.apiService.vaultGetGlobalVariablesList('Document Review State'),
     ]);
     const map = (rows: any[]) => (rows || []).map(v => ({ id: Number(v.variable_id), name: v.name }));
     if (typesRes?.variables)  this.docTypes.set(map(typesRes.variables));
     if (statesRes?.variables) this.docStates.set(map(statesRes.variables));
+    if (reviewRes?.variables) this.reviewStates.set(map(reviewRes.variables));
   }
 
   async loadOwner() {
@@ -111,15 +133,15 @@ export class SharedDetailsPage implements OnInit {
   partyTypeLabel(t: number): string {
     // DirectoryProxy convention: 2=Entity, 3=Regulator, 4=Service.
     switch (t) {
-      case 2: return 'Entity';
-      case 3: return 'Regulator';
-      case 4: return 'Service';
+      case 2: return this.translate.instant('partyType.entity');
+      case 3: return this.translate.instant('partyType.regulator');
+      case 4: return this.translate.instant('partyType.service');
       default: return '';
     }
   }
 
   async loadDocument() {
-    this.loadingService.show('Loading document...');
+    this.loadingService.show(this.translate.instant('documents.details.loading.document'));
     try {
       const r = await this.apiService.documentSharedGet(this.ownerAddress(), this.id());
       if (r?.document) {
@@ -141,17 +163,24 @@ export class SharedDetailsPage implements OnInit {
         } as Document);
       }
       if (r?.signatureCount !== undefined) this.signatureCount.set(Number(r.signatureCount));
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
     } finally {
       this.loadingService.hide();
     }
   }
 
   typeLabel(t?: number): string {
-    return this.docTypes().find(v => v.id === t)?.name || (t === 1 ? 'Public' : t === 2 ? 'Private' : String(t ?? ''));
+    return this.docTypes().find(v => v.id === t)?.name
+      || (t === 1 ? this.translate.instant('documents.type.public')
+        : t === 2 ? this.translate.instant('documents.type.private')
+        : t === 3 ? this.translate.instant('documents.type.internal')
+        : String(t ?? ''));
+  }
+  reviewStateLabel(s?: number): string {
+    return this.reviewStates().find(v => v.id === s)?.name || String(s ?? '');
   }
   stateLabel(s?: number): string {
-    return this.docStates().find(v => v.id === s)?.name || (s === 1 ? 'Active' : s === 2 ? 'Deleted' : String(s ?? ''));
+    return this.docStates().find(v => v.id === s)?.name || (s === 1 ? this.translate.instant('documents.docState.active') : s === 2 ? this.translate.instant('documents.docState.deleted') : String(s ?? ''));
   }
   stateClass(s?: number): string {
     switch (s) {
@@ -162,11 +191,11 @@ export class SharedDetailsPage implements OnInit {
   }
 
   async viewFile() {
-    this.loadingService.show('Fetching file...');
+    this.loadingService.show(this.translate.instant('documents.details.loading.fetchingFile'));
     try {
       const r = await this.apiService.documentFetchSharedFile(this.ownerAddress(), this.id());
       if (!r?.blobUrl) {
-        this.alertService.show('Error', 'Could not fetch the shared file.');
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.sharedDetails.errors.fetchFile'));
         return;
       }
       window.open(r.blobUrl, '_blank');
@@ -180,7 +209,7 @@ export class SharedDetailsPage implements OnInit {
   private async _fetchSharedFileBytes(): Promise<ArrayBuffer | null> {
     const fetched = await this.apiService.documentFetchSharedFile(this.ownerAddress(), this.id());
     if (!fetched?.blobUrl) {
-      this.alertService.show('Error', 'Could not fetch the shared file.');
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.sharedDetails.errors.fetchFile'));
       return null;
     }
     try {
@@ -191,6 +220,37 @@ export class SharedDetailsPage implements OnInit {
     }
   }
 
+  // Verify a signature on the shared doc: re-hash the decrypted plaintext, recover the signer
+  // from the 65-byte EIP-191 signature, and compare both against the attested values.
+  async verifySignature(sig: DocumentSignature) {
+    this.loadingService.show(this.translate.instant('documents.details.loading.verifyingSignature'));
+    try {
+      const buf = await this._fetchSharedFileBytes();
+      if (!buf) return;
+      const digest = await crypto.subtle.digest('SHA-256', buf);
+      const currentHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const hashMatches = currentHash.toLowerCase() === (sig.docHash || '').toLowerCase();
+      let recovered = '';
+      try { recovered = ethers.verifyMessage(ethers.getBytes(sig.docHash), sig.signature); } catch { recovered = ''; }
+      const signerMatches = recovered.toLowerCase() === (sig.signer || '').toLowerCase();
+
+      const ok = hashMatches && signerMatches;
+      const lines = [
+        ok ? this.translate.instant('documents.details.verify.valid') : this.translate.instant('documents.details.verify.invalid'),
+        '',
+        this.translate.instant('documents.details.verify.signerExpectedLabel') + sig.signer,
+        this.translate.instant('documents.details.verify.signerRecoveredLabel') + (recovered || '—'),
+        this.translate.instant('documents.details.verify.hashAttestedLabel') + sig.docHash,
+        this.translate.instant('documents.details.verify.hashCurrentLabel') + currentHash,
+        '',
+        hashMatches ? this.translate.instant('documents.details.verify.hashMatches') : this.translate.instant('documents.details.verify.hashMismatch'),
+        signerMatches ? this.translate.instant('documents.details.verify.signerMatches') : this.translate.instant('documents.details.verify.signerMismatch'),
+      ];
+      this.alertService.show(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
+    } finally { this.loadingService.hide(); }
+  }
+
   // Sign a regulator's shared document: hash the plaintext (SHA-256, same as My Documents) and submit
   // the signature back to the regulator via the entity's signer key (POST /regulator/documents/:id/sign
   // → RegulatorTemplate.submitSignature relayed through EntityTemplate.callExternal).
@@ -198,7 +258,7 @@ export class SharedDetailsPage implements OnInit {
     if (!this.canSign()) return;
     const keyId = await this.signModal.show();
     if (keyId === null) return;
-    this.loadingService.show('Hashing file + signing...');
+    this.loadingService.show(this.translate.instant('documents.details.loading.hashingSigning'));
     try {
       const buf = await this._fetchSharedFileBytes();
       if (!buf) return;
@@ -209,12 +269,12 @@ export class SharedDetailsPage implements OnInit {
       // authPost returns null on any non-2xx (e.g. 403) — treat null OR an error body as failure
       // so we never show a false "signed" confirmation.
       if (!r || r.error) {
-        this.alertService.show('Signing failed', r?.error || 'The signature could not be submitted. Please try again.', 'OK', 'max-w-md', true);
+        this.alertService.show(this.translate.instant('documents.sharedDetails.signFailedTitle'), r?.error || this.translate.instant('documents.sharedDetails.signFailedMessage'), this.translate.instant('alerts.ok'), 'max-w-md', true);
         return;
       }
-      this.alertService.show('Document signed', 'Your signature was submitted to the regulator.', 'OK', 'max-w-md', true);
+      this.alertService.show(this.translate.instant('documents.sharedDetails.signedTitle'), this.translate.instant('documents.sharedDetails.signedMessage'), this.translate.instant('alerts.ok'), 'max-w-md', true);
       // Reflect the new signature (hides the Sign button + shows the "Signed by you" indicator).
-      await this.loadMySubmission();
+      await Promise.all([this.loadMySubmission(), this.loadSignatures()]);
     } finally {
       this.loadingService.hide();
     }

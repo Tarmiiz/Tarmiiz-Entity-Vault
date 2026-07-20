@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
@@ -8,7 +9,7 @@ import { ModalUserApprovalRoleService, ApprovalRoleValue } from './modal-user-ap
   selector: 'app-modal-user-approval-role',
   templateUrl: './modal-user-approval-role.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalUserApprovalRoleComponent {
 

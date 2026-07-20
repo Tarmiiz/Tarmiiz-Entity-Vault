@@ -8,7 +8,7 @@ import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
-import { FeeConfig, ExternalIntegration } from '../models/data.model';
+import { FeeConfig, ExternalIntegration, UserGroup, AppConfigItem } from '../models/data.model';
 
 @Injectable({
   providedIn: 'root'
@@ -42,6 +42,11 @@ export class ApiService {
   private _authRef: any = null;
 
   apiURL = this.configService.get('apiURL');
+
+  // Public (no-auth) URL that streams the tenant entity's avatar image (folded media.avatar).
+  // Bound directly by the login page + app-shell logo; 404s when no avatar is set so the
+  // template's (error) handler falls back to the static logo.
+  get avatarUrl(): string { return this.apiURL + '/vault/avatar'; }
 
   private async authHeader(): Promise<Record<string, string>> {
     const token = await this.sessionService.getActiveToken();
@@ -121,15 +126,18 @@ export class ApiService {
     return { dex: !!features.dex, menu: data.menu ?? {}, systemFunctions: data.systemFunctions ?? {} };
   }
 
-  // Per-user menu overrides (admin Menu Access tab on User Details).
+  // Per-user menu overrides (admin Menu Access tab on User Details). Rows carry the
+  // three layers: userEnabled (explicit override), groupEnabled (assigned User Group's
+  // setting — null when no group row / group inert), and the folded effective value.
   async vaultUserMenuConfigList(userId: string | number): Promise<
-    { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; effective: boolean }[]
+    { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean }[]
   > {
     const data = await this.vaultGet('/users/' + userId + '/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
       menuKey: r.menuKey,
       tenantEnabled: !!r.tenantEnabled,
       userEnabled: r.userEnabled === null || r.userEnabled === undefined ? null : !!r.userEnabled,
+      groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
       effective: !!r.effective,
     }));
   }
@@ -138,22 +146,122 @@ export class ApiService {
     return this.vaultPut('/users/' + userId + '/menu-config/' + key, { enabled });
   }
 
+  // Remove a per-user override so the key falls back to the group setting / role default.
+  async vaultUserMenuConfigClear(userId: string | number, key: string) {
+    return this.vaultDelete('/users/' + userId + '/menu-config/' + key);
+  }
+
   // Per-user System Functions (admin System Functions tab on User Details). Returns only the
   // functions applicable to the target user's role (empty ⇒ tab hidden).
   async vaultUserSystemFunctionConfigList(userId: string | number): Promise<
-    { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; effective: boolean }[]
+    { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean }[]
   > {
     const data = await this.vaultGet('/users/' + userId + '/system-functions');
     return (data?.functions ?? []).map((r: any) => ({
       functionKey: r.functionKey,
       defaultEnabled: !!r.defaultEnabled,
       userEnabled: r.userEnabled === null || r.userEnabled === undefined ? null : !!r.userEnabled,
+      groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
       effective: !!r.effective,
     }));
   }
 
   async vaultUserSystemFunctionConfigSet(userId: string | number, key: string, enabled: boolean) {
     return this.vaultPut('/users/' + userId + '/system-functions/' + key, { enabled });
+  }
+
+  async vaultUserSystemFunctionConfigClear(userId: string | number, key: string) {
+    return this.vaultDelete('/users/' + userId + '/system-functions/' + key);
+  }
+
+  // ── User Groups (role-scoped Menu Access + System Functions presets) ─────────────
+  async vaultUserGroupsList(): Promise<UserGroup[]> {
+    const data = await this.vaultGet('/user-groups');
+    return (data?.groups ?? []).map((g: any) => this.mapUserGroup(g));
+  }
+
+  async vaultUserGroupGet(groupId: string): Promise<UserGroup | null> {
+    const data = await this.vaultGet('/user-groups/' + groupId);
+    return data?.group ? this.mapUserGroup(data.group) : null;
+  }
+
+  async vaultUserGroupCreate(body: { name: string; description?: string; role: number }) {
+    return this.vaultPost('/user-groups', body);
+  }
+
+  async vaultUserGroupUpdate(groupId: string, body: { name?: string; description?: string }) {
+    return this.vaultPut('/user-groups/' + groupId, body);
+  }
+
+  async vaultUserGroupDelete(groupId: string) {
+    return this.vaultDelete('/user-groups/' + groupId);
+  }
+
+  async vaultUserGroupMenuConfigList(groupId: string): Promise<
+    { menuKey: string; tenantEnabled: boolean; groupEnabled: boolean | null; effective: boolean }[]
+  > {
+    const data = await this.vaultGet('/user-groups/' + groupId + '/menu-config');
+    return (data?.menu ?? []).map((r: any) => ({
+      menuKey: r.menuKey,
+      tenantEnabled: !!r.tenantEnabled,
+      groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
+      effective: !!r.effective,
+    }));
+  }
+
+  async vaultUserGroupMenuConfigSet(groupId: string, key: string, enabled: boolean) {
+    return this.vaultPut('/user-groups/' + groupId + '/menu-config/' + key, { enabled });
+  }
+
+  async vaultUserGroupSystemFunctionConfigList(groupId: string): Promise<
+    { functionKey: string; defaultEnabled: boolean; groupEnabled: boolean | null; effective: boolean }[]
+  > {
+    const data = await this.vaultGet('/user-groups/' + groupId + '/system-functions');
+    return (data?.functions ?? []).map((r: any) => ({
+      functionKey: r.functionKey,
+      defaultEnabled: !!r.defaultEnabled,
+      groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
+      effective: !!r.effective,
+    }));
+  }
+
+  async vaultUserGroupSystemFunctionConfigSet(groupId: string, key: string, enabled: boolean) {
+    return this.vaultPut('/user-groups/' + groupId + '/system-functions/' + key, { enabled });
+  }
+
+  async vaultUserGroupMembers(groupId: string): Promise<{ userId: string; assignedAt: number }[]> {
+    const data = await this.vaultGet('/user-groups/' + groupId + '/members');
+    return (data?.members ?? []).map((m: any) => ({ userId: String(m.userId), assignedAt: Number(m.assignedAt) }));
+  }
+
+  // Per-user membership: the user's assigned group (null when none) + whether its target
+  // role still matches the user's on-chain role (false ⇒ the group layer is inert).
+  async vaultUserGroupMembershipGet(userId: string | number): Promise<{ group: UserGroup | null; roleMatch: boolean }> {
+    const data = await this.vaultGet('/users/' + userId + '/group');
+    return {
+      group: data?.group ? this.mapUserGroup(data.group) : null,
+      roleMatch: data?.roleMatch !== false,
+    };
+  }
+
+  async vaultUserGroupMembershipSet(userId: string | number, groupId: string) {
+    return this.vaultPut('/users/' + userId + '/group', { groupId });
+  }
+
+  async vaultUserGroupMembershipClear(userId: string | number) {
+    return this.vaultDelete('/users/' + userId + '/group');
+  }
+
+  private mapUserGroup(g: any): UserGroup {
+    return {
+      groupId: String(g.groupId),
+      name: g.name ?? '',
+      description: g.description ?? null,
+      role: Number(g.role),
+      memberCount: g.memberCount != null ? Number(g.memberCount) : 0,
+      createdAt: g.createdAt != null ? Number(g.createdAt) : null,
+      updatedAt: g.updatedAt != null ? Number(g.updatedAt) : null,
+    };
   }
 
   // Settings backup (on-chain encrypted fallback for the DB-only settings tables) — admin page
@@ -192,6 +300,20 @@ export class ApiService {
 
   async vaultIntegrationDelete(name: string) {
     return this.vaultDelete('/integrations/' + name);
+  }
+
+  // Runtime app configuration (DB-backed .env overrides) — admin page.
+  async getAppConfig(): Promise<AppConfigItem[]> {
+    const data = await this.vaultGet('/app-config');
+    return (data?.config ?? []) as AppConfigItem[];
+  }
+
+  async setAppConfig(key: string, value: any) {
+    return this.vaultPut('/app-config/' + encodeURIComponent(key), { value });
+  }
+
+  async resetAppConfig(key: string) {
+    return this.vaultPost('/app-config/' + encodeURIComponent(key) + '/reset', {});
   }
 
   // ─── Vault helpers ────────────────────────────────────────────────────────────
@@ -882,11 +1004,6 @@ export class ApiService {
     return data ?? null;
   }
 
-  async vaultUpdateServiceData(address: string, body: Record<string, any>) {
-    const data = await this.vaultPut('/services/' + address + '/data', body);
-    return data ?? null;
-  }
-
   async vaultUpdateServiceState(address: string, state: number, reason = '') {
     const data = await this.vaultPut('/services/' + address + '/state', { state, reason });
     return data ?? null;
@@ -1402,7 +1519,7 @@ export class ApiService {
   private async _uploadMultipart(
     path: string,
     file: File,
-    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[]; imageRole?: string },
     onProgress?: (percent: number) => void
   ): Promise<any> {
     const token = await this.sessionService.getActiveToken();
@@ -1422,6 +1539,7 @@ export class ApiService {
         if (metadata.sharedWith && metadata.sharedWith.length) {
           form.append('sharedWith', JSON.stringify(metadata.sharedWith));
         }
+        if (metadata.imageRole) form.append('imageRole', metadata.imageRole);
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', this.apiURL + path);
@@ -1478,10 +1596,14 @@ export class ApiService {
   // Entity-document shortcuts
   async documentAddMultipart(
     file: File,
-    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[]; imageRole?: string },
     onProgress?: (percent: number) => void,
   ) {
     return this._uploadMultipart('/documents', file, metadata, onProgress);
+  }
+  // Media role on an existing public entity image ('avatar' | 'banner' | 'gallery' = unset).
+  async vaultSetEntityMediaRole(id: any, role: string) {
+    return await this.authPut('/documents/' + id + '/media-role', { role });
   }
   async documentFetchFile(id: any) {
     return this._fetchFileBlob('/documents/' + id + '/file');
@@ -1492,6 +1614,10 @@ export class ApiService {
   }
   async documentSharedGet(owner: string, id: any) {
     return await this.authGet('/documents/shared/' + owner + '/' + id);
+  }
+  // Signatures + review state on an inbound shared doc (recipient-relaxed signature reads).
+  async documentSharedSignatures(owner: string, id: any, start = 1, offset = 50) {
+    return await this.authGet('/documents/shared/' + owner + '/' + id + '/signatures', { start: String(start), offset: String(offset) });
   }
 
   // Inbound shares to one of this tenant's NON-entity templates (a service / subscription / asset).
@@ -1538,10 +1664,14 @@ export class ApiService {
   }
   async serviceDocumentAddMultipart(
     address: string, file: File,
-    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[]; imageRole?: string },
     onProgress?: (percent: number) => void,
   ) {
     return this._uploadMultipart('/services/' + address + '/documents', file, metadata, onProgress);
+  }
+  // Media role on an existing public service image ('avatar' | 'banner' | 'gallery' = unset).
+  async vaultSetServiceMediaRole(address: string, id: any, role: string) {
+    return await this.authPut('/services/' + address + '/documents/' + id + '/media-role', { role });
   }
   async serviceDocumentFetchFile(address: string, id: any) {
     return this._fetchFileBlob('/services/' + address + '/documents/' + id + '/file');
@@ -1574,10 +1704,14 @@ export class ApiService {
   }
   async assetDocumentAddMultipart(
     address: string, file: File,
-    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[] },
+    metadata: { title?: string; description?: string; fileType?: string; documentType: number; documentState: number; sharedWith?: string[]; imageRole?: string },
     onProgress?: (percent: number) => void,
   ) {
     return this._uploadMultipart('/assets/' + address + '/documents', file, metadata, onProgress);
+  }
+  // Media role on an existing public asset image ('avatar' | 'banner' | 'gallery' = unset).
+  async vaultSetAssetMediaRole(address: string, id: any, role: string) {
+    return await this.authPut('/assets/' + address + '/documents/' + id + '/media-role', { role });
   }
   async assetDocumentFetchFile(address: string, id: any) {
     return this._fetchFileBlob('/assets/' + address + '/documents/' + id + '/file');
@@ -2016,6 +2150,43 @@ export class ApiService {
 
   async connectThreadsList(start = 1, offset = 50)   { return this.vaultGet (`/connect/threads?start=${start}&offset=${offset}`); }
   async connectThreadCreate(body: any)               { return this.vaultPost('/connect/threads', body); }
+  // Multipart create — used when the initial message carries attachments (≤10
+  // files, encrypted server-side). `body` holds { kind, subject?, targets[],
+  // initialMessage:{ text, contentType?, to? } }; only files ride as binary.
+  async connectThreadCreateMultipart(body: any, files: File[], onProgress?: (percent: number) => void): Promise<any> {
+    const token = await this.sessionService.getActiveToken();
+    if (!token) {
+      this._handleAuthFailure();
+      return { error: 'Session expired. Please log in again.', status: 401 };
+    }
+    return new Promise<any>((resolve) => {
+      try {
+        const form = new FormData();
+        for (const f of files || []) form.append('attachments', f, f.name);
+        form.append('kind', body.kind);
+        if (body.subject) form.append('subject', body.subject);
+        form.append('targets', JSON.stringify(body.targets || []));
+        if (body.initialMessage) form.append('initialMessage', JSON.stringify(body.initialMessage));
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', this.apiURL + '/vault/connect/threads');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        const audit = this.getAuditHeaders();
+        for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
+        xhr.upload.onprogress = (e) => {
+          if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch { resolve({ error: 'Invalid response', status: xhr.status }); }
+        };
+        xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.send(form);
+      } catch (err: any) {
+        resolve({ error: err?.message || 'upload failed', status: 0 });
+      }
+    });
+  }
   async connectThreadGet(id: number)                 { return this.vaultGet ('/connect/threads/' + id); }
   async connectThreadClose(id: number, reason = '')  { return this.vaultPost(`/connect/threads/${id}/close`, { reason }); }
   async connectThreadBroadcast(id: number, text: string, contentType = 4, subject?: string) {

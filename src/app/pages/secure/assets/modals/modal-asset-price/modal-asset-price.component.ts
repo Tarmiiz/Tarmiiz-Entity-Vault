@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalAssetPriceService } from './modal-asset-price.service';
 
@@ -7,7 +8,7 @@ import { ModalAssetPriceService } from './modal-asset-price.service';
   selector: 'app-modal-asset-price',
   templateUrl: './modal-asset-price.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalAssetPriceComponent {
 

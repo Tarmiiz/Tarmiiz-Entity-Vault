@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalUserEditService, EditUserData } from './modal-user-edit.service';
@@ -8,7 +9,7 @@ import { ModalUserEditService, EditUserData } from './modal-user-edit.service';
   templateUrl: './modal-user-edit.component.html',
   styleUrls: ['./modal-user-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],  
+  imports: [ReactiveFormsModule, TranslatePipe],  
 })
 export class ModalUserEditComponent {
 

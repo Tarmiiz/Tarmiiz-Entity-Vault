@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from "../../../../../shared/components/header/header.component";
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -33,6 +33,7 @@ export class DetailsPage implements OnInit {
   private tierChangeModal = inject(ModalListingVenueTierChangeService);
   utils = inject(UtilsService);
   private authService = inject(AuthService);
+  private translate = inject(TranslateService);
 
   get userInfo() { return this.authService.userInfo; }
 
@@ -60,7 +61,10 @@ export class DetailsPage implements OnInit {
   setAddInitialTier(t: 1 | 2 | 3) { this.addInitialTier.set(t); }
 
   tierLabel(t: number): string {
-    return t === 1 ? 'Tier 1 — Venue' : t === 2 ? 'Tier 2 — Country' : t === 3 ? 'Tier 3 — Global' : '—';
+    return t === 1 ? this.translate.instant('dex.listings.details.tiers.tier1')
+         : t === 2 ? this.translate.instant('dex.listings.details.tiers.tier2')
+         : t === 3 ? this.translate.instant('dex.listings.details.tiers.tier3')
+         : '—';
   }
   tierApprovedOnAsset(t: 1 | 2 | 3): boolean {
     const l = this.listing(); if (!l) return false;
@@ -81,13 +85,13 @@ export class DetailsPage implements OnInit {
   upstreamBlockReason(): string {
     const l = this.listing(); if (!l) return '';
     const u = l.upstream;
-    if (u && u.issuerEntityState && u.issuerEntityState !== 2) return 'Trading blocked — issuer entity not active';
-    if (u && !u.assetTradable && u.syncedAt) return 'Trading blocked — asset suspended or inactive';
+    if (u && u.issuerEntityState && u.issuerEntityState !== 2) return this.translate.instant('dex.listings.details.blockReasons.issuerNotActive');
+    if (u && !u.assetTradable && u.syncedAt) return this.translate.instant('dex.listings.details.blockReasons.assetSuspended');
     return '';
   }
 
   async loadListing() {
-    this.loadingService.show('Loading listing...');
+    this.loadingService.show(this.translate.instant('dex.listings.details.loading'));
     try {
       const data = await this.apiService.vaultDexAssetListingInfo(this.baseAsset());
       this.listing.set(data);
@@ -120,15 +124,15 @@ export class DetailsPage implements OnInit {
 
   async removeVenue(v: DexAssetListingVenue) {
     const ok = await this.alertService.show(
-      'Remove venue',
-      `Remove "${v.dexServiceName || v.dexService}" from this listing? Open orders against this venue will continue, but no new orders will place.`,
-      'Remove'
+      this.translate.instant('dex.listings.details.venues.removeTitle'),
+      this.translate.instant('dex.listings.details.venues.removeMessage', { name: v.dexServiceName || v.dexService }),
+      this.translate.instant('common.remove')
     );
     if (!ok) return;
-    this.loadingService.show('Removing venue...');
+    this.loadingService.show(this.translate.instant('dex.listings.details.venues.removing'));
     try {
       const r = await this.apiService.vaultDexAssetListingVenueRemove(this.baseAsset(), v.dexService);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('dex.listings.error'), r.error);
       await this.loadEnabledVenues();
     } finally { this.loadingService.hide(); }
   }

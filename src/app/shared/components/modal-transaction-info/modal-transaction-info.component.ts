@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 
 import { UtilsService } from '../../services/utils.service';
@@ -14,7 +15,7 @@ import { ModalTransactionInfoService } from './modal-transaction-info.service';
   templateUrl: './modal-transaction-info.component.html',
   styleUrls: ['./modal-transaction-info.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
 })
 export class ModalTransactionInfoComponent {
   modalService = inject(ModalTransactionInfoService);

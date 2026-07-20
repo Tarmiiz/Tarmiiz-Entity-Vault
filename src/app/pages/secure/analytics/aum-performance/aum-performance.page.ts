@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -19,8 +19,8 @@ interface Bucket { label: string; aum: number; }
     <app-header [title]="'analytics.aumPerformance.title' | translate"></app-header>
     <div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
       <app-analytics-card
-        title="Assets Under Management"
-        subtitle="Stacked by currency. circulating × latest bid at each bucket."
+        [title]="'analytics.aumPerformance.chart.title' | translate"
+        [subtitle]="'analytics.aumPerformance.chart.subtitle' | translate"
         [loading]="loading()"
         [empty]="!loading() && !hasData()">
         <app-analytics-interval-select card-actions
@@ -36,6 +36,7 @@ interface Bucket { label: string; aum: number; }
 })
 export class AumPerformancePage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private translate = inject(TranslateService);
 
   @ViewChild('chart') chartRef?: ElementRef<HTMLCanvasElement>;
 
@@ -101,7 +102,7 @@ export class AumPerformancePage implements OnInit, OnDestroy {
         plugins: { legend: { position: 'top' } },
         scales: {
           x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
-          y: { beginAtZero: true, stacked: true, title: { display: true, text: 'AUM (currency value)' } },
+          y: { beginAtZero: true, stacked: true, title: { display: true, text: this.translate.instant('analytics.aumPerformance.chart.axisTitle') } },
         },
       },
     });

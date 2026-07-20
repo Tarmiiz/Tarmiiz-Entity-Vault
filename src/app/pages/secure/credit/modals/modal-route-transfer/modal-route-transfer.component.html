@@ -2,36 +2,36 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Route Credit to Another Service</h3>
-        <p class="text-xs text-gray-200 mt-1">Move a subscriber's credit to that same identity's account at another service. The destination subscription is resolved automatically — you never see it.</p>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'credit.routeTransferModal.title' | translate }}</h3>
+        <p class="text-xs text-gray-200 mt-1">{{ 'credit.routeTransferModal.description' | translate }}</p>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Source Service</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.routeTransferModal.sourceService' | translate }}</label>
             <select formControlName="service" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
-              <option value="" class="text-black bg-white">Select a source service…</option>
+              <option value="" class="text-black bg-white">{{ 'credit.routeTransferModal.selectSourceService' | translate }}</option>
               @for (s of sourceServices(); track s.address) {
                 <option [value]="s.address" class="text-black bg-white">{{ s.name }}</option>
               }
             </select>
             @if (sourceServices().length === 0) {
-              <p class="text-xs text-amber-600 mt-1">No token-issuer services found.</p>
+              <p class="text-xs text-amber-600 mt-1">{{ 'credit.routeTransferModal.noSourceServices' | translate }}</p>
             }
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">From (subscription on the source service)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.routeTransferModal.fromSub' | translate }}</label>
             <input type="text" formControlName="fromSub" placeholder="0x…"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black font-mono" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Destination service</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.routeTransferModal.destinationService' | translate }}</label>
             <input type="text" formControlName="destinationService" placeholder="0x…"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black font-mono" />
-            <p class="text-xs text-gray-500 mt-1">The subscriber must already hold an account at this service; otherwise the transfer is rejected.</p>
+            <p class="text-xs text-gray-500 mt-1">{{ 'credit.routeTransferModal.destinationServiceNote' | translate }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Currency</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.table.currency' | translate }}</label>
             <select formControlName="currencyCode" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
               @for (c of modalService.currencies(); track c.currencyCode) {
                 <option [ngValue]="c.currencyCode" class="text-black bg-white">{{ c.currencyName }} ({{ c.currencySymbol }})</option>
@@ -39,35 +39,35 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Amount</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'common.amount' | translate }}</label>
             <input type="number" min="0" step="0.01" formControlName="amount"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Reference No</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.routeTransferModal.referenceNo' | translate }}</label>
             <input type="text" formControlName="trxRefNo"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
-              placeholder="e.g. bank transfer reference" />
+              [placeholder]="'credit.routeTransferModal.referenceNoPlaceholder' | translate" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Transaction date (optional)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.routeTransferModal.trxDate' | translate }}</label>
             <input type="datetime-local" formControlName="trxDate"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
-            <p class="text-xs text-gray-500 mt-1">Backdates the ledger row. Leave empty to use the current time.</p>
+            <p class="text-xs text-gray-500 mt-1">{{ 'credit.routeTransferModal.trxDateNote' | translate }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Note (optional)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.routeTransferModal.note' | translate }}</label>
             <textarea formControlName="note" rows="2"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
-              placeholder="Reference / memo…"></textarea>
+              [placeholder]="'credit.routeTransferModal.notePlaceholder' | translate"></textarea>
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!form.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Route
+            {{ 'credit.routeTransferModal.submit' | translate }}
           </button>
         </div>
       </form>

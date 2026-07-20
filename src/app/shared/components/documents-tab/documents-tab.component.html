@@ -5,26 +5,27 @@
   <div class="flex flex-wrap gap-2 items-end">
 
     <div class="flex flex-col gap-1">
-      <label class="text-xs font-medium text-gray-500">Search</label>
-      <input type="text" placeholder="Title or description..."
+      <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
+      <input type="text" [placeholder]="'documentsTab.filters.searchPlaceholder' | translate"
         [ngModel]="filterTitle()" (ngModelChange)="filterTitle.set($event)"
         class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
     </div>
 
     <div class="flex flex-col gap-1">
-      <label class="text-xs font-medium text-gray-500">Type</label>
+      <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
       <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
         class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-        <option value="">All</option>
-        <option value="1">Public</option>
-        <option value="2">Private</option>
+        <option value="">{{ 'common.all' | translate }}</option>
+        <option value="1">{{ 'documentsTab.docType.public' | translate }}</option>
+        <option value="2">{{ 'documentsTab.docType.private' | translate }}</option>
+        <option value="3">{{ 'documentsTab.docType.internal' | translate }}</option>
       </select>
     </div>
 
     <div class="flex flex-col justify-end">
       <button (click)="clearFilters()"
         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-        Clear
+        {{ 'common.clear' | translate }}
       </button>
     </div>
 
@@ -35,7 +36,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Add Document
+          {{ 'documentsTab.addDocument' | translate }}
         </button>
       }
     </div>
@@ -49,12 +50,12 @@
     <table class="w-full text-sm text-left text-gray-700">
       <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
         <tr>
-          <th scope="col" class="px-6 py-2">#</th>
-          <th scope="col" class="px-6 py-2">Title</th>
-          <th scope="col" class="px-6 py-2">Type</th>
-          <th scope="col" class="px-6 py-2">Signed</th>
-          <th scope="col" class="px-6 py-2">Added</th>
-          <th scope="col" class="px-6 py-2 text-right">Actions</th>
+          <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+          <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.title' | translate }}</th>
+          <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
+          <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.signed' | translate }}</th>
+          <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.added' | translate }}</th>
+          <th scope="col" class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
         </tr>
       </thead>
       <tbody class="text-xs">
@@ -66,7 +67,7 @@
           }
         } @else if (filteredDocs().length === 0) {
           <tr class="bg-white border-b">
-            <td class="px-6 py-3 text-gray-400" colspan="6">No documents found</td>
+            <td class="px-6 py-3 text-gray-400" colspan="6">{{ 'documentsTab.noDocuments' | translate }}</td>
           </tr>
         } @else {
           @for (doc of filteredDocs(); track doc.id; let i = $index; let isEven = $even) {
@@ -77,16 +78,16 @@
               <td class="px-6 py-2 font-medium">{{ doc.title }}</td>
               <td class="px-6 py-2">
                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(doc.documentType)">
-                  {{ doc.documentTypeName || docTypeNames[doc.documentType] }}
+                  {{ doc.documentTypeName || (docTypeNames[doc.documentType] | translate) }}
                 </span>
               </td>
               <td class="px-6 py-2">
                 @if (signedCounts()[doc.id] > 0) {
                   <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                    Yes ({{ signedCounts()[doc.id] }})
+                    {{ 'documentsTab.signedYes' | translate: { count: signedCounts()[doc.id] } }}
                   </span>
                 } @else {
-                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">No</span>
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">{{ 'common.no' | translate }}</span>
                 }
               </td>
               <td class="px-6 py-2">{{ utils.formatDate(doc.createdAt) }}</td>
@@ -94,27 +95,29 @@
                 <div class="flex gap-1 justify-end">
                   <button (click)="viewFile(doc)"
                     class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
-                    View
+                    {{ 'common.view' | translate }}
                   </button>
                   @if (entityActive && !isViewer()) {
                     <button (click)="openEdit(doc)"
                       class="text-xs px-2 py-1 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
-                      Edit
+                      {{ 'common.edit' | translate }}
                     </button>
                     @if (doc.documentType === 2) {
                       <button (click)="shareDocument(doc)"
                         class="text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
-                        Share
+                        {{ 'documentsTab.actions.share' | translate }}
                       </button>
+                    }
+                    @if (doc.documentType === 2 || doc.documentType === 3) {
                       <button (click)="publishDocument(doc)"
-                        [title]="'Make Public — re-uploads plaintext to IPFS and clears all shares. One-way.'"
+                        [title]="'documentsTab.actions.publishTitle' | translate"
                         class="text-xs px-2 py-1 rounded bg-amber-700 text-white hover:bg-amber-800 transition-colors">
-                        Publish
+                        {{ 'documentsTab.actions.publish' | translate }}
                       </button>
                     }
                     <button (click)="removeDocument(doc)"
                       class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
-                      Remove
+                      {{ 'common.remove' | translate }}
                     </button>
                   }
                 </div>
@@ -126,7 +129,7 @@
     </table>
   </div>
   <div class="flex items-center px-4 py-2 border-t">
-    <p class="text-xs font-medium text-gray-800">Showing {{ filteredDocs().length }} of Total {{ documents().length }} Records</p>
+    <p class="text-xs font-medium text-gray-800">{{ 'documentsTab.showingRecords' | translate: { showing: filteredDocs().length, total: documents().length } }}</p>
   </div>
 </div>
 
@@ -134,20 +137,20 @@
 @if (inboundDocs().length > 0) {
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mt-4">
     <div class="px-4 py-3 border-b">
-      <p class="text-sm font-semibold text-gray-800">Shared with this {{ resourceType }}</p>
-      <p class="text-xs text-gray-500">Documents another party shared directly with this {{ resourceType }} (read-only).</p>
+      <p class="text-sm font-semibold text-gray-800">{{ 'documentsTab.inbound.title' | translate: { type: resourceType } }}</p>
+      <p class="text-xs text-gray-500">{{ 'documentsTab.inbound.hint' | translate: { type: resourceType } }}</p>
     </div>
     <div class="overflow-x-auto rounded-lg">
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th scope="col" class="px-6 py-2">#</th>
-            <th scope="col" class="px-6 py-2">Title</th>
-            <th scope="col" class="px-6 py-2">From</th>
-            <th scope="col" class="px-6 py-2">Type</th>
-            <th scope="col" class="px-6 py-2">Signed</th>
-            <th scope="col" class="px-6 py-2">Shared At</th>
-            <th scope="col" class="px-6 py-2 text-right">Actions</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.title' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.from' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.signed' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'documentsTab.inbound.sharedAt' | translate }}</th>
+            <th scope="col" class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
@@ -165,12 +168,12 @@
               </td>
               <td class="px-6 py-2">
                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(doc.documentType)">
-                  {{ docTypeNames[doc.documentType] }}
+                  {{ docTypeNames[doc.documentType] | translate }}
                 </span>
               </td>
               <td class="px-6 py-2">
                 @if (doc.signed) {
-                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Signed by you</span>
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'documentsTab.signedByYou' | translate }}</span>
                 } @else {
                   <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">—</span>
                 }
@@ -180,12 +183,12 @@
                 <div class="flex gap-1 justify-end">
                   <button (click)="viewInbound(doc)"
                     class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
-                    View
+                    {{ 'common.view' | translate }}
                   </button>
                   @if (canSignInbound(doc)) {
                     <button (click)="signInbound(doc)"
                       class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
-                      Sign
+                      {{ 'documentsTab.actions.sign' | translate }}
                     </button>
                   }
                 </div>
@@ -216,26 +219,26 @@
         @if (isViewMode) {
           <!-- View: read-only -->
           <div>
-            <p class="text-sm font-medium text-gray-500">Title</p>
+            <p class="text-sm font-medium text-gray-500">{{ 'documentsTab.modal.titleLabel' | translate }}</p>
             <p class="text-base text-gray-700">{{ formTitle() || '—' }}</p>
           </div>
           <div>
-            <p class="text-sm font-medium text-gray-500">Description</p>
+            <p class="text-sm font-medium text-gray-500">{{ 'common.description' | translate }}</p>
             <p class="text-base text-gray-700 whitespace-pre-wrap">{{ formDescription() || '—' }}</p>
           </div>
           <div>
-            <p class="text-sm font-medium text-gray-500">Type</p>
+            <p class="text-sm font-medium text-gray-500">{{ 'common.type' | translate }}</p>
             <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(formType())">
-              {{ docTypeNames[formType()] }}
+              {{ docTypeNames[formType()] | translate }}
             </span>
           </div>
           <div>
-            <p class="text-sm font-medium text-gray-500">CID</p>
+            <p class="text-sm font-medium text-gray-500">{{ 'documentsTab.modal.cidLabel' | translate }}</p>
             <p class="text-base text-gray-700 font-mono break-all">{{ formState().doc?.cid || '—' }}</p>
           </div>
           @if (formState().doc?.fileType) {
             <div>
-              <p class="text-sm font-medium text-gray-500">File Type</p>
+              <p class="text-sm font-medium text-gray-500">{{ 'documentsTab.modal.fileTypeLabel' | translate }}</p>
               <p class="text-base text-gray-700">{{ formState().doc?.fileType }}</p>
             </div>
           }
@@ -243,19 +246,19 @@
           @if (formState().doc && formState().doc!.documentType === 2) {
             <div class="border-t pt-4">
               <div class="flex items-center justify-between mb-2">
-                <p class="text-sm font-medium text-gray-500">Shared with ({{ sharedWith().length }})</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'documentsTab.modal.sharedWithCount' | translate: { count: sharedWith().length } }}</p>
                 @if (entityActive && !isViewer()) {
                   <button (click)="shareDocument(formState().doc!)"
                     class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                     </svg>
-                    Share with account
+                    {{ 'documentsTab.modal.shareWithAccount' | translate }}
                   </button>
                 }
               </div>
               @if (sharedWith().length === 0) {
-                <p class="text-xs text-gray-400">Not shared with anyone.</p>
+                <p class="text-xs text-gray-400">{{ 'documentsTab.modal.notShared' | translate }}</p>
               } @else {
                 <ul class="space-y-1">
                   @for (acc of sharedWith(); track acc) {
@@ -272,11 +275,11 @@
                         </div>
                       </div>
                       @if (isSelfShare(acc)) {
-                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Owner</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">{{ 'documentsTab.modal.ownerBadge' | translate }}</span>
                       } @else if (entityActive && !isViewer()) {
                         <button (click)="unshareAccount(formState().doc!, acc)"
                           class="text-xs px-2 py-0.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors shrink-0">
-                          Revoke
+                          {{ 'documentsTab.modal.revoke' | translate }}
                         </button>
                       }
                     </li>
@@ -290,31 +293,31 @@
 
           @if (isAddMode) {
             <div>
-              <label class="block text-sm font-medium text-gray-700">File <span class="text-red-500">*</span></label>
+              <label class="block text-sm font-medium text-gray-700">{{ 'documentsTab.modal.fileLabel' | translate }} <span class="text-red-500">*</span></label>
               <input type="file" (change)="onFileSelected($event)"
                 class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-indigo-700 file:text-white hover:file:bg-indigo-800 cursor-pointer">
               @if (formSelectedFile()) {
-                <p class="text-xs text-gray-500 mt-1">Selected: {{ formSelectedFile()!.name }} ({{ formSelectedFile()!.type || 'unknown type' }})</p>
+                <p class="text-xs text-gray-500 mt-1">{{ 'documentsTab.modal.selectedFile' | translate: { name: formSelectedFile()!.name, type: formSelectedFile()!.type || ('documentsTab.modal.unknownType' | translate) } }}</p>
               }
               @if (formUploadProgress() !== null) {
                 <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
                   <div class="bg-indigo-600 h-1.5 rounded-full transition-all" [style.width.%]="formUploadProgress()"></div>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Uploading {{ formUploadProgress() }}%...</p>
+                <p class="text-xs text-gray-500 mt-1">{{ 'documentsTab.modal.uploading' | translate: { percent: formUploadProgress() } }}</p>
               }
             </div>
           }
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Title <span class="text-red-500">*</span></label>
-            <input type="text" placeholder="Document title"
+            <label class="block text-sm font-medium text-gray-700">{{ 'documentsTab.modal.titleLabel' | translate }} <span class="text-red-500">*</span></label>
+            <input type="text" [placeholder]="'documentsTab.modal.titlePlaceholder' | translate"
               [ngModel]="formTitle()" (ngModelChange)="formTitle.set($event)"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Description</label>
-            <textarea rows="3" placeholder="Optional description"
+            <label class="block text-sm font-medium text-gray-700">{{ 'common.description' | translate }}</label>
+            <textarea rows="3" [placeholder]="'documentsTab.modal.descriptionPlaceholder' | translate"
               [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black resize-none">
             </textarea>
@@ -322,26 +325,36 @@
 
           @if (isAddMode) {
             <div class="flex items-center justify-between">
-              <label class="text-sm font-medium text-gray-700">Visibility</label>
+              <label class="text-sm font-medium text-gray-700">{{ 'documentsTab.modal.visibility' | translate }}</label>
               <div class="flex gap-4">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="visibility" [value]="1"
                     [checked]="formType() === 1" (change)="formType.set(1)"
                     class="text-indigo-600 focus:ring-indigo-500">
-                  <span class="text-sm text-gray-700">Public</span>
+                  <span class="text-sm text-gray-700">{{ 'documentsTab.docType.public' | translate }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="visibility" [value]="2"
                     [checked]="formType() === 2" (change)="formType.set(2)"
                     class="text-indigo-600 focus:ring-indigo-500">
-                  <span class="text-sm text-gray-700">Private</span>
+                  <span class="text-sm text-gray-700">{{ 'documentsTab.docType.private' | translate }}</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="visibility" [value]="3"
+                    [checked]="formType() === 3" (change)="formType.set(3)"
+                    class="text-indigo-600 focus:ring-indigo-500">
+                  <span class="text-sm text-gray-700">{{ 'documentsTab.docType.internal' | translate }}</span>
                 </label>
               </div>
             </div>
 
+            @if (formType() === 3) {
+              <p class="text-xs text-gray-500">{{ 'documents.addModal.internalHint' | translate }}</p>
+            }
+
             @if (isPrivate()) {
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Share with (optional)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ 'documentsTab.modal.shareWithOptional' | translate }}</label>
 
                 <div class="flex flex-wrap gap-1 mb-2">
                   @for (k of ['entity','regulator','service','subscription']; track k) {
@@ -361,7 +374,7 @@
                 </div>
 
                 <div class="relative">
-                  <input type="text" placeholder="Name or address…"
+                  <input type="text" [placeholder]="'documentsTab.modal.recipientPlaceholder' | translate"
                     [ngModel]="recipientQuery()" (ngModelChange)="recipientQuery.set($event)"
                     class="w-full pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                   @if (recipientSearching()) {
@@ -394,13 +407,13 @@
                     }
                   </div>
                 } @else if (recipientQuery().length >= 2 && !recipientSearching()) {
-                  <p class="mt-2 text-[11px] text-gray-500">No matches.</p>
+                  <p class="mt-2 text-[11px] text-gray-500">{{ 'documentsTab.modal.noMatches' | translate }}</p>
                 }
 
                 @if (recipientSelected().length > 0) {
                   <div class="mt-3">
                     <div class="flex items-center justify-between mb-1">
-                      <span class="text-xs text-gray-500">Selected ({{ recipientSelected().length }})</span>
+                      <span class="text-xs text-gray-500">{{ 'documentsTab.modal.selectedCount' | translate: { count: recipientSelected().length } }}</span>
                     </div>
                     <div class="flex flex-wrap gap-1">
                       @for (s of recipientSelected(); track s.address) {
@@ -416,12 +429,12 @@
                   </div>
                 }
 
-                <p class="text-xs text-gray-500 mt-2">Each recipient must have published an encryption public key on-chain.</p>
+                <p class="text-xs text-gray-500 mt-2">{{ 'documentsTab.modal.recipientKeyHint' | translate }}</p>
               </div>
             }
           } @else {
             <!-- Edit mode: only title + description are editable. CID / type / file cannot change in-place. -->
-            <p class="text-xs text-gray-500">CID, type, and file cannot be changed — delete + re-add to replace.</p>
+            <p class="text-xs text-gray-500">{{ 'documentsTab.modal.editNote' | translate }}</p>
           }
         }
 
@@ -435,17 +448,17 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828 9 14l.172-2.828z"/>
             </svg>
-            Sign Document
+            {{ 'documentsTab.actions.signDocument' | translate }}
           </button>
         }
         <button type="button" (click)="closeModal()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          {{ isViewMode ? 'Close' : 'Cancel' }}
+          {{ (isViewMode ? 'common.close' : 'common.cancel') | translate }}
         </button>
         @if (!isViewMode) {
           <button type="button" (click)="onSave()" [disabled]="!isFormValid()"
             class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
-            {{ isAddMode ? 'Add Document' : 'Save Changes' }}
+            {{ (isAddMode ? 'documentsTab.addDocument' : 'documentsTab.modal.saveChanges') | translate }}
           </button>
         }
       </div>
@@ -458,6 +471,6 @@
 <app-modal-document-sign />
 
 } @else {
-  <p class="text-center text-sm text-gray-500 py-10">Document viewing is disabled for your account.</p>
+  <p class="text-center text-sm text-gray-500 py-10">{{ 'documentsTab.disabledMessage' | translate }}</p>
 }
 

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ethers } from 'ethers';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -34,6 +34,7 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
   private authService = inject(AuthService);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
 
   private shareModal = inject(ModalDocumentShareService);
@@ -72,7 +73,7 @@ export class DetailsPage implements OnInit {
   }
 
   async loadAll() {
-    this.loadingService.show('Loading document...');
+    this.loadingService.show(this.translate.instant('documents.details.loading.document'));
     try {
       await Promise.all([this.loadDocument(), this.loadShared(), this.loadSignatures(), this.loadGlobals()]);
     } finally {
@@ -141,10 +142,10 @@ export class DetailsPage implements OnInit {
     const entry = this.sharedWithDirectory()[address.toLowerCase()];
     if (!entry) return '';
     switch (entry.partyType) {
-      case 2: return 'Entity';
-      case 3: return 'Regulator';
-      case 4: return 'Service';
-      case 5: return 'Subscription';
+      case 2: return this.translate.instant('partyType.entity');
+      case 3: return this.translate.instant('partyType.regulator');
+      case 4: return this.translate.instant('partyType.service');
+      case 5: return this.translate.instant('partyType.subscription');
       default: return '';
     }
   }
@@ -163,8 +164,9 @@ export class DetailsPage implements OnInit {
 
   typeLabel(t?: number): string {
     switch (t) {
-      case 1: return 'Public';
-      case 2: return 'Private';
+      case 1: return this.translate.instant('documents.type.public');
+      case 2: return this.translate.instant('documents.type.private');
+      case 3: return this.translate.instant('documents.type.internal');
       default: return String(t ?? '');
     }
   }
@@ -172,13 +174,14 @@ export class DetailsPage implements OnInit {
     switch (t) {
       case 1: return 'bg-blue-100 text-blue-800';
       case 2: return 'bg-yellow-100 text-yellow-800';
+      case 3: return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }
   stateLabel(s?: number): string {
     switch (s) {
-      case 1: return 'Active';
-      case 2: return 'Deleted';
+      case 1: return this.translate.instant('documents.docState.active');
+      case 2: return this.translate.instant('documents.docState.deleted');
       default: return String(s ?? '');
     }
   }
@@ -194,20 +197,20 @@ export class DetailsPage implements OnInit {
   }
 
   async deleteDocument() {
-    if (!(await this.alertService.show('Delete Document', 'Soft-delete this document?', 'Delete'))) return;
-    this.loadingService.show('Updating...');
+    if (!(await this.alertService.show(this.translate.instant('documents.details.confirm.deleteTitle'), this.translate.instant('documents.details.confirm.deleteMessage'), this.translate.instant('common.delete')))) return;
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.documentSetState(this.id(), 2);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
 
   async restoreDocument() {
-    this.loadingService.show('Updating...');
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.documentSetState(this.id(), 1);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
@@ -215,20 +218,20 @@ export class DetailsPage implements OnInit {
   async shareWithNew() {
     const account = await this.shareModal.show();
     if (!account) return;
-    this.loadingService.show('Sharing...');
+    this.loadingService.show(this.translate.instant('documents.shareModal.sharing'));
     try {
       const r = await this.apiService.documentShare(this.id(), account);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
 
   async unshare(account: string) {
-    if (!(await this.alertService.show('Revoke Access', 'Revoke access for ' + account + '?', 'Revoke'))) return;
-    this.loadingService.show('Updating...');
+    if (!(await this.alertService.show(this.translate.instant('documents.details.confirm.revokeTitle'), this.translate.instant('documents.details.confirm.revokeMessage', { account }), this.translate.instant('documents.details.actions.revoke')))) return;
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.documentUnshare(this.id(), account);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
@@ -239,7 +242,7 @@ export class DetailsPage implements OnInit {
   private async _fetchFileBytes(): Promise<ArrayBuffer | null> {
     const fetched = await this.apiService.documentFetchFile(this.id());
     if (!fetched) {
-      this.alertService.show('Error', 'Could not fetch file.');
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile'));
       return null;
     }
     try {
@@ -255,7 +258,7 @@ export class DetailsPage implements OnInit {
     if (!doc?.cid) return;
     const keyId = await this.signModal.show();
     if (keyId === null) return;
-    this.loadingService.show('Hashing file + signing...');
+    this.loadingService.show(this.translate.instant('documents.details.loading.hashingSigning'));
     try {
       const buf = await this._fetchFileBytes();
       if (!buf) return;
@@ -264,7 +267,7 @@ export class DetailsPage implements OnInit {
 
       const signRes = await this.apiService.documentSign(this.id(), keyId, docHash);
       if (signRes?.error) {
-        this.alertService.show('Error', signRes.error);
+        this.alertService.show(this.translate.instant('alerts.error'), signRes.error);
       } else {
         await this.loadSignatures();
         this.activeTab.set('signatures');
@@ -277,7 +280,7 @@ export class DetailsPage implements OnInit {
   async verifySignature(sig: DocumentSignature) {
     const doc = this.document();
     if (!doc?.cid) return;
-    this.loadingService.show('Verifying signature...');
+    this.loadingService.show(this.translate.instant('documents.details.loading.verifyingSignature'));
     try {
       const buf = await this._fetchFileBytes();
       if (!buf) return;
@@ -291,28 +294,28 @@ export class DetailsPage implements OnInit {
 
       const ok = hashMatches && signerMatches;
       const lines = [
-        ok ? '✅ Signature is VALID' : '❌ Signature is INVALID',
+        ok ? this.translate.instant('documents.details.verify.valid') : this.translate.instant('documents.details.verify.invalid'),
         '',
-        'Signer (expected):  ' + sig.signer,
-        'Signer (recovered): ' + (recovered || '—'),
-        'Hash  (attested):   ' + sig.docHash,
-        'Hash  (current):    ' + currentHash,
+        this.translate.instant('documents.details.verify.signerExpectedLabel') + sig.signer,
+        this.translate.instant('documents.details.verify.signerRecoveredLabel') + (recovered || '—'),
+        this.translate.instant('documents.details.verify.hashAttestedLabel') + sig.docHash,
+        this.translate.instant('documents.details.verify.hashCurrentLabel') + currentHash,
         '',
-        hashMatches ? 'File hash matches — content has not changed since signing.' : '⚠ File hash has changed — content differs from what was signed.',
-        signerMatches ? 'Signer recovered from signature matches the expected signer.' : '⚠ Recovered signer does NOT match the expected signer.',
+        hashMatches ? this.translate.instant('documents.details.verify.hashMatches') : this.translate.instant('documents.details.verify.hashMismatch'),
+        signerMatches ? this.translate.instant('documents.details.verify.signerMatches') : this.translate.instant('documents.details.verify.signerMismatch'),
       ];
-      this.alertService.show(ok ? 'Signature Valid' : 'Signature Check Failed', lines.join('\n'));
+      this.alertService.show(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
     } finally { this.loadingService.hide(); }
   }
 
   async viewFile() {
     const doc = this.document();
     if (!doc?.cid) return;
-    this.loadingService.show('Fetching file...');
+    this.loadingService.show(this.translate.instant('documents.details.loading.fetchingFile'));
     try {
       const fetched = await this.apiService.documentFetchFile(this.id());
       if (!fetched) {
-        this.alertService.show('Error', 'Could not fetch file.');
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile'));
         return;
       }
       window.open(fetched.blobUrl, '_blank');
@@ -330,22 +333,20 @@ export class DetailsPage implements OnInit {
   async publishDocument() {
     const doc = this.document();
     if (!doc) return;
-    if (doc.documentType !== 2) {
-      this.alertService.show('Not applicable', 'Only Private documents can be published.');
+    if (doc.documentType !== 2 && doc.documentType !== 3) {
+      this.alertService.show(this.translate.instant('documents.details.publish.notApplicableTitle'), this.translate.instant('documents.details.publish.notApplicableMessage'));
       return;
     }
     const ok = await this.alertService.show(
-      'Publish Document',
-      'Make this document Public?\n\n' +
-      'The file will be re-uploaded to IPFS as plaintext — anyone with the CID will be able to read it. ' +
-      'This cannot be undone: Public → Private conversion is not supported.',
-      'Publish'
+      this.translate.instant('documents.details.publish.title'),
+      this.translate.instant('documents.details.publish.body'),
+      this.translate.instant('documents.actions.publish')
     );
     if (!ok) return;
-    this.loadingService.show('Publishing...');
+    this.loadingService.show(this.translate.instant('documents.details.publish.publishing'));
     try {
       const r = await this.apiService.documentPublish(this.id());
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.loadAll();
     } finally {
       this.loadingService.hide();

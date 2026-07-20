@@ -7,9 +7,9 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Show</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.show' | translate }}</label>
         <label class="inline-flex items-center space-x-2 cursor-pointer h-[30px]">
-          <span class="text-xs font-medium text-gray-700">All</span>
+          <span class="text-xs font-medium text-gray-700">{{ 'messages.list.filters.all' | translate }}</span>
           <span class="relative">
             <input id="ToggleMessagesUnread" type="checkbox" class="hidden peer"
                    [checked]="unreadOnly()"
@@ -17,55 +17,57 @@
             <div class="w-8 h-4 rounded-full shadow-inner dark:bg-gray-600 peer-checked:dark:bg-violet-600"></div>
             <div class="absolute inset-y-0 left-0 w-2 h-2 m-1 rounded-full shadow peer-checked:right-0 peer-checked:left-auto dark:bg-gray-100"></div>
           </span>
-          <span class="text-xs font-medium text-gray-700">Unread</span>
+          <span class="text-xs font-medium text-gray-700">{{ 'messages.list.filters.unread' | translate }}</span>
         </label>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Subject</label>
-        <input type="text" placeholder="Subject or thread id…"
+        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.subject' | translate }}</label>
+        <input type="text" [placeholder]="'messages.list.filters.searchPlaceholder' | translate"
                [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Participant</label>
-        <input type="text" placeholder="Name or address…"
+        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.participant' | translate }}</label>
+        <input type="text" [placeholder]="'messages.list.filters.participantPlaceholder' | translate"
                [ngModel]="searchParticipant()" (ngModelChange)="searchParticipant.set($event)"
                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Type</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.type' | translate }}</label>
         <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
                 class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="all">All</option>
-          <option value="entity">Entities</option>
-          <option value="regulator">Regulators</option>
-          <option value="subscription">Subscriptions</option>
+          <option value="all">{{ 'messages.list.filters.typeAll' | translate }}</option>
+          <option value="entity">{{ 'messages.list.filters.typeEntity' | translate }}</option>
+          <option value="regulator">{{ 'messages.list.filters.typeRegulator' | translate }}</option>
+          <option value="subscription">{{ 'messages.list.filters.typeSubscription' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">State</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
                 class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="all">All</option>
-          <option value="1">Open</option>
-          <option value="2">Closed</option>
-          <option value="3">Archived</option>
+          <option value="all">{{ 'state.all' | translate }}</option>
+          <option value="1">{{ 'state.open' | translate }}</option>
+          <option value="2">{{ 'state.closed' | translate }}</option>
+          <option value="3">{{ 'state.archived' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Clear
+          {{ 'messages.list.filters.clear' | translate }}
         </button>
       </div>
       <div class="flex ml-auto items-end gap-2">
-        <button (click)="openNewThread()"
-                class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-          </svg>
-          New thread
-        </button>
+        @if (!isReadOnly) {
+          <button (click)="openNewThread()"
+                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            {{ 'messages.list.newThread' | translate }}
+          </button>
+        }
       </div>
     </div>
   </div>
@@ -76,27 +78,27 @@
       <table class="min-w-full text-xs">
         <thead class="text-xs text-white uppercase sticky top-0" style="background-color: #4a5568;">
           <tr>
-            <th scope="col" class="text-left px-3 py-2">#</th>
-            <th scope="col" class="text-left px-3 py-2">Subject</th>
-            <th scope="col" class="text-left px-3 py-2">Participants</th>
-            <th scope="col" class="text-left px-3 py-2">Messages</th>
-            <th scope="col" class="text-left px-3 py-2">Last activity</th>
-            <th scope="col" class="text-left px-3 py-2">State</th>
+            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.id' | translate }}</th>
+            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.subject' | translate }}</th>
+            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.participants' | translate }}</th>
+            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.messages' | translate }}</th>
+            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.lastActivity' | translate }}</th>
+            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.state' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @if (filteredThreads().length === 0 && !loadingData) {
-            <tr class="bg-white border-b"><td colspan="6" class="px-3 py-6 text-center text-gray-500">no data</td></tr>
+            <tr class="bg-white border-b"><td colspan="6" class="px-3 py-6 text-center text-gray-500">{{ 'common.noData' | translate }}</td></tr>
           } @else {
             @for (t of filteredThreads(); track t.id; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="viewDetails(t)">
                 <td class="px-3 py-2 text-gray-700">{{ i + 1 }}</td>
-                <td class="px-3 py-2 font-medium text-gray-800">{{ t.subject || '(no subject)' }}</td>
+                <td class="px-3 py-2 font-medium text-gray-800">{{ t.subject || ('messages.noSubject' | translate) }}</td>
                 <td class="px-3 py-2 text-gray-700">{{ t.participantCount }}</td>
                 <td class="px-3 py-2 text-gray-700">{{ t.messageCount }}</td>
-                <td class="px-3 py-2 text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : '—' }}</td>
+                <td class="px-3 py-2 text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : ('common.notSet' | translate) }}</td>
                 <td class="px-3 py-2">
                   <span class="px-2 py-0.5 rounded text-[10px] font-medium" [ngClass]="stateClass(t.state)">
                     {{ stateName(t.state) }}
@@ -109,7 +111,7 @@
       </table>
     </div>
     <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ filteredThreads().length }} of Total {{ threads().length }} Records</p>
+      <p class="text-xs font-medium text-gray-800">{{ 'messages.showingOfTotal' | translate: { showing: filteredThreads().length, total: threads().length } }}</p>
     </div>
   </div>
 </div>

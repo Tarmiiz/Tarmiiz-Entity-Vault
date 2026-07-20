@@ -51,11 +51,28 @@ export class AuthorizedLayoutComponent {
   get entityInfo(): Entity { return this.authService.entityInfo; }
   get userInfo(): User { return this.authService.userInfo; }
 
+  // User Management group: Users / User Groups / Menu Settings / Approval Settings
+  // (all admin only) + Approvals. Admin-only — for a non-admin the group would wrap
+  // just "Approvals", so exec sees a standalone top-level Approvals item instead.
+  get userManagementGroupVisible(): boolean {
+    return Number(this.userInfo?.role) === 1;
+  }
+
+  // Tenant avatar (public endpoint) used as the sidebar logo; static logo fallback on 404.
+  get avatarUrl(): string { return this.apiService.avatarUrl; }
+  onLogoError(ev: Event) {
+    const img = ev.target as HTMLImageElement;
+    if (img && !img.src.endsWith('assets/images/logo.svg')) img.src = 'assets/images/logo.svg';
+  }
+
   dexExpanded = signal(false);
   toggleDex() { this.dexExpanded.update(v => !v); }
 
   analyticsExpanded = signal(false);
   toggleAnalytics() { this.analyticsExpanded.update(v => !v); }
+
+  userManagementExpanded = signal(false);
+  toggleUserManagement() { this.userManagementExpanded.update(v => !v); }
 
   pendingApprovalsCount = signal(0);
   unreadMessagesCount = signal(0);
@@ -90,8 +107,9 @@ export class AuthorizedLayoutComponent {
   private async refreshUnreadMessages() {
     const u = this.userInfo;
     if (!u) return;
-    // Security officers (role 4) don't see Messages — skip the poll.
-    if (Number(u.role) === 4) { this.unreadMessagesCount.set(0); return; }
+    // Only poll when the Messages module is actually visible to this user — a
+    // Security officer without the per-user grant would otherwise 403 (swallowed).
+    if (!this.features.menuEnabled('messages')) { this.unreadMessagesCount.set(0); return; }
     try {
       const res: any = await this.apiService.connectInboxInfo();
       this.unreadMessagesCount.set(Number(res?.inbox?.unread ?? 0));

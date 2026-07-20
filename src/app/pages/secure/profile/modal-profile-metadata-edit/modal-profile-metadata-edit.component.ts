@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, effect } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit.service';
@@ -7,23 +8,31 @@ import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit.s
   selector: 'app-modal-profile-metadata-edit',
   templateUrl: './modal-profile-metadata-edit.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalProfileMetadataEditComponent {
   editService = inject(ModalProfileMetadataEditService);
   private fb = inject(FormBuilder);
 
   editForm = this.fb.group({
+    description: [''],
     email:   ['', Validators.required],
-    mobile:  ['', Validators.required],
+    phone:   ['', Validators.required],
     website: ['', Validators.required],
+    address: ['', Validators.required],
   });
 
   constructor() {
     effect(() => {
       const meta = this.editService.metadata();
       if (meta) {
-        this.editForm.patchValue({ email: meta.email, mobile: meta.mobile, website: meta.website });
+        this.editForm.patchValue({
+          description: meta.description,
+          email:   meta.contact.email,
+          phone:   meta.contact.phone,
+          website: meta.contact.website,
+          address: meta.contact.address,
+        });
       } else {
         this.editForm.reset();
       }
@@ -33,7 +42,15 @@ export class ModalProfileMetadataEditComponent {
   onSave(): void {
     if (!this.editForm.valid) return;
     const v = this.editForm.getRawValue();
-    this.editService.confirm({ email: v.email ?? '', mobile: v.mobile ?? '', website: v.website ?? '' });
+    this.editService.confirm({
+      description: v.description ?? '',
+      contact: {
+        email:   v.email   ?? '',
+        phone:   v.phone   ?? '',
+        website: v.website ?? '',
+        address: v.address ?? '',
+      },
+    });
   }
 
   onCancel(): void {

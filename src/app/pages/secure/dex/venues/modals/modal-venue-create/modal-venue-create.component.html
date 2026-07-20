@@ -2,29 +2,29 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Create DEX Venue</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'dex.venues.createModal.title' | translate }}</h3>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSave()">
         <div class="p-6 space-y-3">
-          <p class="text-sm text-gray-700">Register one of your token-issuer services as a DEX venue. The service must already have a payment processor set.</p>
+          <p class="text-sm text-gray-700">{{ 'dex.venues.createModal.description' | translate }}</p>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Service</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.venues.createModal.service' | translate }}</label>
             <select formControlName="serviceAddress"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-              <option value="">Select a service...</option>
+              <option value="">{{ 'dex.venues.createModal.selectService' | translate }}</option>
               @for (s of services(); track s.address) {
                 <option [value]="s.address">{{ s.name || s.address }}</option>
               }
             </select>
-            <p class="text-xs text-gray-500 mt-1">A service must have a payment processor configured before it can become a venue.</p>
+            <p class="text-xs text-gray-500 mt-1">{{ 'dex.venues.createModal.serviceHint' | translate }}</p>
           </div>
-          <p class="text-xs text-gray-500">New venues are created in a regulator-suspended state with Tier 1 pending approval. Trading begins after the regulator clears the venue.</p>
+          <p class="text-xs text-gray-500">{{ 'dex.venues.createModal.suspendedNotice' | translate }}</p>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()"
-            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Cancel</button>
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
           <button type="submit" [disabled]="!form.valid"
-            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Create</button>
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.create' | translate }}</button>
         </div>
       </form>
     </div>

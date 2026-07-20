@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -46,6 +46,7 @@ export class ListPage implements OnInit {
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
   private auditService = inject(AuditService);
   private addSubscriptionService = inject(ModalAddSubscriptionService);
@@ -101,11 +102,14 @@ export class ListPage implements OnInit {
     }
   } 
 
-  private readonly stateNames: Record<number, string> = {
-    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
-  };
-
   private mapVaultSubscription(raw: any): Subscription {
+    const stateNames: Record<number, string> = {
+      0: this.translate.instant('state.inactive'),
+      1: this.translate.instant('state.initiated'),
+      2: this.translate.instant('state.active'),
+      3: this.translate.instant('state.suspended'),
+      4: this.translate.instant('state.deactivated'),
+    };
     return {
       subscription: raw.address,
       entity: raw.entity ?? '',
@@ -121,13 +125,13 @@ export class ListPage implements OnInit {
       createdAt: raw.created_at ?? 0,
       suspended: raw.suspended === true || raw.suspended === 1,
       state: raw.state ?? 0,
-      stateName: raw.account_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      stateName: raw.account_state_name ?? stateNames[raw.state] ?? String(raw.state ?? ''),
     } as Subscription;
   }
 
   async listSubscriptions(silent = false) {
     if (silent) this.refreshing.set(true);
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     try {
       const result = await this.apiService.vaultGetSubscriptions(undefined, 0, 1000);
       if (result) {
@@ -147,7 +151,10 @@ export class ListPage implements OnInit {
   async openAddSubscription() {
     const result = await this.addSubscriptionService.show();
     if (result?.subscriptionAddress) {
-      await this.alertService.show('Subscription Created', 'Subscription address: ' + result.subscriptionAddress);
+      await this.alertService.show(
+        this.translate.instant('subscriptions.list.createdTitle'),
+        this.translate.instant('subscriptions.list.createdMessage', { address: result.subscriptionAddress })
+      );
       await this.listSubscriptions();
     }
   }
@@ -171,19 +178,23 @@ export class ListPage implements OnInit {
     const doc = new jsPDF();
     const pad = 14;
 
+    const serviceLabel = this.translate.instant('subscriptions.filters.service');
+    const stateLabel = this.translate.instant('subscriptions.filters.state');
+    const noneLabel = this.translate.instant('common.none');
+
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Subscriptions', pad, 15);
+    doc.text(this.translate.instant('subscriptions.title'), pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
 
     const filterParts = [
-      `Service: ${this.filterService() || 'None'}`,
-      `State: ${this.filterState() || 'None'}`,
+      `${serviceLabel}: ${this.filterService() || noneLabel}`,
+      `${stateLabel}: ${this.filterState() || noneLabel}`,
     ];
     doc.setFontSize(8);
     doc.setTextColor(100);
-    doc.text(`Filters: ${filterParts.join('  |  ')}`, pad, 27);
+    doc.text(`${this.translate.instant('common.filters')}: ${filterParts.join('  |  ')}`, pad, 27);
     doc.setTextColor(0);
 
     const stateCounts = subs.reduce((acc, s) => {
@@ -206,13 +217,13 @@ export class ListPage implements OnInit {
         3: { halign: 'center' },
       },
       head: [[
-        { content: 'State' },
-        { content: 'Count', styles: { halign: 'center' } },
-        { content: 'Active', styles: { halign: 'center' } },
-        { content: 'Suspended', styles: { halign: 'center' } },
+        { content: stateLabel },
+        { content: this.translate.instant('subscriptions.list.pdf.count'), styles: { halign: 'center' } },
+        { content: this.translate.instant('state.active'), styles: { halign: 'center' } },
+        { content: this.translate.instant('state.suspended'), styles: { halign: 'center' } },
       ]],
       body: [
-        ['All', subs.length, totalActive, totalSuspended],
+        [this.translate.instant('common.all'), subs.length, totalActive, totalSuspended],
         ...stateRows,
       ],
     });
@@ -226,18 +237,18 @@ export class ListPage implements OnInit {
         0: { cellWidth: 10 },
       },
       head: [[
-        { content: '#' },
-        { content: 'Created' },
-        { content: 'Subscription Address' },
-        { content: 'Service' },
-        { content: 'State' },
+        { content: this.translate.instant('common.id') },
+        { content: this.translate.instant('common.createdAt') },
+        { content: this.translate.instant('subscriptions.list.pdf.subscriptionAddress') },
+        { content: serviceLabel },
+        { content: stateLabel },
       ]],
       body: subs.map((s, i) => [
         i + 1,
         this.utils.formatDate(s.createdAt),
         s.subscription,
         s.serviceName,
-        `${s.stateName}${s.suspended ? ' (Suspended)' : ''}`,
+        `${s.stateName}${s.suspended ? ' ' + this.translate.instant('subscriptions.list.suspendedSuffix') : ''}`,
       ]),
     });
 
@@ -248,17 +259,25 @@ export class ListPage implements OnInit {
   }
 
   exportExcel() {
+    const createdLabel = this.translate.instant('common.createdAt');
+    const subscriptionLabel = this.translate.instant('subscriptions.list.table.subscription');
+    const serviceLabel = this.translate.instant('subscriptions.filters.service');
+    const stateLabel = this.translate.instant('common.state');
+    const suspendedLabel = this.translate.instant('state.suspended');
+    const yesLabel = this.translate.instant('common.yes');
+    const noLabel = this.translate.instant('common.no');
+
     const rows = this.filteredSubscriptions().map(s => ({
-      'Created': this.utils.formatDate(s.createdAt),
-      'Subscription': s.subscription,
-      'Service': s.serviceName,
-      'State': s.stateName,
-      'Suspended': s.suspended ? 'Yes' : 'No',
+      [createdLabel]: this.utils.formatDate(s.createdAt),
+      [subscriptionLabel]: s.subscription,
+      [serviceLabel]: s.serviceName,
+      [stateLabel]: s.stateName,
+      [suspendedLabel]: s.suspended ? yesLabel : noLabel,
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Subscriptions');
+    XLSX.utils.book_append_sheet(wb, ws, this.translate.instant('subscriptions.title'));
 
     const now = new Date();
     const stamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');

@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, effect, signal, computed } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ModalServiceEditService, EditServiceData } from './modal-service-edit.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 
@@ -11,7 +12,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
   templateUrl: './modal-service-edit.component.html',
   styleUrls: ['./modal-service-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalServiceEditComponent {
 
@@ -25,9 +26,6 @@ export class ModalServiceEditComponent {
 
   editForm = this.fb.group({
     name: ['', Validators.required],
-    website: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    mobile: ['', Validators.required],
     validator: [''],
     paymentProcessor: [''],
   });
@@ -41,9 +39,6 @@ export class ModalServiceEditComponent {
         const paymentProcessorValue = (service.paymentProcessor && service.paymentProcessor !== ZERO_ADDRESS) ? service.paymentProcessor : '';
         this.editForm.patchValue({
           name: service.name,
-          website: service.website,
-          email: service.email,
-          mobile: service.mobile,
           validator: validatorValue,
           paymentProcessor: paymentProcessorValue,
         });
@@ -77,9 +72,6 @@ export class ModalServiceEditComponent {
       const formValue = this.editForm.getRawValue();
       const serviceData: EditServiceData = {
         name: formValue.name ?? '',
-        website: formValue.website ?? '',
-        email: formValue.email ?? '',
-        mobile: formValue.mobile ?? '',
         validator: formValue.validator ?? '',
         paymentProcessor: formValue.paymentProcessor ?? '',
       };

@@ -2,32 +2,42 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Edit Details</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'profile.metadataEditModal.title' | translate }}</h3>
       </div>
       <form [formGroup]="editForm" (ngSubmit)="onSave()">
         <div class="p-6 space-y-4">
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+            <label for="description" class="block text-sm font-medium text-gray-700">{{ 'common.description' | translate }}</label>
+            <textarea id="description" formControlName="description" rows="3" autocomplete="off"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"></textarea>
+          </div>
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">{{ 'common.email' | translate }}</label>
             <input type="email" id="email" formControlName="email" autocomplete="off"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
           <div>
-            <label for="mobile" class="block text-sm font-medium text-gray-700">Mobile</label>
-            <input type="text" id="mobile" formControlName="mobile" autocomplete="off"
+            <label for="phone" class="block text-sm font-medium text-gray-700">{{ 'common.mobile' | translate }}</label>
+            <input type="text" id="phone" formControlName="phone" autocomplete="off"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
           <div>
-            <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
+            <label for="website" class="block text-sm font-medium text-gray-700">{{ 'common.website' | translate }}</label>
             <input type="text" id="website" formControlName="website" autocomplete="off"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+          </div>
+          <div>
+            <label for="address" class="block text-sm font-medium text-gray-700">{{ 'common.address' | translate }}</label>
+            <input type="text" id="address" formControlName="address" autocomplete="off"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!editForm.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Save Changes
+            {{ 'profile.metadataEditModal.saveChanges' | translate }}
           </button>
         </div>
       </form>

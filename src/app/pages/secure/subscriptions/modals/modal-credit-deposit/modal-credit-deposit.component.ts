@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { ModalCreditDepositService } from './modal-credit-deposit.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -20,7 +21,7 @@ interface ApprovedProcessor {
   styleUrls: ['./modal-credit-deposit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
 })
 export class ModalCreditDepositComponent {
   modalService = inject(ModalCreditDepositService);
@@ -28,6 +29,7 @@ export class ModalCreditDepositComponent {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private fb = inject(FormBuilder);
+  private translate = inject(TranslateService);
 
   processors = signal<ApprovedProcessor[]>([]);
 
@@ -78,11 +80,11 @@ export class ModalCreditDepositComponent {
     const v = this.form.value;
     const service = this.modalService.service();
     if (!service) {
-      await this.alertService.show('Error', 'Token-issuer service is missing.');
+      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorServiceMissing'));
       return;
     }
     if (!v.provider) {
-      await this.alertService.show('Error', 'Please select a payment processor.');
+      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorSelectProcessor'));
       return;
     }
 
@@ -101,12 +103,12 @@ export class ModalCreditDepositComponent {
       raw: v.note ? { note: v.note } : {},
     };
 
-    this.loadingService.show('Depositing credit...');
+    this.loadingService.show(this.translate.instant('subscriptions.creditDepositModal.depositing'));
     const res = await this.apiService.creditDeposit(body);
     this.loadingService.hide();
 
     if (res.error) {
-      await this.alertService.show('Error', res.error);
+      await this.alertService.show(this.translate.instant('alerts.error'), res.error);
       return;
     }
     this.modalService.confirm(res.result?.transactionHash || '');

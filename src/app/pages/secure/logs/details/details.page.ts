@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -22,6 +22,7 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
 
   event = signal<AuditLog | null>(null);
@@ -35,7 +36,7 @@ export class DetailsPage implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     const refNo = this.route.snapshot.queryParamMap.get('refNo') || '';
     this.refNo.set(refNo);
-    this.loadingService.show('Loading event...');
+    this.loadingService.show(this.translate.instant('logs.details.loadingEvent'));
 
     let focusEvent: AuditLog | null = null;
     const stateRow = (typeof history !== 'undefined' && history.state && history.state.row)

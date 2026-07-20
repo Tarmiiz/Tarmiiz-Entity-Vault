@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -66,6 +66,7 @@ export class DetailsPage implements OnInit {
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
@@ -385,7 +386,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getSubscriptionDetails(silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const raw = await this.apiService.vaultGetSubscription(this.subscriptionAddress);
     if (raw) {
       const subscription = this.mapVaultSubscription(raw);
@@ -419,11 +420,15 @@ export class DetailsPage implements OnInit {
 
     const modalResult = await this.subscriptionStateService.show(currentService.state);
     if (modalResult !== null && modalResult.state !== currentService.state) {
-        this.loadingService.show('Changing state...');
+        this.loadingService.show(this.translate.instant('subscriptions.details.info.changingState'));
         try {
             const result = await this.apiService.vaultUpdateSubscriptionState(currentService.subscription, modalResult.state, modalResult.reason);
             if (result?.requestId) {
-                this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+                this.alertService.show(
+                  this.translate.instant('subscriptions.details.info.approvalSubmittedTitle'),
+                  this.translate.instant('subscriptions.details.info.approvalSubmittedMessage'),
+                  this.translate.instant('subscriptions.details.info.ok')
+                );
             } else if (result) {
                 this.subscription.update(sub => sub ? {
                     ...sub,
@@ -448,7 +453,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getHoldings(start: number, offset: number, silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetSubscriptionHoldings(this.subscriptionAddress, start - 1, offset);
     if (data?.holdings) {
       const next: SubscriptionHolding[] = data.holdings.map((h: any) => this.mapVaultHolding(h));
@@ -517,7 +522,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getTransactions(start: number, offset: number, silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetTransactions({ subscription: this.subscriptionAddress }, start - 1, offset);
     if (data?.transactions) {
       const next = data.transactions.map((t: any) => this.mapVaultTransaction(t));
@@ -855,14 +860,20 @@ export class DetailsPage implements OnInit {
     const sub = this.subscription();
     if (!sub) return;
     if (!sub.service) {
-      await this.alertService.show('Error', 'Subscription has no token-issuer service.');
+      await this.alertService.show(
+        this.translate.instant('subscriptions.details.credit.errorTitle'),
+        this.translate.instant('subscriptions.details.credit.noTokenIssuerService')
+      );
       return;
     }
     const service = await this.apiService.vaultGetService(sub.service);
     const paymentProcessor = service?.payment_processor || service?.paymentProcessor || '';
     const currencies = this.creditBalances();
     if (currencies.length === 0) {
-      await this.alertService.show('Error', 'No currencies available. Wait for credit balances to load.');
+      await this.alertService.show(
+        this.translate.instant('subscriptions.details.credit.errorTitle'),
+        this.translate.instant('subscriptions.details.credit.noCurrenciesAvailable')
+      );
       return;
     }
     const result = await this.creditDepositService.show({
@@ -872,13 +883,18 @@ export class DetailsPage implements OnInit {
       currencies,
     });
     if (result) {
-      await this.alertService.show('Credit Deposited', result.txHash ? ('Tx: ' + result.txHash) : 'Deposit successful.');
+      await this.alertService.show(
+        this.translate.instant('subscriptions.details.credit.depositedTitle'),
+        result.txHash
+          ? (this.translate.instant('subscriptions.details.credit.txPrefix') + result.txHash)
+          : this.translate.instant('subscriptions.details.credit.depositSuccessful')
+      );
       await this.getCreditData();
     }
   }
 
   async getCreditData() {
-    this.loadingService.show('Loading credit data...');
+    this.loadingService.show(this.translate.instant('subscriptions.details.credit.loadingCreditData'));
     const [, trxData, originVars] = await Promise.all([
       this.getCreditBalances(),
       this.apiService.vaultGetSubscriptionCreditTransactions(this.subscriptionAddress, 1, 50),

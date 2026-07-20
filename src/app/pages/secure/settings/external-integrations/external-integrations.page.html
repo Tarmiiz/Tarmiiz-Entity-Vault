@@ -1,15 +1,12 @@
-<app-header title="External API Integrations"></app-header>
+<app-header [title]="'settings.externalIntegrations.pageTitle' | translate"></app-header>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3 flex items-start justify-between gap-4">
     <div>
-      <h2 class="text-sm font-semibold text-gray-800 mb-1">External API integrations</h2>
+      <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'settings.externalIntegrations.title' | translate }}</h2>
       <p class="text-xs text-gray-600">
-        Admin-managed configuration records for external APIs, grouped by category. Parameters are
-        flexible key/value pairs, encrypted in this dashboard's database — never stored in
-        configuration files — and included in the on-chain settings backup, so they survive a
-        database rebuild. Editing a parameter replaces it; leaving it empty keeps the stored value.
+        {{ 'settings.externalIntegrations.description' | translate }}
       </p>
     </div>
     <button (click)="openCreate()" [disabled]="busy()"
@@ -17,7 +14,7 @@
       <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
       </svg>
-      Add Integration
+      {{ 'settings.externalIntegrations.addIntegration' | translate }}
     </button>
   </div>
 
@@ -26,21 +23,21 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th scope="col" class="px-6 py-2">#</th>
-            <th scope="col" class="px-6 py-2">Integration</th>
-            <th scope="col" class="px-6 py-2">Category</th>
-            <th scope="col" class="px-6 py-2">Status</th>
-            <th scope="col" class="px-6 py-2">Default</th>
-            <th scope="col" class="px-6 py-2">Parameters</th>
-            <th scope="col" class="px-6 py-2">Last Updated</th>
-            <th scope="col" class="px-6 py-2">Actions</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.integration' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.categoryLabel' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.status' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.default' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.parameters' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.lastUpdated' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (integrations().length == 0) {
             <tr class="bg-white border-b">
               <td class="px-6 py-2" colspan="8">
-                @if (loading()) { Loading… } @else { no data }
+                @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'common.noData' | translate }} }
               </td>
             </tr>
           } @else {
@@ -60,40 +57,40 @@
                 <td class="px-6 py-2">
                   <span class="px-3 py-1 text-xs font-semibold rounded-full"
                         [class]="p.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
-                    {{ p.enabled ? 'Enabled' : 'Disabled' }}
+                    {{ (p.enabled ? 'settings.externalIntegrations.enabled' : 'settings.externalIntegrations.disabled') | translate }}
                   </span>
                 </td>
                 <td class="px-6 py-2">
                   @if (p.isDefault) {
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Default</span>
-                  } @else { — }
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ 'settings.externalIntegrations.table.default' | translate }}</span>
+                  } @else { {{ 'common.notSet' | translate }} }
                 </td>
                 <td class="px-6 py-2">
-                  <span>{{ paramsSetCount(p) }} set</span>
+                  <span>{{ 'settings.externalIntegrations.paramsSetCount' | translate: { count: paramsSetCount(p) } }}</span>
                 </td>
                 <td class="px-6 py-2">
-                  @if (p.updatedAt != null) { {{ p.updatedAt | date:'medium' }} } @else { — }
+                  @if (p.updatedAt != null) { {{ p.updatedAt | date:'medium' }} } @else { {{ 'common.notSet' | translate }} }
                 </td>
                 <td class="px-6 py-2">
                   <div class="flex gap-2">
                     <button (click)="edit(p)" [disabled]="busy()"
                       class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50">
-                      Edit
+                      {{ 'common.edit' | translate }}
                     </button>
                     @if (!p.isDefault) {
                       <button (click)="makeDefault(p)" [disabled]="busy() || !p.enabled"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
-                        Set Default
+                        {{ 'settings.externalIntegrations.setDefault' | translate }}
                       </button>
                     }
                     <button (click)="toggleEnabled(p)" [disabled]="busy()"
                       class="text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
                       [class]="p.enabled ? 'bg-red-700 text-white hover:bg-red-800' : 'bg-green-700 text-white hover:bg-green-800'">
-                      {{ p.enabled ? 'Disable' : 'Enable' }}
+                      {{ (p.enabled ? 'settings.externalIntegrations.disableAction' : 'settings.externalIntegrations.enableAction') | translate }}
                     </button>
                     <button (click)="remove(p)" [disabled]="busy()"
                       class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50">
-                      Delete
+                      {{ 'common.delete' | translate }}
                     </button>
                   </div>
                 </td>
@@ -104,7 +101,7 @@
       </table>
     </div>
     <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ integrations().length }} of Total {{ integrations().length }} Records</p>
+      <p class="text-xs font-medium text-gray-800">{{ 'settings.externalIntegrations.showingTotal' | translate: { count: integrations().length } }}</p>
     </div>
   </div>
 </div>
@@ -118,29 +115,33 @@
 
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">
-          {{ createMode() ? 'Add Integration' : 'Edit ' + (editing()?.displayName || '') }}
+          @if (createMode()) {
+            {{ 'settings.externalIntegrations.addIntegration' | translate }}
+          } @else {
+            {{ 'settings.externalIntegrations.editIntegration' | translate: { name: editing()?.displayName || '' } }}
+          }
         </h3>
-        <p class="text-xs text-gray-400 mt-1">Parameter values are write-only — leave a field empty to keep its stored value.</p>
+        <p class="text-xs text-gray-400 mt-1">{{ 'settings.externalIntegrations.writeOnlyNote' | translate }}</p>
       </div>
 
       <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
         @if (createMode()) {
           <div>
-            <label class="block text-sm font-medium text-gray-700">Name <span class="text-gray-400 font-normal">(slug — a-z, 0-9, -, _)</span></label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'settings.externalIntegrations.nameLabel' | translate }} <span class="text-gray-400 font-normal">{{ 'settings.externalIntegrations.nameSlugHint' | translate }}</span></label>
             <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)"
-              placeholder="e.g. my-payment-api" autocomplete="off"
+              [placeholder]="'settings.externalIntegrations.namePlaceholder' | translate" autocomplete="off"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
           </div>
         }
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Display Name</label>
+          <label class="block text-sm font-medium text-gray-700">{{ 'settings.externalIntegrations.displayNameLabel' | translate }}</label>
           <input type="text" [ngModel]="editDisplayName()" (ngModelChange)="editDisplayName.set($event)"
             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Category</label>
+          <label class="block text-sm font-medium text-gray-700">{{ 'settings.externalIntegrations.categoryLabel' | translate }}</label>
           @if (createMode()) {
             <input type="text" list="category-suggestions"
               [ngModel]="editCategory()" (ngModelChange)="editCategory.set($event)"
@@ -159,12 +160,12 @@
           <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
             <input type="checkbox" [ngModel]="editEnabled()" (ngModelChange)="editEnabled.set($event)"
               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            Enabled
+            {{ 'settings.externalIntegrations.enabled' | translate }}
           </label>
           <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
             <input type="checkbox" [ngModel]="editDefault()" (ngModelChange)="editDefault.set($event)"
               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            Default for category
+            {{ 'settings.externalIntegrations.defaultForCategory' | translate }}
           </label>
         </div>
 
@@ -175,24 +176,24 @@
               <label class="block text-sm font-medium text-gray-700 flex items-center">
                 <span [class.line-through]="isRemoved(f.key)">{{ f.key }}</span>
                 @if (f.set) {
-                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">set</span>
+                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">{{ 'settings.externalIntegrations.paramSet' | translate }}</span>
                 } @else {
-                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800">not set</span>
+                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800">{{ 'settings.externalIntegrations.paramNotSet' | translate }}</span>
                 }
                 @if (f.secret) {
-                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-600">secret</span>
+                  <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-600">{{ 'settings.externalIntegrations.secret' | translate }}</span>
                 }
                 @if (f.set) {
                   <button type="button" (click)="toggleRemoved(f.key)"
                     class="ml-auto text-[10px] px-2 py-0.5 rounded border transition-colors"
                     [class]="isRemoved(f.key) ? 'border-gray-300 text-gray-600 hover:bg-gray-100' : 'border-red-300 text-red-700 hover:bg-red-50'">
-                    {{ isRemoved(f.key) ? 'Restore' : 'Remove' }}
+                    {{ (isRemoved(f.key) ? 'settings.externalIntegrations.restoreParam' : 'common.remove') | translate }}
                   </button>
                 }
               </label>
               <input [type]="f.secret ? 'password' : 'text'"
                 [ngModel]="paramValues()[f.key] || ''" (ngModelChange)="setParam(f.key, $event)"
-                [placeholder]="f.set ? '••••••••  (unchanged)' : ''"
+                [placeholder]="f.set ? ('settings.externalIntegrations.unchangedPlaceholder' | translate) : ''"
                 [disabled]="isRemoved(f.key)"
                 autocomplete="off"
                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
@@ -203,21 +204,21 @@
           @for (row of newParams(); track $index; let idx = $index) {
             <div class="flex items-end gap-2">
               <div class="flex-1">
-                @if (idx === 0) { <label class="block text-xs font-medium text-gray-500">Key</label> }
+                @if (idx === 0) { <label class="block text-xs font-medium text-gray-500">{{ 'settings.externalIntegrations.keyLabel' | translate }}</label> }
                 <input type="text" [ngModel]="row.key" (ngModelChange)="updateNewParam(idx, 'key', $event)"
-                  placeholder="parameter key" autocomplete="off"
+                  [placeholder]="'settings.externalIntegrations.parameterKeyPlaceholder' | translate" autocomplete="off"
                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
               </div>
               <div class="flex-1">
-                @if (idx === 0) { <label class="block text-xs font-medium text-gray-500">Value</label> }
+                @if (idx === 0) { <label class="block text-xs font-medium text-gray-500">{{ 'settings.externalIntegrations.valueLabel' | translate }}</label> }
                 <input [type]="row.secret ? 'password' : 'text'" [ngModel]="row.value" (ngModelChange)="updateNewParam(idx, 'value', $event)"
-                  placeholder="value" autocomplete="off"
+                  [placeholder]="'settings.externalIntegrations.valuePlaceholder' | translate" autocomplete="off"
                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
               </div>
               <label class="flex items-center gap-1 text-xs font-medium text-gray-600 pb-2.5">
                 <input type="checkbox" [ngModel]="row.secret" (ngModelChange)="updateNewParam(idx, 'secret', $event)"
                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                secret
+                {{ 'settings.externalIntegrations.secret' | translate }}
               </label>
               <button type="button" (click)="removeNewParamRow(idx)"
                 class="text-xs px-2 py-2 rounded border border-gray-300 text-gray-500 hover:bg-gray-100 transition-colors mb-0.5">
@@ -231,7 +232,7 @@
             <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
             </svg>
-            Add parameter
+            {{ 'settings.externalIntegrations.addParameter' | translate }}
           </button>
         </div>
       </div>
@@ -239,11 +240,11 @@
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="closeEdit()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Cancel
+          {{ 'common.cancel' | translate }}
         </button>
         <button type="button" (click)="saveEdit()" [disabled]="busy()"
           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
-          {{ createMode() ? 'Create' : 'Save' }}
+          {{ (createMode() ? 'common.create' : 'common.save') | translate }}
         </button>
       </div>
 

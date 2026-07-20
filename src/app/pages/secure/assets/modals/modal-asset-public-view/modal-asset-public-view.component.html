@@ -1,0 +1,126 @@
+@if (viewService.isVisible() && viewService.data(); as data) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onClose()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4 max-h-[88vh] overflow-hidden flex flex-col transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+
+      <div class="overflow-y-auto">
+
+        <!-- Banner hero + avatar -->
+        <div class="relative">
+          @if (bannerUrl()) {
+            <img [src]="bannerUrl()" [alt]="data.name" class="w-full h-44 object-cover">
+          } @else {
+            <div class="w-full h-44 bg-gradient-to-r from-[var(--brand-primary)] to-indigo-400"></div>
+          }
+          <span class="absolute top-3 right-3 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-white/90 text-indigo-700 shadow">{{ data.symbol }}</span>
+          @if (avatarUrl()) {
+            <img [src]="avatarUrl()" [alt]="data.name"
+              class="absolute -bottom-8 left-6 w-20 h-20 rounded-xl object-cover border-4 border-white shadow-md bg-white">
+          }
+        </div>
+
+        <div class="px-6 pb-6" [class.pt-12]="avatarUrl()" [class.pt-5]="!avatarUrl()">
+
+          <!-- Identity -->
+          <p class="text-xs text-gray-500">
+            {{ data.entityName }}
+            @if (data.assetTypeName) { <span class="text-indigo-500 mx-1">&#10022;</span> <span class="uppercase tracking-wide">{{ data.assetTypeName }}</span> }
+          </p>
+          <h3 class="text-2xl font-bold text-black mt-1">{{ data.name }}</h3>
+
+          @if (data.description) {
+            <p class="text-sm text-gray-600 mt-3 whitespace-pre-wrap">{{ data.description }}</p>
+          }
+
+          <!-- Contact info -->
+          @if (hasContact()) {
+            <div class="mt-5 border-t border-gray-100 pt-4">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.details.publicView.contact' | translate }}</h4>
+              <div class="space-y-2">
+                @if (data.contact.email) {
+                  <div class="flex justify-between items-start text-sm">
+                    <span class="text-gray-500 shrink-0">{{ 'common.email' | translate }}</span>
+                    <span class="text-black font-semibold text-right ml-4 break-all">{{ data.contact.email }}</span>
+                  </div>
+                }
+                @if (data.contact.phone) {
+                  <div class="flex justify-between items-start text-sm">
+                    <span class="text-gray-500 shrink-0">{{ 'common.mobile' | translate }}</span>
+                    <span class="text-black font-semibold text-right ml-4 break-all">{{ data.contact.phone }}</span>
+                  </div>
+                }
+                @if (data.contact.website) {
+                  <div class="flex justify-between items-start text-sm">
+                    <span class="text-gray-500 shrink-0">{{ 'common.website' | translate }}</span>
+                    <span class="text-black font-semibold text-right ml-4 break-all">{{ data.contact.website }}</span>
+                  </div>
+                }
+                @if (data.contact.address) {
+                  <div class="flex justify-between items-start text-sm">
+                    <span class="text-gray-500 shrink-0">{{ 'common.address' | translate }}</span>
+                    <span class="text-black font-semibold text-right ml-4 break-all">{{ data.contact.address }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Metadata key/values -->
+          @if (data.entries.length) {
+            <div class="mt-5 border-t border-gray-100 pt-4 space-y-2">
+              @for (row of data.entries; track row[0]) {
+                <div class="flex justify-between items-start text-sm">
+                  <span class="text-gray-500 shrink-0">{{ row[0] }}</span>
+                  <span class="text-black font-semibold text-right ml-4 break-all">{{ row[1] }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Gallery -->
+          @if (galleryImages().length) {
+            <div class="mt-5">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.details.publicView.gallery' | translate }}</h4>
+              <div class="grid grid-cols-3 gap-2">
+                @for (img of galleryImages(); track img.documentId) {
+                  @if (data.imageUrls[img.documentId]) {
+                    <img [src]="data.imageUrls[img.documentId]" [alt]="img.title" [title]="img.title"
+                      class="w-full aspect-video object-cover rounded-lg border border-gray-200">
+                  }
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Public documents -->
+          @if (publicDocuments().length) {
+            <div class="mt-5">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.details.publicView.documents' | translate }}</h4>
+              <div class="space-y-1.5">
+                @for (doc of publicDocuments(); track doc.documentId) {
+                  <div class="flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 py-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                      <span class="text-sm text-black font-medium truncate">{{ doc.title }}</span>
+                    </div>
+                    <button type="button" (click)="viewDocument(doc)"
+                      class="text-xs text-indigo-600 hover:text-indigo-800 shrink-0">{{ 'assets.details.publicView.viewDocument' | translate }}</button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-gray-50 flex justify-end border-t border-gray-100">
+        <button type="button" (click)="onClose()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          {{ 'common.close' | translate }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

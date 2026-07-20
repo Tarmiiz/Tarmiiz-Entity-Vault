@@ -1,7 +1,7 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 
@@ -37,6 +37,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   features = inject(FeaturesService);
   private stateModal = inject(ModalVenueStateService);
   private authService = inject(AuthService);
+  private translate = inject(TranslateService);
 
   get userInfo() { return this.authService.userInfo; }
 
@@ -78,7 +79,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
   async loadVenue(silent = false) {
-    if (!silent) this.loadingService.show('Loading venue...');
+    if (!silent) this.loadingService.show(this.translate.instant('dex.venues.details.loadingVenue'));
     const data = await this.apiService.vaultDexVenueInfo(this.serviceAddress());
     this.venue.set(data);
     if (!silent) this.loadingService.hide();
@@ -102,7 +103,8 @@ export class DetailsPage implements OnInit, OnDestroy {
   setTab(tab: 'info' | 'assets' | 'orders' | 'trades') { this.activeTab.set(tab); }
 
   tierLabelShort(tier: number): string {
-    return tier === 1 ? 'Tier 1 — Venue' : tier === 2 ? 'Tier 2 — Country' : tier === 3 ? 'Tier 3 — Global' : '—';
+    if (tier !== 1 && tier !== 2 && tier !== 3) return '—';
+    return this.tierLabel(tier);
   }
   goAsset(baseAsset: string) { this.router.navigate(['/authorized/dex/asset-listings/details/' + baseAsset]); }
 
@@ -132,10 +134,10 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   stateName(s: number): string {
     switch (s) {
-      case 1: return 'Registered';
-      case 2: return 'Active';
-      case 3: return 'Paused';
-      case 4: return 'Deregistered';
+      case 1: return this.translate.instant('state.registered');
+      case 2: return this.translate.instant('state.active');
+      case 3: return this.translate.instant('state.paused');
+      case 4: return this.translate.instant('state.deregistered');
       default: return String(s);
     }
   }
@@ -152,31 +154,34 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   tierLabel(tier: 1 | 2 | 3): string {
-    return tier === 1 ? 'Tier 1 — Venue' : tier === 2 ? 'Tier 2 — Country' : 'Tier 3 — Global';
+    const scope = tier === 1 ? this.translate.instant('dex.venues.tier.scopeVenue')
+      : tier === 2 ? this.translate.instant('dex.venues.tier.scopeCountry')
+      : this.translate.instant('dex.venues.tier.scopeGlobal');
+    return this.translate.instant('dex.venues.tier.withScope', { n: tier, scope });
   }
-  tierStatus(tier: 1 | 2 | 3): { label: string; cls: string } {
+  tierStatus(tier: 1 | 2 | 3): { code: 'approved' | 'pending' | 'none'; label: string; cls: string } {
     const v = this.venue();
-    if (!v) return { label: '—', cls: 'bg-gray-100 text-gray-800' };
+    if (!v) return { code: 'none', label: '—', cls: 'bg-gray-100 text-gray-800' };
     const approved = tier === 1 ? v.tier1Approved : tier === 2 ? v.tier2Approved : v.tier3Approved;
     const pending  = tier === 1 ? v.tier1Pending  : tier === 2 ? v.tier2Pending  : v.tier3Pending;
-    if (approved) return { label: 'Approved', cls: 'bg-green-100 text-green-800' };
-    if (pending)  return { label: 'Pending regulator approval', cls: 'bg-yellow-100 text-yellow-800' };
-    return { label: 'Not requested', cls: 'bg-gray-100 text-gray-800' };
+    if (approved) return { code: 'approved', label: this.translate.instant('state.approved'), cls: 'bg-green-100 text-green-800' };
+    if (pending)  return { code: 'pending', label: this.translate.instant('dex.venues.tier.pendingApproval'), cls: 'bg-yellow-100 text-yellow-800' };
+    return { code: 'none', label: this.translate.instant('dex.venues.tier.notRequested'), cls: 'bg-gray-100 text-gray-800' };
   }
 
   async requestTier(tier: 1 | 2 | 3) {
     const v = this.venue();
     if (!v) return;
     const ok = await this.alertService.show(
-      'Request tier approval',
-      `Request ${this.tierLabel(tier)} approval from your regulator for this venue?`,
-      'Request'
+      this.translate.instant('dex.venues.tier.requestModal.title'),
+      this.translate.instant('dex.venues.tier.requestModal.message', { tier: this.tierLabel(tier) }),
+      this.translate.instant('dex.venues.tier.requestModal.confirm')
     );
     if (!ok) return;
-    this.loadingService.show('Requesting tier...');
+    this.loadingService.show(this.translate.instant('dex.venues.details.requestingTier'));
     try {
       const r = await this.apiService.vaultDexVenueRequestTier(v.serviceAddress, tier);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.loadVenue();
     } finally { this.loadingService.hide(); }
   }
@@ -184,21 +189,24 @@ export class DetailsPage implements OnInit, OnDestroy {
   async openStateModal() {
     const v = this.venue();
     if (!v) return;
-    if (v.state === 4) { this.alertService.show('Not allowed', 'Venue is deregistered (terminal state).'); return; }
+    if (v.state === 4) {
+      this.alertService.show(this.translate.instant('dex.venues.details.notAllowedTitle'), this.translate.instant('dex.venues.details.terminalStateMessage'));
+      return;
+    }
     const result = await this.stateModal.show(v.state);
     if (!result) return;
     if (result.newState === 4) {
       const ok = await this.alertService.show(
-        'Deactivate venue',
-        'Set venue state to Deregistered? This is terminal — the venue cannot be reactivated.',
-        'Deactivate'
+        this.translate.instant('dex.venues.details.deactivateTitle'),
+        this.translate.instant('dex.venues.details.deactivateMessage'),
+        this.translate.instant('dex.venues.details.deactivateConfirm')
       );
       if (!ok) return;
     }
-    this.loadingService.show('Updating state...');
+    this.loadingService.show(this.translate.instant('dex.venues.details.updatingState'));
     try {
       const r = await this.apiService.vaultDexVenueSetState(v.serviceAddress, result.newState);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.loadVenue();
     } finally { this.loadingService.hide(); }
   }

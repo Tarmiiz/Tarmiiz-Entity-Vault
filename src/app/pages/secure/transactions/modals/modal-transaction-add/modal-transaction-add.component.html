@@ -4,8 +4,8 @@
 
       <!-- Header -->
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Transaction</h3>
-        <p class="text-xs text-gray-400 mt-1">Submit a Subscribe or Redeem transaction.</p>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'transactions.addModal.title' | translate }}</h3>
+        <p class="text-xs text-gray-400 mt-1">{{ 'transactions.addModal.subtitle' | translate }}</p>
       </div>
 
       <form [formGroup]="form" (ngSubmit)="onSave()">
@@ -13,27 +13,27 @@
 
           <!-- Type -->
           <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Transaction Type</label>
+            <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'transactions.addModal.transactionTypeLabel' | translate }}</label>
             <div class="grid grid-cols-2 gap-2">
               <label class="flex items-center justify-center px-3 py-2 border rounded-md cursor-pointer text-sm font-medium transition-colors"
                 [class]="form.get('trxType')?.value === 'Subscribe' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'">
                 <input type="radio" formControlName="trxType" value="Subscribe" class="sr-only">
-                Subscribe
+                {{ 'transactions.addModal.subscribe' | translate }}
               </label>
               <label class="flex items-center justify-center px-3 py-2 border rounded-md cursor-pointer text-sm font-medium transition-colors"
                 [class]="form.get('trxType')?.value === 'Redeem' ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'">
                 <input type="radio" formControlName="trxType" value="Redeem" class="sr-only">
-                Redeem
+                {{ 'transactions.addModal.redeem' | translate }}
               </label>
             </div>
           </div>
 
           <!-- Service -->
           <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Service</label>
+            <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'transactions.addModal.service' | translate }}</label>
             <select formControlName="service"
               class="block w-full pl-3 pr-10 py-2 border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black bg-white">
-              <option value="" disabled selected hidden>Select service...</option>
+              <option value="" disabled selected hidden>{{ 'transactions.addModal.selectService' | translate }}</option>
               @for (s of services(); track s.address) {
                 <option [value]="s.address">{{ s.name }}</option>
               }
@@ -42,10 +42,10 @@
 
           <!-- Asset -->
           <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Asset</label>
+            <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'transactions.addModal.asset' | translate }}</label>
             <select formControlName="asset" [attr.disabled]="!selectedService() ? true : null"
               class="block w-full pl-3 pr-10 py-2 border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black bg-white disabled:bg-gray-100 disabled:text-gray-400">
-              <option value="" disabled selected hidden>{{ selectedService() ? 'Select asset...' : 'Select a service first' }}</option>
+              <option value="" disabled selected hidden>{{ (selectedService() ? 'transactions.addModal.selectAsset' : 'transactions.addModal.selectServiceFirst') | translate }}</option>
               @for (a of filteredAssets(); track a.address) {
                 <option [value]="a.address">{{ a.name }} ({{ a.symbol }})</option>
               }
@@ -54,10 +54,10 @@
 
           <!-- Subscription -->
           <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Subscription</label>
+            <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'transactions.addModal.subscription' | translate }}</label>
             <select formControlName="subscription" [attr.disabled]="!selectedService() ? true : null"
               class="block w-full pl-3 pr-10 py-2 border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black bg-white disabled:bg-gray-100 disabled:text-gray-400 font-mono text-xs">
-              <option value="" disabled selected hidden>{{ selectedService() ? 'Select subscription...' : 'Select a service first' }}</option>
+              <option value="" disabled selected hidden>{{ (selectedService() ? 'transactions.addModal.selectSubscription' : 'transactions.addModal.selectServiceFirst') | translate }}</option>
               @for (s of filteredSubscriptions(); track s.address) {
                 <option [value]="s.address">{{ s.address }}</option>
               }
@@ -66,7 +66,7 @@
 
           <!-- Tokens -->
           <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Tokens</label>
+            <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'transactions.addModal.tokens' | translate }}</label>
             <input type="number" formControlName="tokens" min="1" placeholder="0"
               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
@@ -77,12 +77,12 @@
         <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end gap-2">
           <button type="button" (click)="onCancel()"
             class="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="form.invalid"
             class="px-4 py-2 text-sm font-medium rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             [class]="form.get('trxType')?.value === 'Redeem' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'">
-            Submit {{ form.get('trxType')?.value }}
+            {{ (form.get('trxType')?.value === 'Redeem' ? 'transactions.addModal.submitRedeem' : 'transactions.addModal.submitSubscribe') | translate }}
           </button>
         </div>
       </form>

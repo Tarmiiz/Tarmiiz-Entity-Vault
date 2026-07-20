@@ -2,7 +2,7 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Subscription</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'subscriptions.addModal.title' | translate }}</h3>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
@@ -17,7 +17,7 @@
               [class.text-gray-700]="mode() !== 'A'"
               [class.border-gray-300]="mode() !== 'A'"
               [class.hover:bg-gray-100]="mode() !== 'A'">
-              Existing DID
+              {{ 'subscriptions.addModal.modeExisting' | translate }}
             </button>
             <button type="button" (click)="setMode('B')"
               class="flex-1 text-xs px-3 py-2 rounded border transition-colors"
@@ -27,15 +27,15 @@
               [class.text-gray-700]="mode() !== 'B'"
               [class.border-gray-300]="mode() !== 'B'"
               [class.hover:bg-gray-100]="mode() !== 'B'">
-              New User (eKYC Result)
+              {{ 'subscriptions.addModal.modeNew' | translate }}
             </button>
           </div>
 
           <!-- Service -->
           <div>
-            <label class="block text-sm font-medium text-gray-700">Service</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.table.service' | translate }}</label>
             <select formControlName="service" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
-              <option value="">Select a service</option>
+              <option value="">{{ 'subscriptions.addModal.selectService' | translate }}</option>
               @for (s of services(); track s.address) {
                 <option [value]="s.address">{{ s.name }}</option>
               }
@@ -44,39 +44,39 @@
 
           @if (mode() === 'A') {
             <div>
-              <label class="block text-sm font-medium text-gray-700">DID Hash</label>
+              <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.didHash' | translate }}</label>
               <input type="text" formControlName="didHash"
                 placeholder="0x..."
                 class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
-              <p class="text-xs text-gray-400 mt-1">A returning claimed user is already verified — the subscription reuses the identity's existing validation.</p>
+              <p class="text-xs text-gray-400 mt-1">{{ 'subscriptions.addModal.existingDidHint' | translate }}</p>
             </div>
           } @else {
-            <p class="text-xs text-gray-400">Enter the eKYC result you obtained from your service provider — the platform never calls the provider itself.</p>
+            <p class="text-xs text-gray-400">{{ 'subscriptions.addModal.ekycHint' | translate }}</p>
 
             <!-- Provider envelope -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Provider (validator service)</label>
+              <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.provider' | translate }}</label>
               <select formControlName="provider" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
-                <option value="">Select the provider that performed the verification</option>
+                <option value="">{{ 'subscriptions.addModal.selectProviderHint' | translate }}</option>
                 @for (vv of serviceValidators(); track vv.address) {
-                  <option [value]="vv.address">{{ vv.address }}{{ vv.active ? '' : ' (inactive)' }}</option>
+                  <option [value]="vv.address">{{ vv.address }}{{ vv.active ? '' : ('subscriptions.addModal.inactiveSuffix' | translate) }}</option>
                 }
               </select>
-              <p class="text-xs text-gray-400 mt-1">Must be a validator attached to the selected service.</p>
+              <p class="text-xs text-gray-400 mt-1">{{ 'subscriptions.addModal.providerHint' | translate }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">Provider Name <span class="text-gray-400">(optional)</span></label>
+              <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.providerName' | translate }} <span class="text-gray-400">({{ 'common.optional' | translate }})</span></label>
               <input type="text" formControlName="providerName"
                 class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700">Provider Trx Ref No</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.providerTrxRefNo' | translate }}</label>
                 <input type="text" formControlName="providerTrxRefNo"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Provider Trx Time <span class="text-gray-400">(optional)</span></label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.providerTrxTime' | translate }} <span class="text-gray-400">({{ 'common.optional' | translate }})</span></label>
                 <input type="datetime-local" formControlName="providerTrxTime"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
               </div>
@@ -85,12 +85,12 @@
             <!-- Subscriber -->
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700">Email</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'common.email' | translate }}</label>
                 <input type="email" formControlName="email"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Mobile</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'common.mobile' | translate }}</label>
                 <input type="text" formControlName="mobile"
                   placeholder="+201001234567"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
@@ -98,16 +98,16 @@
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700">DID Type</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.didType' | translate }}</label>
                 <select formControlName="didType" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
-                  <option [ngValue]="1">Individual</option>
-                  <option [ngValue]="2">Organization</option>
+                  <option [ngValue]="1">{{ 'subscriptions.addModal.individual' | translate }}</option>
+                  <option [ngValue]="2">{{ 'subscriptions.addModal.organization' | translate }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Country</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'common.country' | translate }}</label>
                 <select formControlName="countryCode" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
-                  <option [ngValue]="null" class="text-black bg-white">Select</option>
+                  <option [ngValue]="null" class="text-black bg-white">{{ 'subscriptions.addModal.select' | translate }}</option>
                   @for (c of countries(); track c.countryCode) {
                     <option [ngValue]="c.countryCode" class="text-black bg-white">{{ c.name }}</option>
                   }
@@ -115,23 +115,23 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">Verification Level</label>
+              <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.verificationLevel' | translate }}</label>
               <select formControlName="level" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
-                <option [ngValue]="1">Level 1</option>
-                <option [ngValue]="2">Level 2</option>
-                <option [ngValue]="3">Level 3</option>
+                <option [ngValue]="1">{{ 'subscriptions.addModal.level1' | translate }}</option>
+                <option [ngValue]="2">{{ 'subscriptions.addModal.level2' | translate }}</option>
+                <option [ngValue]="3">{{ 'subscriptions.addModal.level3' | translate }}</option>
               </select>
             </div>
 
             <!-- Canonical identity data -->
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700">National ID</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.nationalId' | translate }}</label>
                 <input type="text" formControlName="uniqueId"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.fullName' | translate }}</label>
                 <input type="text" formControlName="nameFull"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
               </div>
@@ -139,69 +139,69 @@
 
             <button type="button" (click)="toggleMoreIdentity()"
               class="text-xs text-indigo-600 hover:text-indigo-800 transition-colors">
-              {{ showMoreIdentity() ? '− Hide' : '+ More' }} identity fields
+              {{ (showMoreIdentity() ? 'subscriptions.addModal.hideIdentityFields' : 'subscriptions.addModal.moreIdentityFields') | translate }}
             </button>
 
             @if (showMoreIdentity()) {
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">First Name</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.firstName' | translate }}</label>
                   <input type="text" formControlName="nameFirst" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Last Name</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.lastName' | translate }}</label>
                   <input type="text" formControlName="nameLast" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Gender</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.gender' | translate }}</label>
                   <input type="text" formControlName="gender" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.dateOfBirth' | translate }}</label>
                   <input type="text" formControlName="dateOfBirth" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Marital Status</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.maritalStatus' | translate }}</label>
                   <input type="text" formControlName="maritalStatus" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Religion</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.religion' | translate }}</label>
                   <input type="text" formControlName="religion" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Profession</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.profession' | translate }}</label>
                   <input type="text" formControlName="profession" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Husband Name</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.husbandName' | translate }}</label>
                   <input type="text" formControlName="husbandName" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">ID Serial</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.idSerial' | translate }}</label>
                   <input type="text" formControlName="nationalIdSerial" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">ID Release Date</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.idReleaseDate' | translate }}</label>
                   <input type="text" formControlName="idReleaseDate" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">ID Expiry Date</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.idExpiryDate' | translate }}</label>
                   <input type="text" formControlName="idExpiryDate" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Street</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.street' | translate }}</label>
                   <input type="text" formControlName="addressStreet" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">District</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.district' | translate }}</label>
                   <input type="text" formControlName="addressDistrict" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Governorate</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.governorate' | translate }}</label>
                   <input type="text" formControlName="addressGovernorate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Birth Governorate</label>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.birthGovernorate' | translate }}</label>
                   <input type="text" formControlName="birthGovernorate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
               </div>
@@ -210,10 +210,10 @@
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!canSubmit()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Create Subscription
+            {{ 'subscriptions.addModal.submit' | translate }}
           </button>
         </div>
       </form>

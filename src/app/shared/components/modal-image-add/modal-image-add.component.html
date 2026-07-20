@@ -1,0 +1,83 @@
+@if (addImageService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'media.addModalTitle' | translate }}</h3>
+        <p class="text-xs text-gray-400 mt-1">{{ 'media.addModalSubtitle' | translate }}</p>
+      </div>
+
+      <div class="p-6 space-y-4">
+
+        <!-- File picker + preview -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'media.imageFileLabel' | translate }}</label>
+          @if (previewUrl()) {
+            <div class="flex items-center gap-3">
+              <img [src]="previewUrl()" [alt]="file()?.name" class="w-20 h-20 rounded-md object-cover border border-gray-200">
+              <div class="min-w-0">
+                <p class="text-xs text-black font-medium truncate">{{ file()?.name }}</p>
+                <label class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">
+                  {{ 'media.changeFile' | translate }}
+                  <input type="file" accept="image/*" class="hidden" (change)="onFileSelected($event)">
+                </label>
+              </div>
+            </div>
+          } @else {
+            <label class="block border border-dashed border-gray-300 rounded-lg p-6 text-center text-xs text-gray-400 cursor-pointer hover:bg-gray-50">
+              {{ 'media.pickFileHint' | translate }}
+              <input type="file" accept="image/*" class="hidden" (change)="onFileSelected($event)">
+            </label>
+          }
+        </div>
+
+        <!-- Title -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'media.titleLabel' | translate }}</label>
+          <input type="text" [value]="title()" (input)="title.set($any($event.target).value)"
+            [placeholder]="'media.titlePlaceholder' | translate"
+            class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+        </div>
+
+        <!-- Role -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'media.roleLabel' | translate }}</label>
+          <select [value]="role()" (change)="setRole($any($event.target).value)"
+            class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+            <option value="gallery">{{ 'media.roleGallery' | translate }}</option>
+            <option value="avatar">{{ 'media.roleAvatar' | translate }}</option>
+            <option value="banner">{{ 'media.roleBanner' | translate }}</option>
+          </select>
+        </div>
+
+        <!-- Type (gallery only — avatar/banner forced Public) -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'media.typeLabel' | translate }}</label>
+          <select [value]="documentType()" (change)="documentType.set(+$any($event.target).value)" [disabled]="role() !== 'gallery'"
+            class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black disabled:opacity-50">
+            <option [value]="1">{{ 'media.typePublic' | translate }}</option>
+            <option [value]="2">{{ 'media.typePrivate' | translate }}</option>
+          </select>
+          @if (role() !== 'gallery') {
+            <p class="text-xs text-gray-400 mt-1">{{ 'media.rolePublicForced' | translate }}</p>
+          }
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button type="button" (click)="onSave()" [disabled]="!file()"
+          class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ 'media.uploadButton' | translate }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

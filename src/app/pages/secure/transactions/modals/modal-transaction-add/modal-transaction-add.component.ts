@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect, computed } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
@@ -10,7 +11,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-transaction-add.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
 })
 export class ModalTransactionAddComponent {
   modalService = inject(ModalTransactionAddService);

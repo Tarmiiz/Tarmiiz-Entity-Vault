@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-analytics-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="rounded-xl shadow-md border border-gray-200 bg-white p-5 mb-6">
@@ -29,7 +30,7 @@ import { CommonModule } from '@angular/common';
         </div>
       } @else if (empty) {
         <div class="flex items-center justify-center h-48 text-gray-400 italic text-sm">
-          {{ emptyMessage || 'No data yet' }}
+          {{ emptyMessage || ('common.noData' | translate) }}
         </div>
       } @else {
         <div class="relative">

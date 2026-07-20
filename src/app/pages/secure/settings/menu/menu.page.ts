@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -29,13 +29,14 @@ export class MenuSettingsPage implements OnInit {
   private features       = inject(FeaturesService);
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
+  private translate      = inject(TranslateService);
 
   rows    = signal<MenuConfigRow[]>([]);
   loading = signal(false);
   saving  = signal<string | null>(null); // menu key currently saving
 
   labelFor(key: string): string {
-    return menuLabelFor(key);
+    return this.translate.instant(menuLabelFor(key));
   }
 
   ngOnInit() {}
@@ -58,19 +59,19 @@ export class MenuSettingsPage implements OnInit {
 
   async toggle(row: MenuConfigRow, enabled: boolean) {
     if (this.saving()) return;
-    const verb = enabled ? 'shown in the menu' : 'hidden from the menu and blocked';
+    const verb = this.translate.instant(enabled ? 'settings.menu.shownVerb' : 'settings.menu.hiddenVerb');
     const ok = await this.alertService.show(
-      'Confirm menu change',
-      `${this.labelFor(row.menuKey)} will be ${verb} for this entity. Continue?`,
-      'Save',
+      this.translate.instant('settings.menu.confirmChangeTitle'),
+      this.translate.instant('settings.menu.confirmChangeMessage', { name: this.labelFor(row.menuKey), verb }),
+      this.translate.instant('common.save'),
     );
     if (!ok) return;
     this.saving.set(row.menuKey);
-    this.loadingService.show('Saving...');
+    this.loadingService.show(this.translate.instant('common.saving'));
     try {
       const res = await this.apiService.vaultMenuConfigSet(row.menuKey, enabled);
       if (res?.error) {
-        this.alertService.show('Error', res.error);
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
       } else {
         // Refresh the live feature map so the sidebar reflects the change without a reload.
         await this.features.refresh();

@@ -3,51 +3,51 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
 
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Share Document</h3>
-        <p class="text-xs text-gray-400 mt-1">Pick a recipient by name. The API will wrap the decryption key with their on-chain encryption public key.</p>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'documents.shareModal.title' | translate }}</h3>
+        <p class="text-xs text-gray-400 mt-1">{{ 'documents.shareModal.subtitle' | translate }}</p>
       </div>
 
       <div class="p-6 overflow-y-auto flex flex-col gap-4">
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Recipient type</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ 'documents.shareModal.recipientTypeLabel' | translate }}</label>
           <div class="flex gap-2 flex-wrap">
             <button type="button"
                     class="flex-1 min-w-[100px] px-3 py-2 rounded-md border text-sm font-medium transition-colors"
                     [ngClass]="kind()==='entity' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                    (click)="setKind('entity')">Entity</button>
+                    (click)="setKind('entity')">{{ 'partyType.entity' | translate }}</button>
             <button type="button"
                     class="flex-1 min-w-[100px] px-3 py-2 rounded-md border text-sm font-medium transition-colors"
                     [ngClass]="kind()==='regulator' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                    (click)="setKind('regulator')">Regulator</button>
+                    (click)="setKind('regulator')">{{ 'partyType.regulator' | translate }}</button>
             <button type="button"
                     class="flex-1 min-w-[100px] px-3 py-2 rounded-md border text-sm font-medium transition-colors"
                     [ngClass]="kind()==='service' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                    (click)="setKind('service')">Service</button>
+                    (click)="setKind('service')">{{ 'partyType.service' | translate }}</button>
             <button type="button"
                     class="flex-1 min-w-[100px] px-3 py-2 rounded-md border text-sm font-medium transition-colors"
                     [ngClass]="kind()==='subscription' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                    (click)="setKind('subscription')">Subscription</button>
+                    (click)="setKind('subscription')">{{ 'partyType.subscription' | translate }}</button>
           </div>
         </div>
 
         @if (!manualMode()) {
           <div>
-            <label for="docShareSearch" class="block text-sm font-medium text-gray-700">Search</label>
+            <label for="docShareSearch" class="block text-sm font-medium text-gray-700">{{ 'common.search' | translate }}</label>
             <div class="flex gap-2 mt-1">
               <input id="docShareSearch" type="text"
                      [ngModel]="query()" (ngModelChange)="query.set($event)"
                      (keyup.enter)="search()"
-                     placeholder="Name or address..."
+                     [placeholder]="'documents.shareModal.searchPlaceholder' | translate"
                      class="flex-1 pl-3 pr-3 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
               <button type="button" (click)="search()"
                       class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">
-                Search
+                {{ 'common.search' | translate }}
               </button>
             </div>
 
             @if (searching()) {
-              <p class="text-xs text-gray-500 mt-2">Searching...</p>
+              <p class="text-xs text-gray-500 mt-2">{{ 'documents.shareModal.searching' | translate }}</p>
             } @else if (results().length > 0) {
               <div class="mt-2 border border-gray-200 rounded-md max-h-48 overflow-auto">
                 @for (r of results(); track r.address) {
@@ -66,19 +66,19 @@
                 }
               </div>
             } @else if (query().length >= 2) {
-              <p class="text-xs text-gray-400 mt-2">No matches. Try a shorter term, or enter an address manually below.</p>
+              <p class="text-xs text-gray-400 mt-2">{{ 'documents.shareModal.noMatchesHint' | translate }}</p>
             }
           </div>
 
           @if (selected()) {
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Selected</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ 'documents.shareModal.selectedLabel' | translate }}</label>
               <div class="flex items-center justify-between gap-2 bg-indigo-50 border border-indigo-200 rounded-md px-3 py-2">
                 <div class="min-w-0">
                   <div class="text-sm font-medium text-indigo-900 truncate">{{ selected()!.name }}</div>
                   <div class="text-[11px] font-mono text-indigo-700 truncate">{{ selected()!.address }}</div>
                 </div>
-                <button type="button" class="text-red-600 hover:text-red-800 text-xs" (click)="selected.set(null)">Clear</button>
+                <button type="button" class="text-red-600 hover:text-red-800 text-xs" (click)="selected.set(null)">{{ 'common.clear' | translate }}</button>
               </div>
             </div>
           }
@@ -86,16 +86,16 @@
 
         @if (manualMode()) {
           <div>
-            <label class="block text-sm font-medium text-gray-700">Address</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'common.address' | translate }}</label>
             <input type="text" [ngModel]="manualAddress()" (ngModelChange)="manualAddress.set($event)"
                    placeholder="0x..."
                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono">
-            <p class="text-xs text-gray-500 mt-1">The address must have a published encryption public key on-chain, otherwise the share will fail.</p>
+            <p class="text-xs text-gray-500 mt-1">{{ 'documents.shareModal.manualAddressHint' | translate }}</p>
           </div>
         }
 
         <button type="button" class="text-xs text-indigo-600 hover:underline self-start" (click)="toggleManual()">
-          {{ manualMode() ? 'Back to search' : 'Or enter an address manually' }}
+          {{ (manualMode() ? 'documents.shareModal.backToSearch' : 'documents.shareModal.enterManually') | translate }}
         </button>
 
       </div>
@@ -103,11 +103,11 @@
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="onCancel()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Cancel
+          {{ 'common.cancel' | translate }}
         </button>
         <button type="button" (click)="onSave()" [disabled]="!isValid()"
           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          Share
+          {{ 'documents.shareModal.submit' | translate }}
         </button>
       </div>
     </div>

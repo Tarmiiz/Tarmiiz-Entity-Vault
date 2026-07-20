@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 
@@ -14,13 +14,13 @@ import { ApprovalPolicyRow, approvalPolicyFromApi } from '../../../../shared/mod
 // Entity-side action categories. Narrower than the Regulator API set —
 // no validator / PP / entity-self / service-suspended / asset-suspended,
 // since the entity does not perform those actions on its own things.
-const CATEGORY_LABELS: Record<string, string> = {
-  service_state:       'Service: state change',
-  subscription_state:  'Subscription: state change',
-  asset_state:         'Asset: state change',
-  asset_service_state: 'Asset-service: per-service state',
-  entity_sp_add:       'Service provider: add',
-  entity_sp_state:     'Service provider: suspend / re-activate',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  service_state:       'approvals.policy.categories.serviceState',
+  subscription_state:  'approvals.policy.categories.subscriptionState',
+  asset_state:         'approvals.policy.categories.assetState',
+  asset_service_state: 'approvals.policy.categories.assetServiceState',
+  entity_sp_add:       'approvals.policy.categories.entitySpAdd',
+  entity_sp_state:     'approvals.policy.categories.entitySpState',
 };
 
 @Component({
@@ -34,12 +34,16 @@ export class PolicyPage implements OnInit {
   private apiService     = inject(ApiService);
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
+  private translate      = inject(TranslateService);
 
   rows    = signal<ApprovalPolicyRow[]>([]);
   loading = signal(false);
   saving  = signal<string | null>(null);
 
-  labelFor(cat: string): string { return CATEGORY_LABELS[cat] || cat; }
+  labelFor(cat: string): string {
+    const key = CATEGORY_LABEL_KEYS[cat];
+    return key ? this.translate.instant(key) : cat;
+  }
 
   ngOnInit() {}
 
@@ -61,14 +65,17 @@ export class PolicyPage implements OnInit {
 
   async toggle(row: ApprovalPolicyRow, requiresApproval: boolean) {
     if (this.saving()) return;
-    const verb = requiresApproval ? 'require maker/checker approval' : 'stop requiring approval (revert to direct execute)';
-    const ok = await this.alertService.show('Confirm policy change', `${this.labelFor(row.actionCategory)} will now ${verb} on this entity. Continue?`, 'Save');
+    const verb = requiresApproval
+      ? this.translate.instant('approvals.policy.verbRequire')
+      : this.translate.instant('approvals.policy.verbDirectExecute');
+    const message = this.translate.instant('approvals.policy.confirmMessage', { label: this.labelFor(row.actionCategory), verb });
+    const ok = await this.alertService.show(this.translate.instant('approvals.policy.confirmTitle'), message, this.translate.instant('common.save'));
     if (!ok) return;
     this.saving.set(row.actionCategory);
     try {
       const res = await this.apiService.vaultApprovalsPolicySet(row.actionCategory, requiresApproval);
       if (res?.error) {
-        this.alertService.show('Error', res.error);
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.load();
       }

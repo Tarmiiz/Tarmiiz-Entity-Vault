@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalServiceStateService } from './modal-service-state.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -10,7 +11,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-service-state.component.html',
   styleUrls: ['./modal-service-state.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalServiceStateComponent {
 

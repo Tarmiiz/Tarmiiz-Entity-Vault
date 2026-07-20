@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
 import { ModalDocumentSignService } from './modal-document-sign.service';
@@ -9,7 +10,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-document-sign.component.html',
   styleUrls: ['./modal-document-sign.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
 })
 export class ModalDocumentSignComponent {
   signService = inject(ModalDocumentSignService);

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -23,14 +23,14 @@ interface Bucket {
     <app-header [title]="'analytics.flows.title' | translate"></app-header>
     <div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
       <app-analytics-card
-        title="Net flow (subscribe vs redeem)"
-        subtitle="Token volume per bucket. Bars = volume; line = net (subscribe − redeem)."
+        [title]="'analytics.flows.chart.title' | translate"
+        [subtitle]="'analytics.flows.chart.subtitle' | translate"
         [loading]="loading()"
         [empty]="!loading() && currencies().length === 0">
         <div card-actions class="flex items-center gap-3">
           @if (currencies().length > 1) {
             <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-              <span class="font-medium">Currency</span>
+              <span class="font-medium">{{ 'analytics.flows.filters.currencyLabel' | translate }}</span>
               <select class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
                       [ngModel]="selectedCurrency()"
                       (ngModelChange)="onCurrency($event)">
@@ -54,6 +54,7 @@ interface Bucket {
 })
 export class FlowsPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private translate = inject(TranslateService);
 
   @ViewChild('chart') chartRef?: ElementRef<HTMLCanvasElement>;
 
@@ -112,19 +113,19 @@ export class FlowsPage implements OnInit, OnDestroy {
       data: {
         labels,
         datasets: [
-          { type: 'bar', label: 'Subscribe (tokens)', data: sub, backgroundColor: 'rgba(16,185,129,0.55)', borderColor: 'rgba(16,185,129,1)', borderWidth: 1, stack: 'flow' },
-          { type: 'bar', label: 'Redeem (tokens)',    data: red, backgroundColor: 'rgba(239,68,68,0.55)',  borderColor: 'rgba(239,68,68,1)',  borderWidth: 1, stack: 'flow' },
-          { type: 'line', label: 'Net (tokens)', data: net, borderColor: 'rgba(99,102,241,1)', backgroundColor: 'rgba(99,102,241,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
+          { type: 'bar', label: this.translate.instant('analytics.flows.chart.datasetSubscribe'), data: sub, backgroundColor: 'rgba(16,185,129,0.55)', borderColor: 'rgba(16,185,129,1)', borderWidth: 1, stack: 'flow' },
+          { type: 'bar', label: this.translate.instant('analytics.flows.chart.datasetRedeem'),    data: red, backgroundColor: 'rgba(239,68,68,0.55)',  borderColor: 'rgba(239,68,68,1)',  borderWidth: 1, stack: 'flow' },
+          { type: 'line', label: this.translate.instant('analytics.flows.chart.datasetNet'), data: net, borderColor: 'rgba(99,102,241,1)', backgroundColor: 'rgba(99,102,241,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2 },
         ],
       } as any,
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'top' }, title: { display: true, text: `Currency: ${code}` } },
+        plugins: { legend: { position: 'top' }, title: { display: true, text: this.translate.instant('analytics.flows.chart.currencyTitle', { code }) } },
         scales: {
           x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
-          y: { title: { display: true, text: 'Tokens (signed: redeem negative)' } },
+          y: { title: { display: true, text: this.translate.instant('analytics.flows.chart.tokensAxis') } },
         },
       },
     });

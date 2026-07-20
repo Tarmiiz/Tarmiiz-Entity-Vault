@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalVenueStateService } from './modal-venue-state.service';
@@ -8,7 +9,7 @@ import { ModalVenueStateService } from './modal-venue-state.service';
   templateUrl: './modal-venue-state.component.html',
   styleUrls: ['./modal-venue-state.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalVenueStateComponent {
   modalService = inject(ModalVenueStateService);

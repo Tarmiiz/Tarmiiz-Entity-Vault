@@ -6,50 +6,50 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Search</label>
-        <input type="text" placeholder="ID, asset, party..."
+        <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
+        <input type="text" [placeholder]="'dex.trades.list.searchPlaceholder' | translate"
           [ngModel]="search()" (ngModelChange)="search.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Scope</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'dex.trades.list.scopeLabel' | translate }}</label>
         <select [ngModel]="filterScope()" (ngModelChange)="filterScope.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="">All</option>
-          <option value="1">Tier 1 (Venue)</option>
-          <option value="2">Tier 2 (Country)</option>
-          <option value="3">Tier 3 (Global)</option>
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'dex.trades.list.scopeOptions.tier1' | translate }}</option>
+          <option value="2">{{ 'dex.trades.list.scopeOptions.tier2' | translate }}</option>
+          <option value="3">{{ 'dex.trades.list.scopeOptions.tier3' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Asset</label>
-        <input type="text" placeholder="symbol or address"
+        <label class="text-xs font-medium text-gray-500">{{ 'dex.trades.table.asset' | translate }}</label>
+        <input type="text" [placeholder]="'dex.trades.list.assetPlaceholder' | translate"
           [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Venue</label>
-        <input type="text" placeholder="venue name or addr"
+        <label class="text-xs font-medium text-gray-500">{{ 'dex.trades.table.venue' | translate }}</label>
+        <input type="text" [placeholder]="'dex.trades.list.venuePlaceholder' | translate"
           [ngModel]="filterVenue()" (ngModelChange)="filterVenue.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.clear' | translate }}</button>
       </div>
       <div class="flex ml-auto items-end gap-2">
         @if (features.systemFunctionEnabled('export-excel')) {
           <button (click)="exportExcel()"
             class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
-            Export Excel
+            {{ 'common.exportExcel' | translate }}
           </button>
         }
         @if (features.systemFunctionEnabled('export-pdf')) {
           <button (click)="exportPdf()"
             class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
-            Export PDF
+            {{ 'common.exportPdf' | translate }}
           </button>
         }
       </div>
@@ -61,21 +61,21 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th class="px-6 py-2">Executed</th>
-            <th class="px-6 py-2">Asset</th>
-            <th class="px-6 py-2">Symbol</th>
-            <th class="px-6 py-2">Buy Venue</th>
-            <th class="px-6 py-2">Sell Venue</th>
-            <th class="px-6 py-2 text-center">Currency</th>
-            <th class="px-6 py-2 text-right">Amount</th>
-            <th class="px-6 py-2 text-right">Price</th>
-            <th class="px-6 py-2 text-right">Total</th>
+            <th class="px-6 py-2">{{ 'dex.trades.table.executed' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.trades.table.asset' | translate }}</th>
+            <th class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.trades.table.buyVenue' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.trades.table.sellVenue' | translate }}</th>
+            <th class="px-6 py-2 text-center">{{ 'dex.trades.table.currency' | translate }}</th>
+            <th class="px-6 py-2 text-right">{{ 'dex.trades.table.amount' | translate }}</th>
+            <th class="px-6 py-2 text-right">{{ 'dex.trades.table.price' | translate }}</th>
+            <th class="px-6 py-2 text-right">{{ 'dex.trades.table.total' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filtered().length === 0) {
             <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="9">no data</td>
+              <td class="px-6 py-2" colspan="9">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
             @for (t of filtered(); track t.tradeId; let isEven = $even) {
@@ -98,7 +98,7 @@
       </table>
     </div>
     <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ filtered().length }} of Total {{ trades().length }} Trades</p>
+      <p class="text-xs font-medium text-gray-800">{{ 'dex.trades.list.showing' | translate: { shown: filtered().length, total: trades().length } }}</p>
     </div>
   </div>
 

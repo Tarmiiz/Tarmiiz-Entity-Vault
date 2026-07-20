@@ -4,7 +4,7 @@
   <nav class="flex" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/dex/trades/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">DEX Trades</a>
+        <a routerLink="/authorized/dex/trades/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.trades.details.breadcrumb' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -26,68 +26,68 @@
           <div class="p-4">
             <div class="flex items-start justify-between mb-4">
               <div>
-                <h2 class="text-1xl font-bold text-gray-800">Trade #{{ t.tradeId }}</h2>
+                <h2 class="text-1xl font-bold text-gray-800">{{ 'dex.trades.details.heading' | translate: { id: t.tradeId } }}</h2>
                 <p class="text-xs text-gray-500 mt-0.5">{{ t.assetName || t.assetSymbol }} <span class="font-mono">{{ t.baseAsset.slice(0,10) }}…</span></p>
               </div>
-              <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ t.marketScopeName || ('Tier ' + t.marketScope) }}</span>
+              <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ t.marketScopeName || ('dex.tierFallback' | translate: { n: t.marketScope }) }}</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Asset</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.asset' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.assetName || '—' }} <span class="text-gray-500">({{ t.assetSymbol || '—' }})</span></p>
                 <p class="text-xs text-gray-500 font-mono break-all">{{ t.baseAsset }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Country</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.countryName || '—' }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Amount</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.amount' | translate }}</p>
                 <p class="text-base text-gray-700">{{ fmtAmount(t.amount) }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Price</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.price' | translate }}</p>
                 <p class="text-base text-gray-700">{{ fmtPrice(t.price) }} {{ t.currencyName || '' }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Credit Settled</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.creditSettled' | translate }}</p>
                 <p class="text-base text-gray-700">{{ fmtPrice(t.creditAmount) }} {{ t.currencyName || '' }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Currency</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.currency' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.currencyName || t.currencyCode || '—' }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Buy Order</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.buyOrder' | translate }}</p>
                 <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.buyOrderId)">#{{ t.buyOrderId }}</a>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Sell Order</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.sellOrder' | translate }}</p>
                 <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.sellOrderId)">#{{ t.sellOrderId }}</a>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Buy Venue</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.buyVenue' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.buyDexServiceName || '—' }}</p>
                 <p class="text-xs text-gray-500 font-mono break-all">{{ t.buyDexService }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Sell Venue</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.sellVenue' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.sellDexServiceName || '—' }}</p>
                 <p class="text-xs text-gray-500 font-mono break-all">{{ t.sellDexService }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Buyer (Subscription)</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.buyerSubscription' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.buyerName || '—' }}</p>
                 <p class="text-xs text-gray-500 font-mono break-all">{{ t.buyer }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Seller (Subscription)</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.sellerSubscription' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.sellerName || '—' }}</p>
                 <p class="text-xs text-gray-500 font-mono break-all">{{ t.seller }}</p>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">Executed</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.executed' | translate }}</p>
                 <p class="text-base text-gray-700">{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</p>
               </div>
             </div>

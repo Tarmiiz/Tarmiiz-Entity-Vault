@@ -9,64 +9,78 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Type</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.type' | translate }}</label>
         <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-36">
-          <option value="">All</option>
+          <option value="">{{ 'common.all' | translate }}</option>
           @for (t of uniqueTypes(); track t) {
             <option [value]="t">{{ t }}</option>
           }
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">State</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="">All</option>
-          <option value="1">Initiated</option>
-          <option value="2">Active</option>
-          <option value="3">Suspended</option>
-          <option value="4">Deactivated</option>
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'state.initiated' | translate }}</option>
+          <option value="2">{{ 'state.active' | translate }}</option>
+          <option value="3">{{ 'state.suspended' | translate }}</option>
+          <option value="4">{{ 'state.deactivated' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Currency</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.currency' | translate }}</label>
         <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <option value="">All</option>
+          <option value="">{{ 'common.all' | translate }}</option>
           @for (c of uniqueCurrencies(); track c) {
             <option [value]="c">{{ c }}</option>
           }
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Circulating</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.circulating' | translate }}</label>
         <div class="flex items-center gap-1">
           <select [ngModel]="filterCirculatingOp()" (ngModelChange)="filterCirculatingOp.set($event)"
             class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-            <option value="">Any</option>
-            <option value="gt">&gt;</option>
-            <option value="lt">&lt;</option>
+            <option value="">{{ 'assets.compare.any' | translate }}</option>
+            <option value="gt">{{ 'assets.compare.gt' | translate }}</option>
+            <option value="lt">{{ 'assets.compare.lt' | translate }}</option>
           </select>
           <input type="number" min="0" [ngModel]="filterCirculatingAmt()" (ngModelChange)="filterCirculatingAmt.set($event === '' || $event === null ? null : +$event)"
-            placeholder="Amount"
+            [placeholder]="'assets.filters.amount' | translate"
             class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
         </div>
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Clear
+          {{ 'common.clear' | translate }}
         </button>
       </div>
       <div class="flex ml-auto items-end gap-2">
+        @if(userInfo && userInfo.role !== 3) {
+          <button (click)="openAddModal()" [disabled]="!entityActive"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            {{ 'assets.add' | translate }}
+          </button>
+          <button (click)="openRegisterExistingModal()" [disabled]="!entityActive"
+            class="text-xs px-3 py-1.5 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            [title]="'assets.list.registerExistingTooltip' | translate">
+            {{ 'assets.list.registerExisting' | translate }}
+          </button>
+        }
         @if (features.systemFunctionEnabled('export-excel')) {
           <button (click)="exportExcel()"
             class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
             </svg>
-            Export Excel
+            {{ 'common.exportExcel' | translate }}
           </button>
         }
         @if (features.systemFunctionEnabled('export-pdf')) {
@@ -75,21 +89,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
             </svg>
-            Export PDF
-          </button>
-        }
-        @if(userInfo && userInfo.role !== 3) {
-          <button (click)="openRegisterExistingModal()" [disabled]="!entityActive"
-            class="text-xs px-3 py-1.5 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Register a BYO contract you deployed yourself (Path B)">
-            Register Existing
-          </button>
-          <button (click)="openAddModal()" [disabled]="!entityActive"
-            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-            </svg>
-            Add Asset
+            {{ 'common.exportPdf' | translate }}
           </button>
         }
       </div>
@@ -102,14 +102,14 @@
         <table class="w-full text-sm text-left text-gray-700">
           <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
               <tr>
-                  <th scope="col" class="px-6 py-2">#</th>
-                  <th scope="col" class="px-6 py-2">Name</th>
-                  <th scope="col" class="px-6 py-2">Symbol</th>
-                  <th scope="col" class="px-6 py-2">Currency</th>
-                  <th scope="col" class="px-6 py-2">Type</th>
-                  <th scope="col" class="px-6 py-2">Price Mode</th>
-                  <th scope="col" class="px-6 py-2">Circulating</th>
-                  <th scope="col" class="px-6 py-2">State</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.id' | translate }}</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.name' | translate }}</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.symbol' | translate }}</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.currency' | translate }}</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.type' | translate }}</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.priceMode' | translate }}</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.circulating' | translate }}</th>
+                  <th scope="col" class="px-6 py-2">{{ 'assets.table.state' | translate }}</th>
               </tr>
           </thead>
           <tbody class="text-xs">
@@ -120,7 +120,7 @@
               <!-- no data -->
               @if(filteredAssets().length == 0) {
                   <tr class="bg-white border-b hover:bg-gray-50">
-                      <td class="px-6 py-2">no data</td>
+                      <td class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                   </tr>
               }
               @else {
@@ -130,11 +130,11 @@
                         <td class="px-6 py-2">{{ data.name }}</td>
                         <td class="px-6 py-2"><span class="badge-symbol">{{ data.symbol }}</span></td>
                         <td class="px-6 py-2"><span class="badge-currency">{{ data.currencyCode }}</span></td>
-                        <td class="px-6 py-2">{{ data.supplyModeName || (data.supplyMode === 2 ? 'Dynamic' : 'Fixed') }}</td>
+                        <td class="px-6 py-2">{{ data.supplyModeName || ((data.supplyMode === 2 ? 'assets.enums.supplyMode.dynamic' : 'assets.enums.supplyMode.fixed') | translate) }}</td>
                         <td class="px-6 py-2">
                           <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
                             [class]="data.priceMode === 1 ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'">
-                            {{ data.priceModeName || (data.priceMode === 1 ? 'Single' : 'Bid/Ask') }}
+                            {{ data.priceModeName || ((data.priceMode === 1 ? 'assets.enums.priceMode.single' : 'assets.enums.priceMode.bidAsk') | translate) }}
                           </span>
                         </td>
                         <td class="px-6 py-2">{{ data.circulating | number:'1.0-0' }}</td>
@@ -145,7 +145,7 @@
                             </span>
                             @if (data.suspended) {
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                Suspended
+                                {{ 'state.suspended' | translate }}
                               </span>
                             }
                           </div>
@@ -158,7 +158,7 @@
         </table>
       </div>
       <div class="flex items-center px-4 py-2 border-t">
-        <p class="text-xs font-medium text-gray-800">Showing {{ filteredAssets().length }} of Total {{ assets().length }} Assets</p>
+        <p class="text-xs font-medium text-gray-800">{{ 'assets.list.footer' | translate: { shown: filteredAssets().length, total: assets().length } }}</p>
       </div>
     </div>
 

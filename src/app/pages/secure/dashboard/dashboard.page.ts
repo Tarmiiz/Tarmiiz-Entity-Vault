@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 import { SocketService } from '../../../shared/services/socket.service';
 
-import { AssetTransaction, CreditBalance, Subscription, User } from '../../../shared/models/data.model';
+import { AssetTransaction, CreditBalance, PendingApproval, Subscription, User } from '../../../shared/models/data.model';
 
 import { Subscription as RxSubscription } from 'rxjs';
 
@@ -146,6 +146,14 @@ export class DashboardPage implements OnInit {
   userCount = signal<number | null>(null);
   showBootstrapNudge = computed(() => this.userCount() === 1 && Number(this.userInfo?.role) === 1);
 
+  // ─── Admin home (role 1) ─────────────────────────────────────────────────────
+  adminRecentUsers        = signal<User[]>([]);
+  adminUsersLoading       = signal(true);
+  pendingApprovals        = signal<PendingApproval[]>([]);
+  pendingApprovalsCount   = signal<number>(0);
+  pendingApprovalsLoading = signal(true);
+  private readonly roleNames: Record<number, string> = { 1: 'Admin', 2: 'Executive', 3: 'Viewer', 4: 'Auditor' };
+
   lastSynced: number = 0;
 
   creditTotals = signal<CreditBalance[]>([]);
@@ -246,14 +254,29 @@ export class DashboardPage implements OnInit {
     this.auditService.logView('transaction', { trxId: trx.trxId, trxType: trx.trxType });
   }
 
+  private _approvalSubs: RxSubscription[] = [];
+
   async ionViewWillEnter() {
     await this.loadPageData(false);
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.loadPageData(true));
+    // Admins watch the maker/checker stream so the pending-approvals card + panel stay live.
+    this._approvalSubs.push(this.socketService.approvalsCreated$.subscribe(() => this.refreshAdminApprovals()));
+    this._approvalSubs.push(this.socketService.approvalsDecided$.subscribe(() => this.refreshAdminApprovals()));
   }
 
   ionViewWillLeave() {
     this._socketSub?.unsubscribe();
     this._socketSub = null;
+    this._approvalSubs.forEach(s => s.unsubscribe());
+    this._approvalSubs = [];
+  }
+
+  private async refreshAdminApprovals() {
+    if (Number(this.userInfo?.role) !== 1) return;
+    const res = await this.apiService.vaultApprovalsList({ state: 1, offset: 5 });
+    const rows = (res?.approvals ?? []).map(PendingApproval.fromApi);
+    this.pendingApprovals.set(rows);
+    this.pendingApprovalsCount.set(Number(res?.count ?? rows.length));
   }
 
   private readonly stateNames: Record<number, string> = {
@@ -323,15 +346,36 @@ export class DashboardPage implements OnInit {
         ]);
         this.lastUpdated.set(new Date());
       } else {
-        await this.getUserCount();
+        await this.loadAdminData(silent);
       }
       if (!silent) this.loadingService.hide();
     }
   }
 
-  async getUserCount() {
-    const res = await this.apiService.vaultGetUsers(0, 2);
-    if (res) this.userCount.set(res.count);
+  viewUser(u: User) { this.router.navigate(['/authorized/users/details/' + u.userId]); }
+
+  private mapUser(raw: any): User {
+    return { ...raw, roleName: this.roleNames[raw.role] ?? String(raw.role ?? '') } as User;
+  }
+
+  async loadAdminData(silent = false) {
+    if (!silent) { this.adminUsersLoading.set(true); this.pendingApprovalsLoading.set(true); }
+    const [usersRes, apprRes, status] = await Promise.all([
+      this.apiService.vaultGetUsers(0, 5),
+      this.apiService.vaultApprovalsList({ state: 1, offset: 5 }),
+      this.apiService.vaultGetSyncStatus(),
+    ]);
+    if (usersRes) {
+      this.userCount.set(usersRes.count);
+      this.adminRecentUsers.set((usersRes.users ?? []).map((u: any) => this.mapUser(u)));
+    }
+    this.adminUsersLoading.set(false);
+    const rows = (apprRes?.approvals ?? []).map(PendingApproval.fromApi);
+    this.pendingApprovals.set(rows);
+    this.pendingApprovalsCount.set(Number(apprRes?.count ?? rows.length));
+    this.pendingApprovalsLoading.set(false);
+    if (status) this.lastSynced = status.lastSync ? Number(status.lastSync) : 0;
+    this.lastUpdated.set(new Date());
   }
 
   async getStats(silent = false) {

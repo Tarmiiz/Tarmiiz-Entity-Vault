@@ -3,12 +3,12 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">
-          Change User State
+          {{ 'users.stateModal.title' | translate }}
         </h3>
       </div>
       <form [formGroup]="stateForm" (ngSubmit)="onSave()">
         <div class="p-6">
-          <label for="state" class="block text-sm font-medium text-gray-700">New State</label>
+          <label for="state" class="block text-sm font-medium text-gray-700">{{ 'users.stateModal.newState' | translate }}</label>
           <select id="state" formControlName="newState" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
             @for(state of states(); track state.variableId) {
               <option [value]="state.variableId">{{ state.name }}</option>
@@ -17,10 +17,10 @@
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!stateForm.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Update State
+            {{ 'users.stateModal.submit' | translate }}
           </button>
         </div>
       </form>

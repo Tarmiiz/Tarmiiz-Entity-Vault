@@ -2,50 +2,50 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">List Asset on DEX</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'dex.listings.createModal.heading' | translate }}</h3>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSave()">
         <div class="p-6 space-y-3">
-          <p class="text-sm text-gray-700">Submit a listing request for one of your assets. The asset's regulator must approve each requested tier before trading is enabled at that scope.</p>
+          <p class="text-sm text-gray-700">{{ 'dex.listings.createModal.description' | translate }}</p>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Asset</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.listings.createModal.asset' | translate }}</label>
             <select formControlName="baseAsset"
               [attr.disabled]="modalService.presetAsset() ? '' : null"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black disabled:bg-gray-100 disabled:text-gray-500">
-              <option value="">Select an asset...</option>
+              <option value="">{{ 'dex.listings.createModal.selectAssetPlaceholder' | translate }}</option>
               @for (a of assets(); track a.address) {
                 <option [value]="a.address">{{ a.name }} {{ a.symbol ? '(' + a.symbol + ')' : '' }}</option>
               }
             </select>
             @if (modalService.presetAsset()) {
-              <p class="text-xs text-gray-500 mt-1">Listing this asset on the DEX. Manage venues from the listing details page after creation.</p>
+              <p class="text-xs text-gray-500 mt-1">{{ 'dex.listings.createModal.presetAssetHint' | translate }}</p>
             }
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Tiers to request</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ 'dex.listings.createModal.tiersToRequestLabel' | translate }}</label>
             <div class="space-y-2">
               <label class="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" formControlName="venue" class="rounded">
-                Tier 1 — Venue scope (single venue)
+                {{ 'dex.listings.createModal.tier1Description' | translate }}
               </label>
               <label class="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" formControlName="country" class="rounded">
-                Tier 2 — Country scope
+                {{ 'dex.listings.createModal.tier2Description' | translate }}
               </label>
               <label class="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" formControlName="global" class="rounded">
-                Tier 3 — Global scope
+                {{ 'dex.listings.createModal.tier3Description' | translate }}
               </label>
             </div>
-            <p class="text-xs text-gray-500 mt-2">At least one tier must be selected.</p>
-            <p class="text-xs text-gray-500 mt-2">After approval, choose which venues this asset trades on (per tier) from the listing details page.</p>
+            <p class="text-xs text-gray-500 mt-2">{{ 'dex.listings.createModal.atLeastOneTierHint' | translate }}</p>
+            <p class="text-xs text-gray-500 mt-2">{{ 'dex.listings.createModal.postApprovalHint' | translate }}</p>
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()"
-            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Cancel</button>
+            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
           <button type="submit" [disabled]="!form.valid || (!form.value.venue && !form.value.country && !form.value.global)"
-            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Submit</button>
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.submit' | translate }}</button>
         </div>
       </form>
     </div>

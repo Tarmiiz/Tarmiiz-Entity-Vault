@@ -6,40 +6,40 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Search</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'users.filters.search' | translate }}</label>
         <input
           type="text"
-          placeholder="Name, username, email..."
+          [placeholder]="'users.filters.searchPlaceholder' | translate"
           [ngModel]="filterSearch()"
           (ngModelChange)="filterSearch.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Role</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'users.filters.role' | translate }}</label>
         <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
-          <option value="">All</option>
-          <option value="1">Admin</option>
-          <option value="2">Executive</option>
-          <option value="3">Viewer</option>
-          <option value="4">Security</option>
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'role.admin' | translate }}</option>
+          <option value="2">{{ 'users.roles.executive' | translate }}</option>
+          <option value="3">{{ 'role.viewer' | translate }}</option>
+          <option value="4">{{ 'users.roles.security' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">State</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'users.filters.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
-          <option value="">All</option>
-          <option value="1">Initiated</option>
-          <option value="2">Active</option>
-          <option value="3">Suspended</option>
-          <option value="4">Deactivated</option>
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'state.initiated' | translate }}</option>
+          <option value="2">{{ 'state.active' | translate }}</option>
+          <option value="3">{{ 'state.suspended' | translate }}</option>
+          <option value="4">{{ 'state.deactivated' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Clear
+          {{ 'common.clear' | translate }}
         </button>
       </div>
       @if (userInfo && userInfo.role === 1) {
@@ -49,7 +49,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
           </svg>
-          Add User
+          {{ 'users.add' | translate }}
         </button>
       </div>
       }
@@ -62,11 +62,11 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th scope="col" class="px-6 py-2">#</th>
-            <th scope="col" class="px-6 py-2">Name</th>
-            <th scope="col" class="px-6 py-2">Username</th>
-            <th scope="col" class="px-6 py-2">Role</th>
-            <th scope="col" class="px-6 py-2">State</th>
+            <th scope="col" class="px-6 py-2">{{ 'users.table.id' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'users.table.name' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'users.table.username' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'users.table.role' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'users.table.state' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
@@ -74,7 +74,7 @@
           @else {
             @if (filteredUsers().length === 0) {
               <tr class="bg-white border-b hover:bg-gray-50">
-                <td class="px-6 py-2">no data</td>
+                <td class="px-6 py-2">{{ 'common.noData' | translate }}</td>
               </tr>
             }
             @else {
@@ -99,7 +99,7 @@
       </table>
     </div>
     <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ filteredUsers().length }} of Total {{ users().length }} Users</p>
+      <p class="text-xs font-medium text-gray-800">{{ 'users.list.showingCount' | translate: { shown: filteredUsers().length, total: users().length } }}</p>
     </div>
   </div>
 

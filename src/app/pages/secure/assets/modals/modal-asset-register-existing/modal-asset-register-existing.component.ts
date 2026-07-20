@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ApiService } from '../../../../../shared/services/api.service';
 import { ModalAssetRegisterExistingService } from './modal-asset-register-existing.service';
@@ -15,7 +16,7 @@ import { ModalAssetRegisterExistingService } from './modal-asset-register-existi
 @Component({
   selector: 'app-modal-asset-register-existing',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './modal-asset-register-existing.component.html',
 })
 export class ModalAssetRegisterExistingComponent {

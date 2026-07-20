@@ -2,36 +2,36 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Bank Transfer</h3>
-        <p class="text-xs text-gray-200 mt-1">Move an identity's credit between its bank-account hub and one of its subscriptions. Both must belong to the same identity (enforced on-chain).</p>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'credit.bankTransferModal.title' | translate }}</h3>
+        <p class="text-xs text-gray-200 mt-1">{{ 'credit.bankTransferModal.description' | translate }}</p>
       </div>
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Bank Service</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.bankTransferModal.bankService' | translate }}</label>
             <select formControlName="service" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
-              <option value="" class="text-black bg-white">Select a bank service…</option>
+              <option value="" class="text-black bg-white">{{ 'credit.bankTransferModal.selectBankService' | translate }}</option>
               @for (s of bankServices(); track s.address) {
                 <option [value]="s.address" class="text-black bg-white">{{ s.name }}</option>
               }
             </select>
             @if (bankServices().length === 0) {
-              <p class="text-xs text-amber-600 mt-1">No service-provider services found. A Bank-level payment-processor service is required.</p>
+              <p class="text-xs text-amber-600 mt-1">{{ 'credit.bankTransferModal.noBankServices' | translate }}</p>
             }
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">From (subscription)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.bankTransferModal.from' | translate }}</label>
             <input type="text" formControlName="from" placeholder="0x…"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black font-mono" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">To (subscription)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.bankTransferModal.to' | translate }}</label>
             <input type="text" formControlName="to" placeholder="0x…"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black font-mono" />
           </div>
-          <p class="text-xs text-gray-500">Exactly one side must be the identity's bank-account at the selected bank service.</p>
+          <p class="text-xs text-gray-500">{{ 'credit.bankTransferModal.sideNote' | translate }}</p>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Currency</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.table.currency' | translate }}</label>
             <select formControlName="currencyCode" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black bg-white">
               @for (c of modalService.currencies(); track c.currencyCode) {
                 <option [ngValue]="c.currencyCode" class="text-black bg-white">{{ c.currencyName }} ({{ c.currencySymbol }})</option>
@@ -39,35 +39,35 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Amount</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'common.amount' | translate }}</label>
             <input type="number" min="0" step="0.01" formControlName="amount"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Reference No</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.bankTransferModal.referenceNo' | translate }}</label>
             <input type="text" formControlName="trxRefNo"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
-              placeholder="e.g. bank transfer reference" />
+              [placeholder]="'credit.bankTransferModal.referenceNoPlaceholder' | translate" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Transaction date (optional)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.bankTransferModal.trxDate' | translate }}</label>
             <input type="datetime-local" formControlName="trxDate"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
-            <p class="text-xs text-gray-500 mt-1">Backdates the ledger row. Leave empty to use the current time.</p>
+            <p class="text-xs text-gray-500 mt-1">{{ 'credit.bankTransferModal.trxDateNote' | translate }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Note (optional)</label>
+            <label class="block text-sm font-medium text-gray-700">{{ 'credit.bankTransferModal.note' | translate }}</label>
             <textarea formControlName="note" rows="2"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black"
-              placeholder="Reference / memo…"></textarea>
+              [placeholder]="'credit.bankTransferModal.notePlaceholder' | translate"></textarea>
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!form.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Transfer
+            {{ 'credit.bankTransferModal.submit' | translate }}
           </button>
         </div>
       </form>

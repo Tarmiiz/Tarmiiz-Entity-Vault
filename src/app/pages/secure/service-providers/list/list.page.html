@@ -1,4 +1,4 @@
-<app-header [title]="'Service Providers'"></app-header>
+<app-header [title]="'serviceProviders.title' | translate"></app-header>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
@@ -6,44 +6,44 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Search</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input
           type="text"
-          placeholder="Name, address, type..."
+          [placeholder]="'serviceProviders.filters.searchPlaceholder' | translate"
           [ngModel]="filterSearch()"
           (ngModelChange)="filterSearch.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Type</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
         <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
-          <option value="">All</option>
-          <option value="1">Validator</option>
-          <option value="2">Payment Processor</option>
-          <option value="3">Custodian</option>
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'serviceProviders.filters.typeValidator' | translate }}</option>
+          <option value="2">{{ 'serviceProviders.filters.typePaymentProcessor' | translate }}</option>
+          <option value="3">{{ 'serviceProviders.filters.typeCustodian' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">State</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
-          <option value="">All</option>
-          <option value="1">Active</option>
-          <option value="2">Suspended</option>
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'state.active' | translate }}</option>
+          <option value="2">{{ 'state.suspended' | translate }}</option>
         </select>
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Clear
+          {{ 'common.clear' | translate }}
         </button>
       </div>
       @if (userInfo && userInfo.role === 1 && entityActive) {
       <div class="flex ml-auto items-end">
         <button (click)="openAddModal()"
           class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-          + Add Service Provider
+          + {{ 'serviceProviders.addButton' | translate }}
         </button>
       </div>
       }
@@ -56,12 +56,12 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th scope="col" class="px-6 py-2">#</th>
-            <th scope="col" class="px-6 py-2">Name</th>
-            <th scope="col" class="px-6 py-2">Address</th>
-            <th scope="col" class="px-6 py-2">Type</th>
-            <th scope="col" class="px-6 py-2">State</th>
-            <th scope="col" class="px-6 py-2 text-right">Actions</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.name' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.address' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+            <th scope="col" class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
@@ -69,7 +69,7 @@
           @else {
             @if (filteredProviders().length === 0) {
               <tr class="bg-white border-b">
-                <td class="px-6 py-2" colspan="6">no data</td>
+                <td class="px-6 py-2" colspan="6">{{ 'common.noData' | translate }}</td>
               </tr>
             }
             @else {
@@ -89,12 +89,12 @@
                       @if (p.state === 1) {
                         <button (click)="suspend(p)"
                           class="text-xs px-3 py-1.5 rounded border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors">
-                          Suspend
+                          {{ 'serviceProviders.actions.suspend' | translate }}
                         </button>
                       } @else {
                         <button (click)="reactivate(p)"
                           class="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 transition-colors">
-                          Re-activate
+                          {{ 'serviceProviders.actions.reactivate' | translate }}
                         </button>
                       }
                     }
@@ -107,7 +107,7 @@
       </table>
     </div>
     <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ filteredProviders().length }} of Total {{ providers().length }} Service Providers</p>
+      <p class="text-xs font-medium text-gray-800">{{ 'serviceProviders.footer.showing' | translate: { shown: filteredProviders().length, total: providers().length } }}</p>
     </div>
   </div>
 

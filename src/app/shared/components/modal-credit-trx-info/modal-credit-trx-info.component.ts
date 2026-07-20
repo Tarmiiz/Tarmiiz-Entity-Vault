@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 
 import { UtilsService } from '../../services/utils.service';
@@ -18,7 +19,7 @@ import { ModalCreditTrxInfoService } from './modal-credit-trx-info.service';
   templateUrl: './modal-credit-trx-info.component.html',
   styleUrls: ['./modal-credit-trx-info.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
 })
 export class ModalCreditTrxInfoComponent {
   modalService = inject(ModalCreditTrxInfoService);
@@ -29,6 +30,7 @@ export class ModalCreditTrxInfoComponent {
   private apiService = inject(ApiService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
+  private translate = inject(TranslateService);
 
   getTrxTypeClass(trxType: number): string {
     switch (trxType) {
@@ -84,19 +86,19 @@ export class ModalCreditTrxInfoComponent {
   async viewReceipt(trx: CreditTransaction): Promise<void> {
     if (!trx.dataCid || !trx.service) return;
     const win = window.open('', '_blank');
-    this.loadingService.show('Fetching receipt...');
+    this.loadingService.show(this.translate.instant('credit.trxInfoModal.fetchingReceipt'));
     try {
       const data = await this.apiService.serviceDocumentsList(trx.service, 1, 200);
       const doc = (data?.documents ?? []).find((d: any) => d.cid === trx.dataCid);
       if (!doc) {
         if (win) win.close();
-        await this.alertService.show('Error', 'Receipt document not found on the service.');
+        await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('credit.trxInfoModal.receiptNotFound'));
         return;
       }
       const fetched = await this.apiService.serviceDocumentFetchFile(trx.service, doc.id ?? doc.documentId);
       if (!fetched) {
         if (win) win.close();
-        await this.alertService.show('Error', 'Could not fetch the receipt file.');
+        await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('credit.trxInfoModal.receiptFetchFailed'));
         return;
       }
       if (win) {

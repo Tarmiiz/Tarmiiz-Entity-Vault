@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalSpAddService } from './modal-sp-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -12,7 +13,7 @@ interface PickerItem { address: string; name: string; level: number; }
   templateUrl: './modal-sp-add.component.html',
   styleUrls: ['./modal-sp-add.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalSpAddComponent {
 

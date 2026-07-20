@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, effect, untracked } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
-import { ModalAssetAddService, AddAssetData } from './modal-asset-add.service';
+import { ModalAssetAddService, AddAssetData, WizardDocFile, WizardImageFile } from './modal-asset-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
 import { FeaturesService } from '../../../../../shared/services/features.service';
@@ -12,7 +13,7 @@ import { FeaturesService } from '../../../../../shared/services/features.service
   templateUrl: './modal-asset-add.component.html',
   styleUrls: ['./modal-asset-add.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalAssetAddComponent {
 
@@ -53,9 +54,15 @@ export class ModalAssetAddComponent {
 
   // Wizard state
   currentStep = signal(1);
-  readonly totalSteps = 6;
-  readonly stepLabels = ['Standard & Supply', 'Identity', 'Metadata', 'Service', 'Roles', 'Review'];
+  readonly totalSteps = 8;
+  readonly stepLabels = ['Standard & Supply', 'Identity', 'Metadata', 'Service', 'Roles', 'Documents', 'Images', 'Review'];
+  readonly stepNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
   reviewConfirmed = signal(false);
+
+  // Optional attachments (steps 6 + 7) — collected here, uploaded by the list page
+  // AFTER the asset is created (docs attach to the new asset's address).
+  docFiles = signal<WizardDocFile[]>([]);
+  imageFiles = signal<WizardImageFile[]>([]);
 
   // Symbol availability check (on-chain via API)
   symbolAvailable = signal<boolean | null>(null);
@@ -117,6 +124,12 @@ export class ModalAssetAddComponent {
       if (key.toLowerCase() === 'description') {
         return '"description" is reserved — use the Description field above.';
       }
+      if (key.toLowerCase() === 'media') {
+        return '"media" is reserved — attach documents and images in the wizard steps instead.';
+      }
+      if (key.toLowerCase() === 'contact') {
+        return '"contact" is reserved — set contact info from the asset details page after creation.';
+      }
       if (seen.has(key)) {
         return `Duplicate key: "${key}".`;
       }
@@ -150,6 +163,10 @@ export class ModalAssetAddComponent {
         this.metadataRows.clear();
         this.addMetadataRow();
         this.metadataError.set('');
+        // untracked: resetAttachments reads + writes the attachment signals — tracked here,
+        // that read would register them as effect deps and the writes would re-trigger the
+        // effect forever (fresh [] reference each run), hanging the UI on modal open.
+        untracked(() => this.resetAttachments());
         this.currentStep.set(1);
         this.symbolAvailable.set(null);
         this.symbolCheckPending.set(false);
@@ -206,11 +223,13 @@ export class ModalAssetAddComponent {
     3: [],
     4: ['service', 'currency'],
     5: ['owner', 'issuer', 'manager', 'regulator'],
+    6: [], // Documents — optional
+    7: [], // Images — optional
   };
 
   isCurrentStepValid(): boolean {
     const step = this.currentStep();
-    if (step === 6) return this.addForm.valid && !this.metadataError();
+    if (step === 8) return this.addForm.valid && !this.metadataError();
     let fields = this.stepFields[step] ?? [];
     if (step === 1 && this.isFixedSupply) {
       fields = [...fields, 'initialSupply'];
@@ -235,6 +254,80 @@ export class ModalAssetAddComponent {
     if (this.currentStep() > 1) {
       this.currentStep.update(s => s - 1);
     }
+  }
+
+  // --- Attachments (Documents + Images steps) ---
+
+  onDocFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    if (files.length) {
+      this.docFiles.update(rows => [
+        ...rows,
+        ...files.map(file => ({ file, title: '', description: '', documentType: 2 })),
+      ]);
+    }
+    input.value = '';
+  }
+
+  onImageFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []).filter(f => f.type.startsWith('image/'));
+    if (files.length) {
+      this.imageFiles.update(rows => [
+        ...rows,
+        ...files.map(file => ({
+          file, title: '', description: '', documentType: 1,
+          role: 'gallery' as const, previewUrl: URL.createObjectURL(file),
+        })),
+      ]);
+    }
+    input.value = '';
+  }
+
+  updateDocRow(index: number, patch: Partial<WizardDocFile>): void {
+    this.docFiles.update(rows => rows.map((r, i) => i === index ? { ...r, ...patch } : r));
+  }
+
+  removeDocRow(index: number): void {
+    this.docFiles.update(rows => rows.filter((_, i) => i !== index));
+  }
+
+  updateImageRow(index: number, patch: Partial<WizardImageFile>): void {
+    this.imageFiles.update(rows => rows.map((r, i) => i === index ? { ...r, ...patch } : r));
+  }
+
+  // Avatar/banner are single-holder and PUBLIC-only: assigning one demotes the current
+  // holder to gallery and forces the row Public (the type select is disabled in the UI).
+  setImageRole(index: number, role: 'avatar' | 'banner' | 'gallery'): void {
+    this.imageFiles.update(rows => rows.map((r, i) => {
+      if (i === index) return { ...r, role, ...(role !== 'gallery' ? { documentType: 1 } : {}) };
+      if (role !== 'gallery' && r.role === role) return { ...r, role: 'gallery' as const };
+      return r;
+    }));
+  }
+
+  removeImageRow(index: number): void {
+    const row = this.imageFiles()[index];
+    if (row?.previewUrl) URL.revokeObjectURL(row.previewUrl);
+    this.imageFiles.update(rows => rows.filter((_, i) => i !== index));
+  }
+
+  private resetAttachments(): void {
+    for (const row of this.imageFiles()) {
+      if (row.previewUrl) URL.revokeObjectURL(row.previewUrl);
+    }
+    this.docFiles.set([]);
+    this.imageFiles.set([]);
+  }
+
+  publicAttachmentCount(): number {
+    return this.docFiles().filter(d => d.documentType === 1).length
+         + this.imageFiles().filter(d => d.documentType === 1).length;
+  }
+
+  imageRoleName(role: string): string {
+    return role === 'avatar' ? 'Avatar' : role === 'banner' ? 'Banner' : 'Gallery';
   }
 
   // --- Symbol availability check (on-chain) ---
@@ -267,6 +360,18 @@ export class ModalAssetAddComponent {
     }
 
     this.knownAddresses.set(entries);
+
+    // Default the governance addresses (owner / issuer / manager) to Self — only
+    // when still untouched, so re-opening the modal doesn't clobber a manual edit.
+    if (entity?.address) {
+      for (const field of ['owner', 'issuer', 'manager'] as const) {
+        const ctrl = this.addForm.get(field);
+        if (ctrl && !ctrl.value) {
+          ctrl.setValue(entity.address);
+          this.resolveAddress(field);
+        }
+      }
+    }
   }
 
   useSelf(field: 'owner' | 'issuer' | 'manager'): void {
@@ -356,11 +461,20 @@ export class ModalAssetAddComponent {
     if (entity) {
       const regulators = await this.apiService.vaultGetRegulatorsByCountry(String(entity.country_code), 0, 100);
       if (regulators) {
-        this.regulators.set(regulators.filter((r: any) => r.state).map((r: any) => ({
+        const active = regulators.filter((r: any) => r.state).map((r: any) => ({
           address: r.address,
           name: r.name,
           symbol: r.symbol,
-        })));
+        }));
+        this.regulators.set(active);
+        // Default the regulator picker to the entity's own regulator (when present
+        // in the active set and the field hasn't already been set/edited).
+        const own = entity.regulator ? String(entity.regulator).toLowerCase() : '';
+        const regCtrl = this.addForm.get('regulator');
+        if (own && regCtrl && !regCtrl.value) {
+          const match = active.find((r: any) => r.address.toLowerCase() === own);
+          if (match) regCtrl.setValue(match.address);
+        }
       }
     }
   }
@@ -420,6 +534,8 @@ export class ModalAssetAddComponent {
       assetType: Number(formValue.assetType),
       creditSettlement: formValue.noCreditSettlement !== true,
       customMetadata,
+      documents: this.docFiles().map(d => ({ ...d, title: d.title.trim() || d.file.name })),
+      images: this.imageFiles().map(d => ({ ...d, title: d.title.trim() || d.file.name })),
       // Initial supply is Fixed-supply-only (minted to the contract at init).
       ...(supplyMode === 1 ? {
         initialSupply: Number(formValue.initialSupply),

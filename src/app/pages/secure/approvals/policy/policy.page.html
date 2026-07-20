@@ -1,15 +1,14 @@
-<app-header [title]="'approvals.policyTitle' | translate"></app-header>
+<app-header [title]="'sidebar.approvalSettings' | translate"></app-header>
 
 <div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
-    <h2 class="text-sm font-semibold text-gray-800 mb-1">Maker / Checker policy</h2>
+    <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'approvals.policy.heading' | translate }}</h2>
     <p class="text-xs text-gray-600">
-      Toggle each action category to require a second-operator approval. When enabled, users flagged as
-      <span class="font-semibold uppercase">maker</span> submit requests; users flagged as
-      <span class="font-semibold uppercase">checker</span> approve them. Same user can never approve their own request.
-      Assign maker / checker roles to individual users from the
-      <a routerLink="/authorized/users/list" class="text-blue-700 hover:underline">Users</a> page.
+      {{ 'approvals.policy.descriptionIntro' | translate }}
+      <span class="font-semibold uppercase">{{ 'approvals.roleMaker' | translate }}</span> {{ 'approvals.policy.descriptionMakerToChecker' | translate }}
+      <span class="font-semibold uppercase">{{ 'approvals.roleChecker' | translate }}</span> {{ 'approvals.policy.descriptionRest' | translate }}
+      <a routerLink="/authorized/users/list" class="text-blue-700 hover:underline">{{ 'users.title' | translate }}</a> {{ 'approvals.policy.descriptionSuffix' | translate }}
     </p>
   </div>
 
@@ -18,9 +17,9 @@
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th class="px-4 py-2">Action category</th>
-            <th class="px-4 py-2">Description</th>
-            <th class="px-4 py-2">Requires approval</th>
+            <th class="px-4 py-2">{{ 'approvals.policy.table.actionCategory' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.description' | translate }}</th>
+            <th class="px-4 py-2">{{ 'approvals.policy.table.requiresApproval' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -41,7 +40,7 @@
                       [class.translate-x-5]="row.requiresApproval"></div>
                   </div>
                   <span class="ml-2 text-xs text-gray-700">
-                    {{ row.requiresApproval ? 'Required' : 'Direct execute' }}
+                    {{ (row.requiresApproval ? 'approvals.policy.required' : 'approvals.policy.directExecute') | translate }}
                   </span>
                 </label>
               </td>
@@ -49,7 +48,7 @@
           } @empty {
             <tr>
               <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
-                @if (loading()) { Loading… } @else { No categories configured. }
+                @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'approvals.policy.empty' | translate }} }
               </td>
             </tr>
           }

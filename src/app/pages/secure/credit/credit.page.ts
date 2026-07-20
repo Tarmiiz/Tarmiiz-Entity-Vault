@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -50,6 +50,7 @@ export class CreditPage implements OnInit {
   private socketService = inject(SocketService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
   features = inject(FeaturesService);
   private auditService = inject(AuditService);
@@ -131,7 +132,7 @@ export class CreditPage implements OnInit {
     if (silent) this.refreshing.set(true);
     if (!silent) {
       this.loading.set(true);
-      this.loadingService.show('Loading credit overview...');
+      this.loadingService.show(this.translate.instant('credit.loadingOverview'));
     }
     try {
       const data = await this.apiService.vaultGetEntityCreditOverview();

@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 
@@ -19,7 +20,7 @@ import { ModalSpAddService } from '../modals/modal-sp-add/modal-sp-add.service';
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalSpAddComponent],
+  imports: [FormsModule, HeaderComponent, ModalSpAddComponent, TranslatePipe],
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -27,6 +28,7 @@ export class ListPage implements OnInit {
   private alertService = inject(AlertService);
   private authService = inject(AuthService);
   private spAddService = inject(ModalSpAddService);
+  private translate = inject(TranslateService);
 
   userInfo!: User;
   loadingData = false;
@@ -63,7 +65,7 @@ export class ListPage implements OnInit {
   }
 
   async listProviders() {
-    this.loadingService.show('Loading data...');
+    this.loadingService.show(this.translate.instant('common.loadingData'));
     const result = await this.apiService.vaultGetServiceProviders();
     if (result) {
       this.providers.set((result.providers ?? []).map((p: any) => new EntityServiceProvider(
@@ -105,16 +107,16 @@ export class ListPage implements OnInit {
     const existing = this.providers().map(p => p.address);
     const result = await this.spAddService.show(existing);
     if (!result) return;
-    this.loadingService.show('Adding service provider...');
+    this.loadingService.show(this.translate.instant('serviceProviders.alerts.adding'));
     try {
       const res: any = await this.apiService.vaultAddServiceProvider(result.provider, result.spType);
       this.loadingService.hide();
       if (res?.error) {
-        await this.alertService.show('Could not add', res.error);
+        await this.alertService.show(this.translate.instant('serviceProviders.alerts.addFailedTitle'), res.error);
         return;
       }
       if (res?.requestId) {
-        await this.alertService.show('Submitted for approval', 'The request to add this service provider was submitted for approval.');
+        await this.alertService.show(this.translate.instant('serviceProviders.alerts.submittedTitle'), this.translate.instant('serviceProviders.alerts.addSubmittedMessage'));
         return;
       }
       await this.listProviders();
@@ -125,21 +127,21 @@ export class ListPage implements OnInit {
 
   async suspend(p: EntityServiceProvider) {
     // Pre-check usage so we can show the blocking services before the on-chain guard reverts.
-    this.loadingService.show('Checking usage...');
+    this.loadingService.show(this.translate.instant('serviceProviders.alerts.checkingUsage'));
     const usage = await this.apiService.vaultGetServiceProviderUsage(p.address);
     this.loadingService.hide();
     if (usage?.inUse) {
       const list = usage.services.map((s: any) => `• ${s.name || s.address}`).join('\n');
       await this.alertService.show(
-        'Cannot suspend — in use',
-        `This service provider is used by the following service(s). Reassign them first:\n\n${list}`,
+        this.translate.instant('serviceProviders.alerts.cannotSuspendTitle'),
+        `${this.translate.instant('serviceProviders.alerts.cannotSuspendMessage')}\n\n${list}`,
       );
       return;
     }
     const confirmed = await this.alertService.show(
-      'Suspend service provider',
-      `Suspend ${p.name || p.address}? Existing services keep working; new services won't be able to select it.`,
-      'Suspend',
+      this.translate.instant('serviceProviders.alerts.suspendTitle'),
+      this.translate.instant('serviceProviders.alerts.suspendMessage', { name: p.name || p.address }),
+      this.translate.instant('serviceProviders.actions.suspend'),
     );
     if (!confirmed) return;
     await this.applyState(p, 2);
@@ -147,25 +149,25 @@ export class ListPage implements OnInit {
 
   async reactivate(p: EntityServiceProvider) {
     const confirmed = await this.alertService.show(
-      'Re-activate service provider',
-      `Re-activate ${p.name || p.address}? Services will be able to select it again.`,
-      'Re-activate',
+      this.translate.instant('serviceProviders.alerts.reactivateTitle'),
+      this.translate.instant('serviceProviders.alerts.reactivateMessage', { name: p.name || p.address }),
+      this.translate.instant('serviceProviders.actions.reactivate'),
     );
     if (!confirmed) return;
     await this.applyState(p, 1);
   }
 
   private async applyState(p: EntityServiceProvider, state: number) {
-    this.loadingService.show('Updating...');
+    this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const res: any = await this.apiService.vaultSetServiceProviderState(p.address, state);
       this.loadingService.hide();
       if (res?.error) {
-        await this.alertService.show('Could not update', res.error);
+        await this.alertService.show(this.translate.instant('serviceProviders.alerts.updateFailedTitle'), res.error);
         return;
       }
       if (res?.requestId) {
-        await this.alertService.show('Submitted for approval', 'The request was submitted for approval.');
+        await this.alertService.show(this.translate.instant('serviceProviders.alerts.submittedTitle'), this.translate.instant('serviceProviders.alerts.updateSubmittedMessage'));
         return;
       }
       await this.listProviders();

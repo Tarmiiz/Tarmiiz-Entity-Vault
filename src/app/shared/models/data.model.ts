@@ -14,6 +14,18 @@ export class User {
   ){}
 }
 
+// A named, role-scoped preset of Menu Access + System Functions settings an admin
+// assigns to users (live membership — group edits propagate to members).
+export interface UserGroup {
+  groupId: string;
+  name: string;
+  description: string | null;
+  role: number;       // immutable target user role
+  memberCount: number;
+  createdAt: number | null;
+  updatedAt: number | null;
+}
+
 export class Key {
   constructor (
     public address: string,
@@ -240,6 +252,13 @@ export class EntityServiceProvider {
   ) {}
 }
 
+export interface ContactInfo {
+  email: string;
+  phone: string;
+  website: string;
+  address: string;
+}
+
 export class Entity {
   constructor (
     public address: string,
@@ -254,7 +273,11 @@ export class Entity {
     public regulatorName: string,
     public regulatorSymbol: string,
     public state: number,
-    public stateName: string
+    public stateName: string,
+    // Public-profile fields (2026-07-20) — nested contact + description live inside the
+    // metadata JSON and are spread onto the entity object by the API's getEntity().
+    public description: string = '',
+    public contact?: ContactInfo,
   ) {}
 }
 
@@ -290,7 +313,10 @@ export class Service {
     // Entity-declared sub-type for service providers (serviceType 2): 1=Validator,
     // 2=PaymentProcessor, 3=Custodian, 4=DataProvider; 0 for token issuers.
     public providerType: number = 0,
-    public providerTypeName: string = ''
+    public providerTypeName: string = '',
+    // Nested public contact info (2026-07-20) — derived from the service metadata's `contact`
+    // key with fallback to the legacy flat email/mobile/website.
+    public contact?: ContactInfo
   ) {}
 }
 
@@ -390,6 +416,21 @@ export interface ExternalIntegration {
   isDefault: boolean;
   updatedAt: number | null;
   params: IntegrationParam[];
+}
+
+// Runtime app configuration (DB-backed override of the .env/registry seed). Server returns
+// camelCase already — no snake_case mapping needed. Non-secret keys carry `value`; secret
+// keys carry `set` (whether a value is stored) and never return the value.
+export interface AppConfigItem {
+  key: string;
+  category: string;
+  type: 'string' | 'number' | 'bool' | 'secret';
+  label: string;
+  restartRequired: boolean;
+  value?: string | null;
+  set?: boolean;
+  isDefault: boolean;
+  updatedAt: number | null;
 }
 
 export class AssetHolder {

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -25,15 +25,15 @@ interface DexAsset {
     <app-header [title]="'analytics.dexSecondary.title' | translate"></app-header>
     <div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
       <app-analytics-card
-        title="Secondary trade volume + NAV premium"
-        subtitle="Bars = traded units per bucket. Line = avg-trade-price vs latest NAV bid (% premium)."
+        [title]="'analytics.dexSecondary.chart.title' | translate"
+        [subtitle]="'analytics.dexSecondary.chart.subtitle' | translate"
         [loading]="loading()"
         [empty]="!loading() && assetCodes().length === 0"
-        emptyMessage="No DEX trades yet for this entity's assets.">
+        [emptyMessage]="'analytics.dexSecondary.chart.emptyMessage' | translate">
         <div card-actions class="flex items-center gap-3">
           @if (assetCodes().length > 1) {
             <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-              <span class="font-medium">Asset</span>
+              <span class="font-medium">{{ 'analytics.dexSecondary.filters.assetLabel' | translate }}</span>
               <select class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
                       [ngModel]="selectedAsset()"
                       (ngModelChange)="onAsset($event)">
@@ -57,6 +57,7 @@ interface DexAsset {
 })
 export class DexSecondaryPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private translate = inject(TranslateService);
 
   @ViewChild('chart') chartRef?: ElementRef<HTMLCanvasElement>;
 
@@ -115,19 +116,19 @@ export class DexSecondaryPage implements OnInit, OnDestroy {
       data: {
         labels,
         datasets: [
-          { type: 'bar',  label: 'Volume', data: volume, backgroundColor: 'rgba(99,102,241,0.5)', borderColor: 'rgba(99,102,241,1)', borderWidth: 1, yAxisID: 'y' },
-          { type: 'line', label: 'Premium % vs NAV', data: premium, borderColor: 'rgba(245,158,11,1)', backgroundColor: 'rgba(245,158,11,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y1' },
+          { type: 'bar',  label: this.translate.instant('analytics.dexSecondary.chart.datasetVolume'), data: volume, backgroundColor: 'rgba(99,102,241,0.5)', borderColor: 'rgba(99,102,241,1)', borderWidth: 1, yAxisID: 'y' },
+          { type: 'line', label: this.translate.instant('analytics.dexSecondary.chart.datasetPremium'), data: premium, borderColor: 'rgba(245,158,11,1)', backgroundColor: 'rgba(245,158,11,0.15)', tension: 0.3, pointRadius: 2, borderWidth: 2, yAxisID: 'y1' },
         ],
       } as any,
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'top' }, title: { display: true, text: `${a.symbol} — NAV bid ${a.navBid}` } },
+        plugins: { legend: { position: 'top' }, title: { display: true, text: this.translate.instant('analytics.dexSecondary.chart.navBidTitle', { symbol: a.symbol, navBid: a.navBid }) } },
         scales: {
           x:  { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
-          y:  { beginAtZero: true, position: 'left',  title: { display: true, text: 'Volume (units)' } },
-          y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Premium %' } },
+          y:  { beginAtZero: true, position: 'left',  title: { display: true, text: this.translate.instant('analytics.dexSecondary.chart.volumeAxis') } },
+          y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: this.translate.instant('analytics.dexSecondary.chart.premiumAxis') } },
         },
       },
     });

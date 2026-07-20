@@ -3,14 +3,14 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">
-          Change Payment Processor
+          {{ 'services.paymentProcessorModal.title' | translate }}
         </h3>
       </div>
       <form [formGroup]="paymentProcessorForm" (ngSubmit)="onSave()">
         <div class="p-6">
-          <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">Payment Processor</label>
+          <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">{{ 'services.paymentProcessorModal.label' | translate }}</label>
           <select id="paymentProcessor" formControlName="paymentProcessor" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-            <option value="">None</option>
+            <option value="">{{ 'common.none' | translate }}</option>
             @for (cs of paymentProcessors(); track cs.address) {
               <option [value]="cs.address">{{ cs.name || cs.address }}</option>
             }
@@ -18,10 +18,10 @@
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-            Update Payment Processor
+            {{ 'services.paymentProcessorModal.submit' | translate }}
           </button>
         </div>
       </form>

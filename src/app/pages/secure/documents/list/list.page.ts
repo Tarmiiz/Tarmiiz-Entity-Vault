@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
@@ -15,7 +15,22 @@ import { Document, DocumentShare, GlobalVariable } from '../../../../shared/mode
 import { ModalDocumentAddComponent } from '../modals/modal-document-add/modal-document-add.component';
 import { ModalDocumentAddService } from '../modals/modal-document-add/modal-document-add.service';
 
-type Tab = 'mine' | 'shared';
+// Single-list row: an own document OR an inbound share (the Vault has no detail
+// pages for foreign owners, so entity-level inbound shares live on this list;
+// shares to child templates surface on the service/asset/subscription tabs).
+interface DocRow {
+  kind: 'own' | 'shared';
+  id: number;
+  title: string;
+  fileType: string;
+  cid: string;
+  documentType: number | null;
+  date: number;
+  state: number;
+  owner: string;
+  doc: Document | null;
+  share: DocumentShare | null;
+}
 
 @Component({
   selector: 'app-documents-list',
@@ -33,11 +48,11 @@ export class ListPage implements OnInit {
   utils = inject(UtilsService);
   private authService = inject(AuthService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   get userInfo() { return this.authService.userInfo; }
 
   loading = false;
-  activeTab = signal<Tab>('mine');
   documents = signal<Document[]>([]);
   sharedWithMe = signal<DocumentShare[]>([]);
 
@@ -87,7 +102,7 @@ export class ListPage implements OnInit {
   }
 
   async list() {
-    this.loadingService.show('Loading documents...');
+    this.loadingService.show(this.translate.instant('documents.list.loadingDocuments'));
     const result = await this.apiService.documentsList(1, 100);
     if (result?.documents) {
       this.documents.set(result.documents);
@@ -113,38 +128,63 @@ export class ListPage implements OnInit {
     }
   }
 
-  setTab(tab: Tab) { this.activeTab.set(tab); }
-
-  filtered = computed(() => {
+  // ONE list: own documents + entity-level inbound shares, newest-first. Shared
+  // documents from parties with their own pages surface on those pages instead
+  // (service / asset / subscription Documents tabs); everything reaching the
+  // entity itself (e.g. regulator-shared docs) lands here.
+  rows = computed<DocRow[]>(() => {
     const term = this.search().toLowerCase();
     const t = this.filterType();
     const s = this.filterState();
-    return this.documents().filter(d =>
-      (!t || String(d.documentType) === t) &&
-      (!s || String(d.documentState) === s) &&
-      (!term ||
-        d.title?.toLowerCase().includes(term) ||
-        d.description?.toLowerCase().includes(term) ||
-        d.cid?.toLowerCase().includes(term) ||
-        String(d.id).includes(term))
-    );
+
+    const own: DocRow[] = this.documents().map(d => ({
+      kind: 'own' as const,
+      id: d.id,
+      title: d.title || '',
+      fileType: d.fileType || '',
+      cid: d.cid || '',
+      documentType: d.documentType,
+      date: d.createdAt,
+      state: d.documentState,
+      owner: '',
+      doc: d,
+      share: null,
+    }));
+    const shared: DocRow[] = this.sharedWithMe().map(sh => ({
+      kind: 'shared' as const,
+      id: sh.documentId,
+      title: sh.title || '',
+      fileType: '',
+      cid: sh.cid || '',
+      documentType: sh.documentType,
+      date: sh.sharedAt,
+      state: 0,
+      owner: sh.ownerAddress || '',
+      doc: null,
+      share: sh,
+    }));
+
+    return [...own, ...shared]
+      .filter(r =>
+        (!t || String(r.documentType ?? '') === t) &&
+        // The state filter only applies to own docs (shares carry no state).
+        (!s || (r.kind === 'own' && String(r.state) === s)) &&
+        (!term ||
+          r.title.toLowerCase().includes(term) ||
+          r.cid.toLowerCase().includes(term) ||
+          r.owner.toLowerCase().includes(term) ||
+          (r.kind === 'own' && (r.doc?.description || '').toLowerCase().includes(term)) ||
+          String(r.id).includes(term)))
+      .sort((a, b) => b.date - a.date);
   });
 
-  filteredShared = computed(() => {
-    const term = this.search().toLowerCase();
-    return this.sharedWithMe().filter(s =>
-      !term ||
-      s.title?.toLowerCase().includes(term) ||
-      s.cid?.toLowerCase().includes(term) ||
-      s.ownerAddress?.toLowerCase().includes(term) ||
-      String(s.documentId).includes(term)
-    );
-  });
+  totalCount = computed(() => this.documents().length + this.sharedWithMe().length);
 
   typeLabel(t: number): string {
     switch (t) {
-      case 1: return 'Public';
-      case 2: return 'Private';
+      case 1: return this.translate.instant('documents.type.public');
+      case 2: return this.translate.instant('documents.type.private');
+      case 3: return this.translate.instant('documents.type.internal');
       default: return String(t);
     }
   }
@@ -153,14 +193,15 @@ export class ListPage implements OnInit {
     switch (t) {
       case 1: return 'bg-blue-100 text-blue-800';
       case 2: return 'bg-yellow-100 text-yellow-800';
+      case 3: return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }
 
   stateLabel(s: number): string {
     switch (s) {
-      case 1: return 'Active';
-      case 2: return 'Deleted';
+      case 1: return this.translate.instant('documents.docState.active');
+      case 2: return this.translate.instant('documents.docState.deleted');
       default: return String(s);
     }
   }
@@ -179,20 +220,19 @@ export class ListPage implements OnInit {
     this.filterState.set('');
   }
 
-  view(doc: Document) {
-    this.router.navigate(['/authorized/documents/details/' + doc.id]);
-  }
-
-  viewShared(share: DocumentShare) {
-    // Open the read-only shared-document details (title / description / type / CID + View File),
-    // mirroring "My Documents" details so the recipient can read the description, not just the file.
-    this.router.navigate(['/authorized/documents/shared/' + share.ownerAddress + '/' + share.documentId]);
+  view(row: DocRow) {
+    if (row.kind === 'own' && row.doc) {
+      this.router.navigate(['/authorized/documents/details/' + row.doc.id]);
+    } else if (row.share) {
+      // Read-only shared-document details (title / type / CID + View File + signatures).
+      this.router.navigate(['/authorized/documents/shared/' + row.share.ownerAddress + '/' + row.share.documentId]);
+    }
   }
 
   async onAddClick() {
     const data = await this.addModal.show();
     if (!data) return;
-    this.loadingService.show('Uploading and registering document...');
+    this.loadingService.show(this.translate.instant('documents.list.uploadingDocument'));
     try {
       const result = await this.apiService.documentAddMultipart(
         data.file,
@@ -209,7 +249,7 @@ export class ListPage implements OnInit {
       if (!result || result.error) {
         // 401 already triggers a global session-clear + redirect, no duplicate alert.
         if (result?.status !== 401) {
-          this.alertService.show('Error', result?.error || 'Failed to add document.');
+          this.alertService.show(this.translate.instant('alerts.error'), result?.error || this.translate.instant('documents.list.addDocumentFailed'));
         }
       } else {
         await this.list();

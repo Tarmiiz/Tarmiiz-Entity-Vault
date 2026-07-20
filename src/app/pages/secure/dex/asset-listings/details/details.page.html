@@ -5,7 +5,7 @@
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
         <a routerLink="/authorized/dex/asset-listings/list"
-          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">Asset Listings</a>
+          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.listings.title' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -28,13 +28,13 @@
           [class.text-white]="activeTab() === 'info'"
           [class.border-b-2]="activeTab() === 'info'"
           [class.border-blue-600]="activeTab() === 'info'"
-          [class.bg-blue-600]="activeTab() === 'info'">Information</button>
+          [class.bg-blue-600]="activeTab() === 'info'">{{ 'dex.listings.details.tabs.info' | translate }}</button>
         <button (click)="setTab('venues')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'venues'"
           [class.border-b-2]="activeTab() === 'venues'"
           [class.border-blue-600]="activeTab() === 'venues'"
-          [class.bg-blue-600]="activeTab() === 'venues'">Venues</button>
+          [class.bg-blue-600]="activeTab() === 'venues'">{{ 'dex.listings.details.tabs.venues' | translate }}</button>
       </div>
     </div>
 
@@ -46,10 +46,10 @@
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
-                  <h2 class="text-1xl font-bold text-gray-800">{{ l.assetName || 'Unnamed Asset' }} <span class="text-sm font-normal text-gray-500">{{ l.assetSymbol ? '(' + l.assetSymbol + ')' : '' }}</span></h2>
+                  <h2 class="text-1xl font-bold text-gray-800">{{ l.assetName || ('dex.listings.details.unnamedAsset' | translate) }} <span class="text-sm font-normal text-gray-500">{{ l.assetSymbol ? '(' + l.assetSymbol + ')' : '' }}</span></h2>
                   <p class="text-xs text-gray-500 mt-0.5 font-mono break-all">{{ l.baseAsset }}</p>
                 </div>
-                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Approvals are regulator-side</span>
+                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">{{ 'dex.listings.details.approvalsRegulatorSide' | translate }}</span>
               </div>
               @if (upstreamBlockReason()) {
                 <div class="mb-3 px-3 py-2 rounded bg-red-50 border border-red-200 text-xs text-red-800">
@@ -59,65 +59,65 @@
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Listed By</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.listings.details.fields.listedBy' | translate }}</p>
                   <p class="text-base text-gray-700">{{ l.listedByName || '—' }}</p>
                   <p class="text-xs text-gray-500 font-mono break-all">{{ l.listedBy }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Asset Regulator</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.listings.details.fields.assetRegulator' | translate }}</p>
                   <p class="text-base text-gray-700">{{ l.regulatorName || '—' }}</p>
                   <p class="text-xs text-gray-500 font-mono break-all">{{ l.assetRegulator || '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Country</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                   <p class="text-base text-gray-700">{{ l.entityCountryName || '—' }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Currency</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.listings.table.currency' | translate }}</p>
                   <p class="text-base text-gray-700">{{ l.assetCurrencyName || (l.assetCurrencyCode ? l.assetCurrencyCode : '—') }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">Listed At</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'dex.listings.details.fields.listedAt' | translate }}</p>
                   <p class="text-base text-gray-700">{{ l.listedAt ? utils.formatDate(l.listedAt) : '—' }}</p>
                 </div>
               </div>
 
               <div class="mt-8 border-t pt-4">
-                <h3 class="text-base font-semibold text-gray-800 mb-3">Tiers</h3>
+                <h3 class="text-base font-semibold text-gray-800 mb-3">{{ 'dex.listings.table.tiers' | translate }}</h3>
                 <p class="text-xs text-gray-500 mb-3">
-                  Approval scopes for this asset's listing. Trading at a tier additionally requires the venue to be tier-approved and the issuer to enable the venue for the asset.
+                  {{ 'dex.listings.details.tiers.description' | translate }}
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">Tier 1 — Venue</p>
+                    <p class="text-sm font-semibold text-gray-700">{{ 'dex.listings.details.tiers.tier1' | translate }}</p>
                     <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                           [class]="l.venueApproved ? 'bg-green-100 text-green-800' : (l.venuePending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ l.venueApproved ? 'Approved' : (l.venuePending ? 'Pending regulator approval' : 'Not requested') }}
+                      {{ (l.venueApproved ? 'state.approved' : (l.venuePending ? 'dex.listings.details.tiers.pendingApproval' : 'dex.listings.details.tiers.notRequested')) | translate }}
                     </span>
                     <div class="mt-3">
                       <button (click)="setTab('venues')"
                         class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-                        Manage venues
+                        {{ 'dex.listings.details.tiers.manageVenues' | translate }}
                       </button>
                     </div>
                   </div>
                   <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">Tier 2 — Country</p>
+                    <p class="text-sm font-semibold text-gray-700">{{ 'dex.listings.details.tiers.tier2' | translate }}</p>
                     <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                           [class]="l.countryApproved ? 'bg-green-100 text-green-800' : (l.countryPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ l.countryApproved ? 'Approved' : (l.countryPending ? 'Pending regulator approval' : 'Not requested') }}
+                      {{ (l.countryApproved ? 'state.approved' : (l.countryPending ? 'dex.listings.details.tiers.pendingApproval' : 'dex.listings.details.tiers.notRequested')) | translate }}
                     </span>
                   </div>
                   <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">Tier 3 — Global</p>
+                    <p class="text-sm font-semibold text-gray-700">{{ 'dex.listings.details.tiers.tier3' | translate }}</p>
                     <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                           [class]="l.globalApproved ? 'bg-green-100 text-green-800' : (l.globalPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ l.globalApproved ? 'Approved' : (l.globalPending ? 'Pending regulator approval' : 'Not requested') }}
+                      {{ (l.globalApproved ? 'state.approved' : (l.globalPending ? 'dex.listings.details.tiers.pendingApproval' : 'dex.listings.details.tiers.notRequested')) | translate }}
                     </span>
                   </div>
                 </div>
                 <p class="text-xs text-gray-500 mt-3">
-                  Trading at scope <em>S</em> requires (1) the listing approved at tier S, (2) the venue approved at tier S, and (3) the issuer enabled the venue on this listing at a tier ≥ S. Use the Venues tab to manage that third gate.
+                  {{ 'dex.listings.details.tiers.tradingRequirements' | translate }}
                 </p>
               </div>
             </div>
@@ -130,7 +130,7 @@
             <!-- Add-venue picker: a venue is added at an initial tier; you can change it afterwards. -->
             @if (userInfo && userInfo.role !== 3) {
               <div class="flex flex-wrap items-center gap-2 mb-4">
-                <span class="text-xs text-gray-500 mr-2">Initial tier when adding a venue:</span>
+                <span class="text-xs text-gray-500 mr-2">{{ 'dex.listings.details.venues.initialTierLabel' | translate }}</span>
                 @for (t of [1, 2, 3]; track t) {
                   <button (click)="setAddInitialTier($any(t))"
                     class="text-xs px-3 py-1.5 rounded transition-colors"
@@ -143,7 +143,7 @@
                 <button (click)="openAdd()"
                   class="ml-auto text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                  Add venue
+                  {{ 'dex.listings.details.addVenue' | translate }}
                 </button>
               </div>
             }
@@ -153,19 +153,19 @@
                 <table class="w-full text-sm text-left text-gray-700">
                   <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
-                      <th class="px-6 py-2">#</th>
-                      <th class="px-6 py-2">Venue</th>
-                      <th class="px-6 py-2">Entity</th>
-                      <th class="px-6 py-2">Country</th>
-                      <th class="px-6 py-2">Address</th>
-                      <th class="px-6 py-2">Tier</th>
-                      <th class="px-6 py-2">Venue State</th>
-                      <th class="px-6 py-2 text-right">Actions</th>
+                      <th class="px-6 py-2">{{ 'dex.listings.table.id' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.venueCol' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.entityCol' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'common.country' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'common.address' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.venueStateCol' | translate }}</th>
+                      <th class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if (enabledVenues().length === 0) {
-                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="8">No venues enabled on this listing yet.</td></tr>
+                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="8">{{ 'dex.listings.details.venues.empty' | translate }}</td></tr>
                     } @else {
                       @for (v of enabledVenues(); track v.dexService; let i = $index; let isEven = $even) {
                         <tr class="border-b transition-colors"
@@ -182,18 +182,18 @@
                           </td>
                           <td class="px-6 py-2">
                             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.venueState)">
-                              {{ v.venueSuspended ? 'Suspended' : (v.venueState === 2 ? 'Active' : v.venueState === 3 ? 'Paused' : v.venueState === 4 ? 'Deregistered' : 'Registered') }}
+                              {{ (v.venueSuspended ? 'state.suspended' : (v.venueState === 2 ? 'state.active' : v.venueState === 3 ? 'state.paused' : v.venueState === 4 ? 'dex.listings.details.venues.deregistered' : 'state.registered')) | translate }}
                             </span>
                           </td>
                           <td class="px-6 py-2 text-right whitespace-nowrap">
                             @if (userInfo && userInfo.role !== 3) {
                               <button (click)="openTierChange(v)"
                                 class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">
-                                Change tier
+                                {{ 'dex.listings.details.changeTier' | translate }}
                               </button>
                               <button (click)="removeVenue(v)"
                                 class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
-                                Remove
+                                {{ 'common.remove' | translate }}
                               </button>
                             }
                           </td>
@@ -204,7 +204,7 @@
                 </table>
               </div>
               <div class="flex items-center px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">Showing {{ enabledVenues().length }} of Total {{ enabledVenues().length }} Records</p>
+                <p class="text-xs font-medium text-gray-800">{{ 'dex.listings.details.venues.showing' | translate: { shown: enabledVenues().length, total: enabledVenues().length } }}</p>
               </div>
             </div>
 

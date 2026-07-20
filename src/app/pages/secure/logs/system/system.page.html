@@ -6,15 +6,15 @@
   @if (!verifyState().loading) {
     @if (!verifyState().ok) {
       <div class="mb-3 px-3 py-2 rounded-md bg-red-100 border border-red-300 text-red-800 text-xs font-medium">
-        Tamper detected &mdash; hash chain break at row #{{ verifyState().brokenAt }}
+        {{ 'logs.verify.tamperDetected' | translate: { row: verifyState().brokenAt } }}
       </div>
     } @else if (verifyState().anchored) {
       <div class="mb-3 px-3 py-2 rounded-md bg-green-100 border border-green-300 text-green-800 text-xs font-medium">
-        Verified &#10003; &mdash; anchored at block {{ verifyState().untilBlock }}
+        {{ 'logs.verify.verified' | translate: { block: verifyState().untilBlock } }}
       </div>
     } @else {
       <div class="mb-3 px-3 py-2 rounded-md bg-yellow-100 border border-yellow-300 text-yellow-800 text-xs font-medium">
-        Chain valid &mdash; pending on-chain anchor
+        {{ 'logs.verify.pending' | translate }}
       </div>
     }
   }
@@ -23,54 +23,54 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">From</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'logs.filters.from' | translate }}</label>
         <input type="date" [ngModel]="filterFrom()" (ngModelChange)="filterFrom.set($event); applyFilters()"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">To</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'logs.filters.to' | translate }}</label>
         <input type="date" [ngModel]="filterTo()" (ngModelChange)="filterTo.set($event); applyFilters()"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Category</label>
+        <label class="text-xs font-medium text-gray-500">{{ 'logs.table.category' | translate }}</label>
         <select [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event); applyFilters()"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
-          <option value="">All</option>
+          <option value="">{{ 'common.all' | translate }}</option>
           @for (c of categories; track c) {
             <option [value]="c">{{ c }}</option>
           }
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Action</label>
-        <input type="text" [ngModel]="filterAction()" (ngModelChange)="filterAction.set($event); applyFilters()" placeholder="e.g. create"
+        <label class="text-xs font-medium text-gray-500">{{ 'logs.table.action' | translate }}</label>
+        <input type="text" [ngModel]="filterAction()" (ngModelChange)="filterAction.set($event); applyFilters()" [placeholder]="'logs.filters.actionPlaceholder' | translate"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-36" />
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Actor</label>
-        <input type="text" [ngModel]="filterActor()" (ngModelChange)="filterActor.set($event); applyFilters()" placeholder="0x…"
+        <label class="text-xs font-medium text-gray-500">{{ 'logs.table.actor' | translate }}</label>
+        <input type="text" [ngModel]="filterActor()" (ngModelChange)="filterActor.set($event); applyFilters()" [placeholder]="'logs.filters.addressPlaceholder' | translate"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44 font-mono" />
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">Contract</label>
-        <input type="text" [ngModel]="filterContract()" (ngModelChange)="filterContract.set($event); applyFilters()" placeholder="0x…"
+        <label class="text-xs font-medium text-gray-500">{{ 'logs.table.contract' | translate }}</label>
+        <input type="text" [ngModel]="filterContract()" (ngModelChange)="filterContract.set($event); applyFilters()" [placeholder]="'logs.filters.addressPlaceholder' | translate"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44 font-mono" />
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">RefNo</label>
-        <input type="text" [ngModel]="filterRefNo()" (ngModelChange)="filterRefNo.set($event); applyFilters()" placeholder="0x…"
+        <label class="text-xs font-medium text-gray-500">{{ 'logs.table.refNo' | translate }}</label>
+        <input type="text" [ngModel]="filterRefNo()" (ngModelChange)="filterRefNo.set($event); applyFilters()" [placeholder]="'logs.filters.addressPlaceholder' | translate"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44 font-mono" />
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">Clear</button>
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.clear' | translate }}</button>
       </div>
       <div class="flex gap-2 ml-auto">
         <button (click)="exportExcel()"
-          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">Export Excel</button>
+          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">{{ 'common.exportExcel' | translate }}</button>
         <button (click)="exportPdf()"
-          class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">Export PDF</button>
+          class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors">{{ 'common.exportPdf' | translate }}</button>
       </div>
     </div>
   </div>
@@ -81,20 +81,20 @@
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
             <th scope="col" class="px-4 py-2">#</th>
-            <th scope="col" class="px-4 py-2">Time</th>
-            <th scope="col" class="px-4 py-2">Category</th>
-            <th scope="col" class="px-4 py-2">Action</th>
-            <th scope="col" class="px-4 py-2">Function</th>
-            <th scope="col" class="px-4 py-2">Actor</th>
-            <th scope="col" class="px-4 py-2">User</th>
-            <th scope="col" class="px-4 py-2">Client IP</th>
-            <th scope="col" class="px-4 py-2">Contract</th>
-            <th scope="col" class="px-4 py-2">RefNo</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.time' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.category' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.action' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.function' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.actor' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.user' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.clientIp' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.contract' | translate }}</th>
+            <th scope="col" class="px-4 py-2">{{ 'logs.table.refNo' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (rows().length === 0) {
-            <tr class="bg-white border-b"><td colspan="10" class="px-4 py-8 text-center text-gray-400">no data</td></tr>
+            <tr class="bg-white border-b"><td colspan="10" class="px-4 py-8 text-center text-gray-400">{{ 'common.noData' | translate }}</td></tr>
           }
           @for (r of rows(); track r.id; let i = $index; let isEven = $even) {
             <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
@@ -125,15 +125,15 @@
     </div>
 
     <div class="flex items-center justify-between px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">Showing {{ rows().length }} of Total {{ total() }} Records</p>
+      <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: rows().length, total: total() } }}</p>
       @if (totalPages() > 1) {
         <div class="flex items-center gap-3 text-xs text-gray-600">
-          <span>Page {{ page() }} of {{ totalPages() }}</span>
+          <span>{{ 'common.pageOf' | translate: { page: page(), pages: totalPages() } }}</span>
           <div class="flex gap-2">
             <button (click)="prevPage()" [disabled]="page() === 1"
-              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{{ 'common.prev' | translate }}</button>
             <button (click)="nextPage()" [disabled]="page() >= totalPages()"
-              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
+              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{{ 'common.next' | translate }}</button>
           </div>
         </div>
       }

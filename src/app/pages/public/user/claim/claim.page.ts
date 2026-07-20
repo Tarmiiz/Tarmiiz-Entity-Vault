@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
@@ -27,7 +28,7 @@ import { SessionService } from '../../../../shared/services/session.service';
   templateUrl: './claim.page.html',
   styleUrls: ['./claim.page.scss'],
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule],
+  imports: [ReactiveFormsModule, FormsModule, TranslatePipe],
 })
 export class ClaimPage implements OnInit {
   private alertService   = inject(AlertService);
@@ -38,6 +39,7 @@ export class ClaimPage implements OnInit {
   private apiService     = inject(ApiService);
   private ethersService  = inject(EthersService);
   private sessionService = inject(SessionService);
+  private translate      = inject(TranslateService);
 
   // signals so the template can react without a separate change-detection cycle
   step           = signal<1 | 2 | 'done'>(1);
@@ -72,20 +74,20 @@ export class ClaimPage implements OnInit {
 
   async submitActivation() {
     if (!this.formActivation.valid) {
-      await this.alertService.show('Invalid Form', 'Please enter your email and the 6-digit activation code.');
+      await this.alertService.show(this.translate.instant('claim.errors.invalidFormTitle'), this.translate.instant('claim.errors.activationFormMessage'));
       return;
     }
     const { email, otp } = this.formActivation.value;
     this.isSubmitting.set(true);
-    this.loadingService.show('Verifying activation code...');
+    this.loadingService.show(this.translate.instant('claim.loading.verifyingActivation'));
     let alertTitle = '';
     let alertMessage = '';
     try {
       const config = await this.apiService.vaultGetConfig();
       if (!config) throw new Error('Failed to fetch entity configuration');
       if (!config.bootstrapSalt || /^0x0+$/.test(config.bootstrapSalt)) {
-        alertTitle = 'Already Claimed';
-        alertMessage = 'This entity has already been claimed. Please log in normally.';
+        alertTitle = this.translate.instant('claim.errors.alreadyClaimedTitle');
+        alertMessage = this.translate.instant('claim.errors.alreadyClaimedMessage');
         return;
       }
       this.ethersService.configure(config.rpcNode, config.entityContract, config.globalVariablesProxyContract, config.globalSalt);
@@ -96,11 +98,11 @@ export class ClaimPage implements OnInit {
       const result: any = await this.apiService.entityLogin(email, otp, SESSION_DURATION, config.bootstrapSalt, true);
       if (!result.success) {
         const err = String(result.error ?? '');
-        alertTitle = 'Activation Failed';
+        alertTitle = this.translate.instant('claim.errors.activationFailedTitle');
         if (/commitment mismatch|invalid zk proof/i.test(err)) {
-          alertMessage = 'The activation code is incorrect or expired. Please ask your regulator to regenerate the code.';
+          alertMessage = this.translate.instant('claim.errors.activationCodeInvalid');
         } else {
-          alertMessage = err || 'Could not verify the activation code.';
+          alertMessage = err || this.translate.instant('claim.errors.activationVerifyFailed');
         }
         return;
       }
@@ -114,8 +116,8 @@ export class ClaimPage implements OnInit {
       this.bootstrapSalt.set(config.bootstrapSalt);
       this.step.set(2);
     } catch (err: any) {
-      alertTitle = 'Activation Error';
-      alertMessage = err?.message || 'An unexpected error occurred.';
+      alertTitle = this.translate.instant('claim.errors.activationErrorTitle');
+      alertMessage = err?.message || this.translate.instant('claim.errors.unexpectedError');
     } finally {
       this.loadingService.hide();
       this.isSubmitting.set(false);
@@ -125,16 +127,16 @@ export class ClaimPage implements OnInit {
 
   async submitPassword() {
     if (!this.formPassword.valid) {
-      await this.alertService.show('Invalid Form', 'Name, username are required and password must be at least 8 characters.');
+      await this.alertService.show(this.translate.instant('claim.errors.invalidFormTitle'), this.translate.instant('claim.errors.passwordFormMessage'));
       return;
     }
     const { name, username, password, confirm } = this.formPassword.value;
     if (password !== confirm) {
-      await this.alertService.show('Password Mismatch', 'Password and confirmation do not match.');
+      await this.alertService.show(this.translate.instant('claim.errors.passwordMismatchTitle'), this.translate.instant('claim.errors.passwordMismatchMessage'));
       return;
     }
     this.isSubmitting.set(true);
-    this.loadingService.show('Setting your new password...');
+    this.loadingService.show(this.translate.instant('claim.loading.settingPassword'));
     let alertTitle = '';
     let alertMessage = '';
     try {
@@ -193,8 +195,8 @@ export class ClaimPage implements OnInit {
 
       this.step.set('done');
     } catch (err: any) {
-      alertTitle = 'Claim Failed';
-      alertMessage = err?.message || 'Could not complete the claim.';
+      alertTitle = this.translate.instant('claim.errors.claimFailedTitle');
+      alertMessage = err?.message || this.translate.instant('claim.errors.claimFailedMessage');
     } finally {
       this.loadingService.hide();
       this.isSubmitting.set(false);

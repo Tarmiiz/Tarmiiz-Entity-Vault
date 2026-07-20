@@ -2,19 +2,19 @@
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add New User</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'users.addModal.addTitle' | translate }}</h3>
       </div>
       <form [formGroup]="addForm" (ngSubmit)="onSave()">
         <div class="p-6 space-y-4">
           <div>
-            <input type="text" placeholder="Name" id="name" formControlName="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+            <input type="text" [placeholder]="'users.addModal.name' | translate" id="name" formControlName="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
           <div>
-            <input type="email" placeholder="Email" id="email" formControlName="email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="email">
+            <input type="email" [placeholder]="'users.addModal.email' | translate" id="email" formControlName="email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="email">
           </div>
           <div>
             <select id="role" formControlName="role" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-              <option value="" disabled selected hidden style="color:gray">Select Role</option>
+              <option value="" disabled selected hidden style="color:gray">{{ 'users.addModal.selectRole' | translate }}</option>
               @for(role of roles; track role.variableId) {
                 <option [value]="role.variableId">{{ role.name }}</option>
               }
@@ -22,30 +22,56 @@
           </div>
           @if (isExecutive()) {
             <div>
-              <label for="approvalRole" class="block text-xs font-medium text-gray-600 mb-1">Approval role (maker / checker)</label>
+              <label for="approvalRole" class="block text-xs font-medium text-gray-600 mb-1">{{ 'users.addModal.approvalRoleLabel' | translate }}</label>
               <select id="approvalRole" formControlName="approvalRole" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="none">None</option>
-                <option value="maker">Maker</option>
-                <option value="checker">Checker</option>
+                <option value="none">{{ 'common.none' | translate }}</option>
+                <option value="maker">{{ 'users.approvalRole.maker' | translate }}</option>
+                <option value="checker">{{ 'users.approvalRole.checker' | translate }}</option>
               </select>
             </div>
           }
+          @if (roleGroups().length > 0) {
+            <div>
+              <label for="groupId" class="block text-xs font-medium text-gray-600 mb-1">{{ 'users.addModal.groupLabel' | translate }}</label>
+              <select id="groupId" formControlName="groupId" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="">{{ 'common.none' | translate }}</option>
+                @for (group of roleGroups(); track group.groupId) {
+                  <option [value]="group.groupId">{{ group.name }}</option>
+                }
+              </select>
+              <p class="text-xs text-gray-500 mt-1">{{ 'users.addModal.groupHint' | translate }}</p>
+            </div>
+          }
+          @if (isSecurity()) {
+            <div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" formControlName="messagesEnabled" class="h-4 w-4 accent-indigo-600">
+                <span class="text-xs font-medium text-gray-600">{{ 'users.addModal.messagesAccessLabel' | translate }}</span>
+              </label>
+              <p class="text-xs text-gray-500 mt-1">{{ 'users.addModal.messagesAccessHint' | translate }}</p>
+            </div>
+          }
           <div>
-            <input type="text" placeholder="Username" id="username" formControlName="username" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="username">
+            <input type="text" [placeholder]="'users.addModal.username' | translate" id="username" formControlName="username" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="username">
           </div>
           <div>
-            <input type="password" placeholder="Password" id="password" formControlName="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="new-password">
+            <input type="password" [placeholder]="'users.addModal.password' | translate" id="password" formControlName="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="new-password">
           </div>
           <div>
-            <input type="password" placeholder="Confirm Password" id="password2" formControlName="password2" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="new-password">
+            <input type="password" [placeholder]="'users.addModal.confirmPassword' | translate" id="password2" formControlName="password2" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="new-password">
+          </div>
+          <div>
+            <label for="handle" class="block text-xs font-medium text-gray-600 mb-1">{{ 'users.addModal.handleLabel' | translate }}</label>
+            <input type="text" [placeholder]="'users.addModal.handlePlaceholder' | translate" id="handle" formControlName="handle" (input)="onHandleInput()" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" autocomplete="off">
+            <p class="text-xs text-gray-500 mt-1">{{ 'users.addModal.handleHint' | translate }}</p>
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Add User
+            {{ 'users.addModal.addSubmit' | translate }}
           </button>
         </div>
       </form>

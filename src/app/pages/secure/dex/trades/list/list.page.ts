@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ethers } from 'ethers';
 import jsPDF from 'jspdf';
@@ -27,6 +27,7 @@ import { DexTrade } from '../../../../../shared/models/data.model';
 export class ListPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private loadingService = inject(LoadingService);
+  private translate = inject(TranslateService);
   private router = inject(Router);
   private socket = inject(SocketService);
   utils = inject(UtilsService);
@@ -54,7 +55,7 @@ export class ListPage implements OnInit, OnDestroy {
 
   async refresh(silent = false) {
     if (silent) this.refreshing.set(true);
-    if (!silent) this.loadingService.show('Loading trades...');
+    if (!silent) this.loadingService.show(this.translate.instant('dex.trades.loadingList'));
     try {
       const r = await this.apiService.vaultDexTradesList({ start: 1, offset: 200 });
       if (r?.trades) this.trades.set(r.trades);

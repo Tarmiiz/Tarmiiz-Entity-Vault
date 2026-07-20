@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal, computed, ElementRef, ViewChild } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -16,7 +16,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
-import { Asset, AssetHolder, AssetPrice, AssetTransaction, User } from '../../../../shared/models/data.model';
+import { Asset, AssetHolder, AssetPrice, AssetTransaction, User, ContactInfo } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalAssetStateService } from '../modals/modal-asset-state/modal-asset-state.service';
@@ -43,7 +43,20 @@ import { ModalDistributionDeclareService } from '../modals/modal-distribution-de
 import { ModalDistributionDeclareComponent } from '../modals/modal-distribution-declare/modal-distribution-declare.component';
 import { MetadataEditModalService } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.service';
 import { MetadataEditModalComponent } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.component';
+import { ModalAssetImageAddService } from '../modals/modal-asset-image-add/modal-asset-image-add.service';
+import { ModalAssetImageAddComponent } from '../modals/modal-asset-image-add/modal-asset-image-add.component';
+import { ModalAssetPublicViewService } from '../modals/modal-asset-public-view/modal-asset-public-view.service';
+import { ModalAssetPublicViewComponent } from '../modals/modal-asset-public-view/modal-asset-public-view.component';
 import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models/data.model';
+
+// Entry inside the asset metadata's server-owned `media` key (public docs/images index).
+export interface AssetMediaEntry { documentId: number; cid: string; title: string; fileType: string; }
+export interface AssetMedia {
+  avatar?: AssetMediaEntry;
+  banner?: AssetMediaEntry;
+  images?: AssetMediaEntry[];
+  documents?: AssetMediaEntry[];
+}
 
 
 
@@ -67,7 +80,9 @@ import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models
     ModalAssetSupplyComponent,
     ModalAssetFeeConfigComponent,
     ModalDistributionDeclareComponent,
-    MetadataEditModalComponent, TranslatePipe,
+    MetadataEditModalComponent,
+    ModalAssetImageAddComponent,
+    ModalAssetPublicViewComponent, TranslatePipe,
   ]
 })
 export class DetailsPage implements OnInit {
@@ -84,6 +99,8 @@ export class DetailsPage implements OnInit {
   private supplyModal = inject(ModalAssetSupplyService);
   private feeConfigModal = inject(ModalAssetFeeConfigService);
   private metadataEditModal = inject(MetadataEditModalService);
+  private imageAddModal = inject(ModalAssetImageAddService);
+  private publicViewModal = inject(ModalAssetPublicViewService);
   distributionDeclareModal = inject(ModalDistributionDeclareService);
   trxInfoService = inject(ModalTransactionInfoService);
   utils = inject(UtilsService);
@@ -91,10 +108,12 @@ export class DetailsPage implements OnInit {
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: Subscription | null = null;
+  private _langSub: Subscription | null = null;
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -136,21 +155,21 @@ export class DetailsPage implements OnInit {
   readonly pricePageSize = 10;
 
   readonly intervalOptions: { value: string; label: string; seconds: number }[] = [
-    { value: '1m',  label: '1 min',    seconds: 60 },
-    { value: '5m',  label: '5 min',    seconds: 300 },
-    { value: '15m', label: '15 min',   seconds: 900 },
-    { value: '30m', label: '30 min',   seconds: 1800 },
-    { value: '1h',  label: '1 hour',   seconds: 3600 },
-    { value: '3h',  label: '3 hours',  seconds: 10800 },
-    { value: '6h',  label: '6 hours',  seconds: 21600 },
-    { value: '12h', label: '12 hours', seconds: 43200 },
-    { value: '1d',  label: '1 day',    seconds: 86400 },
-    { value: '3d',  label: '3 days',   seconds: 259200 },
-    { value: '7d',  label: '7 days',   seconds: 604800 },
-    { value: '15d', label: '15 days',  seconds: 1296000 },
-    { value: '30d', label: '30 days',  seconds: 2592000 },
-    { value: '60d', label: '60 days',  seconds: 5184000 },
-    { value: '90d', label: '90 days',  seconds: 7776000 },
+    { value: '1m',  label: this.translate.instant('assets.details.price.intervals.oneMin'),    seconds: 60 },
+    { value: '5m',  label: this.translate.instant('assets.details.price.intervals.fiveMin'),    seconds: 300 },
+    { value: '15m', label: this.translate.instant('assets.details.price.intervals.fifteenMin'), seconds: 900 },
+    { value: '30m', label: this.translate.instant('assets.details.price.intervals.thirtyMin'),  seconds: 1800 },
+    { value: '1h',  label: this.translate.instant('assets.details.price.intervals.oneHour'),    seconds: 3600 },
+    { value: '3h',  label: this.translate.instant('assets.details.price.intervals.threeHours'), seconds: 10800 },
+    { value: '6h',  label: this.translate.instant('assets.details.price.intervals.sixHours'),   seconds: 21600 },
+    { value: '12h', label: this.translate.instant('assets.details.price.intervals.twelveHours'),seconds: 43200 },
+    { value: '1d',  label: this.translate.instant('assets.details.price.intervals.oneDay'),     seconds: 86400 },
+    { value: '3d',  label: this.translate.instant('assets.details.price.intervals.threeDays'),  seconds: 259200 },
+    { value: '7d',  label: this.translate.instant('assets.details.price.intervals.sevenDays'),  seconds: 604800 },
+    { value: '15d', label: this.translate.instant('assets.details.price.intervals.fifteenDays'),seconds: 1296000 },
+    { value: '30d', label: this.translate.instant('assets.details.price.intervals.thirtyDays'), seconds: 2592000 },
+    { value: '60d', label: this.translate.instant('assets.details.price.intervals.sixtyDays'),  seconds: 5184000 },
+    { value: '90d', label: this.translate.instant('assets.details.price.intervals.ninetyDays'), seconds: 7776000 },
   ];
   priceInterval = signal<string>('5m');
   activeIntervalLabel = computed(() =>
@@ -384,21 +403,46 @@ export class DetailsPage implements OnInit {
     if (!t || t.length === 0) return null;
     return [...t].sort((a, b) => b.time - a.time)[0];
   });
-  parsedMetadata = computed<{ description: string; entries: [string, string][]; raw: string; valid: boolean }>(() => {
+  parsedMetadata = computed<{ description: string; contact: ContactInfo; entries: [string, string][]; media: AssetMedia | null; raw: string; valid: boolean }>(() => {
     const raw = this.asset()?.metadata ?? '';
-    if (!raw) return { description: '', entries: [], raw: '', valid: true };
+    const emptyContact: ContactInfo = { email: '', phone: '', website: '', address: '' };
+    if (!raw) return { description: '', contact: emptyContact, entries: [], media: null, raw: '', valid: true };
     try {
       const obj = JSON.parse(raw);
       if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
         const description = typeof obj.description === 'string' ? obj.description : '';
+        // `contact` (nested public contact info) is rendered in its own section, excluded from
+        // the free-form KV table. Legacy flat contact keys fall back into it and are also excluded.
+        const c = (obj.contact && typeof obj.contact === 'object' && !Array.isArray(obj.contact)) ? obj.contact : {};
+        const contact: ContactInfo = {
+          email:   c.email   ?? obj.email   ?? '',
+          phone:   c.phone   ?? obj.telephone ?? obj.mobile ?? '',
+          website: c.website ?? obj.website ?? '',
+          address: c.address ?? obj.address ?? '',
+        };
+        // `media` is the server-owned public docs/images index — rendered by the Images
+        // section, excluded from the free-form key/value table (like `description`).
+        const media = (obj.media && typeof obj.media === 'object' && !Array.isArray(obj.media)) ? obj.media as AssetMedia : null;
+        const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address']);
         const entries = Object.entries(obj)
-          .filter(([k]) => k !== 'description')
+          .filter(([k]) => !RESERVED.has(k))
           .map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)] as [string, string])
           .sort((a, b) => a[0].localeCompare(b[0]));
-        return { description, entries, raw, valid: true };
+        return { description, contact, entries, media, raw, valid: true };
       }
     } catch (_) { /* fall through */ }
-    return { description: '', entries: [], raw, valid: false };
+    return { description: '', contact: emptyContact, entries: [], media: null, raw, valid: false };
+  });
+
+  // All public media images (avatar + banner + gallery), for the Images section.
+  mediaImages = computed<{ entry: AssetMediaEntry; role: 'avatar' | 'banner' | 'gallery' }[]>(() => {
+    const media = this.parsedMetadata().media;
+    if (!media) return [];
+    const rows: { entry: AssetMediaEntry; role: 'avatar' | 'banner' | 'gallery' }[] = [];
+    if (media.avatar) rows.push({ entry: media.avatar, role: 'avatar' });
+    if (media.banner) rows.push({ entry: media.banner, role: 'banner' });
+    for (const img of media.images ?? []) rows.push({ entry: img, role: 'gallery' });
+    return rows;
   });
 
   marketValue = computed(() => {
@@ -422,11 +466,18 @@ export class DetailsPage implements OnInit {
     this.activeTab.set('overview');
     await this.reload();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload(true));
+    // The price chart is built from Chart.js config text (dataset labels) resolved once at
+    // construction time via translate.instant — redraw it on language change since renderChart()
+    // already tears down + recreates the chart on every data refresh (nearly-free hook).
+    this._langSub = this.translate.onLangChange.subscribe(() => this.renderChart());
   }
 
   ionViewWillLeave() {
     this._socketSub?.unsubscribe();
     this._socketSub = null;
+    this._langSub?.unsubscribe();
+    this._langSub = null;
+    this.revokeMediaImageUrls();
   }
 
   private async reload(silent = false) {
@@ -447,6 +498,7 @@ export class DetailsPage implements OnInit {
   setTab(tab: 'overview' | 'info' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
+    if (tab === 'metadata') this.loadMediaImages();
     if (tab === 'services') this.getAssetDetails();
     if (tab === 'price') this.getPriceHistory(1, 500);
     if (tab === 'holders') this.getHolders(1, 500);
@@ -462,13 +514,13 @@ export class DetailsPage implements OnInit {
     let tsSec = 0;
     if (dateMode) {
       const ds = this.holdersAtDateInput();
-      if (!ds) { this.alertService.show('Invalid date', 'Pick a date.'); return; }
+      if (!ds) { this.alertService.show(this.translate.instant('assets.details.holdersAt.invalidDateTitle'), this.translate.instant('assets.details.holdersAt.pickDate')); return; }
       // Interpret the picked day as END of that local day → holders "as of" that date.
       tsSec = Math.floor(new Date(ds + 'T23:59:59').getTime() / 1000);
-      if (!tsSec || tsSec <= 0) { this.alertService.show('Invalid date', 'Pick a valid date.'); return; }
+      if (!tsSec || tsSec <= 0) { this.alertService.show(this.translate.instant('assets.details.holdersAt.invalidDateTitle'), this.translate.instant('assets.details.holdersAt.pickValidDate')); return; }
     } else {
       blk = Math.floor(Number(this.holdersAtBlockInput()));
-      if (!blk || blk <= 0) { this.alertService.show('Invalid block', 'Enter a positive block number.'); return; }
+      if (!blk || blk <= 0) { this.alertService.show(this.translate.instant('assets.details.holdersAt.invalidBlockTitle'), this.translate.instant('assets.details.holdersAt.enterPositiveBlock')); return; }
     }
     this.holdersAtLoading.set(true);
     try {
@@ -498,21 +550,23 @@ export class DetailsPage implements OnInit {
 
   distStateName(state: number): string {
     switch (Number(state)) {
-      case 1: return 'Declared';
-      case 2: return 'Executing';
-      case 3: return 'Completed';
-      case 4: return 'Partially Completed';
-      default: return 'Unknown';
+      case 1: return this.translate.instant('assets.details.distributions.state.declared');
+      case 2: return this.translate.instant('assets.details.distributions.state.executing');
+      case 3: return this.translate.instant('assets.details.distributions.state.completed');
+      case 4: return this.translate.instant('assets.details.distributions.state.partiallyCompleted');
+      default: return this.translate.instant('state.unknown');
     }
   }
   distTypeName(t: number): string {
-    return Number(t) === 1 ? 'Credit Dividend' : Number(t) === 2 ? 'Stock Split' : 'Unknown';
+    return Number(t) === 1 ? this.translate.instant('assets.details.distributions.type.creditDividend')
+      : Number(t) === 2 ? this.translate.instant('assets.details.distributions.type.stockSplit')
+      : this.translate.instant('state.unknown');
   }
 
   async openDeclareDistribution() {
     const data = await this.distributionDeclareModal.show(this.assetAddress);
     if (!data) return;
-    this.loadingService.show('Declaring distribution…');
+    this.loadingService.show(this.translate.instant('assets.details.distributions.declaringLoading'));
     try {
       const r = await this.apiService.distributionDeclare(this.assetAddress, {
         distType:      data.distType,
@@ -521,49 +575,49 @@ export class DetailsPage implements OnInit {
         sweepResidual: data.sweepResidual,
       });
       if (!r || r.error) {
-        this.alertService.show('Declare failed', r?.error || 'Could not declare distribution.');
+        this.alertService.show(this.translate.instant('assets.details.distributions.declareFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.declareFailedDefault'));
       } else {
-        this.alertService.show('Declared', `Distribution #${r.distribution?.distributionId} created.`);
+        this.alertService.show(this.translate.instant('assets.details.distributions.declaredAlertTitle'), this.translate.instant('assets.details.distributions.declaredMessage', { id: r.distribution?.distributionId }));
         await this.loadDistributions();
       }
     } catch (e: any) {
-      this.alertService.show('Error', e?.message || String(e));
+      this.alertService.show(this.translate.instant('alerts.error'), e?.message || String(e));
     } finally {
       this.loadingService.hide();
     }
   }
 
   async executeDistribution(distributionId: number) {
-    if (!(await this.alertService.show('Execute Distribution', `Execute all Pending legs for distribution #${distributionId}? This walks the holder set in chain-paginated chunks.`, 'Execute'))) return;
-    this.loadingService.show(`Executing #${distributionId}…`);
+    if (!(await this.alertService.show(this.translate.instant('assets.details.distributions.executeConfirmTitle'), this.translate.instant('assets.details.distributions.executeConfirmMessage', { id: distributionId }), this.translate.instant('assets.details.distributions.execute')))) return;
+    this.loadingService.show(this.translate.instant('assets.details.distributions.executingLoading', { id: distributionId }));
     try {
       const r = await this.apiService.distributionExecute(this.assetAddress, distributionId);
       if (!r || r.error) {
-        this.alertService.show('Execute failed', r?.error || 'Could not execute distribution.');
+        this.alertService.show(this.translate.instant('assets.details.distributions.executeFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.executeFailedDefault'));
       } else {
-        this.alertService.show('Executed', `Sent ${r.result?.sent ?? 0} / Failed ${r.result?.failed ?? 0}.`);
+        this.alertService.show(this.translate.instant('assets.details.distributions.executedTitle'), this.translate.instant('assets.details.distributions.executedMessage', { sent: r.result?.sent ?? 0, failed: r.result?.failed ?? 0 }));
         await this.loadDistributions();
       }
     } catch (e: any) {
-      this.alertService.show('Error', e?.message || String(e));
+      this.alertService.show(this.translate.instant('alerts.error'), e?.message || String(e));
     } finally {
       this.loadingService.hide();
     }
   }
 
   async finalizeDistribution(distributionId: number) {
-    if (!(await this.alertService.show('Finalize Distribution', `Finalize distribution #${distributionId}? Remaining Pending legs flip to Skipped; residual (if any, Credit-only) is refunded when sweep is enabled.`, 'Finalize'))) return;
-    this.loadingService.show(`Finalizing #${distributionId}…`);
+    if (!(await this.alertService.show(this.translate.instant('assets.details.distributions.finalizeConfirmTitle'), this.translate.instant('assets.details.distributions.finalizeConfirmMessage', { id: distributionId }), this.translate.instant('assets.details.distributions.finalize')))) return;
+    this.loadingService.show(this.translate.instant('assets.details.distributions.finalizingLoading', { id: distributionId }));
     try {
       const r = await this.apiService.distributionFinalize(this.assetAddress, distributionId);
       if (!r || r.error) {
-        this.alertService.show('Finalize failed', r?.error || 'Could not finalize distribution.');
+        this.alertService.show(this.translate.instant('assets.details.distributions.finalizeFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.finalizeFailedDefault'));
       } else {
-        this.alertService.show('Finalized', `State: ${this.distStateName(r.result?.state)}.`);
+        this.alertService.show(this.translate.instant('assets.details.distributions.finalizedTitle'), this.translate.instant('assets.details.distributions.finalizedMessage', { state: this.distStateName(r.result?.state) }));
         await this.loadDistributions();
       }
     } catch (e: any) {
-      this.alertService.show('Error', e?.message || String(e));
+      this.alertService.show(this.translate.instant('alerts.error'), e?.message || String(e));
     } finally {
       this.loadingService.hide();
     }
@@ -595,10 +649,10 @@ export class DetailsPage implements OnInit {
   async openDexListingCreate() {
     const result = await this.listingCreateModal.show({ presetAsset: this.assetAddress });
     if (!result) return;
-    this.loadingService.show('Listing on DEX...');
+    this.loadingService.show(this.translate.instant('assets.details.dex.listingOnDex'));
     try {
       const r = await this.apiService.vaultDexAssetListingCreate(result.baseAsset, result.venue, result.country, result.global);
-      if ((r as any)?.error) { this.alertService.show('Error', (r as any).error); return; }
+      if ((r as any)?.error) { this.alertService.show(this.translate.instant('alerts.error'), (r as any).error); return; }
       await this.loadDexListing();
     } finally { this.loadingService.hide(); }
   }
@@ -606,7 +660,10 @@ export class DetailsPage implements OnInit {
   goDexListing() { this.router.navigate(['/authorized/dex/asset-listings/details/' + this.assetAddress]); }
 
   dexTierLabel(t: number): string {
-    return t === 1 ? 'Tier 1 — Venue' : t === 2 ? 'Tier 2 — Country' : t === 3 ? 'Tier 3 — Global' : '—';
+    return t === 1 ? this.translate.instant('assets.details.dex.tier1')
+      : t === 2 ? this.translate.instant('assets.details.dex.tier2')
+      : t === 3 ? this.translate.instant('assets.details.dex.tier3')
+      : this.translate.instant('common.notSet');
   }
   dexTierBadgeClass(t: number): string {
     return t === 1 ? 'bg-indigo-100 text-indigo-800'
@@ -617,18 +674,33 @@ export class DetailsPage implements OnInit {
   dexUpstreamBlockReason(): string {
     const l = this.dexListing(); if (!l) return '';
     const u = l.upstream;
-    if (u && u.issuerEntityState && u.issuerEntityState !== 2) return 'Trading blocked — issuer entity not active';
-    if (u && !u.assetTradable && u.syncedAt) return 'Trading blocked — asset suspended or inactive';
+    if (u && u.issuerEntityState && u.issuerEntityState !== 2) return this.translate.instant('assets.details.dex.blockedIssuerInactive');
+    if (u && !u.assetTradable && u.syncedAt) return this.translate.instant('assets.details.dex.blockedAssetInactive');
     return '';
   }
 
-  private readonly stateNames: Record<number, string> = {
-    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
-  };
+  private getAssetStateName(state: number): string | undefined {
+    const map: Record<number, string> = {
+      0: this.translate.instant('assets.details.stateInactive'),
+      1: this.translate.instant('state.initiated'),
+      2: this.translate.instant('state.active'),
+      3: this.translate.instant('state.suspended'),
+      4: this.translate.instant('state.deactivated'),
+    };
+    return map[state];
+  }
 
-  readonly serviceStateNames: Record<number, string> = {
-    0: 'Unknown', 1: 'Pending', 2: 'Active', 3: 'Suspended', 4: 'Exit Only', 5: 'Deactivated',
-  };
+  getServiceStateName(state: number): string {
+    const map: Record<number, string> = {
+      0: this.translate.instant('state.unknown'),
+      1: this.translate.instant('state.pending'),
+      2: this.translate.instant('state.active'),
+      3: this.translate.instant('state.suspended'),
+      4: this.translate.instant('assets.details.serviceStateExitOnly'),
+      5: this.translate.instant('state.deactivated'),
+    };
+    return map[state] ?? this.translate.instant('state.unknown');
+  }
 
   private mapVaultAsset(raw: any): Asset {
     return {
@@ -658,11 +730,11 @@ export class DetailsPage implements OnInit {
       suspended: raw.suspended === true || raw.suspended === 1,
       creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
-      stateName: raw.asset_state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      stateName: raw.asset_state_name ?? this.getAssetStateName(raw.state) ?? String(raw.state ?? ''),
       priceMode: raw.priceMode ?? raw.price_mode ?? 2,
-      priceModeName: raw.priceModeName ?? raw.price_mode_name ?? (Number(raw.priceMode ?? raw.price_mode ?? 2) === 1 ? 'Single' : 'Bid/Ask'),
+      priceModeName: raw.priceModeName ?? raw.price_mode_name ?? (Number(raw.priceMode ?? raw.price_mode ?? 2) === 1 ? this.translate.instant('assets.details.info.priceModeSingle') : this.translate.instant('assets.details.info.priceModeBidAsk')),
       supplyMode: raw.supplyMode ?? raw.supply_mode ?? 1,
-      supplyModeName: raw.supplyModeName ?? raw.supply_mode_name ?? (Number(raw.supplyMode ?? raw.supply_mode ?? 1) === 2 ? 'Dynamic' : 'Fixed'),
+      supplyModeName: raw.supplyModeName ?? raw.supply_mode_name ?? (Number(raw.supplyMode ?? raw.supply_mode ?? 1) === 2 ? this.translate.instant('assets.details.info.supplyModeDynamic') : this.translate.instant('assets.details.info.supplyModeFixed')),
     };
   }
 
@@ -697,7 +769,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getAssetDetails(silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const [raw, services, wheld] = await Promise.all([
       this.apiService.vaultGetAsset(this.assetAddress),
       this.apiService.vaultGetAssetServices(this.assetAddress),
@@ -711,7 +783,7 @@ export class DetailsPage implements OnInit {
           service: s.service,
           serviceName: s.service_name ?? s.service,
           state: s.state ?? 0,
-          stateName: s.state_name ?? this.serviceStateNames[s.state] ?? 'Unknown',
+          stateName: s.state_name ?? this.getServiceStateName(s.state),
           canQuote: !!(s.can_quote ?? s.canQuote ?? 0),
           feeConfig: s.fee_config ?? s.feeConfig ?? null,
         }));
@@ -776,12 +848,12 @@ export class DetailsPage implements OnInit {
   async openServiceStateModal(serviceAddress: string, serviceName: string, currentState: number) {
     const result = await this.serviceStateModal.show({ serviceAddress, serviceName, currentState });
     if (result === null || result.state === currentState) return;
-    this.loadingService.show('Updating service state...');
+    this.loadingService.show(this.translate.instant('assets.details.services.updatingServiceState'));
     try {
       const res = await this.apiService.vaultSetAssetServiceState(this.assetAddress, serviceAddress, result.state, result.reason);
       await this.getAssetDetails();
       if (res?.requestId) {
-        this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+        this.alertService.show(this.translate.instant('assets.details.submittedForApprovalTitle'), this.translate.instant('assets.details.submittedForApprovalMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to change service state', error);
@@ -792,15 +864,15 @@ export class DetailsPage implements OnInit {
 
   feeModeName(mode: number | undefined): string {
     switch (Number(mode ?? 0)) {
-      case 1: return 'Bps';
-      case 2: return 'Fixed';
-      default: return 'None';
+      case 1: return this.translate.instant('assets.details.services.feeModeBps');
+      case 2: return this.translate.instant('assets.details.services.feeModeFixed');
+      default: return this.translate.instant('common.none');
     }
   }
 
   feeValueDisplay(mode: number | undefined, value: string | undefined): string {
     const m = Number(mode ?? 0);
-    if (!m || !value) return '—';
+    if (!m || !value) return this.translate.instant('common.notSet');
     if (m === 1) return `${value} bps`;
     // Fixed: stored in wei → format to a human-readable decimal
     try {
@@ -825,11 +897,11 @@ export class DetailsPage implements OnInit {
       feeConfig: current,
     });
     if (!result) return;
-    this.loadingService.show('Saving fee config...');
+    this.loadingService.show(this.translate.instant('assets.details.services.savingFeeConfig'));
     try {
       const r = await this.apiService.vaultSetAssetFeeConfig(this.assetAddress, serviceAddress, result.feeConfig);
       if ((r as any)?.error) {
-        this.alertService.show('Error', (r as any).error);
+        this.alertService.show(this.translate.instant('alerts.error'), (r as any).error);
         return;
       }
       await this.getAssetDetails();
@@ -840,13 +912,13 @@ export class DetailsPage implements OnInit {
 
   async toggleServiceCanQuote(serviceAddress: string, serviceName: string, currentlyAllowed: boolean) {
     const next = !currentlyAllowed;
-    const title = next ? 'Allow Price Quoting' : 'Revoke Price Quoting';
+    const title = next ? this.translate.instant('assets.details.services.allowQuotingTitle') : this.translate.instant('assets.details.services.revokeQuotingTitle');
     const message = next
-      ? `Allow "${serviceName}" to set its own per-trade price on this asset? Trades placed through this service will clear at the price it supplies, not at your setPrice.`
-      : `Pin "${serviceName}" to your asset price? Any per-trade price this service supplies will be ignored — trades will clear at your current bid/ask.`;
-    const confirmed = await this.alertService.show(title, message, next ? 'Allow' : 'Pin');
+      ? this.translate.instant('assets.details.services.allowQuotingMessage', { name: serviceName })
+      : this.translate.instant('assets.details.services.revokeQuotingMessage', { name: serviceName });
+    const confirmed = await this.alertService.show(title, message, next ? this.translate.instant('assets.details.services.allowBtn') : this.translate.instant('assets.details.services.pinBtn'));
     if (!confirmed) return;
-    this.loadingService.show('Updating price-quoting permission...');
+    this.loadingService.show(this.translate.instant('assets.details.services.updatingCanQuote'));
     try {
       await this.apiService.vaultSetAssetServiceCanQuote(this.assetAddress, serviceAddress, next);
       await this.getAssetDetails();
@@ -863,12 +935,12 @@ export class DetailsPage implements OnInit {
 
     const result = await this.assetStateService.show(currentAsset.state);
     if (result !== null && result.state !== currentAsset.state) {
-      this.loadingService.show('Changing state...');
+      this.loadingService.show(this.translate.instant('assets.details.info.changingState'));
       try {
         const res = await this.apiService.vaultUpdateAssetState(currentAsset.address, result.state, result.reason);
         await this.getAssetDetails();
         if (res?.requestId) {
-          this.alertService.show('Submitted for approval', 'A second operator must approve before this takes effect.', 'OK');
+          this.alertService.show(this.translate.instant('assets.details.submittedForApprovalTitle'), this.translate.instant('assets.details.submittedForApprovalMessage'), this.translate.instant('alerts.ok'));
         }
       } catch (error) {
         console.error('Failed to change state', error);
@@ -883,22 +955,152 @@ export class DetailsPage implements OnInit {
     if (!asset) return;
     const pm = this.parsedMetadata();
     const result = await this.metadataEditModal.show({
-      title: 'Edit Asset Metadata',
+      title: this.translate.instant('assets.details.metadata.editModalTitle'),
       description: pm.description,
+      contact: pm.contact,
       entries: pm.entries,
     });
     if (!result) return;
-    this.loadingService.show('Updating metadata...');
+    this.loadingService.show(this.translate.instant('assets.details.metadata.updatingMetadata'));
     try {
       const res = await this.apiService.vaultUpdateAssetMetadata(asset.address, result);
       if (res?.error) {
-        this.alertService.show('Error', res.error || 'Failed to update metadata.');
+        this.alertService.show(this.translate.instant('alerts.error'), res.error || this.translate.instant('assets.details.metadata.updateFailedDefault'));
       } else {
         await this.getAssetDetails();
       }
     } catch (error) {
       console.error('Failed to update metadata', error);
-      this.alertService.show('Error', 'An unexpected error occurred.');
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // ─── Images section (metadata tab) ────────────────────────────────────────────
+  // Public media images render through the ACL-checked document file stream (correct
+  // Content-Type, works for the entity regardless of pin form) → blob URLs cached per
+  // documentId and revoked on leave.
+
+  mediaImageUrls = signal<Record<number, string>>({});
+  mediaImagesLoading = signal(false);
+
+  async loadMediaImages() {
+    const rows = this.mediaImages();
+    if (!rows.length) return;
+    const current = this.mediaImageUrls();
+    const missing = rows.filter(r => !current[r.entry.documentId]);
+    if (!missing.length) return;
+    this.mediaImagesLoading.set(true);
+    try {
+      for (const r of missing) {
+        const res = await this.apiService.assetDocumentFetchFile(this.assetAddress, r.entry.documentId);
+        if (res?.blobUrl) {
+          this.mediaImageUrls.update(m => ({ ...m, [r.entry.documentId]: res.blobUrl }));
+        }
+      }
+    } finally {
+      this.mediaImagesLoading.set(false);
+    }
+  }
+
+  private revokeMediaImageUrls() {
+    for (const url of Object.values(this.mediaImageUrls())) URL.revokeObjectURL(url);
+    this.mediaImageUrls.set({});
+  }
+
+  private async refreshMediaImages() {
+    this.revokeMediaImageUrls();
+    await this.getAssetDetails();
+    await this.loadMediaImages();
+  }
+
+  // Public asset profile preview — banner/avatar hero + description + metadata KV +
+  // gallery + public documents, all sourced from the asset row and its media index.
+  async openViewAssetModal() {
+    const asset = this.asset();
+    if (!asset) return;
+    this.loadingService.show(this.translate.instant('common.loadingData'));
+    try {
+      await this.loadMediaImages();
+      const entity = await this.apiService.vaultGetEntityInfo().catch(() => null);
+      const pm = this.parsedMetadata();
+      this.publicViewModal.show({
+        address:       asset.address,
+        name:          asset.name,
+        symbol:        asset.symbol,
+        entityName:    entity?.name || '',
+        assetTypeName: asset.assetTypeName || '',
+        currencyCode:  asset.currencyCode || '',
+        description:   pm.description,
+        contact:       pm.contact,
+        entries:       pm.entries,
+        media:         pm.media,
+        imageUrls:     this.mediaImageUrls(),
+      });
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async openAddImageModal() {
+    const data = await this.imageAddModal.show();
+    if (!data) return;
+    this.loadingService.show(this.translate.instant('assets.details.media.uploading'));
+    try {
+      const res = await this.apiService.assetDocumentAddMultipart(this.assetAddress, data.file, {
+        title: data.title,
+        description: '',
+        fileType: data.file.type,
+        documentType: data.documentType,
+        documentState: 1,
+        ...(data.role !== 'gallery' ? { imageRole: data.role } : {}),
+      });
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      } else {
+        await this.refreshMediaImages();
+      }
+    } catch (error) {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async changeMediaRole(documentId: number, role: 'avatar' | 'banner' | 'gallery') {
+    this.loadingService.show(this.translate.instant('assets.details.media.updatingRole'));
+    try {
+      const res = await this.apiService.vaultSetAssetMediaRole(this.assetAddress, documentId, role);
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      } else {
+        await this.refreshMediaImages();
+      }
+    } catch (error) {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async removeMediaImage(row: { entry: AssetMediaEntry; role: string }) {
+    const confirmed = await this.alertService.show(
+      this.translate.instant('assets.details.media.removeConfirmTitle'),
+      this.translate.instant('assets.details.media.removeConfirmMessage', { title: row.entry.title }),
+      this.translate.instant('common.remove'),
+    );
+    if (!confirmed) return;
+    this.loadingService.show(this.translate.instant('assets.details.media.removing'));
+    try {
+      const res = await this.apiService.assetDocumentRemove(this.assetAddress, row.entry.documentId);
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      } else {
+        await this.refreshMediaImages();
+      }
+    } catch (error) {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -916,7 +1118,7 @@ export class DetailsPage implements OnInit {
       currentAsk: lp?.ask,
     });
     if (!result) return;
-    this.loadingService.show('Saving price...');
+    this.loadingService.show(this.translate.instant('assets.details.price.savingPrice'));
     try {
       const r = await this.apiService.vaultSetAssetPrice({
         asset: this.assetAddress,
@@ -925,7 +1127,7 @@ export class DetailsPage implements OnInit {
         timestamp: result.timestamp,
       });
       if ((r as any)?.error) {
-        this.alertService.show('Error', (r as any).error);
+        this.alertService.show(this.translate.instant('alerts.error'), (r as any).error);
         return;
       }
       await this.getPriceHistory(1, 500);
@@ -942,10 +1144,10 @@ export class DetailsPage implements OnInit {
     if (!asset) return;
     const result = await this.supplyModal.show({ mode: 'mint', symbol: asset.symbol });
     if (!result) return;
-    this.loadingService.show('Minting supply...');
+    this.loadingService.show(this.translate.instant('assets.details.info.mintingSupply'));
     try {
       const r = await this.apiService.vaultMintAsset(this.assetAddress, result.tokens);
-      if ((r as any)?.error) { this.alertService.show('Mint failed', (r as any).error); return; }
+      if ((r as any)?.error) { this.alertService.show(this.translate.instant('assets.details.info.mintFailedTitle'), (r as any).error); return; }
       await this.getAssetDetails();
     } finally {
       this.loadingService.hide();
@@ -959,10 +1161,10 @@ export class DetailsPage implements OnInit {
     const available = Math.max(0, (asset.totalSupply ?? 0) - (asset.circulating ?? 0));
     const result = await this.supplyModal.show({ mode: 'burn', symbol: asset.symbol, available });
     if (!result) return;
-    this.loadingService.show('Burning supply...');
+    this.loadingService.show(this.translate.instant('assets.details.info.burningSupply'));
     try {
       const r = await this.apiService.vaultBurnAsset(this.assetAddress, result.tokens);
-      if ((r as any)?.error) { this.alertService.show('Burn failed', (r as any).error); return; }
+      if ((r as any)?.error) { this.alertService.show(this.translate.instant('assets.details.info.burnFailedTitle'), (r as any).error); return; }
       await this.getAssetDetails();
     } finally {
       this.loadingService.hide();
@@ -974,7 +1176,7 @@ export class DetailsPage implements OnInit {
     if (!asset) return;
     const selected = await this.addServiceModal.show(asset.services.map(s => s.service));
     if (selected) {
-      this.loadingService.show('Adding service...');
+      this.loadingService.show(this.translate.instant('assets.details.services.addingService'));
       try {
         await this.apiService.vaultAddAssetService(this.assetAddress, selected);
         await this.getAssetDetails();
@@ -988,12 +1190,12 @@ export class DetailsPage implements OnInit {
     const svc = this.asset()?.services.find(s => s.service === serviceAddress);
     const label = svc?.serviceName ?? serviceAddress;
     const confirmed = await this.alertService.show(
-      'Remove Service',
-      `Are you sure you want to remove "${label}" from this asset?`,
-      'Remove'
+      this.translate.instant('assets.details.services.removeServiceTitle'),
+      this.translate.instant('assets.details.services.removeServiceMessage', { name: label }),
+      this.translate.instant('common.remove')
     );
     if (!confirmed) return;
-    this.loadingService.show('Removing service...');
+    this.loadingService.show(this.translate.instant('assets.details.services.removingService'));
     try {
       await this.apiService.vaultRemoveAssetService(this.assetAddress, serviceAddress);
       await this.getAssetDetails();
@@ -1015,7 +1217,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getPriceHistory(start: number, offset: number, silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetAssetPriceHistory(this.assetAddress, start - 1, offset);
     const next = data?.history ?? [];
     if (!silent) this.loadingService.hide();
@@ -1079,7 +1281,7 @@ export class DetailsPage implements OnInit {
         labels,
         datasets: [
           {
-            label: 'Bid',
+            label: this.translate.instant('assets.details.price.bid'),
             data: bidData,
             borderColor: '#4f46e5',
             backgroundColor: 'rgba(79, 70, 229, 0.08)',
@@ -1091,7 +1293,7 @@ export class DetailsPage implements OnInit {
             tension: 0.4,
           },
           {
-            label: 'Ask',
+            label: this.translate.instant('assets.details.price.ask'),
             data: askData,
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.08)',
@@ -1149,7 +1351,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getHolders(start: number, offset: number, silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const [holdersData, priceData] = await Promise.all([
       this.apiService.vaultGetAssetHolders(this.assetAddress, start - 1, offset),
       this.apiService.vaultGetAssetPrice(this.assetAddress),
@@ -1161,7 +1363,7 @@ export class DetailsPage implements OnInit {
   }
 
   async getTransactions(start: number, offset: number, silent = false) {
-    if (!silent) this.loadingService.show('Loading data...');
+    if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetTransactions({ asset: this.assetAddress }, start - 1, offset);
     if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
     this.trxPage.set(0);

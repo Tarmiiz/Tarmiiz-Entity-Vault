@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalDistributionDeclareService, DeclareDistributionData } from './modal-distribution-declare.service';
 
@@ -14,7 +15,7 @@ import { ModalDistributionDeclareService, DeclareDistributionData } from './moda
 @Component({
   selector: 'app-modal-distribution-declare',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './modal-distribution-declare.component.html',
 })
 export class ModalDistributionDeclareComponent {

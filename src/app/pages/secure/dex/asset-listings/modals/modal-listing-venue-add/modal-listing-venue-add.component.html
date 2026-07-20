@@ -5,7 +5,7 @@
          (click)="$event.stopPropagation()">
 
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">Add Venue</h3>
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'dex.listings.addVenueModal.heading' | translate }}</h3>
         <p class="text-xs text-gray-400 mt-1">{{ tierLabel() }}</p>
         <p class="text-xs text-gray-300 mt-2">{{ tierHint() }}</p>
       </div>
@@ -13,15 +13,15 @@
       <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
         <div class="flex flex-wrap gap-2 items-end">
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">Search</label>
-            <input type="text" placeholder="Name, entity, address..."
+            <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
+            <input type="text" [placeholder]="'dex.listings.addVenueModal.searchPlaceholder' | translate"
               [ngModel]="search()" (ngModelChange)="search.set($event); reload()"
               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
           </div>
           @if (modalService.input()?.tier === 3) {
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-gray-500">Country code</label>
-              <input type="number" placeholder="e.g. 818"
+              <label class="text-xs font-medium text-gray-500">{{ 'dex.listings.addVenueModal.countryCodeLabel' | translate }}</label>
+              <input type="number" [placeholder]="'dex.listings.addVenueModal.countryCodePlaceholder' | translate"
                 [ngModel]="countryFilter()" (ngModelChange)="countryFilter.set($event); reload()"
                 class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
             </div>
@@ -33,19 +33,19 @@
             <table class="w-full text-sm text-left text-gray-700">
               <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                 <tr>
-                  <th class="px-4 py-2">#</th>
-                  <th class="px-4 py-2">Venue</th>
-                  <th class="px-4 py-2">Entity</th>
-                  <th class="px-4 py-2">Country</th>
-                  <th class="px-4 py-2">Address</th>
-                  <th class="px-4 py-2 text-right">Action</th>
+                  <th class="px-4 py-2">{{ 'dex.listings.addVenueModal.table.index' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'dex.listings.addVenueModal.venue' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'dex.listings.addVenueModal.table.entity' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'common.country' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'common.address' | translate }}</th>
+                  <th class="px-4 py-2 text-right">{{ 'dex.listings.addVenueModal.table.action' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="text-xs">
                 @if (loading()) {
-                  <tr class="bg-white border-b"><td class="px-4 py-3" colspan="6">Loading…</td></tr>
+                  <tr class="bg-white border-b"><td class="px-4 py-3" colspan="6">{{ 'common.loading' | translate }}</td></tr>
                 } @else if (candidates().length === 0) {
-                  <tr class="bg-white border-b"><td class="px-4 py-3 text-gray-400" colspan="6">No matching venues available</td></tr>
+                  <tr class="bg-white border-b"><td class="px-4 py-3 text-gray-400" colspan="6">{{ 'dex.listings.addVenueModal.noVenuesAvailable' | translate }}</td></tr>
                 } @else {
                   @for (v of candidates(); track v.serviceAddress; let i = $index; let isEven = $even) {
                     <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
@@ -57,7 +57,7 @@
                       <td class="px-4 py-2 text-right">
                         <button (click)="add(v)"
                           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
-                          Enable
+                          {{ 'dex.listings.addVenueModal.enableButton' | translate }}
                         </button>
                       </td>
                     </tr>
@@ -67,7 +67,7 @@
             </table>
           </div>
           <div class="flex items-center px-4 py-2 border-t">
-            <p class="text-xs font-medium text-gray-800">{{ candidates().length }} candidate venues</p>
+            <p class="text-xs font-medium text-gray-800">{{ 'dex.listings.addVenueModal.candidateVenuesCount' | translate: { count: candidates().length } }}</p>
           </div>
         </div>
       </div>
@@ -75,7 +75,7 @@
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="cancel()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-          Close
+          {{ 'common.close' | translate }}
         </button>
       </div>
     </div>

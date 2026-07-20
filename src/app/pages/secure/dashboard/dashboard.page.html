@@ -15,8 +15,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
           </svg>
           <div>
-            <p class="text-sm font-semibold text-red-800">Entity is {{ entityStateName || 'not active' }}</p>
-            <p class="text-xs text-red-600">All management actions are restricted. Contact your regulator to restore active status.</p>
+            <p class="text-sm font-semibold text-red-800">{{ 'dashboard.inactiveWarning.title' | translate: { state: entityStateName || ('dashboard.inactiveWarning.notActive' | translate) } }}</p>
+            <p class="text-xs text-red-600">{{ 'dashboard.inactiveWarning.body' | translate }}</p>
           </div>
         </div>
       }
@@ -25,14 +25,14 @@
       <div class="rounded-xl shadow-md border border-indigo-200 bg-linear-to-r from-indigo-600 to-indigo-800 text-white p-5 mb-6 badges">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div class="min-w-0">
-            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">Assets Under Management</p>
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'dashboard.aum' | translate }}</p>
             @if (summaryLoading()) {
               <svg class="animate-spin h-6 w-6 text-white mt-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
             } @else if (currencies().length === 0) {
-              <p class="text-lg text-indigo-200 italic">No active assets yet</p>
+              <p class="text-lg text-indigo-200 italic">{{ 'dashboard.aumEmpty' | translate }}</p>
             } @else {
               <div class="flex gap-3 overflow-x-auto pb-1">
                 @for (c of currencies(); track c.code) {
@@ -41,10 +41,10 @@
                       <p class="text-2xl font-bold">{{ c.totalAum | number:'1.2-2' }}</p>
                       <span class="text-xs font-semibold text-indigo-200">{{ c.code }}</span>
                     </div>
-                    <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ c.assetCount }} asset{{ c.assetCount === 1 ? '' : 's' }}</p>
+                    <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ c.assetCount }} {{ (c.assetCount === 1 ? 'dashboard.assetSingular' : 'dashboard.assetPlural') | translate }}</p>
                     <p class="text-xs mt-1" [class]="c.netFlow30d >= 0 ? 'text-green-300' : 'text-red-300'">
                       {{ c.netFlow30d >= 0 ? '▲' : '▼' }} {{ (c.netFlow30d < 0 ? -c.netFlow30d : c.netFlow30d) | number:'1.2-2' }}
-                      <span class="text-indigo-300 font-normal">30d</span>
+                      <span class="text-indigo-300 font-normal">{{ 'dashboard.netFlowPeriod' | translate }}</span>
                     </p>
                   </div>
                 }
@@ -52,14 +52,14 @@
             }
           </div>
           <div class="shrink-0 flex-1 md:border-l md:border-indigo-400/30 md:pl-4">
-            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">Total Credit</p>
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'dashboard.totalCredit' | translate }}</p>
             @if (creditLoading()) {
               <svg class="animate-spin h-6 w-6 text-white mt-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
             } @else if (activeCreditTotals().length === 0) {
-              <p class="text-sm text-indigo-200 italic">No credit</p>
+              <p class="text-sm text-indigo-200 italic">{{ 'dashboard.creditEmpty' | translate }}</p>
             } @else {
               <div class="flex gap-3 overflow-x-auto pb-1">
                 @for (t of activeCreditTotals(); track t.currencyCode) {
@@ -75,12 +75,12 @@
             }
           </div>
           <div class="text-center shrink-0">
-            <p class="text-xs text-indigo-300 uppercase tracking-wider">Status</p>
+            <p class="text-xs text-indigo-300 uppercase tracking-wider">{{ 'dashboard.status' | translate }}</p>
             <div class="flex items-center justify-center gap-1.5 mt-1">
               <span class="w-2 h-2 rounded-full" [class]="socketService.connected() ? 'bg-green-400' : 'bg-red-400'"></span>
-              <span class="text-sm font-medium text-indigo-200">{{ socketService.connected() ? 'Live' : 'Offline' }}</span>
+              <span class="text-sm font-medium text-indigo-200">{{ (socketService.connected() ? 'common.live' : 'common.offline') | translate }}</span>
             </div>
-            <p class="text-xs text-indigo-300 mt-1">{{ lastUpdated() ? (lastUpdated()! | date:'HH:mm:ss') : '—' }}</p>
+            <p class="text-xs text-indigo-300 mt-1">{{ lastUpdated() ? (lastUpdated()! | date:'HH:mm:ss') : ('common.notSet' | translate) }}</p>
           </div>
         </div>
       </div>
@@ -89,8 +89,8 @@
       @if (hasLiquidityWarnings()) {
         <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-6 badges">
           <div class="flex items-baseline justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-700">Liquidity Shortfall</h3>
-            <span class="text-xs text-gray-400">if all holders redeemed now</span>
+            <h3 class="text-sm font-semibold text-gray-700">{{ 'dashboard.liquidity.title' | translate }}</h3>
+            <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.subtitle' | translate }}</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @for (row of liquidityCoverage(); track row.currency) {
@@ -111,25 +111,25 @@
                       [class.text-green-700]="tone === 'good'"
                       [class.text-amber-700]="tone === 'warn'"
                       [class.text-red-700]="tone === 'bad'">
-                      {{ (row.coverageRatio * 100) | number:'1.1-1' }}% covered
+                      {{ (row.coverageRatio * 100) | number:'1.1-1' }}% {{ 'dashboard.liquidity.covered' | translate }}
                     </span>
                   } @else {
-                    <span class="text-xs text-gray-400">no obligation</span>
+                    <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.noObligation' | translate }}</span>
                   }
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <p class="text-gray-500 uppercase tracking-wider">Obligation</p>
+                    <p class="text-gray-500 uppercase tracking-wider">{{ 'dashboard.liquidity.obligation' | translate }}</p>
                     <p class="font-mono font-semibold text-gray-800">{{ row.obligation | number:'1.2-2' }}</p>
                   </div>
                   <div>
-                    <p class="text-gray-500 uppercase tracking-wider">Liquidity</p>
+                    <p class="text-gray-500 uppercase tracking-wider">{{ 'dashboard.liquidity.liquidityLabel' | translate }}</p>
                     <p class="font-mono font-semibold text-gray-800">{{ row.liquidity | number:'1.2-2' }}</p>
                   </div>
                 </div>
                 @if (row.shortfall > 0) {
                   <p class="mt-2 text-xs font-semibold text-red-700">
-                    Shortfall: <span class="font-mono">{{ row.shortfall | number:'1.2-2' }} {{ row.currency }}</span>
+                    {{ 'dashboard.liquidity.shortfallPrefix' | translate }} <span class="font-mono">{{ row.shortfall | number:'1.2-2' }} {{ row.currency }}</span>
                   </p>
                 }
                 <div class="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
@@ -150,12 +150,12 @@
               <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                   <tr>
-                    <th class="px-3 py-2">Service</th>
-                    <th class="px-3 py-2">Currency</th>
-                    <th class="px-3 py-2 text-right">Obligation</th>
-                    <th class="px-3 py-2 text-right">Liquidity</th>
-                    <th class="px-3 py-2 text-right">Shortfall</th>
-                    <th class="px-3 py-2 text-right">Coverage</th>
+                    <th class="px-3 py-2">{{ 'dashboard.table.service' | translate }}</th>
+                    <th class="px-3 py-2">{{ 'dashboard.currencyLabel' | translate }}</th>
+                    <th class="px-3 py-2 text-right">{{ 'dashboard.liquidity.obligation' | translate }}</th>
+                    <th class="px-3 py-2 text-right">{{ 'dashboard.liquidity.liquidityLabel' | translate }}</th>
+                    <th class="px-3 py-2 text-right">{{ 'dashboard.liquidity.shortfall' | translate }}</th>
+                    <th class="px-3 py-2 text-right">{{ 'dashboard.liquidity.coverage' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -172,14 +172,14 @@
                       <td class="px-3 py-2 text-right font-mono"
                         [class.text-red-700]="row.shortfall > 0"
                         [class.font-semibold]="row.shortfall > 0">
-                        @if (row.shortfall > 0) { {{ row.shortfall | number:'1.2-2' }} } @else { <span class="text-gray-300">—</span> }
+                        @if (row.shortfall > 0) { {{ row.shortfall | number:'1.2-2' }} } @else { <span class="text-gray-300">{{ 'common.notSet' | translate }}</span> }
                       </td>
                       <td class="px-3 py-2 text-right font-mono text-xs font-semibold"
                         [class.text-green-700]="tone === 'good'"
                         [class.text-amber-700]="tone === 'warn'"
                         [class.text-red-700]="tone === 'bad'"
                         [class.text-gray-400]="tone === 'idle'">
-                        @if (row.coverageRatio !== null) { {{ (row.coverageRatio * 100) | number:'1.1-1' }}% } @else { — }
+                        @if (row.coverageRatio !== null) { {{ (row.coverageRatio * 100) | number:'1.1-1' }}% } @else { {{ 'common.notSet' | translate }} }
                       </td>
                     </tr>
                   }
@@ -224,12 +224,12 @@
         <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4">
           <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
             <h3 class="text-sm font-semibold text-gray-700">
-              Transaction Activity — Last 30 × {{ activeIntervalLabel() }}
+              {{ 'dashboard.trxActivity' | translate: { interval: activeIntervalLabel() } }}
               @if (selectedCurrency()) { <span class="text-gray-400 font-normal">({{ selectedCurrency() }})</span> }
             </h3>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
-                <label class="text-xs font-medium text-gray-500">Interval</label>
+                <label class="text-xs font-medium text-gray-500">{{ 'dashboard.intervalLabel' | translate }}</label>
                 <select [ngModel]="activityInterval()" (ngModelChange)="setInterval($event)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   @for (i of intervalOptions; track i.value) {
@@ -239,7 +239,7 @@
               </div>
               @if (hasMultipleCurrencies()) {
                 <div class="flex items-center gap-2">
-                  <label class="text-xs font-medium text-gray-500">Currency</label>
+                  <label class="text-xs font-medium text-gray-500">{{ 'dashboard.currencyLabel' | translate }}</label>
                   <select [ngModel]="selectedCurrency()" (ngModelChange)="setCurrency($event)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-20"
                     [title]="selectedCurrencyName()">
@@ -254,11 +254,11 @@
           <div class="relative h-72" style="position:relative">
             @if (summaryLoading() || activityLoading()) {
               <div class="h-full bg-gray-100 rounded animate-pulse flex items-center justify-center">
-                <p class="text-gray-400 text-sm">Loading chart…</p>
+                <p class="text-gray-400 text-sm">{{ 'dashboard.loadingChart' | translate }}</p>
               </div>
             } @else if (activityPoints().length === 0) {
               <div class="h-full flex items-center justify-center">
-                <p class="text-gray-400 text-sm">No transactions yet</p>
+                <p class="text-gray-400 text-sm">{{ 'dashboard.noTransactionsYet' | translate }}</p>
               </div>
             } @else {
               <canvas #activityChart></canvas>
@@ -272,17 +272,17 @@
 
         <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4">
           <h3 class="text-sm font-semibold text-gray-700 mb-3">
-            AUM by Asset
+            {{ 'dashboard.aumByAssetTitle' | translate }}
             @if (selectedCurrency()) { <span class="text-gray-400 font-normal">({{ selectedCurrency() }})</span> }
           </h3>
           <div class="relative h-64" style="position:relative">
             @if (summaryLoading()) {
               <div class="h-full bg-gray-100 rounded animate-pulse flex items-center justify-center">
-                <p class="text-gray-400 text-sm">Loading chart…</p>
+                <p class="text-gray-400 text-sm">{{ 'dashboard.loadingChart' | translate }}</p>
               </div>
             } @else if (aumByAsset().length === 0) {
               <div class="h-full flex items-center justify-center">
-                <p class="text-gray-400 text-sm">No active assets with prices</p>
+                <p class="text-gray-400 text-sm">{{ 'dashboard.noActiveAssetsWithPrices' | translate }}</p>
               </div>
             } @else {
               <canvas #aumChart></canvas>
@@ -293,20 +293,20 @@
         <!-- Top Assets by AUM -->
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden lg:col-span-2">
           <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
-            <h2 class="text-base font-semibold text-white">Top Assets by AUM</h2>
-            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/assets/list')">View all →</button>
+            <h2 class="text-base font-semibold text-white">{{ 'dashboard.topAssetsTitle' | translate }}</h2>
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/assets/list')">{{ 'common.viewAll' | translate }}</button>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-500">
               <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                 <tr>
-                  <th class="px-4 py-2">Asset</th>
-                  <th class="px-4 py-2">Symbol</th>
-                  <th class="px-4 py-2">Currency</th>
-                  <th class="px-4 py-2 text-right">Circulating</th>
-                  <th class="px-4 py-2 text-right">Bid</th>
-                  <th class="px-4 py-2 text-right">AUM</th>
-                  <th class="px-4 py-2 text-right">24h Change</th>
+                  <th class="px-4 py-2">{{ 'dashboard.table.asset' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'common.symbol' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'dashboard.currencyLabel' | translate }}</th>
+                  <th class="px-4 py-2 text-right">{{ 'dashboard.table.circulating' | translate }}</th>
+                  <th class="px-4 py-2 text-right">{{ 'dashboard.table.bid' | translate }}</th>
+                  <th class="px-4 py-2 text-right">{{ 'dashboard.table.aum' | translate }}</th>
+                  <th class="px-4 py-2 text-right">{{ 'dashboard.table.change24h' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -320,7 +320,7 @@
                   }
                 } @else if (topAssets().length === 0) {
                   <tr>
-                    <td colspan="7" class="px-4 py-4 text-center text-gray-400">No active assets with pricing data</td>
+                    <td colspan="7" class="px-4 py-4 text-center text-gray-400">{{ 'dashboard.noActiveAssetsWithPricingData' | translate }}</td>
                   </tr>
                 } @else {
                   @for (asset of topAssets(); track asset.address) {
@@ -337,7 +337,7 @@
                       <td class="px-4 py-2 text-right font-mono font-semibold text-gray-800">{{ asset.aum | number:'1.2-2' }}</td>
                       <td class="px-4 py-2 text-right font-mono text-sm">
                         @if (priceChange(asset) === 0) {
-                          <span class="text-gray-400">—</span>
+                          <span class="text-gray-400">{{ 'common.notSet' | translate }}</span>
                         } @else {
                           <span [class]="priceChange(asset) >= 0 ? 'text-green-600' : 'text-red-600'">
                             {{ priceChange(asset) >= 0 ? '▲' : '▼' }} {{ (priceChange(asset) < 0 ? -priceChange(asset) : priceChange(asset)) | number:'1.2-2' }}%
@@ -357,28 +357,28 @@
       <!-- Latest Transactions -->
       <div [class]="transactionsLoading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
         <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
-          <h2 class="text-xl font-semibold text-white">Latest Transactions</h2>
+          <h2 class="text-xl font-semibold text-white">{{ 'dashboard.latestTransactions' | translate }}</h2>
           @if (transactionsLoading()) {
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
           } @else {
-            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/transactions/list')">View all →</button>
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/transactions/list')">{{ 'common.viewAll' | translate }}</button>
           }
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left text-gray-500">
             <thead class="text-xs text-gray-700 uppercase bg-gray-100">
               <tr>
-                <th class="px-4 py-2">Time</th>
-                <th class="px-4 py-2">Type</th>
-                <th class="px-4 py-2">Asset</th>
-                <th class="px-4 py-2">Symbol</th>
-                <th class="px-4 py-2">Service</th>
-                <th class="px-4 py-2 text-right">Tokens</th>
-                <th class="px-4 py-2 text-right">Price</th>
-                <th class="px-4 py-2 text-right">Total</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.time' | translate }}</th>
+                <th class="px-4 py-2">{{ 'common.type' | translate }}</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.asset' | translate }}</th>
+                <th class="px-4 py-2">{{ 'common.symbol' | translate }}</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.service' | translate }}</th>
+                <th class="px-4 py-2 text-right">{{ 'dashboard.table.tokens' | translate }}</th>
+                <th class="px-4 py-2 text-right">{{ 'dashboard.table.price' | translate }}</th>
+                <th class="px-4 py-2 text-right">{{ 'dashboard.table.total' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -392,7 +392,7 @@
                 }
               } @else if (latestTransactions().length === 0) {
                 <tr>
-                  <td colspan="8" class="px-4 py-4 text-center text-gray-400">No transactions found</td>
+                  <td colspan="8" class="px-4 py-4 text-center text-gray-400">{{ 'dashboard.noTransactionsFound' | translate }}</td>
                 </tr>
               } @else {
                 @for (t of latestTransactions(); track t.trxId) {
@@ -418,25 +418,25 @@
       <!-- Latest Subscriptions -->
       <div [class]="subscriptionsLoading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
         <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
-          <h2 class="text-xl font-semibold text-white">Latest Subscriptions</h2>
+          <h2 class="text-xl font-semibold text-white">{{ 'dashboard.latestSubscriptions' | translate }}</h2>
           @if (subscriptionsLoading()) {
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
           } @else {
-            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/subscriptions/list')">View all →</button>
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/subscriptions/list')">{{ 'common.viewAll' | translate }}</button>
           }
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left text-gray-500">
             <thead class="text-xs text-gray-700 uppercase bg-gray-100">
               <tr>
-                <th class="px-4 py-2">Created</th>
-                <th class="px-4 py-2">Subscription</th>
-                <th class="px-4 py-2">Service</th>
-                <th class="px-4 py-2">Validator</th>
-                <th class="px-4 py-2">State</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.created' | translate }}</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.subscriptionCol' | translate }}</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.service' | translate }}</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.validator' | translate }}</th>
+                <th class="px-4 py-2">{{ 'dashboard.table.state' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -450,7 +450,7 @@
                 }
               } @else if (latestSubscriptions().length === 0) {
                 <tr>
-                  <td colspan="5" class="px-4 py-4 text-center text-gray-400">No subscriptions found</td>
+                  <td colspan="5" class="px-4 py-4 text-center text-gray-400">{{ 'dashboard.noSubscriptionsFound' | translate }}</td>
                 </tr>
               } @else {
                 @for (s of latestSubscriptions(); track s.subscription) {
@@ -463,7 +463,7 @@
                       <div class="flex items-center gap-1.5">
                         <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getStateClass(s.state)">{{ s.stateName }}</span>
                         @if (s.suspended) {
-                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'state.suspended' | translate }}</span>
                         }
                       </div>
                     </td>
@@ -527,13 +527,138 @@
         </div>
       }
 
-      <!-- admin placeholder view -->
-      <div class="flex flex-col items-center justify-center py-24 text-center">
-        <svg class="w-16 h-16 text-gray-400 mb-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 17H4a1 1 0 0 1-1-1 3 3 0 0 1 3-3h1m0-3.05A2.5 2.5 0 1 1 9 5.5M19.5 17h.5a1 1 0 0 0 1-1 3 3 0 0 0-3-3h-1m0-3.05a2.5 2.5 0 1 0-2-4.45m.5 13.5h-7a1 1 0 0 1-1-1 3 3 0 0 1 3-3h3a3 3 0 0 1 3 3 1 1 0 0 1-1 1Zm-1-9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>
-        </svg>
-        <h2 class="text-xl font-semibold text-gray-600 mb-2">Admin Dashboard</h2>
-        <p class="text-sm text-gray-400">Use the Users menu to manage system users.</p>
+      <!-- Admin welcome banner -->
+      <div class="rounded-xl shadow-md border border-indigo-200 bg-linear-to-r from-indigo-600 to-indigo-800 text-white p-5 mb-6 badges">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider">{{ 'dashboard.admin.welcome' | translate }}</p>
+            <p class="text-3xl font-bold mt-1">{{ userInfo.name }}</p>
+            <p class="text-xs text-indigo-300 mt-1">{{ 'dashboard.admin.subtitle' | translate }}</p>
+          </div>
+          <div class="text-center shrink-0">
+            <p class="text-xs text-indigo-300 uppercase tracking-wider">{{ 'dashboard.status' | translate }}</p>
+            <div class="flex items-center justify-center gap-1.5 mt-1">
+              <span class="w-2 h-2 rounded-full" [class]="socketService.connected() ? 'bg-green-400' : 'bg-red-400'"></span>
+              <span class="text-sm font-medium text-indigo-200">{{ (socketService.connected() ? 'common.live' : 'common.offline') | translate }}</span>
+            </div>
+            <p class="text-xs text-indigo-300 mt-1">{{ lastUpdated() ? (lastUpdated()! | date:'HH:mm:ss') : ('common.notSet' | translate) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin stat cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 badges">
+        <!-- Total Users -->
+        <div class="p-6 rounded-xl shadow-md border border-gray-200 bg-white flex items-center space-x-4 rtl:space-x-reverse cursor-pointer hover:bg-indigo-100" (click)="goTo('/authorized/users/list')">
+          <div class="bg-blue-100 p-3 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500">{{ 'dashboard.admin.totalUsers' | translate }}</p>
+            @if (adminUsersLoading()) {
+              <div class="h-6 w-10 mt-1 bg-gray-200 rounded animate-pulse"></div>
+            } @else {
+              <p class="text-1xl font-bold text-gray-800">{{ (userCount() ?? 0) | number }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- Pending Approvals -->
+        <div class="p-6 rounded-xl shadow-md border border-gray-200 bg-white flex items-center space-x-4 rtl:space-x-reverse cursor-pointer hover:bg-indigo-100" (click)="goTo('/authorized/approvals/list')">
+          <div class="bg-amber-100 p-3 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500">{{ 'dashboard.admin.pendingApprovals' | translate }}</p>
+            @if (pendingApprovalsLoading()) {
+              <div class="h-6 w-10 mt-1 bg-gray-200 rounded animate-pulse"></div>
+            } @else {
+              <p class="text-1xl font-bold text-gray-800">{{ pendingApprovalsCount() | number }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- Entity Status -->
+        <div class="p-6 rounded-xl shadow-md border border-gray-200 bg-white flex items-center space-x-4 rtl:space-x-reverse">
+          <div class="p-3 rounded-full" [class]="entityActive ? 'bg-green-100' : 'bg-red-100'">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" [class]="entityActive ? 'text-green-600' : 'text-red-600'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500">{{ 'dashboard.admin.entityStatus' | translate }}</p>
+            <p class="text-1xl font-bold" [class]="entityActive ? 'text-green-700' : 'text-red-700'">{{ entityStateName || (entityActive ? ('common.live' | translate) : ('common.offline' | translate)) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin panels -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 badges">
+
+        <!-- Pending Approvals -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+            <h2 class="text-base font-semibold text-white">{{ 'dashboard.admin.pendingApprovalsTitle' | translate }}</h2>
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/approvals/list')">{{ 'dashboard.viewAll' | translate }}</button>
+          </div>
+          <table class="w-full table-fixed text-sm text-left text-gray-700">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+              <tr>
+                <th class="px-4 py-1.5 w-[35%]">{{ 'dashboard.admin.colCategory' | translate }}</th>
+                <th class="px-4 py-1.5 w-[35%]">{{ 'dashboard.admin.colTarget' | translate }}</th>
+                <th class="px-4 py-1.5 text-right pr-6 w-[30%]">{{ 'dashboard.admin.colMaker' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs">
+              @if (pendingApprovals().length === 0) {
+                <tr><td class="px-4 py-2 text-gray-400" colspan="3">{{ 'dashboard.admin.noApprovals' | translate }}</td></tr>
+              } @else {
+                @for (a of pendingApprovals(); track a.requestId; let isEven = $even) {
+                  <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="goTo('/authorized/approvals/list')">
+                    <td class="px-4 py-1.5 truncate">{{ a.actionCategory }}</td>
+                    <td class="px-4 py-1.5 truncate">{{ a.targetLabel || a.targetAddress }}</td>
+                    <td class="px-4 py-1.5 text-right pr-6 truncate">{{ a.makerUserName || '—' }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Recent Users -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+            <h2 class="text-base font-semibold text-white">{{ 'dashboard.admin.recentUsers' | translate }}</h2>
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/users/list')">{{ 'dashboard.viewAll' | translate }}</button>
+          </div>
+          <table class="w-full table-fixed text-sm text-left text-gray-700">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+              <tr>
+                <th class="px-4 py-1.5 w-[40%]">{{ 'dashboard.admin.colUser' | translate }}</th>
+                <th class="px-4 py-1.5 w-[35%]">{{ 'dashboard.admin.colUsername' | translate }}</th>
+                <th class="px-4 py-1.5 text-right pr-6 w-[25%]">{{ 'dashboard.admin.colRole' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs">
+              @if (adminRecentUsers().length === 0) {
+                <tr><td class="px-4 py-2 text-gray-400" colspan="3">{{ 'dashboard.admin.noUsers' | translate }}</td></tr>
+              } @else {
+                @for (u of adminRecentUsers(); track u.userId; let isEven = $even) {
+                  <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewUser(u)">
+                    <td class="px-4 py-1.5 truncate">{{ u.name }}</td>
+                    <td class="px-4 py-1.5 truncate">{{ u.username }}</td>
+                    <td class="px-4 py-1.5 text-right pr-6 truncate">{{ u.roleName }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
       </div>
 
     }

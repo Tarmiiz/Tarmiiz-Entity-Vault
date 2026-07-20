@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -34,6 +34,7 @@ export class ListPage implements OnInit {
   private listingCreateService = inject(ModalListingCreateService);
   private authService = inject(AuthService);
   features = inject(FeaturesService);
+  private translate = inject(TranslateService);
 
   get userInfo() { return this.authService.userInfo; }
 
@@ -50,7 +51,7 @@ export class ListPage implements OnInit {
   }
 
   async listListings() {
-    this.loadingService.show('Loading listings...');
+    this.loadingService.show(this.translate.instant('dex.listings.list.loading'));
     const result = await this.apiService.vaultDexAssetListingsList(1, 50);
     if (result?.listings) this.listings.set(result.listings);
     this.loadingService.hide();
@@ -75,47 +76,63 @@ export class ListPage implements OnInit {
   async createListing() {
     const result = await this.listingCreateService.show();
     if (!result) return;
-    this.loadingService.show('Submitting listing request...');
+    this.loadingService.show(this.translate.instant('dex.listings.list.submitting'));
     try {
       const r = await this.apiService.vaultDexAssetListingCreate(result.baseAsset, result.venue, result.country, result.global);
-      if (r?.error) this.alertService.show('Error', r.error);
+      if (r?.error) this.alertService.show(this.translate.instant('dex.listings.error'), r.error);
       else await this.listListings();
     } finally { this.loadingService.hide(); }
   }
 
   exportExcel() {
+    const assetLabel = this.translate.instant('dex.listings.table.asset');
+    const tier1Label = this.translate.instant('dex.listings.list.export.tier1');
+    const tier2Label = this.translate.instant('dex.listings.list.export.tier2');
+    const tier3Label = this.translate.instant('dex.listings.list.export.tier3');
+    const listedLabel = this.translate.instant('dex.listings.table.listed');
+    const approvedLabel = this.translate.instant('state.approved');
+    const pendingLabel = this.translate.instant('state.pending');
+
     const rows = this.filteredListings().map(l => ({
-      'Asset':  l.assetName + (l.assetSymbol ? ' (' + l.assetSymbol + ')' : ''),
-      'Tier 1': l.venueApproved ? 'Approved' : (l.venuePending ? 'Pending' : '—'),
-      'Tier 2': l.countryApproved ? 'Approved' : (l.countryPending ? 'Pending' : '—'),
-      'Tier 3': l.globalApproved ? 'Approved' : (l.globalPending ? 'Pending' : '—'),
-      'Listed': l.listedAt ? this.utils.formatDate(l.listedAt) : '—',
+      [assetLabel]:  l.assetName + (l.assetSymbol ? ' (' + l.assetSymbol + ')' : ''),
+      [tier1Label]: l.venueApproved ? approvedLabel : (l.venuePending ? pendingLabel : '—'),
+      [tier2Label]: l.countryApproved ? approvedLabel : (l.countryPending ? pendingLabel : '—'),
+      [tier3Label]: l.globalApproved ? approvedLabel : (l.globalPending ? pendingLabel : '—'),
+      [listedLabel]: l.listedAt ? this.utils.formatDate(l.listedAt) : '—',
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'DEX Listings');
+    XLSX.utils.book_append_sheet(wb, ws, this.translate.instant('dex.listings.list.export.sheetName'));
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `dex_listings_${stamp}.xlsx`);
   }
 
   exportPdf() {
     const listings = this.filteredListings();
+    const idLabel = this.translate.instant('dex.listings.table.id');
+    const assetLabel = this.translate.instant('dex.listings.table.asset');
+    const tier1Label = this.translate.instant('dex.listings.list.export.tier1');
+    const tier2Label = this.translate.instant('dex.listings.list.export.tier2');
+    const tier3Label = this.translate.instant('dex.listings.list.export.tier3');
+    const listedLabel = this.translate.instant('dex.listings.table.listed');
+    const approvedLabel = this.translate.instant('state.approved');
+    const pendingLabel = this.translate.instant('state.pending');
     const doc = new jsPDF({ orientation: 'landscape' });
     const pad = 14;
     doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-    doc.text('DEX Asset Listings', pad, 15);
+    doc.text(this.translate.instant('dex.listings.list.export.pdfTitle'), pad, 15);
     autoTable(doc, {
       startY: 28,
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [[ '#', 'Asset', 'Tier 1', 'Tier 2', 'Tier 3', 'Listed' ]],
+      head: [[ idLabel, assetLabel, tier1Label, tier2Label, tier3Label, listedLabel ]],
       body: listings.map((l, i) => [
         i + 1,
         l.assetName + (l.assetSymbol ? ' (' + l.assetSymbol + ')' : ''),
-        l.venueApproved ? 'Approved' : (l.venuePending ? 'Pending' : '—'),
-        l.countryApproved ? 'Approved' : (l.countryPending ? 'Pending' : '—'),
-        l.globalApproved ? 'Approved' : (l.globalPending ? 'Pending' : '—'),
+        l.venueApproved ? approvedLabel : (l.venuePending ? pendingLabel : '—'),
+        l.countryApproved ? approvedLabel : (l.countryPending ? pendingLabel : '—'),
+        l.globalApproved ? approvedLabel : (l.globalPending ? pendingLabel : '—'),
         l.listedAt ? this.utils.formatDate(l.listedAt) : '—',
       ]),
     });

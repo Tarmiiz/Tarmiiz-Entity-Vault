@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalServicePaymentProcessorService } from './modal-service-payment-processor.service';
 import { ApiService } from '../../../../../shared/services/api.service';
@@ -10,7 +11,7 @@ import { ApiService } from '../../../../../shared/services/api.service';
   templateUrl: './modal-service-payment-processor.component.html',
   styleUrls: ['./modal-service-payment-processor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
 })
 export class ModalServicePaymentProcessorComponent {
 

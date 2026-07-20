@@ -5,16 +5,16 @@
   <!-- My custodian services (type-2) -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-4">
     <div class="px-4 py-3 border-b border-gray-200">
-      <h2 class="text-sm font-semibold text-gray-800">My custodian services</h2>
-      <p class="text-xs text-gray-600">Your own type-2 services that can act as a custodian for token-issuer services.</p>
+      <h2 class="text-sm font-semibold text-gray-800">{{ 'custody.myServices.title' | translate }}</h2>
+      <p class="text-xs text-gray-600">{{ 'custody.myServices.description' | translate }}</p>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm text-left text-gray-700">
         <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th class="px-4 py-2">Name</th>
-            <th class="px-4 py-2">Address</th>
-            <th class="px-4 py-2">State</th>
+            <th class="px-4 py-2">{{ 'common.name' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.address' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -24,14 +24,14 @@
               <td class="px-4 py-2 font-mono text-xs">{{ s.address }}</td>
               <td class="px-4 py-2">
                 <span class="text-xs px-2 py-0.5 rounded-full" [class]="getStateClass(s.state)">
-                  {{ s.stateName }}{{ s.suspended ? ' (Suspended)' : '' }}
+                  {{ s.stateName }}{{ s.suspended ? (' (' + ('state.suspended' | translate) + ')') : '' }}
                 </span>
               </td>
             </tr>
           } @empty {
             <tr>
               <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
-                @if (!loaded()) { Loading… } @else { You have no custodian (type-2) services. }
+                @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.myServices.empty' | translate }} }
               </td>
             </tr>
           }
@@ -43,13 +43,12 @@
   <!-- Services under my custody (reverse index — placeholder) -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-200">
-      <h2 class="text-sm font-semibold text-gray-800">Services under my custody</h2>
-      <p class="text-xs text-gray-600">Token-issuer services that have assigned one of your services as their custodian.</p>
+      <h2 class="text-sm font-semibold text-gray-800">{{ 'custody.underCustody.title' | translate }}</h2>
+      <p class="text-xs text-gray-600">{{ 'custody.underCustody.description' | translate }}</p>
     </div>
     @if (servicesUnderCustody().length === 0) {
       <div class="px-4 py-6 text-center text-gray-500 text-sm">
-        A reverse index of services under custody isn't available yet — pending an Entity API lookup.
-        Assign or reassign a custodian from each token-issuer service's detail page.
+        {{ 'custody.underCustody.empty' | translate }}
       </div>
     }
   </div>

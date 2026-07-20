@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -33,7 +34,7 @@ const AUDIT_CATEGORIES = [
   styleUrls: ['./my.page.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent]
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe]
 })
 export class MyPage implements OnInit {
   protected apiService = inject(ApiService);
@@ -42,6 +43,7 @@ export class MyPage implements OnInit {
   protected loadingService = inject(LoadingService);
   protected router = inject(Router);
   protected activatedRoute = inject(ActivatedRoute);
+  protected translate = inject(TranslateService);
   utils = inject(UtilsService);
 
   readonly categories = AUDIT_CATEGORIES;
@@ -146,7 +148,7 @@ export class MyPage implements OnInit {
     const CHUNK = 500;
     const HARD_CAP = 20000;
     const all: AuditLog[] = [];
-    this.loadingService.show('Preparing export...');
+    this.loadingService.show(this.translate.instant('common.preparingExport'));
     try {
       let page = 1;
       while (all.length < HARD_CAP) {
@@ -165,7 +167,7 @@ export class MyPage implements OnInit {
 
   async load(silent = false) {
     if (silent) this.refreshing.set(true);
-    if (!silent) this.loadingService.show('Loading audit log...');
+    if (!silent) this.loadingService.show(this.translate.instant('logs.audit.loadingLog'));
     try {
       const data = await this.fetch();
       if (data) {
@@ -287,21 +289,31 @@ export class MyPage implements OnInit {
   }
 
   async exportExcel() {
+    const timeLabel = this.translate.instant('logs.table.time');
+    const categoryLabel = this.translate.instant('logs.table.category');
+    const actionLabelHeader = this.translate.instant('logs.table.action');
+    const functionLabel = this.translate.instant('logs.table.function');
+    const actorLabelHeader = this.translate.instant('logs.table.actor');
+    const userLabel = this.translate.instant('logs.table.user');
+    const clientIpLabel = this.translate.instant('logs.table.clientIp');
+    const contractLabel = this.translate.instant('logs.table.contract');
+    const refNoLabel = this.translate.instant('logs.table.refNo');
+    const txHashLabel = this.translate.instant('logs.details.txHash');
     const rows = (await this.loadAllForExport()).map(r => ({
-      'Time': this.utils.formatDate(r.chain_time || r.created_at),
-      'Category': r.category,
-      'Action': this.actionLabel(r),
-      'Function': this.functionLabel(r),
-      'Actor': this.actorLabel(r),
-      'User': r.actor_user_name || '',
-      'Client IP': r.client_ip || '',
-      'Contract': r.contract,
-      'RefNo': r.ref_no,
-      'TxHash': r.tx_hash,
+      [timeLabel]: this.utils.formatDate(r.chain_time || r.created_at),
+      [categoryLabel]: r.category,
+      [actionLabelHeader]: this.actionLabel(r),
+      [functionLabel]: this.functionLabel(r),
+      [actorLabelHeader]: this.actorLabel(r),
+      [userLabel]: r.actor_user_name || '',
+      [clientIpLabel]: r.client_ip || '',
+      [contractLabel]: r.contract,
+      [refNoLabel]: r.ref_no,
+      [txHashLabel]: r.tx_hash,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Audit');
+    XLSX.utils.book_append_sheet(wb, ws, this.translate.instant('logs.audit.exportSheet'));
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `${this.exportName()}_${stamp}.xlsx`);
   }
@@ -318,7 +330,17 @@ export class MyPage implements OnInit {
       startY: 26,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [['Time', 'Category', 'Action', 'Function', 'Actor', 'User', 'Client IP', 'Contract', 'RefNo']],
+      head: [[
+        this.translate.instant('logs.table.time'),
+        this.translate.instant('logs.table.category'),
+        this.translate.instant('logs.table.action'),
+        this.translate.instant('logs.table.function'),
+        this.translate.instant('logs.table.actor'),
+        this.translate.instant('logs.table.user'),
+        this.translate.instant('logs.table.clientIp'),
+        this.translate.instant('logs.table.contract'),
+        this.translate.instant('logs.table.refNo'),
+      ]],
       body: rows.map(r => [
         this.utils.formatDate(r.chain_time || r.created_at),
         r.category, this.actionLabel(r),
@@ -336,8 +358,8 @@ export class MyPage implements OnInit {
   }
 
   protected exportName(): string { return 'audit_my'; }
-  protected exportTitle(): string { return 'My Audit Activity'; }
-  protected pageTitle(): string { return 'My Activity'; }
+  protected exportTitle(): string { return this.translate.instant('logs.my.exportTitle'); }
+  protected pageTitle(): string { return this.translate.instant('logs.my.pageTitle'); }
 
   get title(): string { return this.pageTitle(); }
 }

@@ -3,7 +3,7 @@ import { DecimalPipe } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -50,6 +50,7 @@ export class ListPage implements OnInit {
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
   private auditService = inject(AuditService);
+  private translate = inject(TranslateService);
   features = inject(FeaturesService);
 
   get isServiceProvider() { return this.features.isServiceProvider(); }
@@ -128,11 +129,14 @@ export class ListPage implements OnInit {
     await this.listServices();
   } 
 
-  private readonly stateNames: Record<number, string> = {
-    0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
-  };
-
   private mapVaultService(raw: any): Service {
+    const stateNames: Record<number, string> = {
+      0: this.translate.instant('state.inactive'),
+      1: this.translate.instant('state.initiated'),
+      2: this.translate.instant('state.active'),
+      3: this.translate.instant('state.suspended'),
+      4: this.translate.instant('state.deactivated'),
+    };
     const meta = typeof raw.metadata === 'object' && raw.metadata !== null ? raw.metadata : {};
     return {
       address: raw.address,
@@ -159,14 +163,14 @@ export class ListPage implements OnInit {
       paymentProcessor: raw.payment_processor ?? '',
       suspended: raw.suspended === true || raw.suspended === 1,
       state: raw.state ?? 0,
-      stateName: raw.state_name ?? this.stateNames[raw.state] ?? String(raw.state ?? ''),
+      stateName: raw.state_name ?? stateNames[raw.state] ?? String(raw.state ?? ''),
     } as Service;
   }
 
   async listServices(silent = false) {
     if (silent) this.refreshing.set(true);
     if (!silent) {
-      this.loadingService.show('Loading data...');
+      this.loadingService.show(this.translate.instant('common.loadingData'));
       this.services.set([]);
     }
     try {
@@ -191,7 +195,7 @@ export class ListPage implements OnInit {
     const data = await this.serviceAddService.show();
     if (!data) return;
 
-    this.loadingService.show('Creating service...');
+    this.loadingService.show(this.translate.instant('services.list.creatingService'));
     try {
       const entityInfo = await this.apiService.vaultGetEntityInfo();
       const result = await this.apiService.vaultCreateService({
@@ -210,10 +214,10 @@ export class ListPage implements OnInit {
       if (result) {
         await this.listServices();
       } else {
-        this.alertService.show('Error', 'Failed to create service.');
+        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('services.list.createFailed'));
       }
     } catch (error) {
-      this.alertService.show('Error', 'An unexpected error occurred.');
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -237,16 +241,24 @@ export class ListPage implements OnInit {
   }
 
   exportExcel() {
+    const nameLabel = this.translate.instant('services.table.name');
+    const verificationLabel = this.translate.instant('services.table.verificationLevel');
+    const regulatorLabel = this.translate.instant('services.table.regulator');
+    const stateLabel = this.translate.instant('services.table.state');
+    const suspendedLabel = this.translate.instant('services.table.suspended');
+    const yesLabel = this.translate.instant('common.yes');
+    const noLabel = this.translate.instant('common.no');
+
     const rows = this.filteredServices().map(s => ({
-      'Name': s.name,
-      ...(this.isServiceProvider ? {} : { 'Verification Level': s.verificationLevelName }),
-      ...(this.showAllServices() ? { 'Regulator': s.regulatorSymbol } : {}),
-      'State': s.stateName,
-      'Suspended': s.suspended ? 'Yes' : 'No',
+      [nameLabel]: s.name,
+      ...(this.isServiceProvider ? {} : { [verificationLabel]: s.verificationLevelName }),
+      ...(this.showAllServices() ? { [regulatorLabel]: s.regulatorSymbol } : {}),
+      [stateLabel]: s.stateName,
+      [suspendedLabel]: s.suspended ? yesLabel : noLabel,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Services');
+    XLSX.utils.book_append_sheet(wb, ws, this.translate.instant('services.title'));
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     XLSX.writeFile(wb, `services_${stamp}.xlsx`);
     this.auditService.logExport('excel', 'services');
@@ -257,19 +269,21 @@ export class ListPage implements OnInit {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pad = 14;
 
+    const noneLabel = this.translate.instant('common.none');
+
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Services', pad, 15);
+    doc.text(this.translate.instant('services.title'), pad, 15);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
 
     const filterParts = [
-      ...(this.isServiceProvider ? [] : [`Verification Level: ${this.filterVerificationLevel() ? (this.uniqueVerificationLevels().find(l => String(l[0]) === this.filterVerificationLevel())?.[1] ?? this.filterVerificationLevel()) : 'None'}`]),
-      `State: ${this.filterState() || 'None'}`,
+      ...(this.isServiceProvider ? [] : [`${this.translate.instant('services.filters.verificationLevel')}: ${this.filterVerificationLevel() ? (this.uniqueVerificationLevels().find(l => String(l[0]) === this.filterVerificationLevel())?.[1] ?? this.filterVerificationLevel()) : noneLabel}`]),
+      `${this.translate.instant('services.filters.state')}: ${this.filterState() || noneLabel}`,
     ];
     doc.setFontSize(8);
     doc.setTextColor(100);
-    doc.text(`Filters: ${filterParts.join('  |  ')}`, pad, 27);
+    doc.text(`${this.translate.instant('common.filters')}: ${filterParts.join('  |  ')}`, pad, 27);
     doc.setTextColor(0);
 
     const showRegulator = this.showAllServices();
@@ -278,13 +292,19 @@ export class ListPage implements OnInit {
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [[ '#', 'Name', ...(this.isServiceProvider ? [] : ['Verification Level']), ...(showRegulator ? ['Regulator'] : []), 'State' ]],
+      head: [[
+        this.translate.instant('services.table.id'),
+        this.translate.instant('services.table.name'),
+        ...(this.isServiceProvider ? [] : [this.translate.instant('services.table.verificationLevel')]),
+        ...(showRegulator ? [this.translate.instant('services.table.regulator')] : []),
+        this.translate.instant('services.table.state'),
+      ]],
       body: services.map((s, i) => [
         i + 1,
         s.name,
         ...(this.isServiceProvider ? [] : [s.verificationLevelName]),
         ...(showRegulator ? [s.regulatorSymbol] : []),
-        s.suspended ? `${s.stateName} (Suspended)` : s.stateName,
+        s.suspended ? `${s.stateName} ${this.translate.instant('services.list.suspendedSuffix')}` : s.stateName,
       ]),
     });
 

@@ -3,43 +3,31 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">
-          Edit Service: {{ editServiceService.service()?.name }}
+          {{ 'services.editModal.title' | translate: { name: editServiceService.service()?.name } }}
         </h3>
       </div>
       <form [formGroup]="editForm" (ngSubmit)="onSave()">
         <div class="p-6 space-y-4">
           <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+            <label for="name" class="block text-sm font-medium text-gray-700">{{ 'common.name' | translate }}</label>
             <input type="text" id="name" formControlName="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
-            <input type="text" id="website" formControlName="website" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-            <input type="email" id="email" formControlName="email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
-          </div>
-          <div>
-            <label for="mobile" class="block text-sm font-medium text-gray-700">Mobile</label>
-            <input type="tel" id="mobile" formControlName="mobile" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
           </div>
           @if (isTokenIssuer()) {
             <div>
-              <label for="validator" class="block text-sm font-medium text-gray-700">Validator</label>
+              <label for="validator" class="block text-sm font-medium text-gray-700">{{ 'services.editModal.fields.validator' | translate }}</label>
               <select id="validator" formControlName="validator"
                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="">None</option>
+                <option value="">{{ 'common.none' | translate }}</option>
                 @for (v of validators(); track v.address) {
                   <option [value]="v.address">{{ v.name || v.address }}</option>
                 }
               </select>
             </div>
             <div>
-              <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">Payment Processor</label>
+              <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">{{ 'services.editModal.fields.paymentProcessor' | translate }}</label>
               <select id="paymentProcessor" formControlName="paymentProcessor"
                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="">None</option>
+                <option value="">{{ 'common.none' | translate }}</option>
                 @for (cs of paymentProcessors(); track cs.address) {
                   <option [value]="cs.address">{{ cs.name || cs.address }}</option>
                 }
@@ -49,10 +37,10 @@
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            Cancel
+            {{ 'common.cancel' | translate }}
           </button>
           <button type="submit" [disabled]="!editForm.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Save Changes
+            {{ 'services.editModal.submit' | translate }}
           </button>
         </div>
       </form>
