@@ -135,6 +135,7 @@ export class DetailsPage implements OnInit {
       pick('prev_hash', 'prevHash') ?? null,
       pick('row_hash', 'rowHash') ?? null,
       pick('verified') ?? null,
+      pick('time') ?? 0,
     );
   }
 

@@ -10,7 +10,7 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 
-import { Document, DocumentSignature, GlobalVariable } from '../../../../shared/models/data.model';
+import { Document, DocumentSignature, DocumentVersion, GlobalVariable } from '../../../../shared/models/data.model';
 
 import { ModalDocumentShareService } from '../modals/modal-document-share/modal-document-share.service';
 import { ModalDocumentShareComponent } from '../modals/modal-document-share/modal-document-share.component';
@@ -18,7 +18,7 @@ import { ModalDocumentSignService } from '../modals/modal-document-sign/modal-do
 import { ModalDocumentSignComponent } from '../modals/modal-document-sign/modal-document-sign.component';
 import { AuthService } from '../../../../shared/services/auth.service';
 
-type TabId = 'info' | 'sharing' | 'signatures';
+type TabId = 'info' | 'sharing' | 'signatures' | 'versions';
 
 @Component({
   selector: 'app-documents-details',
@@ -41,6 +41,7 @@ export class DetailsPage implements OnInit {
   private signModal = inject(ModalDocumentSignService);
 
   isExecutive = () => Number(this.authService.userInfo?.role) === 2;
+  isViewer    = () => Number(this.authService.userInfo?.role) === 3;
 
   id = signal<string>('');
   document = signal<Document | null>(null);
@@ -54,7 +55,12 @@ export class DetailsPage implements OnInit {
     return this.sharedWith().filter(a => a.toLowerCase() !== owner);
   });
   signatures = signal<DocumentSignature[]>([]);
+  versions = signal<DocumentVersion[]>([]);
   activeTab = signal<TabId>('info');
+
+  // Replace-file state (the affordance that actually produces versions past v1).
+  replacing = signal(false);
+  replaceProgress = signal(0);
 
   docTypes = signal<GlobalVariable[]>([]);
   docStates = signal<GlobalVariable[]>([]);
@@ -75,7 +81,7 @@ export class DetailsPage implements OnInit {
   async loadAll() {
     this.loadingService.show(this.translate.instant('documents.details.loading.document'));
     try {
-      await Promise.all([this.loadDocument(), this.loadShared(), this.loadSignatures(), this.loadGlobals()]);
+      await Promise.all([this.loadDocument(), this.loadShared(), this.loadSignatures(), this.loadVersions(), this.loadGlobals()]);
     } finally {
       this.loadingService.hide();
     }
@@ -97,7 +103,69 @@ export class DetailsPage implements OnInit {
     if (r?.signatures) this.signatures.set(r.signatures);
   }
 
+  async loadVersions() {
+    const r = await this.apiService.documentVersions(this.id(), 1, 200);
+    if (r?.versions) this.versions.set(r.versions);
+  }
+
   setTab(id: TabId) { this.activeTab.set(id); }
+
+  // ── Replace file ────────────────────────────────────────────────────────────────────────
+  // Uploads a new file over the existing document: the API re-encrypts under a fresh DEK,
+  // re-wraps it for the CURRENT recipient set, re-pins, and updates the cid — appending a
+  // version row. Type / state / ACL are preserved.
+  triggerReplace(input: HTMLInputElement) { input.click(); }
+
+  async onReplaceFile(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';                       // let the same file be picked again after a failure
+    if (!file) return;
+
+    const confirmed = await this.alertService.show(
+      this.translate.instant('documents.details.confirm.replaceTitle'),
+      this.translate.instant('documents.details.confirm.replaceMessage'),
+      this.translate.instant('documents.details.actions.replaceFile')
+    );
+    if (!confirmed) return;
+
+    this.replacing.set(true);
+    this.replaceProgress.set(0);
+    try {
+      const r = await this.apiService.documentReplaceFile(
+        this.id(), file, { fileType: file.type }, p => this.replaceProgress.set(p)
+      );
+      if (r?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+        return;
+      }
+      await Promise.all([this.loadDocument(), this.loadVersions(), this.loadShared()]);
+      this.setTab('versions');
+    } finally {
+      this.replacing.set(false);
+      this.replaceProgress.set(0);
+    }
+  }
+
+  formatBytes(bytes: number | null): string {
+    if (bytes === null || bytes === undefined) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    const units = ['KB', 'MB', 'GB'];
+    let v = bytes / 1024, i = 0;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return v.toFixed(1) + ' ' + units[i];
+  }
+
+  // Middle-truncate a long hash/CID for a table cell; the full value stays in the title attr.
+  truncate(value: string | null, lead = 10, tail = 6): string {
+    if (!value) return '—';
+    return value.length <= lead + tail + 1 ? value : value.slice(0, lead) + '…' + value.slice(-tail);
+  }
+
+  async copyToClipboard(value: string | null) {
+    if (!value) return;
+    try { await navigator.clipboard.writeText(value); } catch { /* clipboard unavailable */ }
+  }
 
   async loadDocument() {
     const r = await this.apiService.documentGet(this.id());
@@ -266,8 +334,10 @@ export class DetailsPage implements OnInit {
       const docHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 
       const signRes = await this.apiService.documentSign(this.id(), keyId, docHash);
-      if (signRes?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), signRes.error);
+      // authPost returns null on any non-2xx (e.g. a 403 from requireExecutive) — null is a failure,
+      // not a silent success.
+      if (!signRes || signRes.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), signRes?.error || this.translate.instant('documents.details.errors.signFailed'));
       } else {
         await this.loadSignatures();
         this.activeTab.set('signatures');

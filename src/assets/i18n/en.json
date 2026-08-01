@@ -79,6 +79,7 @@
     "amount": "Amount",
     "description": "Description",
     "metadata": "Metadata",
+    "contact": "Contact",
     "id": "#",
     "exportExcel": "Export Excel",
     "exportPdf": "Export PDF",
@@ -105,7 +106,8 @@
     "live": "Live",
     "offline": "Offline",
     "breadcrumb": "Breadcrumb",
-    "preparingExport": "Preparing export..."
+    "preparingExport": "Preparing export...",
+    "uploading": "Uploading"
   },
   "state": {
     "all": "All",
@@ -210,6 +212,9 @@
       "network": "Network error — please try again.",
       "generic": "Login failed. Please try again.",
       "credentialsInvalid": "Invalid credentials. Please check your email and password.",
+      "entityPending": "This entity is awaiting regulator approval. Only the entity administrator can sign in until it is approved.",
+      "entityInactive": "This entity is suspended or deactivated. Sign-in is disabled — please contact your regulator.",
+      "entityUnknown": "Could not determine the entity status. Please try again or contact your administrator.",
       "invalidFormMessage": "Please enter your email and password.",
       "invalidFormTitle": "Invalid Form",
       "loginErrorTitle": "Login Error",
@@ -389,7 +394,11 @@
       "shortfall": "Shortfall",
       "shortfallPrefix": "Shortfall:",
       "subtitle": "if all holders redeemed now",
-      "title": "Liquidity Shortfall"
+      "title": "Liquidity Shortfall",
+      "tolerance": "Alert tolerance",
+      "toleranceDefault": "platform default (no regulator setting)",
+      "toleranceRegulator": "set by your regulator",
+      "withinTolerance": "within tolerance — {{amount}} below the alert threshold"
     },
     "loadingChart": "Loading chart…",
     "netFlowPeriod": "30d",
@@ -445,6 +454,7 @@
       "title": "Service Details",
       "tabs": {
         "info": "Information",
+        "metadata": "Metadata",
         "subscriptions": "Subscriptions",
         "assets": "Assets",
         "transactions": "Transactions",
@@ -453,6 +463,14 @@
         "logs": "Audit Trail",
         "liquidity": "Liquidity",
         "overview": "Overview"
+      },
+      "metadata": {
+        "additionalFields": "Additional Fields",
+        "key": "Key",
+        "value": "Value",
+        "noDescription": "No description provided.",
+        "noAdditional": "No additional metadata recorded.",
+        "invalidJson": "The metadata field is not valid JSON. Showing raw value:"
       },
       "info": {
         "name": "Name",
@@ -530,6 +548,10 @@
         "shortfall": "Shortfall",
         "submitting": "Submitting…",
         "title": "Service Liquidity",
+        "tolerance": "Alert tolerance",
+        "toleranceDefault": "platform default (no regulator setting)",
+        "toleranceRegulator": "set by your regulator",
+        "withinTolerance": "within tolerance — {{amount}} below the alert threshold",
         "withdraw": "Withdraw",
         "withheld": "Withheld",
         "injectTitle": "Inject Liquidity",
@@ -756,6 +778,9 @@
     "details": {
       "title": "Asset Details",
       "changeStateBtn": "Change State",
+      "notManager": "Managed by another address — supply and state changes are unavailable here",
+      "notFoundTitle": "Asset not available",
+      "notFoundMessage": "This asset is not part of your vault. It may belong to another entity, or it may have been removed.",
       "loadingAsset": "Loading asset details...",
       "tabs": {
         "info": "Information",
@@ -1270,7 +1295,7 @@
     },
     "distributionDeclareModal": {
       "amountLabel": "Amount",
-      "amountUnitCredit": "wei in asset currency",
+      "amountUnitCredit": "whole units of the asset currency",
       "amountUnitStock": "token units to issue pro-rata",
       "creditDividendDesc": "Paid in the asset's own currency",
       "creditDividendTitle": "Credit Dividend",
@@ -1387,7 +1412,28 @@
         "messages": "Messages",
         "logs": "Audit Trail",
         "credit": "Credit",
-        "overview": "Overview"
+        "overview": "Overview",
+        "identity": "Identity Data"
+      },
+      "identity": {
+        "hint": "Verifications this entity originated for this subscriber, read from the encrypted eKYC documents it holds a key to. Verifications run through other entities are not visible, and the subscriber's DID number is never shown.",
+        "empty": "No verifications originated by this entity for this subscriber.",
+        "transactionId": "Provider Trx Ref",
+        "sharedAt": "Recorded",
+        "view": "View",
+        "hide": "Hide",
+        "provider": "Provider",
+        "otp": "Contacts OTP-verified",
+        "attested": "Contacts attested",
+        "unreadable": "This verification's document could not be read.",
+        "nameFull": "Full Name",
+        "idNumber": "Document Number",
+        "dateOfBirth": "Date of Birth",
+        "idExpiryDate": "ID Expiry",
+        "nationality": "Nationality",
+        "gender": "Gender",
+        "address": "Street",
+        "governorate": "Governorate"
       },
       "info": {
         "subscription": "Subscription Address",
@@ -1507,6 +1553,16 @@
       "modeExisting": "Existing DID",
       "modeNew": "New Subscriber (eKYC)",
       "nationalId": "National ID",
+      "idType": "ID Type",
+      "documentNumber": "Document Number",
+      "nationality": "Nationality",
+      "placeOfBirth": "Place of Birth",
+      "issuingCountry": "Issuing Country",
+      "issuingAuthority": "Issuing Authority",
+      "city": "City",
+      "postalCode": "Postal Code",
+      "addressCountry": "Country (Address)",
+      "acceptExpired": "Accept expired or missing ID expiry date (recorded for the regulator)",
       "organization": "Organization",
       "profession": "Profession",
       "provider": "eKYC Provider",
@@ -1961,17 +2017,21 @@
         "shareWithAccount": "Share with account",
         "sign": "Sign",
         "softDelete": "Soft Delete",
-        "verify": "Verify"
+        "verify": "Verify",
+        "replaceFile": "Replace File"
       },
       "confirm": {
         "deleteMessage": "Soft-delete this document?",
         "deleteTitle": "Delete Document",
         "revokeMessage": "Revoke access for {{account}}?",
-        "revokeTitle": "Revoke Access"
+        "revokeTitle": "Revoke Access",
+        "replaceTitle": "Replace File",
+        "replaceMessage": "This uploads a new file over the current one. The document keeps its type, state and recipients — everyone it is shared with will see the new file. The previous version stays in the upload ledger."
       },
       "errors": {
         "fetchFile": "Could not fetch file from IPFS.",
-        "fetchForHashing": "Could not fetch file from IPFS for hashing."
+        "fetchForHashing": "Could not fetch file from IPFS for hashing.",
+        "signFailed": "Failed to sign the document."
       },
       "loading": {
         "document": "Loading document…",
@@ -1996,7 +2056,8 @@
       "tabs": {
         "info": "Information",
         "sharing": "Sharing",
-        "signatures": "Signatures"
+        "signatures": "Signatures",
+        "versions": "Versions"
       },
       "untitledPrefix": "Document #",
       "verify": {
@@ -2012,6 +2073,18 @@
         "signerRecoveredLabel": "Signer (recovered): ",
         "valid": "✅ Signature is VALID",
         "validTitle": "Signature Valid"
+      },
+      "versions": {
+        "hint": "Every file this document has ever held. A new row is added on upload, on each file replacement, and when a private document is published.",
+        "empty": "No version history recorded for this document yet.",
+        "version": "Version",
+        "uploadedAt": "Uploaded",
+        "fileName": "File Name",
+        "size": "Size",
+        "sha256": "SHA-256",
+        "uploadedBy": "Uploaded By",
+        "current": "Current",
+        "showingCount": "Showing {{count}} Versions"
       }
     },
     "list": {
@@ -2078,6 +2151,8 @@
         "clear": "Clear",
         "participant": "Participant",
         "participantPlaceholder": "Name or address…",
+        "from": "From",
+        "fromPlaceholder": "Name or address…",
         "subject": "Subject",
         "typeEntity": "Entity",
         "typeRegulator": "Regulator",
@@ -2087,6 +2162,7 @@
       "table": {
         "id": "#",
         "subject": "Subject",
+        "from": "From",
         "participants": "Participants",
         "messages": "Messages",
         "lastActivity": "Last activity",
@@ -2802,7 +2878,9 @@
           "removing": "Removing venue...",
           "showing": "Showing {{shown}} of Total {{total}} Records",
           "venueCol": "Venue",
-          "venueStateCol": "Venue State"
+          "venueStateCol": "Venue State",
+          "approvalCol": "Regulator Approval",
+          "awaitingApproval": "Awaiting Approval"
         }
       },
       "createModal": {
@@ -3221,6 +3299,8 @@
   "systemFunctionLabels": {
     "assetAddDistribution": "Asset - Add Distribution",
     "assetChangeState": "Asset - Change State",
+    "custodyHoldPlace": "Custody - Place Hold",
+    "custodyHoldRelease": "Custody - Release Hold",
     "creditBankTransfer": "Credit - Bank Transfer",
     "creditRouteCredit": "Credit - Route Credit",
     "exportExcel": "Export Excel",
@@ -3242,9 +3322,38 @@
       "title": "My custodian services"
     },
     "underCustody": {
-      "description": "Token-issuer services that have assigned one of your services as their custodian.",
-      "empty": "A reverse index of services under custody isn't available yet — pending an Entity API lookup. Assign or reassign a custodian from each token-issuer service's detail page.",
-      "title": "Services under my custody"
+      "description": "Token-issuer services that have attached one of your services as their custodian.",
+      "empty": "No services have attached your custodian services yet.",
+      "title": "Services under my custody",
+      "service": "Service",
+      "myService": "My Custodian Service",
+      "updated": "Updated",
+      "active": "Active",
+      "detached": "Detached"
+    },
+    "assets": {
+      "title": "Assets under custody",
+      "description": "Assets of the services you custody. As custodian you may place and release holds on holder balances; the asset's regulator retains a release-any override.",
+      "empty": "No custodied assets yet."
+    },
+    "holds": {
+      "view": "View Holds",
+      "hide": "Hide Holds",
+      "place": "Place Hold",
+      "placeTitle": "Place Custody Hold",
+      "release": "Release",
+      "releaseTitle": "Release Custody Hold",
+      "actingService": "Acting Custodian Service",
+      "account": "Holder Account",
+      "amountTokens": "Amount (tokens)",
+      "remaining": "Remaining",
+      "placedBy": "Placed By",
+      "regulator": "Regulator",
+      "empty": "No holds on this asset.",
+      "placing": "Placing hold...",
+      "releasing": "Releasing hold...",
+      "placeFailed": "Failed to place the hold",
+      "releaseFailed": "Failed to release the hold"
     }
   },
   "documentsTab": {

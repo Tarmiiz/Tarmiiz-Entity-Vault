@@ -51,6 +51,13 @@ export class AuthService {
   }
   
   async login(username: string, password: string) {
+    // The overlay MUST clear on every exit path. The one exception is the success
+    // return, which deliberately hands a still-visible spinner to the dashboard —
+    // hence the flag rather than an unconditional hide(). This is a `finally` guard
+    // instead of a hide() before each early return because the early returns kept
+    // forgetting it: both a failed config fetch and the entity-state rejection left
+    // the "Generating zero-knowledge proof" overlay stuck over a dead screen.
+    let handOffSpinner = false;
     try {
 
       this.loadingService.show(this.translate.instant('auth.zk.connecting'));
@@ -112,10 +119,16 @@ export class AuthService {
         if (user && user.state === 2) {
           this.userInfo = user;
 
-          // check entity state — block login if entity is not active
+          // check entity state — Pending (1) admits ONLY the admin (role 1) so they can
+          // prepare the tenant while awaiting regulator approval; Active (2) admits
+          // everyone; Suspended (3) / Deactivated (4) admit nobody. The Entity API
+          // enforces the same rule on /vault/entity/login — this is UX, not the boundary.
           const entityData = await this.apiService.vaultGetEntityInfo();
-          if (!entityData || entityData.state !== 2) {
-            return { success: false, error: 'Entity is suspended or deactivated. Contact your regulator.' };
+          if (!entityData) {
+            return { success: false, error: 'ENTITY_UNKNOWN' };
+          }
+          if (entityData.state !== 2 && !(entityData.state === 1 && user.role === 1)) {
+            return { success: false, error: entityData.state === 1 ? 'ENTITY_PENDING' : 'ENTITY_INACTIVE' };
           }
           this.entityInfo = entityData;
           this.entityActive.set(entityData.state === 2);
@@ -137,23 +150,24 @@ export class AuthService {
 
           // keep loading spinner visible — the dashboard will hide it after loading
           this.loadingService.show(this.translate.instant('auth.zk.loadingDashboard'));
+          handOffSpinner = true;
           return { success: true, error: '' };
 
         }
         else {
-          this.loadingService.hide();
           return { success: false, error: user ? 'User is not active' : 'Error fetching info' };
         }
       }
       else {
-          this.loadingService.hide();
           return { success: false, error: loginResult.error };
       }
 
     }
     catch (error) {
-          this.loadingService.hide();
           return { success: false, error: error };
+    }
+    finally {
+      if (!handOffSpinner) this.loadingService.hide();
     }
 
   }

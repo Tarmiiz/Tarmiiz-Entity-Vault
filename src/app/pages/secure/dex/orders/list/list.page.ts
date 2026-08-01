@@ -119,7 +119,7 @@ export class ListPage implements OnInit, OnDestroy {
     return Number(s) === 1 ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
   }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '0.00'; }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   fillPct(o: DexOrder): number {
     const a = Number(o.amount || '0');

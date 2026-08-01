@@ -15,12 +15,53 @@ export class UtilsService {
     return `${dd}/${MM}/${yyyy} ${HH}:${mm}:${ss}`;
   }
 
+  // Log/audit rows carry a single canonical `time` (ms) computed API-side
+  // (chain_time seconds → ms, else the ms created_at). Format it with a plain
+  // `new Date(ms)` — NO ×1000 (that's `formatDate`'s job for raw on-chain seconds).
+  formatTime(ms: number | null | undefined): string {
+    if (!ms) return '-';
+    const d = new Date(ms);
+    const dd   = String(d.getDate()).padStart(2, '0');
+    const MM   = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const HH   = String(d.getHours()).padStart(2, '0');
+    const mm   = String(d.getMinutes()).padStart(2, '0');
+    const ss   = String(d.getSeconds()).padStart(2, '0');
+    return `${dd}/${MM}/${yyyy} ${HH}:${mm}:${ss}`;
+  }
+
+  // Unified timestamp formatter → 'yyyy-MM-dd HH:mm:ss' (24h, local). The one date
+  // format used across the app. Auto-detects the unit: values below 1e12 are treated
+  // as on-chain SECONDS (×1000), otherwise as millisecond epochs — so it accepts both
+  // `chain_time` (seconds) and `created_at` (ms) without the caller normalizing.
+  formatTs(value: number | string | null | undefined): string {
+    if (value === null || value === undefined || value === '') return '-';
+    let n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return '-';
+    if (n < 1e12) n *= 1000;
+    const d = new Date(n);
+    const yyyy = d.getFullYear();
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const HH = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
+  }
+
   formatTokens(value: number): string {
     return Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
 
   formatPrice(value: number): string {
     return Number(value).toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+  }
+
+  // Numeric 6-decimal rounding — kills double-precision dust (e.g. 2.27e-13 from
+  // balance × price − cost) in values used for comparisons (P/L color classes) and
+  // Excel cells, without hiding any real value >= 0.000001.
+  round6(value: number): number {
+    return Math.round((Number(value) || 0) * 1e6) / 1e6;
   }
 
   // Shorten a 0x-prefixed hex string for display: 0xabcdef…1234. Used for

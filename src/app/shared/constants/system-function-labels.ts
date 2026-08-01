@@ -21,6 +21,8 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'asset-change-state':            'systemFunctionLabels.assetChangeState',
   'venue-change-state':            'systemFunctionLabels.venueChangeState',
   'asset-add-distribution':        'systemFunctionLabels.assetAddDistribution',
+  'custody-hold-place':            'systemFunctionLabels.custodyHoldPlace',
+  'custody-hold-release':          'systemFunctionLabels.custodyHoldRelease',
   'export-excel': 'systemFunctionLabels.exportExcel',
   'export-pdf': 'systemFunctionLabels.exportPdf',
   'view-documents': 'systemFunctionLabels.viewDocuments',

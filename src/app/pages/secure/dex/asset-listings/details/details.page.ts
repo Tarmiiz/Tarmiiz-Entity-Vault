@@ -74,6 +74,38 @@ export class DetailsPage implements OnInit {
     const l = this.listing(); if (!l) return false;
     return t === 1 ? l.venuePending : t === 2 ? l.countryPending : l.globalPending;
   }
+  // Badge state for a tier card. Mirrors the venue detail page's tierStatus so both
+  // sides of a listing read identically.
+  tierStatus(t: 1 | 2 | 3): { code: 'approved' | 'pending' | 'none'; label: string; cls: string } {
+    if (this.tierApprovedOnAsset(t)) return { code: 'approved', label: this.translate.instant('state.approved'), cls: 'bg-green-100 text-green-800' };
+    if (this.tierPendingOnAsset(t))  return { code: 'pending',  label: this.translate.instant('dex.listings.details.tiers.pendingApproval'), cls: 'bg-yellow-100 text-yellow-800' };
+    return { code: 'none', label: this.translate.instant('dex.listings.details.tiers.notRequested'), cls: 'bg-gray-100 text-gray-800' };
+  }
+
+  // Request regulator approval for an additional tier on an EXISTING listing.
+  // There is no separate "request tier" endpoint on the listing side — `listAsset`
+  // is additive rather than create-once (it only initialises listedAt on the first
+  // call, then sets each pending flag independently), so re-posting the create with
+  // just this tier's flag is the correct call. Doing it from the list page's Create
+  // Listing modal works too, but its defaults (venue=true) make a re-submit a silent
+  // no-op once tier 1 is approved — hence this button.
+  async requestTier(tier: 1 | 2 | 3) {
+    const l = this.listing();
+    if (!l) return;
+    const ok = await this.alertService.show(
+      this.translate.instant('dex.venues.tier.requestModal.title'),
+      this.translate.instant('dex.venues.tier.requestModal.message', { tier: this.tierLabel(tier) }),
+      this.translate.instant('dex.venues.tier.requestModal.confirm')
+    );
+    if (!ok) return;
+    this.loadingService.show(this.translate.instant('dex.listings.details.loading'));
+    try {
+      const r = await this.apiService.vaultDexAssetListingCreate(this.baseAsset(), tier === 1, tier === 2, tier === 3);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      await this.loadListing();
+    } finally { this.loadingService.hide(); }
+  }
+
   tierBadgeClass(t: number): string {
     return t === 1 ? 'bg-indigo-100 text-indigo-800'
          : t === 2 ? 'bg-blue-100 text-blue-800'

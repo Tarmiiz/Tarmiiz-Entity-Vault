@@ -51,6 +51,15 @@
         >
           {{ 'services.details.tabs.info' | translate }}
         </button>
+        <button (click)="setTab('metadata')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'metadata'"
+          [class.border-b-2]="activeTab() === 'metadata'"
+          [class.border-blue-600]="activeTab() === 'metadata'"
+          [class.bg-blue-600]="activeTab() === 'metadata'"
+        >
+          {{ 'services.details.tabs.metadata' | translate }}
+        </button>
         @if (isTokenIssuer()) {
           <button (click)="setTab('assets')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
@@ -79,15 +88,17 @@
           >
             {{ 'services.details.tabs.transactions' | translate }}
           </button>
-          <button (click)="setTab('liquidity')"
-            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-            [class.text-white]="activeTab() === 'liquidity'"
-            [class.border-b-2]="activeTab() === 'liquidity'"
-            [class.border-blue-600]="activeTab() === 'liquidity'"
-            [class.bg-blue-600]="activeTab() === 'liquidity'"
-          >
-            {{ 'services.details.tabs.liquidity' | translate }}
-          </button>
+          @if (isTokenIssuer()) {
+            <button (click)="setTab('liquidity')"
+              class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+              [class.text-white]="activeTab() === 'liquidity'"
+              [class.border-b-2]="activeTab() === 'liquidity'"
+              [class.border-blue-600]="activeTab() === 'liquidity'"
+              [class.bg-blue-600]="activeTab() === 'liquidity'"
+            >
+              {{ 'services.details.tabs.liquidity' | translate }}
+            </button>
+          }
         }
         @if (features.systemFunctionEnabled('view-documents')) {
           <button (click)="setTab('docs')"
@@ -255,26 +266,6 @@
                   <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.address' | translate }}</p>
                   <p class="font-mono text-base">{{ v.address }}</p>
                 </div>
-                <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">{{ 'common.description' | translate }}</p>
-                  <p class="text-base">{{ v.description }}</p>
-                </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'common.email' | translate }}</p>
-                  <p class="text-base">{{ v.contact?.email }}</p>
-                </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'common.mobile' | translate }}</p>
-                  <p class="text-base">{{ v.contact?.phone }}</p>
-                </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'common.website' | translate }}</p>
-                  <p class="text-base">{{ v.contact?.website }}</p>
-                </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'common.address' | translate }}</p>
-                  <p class="text-base">{{ v.contact?.address }}</p>
-                </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                   <p class="text-base">{{ v.countryName }}</p>
@@ -389,12 +380,6 @@
 
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  @if (features.systemFunctionEnabled('service-edit-metadata')) {
-                    <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
-                      class="text-xs px-3 py-1.5 rounded bg-gray-600 text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-600">
-                      {{ 'services.details.info.editMetadata' | translate }}
-                    </button>
-                  }
                   @if (features.systemFunctionEnabled('service-change-visibility')) {
                     <button (click)="onChangeVisibility()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
@@ -410,69 +395,150 @@
                 </div>
               }
 
-              <!-- Images (public media — avatar / banner / gallery) -->
-              @if (features.systemFunctionEnabled('view-documents')) {
-                <div class="mt-8 pt-6 border-t">
-                  <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'media.heading' | translate }}</h4>
-                    @if (userInfo && userInfo.role !== 3) {
-                      <button (click)="openAddImageModal()" [disabled]="!entityActive"
-                        class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                        {{ 'media.uploadButton' | translate }}
-                      </button>
-                    }
-                  </div>
-                  @if (mediaImages().length === 0) {
-                    <p class="text-sm text-gray-400 italic">{{ 'media.noImages' | translate }}</p>
-                  } @else {
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      @for (row of mediaImages(); track row.entry.documentId) {
-                        <div class="border border-gray-200 rounded-lg overflow-hidden">
-                          <div class="aspect-video bg-gray-100 flex items-center justify-center">
-                            @if (mediaImageUrls()[row.entry.documentId]) {
-                              <img [src]="mediaImageUrls()[row.entry.documentId]" [alt]="row.entry.title" class="w-full h-full object-cover">
-                            } @else {
-                              <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            }
-                          </div>
-                          <div class="p-2">
-                            <div class="flex items-center justify-between gap-1">
-                              <span class="text-xs text-black font-medium truncate">{{ row.entry.title }}</span>
-                              @if (row.role !== 'gallery') {
-                                <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
-                                  [class]="row.role === 'avatar' ? 'bg-indigo-100 text-indigo-700' : 'bg-cyan-100 text-cyan-700'">
-                                  {{ (row.role === 'avatar' ? 'media.roleAvatar' : 'media.roleBanner') | translate }}
-                                </span>
-                              }
-                            </div>
-                            @if (userInfo && userInfo.role !== 3) {
-                              <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                                @if (row.role !== 'avatar') {
-                                  <button (click)="changeMediaRole(row.entry.documentId, 'avatar')" [disabled]="!entityActive"
-                                    class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setAvatar' | translate }}</button>
-                                }
-                                @if (row.role !== 'banner') {
-                                  <button (click)="changeMediaRole(row.entry.documentId, 'banner')" [disabled]="!entityActive"
-                                    class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setBanner' | translate }}</button>
-                                }
-                                @if (row.role !== 'gallery') {
-                                  <button (click)="changeMediaRole(row.entry.documentId, 'gallery')" [disabled]="!entityActive"
-                                    class="text-[10px] text-gray-500 hover:text-gray-700 disabled:opacity-40">{{ 'media.unsetRole' | translate }}</button>
-                                }
-                                <button (click)="removeMediaImage(row)" [disabled]="!entityActive"
-                                  class="text-[10px] text-red-500 hover:text-red-700 disabled:opacity-40">{{ 'common.remove' | translate }}</button>
-                              </div>
-                            }
-                          </div>
-                        </div>
-                      }
-                    </div>
+            </div>
+          </div>
+        }
+
+        <!-- metadata tab -->
+        @if (activeTab() === 'metadata') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto p-4 space-y-6">
+
+            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-edit-metadata')) {
+              <div class="flex justify-end">
+                <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
+                  class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                  {{ 'services.details.info.editMetadata' | translate }}
+                </button>
+              </div>
+            }
+
+            <!-- Description -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'common.description' | translate }}</h4>
+              @if (parsedMetadata().description) {
+                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ parsedMetadata().description }}</p>
+              } @else {
+                <p class="text-sm text-gray-400 italic">{{ 'services.details.metadata.noDescription' | translate }}</p>
+              }
+            </div>
+
+            <!-- Contact -->
+            @if (hasContact()) {
+              <div>
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'common.contact' | translate }}</h4>
+                <div class="space-y-2">
+                  @if (parsedMetadata().contact.email) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.email' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.email }}</span></div>
                   }
-                  <p class="text-xs text-gray-400 mt-2">{{ 'media.hint' | translate }}</p>
+                  @if (parsedMetadata().contact.phone) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.mobile' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.phone }}</span></div>
+                  }
+                  @if (parsedMetadata().contact.website) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.website' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.website }}</span></div>
+                  }
+                  @if (parsedMetadata().contact.address) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.address' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.address }}</span></div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Additional fields -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'services.details.metadata.additionalFields' | translate }}</h4>
+              @if (!parsedMetadata().valid) {
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p class="text-xs text-gray-500 mb-2">{{ 'services.details.metadata.invalidJson' | translate }}</p>
+                  <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap break-all">{{ parsedMetadata().raw }}</pre>
+                </div>
+              } @else if (parsedMetadata().entries.length === 0) {
+                <p class="text-sm text-gray-400 italic">{{ 'services.details.metadata.noAdditional' | translate }}</p>
+              } @else {
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div class="overflow-x-auto rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-700">
+                      <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                        <tr>
+                          <th scope="col" class="px-6 py-2 w-1/3">{{ 'services.details.metadata.key' | translate }}</th>
+                          <th scope="col" class="px-6 py-2">{{ 'services.details.metadata.value' | translate }}</th>
+                        </tr>
+                      </thead>
+                      <tbody class="text-xs">
+                        @for (row of parsedMetadata().entries; track row[0]; let isEven = $even) {
+                          <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                            <td class="px-6 py-2 font-medium text-gray-700">{{ row[0] }}</td>
+                            <td class="px-6 py-2 break-all">{{ row[1] }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               }
-
             </div>
+
+            <!-- Images (public media — avatar / banner / gallery) -->
+            @if (features.systemFunctionEnabled('view-documents')) {
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'media.heading' | translate }}</h4>
+                  @if (userInfo && userInfo.role !== 3) {
+                    <button (click)="openAddImageModal()" [disabled]="!entityActive"
+                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      {{ 'media.uploadButton' | translate }}
+                    </button>
+                  }
+                </div>
+                @if (mediaImages().length === 0) {
+                  <p class="text-sm text-gray-400 italic">{{ 'media.noImages' | translate }}</p>
+                } @else {
+                  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    @for (row of mediaImages(); track row.entry.documentId) {
+                      <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="aspect-video bg-gray-100 flex items-center justify-center">
+                          @if (mediaImageUrls()[row.entry.documentId]) {
+                            <img [src]="mediaImageUrls()[row.entry.documentId]" [alt]="row.entry.title" class="w-full h-full object-cover">
+                          } @else {
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                          }
+                        </div>
+                        <div class="p-2">
+                          <div class="flex items-center justify-between gap-1">
+                            <span class="text-xs text-black font-medium truncate">{{ row.entry.title }}</span>
+                            @if (row.role !== 'gallery') {
+                              <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
+                                [class]="row.role === 'avatar' ? 'bg-indigo-100 text-indigo-700' : 'bg-cyan-100 text-cyan-700'">
+                                {{ (row.role === 'avatar' ? 'media.roleAvatar' : 'media.roleBanner') | translate }}
+                              </span>
+                            }
+                          </div>
+                          @if (userInfo && userInfo.role !== 3) {
+                            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                              @if (row.role !== 'avatar') {
+                                <button (click)="changeMediaRole(row.entry.documentId, 'avatar')" [disabled]="!entityActive"
+                                  class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setAvatar' | translate }}</button>
+                              }
+                              @if (row.role !== 'banner') {
+                                <button (click)="changeMediaRole(row.entry.documentId, 'banner')" [disabled]="!entityActive"
+                                  class="text-[10px] text-indigo-600 hover:text-indigo-800 disabled:opacity-40">{{ 'media.setBanner' | translate }}</button>
+                              }
+                              @if (row.role !== 'gallery') {
+                                <button (click)="changeMediaRole(row.entry.documentId, 'gallery')" [disabled]="!entityActive"
+                                  class="text-[10px] text-gray-500 hover:text-gray-700 disabled:opacity-40">{{ 'media.unsetRole' | translate }}</button>
+                              }
+                              <button (click)="removeMediaImage(row)" [disabled]="!entityActive"
+                                class="text-[10px] text-red-500 hover:text-red-700 disabled:opacity-40">{{ 'common.remove' | translate }}</button>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+                <p class="text-xs text-gray-400 mt-2">{{ 'media.hint' | translate }}</p>
+              </div>
+            }
+
           </div>
         }
 
@@ -878,7 +944,19 @@
         @if (activeTab() === 'liquidity') {
           <div class="p-2 space-y-4">
             <div class="flex items-baseline justify-between">
-              <h3 class="text-sm font-semibold text-gray-700">{{ 'services.details.liquidity.title' | translate }}</h3>
+              <div>
+                <h3 class="text-sm font-semibold text-gray-700">{{ 'services.details.liquidity.title' | translate }}</h3>
+                @if (shortfallTolerance() !== null) {
+                  <p class="text-[11px] text-gray-500 mt-0.5">
+                    {{ 'services.details.liquidity.tolerance' | translate }}:
+                    <span class="font-mono font-semibold text-gray-700">{{ shortfallTolerance() | number:'1.2-6' }}</span>
+                    <span class="text-gray-400">
+                      — {{ (shortfallToleranceIsSet() ? 'services.details.liquidity.toleranceRegulator'
+                                                      : 'services.details.liquidity.toleranceDefault') | translate }}
+                    </span>
+                  </p>
+                }
+              </div>
               <button (click)="getLiquidity()"
                 class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                 {{ 'common.refresh' | translate }}
@@ -907,7 +985,16 @@
                     } @else {
                       @for (row of liquidityBalances(); track row.currencyCode; let isEven = $even) {
                         @let tone = liquidityCoverageTone(row.coverageRatio);
-                        <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <!-- A shortfall tints the whole row (matching the dashboard's Liquidity
+                             Shortfall cards). The tint has to REPLACE the zebra striping rather
+                             than stack with it — two competing bg-* utilities on one element
+                             resolve by stylesheet order, not by binding order. -->
+                        @let tinted = tone === 'warn' || tone === 'bad';
+                        <tr class="border-b"
+                          [class.bg-gray-100]="!tinted && !isEven"
+                          [class.bg-white]="!tinted && isEven"
+                          [class.bg-amber-50]="tone === 'warn'"
+                          [class.bg-red-50]="tone === 'bad'">
                           <td class="px-6 py-2">
                             <span class="badge-currency">{{ row.currencyAlpha || row.currencySymbol }}</span>
                             <span class="ml-2 text-gray-500">{{ row.currencyName }}</span>
@@ -923,7 +1010,16 @@
                             @else { <span class="text-gray-300">—</span> }
                           </td>
                           <td class="px-6 py-2 text-right font-mono">
-                            @if (row.shortfall > 0) { <span class="text-red-700 font-semibold">{{ row.shortfall | number:'1.2-2' }}</span> }
+                            @if (row.shortfall > 0) {
+                              @if (withinShortfallTolerance(row.shortfall)) {
+                                <span class="text-amber-700 font-semibold">{{ row.shortfall | number:'1.2-2' }}</span>
+                                <span class="block text-[10px] font-normal text-gray-400">
+                                  {{ 'services.details.liquidity.withinTolerance' | translate:{ amount: toleranceHeadroom(row.shortfall) } }}
+                                </span>
+                              } @else {
+                                <span class="text-red-700 font-semibold">{{ row.shortfall | number:'1.2-2' }}</span>
+                              }
+                            }
                             @else { <span class="text-gray-300">—</span> }
                           </td>
                           <td class="px-6 py-2">
@@ -932,7 +1028,7 @@
                                 [class.bg-green-100]="tone === 'good'"   [class.text-green-800]="tone === 'good'"
                                 [class.bg-amber-100]="tone === 'warn'"  [class.text-amber-800]="tone === 'warn'"
                                 [class.bg-red-100]="tone === 'bad'"     [class.text-red-800]="tone === 'bad'">
-                                {{ (row.coverageRatio * 100) | number:'1.1-1' }}%
+                                {{ coveragePercent(row.coverageRatio) | number:'1.1-1' }}%
                               </span>
                             } @else {
                               <span class="text-gray-300">—</span>
@@ -960,6 +1056,50 @@
             <p class="text-xs text-gray-500">
               {{ 'services.details.liquidity.helpText' | translate }}
             </p>
+
+            <!-- Liquidity change history (plugin-mirrored credit ledger, origin 3=inject / 4=withdraw) -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
+              <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700">Liquidity Change History</h3>
+                <button type="button" (click)="getLiquidityHistory()" class="text-xs text-blue-600 hover:text-blue-800">Refresh</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                      <th class="px-6 py-2 text-left">Date</th>
+                      <th class="px-6 py-2 text-left">Action</th>
+                      <th class="px-6 py-2 text-right">Amount</th>
+                      <th class="px-6 py-2 text-left">Currency</th>
+                      <th class="px-6 py-2 text-left">Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+                    @if (liquidityHistoryLoading()) {
+                      <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">Loading…</td></tr>
+                    } @else if (liquidityHistory().length === 0) {
+                      <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">No liquidity changes recorded.</td></tr>
+                    } @else {
+                      @for (row of liquidityHistory(); track row.trx_id) {
+                        <tr>
+                          <td class="px-6 py-2 text-gray-500 whitespace-nowrap">{{ row.start_time ? (row.start_time * 1000 | date:'yyyy-MM-dd HH:mm:ss') : '—' }}</td>
+                          <td class="px-6 py-2">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                              [class.bg-green-100]="row.origin === 3" [class.text-green-700]="row.origin === 3"
+                              [class.bg-amber-100]="row.origin === 4" [class.text-amber-700]="row.origin === 4">
+                              {{ creditOriginLabel(row.origin) }}
+                            </span>
+                          </td>
+                          <td class="px-6 py-2 text-right font-mono font-semibold text-gray-800">{{ formatCreditAmount(row.trx_amount) }}</td>
+                          <td class="px-6 py-2 text-gray-800">{{ row.currency_alpha || row.currency_name || row.currency_code }}</td>
+                          <td class="px-6 py-2 text-gray-500">{{ row.trx_ref_no || '—' }}</td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <!-- inline liquidity modal -->

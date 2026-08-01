@@ -72,23 +72,7 @@
                 }
               </div>
             }
-            @if (isTokenIssuer()) {
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.verificationLevel' | translate }}</label>
-                <select formControlName="verificationLevel"
-                  class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  [class.border-red-500]="addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.invalid"
-                  [class.border-gray-300]="!(addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.invalid)">
-                  <option value="" disabled selected hidden>{{ 'services.addModal.placeholders.selectVerificationLevel' | translate }}</option>
-                  @for (level of verificationLevels(); track level.variableId) {
-                    <option [value]="level.variableId">{{ level.name }}</option>
-                  }
-                </select>
-                @if (addForm.get('verificationLevel')?.touched && addForm.get('verificationLevel')?.hasError('required')) {
-                  <p class="mt-1 text-xs text-red-600">{{ 'services.addModal.errors.verificationLevelRequired' | translate }}</p>
-                }
-              </div>
-            }
+            <!-- Verification Level is hidden for now — token-issuer services default to level 2 (eKYC). -->
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.regulator' | translate }}</label>
               <select formControlName="regulator"
@@ -237,12 +221,6 @@
                   <div class="flex justify-between">
                     <span class="text-gray-500">{{ 'services.addModal.fields.providerType' | translate }}</span>
                     <span class="text-black font-medium">{{ getProviderTypeName() }} <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
-                  </div>
-                }
-                @if (isTokenIssuer()) {
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.verificationLevel' | translate }}</span>
-                    <span class="text-black font-medium">{{ getVerificationLevelName() }}</span>
                   </div>
                 }
                 <div class="flex justify-between">

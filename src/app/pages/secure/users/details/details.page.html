@@ -103,8 +103,17 @@
                     <p class="text-base">{{ approvalRoleLabel(approvalRole()) }}</p>
                   </div>
                 }
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">{{ 'users.details.info.createdAt' | translate }}</p>
+                  <p class="text-base">{{ v.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                </div>
+                <div class="border-t pt-4">
+                  <p class="text-sm font-medium text-gray-500">{{ 'users.details.info.lastModified' | translate }}</p>
+                  <p class="text-base">{{ v.lastModifiedAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                </div>
+
                 @if (showGroupCard()) {
-                  <div class="border-t pt-4 md:col-span-2">
+                  <div class="border-t pt-4">
                     <p class="text-sm font-medium text-gray-500">{{ 'users.details.group.label' | translate }}</p>
                     @if (userGroup(); as g) {
                       <div class="flex flex-wrap items-center gap-2 mt-1">
@@ -135,17 +144,11 @@
                     </div>
                   </div>
                 }
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'users.details.info.createdAt' | translate }}</p>
-                  <p class="text-base">{{ v.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-                </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'users.details.info.lastModified' | translate }}</p>
-                  <p class="text-base">{{ v.lastModifiedAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-                </div>
 
-                <!-- Connect handle — the user's direct-message address (alice@entityX) -->
-                <div class="border-t pt-4" [class.md:col-span-2]="!isAuditorTarget()">
+                <!-- Connect handle — the user's direct-message address (alice@entityX).
+                     Single-column: pairs with the User Group card (roles 1/2/3) or the
+                     Messages-access card (auditor, role 4). -->
+                <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'users.details.handle.label' | translate }}</p>
                   @if (handle()) {
                     <p class="text-base font-mono">{{ handleFull() || handle() }}</p>

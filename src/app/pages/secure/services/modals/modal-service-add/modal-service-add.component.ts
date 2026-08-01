@@ -6,6 +6,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ModalServiceAddService, AddServiceData, SELF_CUSTODY_SENTINEL } from './modal-service-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 
+// The Verification Level picker is hidden in the wizard for now — token-issuer services are fixed at level 2 (eKYC).
+const DEFAULT_VERIFICATION_LEVEL = '2';
+
 @Component({
   selector: 'app-modal-service-add',
   templateUrl: './modal-service-add.component.html',
@@ -27,7 +30,7 @@ export class ModalServiceAddComponent {
   paymentProcessors = signal<{ address: string; name: string; serviceLevel: number; state: number }[]>([]);
   custodians = signal<{ address: string; name: string; state: number }[]>([]);
   readonly SELF_CUSTODY = SELF_CUSTODY_SENTINEL;
-  selectedVerificationLevel = signal<number>(0);
+  selectedVerificationLevel = signal<number>(Number(DEFAULT_VERIFICATION_LEVEL));
   selectedServiceType = signal<number>(0);
 
   currentStep = signal<number>(1);
@@ -57,7 +60,7 @@ export class ModalServiceAddComponent {
     website: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+\..+/)]],
     email: ['', [Validators.required, Validators.email]],
     mobile: ['', [Validators.required, Validators.pattern(/^\+?[0-9\s\-()]{7,20}$/)]],
-    verificationLevel: ['', Validators.required],
+    verificationLevel: [DEFAULT_VERIFICATION_LEVEL, Validators.required],
     regulator: ['', Validators.required],
     validator: [''],
     paymentProcessor: [''],
@@ -72,7 +75,7 @@ export class ModalServiceAddComponent {
         this.reviewConfirmed.set(false);
         this.addForm.reset({
           serviceType: '', providerType: '', name: '', description: '', website: '',
-          email: '', mobile: '', verificationLevel: '', regulator: '',
+          email: '', mobile: '', verificationLevel: DEFAULT_VERIFICATION_LEVEL, regulator: '',
           validator: '', paymentProcessor: '', custodian: SELF_CUSTODY_SENTINEL, visibility: 1,
         });
         this.loadServiceTypes();
@@ -105,6 +108,8 @@ export class ModalServiceAddComponent {
         verificationLevel.clearValidators();
         verificationLevel.updateValueAndValidity();
       } else {
+        // The picker is hidden, so re-apply the fixed default whenever we come back to token issuer.
+        verificationLevel.setValue(DEFAULT_VERIFICATION_LEVEL);
         verificationLevel.setValidators(Validators.required);
         verificationLevel.updateValueAndValidity();
         // Default type-1 services to self-custody and refresh endorsed custodian list.
@@ -272,13 +277,22 @@ export class ModalServiceAddComponent {
   }
 
   async fillFromEntity(): Promise<void> {
-    const info = await this.apiService.vaultGetEntityInfo();
+    const info: any = await this.apiService.vaultGetEntityInfo();
     if (!info) return;
-    const meta = typeof (info as any).metadata === 'string' ? JSON.parse((info as any).metadata) : (info as any).metadata ?? {};
+    // Entity contact lives under the nested `contact` key (the API deletes the legacy flat
+    // email/mobile/website keys on every metadata write). `/vault/entity/info` spreads the
+    // parsed metadata onto the row, so read from the row first, then the raw metadata blob.
+    let meta: any = {};
+    try {
+      meta = typeof info.metadata === 'string' ? JSON.parse(info.metadata) : (info.metadata ?? {});
+    } catch { /* non-JSON metadata — fall back to the spread row fields */ }
+    const c = (info.contact && typeof info.contact === 'object') ? info.contact
+            : (meta.contact && typeof meta.contact === 'object') ? meta.contact
+            : {};
     this.addForm.patchValue({
-      website: meta.website ?? '',
-      email: meta.email ?? '',
-      mobile: meta.mobile ?? '',
+      website: c.website ?? meta.website ?? '',
+      email:   c.email   ?? meta.email   ?? '',
+      mobile:  c.phone   ?? meta.telephone ?? meta.mobile ?? '',
     });
   }
 

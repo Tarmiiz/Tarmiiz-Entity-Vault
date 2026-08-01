@@ -156,7 +156,11 @@
                         <td class="px-6 py-2">{{ tierLabelShort(a.tier) }}</td>
                         <td class="px-6 py-2">{{ a.entityName || '—' }}</td>
                         <td class="px-6 py-2 font-mono break-all">{{ a.baseAsset }}</td>
-                        <td class="px-6 py-2">{{ a.addedAt ? utils.formatDate(a.addedAt) : '—' }}</td>
+                        <!-- formatTime, not formatDate: dex_asset_venues.added_at is stamped in
+                             MILLISECONDS by both writers (plugin System.currentTimeMillis /
+                             API Date.now), unlike the chain-derived *_at columns in seconds.
+                             formatDate's ×1000 rendered it as the year 58548. -->
+                        <td class="px-6 py-2">{{ a.addedAt ? utils.formatTime(a.addedAt) : '—' }}</td>
                       </tr>
                     }
                   }

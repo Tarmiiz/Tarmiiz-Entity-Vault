@@ -112,6 +112,20 @@ export class DetailsPage implements OnInit {
 
   userInfo!: User;
   get entityActive() { return this.authService.entityActive(); }
+
+  /**
+   * True when this entity's template is the asset's on-chain `manager` — the
+   * address the Entity API relays writes as. TarmiizT20 gates setMetadata /
+   * setPrice / addService / setServiceCanQuote / setFeeConfig / setServiceState
+   * (and mint / burn / changeState) on a strict equality with it, so every one
+   * of those reverts otherwise. Used to hide those controls rather than render
+   * them and relay a doomed transaction.
+   *
+   * A capability hint only — the contract is the enforcement. Deliberately does
+   * NOT cover the media/images, DEX-listing or distribution actions: those are
+   * issuer-gated, not manager-gated, and stay available to a non-manager owner.
+   */
+  canManage(): boolean { return this.asset()?.canManage === true; }
   private _socketSub: Subscription | null = null;
   private _langSub: Subscription | null = null;
 
@@ -434,6 +448,11 @@ export class DetailsPage implements OnInit {
     return { description: '', contact: emptyContact, entries: [], media: null, raw, valid: false };
   });
 
+  hasContact = computed(() => {
+    const c = this.parsedMetadata().contact;
+    return !!(c.email || c.phone || c.website || c.address);
+  });
+
   // All public media images (avatar + banner + gallery), for the Images section.
   mediaImages = computed<{ entry: AssetMediaEntry; role: 'avatar' | 'banner' | 'gallery' }[]>(() => {
     const media = this.parsedMetadata().media;
@@ -728,6 +747,7 @@ export class DetailsPage implements OnInit {
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
       suspended: raw.suspended === true || raw.suspended === 1,
+      canManage: raw.canManage === true || raw.can_manage === true || raw.can_manage === 1,
       creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
       stateName: raw.asset_state_name ?? this.getAssetStateName(raw.state) ?? String(raw.state ?? ''),
@@ -797,6 +817,21 @@ export class DetailsPage implements OnInit {
       } else {
         this.suspensionReason.set('');
       }
+    } else {
+      // The asset is not in this vault's inventory. The API 404s any asset the
+      // tenant does not own (requireOwnAsset), so this is the direct-URL case:
+      // the mirror is chain-wide, and before the guard a pasted address opened
+      // a foreign asset here complete with Mint / Burn / Change State. Bounce
+      // out rather than rendering an empty shell with live action buttons.
+      if (!silent) {
+        this.loadingService.hide();
+        await this.alertService.show(
+          this.translate.instant('assets.details.notFoundTitle'),
+          this.translate.instant('assets.details.notFoundMessage'),
+        );
+      }
+      this.router.navigate(['/authorized/assets/list']);
+      return;
     }
     if (!silent) this.loadingService.hide();
   }
@@ -1392,12 +1427,12 @@ export class DetailsPage implements OnInit {
   exportHoldersExcel() {
     const bid = this.currentBid();
     const rows = this.filteredHolders().map(h => {
-      const value = h.balance * bid;
-      const pl = value - h.cost;
+      const value = this.utils.round6(h.balance * bid);
+      const pl = this.utils.round6(value - h.cost);
       return {
         'Holder': h.holder,
         'Balance': h.balance,
-        'Cost': h.cost,
+        'Cost': this.utils.round6(h.cost),
         'Value': value,
         'P/L': pl,
         'P/L %': h.cost > 0 ? +(pl / h.cost * 100).toFixed(4) : null,
@@ -1454,8 +1489,8 @@ export class DetailsPage implements OnInit {
         { content: 'P/L %', styles: { halign: 'right' } },
       ]],
       body: holders.map((h, i) => {
-        const value = h.balance * bid;
-        const pl = value - h.cost;
+        const value = this.utils.round6(h.balance * bid);
+        const pl = this.utils.round6(value - h.cost);
         return [
           i + 1,
           h.holder,

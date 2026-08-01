@@ -170,6 +170,7 @@ export class ListPage implements OnInit {
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
       suspended: raw.suspended === true || raw.suspended === 1,
+      canManage: raw.canManage === true || raw.can_manage === true || raw.can_manage === 1,
       creditSettlement: raw.credit_settlement === true || raw.credit_settlement === 1,
       state: raw.state ?? 0,
       stateName: raw.asset_state_name ?? stateNames[raw.state] ?? String(raw.state ?? ''),

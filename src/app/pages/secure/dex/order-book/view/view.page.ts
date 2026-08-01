@@ -107,7 +107,7 @@ export class ViewPage implements OnInit, OnDestroy {
     }
   }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { maximumFractionDigits: 6 }); } catch { return '0'; } }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : '0'; }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
 
   selectBuy(o: DexOrder) { this.selectedBuy.set(o.orderId === this.selectedBuy() ? null : o.orderId); }

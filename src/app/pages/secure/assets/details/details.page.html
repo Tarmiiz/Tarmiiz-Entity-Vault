@@ -362,8 +362,17 @@
               
               @if(userInfo && userInfo.role !== 3) {
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+                  <!-- Manager-gated actions are hidden unless this entity's template IS the
+                       asset's on-chain manager: TarmiizT20._chkManager is a strict equality
+                       against the address the API relays as, so otherwise every one of these
+                       reverts. See `canManage` on the Asset model. -->
+                  @if (!v.canManage) {
+                    <span class="text-xs px-3 py-1.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                      {{ 'assets.details.notManager' | translate }}
+                    </span>
+                  }
                   <!-- Mint / Burn: fixed-supply only. Dynamic-supply tokens mint on subscribe / burn on redeem. -->
-                  @if (v.supplyMode === 1) {
+                  @if (v.canManage && v.supplyMode === 1) {
                     <button (click)="openMintModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-600">
                       {{ 'assets.details.info.mintSupply' | translate }}
@@ -373,7 +382,7 @@
                       {{ 'assets.details.info.burnSupply' | translate }}
                     </button>
                   }
-                  @if (features.systemFunctionEnabled('asset-change-state')) {
+                  @if (v.canManage && features.systemFunctionEnabled('asset-change-state')) {
                     <button (click)="openChangeStateModal()" [disabled]="!entityActive"
                       class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                       {{ 'assets.details.changeStateBtn' | translate }}
@@ -397,7 +406,8 @@
                 {{ 'assets.details.publicView.button' | translate }}
               </button>
               @if (userInfo && userInfo.role !== 3) {
-                <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
+                <button (click)="openEditMetadataModal()" [disabled]="!entityActive || !canManage()"
+                  [title]="canManage() ? '' : ('assets.details.notManager' | translate)"
                   class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                   {{ 'assets.details.metadata.edit' | translate }}
                 </button>
@@ -413,6 +423,27 @@
                 <p class="text-sm text-gray-400 italic">{{ 'assets.details.metadata.noDescription' | translate }}</p>
               }
             </div>
+
+            <!-- Contact -->
+            @if (hasContact()) {
+              <div>
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'common.contact' | translate }}</h4>
+                <div class="space-y-2">
+                  @if (parsedMetadata().contact.email) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.email' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.email }}</span></div>
+                  }
+                  @if (parsedMetadata().contact.phone) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.mobile' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.phone }}</span></div>
+                  }
+                  @if (parsedMetadata().contact.website) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.website' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.website }}</span></div>
+                  }
+                  @if (parsedMetadata().contact.address) {
+                    <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.address' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ parsedMetadata().contact.address }}</span></div>
+                  }
+                </div>
+              </div>
+            }
 
             <!-- Additional fields -->
             <div>
@@ -531,7 +562,8 @@
                 </select>
               </div>
               @if (userInfo && userInfo.role !== 3) {
-                <button (click)="openAddPriceModal()" [disabled]="!entityActive"
+                <button (click)="openAddPriceModal()" [disabled]="!entityActive || !canManage()"
+                  [title]="canManage() ? '' : ('assets.details.notManager' | translate)"
                   class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                   + {{ 'assets.details.price.addPrice' | translate }}
                 </button>
@@ -731,23 +763,24 @@
                     }
                     @else {
                         @for(h of pagedHolders(); track h.holder; let isEven = $even) {
+                            @let pl = utils.round6(h.balance * currentBid() - h.cost);
                             <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(h.holder)">
                                 <td class="px-6 py-2 font-mono">{{ h.holder }}</td>
                                 <td class="px-6 py-2 text-right">{{ h.balance | number: '1.0-2' }}</td>
                                 <td class="px-6 py-2 text-right">{{ h.cost | number: '1.6-6' }}</td>
                                 <td class="px-6 py-2 text-right">{{ h.balance * currentBid() | number: '1.6-6' }}</td>
                                 <td class="px-6 py-2 text-right font-semibold"
-                                    [class.text-green-600]="(h.balance * currentBid() - h.cost) > 0"
-                                    [class.text-red-600]="(h.balance * currentBid() - h.cost) < 0"
-                                    [class.text-gray-500]="(h.balance * currentBid() - h.cost) === 0">
-                                  {{ h.balance * currentBid() - h.cost | number: '1.6-6' }}
+                                    [class.text-green-600]="pl > 0"
+                                    [class.text-red-600]="pl < 0"
+                                    [class.text-gray-500]="pl === 0">
+                                  {{ pl | number: '1.6-6' }}
                                 </td>
                                 <td class="px-6 py-2 text-right font-semibold"
-                                    [class.text-green-600]="(h.balance * currentBid() - h.cost) > 0"
-                                    [class.text-red-600]="(h.balance * currentBid() - h.cost) < 0"
-                                    [class.text-gray-500]="(h.balance * currentBid() - h.cost) === 0">
+                                    [class.text-green-600]="pl > 0"
+                                    [class.text-red-600]="pl < 0"
+                                    [class.text-gray-500]="pl === 0">
                                   @if (h.cost > 0) {
-                                    {{ (h.balance * currentBid() - h.cost) / h.cost * 100 | number: '1.2-2' }}%
+                                    {{ pl / h.cost * 100 | number: '1.2-2' }}%
                                   } @else {
                                     {{ 'common.notSet' | translate }}
                                   }
@@ -948,7 +981,8 @@
               <div class="flex items-center justify-between p-4 border-b">
                 <h3 class="text-lg font-semibold text-gray-800">{{ 'assets.details.tabs.services' | translate }}</h3>
                 @if (userInfo && userInfo.role !== 3) {
-                  <button (click)="openAddServiceModal()" [disabled]="!entityActive"
+                  <button (click)="openAddServiceModal()" [disabled]="!entityActive || !canManage()"
+                    [title]="canManage() ? '' : ('assets.details.notManager' | translate)"
                     class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                     + {{ 'assets.details.services.addService' | translate }}
                   </button>
@@ -986,7 +1020,7 @@
                           <td class="px-6 py-3">
                             @if (userInfo && userInfo.role !== 3) {
                               <button (click)="toggleServiceCanQuote(svc.service, svc.serviceName, svc.canQuote)"
-                                [disabled]="!entityActive"
+                                [disabled]="!entityActive || !canManage()"
                                 class="text-xs px-2 py-1 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 [class.bg-green-100]="svc.canQuote"
                                 [class.text-green-800]="svc.canQuote"
@@ -1022,7 +1056,7 @@
                             }
                             @if (userInfo && userInfo.role !== 3) {
                               <button (click)="openFeeConfigModal(svc.service, svc.serviceName)"
-                                [disabled]="!entityActive || !svc.canQuote"
+                                [disabled]="!entityActive || !svc.canQuote || !canManage()"
                                 class="mt-1 text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-40 disabled:cursor-not-allowed"
                                 [title]="(svc.canQuote ? 'assets.details.services.editFeesTooltip' : 'assets.details.services.setFeesTooltip') | translate">
                                 {{ 'assets.details.services.editFees' | translate }}
@@ -1032,7 +1066,7 @@
                           @if (userInfo && userInfo.role !== 3) {
                             <td class="px-6 py-3">
                               <button (click)="openServiceStateModal(svc.service, svc.serviceName, svc.state)"
-                                [disabled]="!entityActive"
+                                [disabled]="!entityActive || !canManage()"
                                 class="text-gray-400 hover:text-indigo-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 [title]="'assets.details.changeStateBtn' | translate">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>

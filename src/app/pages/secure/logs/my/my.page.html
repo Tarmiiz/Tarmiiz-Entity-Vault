@@ -102,7 +102,7 @@
                 [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                 (click)="openDetails(r)">
               <td class="px-4 py-2">{{ i + 1 }}</td>
-              <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatDate(r.chain_time || r.created_at) }}</td>
+              <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatTime(r.time) }}</td>
               <td class="px-4 py-2">
                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">{{ r.category }}</span>
               </td>

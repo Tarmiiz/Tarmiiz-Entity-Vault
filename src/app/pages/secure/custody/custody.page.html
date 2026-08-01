@@ -40,16 +40,226 @@
     </div>
   </div>
 
-  <!-- Services under my custody (reverse index — placeholder) -->
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+  <!-- Services under my custody (live reverse index) -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-4">
     <div class="px-4 py-3 border-b border-gray-200">
       <h2 class="text-sm font-semibold text-gray-800">{{ 'custody.underCustody.title' | translate }}</h2>
       <p class="text-xs text-gray-600">{{ 'custody.underCustody.description' | translate }}</p>
     </div>
-    @if (servicesUnderCustody().length === 0) {
-      <div class="px-4 py-6 text-center text-gray-500 text-sm">
-        {{ 'custody.underCustody.empty' | translate }}
-      </div>
-    }
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-4 py-2">{{ 'custody.underCustody.service' | translate }}</th>
+            <th class="px-4 py-2">{{ 'custody.underCustody.myService' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
+            <th class="px-4 py-2">{{ 'custody.underCustody.updated' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of custodyMandates(); track (m.service + m.party); let i = $index) {
+            <tr [class.bg-gray-50]="i % 2 === 1">
+              <td class="px-4 py-2 font-mono text-xs">{{ m.service }}</td>
+              <td class="px-4 py-2 font-medium text-gray-900">{{ m.partyName || m.party }}</td>
+              <td class="px-4 py-2">
+                @if (m.active) {
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'custody.underCustody.active' | translate }}</span>
+                } @else {
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'custody.underCustody.detached' | translate }}</span>
+                }
+              </td>
+              <td class="px-4 py-2 text-xs">{{ m.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
+                @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.underCustody.empty' | translate }} }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Assets under custody + holds -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200">
+      <h2 class="text-sm font-semibold text-gray-800">{{ 'custody.assets.title' | translate }}</h2>
+      <p class="text-xs text-gray-600">{{ 'custody.assets.description' | translate }}</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-4 py-2">{{ 'common.name' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.symbol' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.address' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of custodiedAssets(); track a.address; let i = $index) {
+            <tr [class.bg-gray-50]="i % 2 === 1">
+              <td class="px-4 py-2 font-medium text-gray-900">{{ a.name }}</td>
+              <td class="px-4 py-2">
+                @if (a.symbol) {
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 text-indigo-700">{{ a.symbol }}</span>
+                }
+              </td>
+              <td class="px-4 py-2 font-mono text-xs">{{ a.address }}</td>
+              <td class="px-4 py-2">
+                <span class="text-xs px-2 py-0.5 rounded-full" [class]="getStateClass(a.state)">{{ a.stateName }}</span>
+              </td>
+              <td class="px-4 py-2">
+                <div class="flex gap-2">
+                  <button (click)="toggleAssetHolds(a.address)"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    {{ (expandedAsset() === a.address ? 'custody.holds.hide' : 'custody.holds.view') | translate }}
+                  </button>
+                  @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('custody-hold-place')) {
+                    <button (click)="openHoldModal(a.address)"
+                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      {{ 'custody.holds.place' | translate }}
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+            @if (expandedAsset() === a.address) {
+              <tr>
+                <td colspan="5" class="px-4 py-3 bg-gray-50">
+                  <table class="w-full text-xs text-left text-gray-700 border border-gray-200 rounded">
+                    <thead class="text-xs text-gray-600 uppercase bg-gray-100">
+                      <tr>
+                        <th class="px-3 py-1.5">#</th>
+                        <th class="px-3 py-1.5">{{ 'custody.holds.account' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'common.amount' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'custody.holds.remaining' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'common.state' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'custody.holds.placedBy' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'common.reason' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'common.actions' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (h of assetHolds(); track h.holdId) {
+                        <tr class="border-t border-gray-200">
+                          <td class="px-3 py-1.5">{{ h.holdId }}</td>
+                          <td class="px-3 py-1.5 font-mono">{{ h.accountAddress }}</td>
+                          <td class="px-3 py-1.5">{{ h.amount }}</td>
+                          <td class="px-3 py-1.5">{{ h.remaining }}</td>
+                          <td class="px-3 py-1.5">
+                            <span class="text-xs px-2 py-0.5 rounded-full" [class]="holdStateClass(h.state)">{{ h.stateName }}</span>
+                          </td>
+                          <td class="px-3 py-1.5">
+                            <span class="text-xs px-2 py-0.5 rounded-full"
+                              [class]="isOwnHold(h) ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-700'">
+                              {{ placedByLabel(h) }}
+                            </span>
+                          </td>
+                          <td class="px-3 py-1.5">{{ h.reason || '—' }}</td>
+                          <td class="px-3 py-1.5">
+                            @if (h.state !== 3 && isOwnHold(h) && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('custody-hold-release')) {
+                              <button (click)="openReleaseModal(h)"
+                                class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                                {{ 'custody.holds.release' | translate }}
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="8" class="px-3 py-3 text-center text-gray-500">{{ 'custody.holds.empty' | translate }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="5" class="px-4 py-6 text-center text-gray-500 text-sm">
+                @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.assets.empty' | translate }} }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
+
+<!-- Place-hold modal -->
+@if (holdModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" (click)="holdModalOpen.set(false)">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5" (click)="$event.stopPropagation()">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'custody.holds.placeTitle' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4 font-mono">{{ holdAsset() }}</p>
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.actingService' | translate }}</label>
+          <select [(ngModel)]="holdCustodianService"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            @for (s of myCustodianServices(); track s.address) {
+              <option [value]="s.address">{{ s.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.account' | translate }}</label>
+          <input type="text" [(ngModel)]="holdAccount" placeholder="0x…"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.amountTokens' | translate }}</label>
+          <input type="number" min="1" step="1" [(ngModel)]="holdAmount"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'common.reason' | translate }}</label>
+          <input type="text" [(ngModel)]="holdReason" [placeholder]="'common.reasonPlaceholder' | translate"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="holdModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitHold()" [disabled]="!holdCustodianService || !holdAccount || !holdAmount"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'custody.holds.place' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Release-hold modal -->
+@if (releaseModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" (click)="releaseModalOpen.set(false)">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5" (click)="$event.stopPropagation()">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'custody.holds.releaseTitle' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">#{{ releaseHold()?.holdId }} — {{ 'custody.holds.remaining' | translate }}: {{ releaseHold()?.remaining }}</p>
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.amountTokens' | translate }}</label>
+          <input type="number" min="1" step="1" [(ngModel)]="releaseAmount"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'common.reason' | translate }}</label>
+          <input type="text" [(ngModel)]="releaseReason" [placeholder]="'common.reasonPlaceholder' | translate"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="releaseModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitRelease()" [disabled]="!releaseAmount"
+          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'custody.holds.release' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

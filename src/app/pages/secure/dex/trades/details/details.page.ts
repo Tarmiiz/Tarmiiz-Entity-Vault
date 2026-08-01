@@ -62,7 +62,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     }
   }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '0.00'; }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
 
   goOrder(id: number) { this.router.navigate(['/authorized/dex/orders/details/' + id]); }

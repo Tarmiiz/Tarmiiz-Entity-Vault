@@ -88,33 +88,29 @@
                   {{ 'dex.listings.details.tiers.description' | translate }}
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">{{ 'dex.listings.details.tiers.tier1' | translate }}</p>
-                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
-                          [class]="l.venueApproved ? 'bg-green-100 text-green-800' : (l.venuePending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ (l.venueApproved ? 'state.approved' : (l.venuePending ? 'dex.listings.details.tiers.pendingApproval' : 'dex.listings.details.tiers.notRequested')) | translate }}
-                    </span>
-                    <div class="mt-3">
-                      <button (click)="setTab('venues')"
-                        class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-                        {{ 'dex.listings.details.tiers.manageVenues' | translate }}
-                      </button>
+                  @for (tier of [1, 2, 3]; track tier) {
+                    <div class="border border-gray-200 rounded-lg p-3">
+                      <p class="text-sm font-semibold text-gray-700">{{ tierLabel($any(tier)) }}</p>
+                      <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
+                            [class]="tierStatus($any(tier)).cls">{{ tierStatus($any(tier)).label }}</span>
+                      @if (tierStatus($any(tier)).code === 'none' && userInfo && userInfo.role !== 3) {
+                        <div class="mt-3">
+                          <button (click)="requestTier($any(tier))"
+                            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                            {{ 'dex.venues.tier.requestApproval' | translate }}
+                          </button>
+                        </div>
+                      }
+                      @if (tier === 1 && tierStatus(1).code !== 'none') {
+                        <div class="mt-3">
+                          <button (click)="setTab('venues')"
+                            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                            {{ 'dex.listings.details.tiers.manageVenues' | translate }}
+                          </button>
+                        </div>
+                      }
                     </div>
-                  </div>
-                  <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">{{ 'dex.listings.details.tiers.tier2' | translate }}</p>
-                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
-                          [class]="l.countryApproved ? 'bg-green-100 text-green-800' : (l.countryPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ (l.countryApproved ? 'state.approved' : (l.countryPending ? 'dex.listings.details.tiers.pendingApproval' : 'dex.listings.details.tiers.notRequested')) | translate }}
-                    </span>
-                  </div>
-                  <div class="border border-gray-200 rounded-lg p-3">
-                    <p class="text-sm font-semibold text-gray-700">{{ 'dex.listings.details.tiers.tier3' | translate }}</p>
-                    <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
-                          [class]="l.globalApproved ? 'bg-green-100 text-green-800' : (l.globalPending ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')">
-                      {{ (l.globalApproved ? 'state.approved' : (l.globalPending ? 'dex.listings.details.tiers.pendingApproval' : 'dex.listings.details.tiers.notRequested')) | translate }}
-                    </span>
-                  </div>
+                  }
                 </div>
                 <p class="text-xs text-gray-500 mt-3">
                   {{ 'dex.listings.details.tiers.tradingRequirements' | translate }}
@@ -160,12 +156,13 @@
                       <th class="px-6 py-2">{{ 'common.address' | translate }}</th>
                       <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
                       <th class="px-6 py-2">{{ 'dex.listings.details.venues.venueStateCol' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.approvalCol' | translate }}</th>
                       <th class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if (enabledVenues().length === 0) {
-                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="8">{{ 'dex.listings.details.venues.empty' | translate }}</td></tr>
+                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="9">{{ 'dex.listings.details.venues.empty' | translate }}</td></tr>
                     } @else {
                       @for (v of enabledVenues(); track v.dexService; let i = $index; let isEven = $even) {
                         <tr class="border-b transition-colors"
@@ -183,6 +180,12 @@
                           <td class="px-6 py-2">
                             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.venueState)">
                               {{ (v.venueSuspended ? 'state.suspended' : (v.venueState === 2 ? 'state.active' : v.venueState === 3 ? 'state.paused' : v.venueState === 4 ? 'dex.listings.details.venues.deregistered' : 'state.registered')) | translate }}
+                            </span>
+                          </td>
+                          <td class="px-6 py-2">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                                  [class]="v.state === 2 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                              {{ (v.state === 2 ? 'state.approved' : 'dex.listings.details.venues.awaitingApproval') | translate }}
                             </span>
                           </td>
                           <td class="px-6 py-2 text-right whitespace-nowrap">

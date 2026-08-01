@@ -102,6 +102,13 @@
                       class="text-xs px-2 py-1 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
                       {{ 'common.edit' | translate }}
                     </button>
+                    @if (canSign(doc)) {
+                      <button (click)="signDocument(doc)"
+                        [title]="'documentsTab.actions.signDocument' | translate"
+                        class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                        {{ 'documentsTab.actions.sign' | translate }}
+                      </button>
+                    }
                     @if (doc.documentType === 2) {
                       <button (click)="shareDocument(doc)"
                         class="text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
@@ -442,15 +449,7 @@
 
       <!-- Footer -->
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-        @if (isViewMode && entityActive && !isViewer() && formState().doc) {
-          <button type="button" (click)="signDocument(formState().doc!)"
-            class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6.586-6.586a2 2 0 112.828 2.828L11.828 13.828 9 14l.172-2.828z"/>
-            </svg>
-            {{ 'documentsTab.actions.signDocument' | translate }}
-          </button>
-        }
+        <!-- Sign lives in the row actions (next to View / Edit), not here. -->
         <button type="button" (click)="closeModal()"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ (isViewMode ? 'common.close' : 'common.cancel') | translate }}

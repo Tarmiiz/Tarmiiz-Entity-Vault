@@ -18,6 +18,17 @@
         </li>
       </ol>
     </nav>
+    @if (activeTab() === 'versions' && !isViewer()) {
+      <input #replaceInput type="file" class="hidden" (change)="onReplaceFile($event)" />
+      <button (click)="triggerReplace(replaceInput)" [disabled]="replacing()"
+        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        @if (replacing()) { {{ 'common.uploading' | translate }} {{ replaceProgress() }}% }
+        @else { {{ 'documents.details.actions.replaceFile' | translate }} }
+      </button>
+    }
     @if (activeTab() === 'sharing' && doc.documentType === 2) {
       <button (click)="shareWithNew()"
         class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
@@ -63,6 +74,14 @@
           [class.border-blue-600]="activeTab() === 'signatures'"
           [class.bg-blue-600]="activeTab() === 'signatures'">
           {{ 'documents.details.tabs.signatures' | translate }} ({{ signatures().length }})
+        </button>
+        <button (click)="setTab('versions')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'versions'"
+          [class.border-b-2]="activeTab() === 'versions'"
+          [class.border-blue-600]="activeTab() === 'versions'"
+          [class.bg-blue-600]="activeTab() === 'versions'">
+          {{ 'documents.details.tabs.versions' | translate }} ({{ versions().length }})
         </button>
       </div>
     </div>
@@ -249,6 +268,66 @@
             </tbody>
           </table>
         }
+      }
+
+      @if (activeTab() === 'versions') {
+        <div class="p-2">
+          <p class="text-xs text-gray-500 mb-3">{{ 'documents.details.versions.hint' | translate }}</p>
+          @if (versions().length === 0) {
+            <p class="text-sm text-gray-500 p-4">{{ 'documents.details.versions.empty' | translate }}</p>
+          } @else {
+            <div class="overflow-x-auto rounded-lg border border-gray-200">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th class="px-4 py-2">{{ 'documents.details.versions.version' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'documents.details.versions.uploadedAt' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'documents.details.versions.fileName' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'documents.details.versions.size' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'documents.table.type' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'documents.table.cid' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'documents.details.versions.sha256' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'documents.details.versions.uploadedBy' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @for (v of versions(); track v.version; let isEven = $even) {
+                    <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                      <td class="px-4 py-2 font-semibold">
+                        v{{ v.version }}
+                        @if ($first) {
+                          <span class="ml-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">{{ 'documents.details.versions.current' | translate }}</span>
+                        }
+                      </td>
+                      <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatDate(v.createdAt) }}</td>
+                      <td class="px-4 py-2 break-all">{{ v.fileName || '—' }}</td>
+                      <td class="px-4 py-2 whitespace-nowrap">{{ formatBytes(v.fileSize) }}</td>
+                      <td class="px-4 py-2">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full" [class]="typeClass(v.documentType)">{{ typeLabel(v.documentType) }}</span>
+                      </td>
+                      <td class="px-4 py-2">
+                        <button (click)="copyToClipboard(v.cid)" class="font-mono text-indigo-700 hover:underline" [title]="v.cid">
+                          {{ truncate(v.cid) }}
+                        </button>
+                      </td>
+                      <td class="px-4 py-2">
+                        @if (v.contentSha256) {
+                          <button (click)="copyToClipboard(v.contentSha256)" class="font-mono text-indigo-700 hover:underline" [title]="v.contentSha256">
+                            {{ truncate(v.contentSha256, 10, 4) }}
+                          </button>
+                        } @else { — }
+                      </td>
+                      <td class="px-4 py-2">{{ v.actorUserName || (v.createdByUserId ? ('#' + v.createdByUserId) : '—') }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="mt-3 px-1">
+              <p class="text-xs font-medium text-gray-800">{{ 'documents.details.versions.showingCount' | translate: { count: versions().length } }}</p>
+            </div>
+          }
+        </div>
       }
 
       }

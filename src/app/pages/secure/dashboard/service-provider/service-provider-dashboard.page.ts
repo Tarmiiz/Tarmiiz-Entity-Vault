@@ -126,6 +126,17 @@ export class ServiceProviderDashboardPage implements OnInit {
       email: meta.email ?? '',
       mobile: meta.mobile ?? '',
       website: meta.website ?? '',
+      contact: (meta.contact && typeof meta.contact === 'object') ? {
+        email:   meta.contact.email   ?? '',
+        phone:   meta.contact.phone   ?? '',
+        website: meta.contact.website ?? '',
+        address: meta.contact.address ?? '',
+      } : {
+        email:   meta.email ?? '',
+        phone:   meta.telephone ?? meta.mobile ?? '',
+        website: meta.website ?? '',
+        address: meta.address ?? '',
+      },
       countryCode: raw.country_code ?? 0,
       countryName: raw.country_name ?? '',
       verificationLevel: raw.verification_level ?? 0,

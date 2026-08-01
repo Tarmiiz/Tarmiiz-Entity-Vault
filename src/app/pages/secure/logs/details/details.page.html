@@ -67,7 +67,7 @@
                   }
                 </div>
                 <div class="text-right">
-                  <p class="text-xs text-gray-500 mt-1">{{ utils.formatDate(e.chain_time || e.created_at) }}</p>
+                  <p class="text-xs text-gray-500 mt-1">{{ utils.formatTime(e.time) }}</p>
                 </div>
               </div>
 
@@ -166,7 +166,7 @@
                         [class.bg-gray-100]="!isEven"
                         [class.bg-white]="isEven"
                         [class.bg-indigo-50]="event() && r.id === event()!.id">
-                      <td class="px-6 py-2 whitespace-nowrap">{{ utils.formatDate(r.chain_time || r.created_at) }}</td>
+                      <td class="px-6 py-2 whitespace-nowrap">{{ utils.formatTime(r.time) }}</td>
                       <td class="px-6 py-2">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">{{ r.category }}</span>
                       </td>

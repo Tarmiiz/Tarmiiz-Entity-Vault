@@ -60,9 +60,6 @@ export class DetailsPage implements OnInit, OnDestroy {
   replyToMessage = signal<ConnectMessage | null>(null);
   composeFiles = signal<File[]>([]);
 
-  markingRead = signal<Record<string, true>>({});
-  isMarkingRead(id: string | number): boolean { return !!this.markingRead()[String(id)]; }
-
   deleting = signal<Record<string, true>>({});
   isDeleting(id: string | number): boolean { return !!this.deleting()[String(id)]; }
 
@@ -132,10 +129,23 @@ export class DetailsPage implements OnInit, OnDestroy {
         this.messages.set(msgsResp.messages);
         this.resolveMessageContents(msgsResp.messages);
         this.resolveMessageParties(msgsResp.messages);
+        this.autoMarkRead();
       }
     } finally {
       if (silent) this.refreshing.set(false);
     }
+  }
+
+  // Opening a thread marks its unread incoming messages read (no per-message
+  // button). Reuses the markRead eligibility; role 4 stays passive (audit).
+  private async autoMarkRead() {
+    if (this.isReadOnly) return;
+    const ids = this.messages()
+      .filter(m => !this.isMine(m) && this.isRecipient(m) && !this.myReadAt(m))
+      .map(m => m.id);
+    if (ids.length === 0) return;
+    try { await this.apiService.connectMessagesMarkBatchRead(ids); }
+    catch { /* non-fatal — read receipts refresh on the next sync */ }
   }
 
   private async resolveUserAttribution(hashes: string[]) {
@@ -512,23 +522,6 @@ export class DetailsPage implements OnInit, OnDestroy {
     } finally {
       this.adding.set(false);
       this.loadingService.hide();
-    }
-  }
-
-  async markRead(m: ConnectMessage) {
-    if (this.isReadOnly) return;   // passive audit — role 4 never mutates read-state
-    if (this.myReadAt(m) || this.isMine(m) || !this.isRecipient(m)) return;
-    const key = String(m.id);
-    if (this.markingRead()[key]) return;
-    this.markingRead.update(s => ({ ...s, [key]: true }));
-    try {
-      await this.apiService.connectMessageMarkRead(m.id);
-      await this.reload();
-    } finally {
-      this.markingRead.update(s => {
-        const { [key]: _, ...rest } = s;
-        return rest;
-      });
     }
   }
 

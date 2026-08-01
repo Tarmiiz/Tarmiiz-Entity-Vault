@@ -90,11 +90,11 @@ export class ListPage implements OnInit, OnDestroy {
     this.filterVenue.set('');
   }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }); } catch { return '0.00'; } }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '0.00'; }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   fmtTotal(amount: string, priceWei: string) {
     try {
-      const p = Number(ethers.formatEther(priceWei || '0'));
+      const p = Number(priceWei ?? 0);
       const a = Number(amount || '0');
       return (a * p).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
     } catch { return '0.00'; }

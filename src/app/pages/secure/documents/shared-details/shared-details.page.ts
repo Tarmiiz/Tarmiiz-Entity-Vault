@@ -12,7 +12,7 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { ModalDocumentSignService } from '../modals/modal-document-sign/modal-document-sign.service';
 import { ModalDocumentSignComponent } from '../modals/modal-document-sign/modal-document-sign.component';
 
-import { Document, DocumentSignature } from '../../../../shared/models/data.model';
+import { Document, DocumentSignature, DocumentVersion } from '../../../../shared/models/data.model';
 
 const DOC_TYPE_PRIVATE = 2;
 // DirectoryProxy party types (NOT the Connect convention): 2=Entity, 3=Regulator, 4=Service.
@@ -52,6 +52,7 @@ export class SharedDetailsPage implements OnInit {
   // recipients), each enriched with reviewStateName — so the recipient can verify the
   // sender's signature and see the review verdict.
   signatures = signal<DocumentSignature[]>([]);
+  versions = signal<DocumentVersion[]>([]);
   // This entity's own signature on the doc (read from getSubmissionsByEntity), if it has signed.
   mySignature = signal<{ signer: string; signedAt: number } | null>(null);
 
@@ -79,7 +80,36 @@ export class SharedDetailsPage implements OnInit {
   }
 
   async ionViewDidEnter() {
-    await Promise.all([this.loadDocument(), this.loadGlobals(), this.loadOwner(), this.loadMySubmission(), this.loadSignatures()]);
+    await Promise.all([this.loadDocument(), this.loadGlobals(), this.loadOwner(), this.loadMySubmission(), this.loadSignatures(), this.loadVersions()]);
+  }
+
+  // Upload ledger for a foreign-owned doc — read chain-first from the owner's space (the central
+  // read gate admits us as a recipient). The file metadata columns come back null: only the
+  // OWNER's API ever saw the uploaded filename and bytes.
+  async loadVersions() {
+    try {
+      const r = await this.apiService.documentSharedVersions(this.ownerAddress(), this.id(), 1, 200);
+      if (r?.versions) this.versions.set(r.versions as DocumentVersion[]);
+    } catch { /* best effort — the section stays empty */ }
+  }
+
+  formatBytes(bytes: number | null): string {
+    if (bytes === null || bytes === undefined) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    const units = ['KB', 'MB', 'GB'];
+    let v = bytes / 1024, i = 0;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return v.toFixed(1) + ' ' + units[i];
+  }
+
+  truncate(value: string | null, lead = 10, tail = 6): string {
+    if (!value) return '—';
+    return value.length <= lead + tail + 1 ? value : value.slice(0, lead) + '…' + value.slice(-tail);
+  }
+
+  async copyToClipboard(value: string | null) {
+    if (!value) return;
+    try { await navigator.clipboard.writeText(value); } catch { /* clipboard unavailable */ }
   }
 
   // Recipient-facing signature read (GET /documents/shared/:owner/:id/signatures) — the

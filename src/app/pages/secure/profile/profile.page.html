@@ -15,6 +15,15 @@
       >
         {{ 'profile.tabs.info' | translate }}
       </button>
+      <button (click)="setTab('metadata')"
+        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+        [class.text-white]="activeTab() === 'metadata'"
+        [class.border-b-2]="activeTab() === 'metadata'"
+        [class.border-blue-600]="activeTab() === 'metadata'"
+        [class.bg-blue-600]="activeTab() === 'metadata'"
+      >
+        {{ 'profile.tabs.metadata' | translate }}
+      </button>
       <button (click)="setTab('images')"
         class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
         [class.text-white]="activeTab() === 'images'"
@@ -53,28 +62,6 @@
                 <p class="text-sm font-medium text-gray-500">{{ 'profile.info.contractAddress' | translate }}</p>
                 <p class="font-mono text-base">{{ v.address }}</p>
               </div>
-              @if (profileView().description) {
-                <div class="border-t pt-4 md:col-span-2">
-                  <p class="text-sm font-medium text-gray-500">{{ 'common.description' | translate }}</p>
-                  <p class="text-base whitespace-pre-wrap">{{ profileView().description }}</p>
-                </div>
-              }
-              <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.email' | translate }}</p>
-                <p class="text-base">{{ profileView().email }}</p>
-              </div>
-              <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.mobile' | translate }}</p>
-                <p class="text-base">{{ profileView().phone }}</p>
-              </div>
-              <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">{{ 'profile.info.website' | translate }}</p>
-                <p class="text-base">{{ profileView().website }}</p>
-              </div>
-              <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">{{ 'common.address' | translate }}</p>
-                <p class="text-base">{{ profileView().address }}</p>
-              </div>
               <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">{{ 'profile.info.country' | translate }}</p>
                 <p class="text-base">{{ v.countryName }}</p>
@@ -86,10 +73,40 @@
               </div>
             </div>
 
-            <div class="mt-8 pt-6 border-t flex justify-end">
+          </div>
+        </div>
+      }
+
+      <!-- metadata tab -->
+      @if (activeTab() === 'metadata') {
+        <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+          <div class="p-4 space-y-6">
+
+            <div class="flex justify-end">
               <button (click)="openEditMetadataModal()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                 {{ 'profile.info.editDetails' | translate }}
               </button>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'common.description' | translate }}</h4>
+              @if (profileView().description) {
+                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ profileView().description }}</p>
+              } @else {
+                <p class="text-sm text-gray-400 italic">{{ 'services.details.metadata.noDescription' | translate }}</p>
+              }
+            </div>
+
+            <!-- Contact -->
+            <div>
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'common.contact' | translate }}</h4>
+              <div class="space-y-2">
+                <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'profile.info.email' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ profileView().email || '—' }}</span></div>
+                <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'profile.info.mobile' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ profileView().phone || '—' }}</span></div>
+                <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'profile.info.website' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ profileView().website || '—' }}</span></div>
+                <div class="flex justify-between items-start text-sm"><span class="text-gray-500 shrink-0">{{ 'common.address' | translate }}</span><span class="text-black font-semibold text-right ml-4 break-all">{{ profileView().address || '—' }}</span></div>
+              </div>
             </div>
 
           </div>

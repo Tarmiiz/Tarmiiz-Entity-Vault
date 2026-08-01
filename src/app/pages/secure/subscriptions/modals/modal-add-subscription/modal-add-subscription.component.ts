@@ -7,13 +7,17 @@ import { ModalAddSubscriptionService } from './modal-add-subscription.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
+import { EKYC_ID_TYPES } from '../../../../../shared/constants/ekyc-canonical';
 
-// The optional canonical identity-data fields (beyond the required nationalId + nameFull) —
-// mirror of the Entity API's ekycCanonical.IDENTITY_FIELDS (unknown keys are dropped there).
+// The optional canonical identity-data fields (beyond the base required set handled
+// explicitly) — driven by the GENERATED mirror of the platform canonical schema v3
+// (shared/constants/ekyc-canonical.ts; unknown keys are dropped server-side).
 const CANONICAL_EXTRA_FIELDS = [
   'nameFirst', 'nameLast', 'gender', 'dateOfBirth', 'maritalStatus', 'religion',
   'profession', 'husbandName', 'nationalIdSerial', 'idReleaseDate', 'idExpiryDate',
   'addressStreet', 'addressDistrict', 'addressGovernorate', 'birthGovernorate',
+  'nationality', 'placeOfBirth', 'issuingCountry', 'issuingAuthority',
+  'addressCity', 'addressPostalCode', 'addressCountry',
 ] as const;
 
 @Component({
@@ -41,6 +45,9 @@ export class ModalAddSubscriptionComponent {
   serviceValidators = signal<{ address: string; active: boolean }[]>([]);
   showMoreIdentity = signal(false);
 
+  // ID document types — mirror of Global Variables 'ID Type - Individual'.
+  readonly idTypes = Object.entries(EKYC_ID_TYPES).map(([value, label]) => ({ value: Number(value), label }));
+
   form = this.fb.group({
     service: ['', Validators.required],
     // Mode A
@@ -51,13 +58,15 @@ export class ModalAddSubscriptionComponent {
     providerTrxRefNo: [''],
     providerTrxTime: [''],
     // Mode B — subscriber
+    idType: [1 as number | null],
     uniqueId: [''],
     email: [''],
     mobile: [''],
     didType: [1 as number | null],
     countryCode: [null as number | null],
     level: [2 as number | null],
-    // Mode B — canonical identity data (nationalId is auto-filled from uniqueId)
+    acceptExpired: [false],
+    // Mode B — canonical identity data (idNumber is auto-filled from uniqueId)
     nameFull: [''],
     nameFirst: [''],
     nameLast: [''],
@@ -74,6 +83,13 @@ export class ModalAddSubscriptionComponent {
     addressDistrict: [''],
     addressGovernorate: [''],
     birthGovernorate: [''],
+    nationality: [''],
+    placeOfBirth: [''],
+    issuingCountry: [''],
+    issuingAuthority: [''],
+    addressCity: [''],
+    addressPostalCode: [''],
+    addressCountry: [''],
   });
 
   constructor() {
@@ -108,17 +124,21 @@ export class ModalAddSubscriptionComponent {
       providerName: '',
       providerTrxRefNo: '',
       providerTrxTime: '',
+      idType: 1,
       uniqueId: '',
       email: '',
       mobile: '',
       didType: 1,
       countryCode: null,
       level: 2,
+      acceptExpired: false,
       nameFull: '',
       nameFirst: '', nameLast: '', gender: '', dateOfBirth: '', maritalStatus: '',
       religion: '', profession: '', husbandName: '', nationalIdSerial: '',
       idReleaseDate: '', idExpiryDate: '', addressStreet: '', addressDistrict: '',
       addressGovernorate: '', birthGovernorate: '',
+      nationality: '', placeOfBirth: '', issuingCountry: '', issuingAuthority: '',
+      addressCity: '', addressPostalCode: '', addressCountry: '',
     });
   }
 
@@ -159,10 +179,22 @@ export class ModalAddSubscriptionComponent {
     return !!(this.form.value.service && this.form.value.didHash);
   }
 
+  // Passport (idType 2) additionally requires nationality — mirror of the server's
+  // PER_ID_TYPE_REQUIRED. Exposed for the template's conditional required marker.
+  isPassport(): boolean {
+    return Number(this.form.value.idType) === 2;
+  }
+
   private isModeBValid(): boolean {
     const v = this.form.value;
-    return !!(v.service && v.provider && v.providerTrxRefNo && v.uniqueId && v.nameFull
-      && v.email && v.mobile && v.didType && v.countryCode && v.level);
+    // BASE set (canonical v3, level >= 2): document number + name pair + dateOfBirth +
+    // idExpiryDate (unless the operator explicitly accepts an expired/missing expiry).
+    const nameOk = !!(v.nameFull || (v.nameFirst && v.nameLast));
+    const expiryOk = !!(v.idExpiryDate || v.acceptExpired);
+    const passportOk = !this.isPassport() || !!v.nationality;
+    return !!(v.service && v.provider && v.providerTrxRefNo && v.idType && v.uniqueId
+      && nameOk && v.dateOfBirth && expiryOk && passportOk
+      && v.email && v.mobile && v.didType && v.countryCode && Number(v.level) >= 2);
   }
 
   canSubmit(): boolean {
@@ -176,11 +208,12 @@ export class ModalAddSubscriptionComponent {
     if (this.mode() === 'A') {
       body['didHash'] = v.didHash;
     } else {
-      // Canonical identity data — the operator maps the SP's result into these fields;
-      // the API whitelists them and nulls whatever is missing.
+      // Canonical identity data (v3) — the operator maps the SP's result into these fields;
+      // the API whitelists them and nulls whatever is missing. idNumber = the document
+      // number for the chosen idType (the server aliases nationalId for idType 1).
       const canonical: Record<string, any> = {
-        nationalId: String(v.uniqueId).trim(),
-        nameFull:   String(v.nameFull).trim(),
+        idNumber: String(v.uniqueId).trim(),
+        ...(v.nameFull ? { nameFull: String(v.nameFull).trim() } : {}),
       };
       for (const field of CANONICAL_EXTRA_FIELDS) {
         const value = (v as Record<string, any>)[field];
@@ -192,6 +225,7 @@ export class ModalAddSubscriptionComponent {
       body['didType'] = Number(v.didType);
       body['countryCode'] = Number(v.countryCode);
       body['level'] = Number(v.level);
+      body['idType'] = Number(v.idType) || 1;
       body['uniqueId'] = String(v.uniqueId).trim();
       body['ekyc'] = {
         provider: v.provider,
@@ -201,6 +235,7 @@ export class ModalAddSubscriptionComponent {
           ? { providerTrxTime: Math.floor(new Date(v.providerTrxTime as string).getTime() / 1000) }
           : {}),
         canonical,
+        ...(v.acceptExpired ? { acceptExpiredDocument: true } : {}),
       };
     }
 

@@ -131,7 +131,9 @@ export class AuditLog {
     public action_label: string | null = null,
     public prev_hash: string | null = null,
     public row_hash: string | null = null,
-    public verified: boolean | null = null
+    public verified: boolean | null = null,
+    // canonical display timestamp (ms), computed API-side (chain_time→ms else created_at)
+    public time: number = 0
   ) {}
 
   get categoryLabel(): string {
@@ -155,6 +157,7 @@ export interface ActivityLog {
   user_name: string;
   client_ip: string;
   created_at: number;
+  time?: number; // canonical display timestamp (ms), computed API-side
 }
 
 
@@ -475,7 +478,11 @@ export class RegulatorHold {
     public releaseReason: string,
     public blockNumber: number,
     public createdAt: number,
-    public lastUpdate: number
+    public lastUpdate: number,
+    // Acting authority (custodian hold grant, 2026-07-30): the asset's regulator or an
+    // attached external custodian service. Empty on pre-cutover rows.
+    public placedBy: string = '',
+    public releasedBy: string = ''
   ) {}
 }
 
@@ -516,7 +523,14 @@ export class Asset {
     // Immutable post-create. Set by the T20Template consolidation — replaces the old
     // tokenType=1/2 distinction at this level (tokenType now records the leaf-template kind).
     public supplyMode: number = 1,
-    public supplyModeName?: string
+    public supplyModeName?: string,
+    // canManage: server-derived — true when the asset's on-chain `manager` is
+    // this entity's template, i.e. the address the Entity API relays writes as.
+    // TarmiizT20._chkManager is a strict equality, so this decides whether ANY
+    // manager-gated write (mint / burn / change state / metadata / fee config)
+    // can succeed. It is a capability hint for gating buttons, NOT an
+    // authorization check — the contract is the only enforcement.
+    public canManage: boolean = false
   ) {}
 }
 
@@ -699,6 +713,28 @@ export class DocumentSignature {
   ) {}
 }
 
+// One entry in a document's append-only upload ledger. The first block is mirrored from the
+// on-chain DocumentVersionAdded event; the rest is API-only upload metadata and is null for
+// versions this tenant didn't upload (pre-pinned content, or a foreign owner's document).
+export class DocumentVersion {
+  constructor(
+    public version: number,
+    public cid: string,
+    public documentType: number,
+    public addedBy: string,
+    public createdByUserId: number,
+    public createdAt: number,
+    public fileName: string | null = null,
+    public fileSize: number | null = null,
+    public mimeType: string | null = null,
+    public contentSha256: string | null = null,
+    public actorUserId: number | null = null,
+    public actorUserName: string | null = null,
+    public clientIp: string | null = null,
+    public txHash: string | null = null
+  ) {}
+}
+
 export class Document {
   constructor(
     public id: number,
@@ -770,6 +806,10 @@ export class DexAssetListingVenue {
     public tier3Approved: boolean,
     public addedAt: number,
     public updatedAt: number = 0,
+    // Regulator sign-off on THIS (asset, venue) pairing: 1 = Pending, 2 = Approved.
+    // Separate from venueState (the venue's own lifecycle) — an Active venue still
+    // cannot trade this asset until the asset's regulator approves the pairing.
+    public state: number = 1,
   ) {}
 }
 

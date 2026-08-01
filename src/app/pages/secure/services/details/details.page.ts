@@ -15,7 +15,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Asset, AssetTransaction, Service, Subscription, User } from '../../../../shared/models/data.model';
+import { Asset, AssetTransaction, ContactInfo, Service, Subscription, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
@@ -102,9 +102,73 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+
+  // Public-profile metadata parsed from the service's on-chain metadata JSON string.
+  // `contact` is rendered in its own Contact section; `entries` are the free-form
+  // additional fields (reserved keys excluded), shown in the Metadata tab's KV table.
+  parsedMetadata = computed<{ description: string; contact: ContactInfo; entries: [string, string][]; raw: string; valid: boolean }>(() => {
+    const raw = this.service()?.metadata ?? '';
+    const emptyContact: ContactInfo = { email: '', phone: '', website: '', address: '' };
+    if (!raw) return { description: '', contact: emptyContact, entries: [], raw: '', valid: true };
+    try {
+      const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        const description = typeof obj.description === 'string' ? obj.description : '';
+        const c = (obj.contact && typeof obj.contact === 'object' && !Array.isArray(obj.contact)) ? obj.contact : {};
+        const contact: ContactInfo = {
+          email:   c.email   ?? obj.email    ?? '',
+          phone:   c.phone   ?? obj.telephone ?? obj.mobile ?? '',
+          website: c.website ?? obj.website  ?? '',
+          address: c.address ?? obj.address  ?? '',
+        };
+        // `media` is the server-owned public images index (rendered by the Images
+        // section); excluded from the KV table like `description` / `contact`.
+        const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address']);
+        const entries = Object.entries(obj)
+          .filter(([k]) => !RESERVED.has(k))
+          .map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)] as [string, string])
+          .sort((a, b) => a[0].localeCompare(b[0]));
+        return { description, contact, entries, raw: typeof raw === 'string' ? raw : JSON.stringify(raw), valid: true };
+      }
+    } catch (_) { /* fall through */ }
+    return { description: '', contact: emptyContact, entries: [], raw: typeof raw === 'string' ? raw : JSON.stringify(raw), valid: false };
+  });
+
+  hasContact = computed(() => {
+    const c = this.parsedMetadata().contact;
+    return !!(c.email || c.phone || c.website || c.address);
+  });
 
   liquidityBalances = signal<{ currencyCode: number; currencyName: string; currencySymbol: string; currencyAlpha?: string; balance: number; withheld: number; available: number; obligation: number; shortfall: number; coverageRatio: number | null }[]>([]);
+
+  // Regulator-set minimum shortfall that raises an alert (currency units). isSet=false ⇒ the
+  // platform default floor applies. A shortfall at or below it is real but not alertable, so the
+  // threshold has to be visible next to the numbers.
+  shortfallTolerance      = signal<number | null>(null);
+  shortfallToleranceIsSet = signal(false);
+
+  withinShortfallTolerance(shortfall: number): boolean {
+    const tol = this.shortfallTolerance();
+    return shortfall > 0 && tol !== null && shortfall <= tol;
+  }
+
+  // How far the shortfall still is from the alert threshold, formatted for display.
+  toleranceHeadroom(shortfall: number): string {
+    const tol = this.shortfallTolerance();
+    if (tol === null) return '';
+    const gap = Math.max(0, tol - shortfall);
+    return gap >= 0.01 ? gap.toFixed(2) : String(Math.round(gap * 1e6) / 1e6);
+  }
+
+  // Coverage must never ROUND UP to 100% while the obligation is not actually covered —
+  // 99.9766% displayed as "100.0%" is what made a real 1.08 shortfall look like none.
+  // Floor to the one decimal we render, so only a true ratio >= 1 shows 100.0%.
+  coveragePercent(ratio: number | null | undefined): number | null {
+    if (ratio === null || ratio === undefined) return null;
+    const pct = ratio * 100;
+    return pct >= 100 ? 100 : Math.floor(pct * 10) / 10;
+  }
 
   liquidityCoverageTone(ratio: number | null | undefined): 'good' | 'warn' | 'bad' | 'idle' {
     if (ratio === null || ratio === undefined) return 'idle';
@@ -113,6 +177,23 @@ export class DetailsPage implements OnInit {
     return 'bad';
   }
   liquidityLoading = signal(false);
+  // Liquidity change history (plugin-mirrored credit ledger, origin 3=inject / 4=withdraw).
+  liquidityHistory = signal<any[]>([]);
+  liquidityHistoryLoading = signal(false);
+  private readonly creditOriginNames: Record<number, string> = {
+    1: 'Deposit', 2: 'Withdraw', 3: 'Liquidity Inject', 4: 'Liquidity Withdraw',
+    5: 'Service Send', 6: 'Withhold', 7: 'Settle', 8: 'Cross-Service Settle',
+    9: 'Peer-to-Peer', 10: 'Regulator Transfer', 11: 'Settle Fee',
+    12: 'Cross-Service Settle Fee', 13: 'Bank Transfer', 14: 'Route Transfer',
+  };
+  creditOriginLabel(o: number): string { return this.creditOriginNames[o] ?? ('Origin ' + o); }
+  // credit_transactions.trx_amount arrives in whole-currency units since the
+  // 2026-07-30 money-unit unification (the mirror divides once, exactly, at the
+  // plugin write boundary) — dividing again here would render every amount as 0.
+  formatCreditAmount(v: any): string {
+    const n = Number(v ?? 0);
+    return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : '0';
+  }
   liquidityModalOpen = signal(false);
   liquidityModalAction = signal<'inject' | 'withdraw'>('inject');
   liquidityModalCurrency = signal<{ code: number; name: string; symbol: string } | null>(null);
@@ -250,8 +331,8 @@ export class DetailsPage implements OnInit {
   async ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
     const requested = this.route.snapshot.queryParamMap.get('tab') as
-      ('overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
-    const allowed = ['overview', 'info', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
+      ('overview' | 'info' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
+    const allowed = ['overview', 'info', 'metadata', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
     let initialTab = requested && (allowed as readonly string[]).includes(requested) ? requested : 'overview';
     // Overview is hidden for service-provider tenants — fall back to Information.
     if (this.isServiceProvider && initialTab === 'overview') initialTab = 'info';
@@ -281,9 +362,9 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
+  setTab(tab: 'overview' | 'info' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
     this.activeTab.set(tab);
-    if (tab === 'info') this.getServiceDetails();
+    if (tab === 'info' || tab === 'metadata') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
     if (tab === 'trxs') this.getTransactions(1, 500);
@@ -990,10 +1071,23 @@ export class DetailsPage implements OnInit {
   async getLiquidity(silent = false) {
     if (!silent) this.liquidityLoading.set(true);
     try {
-      const balances = await this.apiService.vaultGetServiceLiquidity(this.serviceAddress);
-      this.liquidityBalances.set(Array.isArray(balances) ? balances : []);
+      const data = await this.apiService.vaultGetServiceLiquidity(this.serviceAddress);
+      this.liquidityBalances.set(Array.isArray(data?.balances) ? data.balances : []);
+      this.shortfallTolerance.set(data?.shortfallTolerance ?? null);
+      this.shortfallToleranceIsSet.set(!!data?.shortfallToleranceIsSet);
     } finally {
       if (!silent) this.liquidityLoading.set(false);
+    }
+    this.getLiquidityHistory(silent);
+  }
+
+  async getLiquidityHistory(silent = false) {
+    if (!silent) this.liquidityHistoryLoading.set(true);
+    try {
+      const res = await this.apiService.vaultGetServiceCreditTransactions(this.serviceAddress, { origin: '3,4', offset: 200 });
+      this.liquidityHistory.set(Array.isArray(res.transactions) ? res.transactions : []);
+    } finally {
+      if (!silent) this.liquidityHistoryLoading.set(false);
     }
   }
 

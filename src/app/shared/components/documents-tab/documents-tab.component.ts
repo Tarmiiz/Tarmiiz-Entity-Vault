@@ -426,18 +426,31 @@ export class DocumentsTabComponent implements OnChanges {
 
   private async loadSignedCounts(docs: Document[]) {
     this.signedCounts.set({});
-    await Promise.all(docs.map(async d => {
+    await Promise.all(docs.map(d => this.refreshSignedCount(d)));
+  }
+
+  // Re-reads one document's signature count from the chain and patches the map — called after a
+  // successful sign so the Signed column flips without a full tab reload.
+  //
+  // NEVER throws. It is a display refresh on top of work that has already succeeded: letting it
+  // propagate would suppress the "Document Signed" alert after a sign that DID land on-chain, and
+  // would reject the whole Promise.all in loadSignedCounts, blanking every other row's count over
+  // one bad read. A failed refresh just leaves the stale count until the next load.
+  private async refreshSignedCount(doc: Document) {
+    try {
       let res: any = null;
       if (this.resourceType === 'service') {
-        res = await this.apiService.serviceDocumentSignatures(this.address, d.id, 1, 1);
+        res = await this.apiService.serviceDocumentSignatures(this.address, doc.id, 1, 1);
       } else if (this.resourceType === 'asset') {
-        res = await this.apiService.assetDocumentSignatures(this.address, d.id, 1, 1);
+        res = await this.apiService.assetDocumentSignatures(this.address, doc.id, 1, 1);
       } else {
-        res = await this.apiService.subscriptionDocumentSignatures(this.address, d.id, 1, 1);
+        res = await this.apiService.subscriptionDocumentSignatures(this.address, doc.id, 1, 1);
       }
       const count = Number(res?.count ?? 0);
-      this.signedCounts.update(m => ({ ...m, [d.id]: count }));
-    }));
+      this.signedCounts.update(m => ({ ...m, [doc.id]: count }));
+    } catch {
+      // leave the previous count in place
+    }
   }
 
   private mapDoc(r: any): Document {
@@ -770,8 +783,14 @@ export class DocumentsTabComponent implements OnChanges {
     }
   }
 
+  // Signing needs an entity signer key, and the API's sign routes are requireExecutive (role 2) —
+  // an admin/viewer hitting them gets a bare 403, so don't offer the button to them at all.
+  canSign(doc: Document): boolean {
+    return this.entityActive && this.isExecutive() && doc.documentState === 1 && !!doc.cid;
+  }
+
   async signDocument(doc: Document) {
-    if (!doc?.cid) return;
+    if (!this.canSign(doc)) return;
     const keyId = await this.signModal.show();
     if (keyId === null) return;
     this.loadingService.show(this.translate.instant('documentsTab.loading.hashingSigning'));
@@ -789,11 +808,17 @@ export class DocumentsTabComponent implements OnChanges {
       } else {
         signRes = await this.apiService.subscriptionDocumentSign(this.address, doc.id, keyId, docHash);
       }
-      if (signRes?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), signRes.error);
-      } else {
-        this.alertService.show(this.translate.instant('documentsTab.success.signedTitle'), this.translate.instant('documentsTab.success.signedMsg'));
+      // authPost returns null on any non-2xx (e.g. a 403 from requireExecutive) — treat null OR an
+      // error body as failure, or the UI reports success for a sign that never landed on-chain.
+      if (!signRes || signRes.error) {
+        this.alertService.show(
+          this.translate.instant('documentsTab.errors.signingFailedTitle'),
+          signRes?.error || this.translate.instant('documentsTab.errors.signingFailedMsg'),
+        );
+        return;
       }
+      await this.refreshSignedCount(doc);
+      this.alertService.show(this.translate.instant('documentsTab.success.signedTitle'), this.translate.instant('documentsTab.success.signedMsg'));
     } finally {
       this.loadingService.hide();
     }

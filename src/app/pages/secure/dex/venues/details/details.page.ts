@@ -108,7 +108,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
   goAsset(baseAsset: string) { this.router.navigate(['/authorized/dex/asset-listings/details/' + baseAsset]); }
 
-  fmtPrice(wei: string) { try { return Number(ethers.formatEther(wei || '0')).toLocaleString(undefined, { maximumFractionDigits: 6 }); } catch { return '0'; } }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : '0'; }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
 
   getStatusClass(s: number | undefined): string {

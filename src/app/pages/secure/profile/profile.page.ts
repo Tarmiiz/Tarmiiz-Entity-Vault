@@ -47,7 +47,7 @@ export class ProfilePage implements OnInit {
   private authService = inject(AuthService);
   private translate = inject(TranslateService);
 
-  activeTab = signal<'info' | 'images'>('info');
+  activeTab = signal<'info' | 'metadata' | 'images'>('info');
   info = signal<Entity | undefined>(undefined);
 
   get entityActive() { return this.authService.entityActive(); }
@@ -64,9 +64,9 @@ export class ProfilePage implements OnInit {
     this.revokeMediaImageUrls();
   }
 
-  setTab(tab: 'info' | 'images') {
+  setTab(tab: 'info' | 'metadata' | 'images') {
     this.activeTab.set(tab);
-    if (tab === 'info') this.getInfo();
+    if (tab === 'info' || tab === 'metadata') this.getInfo();
     if (tab === 'images') this.loadMediaImages();
   }
 

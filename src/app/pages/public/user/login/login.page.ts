@@ -83,8 +83,16 @@ export class LoginPage implements OnInit {
         console.error('Login failed:', loginResult.error);
         let errorMessage = this.translate.instant('login.errors.unexpectedDuringLogin');
         const errStr = String(loginResult.error ?? '');
+        // AuthService already routed to the claim wizard — no alert to show.
+        if (errStr === 'CLAIM_REQUIRED') return;
         if (errStr) {
-          if (errStr.includes('User not found')) {
+          if (errStr === 'ENTITY_PENDING' || errStr.includes('pending regulator approval')) {
+            errorMessage = this.translate.instant('login.errors.entityPending');
+          } else if (errStr === 'ENTITY_INACTIVE' || errStr.includes('Sign-in is disabled')) {
+            errorMessage = this.translate.instant('login.errors.entityInactive');
+          } else if (errStr === 'ENTITY_UNKNOWN') {
+            errorMessage = this.translate.instant('login.errors.entityUnknown');
+          } else if (errStr.includes('User not found')) {
             errorMessage = this.translate.instant('login.errors.userNotFound');
           } else if (errStr.includes('proof')) {
             errorMessage = this.translate.instant('login.errors.proofFailed');

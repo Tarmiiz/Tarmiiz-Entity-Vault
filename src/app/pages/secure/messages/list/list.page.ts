@@ -116,13 +116,9 @@ export class ListPage implements OnInit, OnDestroy {
         if (!subjectHit) return false;
       }
       if (partTerm) {
-        const inParticipants = (t.participants || []).some(p => {
-          const a = (p.address || '').toLowerCase();
-          const n = (dir[a]?.name || '').toLowerCase();
-          return a.includes(partTerm) || n.includes(partTerm);
-        });
-        const inSubs = (t.subscriptions || []).some(s => s.toLowerCase().includes(partTerm));
-        if (!inParticipants && !inSubs) return false;
+        const a = (t.creator || '').toLowerCase();
+        const n = (dir[a]?.name || '').toLowerCase();
+        if (!a.includes(partTerm) && !n.includes(partTerm)) return false;
       }
       if (type !== 'all') {
         if (type === 'subscription') {
@@ -134,8 +130,13 @@ export class ListPage implements OnInit, OnDestroy {
         }
       }
       return true;
-    });
+    }).sort((a, b) => (b.lastMessageAt || b.createdAt || 0) - (a.lastMessageAt || a.createdAt || 0));
   });
+
+  nameFor(address: string): string {
+    if (!address) return '—';
+    return this.directory()[address.toLowerCase()]?.name || (address.slice(0, 8) + '…');
+  }
 
   onScopeToggle(event: Event) {
     this.unreadOnly.set((event.target as HTMLInputElement).checked);

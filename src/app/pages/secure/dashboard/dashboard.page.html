@@ -89,7 +89,19 @@
       @if (hasLiquidityWarnings()) {
         <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-6 badges">
           <div class="flex items-baseline justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-700">{{ 'dashboard.liquidity.title' | translate }}</h3>
+            <div>
+              <h3 class="text-sm font-semibold text-gray-700">{{ 'dashboard.liquidity.title' | translate }}</h3>
+              @if (shortfallTolerance() !== null) {
+                <p class="text-[11px] text-gray-500 mt-0.5">
+                  {{ 'dashboard.liquidity.tolerance' | translate }}:
+                  <span class="font-mono font-semibold text-gray-700">{{ shortfallTolerance() | number:'1.2-6' }}</span>
+                  <span class="text-gray-400">
+                    — {{ (shortfallToleranceIsSet() ? 'dashboard.liquidity.toleranceRegulator'
+                                                    : 'dashboard.liquidity.toleranceDefault') | translate }}
+                  </span>
+                </p>
+              }
+            </div>
             <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.subtitle' | translate }}</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -111,7 +123,7 @@
                       [class.text-green-700]="tone === 'good'"
                       [class.text-amber-700]="tone === 'warn'"
                       [class.text-red-700]="tone === 'bad'">
-                      {{ (row.coverageRatio * 100) | number:'1.1-1' }}% {{ 'dashboard.liquidity.covered' | translate }}
+                      {{ coveragePercent(row.coverageRatio) | number:'1.1-1' }}% {{ 'dashboard.liquidity.covered' | translate }}
                     </span>
                   } @else {
                     <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.noObligation' | translate }}</span>
@@ -128,8 +140,15 @@
                   </div>
                 </div>
                 @if (row.shortfall > 0) {
-                  <p class="mt-2 text-xs font-semibold text-red-700">
+                  <p class="mt-2 text-xs font-semibold"
+                    [class.text-red-700]="!withinShortfallTolerance(row.shortfall)"
+                    [class.text-amber-700]="withinShortfallTolerance(row.shortfall)">
                     {{ 'dashboard.liquidity.shortfallPrefix' | translate }} <span class="font-mono">{{ row.shortfall | number:'1.2-2' }} {{ row.currency }}</span>
+                    @if (withinShortfallTolerance(row.shortfall)) {
+                      <!-- &ngsp; not a literal space: Angular's whitespace removal (preserveWhitespaces:false)
+                           drops whitespace-only text nodes, so a plain space before "(" disappears. -->
+                      <span class="font-normal text-gray-400">&ngsp;({{ 'dashboard.liquidity.withinTolerance' | translate:{ amount: toleranceHeadroom(row.shortfall) } }})</span>
+                    }
                   </p>
                 }
                 <div class="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
@@ -170,16 +189,24 @@
                       <td class="px-3 py-2 text-right font-mono">{{ row.obligation | number:'1.2-2' }}</td>
                       <td class="px-3 py-2 text-right font-mono">{{ row.liquidity | number:'1.2-2' }}</td>
                       <td class="px-3 py-2 text-right font-mono"
-                        [class.text-red-700]="row.shortfall > 0"
+                        [class.text-red-700]="row.shortfall > 0 && !withinShortfallTolerance(row.shortfall)"
+                        [class.text-amber-700]="withinShortfallTolerance(row.shortfall)"
                         [class.font-semibold]="row.shortfall > 0">
-                        @if (row.shortfall > 0) { {{ row.shortfall | number:'1.2-2' }} } @else { <span class="text-gray-300">{{ 'common.notSet' | translate }}</span> }
+                        @if (row.shortfall > 0) {
+                          {{ row.shortfall | number:'1.2-2' }}
+                          @if (withinShortfallTolerance(row.shortfall)) {
+                            <span class="block text-[10px] font-normal text-gray-400">
+                              {{ 'dashboard.liquidity.withinTolerance' | translate:{ amount: toleranceHeadroom(row.shortfall) } }}
+                            </span>
+                          }
+                        } @else { <span class="text-gray-300">{{ 'common.notSet' | translate }}</span> }
                       </td>
                       <td class="px-3 py-2 text-right font-mono text-xs font-semibold"
                         [class.text-green-700]="tone === 'good'"
                         [class.text-amber-700]="tone === 'warn'"
                         [class.text-red-700]="tone === 'bad'"
                         [class.text-gray-400]="tone === 'idle'">
-                        @if (row.coverageRatio !== null) { {{ (row.coverageRatio * 100) | number:'1.1-1' }}% } @else { {{ 'common.notSet' | translate }} }
+                        @if (row.coverageRatio !== null) { {{ coveragePercent(row.coverageRatio) | number:'1.1-1' }}% } @else { {{ 'common.notSet' | translate }} }
                       </td>
                     </tr>
                   }

@@ -833,9 +833,15 @@ export class ApiService {
     return data?.services ?? [];
   }
 
+  // Returns the whole payload — the caller needs the regulator's shortfall alert tolerance
+  // alongside the balances, not just the rows.
   async vaultGetServiceLiquidity(address: string) {
     const data = await this.vaultGet('/services/' + address + '/liquidity');
-    return data?.balances ?? [];
+    return {
+      balances:  data?.balances ?? [],
+      shortfallTolerance:      data?.shortfallTolerance ?? null,
+      shortfallToleranceIsSet: data?.shortfallToleranceIsSet ?? false,
+    };
   }
 
   async vaultServiceLiquidityInject(address: string, body: { currencyCode: number; amount: number; trxData?: string; refNo?: string }) {
@@ -844,6 +850,20 @@ export class ApiService {
 
   async vaultServiceLiquidityWithdraw(address: string, body: { currencyCode: number; amount: number; trxData?: string; refNo?: string }) {
     return this.vaultPost('/services/' + address + '/liquidity/withdraw', body);
+  }
+
+  // Off-chain credit-ledger history for a service (plugin-mirrored). `origin='3,4'` = liquidity only.
+  async vaultGetServiceCreditTransactions(
+    address: string,
+    opts: { origin?: string; currencyCode?: number; start?: number; offset?: number } = {},
+  ) {
+    const params: Record<string, string> = {
+      start: String(opts.start ?? 0), offset: String(opts.offset ?? 100),
+    };
+    if (opts.origin) params['origin'] = opts.origin;
+    if (opts.currencyCode != null) params['currencyCode'] = String(opts.currencyCode);
+    const data = await this.vaultGet('/services/' + address + '/credit-transactions', params);
+    return { count: data?.count ?? 0, transactions: data?.transactions ?? [] };
   }
 
   // ─── Vault — Subscriptions ────────────────────────────────────────────────────
@@ -874,14 +894,35 @@ export class ApiService {
     return this.vaultGet(`/assets/${asset}/regulator-holds/${holdId}`);
   }
 
+  // Custodian hold authority (2026-07-30) — this tenant acting AS a custodian.
+  async vaultCustodyMandates(partyType?: number) {
+    return this.vaultGet('/custody/mandates', partyType != null ? { partyType } : undefined);
+  }
+  async vaultCustodyAssets() {
+    return this.vaultGet('/custody/assets');
+  }
+  async vaultCustodyAssetHolds(asset: string, start = 1, offset = 100) {
+    return this.vaultGet(`/custody/assets/${asset}/holds`, { start, offset });
+  }
+  async vaultCustodyHoldPlace(body: { custodianService: string; asset: string; account: string; amount: string; reason?: string }) {
+    return this.vaultPost('/custody/holds', body);
+  }
+  async vaultCustodyHoldRelease(asset: string, holdId: number, body: { custodianService: string; amount: string; reason?: string }) {
+    return this.vaultPut(`/custody/holds/${asset}/${holdId}/release`, body);
+  }
+
   // ─── Vault — State Change Logs ──────────────────────────────────────────────
 
   async vaultGetStateChangeLogs(address: string, start = 1, offset = 50) {
     return this.vaultGet(`/state-logs/${address}?start=${start}&offset=${offset}`);
   }
-  async vaultGetAllStateChangeLogs(start = 1, offset = 50, type?: string) {
+  async vaultGetAllStateChangeLogs(start = 1, offset = 50, type?: string, userId?: number, fromTs?: number, toTs?: number, action?: string) {
     let url = `/state-logs?start=${start}&offset=${offset}`;
     if (type) url += `&type=${type}`;
+    if (userId) url += `&user_id=${userId}`;
+    if (fromTs) url += `&from=${fromTs}`;
+    if (toTs) url += `&to=${toTs}`;
+    if (action) url += `&action=${encodeURIComponent(action)}`;
     return this.vaultGet(url);
   }
 
@@ -1143,6 +1184,24 @@ export class ApiService {
   async vaultGetSubscriptionIdentityHash(address: string) {
     const data = await this.vaultGet('/subscriptions/' + address + '/identity-hash');
     return data?.identityHash ?? null;
+  }
+
+  // ─── eKYC doc-first reads (own-originated verifications — unified-eKYC §2.4) ────
+  // The entity re-reads exactly the identity data IT originated; foreign-originated
+  // verifications are unreadable by construction (per-doc DEK wrap). All three are
+  // gated server-side by the `view-documents` system function.
+
+  async ekycVerifications(didHash: string) {
+    const data = await this.authGet('/ekyc/verifications', { didHash });
+    return data?.verifications ?? [];
+  }
+
+  async ekycTransaction(transactionId: string, didHash?: string) {
+    return this.authGet('/ekyc/transaction', { transactionId, ...(didHash ? { didHash } : {}) });
+  }
+
+  async ekycImages(transactionId: string, didHash?: string) {
+    return this.authGet('/ekyc/images', { transactionId, ...(didHash ? { didHash } : {}) });
   }
 
   // ─── Vault — Users ────────────────────────────────────────────────────────────
@@ -1516,6 +1575,12 @@ export class ApiService {
   // `result?.error` rather than just `!result`. On 401, the global auth-failure
   // handler is invoked so the user is bounced to /public/user/login instead of
   // staring at a generic toast.
+  // Hard ceiling on a multipart upload. The document write path pins to IPFS and then waits
+  // for an on-chain receipt; the API bounds that wait at 120s, so anything past this is a
+  // request that will never be answered (e.g. a relay tx dropped from the tx pool). Without
+  // it the XHR promise never settles and the upload spinner runs forever with no error.
+  private readonly UPLOAD_TIMEOUT_MS = 180000;
+
   private async _uploadMultipart(
     path: string,
     file: File,
@@ -1567,9 +1632,67 @@ export class ApiService {
         };
         xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
         xhr.onabort = () => resolve({ error: 'Upload aborted', status: 0 });
+        xhr.timeout = this.UPLOAD_TIMEOUT_MS;
+        xhr.ontimeout = () => resolve({ error: 'Upload timed out — the server did not respond. The file may not have been saved.', status: 0 });
         xhr.send(form);
       } catch (e: any) {
         resolve({ error: e?.message || 'Upload failed', status: 0 });
+      }
+    });
+  }
+
+  // PUT-multipart sibling of _uploadMultipart, for replacing a document's file. Separate method
+  // rather than a flag on the uploader because the body shape differs: no documentType /
+  // documentState / sharedWith (the API preserves the document's type, state and ACL).
+  private async _replaceFileMultipart(
+    path: string,
+    file: File,
+    metadata: { title?: string; description?: string; fileType?: string } = {},
+    onProgress?: (percent: number) => void
+  ): Promise<any> {
+    const token = await this.sessionService.getActiveToken();
+    if (!token) {
+      this._handleAuthFailure();
+      return { error: 'Session expired. Please log in again.', status: 401 };
+    }
+    return new Promise<any>((resolve) => {
+      try {
+        const form = new FormData();
+        form.append('file', file, file.name);
+        if (metadata.title)       form.append('title', metadata.title);
+        if (metadata.description) form.append('description', metadata.description);
+        if (metadata.fileType)    form.append('fileType', metadata.fileType);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', this.apiURL + path);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        const audit = this.getAuditHeaders();
+        for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
+
+        xhr.upload.onprogress = (e) => {
+          if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          let json: any = null;
+          try { json = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { /* non-JSON body */ }
+          if (xhr.status === 401) {
+            this._handleAuthFailure();
+            resolve({ error: 'Session expired. Please log in again.', status: 401 });
+            return;
+          }
+          if (xhr.status >= 300 || json?.error) {
+            resolve({ error: json?.error || json?.message || `Replace failed (HTTP ${xhr.status})`, status: xhr.status });
+            return;
+          }
+          resolve(json ?? { ok: true });
+        };
+        xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.onabort = () => resolve({ error: 'Upload aborted', status: 0 });
+        xhr.timeout = this.UPLOAD_TIMEOUT_MS;
+        xhr.ontimeout = () => resolve({ error: 'Replace timed out — the server did not respond. The file may not have been replaced.', status: 0 });
+        xhr.send(form);
+      } catch (e: any) {
+        resolve({ error: e?.message || 'Replace failed', status: 0 });
       }
     });
   }
@@ -1620,6 +1743,24 @@ export class ApiService {
     return await this.authGet('/documents/shared/' + owner + '/' + id + '/signatures', { start: String(start), offset: String(offset) });
   }
 
+  // Replace a document's file: new DEK, re-wrapped for the current ACL, new CID → new version.
+  async documentReplaceFile(
+    id: any,
+    file: File,
+    metadata: { title?: string; description?: string; fileType?: string } = {},
+    onProgress?: (percent: number) => void
+  ) {
+    return this._replaceFileMultipart('/documents/' + id, file, metadata, onProgress);
+  }
+
+  // Upload ledger — every CID a document has ever pointed at (newest first).
+  async documentVersions(id: any, start = 1, offset = 50) {
+    return await this.authGet('/documents/' + id + '/versions', { start: String(start), offset: String(offset) });
+  }
+  async documentSharedVersions(owner: string, id: any, start = 1, offset = 50) {
+    return await this.authGet('/documents/shared/' + owner + '/' + id + '/versions', { start: String(start), offset: String(offset) });
+  }
+
   // Inbound shares to one of this tenant's NON-entity templates (a service / subscription / asset).
   // The API reads the doc AS that template (double-hop) since the entity isn't in its ACL.
   async inboundDocumentsList(template: string) {
@@ -1659,6 +1800,9 @@ export class ApiService {
   async serviceDocumentSigners(address: string, id: any)                       { return await this.authGet('/services/' + address + '/documents/' + id + '/signers'); }
   async serviceDocumentHasSigned(address: string, id: any, account: string)    { return await this.authGet('/services/' + address + '/documents/' + id + '/signed/' + account); }
   async serviceDocumentSignatureCount(address: string, id: any)                { return await this.authGet('/services/' + address + '/documents/' + id + '/signatures/count'); }
+  async serviceDocumentVersions(address: string, id: any, start = 1, offset = 50) {
+    return await this.authGet('/services/' + address + '/documents/' + id + '/versions', { start: String(start), offset: String(offset) });
+  }
   async serviceDocumentSign(address: string, id: any, keyId: any, docHash: string) {
     return await this.authPost('/services/' + address + '/documents/' + id + '/sign', { keyId, docHash });
   }
@@ -1699,6 +1843,9 @@ export class ApiService {
   async assetDocumentSigners(address: string, id: any)                       { return await this.authGet('/assets/' + address + '/documents/' + id + '/signers'); }
   async assetDocumentHasSigned(address: string, id: any, account: string)    { return await this.authGet('/assets/' + address + '/documents/' + id + '/signed/' + account); }
   async assetDocumentSignatureCount(address: string, id: any)                { return await this.authGet('/assets/' + address + '/documents/' + id + '/signatures/count'); }
+  async assetDocumentVersions(address: string, id: any, start = 1, offset = 50) {
+    return await this.authGet('/assets/' + address + '/documents/' + id + '/versions', { start: String(start), offset: String(offset) });
+  }
   async assetDocumentSign(address: string, id: any, keyId: any, docHash: string) {
     return await this.authPost('/assets/' + address + '/documents/' + id + '/sign', { keyId, docHash });
   }
@@ -1733,6 +1880,9 @@ export class ApiService {
   async subscriptionDocumentShare(address: string, id: any, account: string)        { return await this.authPost('/subscriptions/' + address + '/documents/' + id + '/share', { account }); }
   async subscriptionDocumentUnshare(address: string, id: any, account: string)      { return await this.authDelete('/subscriptions/' + address + '/documents/' + id + '/share/' + account); }
   async subscriptionDocumentGetSharedWith(address: string, id: any)                 { return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/shared'); }
+  async subscriptionDocumentVersions(address: string, id: any, start = 1, offset = 50) {
+    return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/versions', { start: String(start), offset: String(offset) });
+  }
   async subscriptionDocumentSignatures(address: string, id: any, start = 1, offset = 100) {
     return await this.authGet('/subscriptions/' + address + '/documents/' + id + '/signatures', { start: String(start), offset: String(offset) });
   }
@@ -1802,6 +1952,8 @@ export class ApiService {
         };
         xhr.onerror = () => resolve(null);
         xhr.onabort = () => resolve(null);
+        xhr.timeout = this.UPLOAD_TIMEOUT_MS;
+        xhr.ontimeout = () => resolve(null);
         xhr.send(form);
       } catch { resolve(null); }
     });
@@ -2119,10 +2271,13 @@ export class ApiService {
     return this.authGet('/audit/verify', params);
   }
 
-  async vaultGetActivityLogs(start = 1, offset = 50, category?: string, userId?: number) {
+  async vaultGetActivityLogs(start = 1, offset = 50, category?: string, userId?: number, fromTs?: number, toTs?: number, action?: string) {
     const params: Record<string, any> = { start: String(start), offset: String(offset) };
     if (category) params['category'] = category;
     if (userId) params['user_id'] = String(userId);
+    if (fromTs) params['from'] = String(fromTs);
+    if (toTs) params['to'] = String(toTs);
+    if (action) params['action'] = action;
     return this.vaultGet('/activity-logs', params);
   }
 
@@ -2181,6 +2336,8 @@ export class ApiService {
           catch { resolve({ error: 'Invalid response', status: xhr.status }); }
         };
         xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.timeout = this.UPLOAD_TIMEOUT_MS;
+        xhr.ontimeout = () => resolve({ error: 'Timed out — the server did not respond.', status: 0 });
         xhr.send(form);
       } catch (err: any) {
         resolve({ error: err?.message || 'upload failed', status: 0 });
@@ -2249,6 +2406,8 @@ export class ApiService {
           catch { resolve({ error: 'Invalid response', status: xhr.status }); }
         };
         xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.timeout = this.UPLOAD_TIMEOUT_MS;
+        xhr.ontimeout = () => resolve({ error: 'Timed out — the server did not respond.', status: 0 });
         xhr.send(form);
       } catch (err: any) {
         resolve({ error: err?.message || 'upload failed', status: 0 });

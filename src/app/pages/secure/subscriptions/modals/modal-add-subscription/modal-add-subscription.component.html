@@ -117,16 +117,23 @@
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.verificationLevel' | translate }}</label>
               <select formControlName="level" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
-                <option [ngValue]="1">{{ 'subscriptions.addModal.level1' | translate }}</option>
                 <option [ngValue]="2">{{ 'subscriptions.addModal.level2' | translate }}</option>
                 <option [ngValue]="3">{{ 'subscriptions.addModal.level3' | translate }}</option>
               </select>
             </div>
 
-            <!-- Canonical identity data -->
+            <!-- Canonical identity data — BASE required set (canonical v3) -->
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.nationalId' | translate }}</label>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.idType' | translate }}</label>
+                <select formControlName="idType" class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md text-sm text-black">
+                  @for (t of idTypes; track t.value) {
+                    <option [ngValue]="t.value">{{ t.label }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.documentNumber' | translate }}</label>
                 <input type="text" formControlName="uniqueId"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm font-mono text-black" />
               </div>
@@ -135,7 +142,28 @@
                 <input type="text" formControlName="nameFull"
                   class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
               </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.dateOfBirth' | translate }}</label>
+                <input type="text" formControlName="dateOfBirth" placeholder="dd/mm/yyyy"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.idExpiryDate' | translate }}</label>
+                <input type="text" formControlName="idExpiryDate" placeholder="dd/mm/yyyy"
+                  class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+              </div>
+              @if (isPassport()) {
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.nationality' | translate }}</label>
+                  <input type="text" formControlName="nationality"
+                    class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+              }
             </div>
+            <label class="flex items-center gap-2 text-xs text-gray-600">
+              <input type="checkbox" formControlName="acceptExpired" class="rounded border-gray-300" />
+              {{ 'subscriptions.addModal.acceptExpired' | translate }}
+            </label>
 
             <button type="button" (click)="toggleMoreIdentity()"
               class="text-xs text-indigo-600 hover:text-indigo-800 transition-colors">
@@ -156,10 +184,12 @@
                   <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.gender' | translate }}</label>
                   <input type="text" formControlName="gender" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.dateOfBirth' | translate }}</label>
-                  <input type="text" formControlName="dateOfBirth" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
-                </div>
+                @if (!isPassport()) {
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.nationality' | translate }}</label>
+                    <input type="text" formControlName="nationality" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                  </div>
+                }
                 <div>
                   <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.maritalStatus' | translate }}</label>
                   <input type="text" formControlName="maritalStatus" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
@@ -185,12 +215,32 @@
                   <input type="text" formControlName="idReleaseDate" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.idExpiryDate' | translate }}</label>
-                  <input type="text" formControlName="idExpiryDate" placeholder="dd/mm/yyyy" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.issuingCountry' | translate }}</label>
+                  <input type="text" formControlName="issuingCountry" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.issuingAuthority' | translate }}</label>
+                  <input type="text" formControlName="issuingAuthority" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.placeOfBirth' | translate }}</label>
+                  <input type="text" formControlName="placeOfBirth" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.street' | translate }}</label>
                   <input type="text" formControlName="addressStreet" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.city' | translate }}</label>
+                  <input type="text" formControlName="addressCity" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.postalCode' | translate }}</label>
+                  <input type="text" formControlName="addressPostalCode" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.addressCountry' | translate }}</label>
+                  <input type="text" formControlName="addressCountry" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.addModal.district' | translate }}</label>

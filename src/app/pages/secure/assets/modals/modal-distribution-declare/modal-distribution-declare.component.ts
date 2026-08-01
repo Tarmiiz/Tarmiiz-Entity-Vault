@@ -27,10 +27,15 @@ export class ModalDistributionDeclareComponent {
   sweepResidual  = signal<boolean>(true);
   error          = signal<string>('');
 
+  // Amount is entered in WHOLE UNITS for both types (the API wei-encodes the Credit
+  // side). So a Credit dividend may be fractional — the old BigInt() check rejected
+  // "100.50" outright — while a StockSplit is a token count and stays a whole number.
   canConfirm = computed(() => {
     const a = this.amount().trim();
     if (!a) return false;
-    try { return BigInt(a) > 0n; } catch { return false; }
+    const n = Number(a);
+    if (!Number.isFinite(n) || n <= 0) return false;
+    return this.distType() === 1 ? true : /^\d+$/.test(a);
   });
 
   confirm() {

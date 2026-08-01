@@ -218,6 +218,7 @@ export class MyPage implements OnInit {
       pick('prev_hash', 'prevHash') ?? null,
       pick('row_hash', 'rowHash') ?? null,
       pick('verified') ?? null,
+      pick('time') ?? 0,
     );
   }
 
@@ -300,7 +301,7 @@ export class MyPage implements OnInit {
     const refNoLabel = this.translate.instant('logs.table.refNo');
     const txHashLabel = this.translate.instant('logs.details.txHash');
     const rows = (await this.loadAllForExport()).map(r => ({
-      [timeLabel]: this.utils.formatDate(r.chain_time || r.created_at),
+      [timeLabel]: this.utils.formatTime(r.time),
       [categoryLabel]: r.category,
       [actionLabelHeader]: this.actionLabel(r),
       [functionLabel]: this.functionLabel(r),
@@ -342,7 +343,7 @@ export class MyPage implements OnInit {
         this.translate.instant('logs.table.refNo'),
       ]],
       body: rows.map(r => [
-        this.utils.formatDate(r.chain_time || r.created_at),
+        this.utils.formatTime(r.time),
         r.category, this.actionLabel(r),
         this.functionLabel(r),
         this.actorLabel(r),

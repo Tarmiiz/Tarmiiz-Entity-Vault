@@ -72,7 +72,19 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs' | 'identity'>('overview');
+
+  // ── Identity Data (own-originated eKYC verifications — unified-eKYC §2.4) ──────
+  // Lists the verifications THIS entity originated for the subscriber's identity and
+  // renders the decrypted canonical + ID images. Foreign-originated verifications never
+  // appear (no DEK for this tenant); the DID number is never present.
+  identityHash = signal<string | null>(null);
+  ekycVerifications = signal<{ transactionId: string; documentId: number; sharedAt: number | null }[]>([]);
+  ekycLoaded = signal(false);
+  ekycLoading = signal(false);
+  ekycSelected = signal<string | null>(null);
+  ekycDetail = signal<any | null>(null);
+  ekycImages = signal<{ front: string | null; back: string | null } | null>(null);
 
   loadingData: boolean = false;
   refreshing = signal(false);
@@ -171,9 +183,9 @@ export class DetailsPage implements OnInit {
   totalTrxPages = computed(() => Math.ceil(this.filteredTransactions().length / this.trxPageSize));
 
   // overview computed signals
-  totalPortfolioValue = computed(() => this.holdings().reduce((sum, h) => sum + h.balance * h.currentBid, 0));
-  totalCostBasis = computed(() => this.holdings().reduce((sum, h) => sum + h.cost, 0));
-  totalPL = computed(() => this.totalPortfolioValue() - this.totalCostBasis());
+  totalPortfolioValue = computed(() => this.utils.round6(this.holdings().reduce((sum, h) => sum + h.balance * h.currentBid, 0)));
+  totalCostBasis = computed(() => this.utils.round6(this.holdings().reduce((sum, h) => sum + h.cost, 0)));
+  totalPL = computed(() => this.utils.round6(this.totalPortfolioValue() - this.totalCostBasis()));
   totalPLPct = computed(() => {
     const cost = this.totalCostBasis();
     return cost > 0 ? (this.totalPL() / cost) * 100 : null;
@@ -189,13 +201,16 @@ export class DetailsPage implements OnInit {
         cost: existing.cost + h.cost,
       });
     }
-    return [...map.entries()].map(([cc, v]) => ({
-      currencyCode: cc,
-      marketValue: v.marketValue,
-      cost: v.cost,
-      pl: v.marketValue - v.cost,
-      plPct: v.cost > 0 ? (v.marketValue - v.cost) / v.cost * 100 : null,
-    }));
+    return [...map.entries()].map(([cc, v]) => {
+      const pl = this.utils.round6(v.marketValue - v.cost);
+      return {
+        currencyCode: cc,
+        marketValue: this.utils.round6(v.marketValue),
+        cost: this.utils.round6(v.cost),
+        pl,
+        plPct: v.cost > 0 ? pl / v.cost * 100 : null,
+      };
+    });
   });
   subscribeCount = computed(() => this.transactions().filter(t => t.trxType === 'Subscribe').length);
   redeemCount = computed(() => this.transactions().filter(t => t.trxType === 'Redeem').length);
@@ -309,13 +324,67 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs') {
+  setTab(tab: 'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs' | 'identity') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getSubscriptionDetails();
     if (tab === 'holdings') this.getHoldings(1, 500);
     if (tab === 'trxs') this.getTransactions(1, 500);
     if (tab === 'credit') this.getCreditData();
+    if (tab === 'identity') this.loadIdentityData();
   }
+
+  // ── Identity Data loaders (own-originated verifications only) ─────────────────
+  async loadIdentityData() {
+    if (this.ekycLoaded()) return;
+    this.ekycLoading.set(true);
+    try {
+      let hash = this.identityHash();
+      if (!hash) {
+        hash = await this.apiService.vaultGetSubscriptionIdentityHash(this.subscriptionAddress);
+        this.identityHash.set(hash);
+      }
+      if (hash) {
+        this.ekycVerifications.set(await this.apiService.ekycVerifications(hash));
+      }
+      this.ekycLoaded.set(true);
+    } finally {
+      this.ekycLoading.set(false);
+    }
+  }
+
+  async openEkycVerification(transactionId: string) {
+    if (this.ekycSelected() === transactionId) { this.ekycSelected.set(null); this.ekycDetail.set(null); this.ekycImages.set(null); return; }
+    this.ekycSelected.set(transactionId);
+    this.ekycDetail.set(null);
+    this.ekycImages.set(null);
+    this.ekycLoading.set(true);
+    try {
+      const hash = this.identityHash() ?? undefined;
+      const detail = await this.apiService.ekycTransaction(transactionId, hash ?? undefined);
+      this.ekycDetail.set(detail?.status ? detail : null);
+      const imgs = await this.apiService.ekycImages(transactionId, hash ?? undefined);
+      if (imgs?.status && imgs.data) {
+        this.ekycImages.set({
+          front: imgs.data.front_img ? 'data:image/jpeg;base64,' + imgs.data.front_img : null,
+          back:  imgs.data.back_img  ? 'data:image/jpeg;base64,' + imgs.data.back_img  : null,
+        });
+      }
+    } finally {
+      this.ekycLoading.set(false);
+    }
+  }
+
+  // Canonical fields worth rendering, in display order (null values are skipped in the template).
+  readonly ekycDisplayFields: { key: string; label: string }[] = [
+    { key: 'nameFull', label: 'subscriptions.details.identity.nameFull' },
+    { key: 'idNumber', label: 'subscriptions.details.identity.idNumber' },
+    { key: 'dateOfBirth', label: 'subscriptions.details.identity.dateOfBirth' },
+    { key: 'idExpiryDate', label: 'subscriptions.details.identity.idExpiryDate' },
+    { key: 'nationality', label: 'subscriptions.details.identity.nationality' },
+    { key: 'gender', label: 'subscriptions.details.identity.gender' },
+    { key: 'addressStreet', label: 'subscriptions.details.identity.address' },
+    { key: 'addressGovernorate', label: 'subscriptions.details.identity.governorate' },
+  ];
 
   private readonly stateNames: Record<number, string> = {
     0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
@@ -715,8 +784,8 @@ export class DetailsPage implements OnInit {
         { content: 'P/L %', styles: { halign: 'right' } },
       ]],
       body: holdings.map(h => {
-        const value = h.balance * h.currentBid;
-        const pl = value - h.cost;
+        const value = this.utils.round6(h.balance * h.currentBid);
+        const pl = this.utils.round6(value - h.cost);
         const plPct = h.cost > 0 ? (pl / h.cost * 100).toFixed(2) + '%' : '—';
         return [
           `${h.assetName}${h.assetSymbol ? ` (${h.assetSymbol})` : ''}`,
@@ -738,13 +807,13 @@ export class DetailsPage implements OnInit {
 
   exportHoldingsExcel() {
     const rows = this.filteredHoldings().map(h => {
-      const value = h.balance * h.currentBid;
-      const pl = value - h.cost;
+      const value = this.utils.round6(h.balance * h.currentBid);
+      const pl = this.utils.round6(value - h.cost);
       return {
         'Asset': `${h.assetName}${h.assetSymbol ? ` (${h.assetSymbol})` : ''}`,
         'Currency': h.currencyCode,
         'Balance': h.balance,
-        'Cost': h.cost,
+        'Cost': this.utils.round6(h.cost),
         'Value': value,
         'P/L': pl,
         'P/L %': h.cost > 0 ? pl / h.cost * 100 : null,

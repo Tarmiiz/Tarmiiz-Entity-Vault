@@ -12,7 +12,7 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
-import { ActivityLog } from '../../../../shared/models/data.model';
+import { ActivityLog, User } from '../../../../shared/models/data.model';
 
 interface StateChangeLog {
   id: number;
@@ -28,6 +28,7 @@ interface StateChangeLog {
   user_name: string;
   client_ip: string;
   created_at: number;
+  time?: number; // canonical display timestamp (ms), computed API-side
 }
 
 // Off-chain operational trail (logs_activity: page navigation / exports /
@@ -55,13 +56,32 @@ export class ActivityPage implements OnInit {
   stateRows = signal<StateChangeLog[]>([]);
   stateTotal = signal(0);
 
+  // Per-tab filters — same set as the Regulator Dashboard's logs page
+  // (category/type + user + date range + action substring).
   filterCategory = signal<string>('');
+  activityUserFilter = signal<string>('');
+  activityFromFilter = signal<string>('');
+  activityToFilter = signal<string>('');
+  activityActionFilter = signal<string>('');
+
   stateTypeFilter = signal<string>('');
+  stateUserFilter = signal<string>('');
+  stateFromFilter = signal<string>('');
+  stateToFilter = signal<string>('');
+  stateActionFilter = signal<string>('');
+
+  // Users for the actor dropdown (role 4 is allow-listed on GET /vault/users).
+  users = signal<User[]>([]);
+
+  private actionDebounce: any = null;
+
   page = signal(1);
   readonly pageSize = 25;
 
   readonly activityCategories = ['navigation', 'export', 'filter', 'view', 'auth', 'action', 'approval', 'admin'];
-  readonly stateTypes = ['asset', 'asset_service', 'service', 'subscription', 'user'];
+  // Every type written into logs_state_changes — the API's own writers plus the
+  // Entity Sync plugin's AnnouncedEventsDecoder ('entity' / 'party').
+  readonly stateTypes = ['asset', 'asset_service', 'entity', 'party', 'service', 'subscription', 'user'];
 
   total = computed(() => this.activeTab() === 'activity' ? this.activityTotal() : this.stateTotal());
   totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
@@ -69,7 +89,22 @@ export class ActivityPage implements OnInit {
   async ngOnInit() {}
 
   async ionViewDidEnter() {
+    this.loadUsers();
     await this.load();
+  }
+
+  ionViewWillLeave() {
+    if (this.actionDebounce) clearTimeout(this.actionDebounce);
+    this.actionDebounce = null;
+  }
+
+  async loadUsers() {
+    try {
+      const data = await this.apiService.vaultGetUsers(0, 500);
+      this.users.set(data?.users || []);
+    } catch {
+      this.users.set([]);
+    }
   }
 
   setTab(tab: 'activity' | 'state') {
@@ -79,16 +114,54 @@ export class ActivityPage implements OnInit {
     this.load();
   }
 
+  // Filter argument tuples — one source of truth for both the paged load and
+  // the export loaders (which must honour the same filters).
+  private activityArgs(): [string | undefined, number | undefined, number | undefined, number | undefined, string | undefined] {
+    return [
+      this.filterCategory() || undefined,
+      this.activityUserFilter() ? Number(this.activityUserFilter()) : undefined,
+      this.toEpochStart(this.activityFromFilter()),
+      this.toEpochEnd(this.activityToFilter()),
+      this.activityActionFilter().trim() || undefined,
+    ];
+  }
+
+  private stateArgs(): [string | undefined, number | undefined, number | undefined, number | undefined, string | undefined] {
+    return [
+      this.stateTypeFilter() || undefined,
+      this.stateUserFilter() ? Number(this.stateUserFilter()) : undefined,
+      this.toEpochStart(this.stateFromFilter()),
+      this.toEpochEnd(this.stateToFilter()),
+      this.stateActionFilter().trim() || undefined,
+    ];
+  }
+
+  private toEpochStart(value: string): number | undefined {
+    if (!value) return undefined;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return undefined;
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  private toEpochEnd(value: string): number | undefined {
+    if (!value) return undefined;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return undefined;
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
+  }
+
   async load() {
     this.loadingService.show(this.translate.instant('logs.activity.loading'));
     const start = (this.page() - 1) * this.pageSize + 1;
     try {
       if (this.activeTab() === 'activity') {
-        const data: any = await this.apiService.vaultGetActivityLogs(start, this.pageSize, this.filterCategory() || undefined);
+        const data: any = await this.apiService.vaultGetActivityLogs(start, this.pageSize, ...this.activityArgs());
         this.activityRows.set(data?.logs || []);
         this.activityTotal.set(Number(data?.count ?? 0));
       } else {
-        const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, this.pageSize, this.stateTypeFilter() || undefined);
+        const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, this.pageSize, ...this.stateArgs());
         this.stateRows.set(data?.logs || []);
         this.stateTotal.set(Number(data?.count ?? 0));
       }
@@ -102,9 +175,29 @@ export class ActivityPage implements OnInit {
     this.load();
   }
 
+  // The action inputs are free text — debounce so each keystroke isn't a query.
+  onActionChange(value: string) {
+    if (this.activeTab() === 'activity') this.activityActionFilter.set(value);
+    else this.stateActionFilter.set(value);
+    if (this.actionDebounce) clearTimeout(this.actionDebounce);
+    this.actionDebounce = setTimeout(() => this.applyFilters(), 300);
+  }
+
+  // Clears the ACTIVE tab's filters only (each tab has its own set).
   clearFilters() {
-    this.filterCategory.set('');
-    this.stateTypeFilter.set('');
+    if (this.activeTab() === 'activity') {
+      this.filterCategory.set('');
+      this.activityUserFilter.set('');
+      this.activityFromFilter.set('');
+      this.activityToFilter.set('');
+      this.activityActionFilter.set('');
+    } else {
+      this.stateTypeFilter.set('');
+      this.stateUserFilter.set('');
+      this.stateFromFilter.set('');
+      this.stateToFilter.set('');
+      this.stateActionFilter.set('');
+    }
     this.applyFilters();
   }
 
@@ -139,7 +232,7 @@ export class ActivityPage implements OnInit {
     const all: ActivityLog[] = [];
     let start = 1;
     while (all.length < ActivityPage.EXPORT_CAP) {
-      const data: any = await this.apiService.vaultGetActivityLogs(start, ActivityPage.EXPORT_CHUNK, this.filterCategory() || undefined);
+      const data: any = await this.apiService.vaultGetActivityLogs(start, ActivityPage.EXPORT_CHUNK, ...this.activityArgs());
       const logs = data?.logs || [];
       all.push(...logs);
       const count = Number(data?.count ?? 0);
@@ -153,7 +246,7 @@ export class ActivityPage implements OnInit {
     const all: StateChangeLog[] = [];
     let start = 1;
     while (all.length < ActivityPage.EXPORT_CAP) {
-      const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, ActivityPage.EXPORT_CHUNK, this.stateTypeFilter() || undefined);
+      const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, ActivityPage.EXPORT_CHUNK, ...this.stateArgs());
       const logs = data?.logs || [];
       all.push(...logs);
       const count = Number(data?.count ?? 0);
@@ -188,7 +281,7 @@ export class ActivityPage implements OnInit {
     const detailsLabel = this.translate.instant('logs.activity.details');
     const rows = isState
       ? stateRows.map(r => ({
-          [timeLabel]: this.utils.formatDate(r.created_at),
+          [timeLabel]: this.utils.formatTime(r.time),
           [typeLabel]: r.type,
           [actionLabel]: (r.action || '').replaceAll('_', ' '),
           [addressLabel]: r.address,
@@ -199,7 +292,7 @@ export class ActivityPage implements OnInit {
           [txHashLabel]: r.tx_hash,
         }))
       : activityRows.map(r => ({
-          [timeLabel]: this.utils.formatDate(r.created_at),
+          [timeLabel]: this.utils.formatTime(r.time),
           [categoryLabel]: r.category,
           [actionLabel]: r.action,
           [targetLabel]: r.target,
@@ -256,7 +349,7 @@ export class ActivityPage implements OnInit {
           ]],
       body: isState
         ? stateRows.map(r => [
-            this.utils.formatDate(r.created_at),
+            this.utils.formatTime(r.time),
             r.type,
             (r.action || '').replaceAll('_', ' '),
             this.shortAddr(r.address),
@@ -266,7 +359,7 @@ export class ActivityPage implements OnInit {
             r.client_ip || '',
           ])
         : activityRows.map(r => [
-            this.utils.formatDate(r.created_at),
+            this.utils.formatTime(r.time),
             r.category,
             r.action,
             r.target || '',

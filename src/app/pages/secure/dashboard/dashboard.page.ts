@@ -89,6 +89,8 @@ interface DashboardSummary {
   topAssets: TopAsset[];
   liquidityCoverage?: LiquidityCoverageRow[];
   liquidityCoverageByService?: LiquidityCoverageByServiceRow[];
+  shortfallTolerance?: number | null;
+  shortfallToleranceIsSet?: boolean;
 }
 
 interface ActivityResponse {
@@ -198,6 +200,33 @@ export class DashboardPage implements OnInit {
   liquidityCoverage = computed(() => (this.dashboardSummary()?.liquidityCoverage ?? []).filter(r => r.shortfall > 0));
   liquidityCoverageByService = computed(() => (this.dashboardSummary()?.liquidityCoverageByService ?? []).filter(r => r.shortfall > 0));
   hasLiquidityWarnings = computed(() => this.liquidityCoverage().length > 0 || this.liquidityCoverageByService().length > 0);
+
+  // Regulator-set minimum shortfall that raises an alert (currency units); isSet=false ⇒ the
+  // platform default floor. Shown on the card so a residual gap below it doesn't read as an
+  // unreported alarm.
+  shortfallTolerance      = computed(() => this.dashboardSummary()?.shortfallTolerance ?? null);
+  shortfallToleranceIsSet = computed(() => !!this.dashboardSummary()?.shortfallToleranceIsSet);
+  withinShortfallTolerance(shortfall: number): boolean {
+    const tol = this.shortfallTolerance();
+    return shortfall > 0 && tol !== null && shortfall <= tol;
+  }
+
+  // How far the shortfall still is from the alert threshold, formatted for display.
+  toleranceHeadroom(shortfall: number): string {
+    const tol = this.shortfallTolerance();
+    if (tol === null) return '';
+    const gap = Math.max(0, tol - shortfall);
+    return gap >= 0.01 ? gap.toFixed(2) : String(Math.round(gap * 1e6) / 1e6);
+  }
+
+  // Coverage must never ROUND UP to 100% while the obligation is not actually covered —
+  // 99.9766% displayed as "100.0%" is exactly what made a real 1.08 shortfall look like none.
+  // Floor to the one decimal we render, so only a true ratio >= 1 shows 100.0%.
+  coveragePercent(ratio: number | null | undefined): number | null {
+    if (ratio === null || ratio === undefined) return null;
+    const pct = ratio * 100;
+    return pct >= 100 ? 100 : Math.floor(pct * 10) / 10;
+  }
   coverageTone(row: { obligation: number; coverageRatio: number | null }): 'good' | 'warn' | 'bad' | 'idle' {
     if (row.obligation === 0) return 'idle';
     const r = row.coverageRatio ?? 0;
