@@ -66,13 +66,19 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layouts/authorized-layout/authorized-layout.component').then(m => m.AuthorizedLayoutComponent),
     canActivate: [AuthGuard],
     children: [
-      // dashboard — issuer vs service-provider variant chosen by vaultMode
+      // dashboard — issuer vs service-provider variant chosen by vaultMode. Awaits the
+      // features fetch first (same reason as menuFeatureGuard): the mode is server-owned
+      // now, so a hard refresh here would otherwise pick the variant off the config.json
+      // fallback. inject() runs before the first await, as an injection context requires.
       {
         path: 'dashboard',
-        loadComponent: () =>
-          inject(FeaturesService).isServiceProvider()
-            ? import('./pages/secure/dashboard/service-provider/service-provider-dashboard.page').then(m => m.ServiceProviderDashboardPage)
-            : import('./pages/secure/dashboard/dashboard.page').then(m => m.DashboardPage),
+        loadComponent: async () => {
+          const features = inject(FeaturesService);
+          if (!features.loaded()) await features.refresh();
+          return features.isServiceProvider()
+            ? (await import('./pages/secure/dashboard/service-provider/service-provider-dashboard.page')).ServiceProviderDashboardPage
+            : (await import('./pages/secure/dashboard/dashboard.page')).DashboardPage;
+        },
         canActivate: [AuthGuard, RoleGuard],
         data: { allowedRoles: [1, 2, 3] }
       },
@@ -227,6 +233,13 @@ export const routes: Routes = [
               { path: 'view/:asset', loadComponent: () => import('./pages/secure/dex/order-book/view/view.page').then( m => m.ViewPage), canActivate: [AuthGuard] },
             ],
           },
+          {
+            path: 'offerings',
+            children: [
+              { path: 'list', loadComponent: () => import('./pages/secure/dex/offerings/offerings.page').then( m => m.OfferingsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
           { path: '', redirectTo: '/authorized/dashboard', pathMatch: 'full' },
         ]
       },
@@ -266,6 +279,20 @@ export const routes: Routes = [
           },
           { path: '', redirectTo: '/authorized/credit/list', pathMatch: 'full' },
         ],
+      },
+      // settlements — fiat obligations / net positions / settlement confirms
+      {
+        path: 'settlements',
+        loadComponent: () => import('./pages/secure/settlements/settlements.page').then(m => m.SettlementsPage),
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('settlements')],
+        data: { allowedRoles: [2, 3] },
+      },
+      // distribution — inbound distribution agreements + primary-market trade feed
+      {
+        path: 'distribution',
+        loadComponent: () => import('./pages/secure/distribution/distribution.page').then(m => m.DistributionPage),
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('distribution')],
+        data: { allowedRoles: [2, 3] },
       },
       // documents
       {

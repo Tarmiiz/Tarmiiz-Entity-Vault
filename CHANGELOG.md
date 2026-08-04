@@ -14,6 +14,100 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-08-03
+
+#### Added
+- **Settlements module** ([pages/secure/settlements/](src/app/pages/secure/settlements/), `/authorized/settlements`, menu key `settlements`, roles 2/3) — the fiat leg of the issuer/DEX model (D9-D11). Three tabs: **Positions** (per-counterparty/currency signed net from `credit_positions`, "You owe / Owed to you" pills, per-row Settle), **Obligations** (per-transaction rows with Payable/Receivable direction, kind Derived/Declared/Claimed, credit-trx link), **Settlements** (two-sided lifecycle with inline actions). Inline modals: **Create Settlement** (with a live chain pre-flight of net / in-flight / available via `GET /vault/settlements/positions/:cp/:code`), **Confirm Sent** (required wire reference + optional receipt file — pinned server-side as an encrypted settlement-receipt document; multipart via the new `_postMultipartFields` XHR helper), **Confirm Received** (with an explicit net-decrement warning), plus debtor-side Cancel. All actions maker/checker-aware (`requestId` toast) and gated by the new `settlement-create` / `settlement-confirm-sent` / `settlement-confirm-received` System Functions.
+- **Distribution module** ([pages/secure/distribution/](src/app/pages/secure/distribution/), `/authorized/distribution`, menu key `distribution`, roles 2/3) — the distributor side of the issuer/distributor model. **Agreements** tab lists every (asset, my service) registration with state + consent pill, an **Accept** action (the on-chain `acceptDistribution` consent required before regulator activation — the confirm copy explains the fronted-redeem creditor exposure), and a **My Fees** button opening the shared service fee-config modal for the distributor's OWN per-asset D7b fee. **Primary Trades** tab renders the `primary_market_trades` feed (direction, tokens, price, gross, fee + bearing).
+- **DEX Offerings page** ([pages/secure/dex/offerings/](src/app/pages/secure/dex/offerings/), `/authorized/dex/offerings/list`, under the existing `dex` menu key) — issuer-side IPO facility: offerings table (status ladder Pending Approval / Live / Completed / Cancelled / Rejected + orthogonal Suspended pill, sold/total progress bar), per-offering fills expand, Cancel, and a **Create Offering** modal whose venue picker offers only the selected asset's regulator-APPROVED venue pairings (state 2 rows of the listing's venue set). Gated by the `dex-offering-create` / `dex-offering-cancel` System Functions.
+- `api.service.ts` — full method sets for the three surfaces (`vaultSettlement*`, `vaultDistribution*`, `vaultPrimaryTrades`, `vaultDexOffering*`); `data.model.ts` — `CreditPosition` / `CreditObligation` / `CreditSettlement` / `DistributionAgreement` / `PrimaryTrade` / `DexOffering` / `DexOfferingFill` interfaces. Sidebar items + `MENU_LABELS` / `SYSTEM_FUNCTION_LABELS` entries + full `settlements.*` / `distribution.*` / `dexOfferings.*` i18n blocks (en + ar).
+
+#### Changed
+- **Service fee modal carries the uniform D7b engine** ([modal-service-fee-config](src/app/pages/secure/services/modals/modal-service-fee-config/)): each side gained a **Fee Bearing** select (On top — payer pays gross + fee / Deducted — receiver gets gross − fee) and LOST its destination input — the contract now forces the destination to the configuring service's own account. `FeeConfig` model gained `buyFeeBearing` / `sellFeeBearing`.
+- Asset detail Services tab: the per-service fee column was replaced by a **Distribution Consent** column (Accepted / Awaiting consent pill from the new `asset_services.distribution_accepted` mirror — regulator activation to Active requires the distributor's own acceptance).
+
+#### Removed
+- **The asset-side fee surface** (issuer/DEX model D2/D7 — the on-chain T20 per-service fee config lost its last consumer): `modal-asset-fee-config` component/service deleted, `openFeeConfigModal` + fee helpers removed from the asset details page, and the `vaultGetAssetFeeConfig` / `vaultSetAssetFeeConfig` / `vaultQuoteAssetFee` API methods dropped (their routes no longer exist). `AssetService.feeConfig` field replaced by `distributionAccepted`.
+
+### 2026-08-02
+
+#### Fixed
+- **DEX Listings now shows the assets hosted on this entity's venue, not just the ones it
+  issued.** A venue operator (EGX) saw "No data" while the same asset appeared on its venue
+  detail page's Assets tab. The scope fix is in the Entity API; the Vault side renders the
+  new second side of the listing:
+  - A **Listed By** column on the list page — `Own` for a listing we issued, the issuing
+    entity's name plus an `On my venue` pill for one we merely host. Both exports carry it.
+  - The listing detail page's issuer-only writes (Request Approval per tier, Add Venue,
+    Change Tier, Remove) are hidden for a hosted listing via a new `canManage()` —
+    they are gated on-chain to the asset's issuer and would revert. A blue notice explains
+    why the page is read-only.
+  - `upstreamBlockReason()` returns empty for a hosted listing: the snapshot it reads is
+    computed from the ISSUER's mirror, so it reported "asset suspended" on a healthy asset.
+  - `DexAssetListing` gained `isOwnListing`; `dex.listings.table.listedBy`,
+    `dex.listings.list.scope.{own,hosted}`, `dex.listings.list.export.listedBy` and
+    `dex.listings.details.hostedNotice` added in **both en and ar**.
+
+#### Added
+- **Entity mode (Token Issuer / Service Provider) is switchable from System Configuration.**
+  A new `Entity mode` row under Features on
+  [app-config.page.html](src/app/pages/secure/settings/app-config/app-config.page.html)
+  renders the first `enum`-typed config key as a dropdown (+ Save, same dirty-buffer pattern
+  as the text/number rows; explicit `text-gray-800` on the select and options so they don't
+  inherit a near-white colour). `AppConfigItem` gained `type: 'enum'` + an `options` array.
+  Previously the mode was a `vaultMode` string in the static `assets/config.json` — a host
+  file edit, not an admin action.
+
+#### Changed
+- **`FeaturesService.isServiceProvider()` reads the SERVER value.** A new `mode` signal is
+  hydrated from `features.vaultMode` on `/vault/features[/me]`;
+  [config.service.ts](src/app/shared/services/config.service.ts)'s `vaultMode` survives only
+  as the fallback for the window before that first fetch resolves. A failed/empty fetch keeps
+  the last known mode rather than snapping back to the config.json default, which would
+  briefly re-show issuer modules on a network blip.
+- **The dashboard route now awaits the features fetch before choosing its variant.** With the
+  mode server-owned, the synchronous `loadComponent` in [app.routes.ts](src/app/app.routes.ts)
+  would have picked the issuer/service-provider dashboard off the config.json fallback on a
+  hard refresh; it now mirrors `menuFeatureGuard` (`inject()` before the first `await`, as an
+  injection context requires).
+- The System Configuration page calls `features.refresh()` after every save/reset, so a mode
+  change repaints the sidebar immediately instead of waiting for the next login.
+- **No modal dismisses on a backdrop click any more (53 files).** The `(click)` handler on every
+  `fixed inset-0` overlay — and the `(click)="$event.stopPropagation()"` guard on the card that
+  existed only to defend against it — was removed; a modal now closes only on an explicit
+  ✕ / Cancel / Close press or a completed action. A stray click outside the card silently threw
+  away half-filled wizards (Add Asset is 8 steps) with no undo. Swept mechanically across every
+  modal, the shared [documents-tab](src/app/shared/components/documents-tab/) /
+  [metadata-edit-modal](src/app/shared/components/metadata-edit-modal/) /
+  [modal-image-add](src/app/shared/components/modal-image-add/) components, and the inline
+  overlays on [custody.page.html](src/app/pages/secure/custody/custody.page.html) and the
+  services detail page. The transparent click-away overlays behind dropdowns were deliberately
+  left alone — dismiss-on-outside-click is correct there. Now a platform rule in
+  `docs/frontend-standards.md` §Standard 3.
+
+#### Fixed
+- **The venue Assets tab named the VENUE as the issuer of every asset it hosts.** The ISSUER
+  column on [dex/venues/details](src/app/pages/secure/dex/venues/details/details.page.html)
+  bound `a.entityName`, which on an (asset, venue) row is the venue's own operator — so EGX's
+  venue page credited EGX with issuing Granite's fund. It now binds the Entity API's new
+  `issuerEntityName` (read from `AssetInfo.issuer`). The blank ASSET / SYMBOL cells on the
+  same tab, and the blank VENUE / ENTITY cells on the listing details Venues tab, were the
+  API-side half of the same problem (tenant-local joins on cross-tenant rows) and are fixed
+  there — no further frontend change.
+
+### 2026-08-01
+
+#### Fixed
+- **An unrelated service-metadata edit silently DELETED the `sp` discovery object.** The shared
+  metadata-edit modal returns a FULL-REPLACEMENT object (description + contact + KV rows), and
+  `sp` — the nested `{ sp: { kind, signer, baseUrl } }` consumed by the Token Exchange / DID App /
+  DID API trust chain — was neither in the RESERVED set (so it round-tripped through the flat KV
+  editor as a corrupting JSON-string-in-a-string) nor preserved on save (so once RESERVED, it
+  would simply vanish). The service detail page now RESERVEs `sp` out of the KV editor AND
+  re-attaches the parsed value verbatim onto the modal's result before `vaultUpdateServiceMetadata`
+  (the Entity API's `_normalizeProfileFields` passes unknown keys through, verified).
+  ([services/details/details.page.ts](src/app/pages/secure/services/details/details.page.ts))
+
 <!-- newest first; each date-heading groups every change made that day across any number of sessions -->
 ### 2026-07-31
 

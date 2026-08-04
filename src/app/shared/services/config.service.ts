@@ -5,7 +5,10 @@ export interface AppConfig {
   socketURL: string;
   brandPrimary?: string;
   brandPrimaryHover?: string;
-  // Per-deployment entity-type default view. Absent ⇒ treated as 'issuer' (full access).
+  // Entity-type view mode. NOT authoritative — the live value is the Entity API's
+  // app_config VAULT_MODE (admin-editable from System Configuration) and arrives on
+  // /vault/features. This is only FeaturesService's fallback for the window before that
+  // first fetch resolves. Absent ⇒ treated as 'issuer' (full access).
   vaultMode?: 'issuer' | 'service-provider';
 }
 

@@ -21,15 +21,15 @@
         </label>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.subject' | translate }}</label>
-        <input type="text" [placeholder]="'messages.list.filters.searchPlaceholder' | translate"
-               [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
-               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
-      </div>
-      <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.from' | translate }}</label>
         <input type="text" [placeholder]="'messages.list.filters.fromPlaceholder' | translate"
                [ngModel]="searchParticipant()" (ngModelChange)="searchParticipant.set($event)"
+               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.subject' | translate }}</label>
+        <input type="text" [placeholder]="'messages.list.filters.searchPlaceholder' | translate"
+               [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
@@ -79,8 +79,8 @@
         <thead class="text-xs text-white uppercase sticky top-0" style="background-color: #4a5568;">
           <tr>
             <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.lastActivity' | translate }}</th>
-            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.subject' | translate }}</th>
             <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.from' | translate }}</th>
+            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.subject' | translate }}</th>
             <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.messages' | translate }}</th>
             <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.state' | translate }}</th>
           </tr>
@@ -94,8 +94,8 @@
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="viewDetails(t)">
                 <td class="px-3 py-2 text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : ('common.notSet' | translate) }}</td>
-                <td class="px-3 py-2 font-medium text-gray-800">{{ t.subject || ('messages.noSubject' | translate) }}</td>
                 <td class="px-3 py-2 text-gray-700">{{ nameFor(t.creator) }}</td>
+                <td class="px-3 py-2 font-medium text-gray-800">{{ t.subject || ('messages.noSubject' | translate) }}</td>
                 <td class="px-3 py-2 text-gray-700">{{ t.messageCount }}</td>
                 <td class="px-3 py-2">
                   <span class="px-2 py-0.5 rounded text-[10px] font-medium" [ngClass]="stateClass(t.state)">

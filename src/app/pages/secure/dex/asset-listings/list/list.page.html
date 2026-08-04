@@ -48,6 +48,7 @@
             <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.id' | translate }}</th>
             <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
             <th scope="col" class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.listedBy' | translate }}</th>
             <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.currency' | translate }}</th>
             <th scope="col" class="px-6 py-2">{{ 'common.country' | translate }}</th>
             <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.tiers' | translate }}</th>
@@ -57,7 +58,7 @@
         <tbody class="text-xs">
           @if (filteredListings().length == 0) {
             <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="7">{{ 'common.noData' | translate }}</td>
+              <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
             @for (l of filteredListings(); track l.baseAsset; let i = $index; let isEven = $even) {
@@ -67,6 +68,15 @@
                 <td class="px-6 py-2">{{ i + 1 }}</td>
                 <td class="px-6 py-2">{{ l.assetName || '—' }}</td>
                 <td class="px-6 py-2">@if (l.assetSymbol) { <span class="badge-symbol">{{ l.assetSymbol }}</span> } @else { — }</td>
+                <td class="px-6 py-2">
+                  <div class="flex items-center gap-2">
+                    <span>{{ l.isOwnListing === false ? (l.listedByName || '—') : ('dex.listings.list.scope.own' | translate) }}</span>
+                    @if (l.isOwnListing === false) {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-800"
+                        [title]="'dex.listings.details.hostedNotice' | translate">{{ 'dex.listings.list.scope.hosted' | translate }}</span>
+                    }
+                  </div>
+                </td>
                 <td class="px-6 py-2">@if (l.assetCurrencyName) { <span class="badge-currency">{{ l.assetCurrencyName }}</span> } @else { — }</td>
                 <td class="px-6 py-2">{{ l.entityCountryName || '—' }}</td>
                 <td class="px-6 py-2">

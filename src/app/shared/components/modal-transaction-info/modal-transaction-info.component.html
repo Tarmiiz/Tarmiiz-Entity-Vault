@@ -1,7 +1,7 @@
 ﻿@if (modalService.isVisible()) {
   @if (modalService.transaction(); as trx) {
-    <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onClose()">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+    <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4 transform transition-all duration-300 ease-in-out scale-100">
 
         <!-- header -->
         <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl flex items-center justify-between">

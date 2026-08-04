@@ -112,10 +112,21 @@ export class DetailsPage implements OnInit {
          : t === 3 ? 'bg-purple-100 text-purple-800'
          : 'bg-gray-100 text-gray-800';
   }
+  // False when this listing belongs to a FOREIGN issuer and is merely hosted on one of
+  // our venues (tier 2/3). Every write on this page — requestTier, add/remove venue,
+  // change tier — is gated on-chain to the asset's issuer/regulator, so for a hosted
+  // listing they would revert; the page stays read-only instead.
+  isOwnListing(): boolean { return this.listing()?.isOwnListing !== false; }
+  canManage(): boolean { return this.isOwnListing() && !!this.userInfo && this.userInfo.role !== 3; }
+
   // Returns a short "why is this listing blocked" reason from the cached upstream snapshot.
   // Empty string means upstream is healthy (still subject to per-tier listing/venue approval gates).
   upstreamBlockReason(): string {
     const l = this.listing(); if (!l) return '';
+    // The snapshot is issuer-side only — its inputs (the issuer's entity row, the asset
+    // row) live in the ISSUER's mirror, so for a hosted listing it reads as "not tradable"
+    // no matter how healthy the asset is. Don't render a verdict we can't compute.
+    if (!this.isOwnListing()) return '';
     const u = l.upstream;
     if (u && u.issuerEntityState && u.issuerEntityState !== 2) return this.translate.instant('dex.listings.details.blockReasons.issuerNotActive');
     if (u && !u.assetTradable && u.syncedAt) return this.translate.instant('dex.listings.details.blockReasons.assetSuspended');

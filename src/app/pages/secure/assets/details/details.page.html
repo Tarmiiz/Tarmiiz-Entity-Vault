@@ -999,7 +999,7 @@
                         <th scope="col" class="px-6 py-2">{{ 'common.address' | translate }}</th>
                         <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
                         <th scope="col" class="px-6 py-2" [title]="'assets.details.services.priceQuotingTooltip' | translate">{{ 'assets.details.services.priceQuotingHeader' | translate }}</th>
-                        <th scope="col" class="px-6 py-2" [title]="'assets.details.services.feeConfigTooltip' | translate">{{ 'assets.details.services.feeConfigHeader' | translate }}</th>
+                        <th scope="col" class="px-6 py-2" [title]="'assets.details.services.consentTooltip' | translate">{{ 'assets.details.services.consentHeader' | translate }}</th>
                         @if (userInfo && userInfo.role !== 3) {
                           <th scope="col" class="px-6 py-2 w-12"></th>
                         }
@@ -1038,29 +1038,16 @@
                             }
                           </td>
                           <td class="px-6 py-3">
-                            @if (svc.feeConfig && (svc.feeConfig.buyFeeMode || svc.feeConfig.sellFeeMode)) {
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-gray-700">
-                                  <span class="text-gray-500">{{ 'assets.details.services.buyLabel' | translate }}</span>
-                                  {{ feeModeName(svc.feeConfig.buyFeeMode) }}
-                                  @if (svc.feeConfig.buyFeeMode) { &middot; {{ feeValueDisplay(svc.feeConfig.buyFeeMode, svc.feeConfig.buyFeeValue) }} }
-                                </span>
-                                <span class="text-xs text-gray-700">
-                                  <span class="text-gray-500">{{ 'assets.details.services.sellLabel' | translate }}</span>
-                                  {{ feeModeName(svc.feeConfig.sellFeeMode) }}
-                                  @if (svc.feeConfig.sellFeeMode) { &middot; {{ feeValueDisplay(svc.feeConfig.sellFeeMode, svc.feeConfig.sellFeeValue) }} }
-                                </span>
-                              </div>
+                            @if (svc.distributionAccepted) {
+                              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+                                [title]="'assets.details.services.acceptedTooltip' | translate">
+                                {{ 'assets.details.services.accepted' | translate }}
+                              </span>
                             } @else {
-                              <span class="text-xs text-gray-400">{{ 'common.notSet' | translate }}</span>
-                            }
-                            @if (userInfo && userInfo.role !== 3) {
-                              <button (click)="openFeeConfigModal(svc.service, svc.serviceName)"
-                                [disabled]="!entityActive || !svc.canQuote || !canManage()"
-                                class="mt-1 text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                                [title]="(svc.canQuote ? 'assets.details.services.editFeesTooltip' : 'assets.details.services.setFeesTooltip') | translate">
-                                {{ 'assets.details.services.editFees' | translate }}
-                              </button>
+                              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800"
+                                [title]="'assets.details.services.awaitingConsentTooltip' | translate">
+                                {{ 'assets.details.services.awaitingConsent' | translate }}
+                              </span>
                             }
                           </td>
                           @if (userInfo && userInfo.role !== 3) {
@@ -1414,7 +1401,7 @@
 <app-modal-listing-create></app-modal-listing-create>
 <app-modal-asset-price></app-modal-asset-price>
 <app-modal-asset-supply></app-modal-asset-supply>
-<app-modal-asset-fee-config></app-modal-asset-fee-config>
+
 <app-modal-distribution-declare></app-modal-distribution-declare>
 <app-metadata-edit-modal></app-metadata-edit-modal>
 <app-modal-asset-image-add></app-modal-asset-image-add>

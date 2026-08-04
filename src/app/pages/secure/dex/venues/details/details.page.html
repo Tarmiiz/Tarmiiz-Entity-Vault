@@ -154,7 +154,11 @@
                         <td class="px-6 py-2">{{ a.assetName || '—' }}</td>
                         <td class="px-6 py-2">@if (a.assetSymbol) { <span class="badge-symbol">{{ a.assetSymbol }}</span> } @else { — }</td>
                         <td class="px-6 py-2">{{ tierLabelShort(a.tier) }}</td>
-                        <td class="px-6 py-2">{{ a.entityName || '—' }}</td>
+                        <!-- issuerEntityName, NOT entityName: the row comes from the
+                             (asset, venue) join, whose `entityName` is THIS VENUE's
+                             operator — rendering it here labelled the venue as the
+                             issuer of every foreign asset it hosts. -->
+                        <td class="px-6 py-2">{{ a.issuerEntityName || '—' }}</td>
                         <td class="px-6 py-2 font-mono break-all">{{ a.baseAsset }}</td>
                         <!-- formatTime, not formatDate: dex_asset_venues.added_at is stamped in
                              MILLISECONDS by both writers (plugin System.currentTimeMillis /

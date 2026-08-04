@@ -8,7 +8,11 @@ import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 
 import { ParseProofUtils } from '../utils/parse-proof.utils';
-import { FeeConfig, ExternalIntegration, UserGroup, AppConfigItem } from '../models/data.model';
+import {
+  FeeConfig, ExternalIntegration, UserGroup, AppConfigItem,
+  CreditPosition, CreditObligation, CreditSettlement,
+  DistributionAgreement, PrimaryTrade, DexOffering, DexOfferingFill,
+} from '../models/data.model';
 
 @Injectable({
   providedIn: 'root'
@@ -86,7 +90,7 @@ export class ApiService {
     }
   }
 
-  async vaultFeatures(): Promise<{ dex: boolean; menu: Record<string, boolean> } | null> {
+  async vaultFeatures(): Promise<{ dex: boolean; vaultMode: string | null; menu: Record<string, boolean> } | null> {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
@@ -95,7 +99,7 @@ export class ApiService {
       });
       if (response.data?.type !== 'success') return null;
       const features = response.data.features ?? {};
-      return { dex: !!features.dex, menu: response.data.menu ?? {} };
+      return { dex: !!features.dex, vaultMode: features.vaultMode ?? null, menu: response.data.menu ?? {} };
     } catch {
       return null;
     }
@@ -119,11 +123,11 @@ export class ApiService {
   // Authenticated per-user effective feature map (tenant folded with this user's
   // restrict-only overrides). Same shape as vaultFeatures() plus the systemFunctions map;
   // read once a session exists.
-  async vaultMyFeatures(): Promise<{ dex: boolean; menu: Record<string, boolean>; systemFunctions: Record<string, boolean> } | null> {
+  async vaultMyFeatures(): Promise<{ dex: boolean; vaultMode: string | null; menu: Record<string, boolean>; systemFunctions: Record<string, boolean> } | null> {
     const data = await this.vaultGet('/features/me');
     if (!data) return null;
     const features = data.features ?? {};
-    return { dex: !!features.dex, menu: data.menu ?? {}, systemFunctions: data.systemFunctions ?? {} };
+    return { dex: !!features.dex, vaultMode: features.vaultMode ?? null, menu: data.menu ?? {}, systemFunctions: data.systemFunctions ?? {} };
   }
 
   // Per-user menu overrides (admin Menu Access tab on User Details). Rows carry the
@@ -658,25 +662,11 @@ export class ApiService {
     }
   }
 
-  async vaultGetAssetFeeConfig(asset: string, service: string): Promise<{ feeConfig: FeeConfig | null } | null> {
-    const data = await this.vaultGet('/assets/' + asset + '/services/' + service + '/fee-config');
-    if (!data) return null;
-    return { feeConfig: data.feeConfig ?? null };
-  }
-
-  async vaultSetAssetFeeConfig(asset: string, service: string, feeConfig: FeeConfig) {
-    const data = await this.vaultPut('/assets/' + asset + '/services/' + service + '/fee-config', { feeConfig });
-    return data ?? null;
-  }
-
-  async vaultQuoteAssetFee(asset: string, service: string, direction: number, gross: string | number) {
-    const data = await this.vaultGet('/assets/' + asset + '/services/' + service + '/quote-fee', { direction, gross });
-    return data ?? null;
-  }
-
-  // Venue-side fee config (Phase B, all-flows) — keyed by (service, asset) on the
-  // distributing service's ServiceTemplate. Stacks with the asset-side cut on every
-  // credit-settled flow through callExternalBatchWithCreditFee.
+  // Service-side fee config (uniform D7b engine, 2026-08-03) — keyed by (service, asset)
+  // on the distributing/venue ServiceTemplate. THE only fee surface: the asset-side
+  // per-service fee config was removed with the issuer/DEX model redesign. Each side
+  // carries { mode, value, bearing (0 OnTop / 1 Deducted) }; the destination is forced
+  // on-chain to the configuring service's own account.
   async vaultGetServiceFeeConfig(service: string, asset: string): Promise<{ feeConfig: FeeConfig | null } | null> {
     const data = await this.vaultGet('/services/' + service + '/assets/' + asset + '/fee-config');
     if (!data) return null;
@@ -691,6 +681,106 @@ export class ApiService {
   async vaultQuoteServiceFee(service: string, asset: string, direction: number, gross: string | number) {
     const data = await this.vaultGet('/services/' + service + '/assets/' + asset + '/quote-fee', { direction, gross });
     return data ?? null;
+  }
+
+  // ─── Settlements (fiat obligations / net positions, issuer/DEX model 2026-08-03) ──
+
+  async vaultSettlementPositions(): Promise<CreditPosition[]> {
+    const data = await this.vaultGet('/settlements/positions');
+    return data?.positions ?? [];
+  }
+
+  // Live chain pre-flight for a settlement amount: { netOwedByCaller, inFlightOwedByCaller,
+  // inFlightOwedToCaller } as whole-currency decimal strings.
+  async vaultSettlementPositionWith(counterparty: string, currencyCode: number | string) {
+    const data = await this.vaultGet('/settlements/positions/' + counterparty + '/' + currencyCode);
+    return data?.position ?? null;
+  }
+
+  async vaultSettlementObligations(params: { counterparty?: string; currencyCode?: number; start?: number; offset?: number } = {}) {
+    const data = await this.vaultGet('/settlements/obligations', params);
+    return data ? { totalCount: data.totalCount ?? 0, obligations: (data.obligations ?? []) as CreditObligation[] } : null;
+  }
+
+  async vaultSettlementsList(params: { counterparty?: string; state?: number; start?: number; offset?: number } = {}) {
+    const data = await this.vaultGet('/settlements', params);
+    return data ? { totalCount: data.totalCount ?? 0, settlements: (data.settlements ?? []) as CreditSettlement[] } : null;
+  }
+
+  async vaultSettlementInfo(debtor: string, creditor: string, id: number) {
+    const data = await this.vaultGet('/settlements/' + debtor + '/' + creditor + '/' + id);
+    return (data?.settlement ?? null) as CreditSettlement | null;
+  }
+
+  // Debtor-side create. amount is a WHOLE-CURRENCY amount (the API wei-encodes).
+  async vaultSettlementCreate(payload: { counterparty: string; currencyCode: number; amount: string; memo?: string }) {
+    return this.vaultPost('/settlements', payload);
+  }
+
+  // Debtor-side confirm sent — multipart: wire reference + optional receipt file
+  // (pinned as an encrypted settlement-receipt document at execution time).
+  async vaultSettlementConfirmSent(
+    payload: { debtorEntity: string; creditorEntity: string; settlementId: number; wireRef: string; currencyCode: number; amount: string; memo?: string },
+    receiptFile: File | null,
+  ) {
+    return this._postMultipartFields('/vault/settlements/confirm-sent', {
+      debtorEntity:   payload.debtorEntity,
+      creditorEntity: payload.creditorEntity,
+      settlementId:   String(payload.settlementId),
+      wireRef:        payload.wireRef,
+      currencyCode:   String(payload.currencyCode),
+      amount:         payload.amount,
+      memo:           payload.memo || '',
+    }, receiptFile, 'receipt');
+  }
+
+  // Creditor-side confirm received — the only net-decrement transition (on-chain).
+  async vaultSettlementConfirmReceived(payload: { debtorEntity: string; creditorEntity: string; settlementId: number; note?: string }) {
+    return this.vaultPost('/settlements/confirm-received', payload);
+  }
+
+  async vaultSettlementCancel(debtor: string, creditor: string, id: number) {
+    return this.vaultDelete('/settlements/' + debtor + '/' + creditor + '/' + id);
+  }
+
+  // ─── Distribution agreements + primary-market trades ──────────────────────────
+
+  async vaultDistributionInbound(): Promise<DistributionAgreement[]> {
+    const data = await this.vaultGet('/distribution/inbound');
+    return data?.agreements ?? [];
+  }
+
+  async vaultDistributionAccept(asset: string, service: string) {
+    return this.vaultPost('/distribution/' + asset + '/accept', { service });
+  }
+
+  async vaultPrimaryTrades(params: { asset?: string; service?: string; subscription?: string; start?: number; offset?: number } = {}) {
+    const data = await this.vaultGet('/primary-trades', params);
+    return data ? { totalCount: data.totalCount ?? 0, trades: (data.trades ?? []) as PrimaryTrade[] } : null;
+  }
+
+  // ─── DEX offerings (primary issuance on a venue — IPO facility) ───────────────
+
+  async vaultDexOfferingsList(params: { venue?: string; asset?: string; status?: number; start?: number; offset?: number } = {}) {
+    const data = await this.vaultGet('/dex/offerings', params);
+    return data ? { totalCount: data.totalCount ?? 0, offerings: (data.offerings ?? []) as DexOffering[] } : null;
+  }
+
+  async vaultDexOfferingInfo(key: string) {
+    const data = await this.vaultGet('/dex/offerings/' + key);
+    return data ? {
+      offering: data.offering as DexOffering,
+      fills: (data.fills ?? []) as DexOfferingFill[],
+      fillsTotal: data.fillsTotal ?? 0,
+    } : null;
+  }
+
+  async vaultDexOfferingCreate(payload: { baseAsset: string; dexService: string; price: string; amount: string; minFill?: number; maxPerSubscription?: number; refNo: string }) {
+    return this.vaultPost('/dex/offerings', payload);
+  }
+
+  async vaultDexOfferingCancel(key: string, refNo: string) {
+    return this.vaultDelete('/dex/offerings/' + key + '?refNo=' + encodeURIComponent(refNo));
   }
 
   async vaultGetAssetPriceHistory(address: string, start = 0, offset = 50) {
@@ -1580,6 +1670,56 @@ export class ApiService {
   // request that will never be answered (e.g. a relay tx dropped from the tx pool). Without
   // it the XHR promise never settles and the upload spinner runs forever with no error.
   private readonly UPLOAD_TIMEOUT_MS = 180000;
+
+  // Generic multipart POST for non-document endpoints (e.g. settlement confirm-sent's
+  // optional wire receipt). Flat string fields + one optional file under `fileField`.
+  private async _postMultipartFields(
+    path: string,
+    fields: Record<string, string>,
+    file: File | null,
+    fileField: string,
+  ): Promise<any> {
+    const token = await this.sessionService.getActiveToken();
+    if (!token) {
+      this._handleAuthFailure();
+      return { error: 'Session expired. Please log in again.', status: 401 };
+    }
+    return new Promise<any>((resolve) => {
+      try {
+        const form = new FormData();
+        for (const [k, v] of Object.entries(fields)) form.append(k, v);
+        if (file) form.append(fileField, file, file.name);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', this.apiURL + path);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        const audit = this.getAuditHeaders();
+        for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
+
+        xhr.onload = () => {
+          let json: any = null;
+          try { json = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { /* non-JSON body */ }
+          if (xhr.status === 401) {
+            this._handleAuthFailure();
+            resolve({ error: 'Session expired. Please log in again.', status: 401 });
+            return;
+          }
+          if (xhr.status >= 300 || json?.error) {
+            resolve({ error: json?.error || json?.message || `Request failed (HTTP ${xhr.status})`, status: xhr.status });
+            return;
+          }
+          resolve(json ?? { ok: true });
+        };
+        xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.onabort = () => resolve({ error: 'Request aborted', status: 0 });
+        xhr.timeout = this.UPLOAD_TIMEOUT_MS;
+        xhr.ontimeout = () => resolve({ error: 'Request timed out — the server did not respond.', status: 0 });
+        xhr.send(form);
+      } catch (e: any) {
+        resolve({ error: e?.message || 'Request failed', status: 0 });
+      }
+    });
+  }
 
   private async _uploadMultipart(
     path: string,

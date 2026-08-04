@@ -1,6 +1,6 @@
 @if (modal.isVisible() && modal.input(); as input) {
-  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4" (click)="$event.stopPropagation()">
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4">
 
       <!-- Header -->
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
@@ -50,10 +50,13 @@
                 }
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.feeConfigModal.destinationAddress' | translate }}</label>
-                <input type="text" formControlName="buyFeeDestination"
-                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono"
-                  [placeholder]="'services.feeConfigModal.placeholders.address' | translate">
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.feeConfigModal.bearing' | translate }}</label>
+                <select formControlName="buyFeeBearing"
+                  class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md text-black">
+                  <option value="0">{{ 'services.feeConfigModal.bearingOptions.onTop' | translate }}</option>
+                  <option value="1">{{ 'services.feeConfigModal.bearingOptions.deducted' | translate }}</option>
+                </select>
+                <p class="text-xs text-gray-400 mt-1">{{ 'services.feeConfigModal.bearingNote' | translate }}</p>
               </div>
             }
           </div>
@@ -87,10 +90,13 @@
                 }
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.feeConfigModal.destinationAddress' | translate }}</label>
-                <input type="text" formControlName="sellFeeDestination"
-                  class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black font-mono"
-                  [placeholder]="'services.feeConfigModal.placeholders.address' | translate">
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.feeConfigModal.bearing' | translate }}</label>
+                <select formControlName="sellFeeBearing"
+                  class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md text-black">
+                  <option value="0">{{ 'services.feeConfigModal.bearingOptions.onTop' | translate }}</option>
+                  <option value="1">{{ 'services.feeConfigModal.bearingOptions.deducted' | translate }}</option>
+                </select>
+                <p class="text-xs text-gray-400 mt-1">{{ 'services.feeConfigModal.bearingNote' | translate }}</p>
               </div>
             }
           </div>

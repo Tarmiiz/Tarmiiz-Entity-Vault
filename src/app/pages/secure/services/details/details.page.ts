@@ -810,11 +810,18 @@ export class DetailsPage implements OnInit {
     let description = '';
     let contact = { email: '', phone: '', website: '', address: '' };
     const entries: [string, string][] = [];
-    const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address']);
+    // 'sp' is the provider-discovery object ({ sp: { kind, signer, baseUrl } }) consumed by the
+    // Token Exchange / DID App / DID API trust chain. It is RESERVED out of the flat string→string
+    // KV editor (which would rewrite the nested object as a JSON-string-in-a-string) and
+    // re-attached verbatim on save — the modal's result is a FULL REPLACEMENT, so without the
+    // re-attach an unrelated metadata edit would silently DELETE the discovery keys.
+    const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address', 'sp']);
+    let preservedSp: unknown;
     try {
       const obj = JSON.parse(currentService.metadata || '{}');
       if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
         description = typeof obj.description === 'string' ? obj.description : '';
+        preservedSp = obj.sp;
         const c = (obj.contact && typeof obj.contact === 'object') ? obj.contact : {};
         contact = {
           email:   c.email   ?? obj.email   ?? '',
@@ -831,6 +838,7 @@ export class DetailsPage implements OnInit {
 
     const result = await this.metadataEditModal.show({ title: this.translate.instant('services.details.info.editMetadataModalTitle'), description, contact, entries });
     if (!result) return;
+    if (preservedSp !== undefined) (result as Record<string, unknown>)['sp'] = preservedSp;
     this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingMetadata'));
     try {
       const res = await this.apiService.vaultUpdateServiceMetadata(currentService.address, result);

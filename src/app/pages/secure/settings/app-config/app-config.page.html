@@ -93,6 +93,21 @@
                   </button>
                 }
 
+                @case ('enum') {
+                  <select
+                    [ngModel]="editValue(item.key)" (ngModelChange)="setEdit(item.key, $event)"
+                    class="block w-56 max-w-[55vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800 bg-white">
+                    @for (opt of item.options ?? []; track opt.value) {
+                      <option [value]="opt.value" class="text-gray-800">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <button type="button" (click)="saveValue(item)"
+                    [disabled]="saving() === item.key || !isDirty(item)"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ 'settings.appConfig.save' | translate }}
+                  </button>
+                }
+
                 @case ('number') {
                   <input type="number" step="any"
                     [ngModel]="editValue(item.key)" (ngModelChange)="setEdit(item.key, $event)"

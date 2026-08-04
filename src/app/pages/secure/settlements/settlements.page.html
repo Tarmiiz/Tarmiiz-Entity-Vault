@@ -1,0 +1,344 @@
+<app-header [title]="'sidebar.settlements' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Tab bar -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-4 px-4 pt-2 flex gap-1">
+    @for (tab of ['positions', 'obligations', 'settlements']; track tab) {
+      <button (click)="activeTab.set($any(tab))"
+        class="text-sm px-4 py-2 border-b-2 transition-colors"
+        [class]="activeTab() === tab
+          ? 'border-indigo-600 text-indigo-700 font-semibold'
+          : 'border-transparent text-gray-500 hover:text-gray-700'">
+        {{ ('settlements.tabs.' + tab) | translate }}
+      </button>
+    }
+  </div>
+
+  <!-- Positions tab -->
+  @if (activeTab() === 'positions') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-800">{{ 'settlements.positions.title' | translate }}</h2>
+          <p class="text-xs text-gray-600">{{ 'settlements.positions.description' | translate }}</p>
+        </div>
+        @if (canAct() && features.systemFunctionEnabled('settlement-create')) {
+          <button (click)="openCreateModal()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            {{ 'settlements.createBtn' | translate }}
+          </button>
+        }
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'settlements.counterparty' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.currency' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.positions.net' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.updated' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of positions(); track (p.counterparty + '|' + p.currencyCode); let i = $index) {
+              <tr [class.bg-gray-50]="i % 2 === 1">
+                <td class="px-4 py-2 font-mono text-xs">{{ p.counterparty }}</td>
+                <td class="px-4 py-2">{{ currencyLabel(p.currencyCode) }}</td>
+                <td class="px-4 py-2">
+                  @if (p.netOwedBySelf > 0) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                      {{ 'settlements.positions.youOwe' | translate }} {{ p.netOwedBySelf | number: '1.0-6' }}
+                    </span>
+                  } @else if (p.netOwedBySelf < 0) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                      {{ 'settlements.positions.owedToYou' | translate }} {{ -p.netOwedBySelf | number: '1.0-6' }}
+                    </span>
+                  } @else {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">0</span>
+                  }
+                </td>
+                <td class="px-4 py-2 text-xs">{{ utils.formatTime(p.updatedAt) }}</td>
+                <td class="px-4 py-2">
+                  @if (p.netOwedBySelf > 0 && canAct() && features.systemFunctionEnabled('settlement-create')) {
+                    <button (click)="openCreateModal(p)"
+                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      {{ 'settlements.settleBtn' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="px-4 py-6 text-center text-gray-500 text-sm">
+                  @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'settlements.positions.empty' | translate }} }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Obligations tab -->
+  @if (activeTab() === 'obligations') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'settlements.obligations.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'settlements.obligations.description' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">#</th>
+              <th class="px-4 py-2">{{ 'settlements.direction' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.counterparty' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.currency' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.amount' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.obligations.kind' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.obligations.creditTrx' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.obligations.ref' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.created' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of obligations(); track (o.debtorEntity + o.creditorEntity + o.obligationId); let i = $index) {
+              <tr [class.bg-gray-50]="i % 2 === 1">
+                <td class="px-4 py-2 text-xs">{{ o.obligationId }}</td>
+                <td class="px-4 py-2">
+                  @if (isDebtor(o)) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'settlements.payable' | translate }}</span>
+                  } @else {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'settlements.receivable' | translate }}</span>
+                  }
+                </td>
+                <td class="px-4 py-2 font-mono text-xs">{{ counterpartyOf(o) }}</td>
+                <td class="px-4 py-2">{{ currencyLabel(o.currencyCode) }}</td>
+                <td class="px-4 py-2">{{ o.amount | number: '1.0-6' }}</td>
+                <td class="px-4 py-2 text-xs">{{ obligationKindName(o.kind) }}</td>
+                <td class="px-4 py-2 text-xs">{{ o.creditTrxId || '—' }}</td>
+                <td class="px-4 py-2 text-xs">{{ o.ref || '—' }}</td>
+                <td class="px-4 py-2 text-xs">{{ utils.formatTime(o.createdAt) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="px-4 py-6 text-center text-gray-500 text-sm">
+                  @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'settlements.obligations.empty' | translate }} }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (obligationsTotal() > obligations().length) {
+        <div class="px-4 py-2 text-xs text-gray-500 border-t border-gray-200">
+          {{ 'settlements.showingCount' | translate: { showing: obligations().length, total: obligationsTotal() } }}
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Settlements tab -->
+  @if (activeTab() === 'settlements') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-800">{{ 'settlements.list.title' | translate }}</h2>
+          <p class="text-xs text-gray-600">{{ 'settlements.list.description' | translate }}</p>
+        </div>
+        @if (canAct() && features.systemFunctionEnabled('settlement-create')) {
+          <button (click)="openCreateModal()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            {{ 'settlements.createBtn' | translate }}
+          </button>
+        }
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">#</th>
+              <th class="px-4 py-2">{{ 'settlements.direction' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.counterparty' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.currency' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.amount' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.wireRef' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.updated' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of settlements(); track (s.debtorEntity + s.creditorEntity + s.settlementId); let i = $index) {
+              <tr [class.bg-gray-50]="i % 2 === 1">
+                <td class="px-4 py-2 text-xs">{{ s.settlementId }}</td>
+                <td class="px-4 py-2">
+                  @if (isDebtor(s)) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'settlements.outgoing' | translate }}</span>
+                  } @else {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'settlements.incoming' | translate }}</span>
+                  }
+                </td>
+                <td class="px-4 py-2 font-mono text-xs">{{ counterpartyOf(s) }}</td>
+                <td class="px-4 py-2">{{ currencyLabel(s.currencyCode) }}</td>
+                <td class="px-4 py-2">{{ s.amount | number: '1.0-6' }}</td>
+                <td class="px-4 py-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="settlementStateClass(s.state)">{{ settlementStateName(s.state) }}</span>
+                </td>
+                <td class="px-4 py-2 text-xs">{{ s.wireRef || '—' }}</td>
+                <td class="px-4 py-2 text-xs">{{ utils.formatTime(s.updatedAt) }}</td>
+                <td class="px-4 py-2">
+                  <div class="flex gap-2">
+                    @if (isDebtor(s) && s.state === 1 && canAct() && features.systemFunctionEnabled('settlement-confirm-sent')) {
+                      <button (click)="openSentModal(s)"
+                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                        {{ 'settlements.confirmSentBtn' | translate }}
+                      </button>
+                    }
+                    @if (isDebtor(s) && s.state === 1 && canAct()) {
+                      <button (click)="cancelSettlement(s)"
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                        {{ 'common.cancel' | translate }}
+                      </button>
+                    }
+                    @if (!isDebtor(s) && s.state === 2 && canAct() && features.systemFunctionEnabled('settlement-confirm-received')) {
+                      <button (click)="openReceivedModal(s)"
+                        class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                        {{ 'settlements.confirmReceivedBtn' | translate }}
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="px-4 py-6 text-center text-gray-500 text-sm">
+                  @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'settlements.list.empty' | translate }} }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Create-settlement modal (debtor side) -->
+@if (createModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'settlements.createModal.title' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">{{ 'settlements.createModal.subtitle' | translate }}</p>
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'settlements.counterparty' | translate }}</label>
+          <input type="text" [(ngModel)]="createCounterparty" (blur)="refreshPreflight()" placeholder="0x…"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.currencyCode' | translate }}</label>
+          <input type="number" min="1" step="1" [(ngModel)]="createCurrencyCode" (blur)="refreshPreflight()"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        @if (createPreflight(); as pf) {
+          <div class="text-xs bg-gray-50 border border-gray-200 rounded p-2 space-y-0.5">
+            <div>{{ 'settlements.createModal.netOwed' | translate }}: <span class="font-medium">{{ pf.netOwedByCaller }}</span></div>
+            <div>{{ 'settlements.createModal.inFlight' | translate }}: <span class="font-medium">{{ pf.inFlightOwedByCaller }}</span></div>
+            @if (availableToSettle() !== null) {
+              <div>{{ 'settlements.createModal.available' | translate }}: <span class="font-semibold">{{ availableToSettle() | number: '1.0-6' }}</span></div>
+            }
+          </div>
+        }
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.amount' | translate }}</label>
+          <input type="number" min="0" step="any" [(ngModel)]="createAmount"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.memo' | translate }}</label>
+          <input type="text" [(ngModel)]="createMemo"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="createModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitCreate()" [disabled]="!createCounterparty || !createCurrencyCode || !createAmount"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'settlements.createBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Confirm-sent modal (debtor side: wire ref + optional receipt document) -->
+@if (sentModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'settlements.sentModal.title' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">
+        #{{ sentSettlement()?.settlementId }} — {{ sentSettlement()?.amount | number: '1.0-6' }} ({{ currencyLabel(sentSettlement()?.currencyCode ?? 0) }})
+      </p>
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'settlements.wireRef' | translate }} *</label>
+          <input type="text" [(ngModel)]="sentWireRef" [placeholder]="'settlements.sentModal.wireRefPlaceholder' | translate"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'settlements.sentModal.receipt' | translate }}</label>
+          <input type="file" (change)="onReceiptFileChange($event)"
+            class="text-xs text-gray-600 file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300">
+          <p class="text-xs text-gray-400">{{ 'settlements.sentModal.receiptNote' | translate }}</p>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.memo' | translate }}</label>
+          <input type="text" [(ngModel)]="sentMemo"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="sentModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitConfirmSent()" [disabled]="!sentWireRef"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'settlements.confirmSentBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Confirm-received modal (creditor side — the net-decrement transition) -->
+@if (receivedModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'settlements.receivedModal.title' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">
+        #{{ receivedSettlement()?.settlementId }} — {{ receivedSettlement()?.amount | number: '1.0-6' }} ({{ currencyLabel(receivedSettlement()?.currencyCode ?? 0) }})
+        · {{ 'settlements.wireRef' | translate }}: {{ receivedSettlement()?.wireRef || '—' }}
+      </p>
+      <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-3">
+        {{ 'settlements.receivedModal.warning' | translate }}
+      </p>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">{{ 'settlements.receivedModal.note' | translate }}</label>
+        <input type="text" [(ngModel)]="receivedNote"
+          class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="receivedModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitConfirmReceived()"
+          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+          {{ 'settlements.confirmReceivedBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

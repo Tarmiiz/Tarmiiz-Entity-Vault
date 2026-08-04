@@ -5,6 +5,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { ApiService } from '../../../../shared/services/api.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AppConfigItem } from '../../../../shared/models/data.model';
@@ -18,6 +19,7 @@ import { AppConfigItem } from '../../../../shared/models/data.model';
 })
 export class AppConfigPage implements OnInit {
   private apiService     = inject(ApiService);
+  private features       = inject(FeaturesService);
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
   private translate      = inject(TranslateService);
@@ -118,6 +120,9 @@ export class AppConfigPage implements OnInit {
         this.alertService.show(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.load();
+        // VAULT_MODE lives in this registry and drives the sidebar, so re-hydrate the
+        // feature map here rather than making the admin re-login to see the effect.
+        await this.features.refresh();
       }
     } finally {
       this.loadingService.hide();
@@ -143,6 +148,7 @@ export class AppConfigPage implements OnInit {
         this.alertService.show(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.load();
+        await this.features.refresh();
       }
     } finally {
       this.loadingService.hide();

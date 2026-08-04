@@ -9,11 +9,16 @@ import { FeeConfig } from '../../../../../shared/models/data.model';
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 
 /**
- * Venue-side fee config — distributor's cut on every credit-settled flow.
- * Keyed by (this service, asset). Stacks on top of the asset issuer's own
- * cut set on the T20 asset via T20.setFeeConfig(service, cfg).
+ * Service fee config — the uniform D7b engine (2026-08-03). Keyed by
+ * (this service, asset); THE only fee surface on the platform (the asset-side
+ * per-service fee config was removed with the issuer/DEX model redesign).
  *
- * Fee mode: 0 = None, 1 = Bps (1-2000 = 0.01%-20%), 2 = Fixed (wei).
+ * Each side carries { mode, value, bearing }:
+ *   mode:    0 = None, 1 = Bps (1-2000 = 0.01%-20%), 2 = Fixed (currency units)
+ *   bearing: 0 = OnTop (payer pays gross + fee), 1 = Deducted (receiver gets gross − fee)
+ *
+ * No destination inputs — the contract FORCES the destination to this service's
+ * own account (caller-supplied values are ignored on-chain).
  */
 @Component({
   selector: 'app-modal-service-fee-config',
@@ -29,12 +34,12 @@ export class ModalServiceFeeConfigComponent {
   submitError = signal<string>('');
 
   form = this.fb.group({
-    buyFeeMode:        ['0', Validators.required],
-    buyFeeValue:       [''],
-    buyFeeDestination: [ZERO_ADDR],
-    sellFeeMode:        ['0', Validators.required],
-    sellFeeValue:       [''],
-    sellFeeDestination: [ZERO_ADDR],
+    buyFeeMode:     ['0', Validators.required],
+    buyFeeValue:    [''],
+    buyFeeBearing:  ['0'],
+    sellFeeMode:    ['0', Validators.required],
+    sellFeeValue:   [''],
+    sellFeeBearing: ['0'],
   });
 
   buyMode  = computed(() => Number(this.form.controls.buyFeeMode.value) || 0);
@@ -48,31 +53,31 @@ export class ModalServiceFeeConfigComponent {
       const fc = input.feeConfig;
       if (!fc) {
         this.form.reset({
-          buyFeeMode: '0', buyFeeValue: '', buyFeeDestination: ZERO_ADDR,
-          sellFeeMode: '0', sellFeeValue: '', sellFeeDestination: ZERO_ADDR,
+          buyFeeMode: '0', buyFeeValue: '', buyFeeBearing: '0',
+          sellFeeMode: '0', sellFeeValue: '', sellFeeBearing: '0',
         });
         return;
       }
       this.form.reset({
         buyFeeMode: String(fc.buyFeeMode ?? 0),
         buyFeeValue: this.fromOnChain(fc.buyFeeMode, fc.buyFeeValue),
-        buyFeeDestination: fc.buyFeeDestination || ZERO_ADDR,
+        buyFeeBearing: String(fc.buyFeeBearing ?? 0),
         sellFeeMode: String(fc.sellFeeMode ?? 0),
         sellFeeValue: this.fromOnChain(fc.sellFeeMode, fc.sellFeeValue),
-        sellFeeDestination: fc.sellFeeDestination || ZERO_ADDR,
+        sellFeeBearing: String(fc.sellFeeBearing ?? 0),
       });
     });
 
     this.form.controls.buyFeeMode.valueChanges.subscribe(m => {
       if (m === '0') {
         this.form.controls.buyFeeValue.setValue('');
-        this.form.controls.buyFeeDestination.setValue(ZERO_ADDR);
+        this.form.controls.buyFeeBearing.setValue('0');
       }
     });
     this.form.controls.sellFeeMode.valueChanges.subscribe(m => {
       if (m === '0') {
         this.form.controls.sellFeeValue.setValue('');
-        this.form.controls.sellFeeDestination.setValue(ZERO_ADDR);
+        this.form.controls.sellFeeBearing.setValue('0');
       }
     });
   }
@@ -85,17 +90,11 @@ export class ModalServiceFeeConfigComponent {
     return String(value);
   }
 
-  private isAddress(v: string): boolean {
-    try { return !!v && ethers.isAddress(v); } catch { return false; }
-  }
-
-  validateSide(mode: number, valueStr: string, dest: string): string {
+  validateSide(mode: number, valueStr: string): string {
     if (mode === 0) {
       if (valueStr && valueStr !== '0') return 'When mode is None, value must be empty or 0.';
-      if (dest && dest !== ZERO_ADDR) return 'When mode is None, destination must be the zero address.';
       return '';
     }
-    if (!this.isAddress(dest) || dest === ZERO_ADDR) return 'A non-zero destination address is required.';
     const num = Number(valueStr);
     if (!Number.isFinite(num) || num <= 0) return 'Value must be greater than 0.';
     if (mode === 1) {
@@ -107,8 +106,8 @@ export class ModalServiceFeeConfigComponent {
 
   isValid(): boolean {
     const v = this.form.value;
-    if (this.validateSide(Number(v.buyFeeMode),  v.buyFeeValue  ?? '', v.buyFeeDestination  ?? '')) return false;
-    if (this.validateSide(Number(v.sellFeeMode), v.sellFeeValue ?? '', v.sellFeeDestination ?? '')) return false;
+    if (this.validateSide(Number(v.buyFeeMode),  v.buyFeeValue  ?? '')) return false;
+    if (this.validateSide(Number(v.sellFeeMode), v.sellFeeValue ?? '')) return false;
     return true;
   }
 
@@ -125,13 +124,17 @@ export class ModalServiceFeeConfigComponent {
     const v = this.form.value;
     const buyMode  = Number(v.buyFeeMode);
     const sellMode = Number(v.sellFeeMode);
+    // Destinations are FORCED on-chain to the configuring service; send zero and
+    // let the contract stamp its own address on non-None sides.
     const feeConfig: FeeConfig = {
-      buyFeeMode:        buyMode,
-      buyFeeValue:       this.toOnChain(buyMode,  v.buyFeeValue  ?? ''),
-      buyFeeDestination: buyMode === 0  ? ZERO_ADDR : (v.buyFeeDestination  ?? ZERO_ADDR),
-      sellFeeMode:       sellMode,
-      sellFeeValue:      this.toOnChain(sellMode, v.sellFeeValue ?? ''),
-      sellFeeDestination: sellMode === 0 ? ZERO_ADDR : (v.sellFeeDestination ?? ZERO_ADDR),
+      buyFeeMode:         buyMode,
+      buyFeeValue:        this.toOnChain(buyMode,  v.buyFeeValue  ?? ''),
+      buyFeeDestination:  ZERO_ADDR,
+      buyFeeBearing:      buyMode === 0 ? 0 : Number(v.buyFeeBearing ?? 0),
+      sellFeeMode:        sellMode,
+      sellFeeValue:       this.toOnChain(sellMode, v.sellFeeValue ?? ''),
+      sellFeeDestination: ZERO_ADDR,
+      sellFeeBearing:     sellMode === 0 ? 0 : Number(v.sellFeeBearing ?? 0),
     };
     this.modal.confirm({ feeConfig });
   }

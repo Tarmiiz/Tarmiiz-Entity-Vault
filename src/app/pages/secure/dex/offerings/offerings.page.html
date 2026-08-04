@@ -1,0 +1,185 @@
+<app-header [title]="'sidebar.dexOfferings' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'dexOfferings.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'dexOfferings.description' | translate }}</p>
+      </div>
+      @if (canAct() && features.systemFunctionEnabled('dex-offering-create')) {
+        <button (click)="openCreateModal()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+          {{ 'dexOfferings.createBtn' | translate }}
+        </button>
+      }
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-4 py-2">{{ 'dexOfferings.key' | translate }}</th>
+            <th class="px-4 py-2">{{ 'dexOfferings.asset' | translate }}</th>
+            <th class="px-4 py-2">{{ 'dexOfferings.venue' | translate }}</th>
+            <th class="px-4 py-2">{{ 'dexOfferings.price' | translate }}</th>
+            <th class="px-4 py-2">{{ 'dexOfferings.progress' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
+            <th class="px-4 py-2">{{ 'dexOfferings.createdAt' | translate }}</th>
+            <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of offerings(); track o.offeringKey; let i = $index) {
+            <tr [class.bg-gray-50]="i % 2 === 1">
+              <td class="px-4 py-2 font-mono text-xs" [title]="o.offeringKey">{{ shortKey(o.offeringKey) }}</td>
+              <td class="px-4 py-2 font-mono text-xs">{{ o.baseAsset }}</td>
+              <td class="px-4 py-2 font-mono text-xs">{{ o.dexService }}</td>
+              <td class="px-4 py-2">{{ o.price | number: '1.0-6' }}</td>
+              <td class="px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs">{{ o.sold | number }} / {{ o.amount | number }}</span>
+                  <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-indigo-500" [style.width.%]="o.amount ? (o.sold / o.amount) * 100 : 0"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-2">
+                <div class="flex gap-1">
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="statusClass(o.status)">{{ statusName(o.status) }}</span>
+                  @if (o.suspended) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-800"
+                      [title]="o.suspendedReason || ''">{{ 'dexOfferings.suspended' | translate }}</span>
+                  }
+                </div>
+              </td>
+              <td class="px-4 py-2 text-xs">{{ utils.formatDate(o.createdAt) }}</td>
+              <td class="px-4 py-2">
+                <div class="flex gap-2">
+                  <button (click)="toggleFills(o)"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    {{ (expandedKey() === o.offeringKey ? 'dexOfferings.hideFills' : 'dexOfferings.viewFills') | translate }}
+                  </button>
+                  @if ((o.status === 1 || o.status === 2) && canAct() && features.systemFunctionEnabled('dex-offering-cancel')) {
+                    <button (click)="cancelOffering(o)"
+                      class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                      {{ 'common.cancel' | translate }}
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+            @if (expandedKey() === o.offeringKey) {
+              <tr>
+                <td colspan="8" class="px-4 py-3 bg-gray-50">
+                  <table class="w-full text-xs text-left text-gray-700 border border-gray-200 rounded">
+                    <thead class="text-xs text-gray-600 uppercase bg-gray-100">
+                      <tr>
+                        <th class="px-3 py-1.5">#</th>
+                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.subscription' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.amount' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'dexOfferings.price' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.gross' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.venueFee' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.netToIssuer' | translate }}</th>
+                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.time' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (f of fills(); track f.fillId) {
+                        <tr class="border-t border-gray-200">
+                          <td class="px-3 py-1.5">{{ f.fillId }}</td>
+                          <td class="px-3 py-1.5 font-mono">{{ f.subscription }}</td>
+                          <td class="px-3 py-1.5">{{ f.amount | number }}</td>
+                          <td class="px-3 py-1.5">{{ f.price | number: '1.0-6' }}</td>
+                          <td class="px-3 py-1.5">{{ f.gross | number: '1.0-6' }}</td>
+                          <td class="px-3 py-1.5">{{ f.venueFee | number: '1.0-6' }}</td>
+                          <td class="px-3 py-1.5">{{ f.netToIssuer | number: '1.0-6' }}</td>
+                          <td class="px-3 py-1.5">{{ utils.formatTime(f.createdAt) }}</td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="8" class="px-3 py-3 text-center text-gray-500">{{ 'dexOfferings.fills.empty' | translate }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="8" class="px-4 py-6 text-center text-gray-500 text-sm">
+                @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'dexOfferings.empty' | translate }} }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create-offering modal -->
+@if (createModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'dexOfferings.createModal.title' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">{{ 'dexOfferings.createModal.subtitle' | translate }}</p>
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.asset' | translate }}</label>
+          <select [(ngModel)]="createAsset" (ngModelChange)="onCreateAssetChange()"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option value="">—</option>
+            @for (a of myAssets(); track a.address) {
+              <option [value]="a.address">{{ a.name }} ({{ a.symbol }})</option>
+            }
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.venue' | translate }}</label>
+          <select [(ngModel)]="createVenue" [disabled]="!createAsset"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400 disabled:opacity-50">
+            <option value="">—</option>
+            @for (v of assetVenues(); track v.dexService) {
+              <option [value]="v.dexService">{{ v.serviceName }}</option>
+            }
+          </select>
+          @if (createAsset && assetVenues().length === 0) {
+            <p class="text-xs text-amber-700">{{ 'dexOfferings.createModal.noVenues' | translate }}</p>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.createModal.priceLabel' | translate }}</label>
+          <input type="number" min="0" step="any" [(ngModel)]="createPrice"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.createModal.amountLabel' | translate }}</label>
+          <input type="number" min="1" step="1" [(ngModel)]="createAmount"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.createModal.minFill' | translate }}</label>
+            <input type="number" min="0" step="1" [(ngModel)]="createMinFill" placeholder="0"
+              class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.createModal.maxPerSubscription' | translate }}</label>
+            <input type="number" min="0" step="1" [(ngModel)]="createMaxPerSubscription" placeholder="0"
+              class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          </div>
+        </div>
+        <p class="text-xs text-gray-400">{{ 'dexOfferings.createModal.note' | translate }}</p>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="createModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitCreate()" [disabled]="!createAsset || !createVenue || !createPrice || !createAmount"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'dexOfferings.createBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

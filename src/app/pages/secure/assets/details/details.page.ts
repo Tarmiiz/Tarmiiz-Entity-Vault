@@ -37,8 +37,6 @@ import { ModalAssetPriceService } from '../modals/modal-asset-price/modal-asset-
 import { ModalAssetPriceComponent } from '../modals/modal-asset-price/modal-asset-price.component';
 import { ModalAssetSupplyService } from '../modals/modal-asset-supply/modal-asset-supply.service';
 import { ModalAssetSupplyComponent } from '../modals/modal-asset-supply/modal-asset-supply.component';
-import { ModalAssetFeeConfigService } from '../modals/modal-asset-fee-config/modal-asset-fee-config.service';
-import { ModalAssetFeeConfigComponent } from '../modals/modal-asset-fee-config/modal-asset-fee-config.component';
 import { ModalDistributionDeclareService } from '../modals/modal-distribution-declare/modal-distribution-declare.service';
 import { ModalDistributionDeclareComponent } from '../modals/modal-distribution-declare/modal-distribution-declare.component';
 import { MetadataEditModalService } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.service';
@@ -78,7 +76,6 @@ export interface AssetMedia {
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
     ModalAssetSupplyComponent,
-    ModalAssetFeeConfigComponent,
     ModalDistributionDeclareComponent,
     MetadataEditModalComponent,
     ModalAssetImageAddComponent,
@@ -97,7 +94,6 @@ export class DetailsPage implements OnInit {
   private listingCreateModal = inject(ModalListingCreateService);
   private priceModal = inject(ModalAssetPriceService);
   private supplyModal = inject(ModalAssetSupplyService);
-  private feeConfigModal = inject(ModalAssetFeeConfigService);
   private metadataEditModal = inject(MetadataEditModalService);
   private imageAddModal = inject(ModalAssetImageAddService);
   private publicViewModal = inject(ModalAssetPublicViewService);
@@ -805,7 +801,7 @@ export class DetailsPage implements OnInit {
           state: s.state ?? 0,
           stateName: s.state_name ?? this.getServiceStateName(s.state),
           canQuote: !!(s.can_quote ?? s.canQuote ?? 0),
-          feeConfig: s.fee_config ?? s.feeConfig ?? null,
+          distributionAccepted: !!(s.distribution_accepted ?? s.distributionAccepted ?? 0),
         }));
       }
       this.asset.set(asset);
@@ -892,54 +888,6 @@ export class DetailsPage implements OnInit {
       }
     } catch (error) {
       console.error('Failed to change service state', error);
-    } finally {
-      this.loadingService.hide();
-    }
-  }
-
-  feeModeName(mode: number | undefined): string {
-    switch (Number(mode ?? 0)) {
-      case 1: return this.translate.instant('assets.details.services.feeModeBps');
-      case 2: return this.translate.instant('assets.details.services.feeModeFixed');
-      default: return this.translate.instant('common.none');
-    }
-  }
-
-  feeValueDisplay(mode: number | undefined, value: string | undefined): string {
-    const m = Number(mode ?? 0);
-    if (!m || !value) return this.translate.instant('common.notSet');
-    if (m === 1) return `${value} bps`;
-    // Fixed: stored in wei → format to a human-readable decimal
-    try {
-      const raw = BigInt(value);
-      const whole = raw / 10n ** 18n;
-      const frac  = raw % 10n ** 18n;
-      const fracStr = frac.toString().padStart(18, '0').replace(/0+$/, '');
-      return fracStr ? `${whole}.${fracStr}` : `${whole}`;
-    } catch { return value; }
-  }
-
-  async openFeeConfigModal(serviceAddress: string, serviceName: string) {
-    const asset = this.asset();
-    if (!asset) return;
-    const res = await this.apiService.vaultGetAssetFeeConfig(this.assetAddress, serviceAddress);
-    const current = res?.feeConfig ?? null;
-    const result = await this.feeConfigModal.show({
-      asset: this.assetAddress,
-      assetSymbol: asset.symbol,
-      service: serviceAddress,
-      serviceName,
-      feeConfig: current,
-    });
-    if (!result) return;
-    this.loadingService.show(this.translate.instant('assets.details.services.savingFeeConfig'));
-    try {
-      const r = await this.apiService.vaultSetAssetFeeConfig(this.assetAddress, serviceAddress, result.feeConfig);
-      if ((r as any)?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), (r as any).error);
-        return;
-      }
-      await this.getAssetDetails();
     } finally {
       this.loadingService.hide();
     }

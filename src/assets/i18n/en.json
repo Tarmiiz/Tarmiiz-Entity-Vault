@@ -196,7 +196,10 @@
     "settingsBackup": "Settings Backup",
     "userGroups": "User Groups",
     "userManagement": "User Management",
-    "systemConfiguration": "System Configuration"
+    "systemConfiguration": "System Configuration",
+    "settlements": "Settlements",
+    "distribution": "Distribution",
+    "dexOfferings": "Offerings"
   },
   "login": {
     "title": "Sign In",
@@ -680,10 +683,9 @@
     "feeConfigModal": {
       "bpsNote": "100 bps = 1% · cap 2000 bps = 20%.",
       "buySide": "Buy Side",
-      "destinationAddress": "Destination Address",
-      "distributedBy": "Venue service: {{name}}",
+      "distributedBy": "Service: {{name}}",
       "info": {
-        "line1": "Venue-side fee charged by this service on credit-settled trades of this asset, on top of any issuer fee.",
+        "line1": "Fee charged by this service on credit-settled flows of this asset (primary distribution and DEX trades alike).",
         "modeBps": "Bps",
         "modeBpsDesc": "= percentage of gross (max 2000 bps = 20%);",
         "modeFixed": "Fixed",
@@ -705,10 +707,16 @@
       },
       "sellSide": "Sell Side",
       "submit": "Save Fee Config",
-      "title": "Venue Fees — {{symbol}}",
+      "title": "Service Fees — {{symbol}}",
       "valueAmount": "Value (currency amount)",
       "valueBps": "Value (bps; 1-2000)",
-      "weiNote": "Stored on-chain in wei (×1e18)."
+      "weiNote": "Stored on-chain in wei (×1e18).",
+      "bearing": "Fee Bearing",
+      "bearingOptions": {
+        "onTop": "On top — payer pays gross + fee",
+        "deducted": "Deducted — receiver gets gross − fee"
+      },
+      "bearingNote": "The fee always lands in this service’s own account (forced on-chain)."
     },
     "list": {
       "createFailed": "Failed to create service.",
@@ -993,14 +1001,7 @@
         "allowQuotingTitle": "Allow Price Quoting",
         "allowQuotingTooltip": "Click to allow this service to quote its own per-trade price",
         "allowed": "Allowed",
-        "buyLabel": "Buy:",
-        "editFees": "Edit Fees",
-        "editFeesTooltip": "Edit issuer fee config for this service",
         "emptyAssigned": "No services assigned to this asset.",
-        "feeConfigHeader": "Fee Config",
-        "feeConfigTooltip": "Issuer fee charged on credit-settled flows distributed by this service.",
-        "feeModeBps": "Bps",
-        "feeModeFixed": "Fixed",
         "pinBtn": "Pin",
         "pinnedToIssuer": "Pinned to issuer",
         "priceQuotingHeader": "Price Quoting",
@@ -1011,11 +1012,14 @@
         "revokeQuotingMessage": "Pin \"{{name}}\" to your asset price? Any per-trade price this service supplies will be ignored — trades will clear at your current bid/ask.",
         "revokeQuotingTitle": "Revoke Price Quoting",
         "revokeQuotingTooltip": "Click to revoke price-quoting permission",
-        "savingFeeConfig": "Saving fee config...",
-        "sellLabel": "Sell:",
-        "setFeesTooltip": "Allow price quoting first to set a fee config",
         "updatingCanQuote": "Updating price-quoting permission...",
-        "updatingServiceState": "Updating service state..."
+        "updatingServiceState": "Updating service state...",
+        "consentHeader": "Distribution Consent",
+        "consentTooltip": "Regulator activation to Active requires the distributor service’s own on-chain acceptance (own-entity services auto-consent).",
+        "accepted": "Accepted",
+        "acceptedTooltip": "The distributor service has consented to distributing this asset.",
+        "awaitingConsent": "Awaiting consent",
+        "awaitingConsentTooltip": "The distributor has not yet accepted this distribution agreement."
       },
       "actions": {
         "title": "Asset Actions",
@@ -2810,7 +2814,8 @@
         "state": "State",
         "currency": "Currency",
         "listed": "Listed",
-        "tiers": "Tiers"
+        "tiers": "Tiers",
+        "listedBy": "Listed By"
       },
       "list": {
         "export": {
@@ -2818,7 +2823,8 @@
           "sheetName": "DEX Listings",
           "tier1": "Tier 1",
           "tier2": "Tier 2",
-          "tier3": "Tier 3"
+          "tier3": "Tier 3",
+          "listedBy": "Listed By"
         },
         "loading": "Loading listings...",
         "searchPlaceholder": "Asset, symbol, address...",
@@ -2831,6 +2837,10 @@
           "globalPending": "Tier 3 — Pending",
           "venueApproved": "Tier 1 — Approved",
           "venuePending": "Tier 1 — Pending"
+        },
+        "scope": {
+          "own": "Own",
+          "hosted": "On my venue"
         }
       },
       "tierLabels": {
@@ -2881,7 +2891,8 @@
           "venueStateCol": "Venue State",
           "approvalCol": "Regulator Approval",
           "awaitingApproval": "Awaiting Approval"
-        }
+        },
+        "hostedNotice": "This listing belongs to another issuer and is hosted on one of your venues. Listing changes (tiers, venues) can only be made by the issuer."
       },
       "createModal": {
         "title": "List Asset",
@@ -3252,7 +3263,9 @@
     "signerKeys": "Signer Keys",
     "subscriptions": "Subscriptions",
     "transactions": "Transactions",
-    "variables": "System Variables"
+    "variables": "System Variables",
+    "settlements": "Settlements",
+    "distribution": "Distribution"
   },
   "serviceProviders": {
     "actions": {
@@ -3313,7 +3326,12 @@
     "serviceEditMetadata": "Service - Edit Metadata",
     "subscriptionChangeState": "Subscription - Change State",
     "venueChangeState": "Venue - Change State",
-    "viewDocuments": "View Documents"
+    "viewDocuments": "View Documents",
+    "settlementCreate": "Settlements - Create Settlement",
+    "settlementConfirmSent": "Settlements - Confirm Sent",
+    "settlementConfirmReceived": "Settlements - Confirm Received",
+    "dexOfferingCreate": "DEX - Create Offering",
+    "dexOfferingCancel": "DEX - Cancel Offering"
   },
   "custody": {
     "myServices": {
@@ -3660,5 +3678,176 @@
       "loadingDashboard": "Generating zero-knowledge proof — loading dashboard…"
     },
     "logoutConfirm": "Are you sure you want to logout?"
+  },
+  "settlements": {
+    "tabs": {
+      "positions": "Positions",
+      "obligations": "Obligations",
+      "settlements": "Settlements"
+    },
+    "counterparty": "Counterparty",
+    "currency": "Currency",
+    "updated": "Updated",
+    "created": "Created",
+    "direction": "Direction",
+    "payable": "Payable",
+    "receivable": "Receivable",
+    "outgoing": "Outgoing",
+    "incoming": "Incoming",
+    "wireRef": "Wire Reference",
+    "createBtn": "Create Settlement",
+    "settleBtn": "Settle",
+    "confirmSentBtn": "Confirm Sent",
+    "confirmReceivedBtn": "Confirm Received",
+    "creating": "Creating settlement...",
+    "confirmingSent": "Confirming funds sent...",
+    "confirmingReceived": "Confirming funds received...",
+    "cancelling": "Cancelling settlement...",
+    "cancelTitle": "Cancel Settlement",
+    "cancelMessage": "Cancel settlement #{{id}}? This releases its in-flight cover; nothing has moved off-chain.",
+    "showingCount": "Showing {{showing}} of {{total}}",
+    "positions": {
+      "title": "Net Positions",
+      "description": "Running signed net per counterparty entity and currency - every cross-entity credit move lands here as a fiat obligation.",
+      "net": "Net Position",
+      "youOwe": "You owe",
+      "owedToYou": "Owed to you",
+      "empty": "No open positions."
+    },
+    "obligations": {
+      "title": "Obligations",
+      "description": "Per-transaction fiat obligations derived from cross-entity credit moves (plus declared and claimed IOUs).",
+      "kind": "Kind",
+      "kindDerived": "Derived",
+      "kindDeclared": "Declared",
+      "kindClaimed": "Claimed",
+      "creditTrx": "Credit Trx",
+      "ref": "Reference",
+      "empty": "No obligations recorded."
+    },
+    "list": {
+      "title": "Settlements",
+      "description": "Net settlements between entity pairs. The debtor confirms the wire was sent; the creditor confirms receipt - only then does the net decrease.",
+      "empty": "No settlements yet."
+    },
+    "states": {
+      "pending": "Pending",
+      "sentConfirmed": "Sent Confirmed",
+      "settled": "Settled",
+      "cancelled": "Cancelled"
+    },
+    "createModal": {
+      "title": "Create Settlement",
+      "subtitle": "Debtor-side: propose settling part of the net you owe a counterparty. The amount is locked as in-flight cover until confirmed or cancelled.",
+      "currencyCode": "Currency Code",
+      "amount": "Amount (currency units)",
+      "memo": "Memo",
+      "netOwed": "Net owed by you",
+      "inFlight": "Already in-flight",
+      "available": "Available to settle"
+    },
+    "sentModal": {
+      "title": "Confirm Funds Sent",
+      "wireRefPlaceholder": "Bank wire / transfer reference",
+      "receipt": "Wire receipt (optional)",
+      "receiptNote": "Pinned as an encrypted document shared with the counterparty and both regulators; only its CID goes on-chain."
+    },
+    "receivedModal": {
+      "title": "Confirm Funds Received",
+      "note": "Note (optional)",
+      "warning": "Confirming receipt permanently reduces the net position between the two entities on-chain. Only confirm after verifying the funds arrived."
+    }
+  },
+  "distribution": {
+    "tabs": {
+      "agreements": "Agreements",
+      "trades": "Primary Trades"
+    },
+    "acceptBtn": "Accept",
+    "feesBtn": "My Fees",
+    "accepting": "Accepting distribution agreement...",
+    "savingFees": "Saving fee configuration...",
+    "acceptTitle": "Accept Distribution",
+    "acceptMessage": "Accept distributing {{asset}} through {{service}}? Your service will front redemption payouts from its own liquidity and be reimbursed by the issuer through the obligations ledger.",
+    "states": {
+      "pending": "Pending",
+      "active": "Active",
+      "suspended": "Suspended",
+      "deactivated": "Deactivated"
+    },
+    "agreements": {
+      "title": "Distribution Agreements",
+      "description": "Assets registered on your services by their issuers. Accepting is required before the regulator can activate the agreement.",
+      "asset": "Asset",
+      "myService": "My Service",
+      "consent": "Consent",
+      "accepted": "Accepted",
+      "awaiting": "Awaiting acceptance",
+      "empty": "No distribution agreements."
+    },
+    "trades": {
+      "title": "Primary-Market Trades",
+      "description": "Subscribe / redeem trades on this tenant’s assets and services - including trades on your assets executed by foreign distributors.",
+      "creditTrx": "Credit Trx",
+      "direction": "Direction",
+      "subscribe": "Subscribe",
+      "redeem": "Redeem",
+      "subscription": "Subscription",
+      "distributor": "Distributor",
+      "tokens": "Tokens",
+      "price": "Price",
+      "gross": "Gross",
+      "fee": "Fee",
+      "onTop": "on top",
+      "deducted": "deducted",
+      "empty": "No primary-market trades yet."
+    }
+  },
+  "dexOfferings": {
+    "title": "DEX Offerings",
+    "description": "Primary issuance on a venue (IPO facility): standing tap offers at a fixed price, approved per-offering by the asset’s regulator.",
+    "createBtn": "Create Offering",
+    "key": "Key",
+    "asset": "Asset",
+    "venue": "Venue",
+    "price": "Price",
+    "progress": "Sold / Total",
+    "createdAt": "Created",
+    "suspended": "Suspended",
+    "viewFills": "Fills",
+    "hideFills": "Hide",
+    "empty": "No offerings yet.",
+    "creating": "Creating offering...",
+    "cancelling": "Cancelling offering...",
+    "createdTitle": "Offering Created",
+    "createdMessage": "The offering was created and is pending approval by the asset’s regulator.",
+    "cancelTitle": "Cancel Offering",
+    "cancelMessage": "Cancel this offering? Any escrowed reserve is released and no further fills are possible.",
+    "status": {
+      "pending": "Pending Approval",
+      "live": "Live",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "fills": {
+      "subscription": "Subscription",
+      "amount": "Tokens",
+      "gross": "Gross",
+      "venueFee": "Venue Fee",
+      "netToIssuer": "Net to Issuer",
+      "time": "Time",
+      "empty": "No fills yet."
+    },
+    "createModal": {
+      "title": "Create Offering",
+      "subtitle": "Standing tap: buyers fill at a fixed price directly against the issuer’s reserve. Venue fees are frozen into the offering at creation.",
+      "noVenues": "No regulator-approved venue pairings for this asset - add the asset to a venue and get the pairing approved first.",
+      "priceLabel": "Price per token (currency units)",
+      "amountLabel": "Amount (tokens)",
+      "minFill": "Min fill (0 = none)",
+      "maxPerSubscription": "Max per subscription (0 = unlimited)",
+      "note": "Requires regulator approval before going live. Fixed-supply assets escrow the offered amount from the reserve."
+    }
   }
 }

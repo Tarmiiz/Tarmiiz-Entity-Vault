@@ -84,8 +84,16 @@ export class ListPage implements OnInit {
     } finally { this.loadingService.hide(); }
   }
 
+  // "Own" for a listing we issued, the issuing entity's name for one merely hosted on
+  // one of our venues (tier 2/3 — the whole reason a venue operator opens this page).
+  listedByLabel(l: DexAssetListing): string {
+    if (l.isOwnListing === false) return l.listedByName || l.listedBy || '—';
+    return this.translate.instant('dex.listings.list.scope.own');
+  }
+
   exportExcel() {
     const assetLabel = this.translate.instant('dex.listings.table.asset');
+    const listedByLabel = this.translate.instant('dex.listings.list.export.listedBy');
     const tier1Label = this.translate.instant('dex.listings.list.export.tier1');
     const tier2Label = this.translate.instant('dex.listings.list.export.tier2');
     const tier3Label = this.translate.instant('dex.listings.list.export.tier3');
@@ -95,6 +103,7 @@ export class ListPage implements OnInit {
 
     const rows = this.filteredListings().map(l => ({
       [assetLabel]:  l.assetName + (l.assetSymbol ? ' (' + l.assetSymbol + ')' : ''),
+      [listedByLabel]: this.listedByLabel(l),
       [tier1Label]: l.venueApproved ? approvedLabel : (l.venuePending ? pendingLabel : '—'),
       [tier2Label]: l.countryApproved ? approvedLabel : (l.countryPending ? pendingLabel : '—'),
       [tier3Label]: l.globalApproved ? approvedLabel : (l.globalPending ? pendingLabel : '—'),
@@ -111,6 +120,7 @@ export class ListPage implements OnInit {
     const listings = this.filteredListings();
     const idLabel = this.translate.instant('dex.listings.table.id');
     const assetLabel = this.translate.instant('dex.listings.table.asset');
+    const listedByLabel = this.translate.instant('dex.listings.list.export.listedBy');
     const tier1Label = this.translate.instant('dex.listings.list.export.tier1');
     const tier2Label = this.translate.instant('dex.listings.list.export.tier2');
     const tier3Label = this.translate.instant('dex.listings.list.export.tier3');
@@ -126,10 +136,11 @@ export class ListPage implements OnInit {
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [[ idLabel, assetLabel, tier1Label, tier2Label, tier3Label, listedLabel ]],
+      head: [[ idLabel, assetLabel, listedByLabel, tier1Label, tier2Label, tier3Label, listedLabel ]],
       body: listings.map((l, i) => [
         i + 1,
         l.assetName + (l.assetSymbol ? ' (' + l.assetSymbol + ')' : ''),
+        this.listedByLabel(l),
         l.venueApproved ? approvedLabel : (l.venuePending ? pendingLabel : '—'),
         l.countryApproved ? approvedLabel : (l.countryPending ? pendingLabel : '—'),
         l.globalApproved ? approvedLabel : (l.globalPending ? pendingLabel : '—'),

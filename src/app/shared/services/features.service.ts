@@ -20,6 +20,11 @@ export class FeaturesService {
   private envDex = signal(false);
   loaded = signal(false);
 
+  // Tenant entity mode, SERVER-owned (Entity API app_config VAULT_MODE, edited from the
+  // admin System Configuration page). Null until the first features fetch lands, which is
+  // the only window where the config.json fallback below still matters.
+  private mode = signal<string | null>(null);
+
   // Per-tenant admin menu toggles { key: enabled }. Absent key ⇒ treated as enabled,
   // so core/unknown items never disappear.
   menu = signal<Record<string, boolean>>({});
@@ -39,8 +44,9 @@ export class FeaturesService {
   /** Effective DEX visibility = env kill switch AND admin menu toggle. */
   dex = (): boolean => this.envDex() && this.menuEnabled('dex');
 
-  /** True when this deployment is a service-provider tenant (issuer is the default). */
-  isServiceProvider = (): boolean => this.config.get('vaultMode') === 'service-provider';
+  /** True when this tenant runs in service-provider mode (issuer is the default). */
+  isServiceProvider = (): boolean =>
+    (this.mode() ?? this.config.get('vaultMode') ?? 'issuer') === 'service-provider';
 
   /** Whether a toggleable key is permitted by the deployment's entity-type mode. */
   modeAllows(key: string): boolean {
@@ -72,6 +78,9 @@ export class FeaturesService {
           ? await this.apiService.vaultMyFeatures()
           : await this.apiService.vaultFeatures();
         this.envDex.set(!!features?.dex);
+        // Keep the last known mode on a failed/empty fetch rather than snapping back to
+        // the config.json default — that would briefly re-show issuer modules on a blip.
+        if (features?.vaultMode) this.mode.set(features.vaultMode);
         this.menu.set(features?.menu ?? {});
         // System functions only come back on the authenticated (per-user) call.
         this.systemFunctions.set((features as any)?.systemFunctions ?? {});

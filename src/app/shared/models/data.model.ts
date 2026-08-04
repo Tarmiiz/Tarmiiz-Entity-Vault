@@ -388,18 +388,144 @@ export class AssetService {
     public state: number = 0,
     public stateName: string = '',
     public canQuote: boolean = false,
-    public feeConfig: FeeConfig | null = null
+    // Distributor consent (accept-then-activate, D4): regulator activation to state 2
+    // requires the distributor service's own acceptDistribution() on-chain.
+    public distributionAccepted: boolean = false
   ) {}
 }
 
-// Fee mode: 0 = None, 1 = Bps (bps-based, value out of 10000, cap 2000), 2 = Fixed (wei amount)
+// Uniform D7b fee engine (2026-08-03): per-direction pair, each side
+// { mode: 0 None / 1 Bps (1-2000) / 2 Fixed (wei), value, bearing: 0 OnTop / 1 Deducted }.
+// The destination is forced on-chain to the configuring service's own account.
 export interface FeeConfig {
   buyFeeMode: number;
   buyFeeValue: string;
   buyFeeDestination: string;
+  buyFeeBearing: number;
   sellFeeMode: number;
   sellFeeValue: string;
   sellFeeDestination: string;
+  sellFeeBearing: number;
+}
+
+// ─── Settlements (fiat obligations / net positions, issuer/DEX model) ───────────
+
+// Net position with one counterparty in one currency, from THIS entity's perspective:
+// netOwedBySelf > 0 ⇒ we owe the counterparty; < 0 ⇒ they owe us.
+export interface CreditPosition {
+  counterparty: string;
+  counterpartyName?: string;
+  currencyCode: number;
+  currencyName?: string;
+  netOwedBySelf: number;
+  blockNumber: number;
+  updatedAt: number;
+}
+
+// One per-transaction obligation row (kind: 1 Derived / 2 Declared / 3 Claimed).
+export interface CreditObligation {
+  debtorEntity: string;
+  creditorEntity: string;
+  obligationId: number;
+  currencyCode: number;
+  amount: number;
+  creditTrxId: number;
+  kind: number;
+  origin: number;
+  state: number;
+  ref: string;
+  blockNumber: number;
+  createdAt: number;
+}
+
+// Settlement lifecycle: 1 Pending → 2 SentConfirmed → 3 Settled; 4 Cancelled.
+export interface CreditSettlement {
+  debtorEntity: string;
+  creditorEntity: string;
+  settlementId: number;
+  currencyCode: number;
+  amount: number;
+  state: number;
+  createdBy: string;
+  sentConfirmedBy: string | null;
+  receivedConfirmedBy: string | null;
+  wireRef: string | null;
+  receiptCid: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Inbound distribution agreement: an (asset, my service) registration with its
+// activation state + this side's consent flag.
+export interface DistributionAgreement {
+  asset: string;
+  assetName: string | null;
+  assetSymbol: string | null;
+  issuer: string | null;
+  issuerService: string | null;
+  service: string;
+  serviceName: string | null;
+  state: number;
+  distributionAccepted: boolean;
+}
+
+// Primary-market trade (announced PrimarySubscribed / PrimaryRedeemed mesh rows).
+export interface PrimaryTrade {
+  creditTrxId: number;
+  direction: number;           // 1 = subscribe (buy), 2 = redeem (sell)
+  asset: string;
+  subscription: string;
+  distributorService: string;
+  issuerService: string;
+  certificates: number;
+  price: number;
+  gross: number;
+  fee: number;
+  feeBearing: number;          // 0 = OnTop, 1 = Deducted
+  obligationId: number;
+  assetTrxId: number;
+  txHash: string;
+  blockNumber: number;
+  createdAt: number;
+}
+
+// DEX offering (primary issuance on a venue — IPO facility). kind 2 = Tap;
+// status: 1 Pending, 2 Approved (live), 6 Completed, 7 Cancelled, 8 Rejected.
+export interface DexOffering {
+  offeringKey: string;
+  seq: number;
+  baseAsset: string;
+  dexService: string;
+  issuerService: string;
+  kind: number;
+  status: number;
+  suspended: boolean;
+  suspendedReason: string | null;
+  price: number;
+  amount: number;
+  sold: number;
+  currencyCode: number;
+  buyFeeBps: number;
+  buyFeeBearing: number;
+  sellFeeBps: number;
+  sellFeeBearing: number;
+  minFill: number;
+  maxPerSubscription: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface DexOfferingFill {
+  fillId: number;
+  subscription: string;
+  amount: number;
+  price: number;
+  gross: number;
+  venueFee: number;
+  netToIssuer: number;
+  withholdTrxId: number;
+  assetTrxId: number;
+  createdAt: number;
 }
 
 // External API integration row (admin settings; pure-config records — the former eKYC
@@ -424,11 +550,18 @@ export interface ExternalIntegration {
 // Runtime app configuration (DB-backed override of the .env/registry seed). Server returns
 // camelCase already — no snake_case mapping needed. Non-secret keys carry `value`; secret
 // keys carry `set` (whether a value is stored) and never return the value.
+export interface AppConfigOption {
+  value: string;
+  label: string;
+}
+
 export interface AppConfigItem {
   key: string;
   category: string;
-  type: 'string' | 'number' | 'bool' | 'secret';
+  type: 'string' | 'number' | 'bool' | 'secret' | 'enum';
   label: string;
+  // Closed value set — present only on type 'enum' (rendered as a dropdown).
+  options?: AppConfigOption[];
   restartRequired: boolean;
   value?: string | null;
   set?: boolean;
@@ -835,7 +968,13 @@ export class DexAssetListing {
     public globalApproved: boolean,
     public listedAt: number,
     public updatedAt: number,
+    // ISSUER-SIDE ONLY — the API leaves this unmaintained when isOwnListing is false
+    // (every input is tenant-local, so it cannot be computed for a foreign issuer).
     public upstream: { issuerEntityState: number; assetTradable: boolean; syncedAt: number } = { issuerEntityState: 0, assetTradable: false, syncedAt: 0 },
+    // Which side of the listing we are on: true = we issued it, false = a foreign
+    // issuer's asset enabled on a venue WE operate (tier 2/3). The issuer-only
+    // actions revert on-chain for a hosted listing, so they are hidden for it.
+    public isOwnListing: boolean = true,
   ) {}
 }
 

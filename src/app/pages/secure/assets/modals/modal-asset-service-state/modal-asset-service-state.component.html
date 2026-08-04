@@ -1,6 +1,6 @@
 ﻿@if (stateService.isVisible()) {
-  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out" (click)="onCancel()">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100" (click)="$event.stopPropagation()">
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'assets.serviceStateModal.title' | translate }}</h3>
         @if (stateService.context(); as ctx) {

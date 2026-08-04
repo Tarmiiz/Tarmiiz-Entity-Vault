@@ -1,0 +1,158 @@
+<app-header [title]="'sidebar.distribution' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Tab bar -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-4 px-4 pt-2 flex gap-1">
+    @for (tab of ['agreements', 'trades']; track tab) {
+      <button (click)="activeTab.set($any(tab))"
+        class="text-sm px-4 py-2 border-b-2 transition-colors"
+        [class]="activeTab() === tab
+          ? 'border-indigo-600 text-indigo-700 font-semibold'
+          : 'border-transparent text-gray-500 hover:text-gray-700'">
+        {{ ('distribution.tabs.' + tab) | translate }}
+      </button>
+    }
+  </div>
+
+  <!-- Agreements tab -->
+  @if (activeTab() === 'agreements') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'distribution.agreements.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'distribution.agreements.description' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'distribution.agreements.asset' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.symbol' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.agreements.myService' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.agreements.consent' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of agreements(); track (a.asset + '|' + a.service); let i = $index) {
+              <tr [class.bg-gray-50]="i % 2 === 1">
+                <td class="px-4 py-2">
+                  <span class="text-indigo-800 hover:text-indigo-600 cursor-pointer font-medium" (click)="gotoAsset(a.asset)">
+                    {{ a.assetName || a.asset }}
+                  </span>
+                </td>
+                <td class="px-4 py-2">
+                  @if (a.assetSymbol) {
+                    <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 text-indigo-700">{{ a.assetSymbol }}</span>
+                  }
+                </td>
+                <td class="px-4 py-2 font-medium text-gray-900">{{ a.serviceName || a.service }}</td>
+                <td class="px-4 py-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="agreementStateClass(a.state)">{{ agreementStateName(a.state) }}</span>
+                </td>
+                <td class="px-4 py-2">
+                  @if (a.distributionAccepted) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'distribution.agreements.accepted' | translate }}</span>
+                  } @else {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">{{ 'distribution.agreements.awaiting' | translate }}</span>
+                  }
+                </td>
+                <td class="px-4 py-2">
+                  <div class="flex gap-2">
+                    @if (!a.distributionAccepted && canAct()) {
+                      <button (click)="acceptAgreement(a)"
+                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                        {{ 'distribution.acceptBtn' | translate }}
+                      </button>
+                    }
+                    @if (canAct()) {
+                      <button (click)="openFeeConfig(a)"
+                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                        {{ 'distribution.feesBtn' | translate }}
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">
+                  @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'distribution.agreements.empty' | translate }} }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Primary trades tab -->
+  @if (activeTab() === 'trades') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'distribution.trades.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'distribution.trades.description' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'distribution.trades.creditTrx' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.trades.direction' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.agreements.asset' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.trades.subscription' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.trades.distributor' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.trades.tokens' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.trades.price' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.trades.gross' | translate }}</th>
+              <th class="px-4 py-2">{{ 'distribution.trades.fee' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.created' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of trades(); track t.creditTrxId; let i = $index) {
+              <tr [class.bg-gray-50]="i % 2 === 1">
+                <td class="px-4 py-2 text-xs">{{ t.creditTrxId }}</td>
+                <td class="px-4 py-2">
+                  @if (t.direction === 1) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'distribution.trades.subscribe' | translate }}</span>
+                  } @else {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">{{ 'distribution.trades.redeem' | translate }}</span>
+                  }
+                </td>
+                <td class="px-4 py-2 font-mono text-xs">{{ t.asset }}</td>
+                <td class="px-4 py-2 font-mono text-xs">{{ t.subscription }}</td>
+                <td class="px-4 py-2 font-mono text-xs">{{ t.distributorService }}</td>
+                <td class="px-4 py-2">{{ t.certificates | number }}</td>
+                <td class="px-4 py-2">{{ t.price | number: '1.0-6' }}</td>
+                <td class="px-4 py-2">{{ t.gross | number: '1.0-6' }}</td>
+                <td class="px-4 py-2 text-xs">
+                  {{ t.fee | number: '1.0-6' }}
+                  @if (t.fee > 0) {
+                    <span class="text-gray-400">({{ (t.feeBearing === 0 ? 'distribution.trades.onTop' : 'distribution.trades.deducted') | translate }})</span>
+                  }
+                </td>
+                <td class="px-4 py-2 text-xs">{{ utils.formatTime(t.createdAt) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="px-4 py-6 text-center text-gray-500 text-sm">
+                  @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'distribution.trades.empty' | translate }} }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (tradesTotal() > trades().length) {
+        <div class="px-4 py-2 text-xs text-gray-500 border-t border-gray-200">
+          {{ 'settlements.showingCount' | translate: { showing: trades().length, total: tradesTotal() } }}
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<app-modal-service-fee-config></app-modal-service-fee-config>

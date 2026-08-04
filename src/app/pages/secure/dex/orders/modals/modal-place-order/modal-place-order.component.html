@@ -1,6 +1,6 @@
 ﻿@if (modalService.isVisible()) {
-  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" (click)="onCancel()">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4" (click)="$event.stopPropagation()">
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4">
 
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'dex.orders.placeModal.title' | translate }}</h3>

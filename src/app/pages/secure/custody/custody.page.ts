@@ -229,7 +229,7 @@ export class CustodyPage implements OnInit {
         reason: this.holdReason.trim(),
       });
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMsg'), this.translate.instant('alerts.ok'));
+        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       } else if (res?.error) {
         this.alertService.show(this.translate.instant('alerts.error'), typeof res.error === 'string' ? res.error : this.translate.instant('custody.holds.placeFailed'));
       } else {
@@ -266,7 +266,7 @@ export class CustodyPage implements OnInit {
         reason: this.releaseReason.trim(),
       });
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMsg'), this.translate.instant('alerts.ok'));
+        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       } else if (res?.error) {
         this.alertService.show(this.translate.instant('alerts.error'), typeof res.error === 'string' ? res.error : this.translate.instant('custody.holds.releaseFailed'));
       } else {

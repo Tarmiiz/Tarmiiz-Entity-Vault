@@ -51,6 +51,11 @@
                 </div>
                 <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">{{ 'dex.listings.details.approvalsRegulatorSide' | translate }}</span>
               </div>
+              @if (!isOwnListing()) {
+                <div class="mb-3 px-3 py-2 rounded bg-blue-50 border border-blue-200 text-xs text-blue-800">
+                  {{ 'dex.listings.details.hostedNotice' | translate }}
+                </div>
+              }
               @if (upstreamBlockReason()) {
                 <div class="mb-3 px-3 py-2 rounded bg-red-50 border border-red-200 text-xs text-red-800">
                   {{ upstreamBlockReason() }}
@@ -93,7 +98,7 @@
                       <p class="text-sm font-semibold text-gray-700">{{ tierLabel($any(tier)) }}</p>
                       <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                             [class]="tierStatus($any(tier)).cls">{{ tierStatus($any(tier)).label }}</span>
-                      @if (tierStatus($any(tier)).code === 'none' && userInfo && userInfo.role !== 3) {
+                      @if (tierStatus($any(tier)).code === 'none' && canManage()) {
                         <div class="mt-3">
                           <button (click)="requestTier($any(tier))"
                             class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
@@ -124,7 +129,7 @@
           <div class="p-2">
 
             <!-- Add-venue picker: a venue is added at an initial tier; you can change it afterwards. -->
-            @if (userInfo && userInfo.role !== 3) {
+            @if (canManage()) {
               <div class="flex flex-wrap items-center gap-2 mb-4">
                 <span class="text-xs text-gray-500 mr-2">{{ 'dex.listings.details.venues.initialTierLabel' | translate }}</span>
                 @for (t of [1, 2, 3]; track t) {
@@ -189,7 +194,7 @@
                             </span>
                           </td>
                           <td class="px-6 py-2 text-right whitespace-nowrap">
-                            @if (userInfo && userInfo.role !== 3) {
+                            @if (canManage()) {
                               <button (click)="openTierChange(v)"
                                 class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">
                                 {{ 'dex.listings.details.changeTier' | translate }}
