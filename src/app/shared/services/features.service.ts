@@ -1,29 +1,30 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 
-// Toggleable menu keys a service-provider deployment may show. Everything else
-// (assets, subscriptions, transactions, credit, analytics, dex, custody, variables)
-// is hidden in service-provider mode regardless of the admin menu toggle.
-const SERVICE_PROVIDER_MENU = new Set([
-  'services', 'documents', 'messages', 'signer-keys', 'approvals', 'logs',
-]);
+// The entity mode id of a Token Issuer — the one mode with no menu restriction, and the
+// safe default before the first features fetch lands. Mirrors the 'Entity Mode' Global
+// Variables category (see the Entity API's MODE_MENU).
+const MODE_TOKEN_ISSUER = 1;
 
 @Injectable({ providedIn: 'root' })
 export class FeaturesService {
   private apiService = inject(ApiService);
-  private config = inject(ConfigService);
   private session = inject(SessionService);
 
   // env-level DEX kill switch, kept separate from the admin menu toggle.
   private envDex = signal(false);
   loaded = signal(false);
 
-  // Tenant entity mode, SERVER-owned (Entity API app_config VAULT_MODE, edited from the
-  // admin System Configuration page). Null until the first features fetch lands, which is
-  // the only window where the config.json fallback below still matters.
-  private mode = signal<string | null>(null);
+  // Tenant entity mode, SERVER-owned (Entity API app_config VAULT_MODE = an 'Entity Mode'
+  // Global Variables variable_id, edited from the admin System Configuration page). Null
+  // until the first features fetch lands; treated as Token Issuer until then.
+  private mode = signal<number | null>(null);
+
+  // The menu keys this tenant's mode permits, as served by the API. `null` = unrestricted
+  // (Token Issuer). Held as served rather than derived locally, so adding a provider type
+  // is an Entity API + Global Variables change with no Vault rebuild.
+  private modeMenu = signal<string[] | null>(null);
 
   // Per-tenant admin menu toggles { key: enabled }. Absent key ⇒ treated as enabled,
   // so core/unknown items never disappear.
@@ -44,13 +45,18 @@ export class FeaturesService {
   /** Effective DEX visibility = env kill switch AND admin menu toggle. */
   dex = (): boolean => this.envDex() && this.menuEnabled('dex');
 
-  /** True when this tenant runs in service-provider mode (issuer is the default). */
-  isServiceProvider = (): boolean =>
-    (this.mode() ?? this.config.get('vaultMode') ?? 'issuer') === 'service-provider';
+  /**
+   * True when this tenant runs any service-provider mode (Token Issuer is the default).
+   * Its non-menu call sites (the dashboard swap, the services list/detail columns) all ask
+   * "is this an issuer service?" — Verification Level / Coverage / Shortfall are
+   * issuer-service concepts and stay hidden for every provider type.
+   */
+  isServiceProvider = (): boolean => (this.mode() ?? MODE_TOKEN_ISSUER) !== MODE_TOKEN_ISSUER;
 
   /** Whether a toggleable key is permitted by the deployment's entity-type mode. */
   modeAllows(key: string): boolean {
-    return !this.isServiceProvider() || SERVICE_PROVIDER_MENU.has(key);
+    const allowed = this.modeMenu();
+    return allowed === null || allowed.includes(key);
   }
 
   /** Whether a toggleable menu group is enabled. Unknown keys default to enabled. */
@@ -78,9 +84,14 @@ export class FeaturesService {
           ? await this.apiService.vaultMyFeatures()
           : await this.apiService.vaultFeatures();
         this.envDex.set(!!features?.dex);
-        // Keep the last known mode on a failed/empty fetch rather than snapping back to
-        // the config.json default — that would briefly re-show issuer modules on a blip.
-        if (features?.vaultMode) this.mode.set(features.vaultMode);
+        // Keep the last known mode + allow-list on a failed/empty fetch rather than
+        // snapping back to the unrestricted default — that would briefly re-show the
+        // issuer modules on a blip. modeMenu is only assigned when a mode came back with
+        // it, so the two can never drift apart.
+        if (features?.vaultMode != null) {
+          this.mode.set(features.vaultMode);
+          this.modeMenu.set(features.modeMenu ?? null);
+        }
         this.menu.set(features?.menu ?? {});
         // System functions only come back on the authenticated (per-user) call.
         this.systemFunctions.set((features as any)?.systemFunctions ?? {});

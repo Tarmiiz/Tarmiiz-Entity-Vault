@@ -14,7 +14,7 @@ import { AlertService } from '../../../../../shared/components/alerts/alert/aler
 import { SocketService } from '../../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
 import { FeaturesService } from '../../../../../shared/services/features.service';
-import { DexVenue, DexOrder, DexTrade } from '../../../../../shared/models/data.model';
+import { DexVenue, DexOrder, DexTrade, DexVenueMember } from '../../../../../shared/models/data.model';
 
 import { ModalVenueStateService } from '../modals/modal-venue-state/modal-venue-state.service';
 import { ModalVenueStateComponent } from '../modals/modal-venue-state/modal-venue-state.component';
@@ -43,11 +43,16 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   serviceAddress = signal<string>('');
   venue = signal<DexVenue | undefined>(undefined);
-  activeTab = signal<'info' | 'assets' | 'orders' | 'trades'>('info');
+  activeTab = signal<'info' | 'assets' | 'orders' | 'trades' | 'members'>('info');
   venueOrders = signal<DexOrder[]>([]);
   venueTrades = signal<DexTrade[]>([]);
   venueAssets = signal<any[]>([]);
+  venueMembers = signal<DexVenueMember[]>([]);
   refreshing = signal(false);
+
+  // Add Member inline modal
+  addMemberModalOpen = signal(false);
+  addMemberAddress = '';
 
   private sub?: Subscription;
 
@@ -60,13 +65,14 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   async ionViewWillEnter() {
     await this.loadVenue();
-    await Promise.all([this.loadOrders(), this.loadTrades(), this.loadAssets()]);
+    await Promise.all([this.loadOrders(), this.loadTrades(), this.loadAssets(), this.loadMembers()]);
     this.sub = this.socket.vaultUpdated$.subscribe(async p => {
       const isRelevant = p.type === 'dex-venue' || p.type === 'dex-order' || p.type === 'dex-trade' || p.type === 'dex-asset-venue';
       if (!isRelevant) return;
       this.refreshing.set(true);
       try {
-        if (p.type === 'dex-venue') await this.loadVenue(true);
+        // Member add/accept/remove notify on the dex-venue scope too.
+        if (p.type === 'dex-venue') { await this.loadVenue(true); await this.loadMembers(); }
         if (p.type === 'dex-order') await this.loadOrders();
         if (p.type === 'dex-trade') await this.loadTrades();
         if (p.type === 'dex-asset-venue') await this.loadAssets();
@@ -100,7 +106,12 @@ export class DetailsPage implements OnInit, OnDestroy {
     this.venueAssets.set(r?.assets || []);
   }
 
-  setTab(tab: 'info' | 'assets' | 'orders' | 'trades') { this.activeTab.set(tab); }
+  async loadMembers() {
+    const r = await this.apiService.vaultDexVenueMembers(this.serviceAddress());
+    this.venueMembers.set(r?.members || []);
+  }
+
+  setTab(tab: 'info' | 'assets' | 'orders' | 'trades' | 'members') { this.activeTab.set(tab); }
 
   tierLabelShort(tier: number): string {
     if (tier !== 1 && tier !== 2 && tier !== 3) return '—';
@@ -183,6 +194,66 @@ export class DetailsPage implements OnInit, OnDestroy {
       const r = await this.apiService.vaultDexVenueRequestTier(v.serviceAddress, tier);
       if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.loadVenue();
+    } finally { this.loadingService.hide(); }
+  }
+
+  settlementModeName(mode: number | undefined): string {
+    return Number(mode) === 2
+      ? this.translate.instant('dex.venues.settlementMode.memberSettled')
+      : this.translate.instant('dex.venues.settlementMode.venueSettled');
+  }
+
+  // ── Members (venue-operator side) ─────────────────────────────────────────
+  openAddMemberModal() {
+    this.addMemberAddress = '';
+    this.addMemberModalOpen.set(true);
+  }
+
+  async submitAddMember() {
+    const member = (this.addMemberAddress || '').trim();
+    if (!ethers.isAddress(member)) {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('dex.members.addModal.invalidAddress'));
+      return;
+    }
+    this.addMemberModalOpen.set(false);
+    this.loadingService.show(this.translate.instant('dex.members.adding'));
+    try {
+      const r = await this.apiService.vaultDexVenueMemberAdd(this.serviceAddress(), member);
+      if (r?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      } else if (r?.requestId) {
+        this.alertService.show(
+          this.translate.instant('approvals.submittedTitle'),
+          this.translate.instant('approvals.submittedMessage'),
+          this.translate.instant('alerts.ok'),
+        );
+      } else {
+        await this.loadMembers();
+      }
+    } finally { this.loadingService.hide(); }
+  }
+
+  async removeMember(m: DexVenueMember) {
+    const ok = await this.alertService.show(
+      this.translate.instant('dex.members.removeModal.title'),
+      this.translate.instant('dex.members.removeModal.message', { name: m.memberName || m.memberService }),
+      this.translate.instant('dex.members.removeModal.confirm'),
+    );
+    if (!ok) return;
+    this.loadingService.show(this.translate.instant('dex.members.removing'));
+    try {
+      const r = await this.apiService.vaultDexVenueMemberRemove(this.serviceAddress(), m.memberService);
+      if (r?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      } else if (r?.requestId) {
+        this.alertService.show(
+          this.translate.instant('approvals.submittedTitle'),
+          this.translate.instant('approvals.submittedMessage'),
+          this.translate.instant('alerts.ok'),
+        );
+      } else {
+        await this.loadMembers();
+      }
     } finally { this.loadingService.hide(); }
   }
 

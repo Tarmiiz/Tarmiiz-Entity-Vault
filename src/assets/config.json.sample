@@ -2,6 +2,5 @@
   "apiURL": "http://localhost:8026/api/v1",
   "socketURL": "http://localhost:8026",
   "brandPrimary": "#202a3b",
-  "brandPrimaryHover": "#2c3648",
-  "vaultMode": "issuer"
+  "brandPrimaryHover": "#2c3648"
 }

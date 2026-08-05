@@ -5,11 +5,11 @@ export interface AppConfig {
   socketURL: string;
   brandPrimary?: string;
   brandPrimaryHover?: string;
-  // Entity-type view mode. NOT authoritative — the live value is the Entity API's
-  // app_config VAULT_MODE (admin-editable from System Configuration) and arrives on
-  // /vault/features. This is only FeaturesService's fallback for the window before that
-  // first fetch resolves. Absent ⇒ treated as 'issuer' (full access).
-  vaultMode?: 'issuer' | 'service-provider';
+  // NOTE: there is deliberately no `vaultMode` here. The entity mode is the Entity API's
+  // app_config VAULT_MODE — an 'Entity Mode' Global Variables variable_id — and arrives on
+  // /vault/features together with its menu allow-list. A static mirror here would be a
+  // second, divergent identifier space; FeaturesService instead defaults to Token Issuer
+  // for the window before the first fetch resolves and keeps the last known value after.
 }
 
 const BRAND_DEFAULTS = {

@@ -3,16 +3,16 @@ import { Injectable, signal } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class ModalVenueCreateService {
   isVisible = signal(false);
-  private resolveFn?: (value: { serviceAddress: string } | null) => void;
+  private resolveFn?: (value: { serviceAddress: string; settlementMode: number } | null) => void;
 
-  show(): Promise<{ serviceAddress: string } | null> {
+  show(): Promise<{ serviceAddress: string; settlementMode: number } | null> {
     this.isVisible.set(true);
     return new Promise((resolve) => { this.resolveFn = resolve; });
   }
 
-  confirm(serviceAddress: string): void {
+  confirm(serviceAddress: string, settlementMode: number): void {
     this.isVisible.set(false);
-    if (this.resolveFn) this.resolveFn({ serviceAddress });
+    if (this.resolveFn) this.resolveFn({ serviceAddress, settlementMode });
   }
 
   cancel(): void {

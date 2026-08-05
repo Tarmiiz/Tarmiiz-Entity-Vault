@@ -21,6 +21,8 @@ export class ModalVenueCreateComponent {
 
   form = this.fb.group({
     serviceAddress: ['', Validators.required],
+    // 1 = Venue-settled (default), 2 = Member-settled. Immutable after creation.
+    settlementMode: [1, Validators.required],
   });
 
   constructor() {
@@ -36,13 +38,16 @@ export class ModalVenueCreateComponent {
 
   onSave(): void {
     if (this.form.valid) {
-      this.modalService.confirm(this.form.get('serviceAddress')?.value || '');
-      this.form.reset({ serviceAddress: '' });
+      this.modalService.confirm(
+        this.form.get('serviceAddress')?.value || '',
+        Number(this.form.get('settlementMode')?.value) || 1,
+      );
+      this.form.reset({ serviceAddress: '', settlementMode: 1 });
     }
   }
 
   onCancel(): void {
     this.modalService.cancel();
-    this.form.reset({ serviceAddress: '' });
+    this.form.reset({ serviceAddress: '', settlementMode: 1 });
   }
 }

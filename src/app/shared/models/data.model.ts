@@ -917,7 +917,27 @@ export class DexVenue {
     public tier2Approved: boolean = false,
     public tier3Pending: boolean = false,
     public tier3Approved: boolean = false,
+    // 1 = Venue-settled (venue holds client funds), 2 = Member-settled
+    // (traditional exchange — all trading through member brokerages).
+    // Immutable after creation.
+    public settlementMode: number = 1,
   ) {}
+}
+
+// One (venue, member) row of the venue-membership junction — the brokerage
+// surface. Lifecycle: venue invites (state 1 Pending) → member ACCEPTS
+// (accepted = true) → the VENUE's regulator approves (state 2 Approved).
+export interface DexVenueMember {
+  dexService: string;
+  memberService: string;
+  state: number;              // 1 = Pending, 2 = Approved (regulator-side)
+  accepted: boolean;          // member consent
+  addedAt: number;            // MILLISECONDS
+  updatedAt: number;          // MILLISECONDS
+  venueName: string;
+  venueEntityName: string;
+  memberName: string;
+  memberEntityName: string;
 }
 
 export class DexAssetListingVenue {

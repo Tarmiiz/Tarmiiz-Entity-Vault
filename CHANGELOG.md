@@ -14,6 +14,21 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-08-05
+
+#### Added
+- **DEX venue membership (the brokerage surface).** The venue detail page gained a settlement-mode pill + a **Members tab** (consent/approval pills, ms-aware Added column, Add Member inline modal + Remove — gated `role !== 3` + the new `dex-member-add` / `dex-member-remove` System Functions, maker/checker `requestId` toast). New **Memberships page** ([pages/secure/dex/memberships/](src/app/pages/secure/dex/memberships/), `/authorized/dex/memberships/list`, sidebar item in the DEX group) — the brokerage side: this tenant's services' memberships with Accept (`dex-member-accept`, the consent step) and Exit actions. The venue-create modal gained a Settlement Mode selector (Venue-settled default / Member-settled, immutable note). `vaultDexVenueCreate` sends `settlementMode`; six new `vaultDex*Member*` API methods; `DexVenue.settlementMode` + `DexVenueMember` model; labels in [system-function-labels.ts](src/app/shared/constants/system-function-labels.ts); full en+ar i18n.
+
+#### Changed
+- **The entity mode's allow-list now comes from the API instead of a hardcoded set.** `SERVICE_PROVIDER_MENU` in [features.service.ts](src/app/shared/services/features.service.ts) is deleted; `modeAllows(key)` reads the `modeMenu` array served on `/vault/features[/me]` (`null` = unrestricted). Its `(key: string) => boolean` **signature is unchanged**, so all three filter call sites — Menu Settings, User Details → Menu Access, the User Group editor — are untouched, as are the sidebar's 19 `menuEnabled()` gates and every `menuFeatureGuard` (all of which fold through it).
+  - This fixes a real gap: **Custody was unreachable for custodians.** `custody` is documented server-side as the module "only service-provider tenants use", but it was absent from `SERVICE_PROVIDER_MENU`, so `modeAllows('custody')` returned false in exactly the mode it exists for. `settlements`, `distribution`, `service-providers` and `asset-t3643` were likewise hidden by omission — they were added to the registry after that set was written.
+  - The mode is now a per-provider-type value (`Provider — Validator` / `— Payment Processor` / `— Custodian`, from the on-chain `Entity Mode` Global Variables category) rather than one `service-provider` bucket. Adding a future provider type needs no Vault change at all.
+- **`isServiceProvider()` is now "not the Token Issuer mode"** (mode id ≠ 1). Its four non-menu call sites — the dashboard component swap in [app.routes.ts](src/app/app.routes.ts) and the services list/detail columns — all ask "is this an issuer service?", and Verification Level / Coverage / Shortfall are issuer-service concepts, so they stay hidden for every provider type.
+- `vaultFeatures()` / `vaultMyFeatures()` in [api.service.ts](src/app/shared/services/api.service.ts) return the new exported `VaultFeatures` shape: `vaultMode` re-typed to `number`, plus `vaultModeName` and `modeMenu`.
+
+#### Removed
+- **`vaultMode` from `AppConfig` and both `assets/config.json` files** ([config.service.ts](src/app/shared/services/config.service.ts)). It was `FeaturesService`'s fallback for the window before the first features fetch; with the mode now a Global Variables id, a static string mirror would be a second, divergent identifier space that an admin's System Configuration edit could never update. The service defaults to Token Issuer for that window and keeps the last known value across refresh failures, so the fallback bought nothing. The Docker frontend image no longer writes the key either.
+
 ### 2026-08-03
 
 #### Added

@@ -199,7 +199,8 @@
     "systemConfiguration": "System Configuration",
     "settlements": "Settlements",
     "distribution": "Distribution",
-    "dexOfferings": "Offerings"
+    "dexOfferings": "Offerings",
+    "dexMemberships": "Memberships"
   },
   "login": {
     "title": "Sign In",
@@ -3166,6 +3167,12 @@
         "selectService": "Select a service...",
         "service": "Service",
         "serviceHint": "The service must have an attached payment processor to be registered as a venue.",
+        "settlementMode": "Settlement Mode",
+        "venueSettled": "Venue-settled",
+        "venueSettledHint": "The venue holds client funds (requires a payment processor).",
+        "memberSettled": "Member-settled",
+        "memberSettledHint": "An exchange; clients trade through member brokerages (no payment processor needed).",
+        "settlementModeImmutable": "The settlement mode cannot be changed after the venue is created.",
         "suspendedNotice": "The regulator may suspend a venue at any time; trading halts until the suspension is lifted.",
         "title": "Create Venue"
       },
@@ -3195,6 +3202,7 @@
         "tabs": {
           "assets": "Assets",
           "info": "Information",
+          "members": "Members",
           "orders": "Orders",
           "trades": "Trades"
         },
@@ -3243,6 +3251,69 @@
         "scopeGlobal": "Global",
         "scopeVenue": "Venue",
         "withScope": "Tier {{n}} — {{scope}}"
+      },
+      "settlementMode": {
+        "venueSettled": "Venue-settled",
+        "memberSettled": "Member-settled"
+      }
+    },
+    "members": {
+      "title": "Venue Members",
+      "description": "Foreign member services (brokerages) admitted to trade at this venue. A member must accept the invitation and the venue's regulator must approve it before its subscriptions can trade here.",
+      "addButton": "Add Member",
+      "adding": "Inviting member...",
+      "removing": "Removing member...",
+      "table": {
+        "member": "Member",
+        "memberEntity": "Member Entity",
+        "consent": "Consent",
+        "approval": "Approval",
+        "added": "Added",
+        "noMembers": "No members on this venue yet.",
+        "footer": "Showing {{shown}} Members"
+      },
+      "consent": {
+        "accepted": "Accepted",
+        "awaiting": "Awaiting consent"
+      },
+      "addModal": {
+        "title": "Add Member",
+        "subtitle": "Invite a foreign token-issuer service as a member brokerage of this venue.",
+        "memberService": "Member Service Address",
+        "hint": "The address of the type-1 service to invite as a member.",
+        "lifecycle": "The invited member must accept the invitation, and the venue's regulator must approve it, before the member's subscriptions can trade at this venue.",
+        "submit": "Invite",
+        "invalidAddress": "Enter a valid service address."
+      },
+      "removeModal": {
+        "title": "Remove member",
+        "message": "Remove \"{{name}}\" from this venue? Its subscriptions will no longer be able to trade here.",
+        "confirm": "Remove"
+      }
+    },
+    "memberships": {
+      "title": "My Venue Memberships",
+      "description": "Memberships your services hold at foreign trading venues. Accept an invitation to consent; the venue's regulator must then approve it before your subscriptions can trade there.",
+      "empty": "Your services hold no venue memberships yet.",
+      "footer": "Showing {{shown}} Memberships",
+      "acceptButton": "Accept",
+      "exitButton": "Exit",
+      "accepting": "Accepting membership...",
+      "exiting": "Exiting membership...",
+      "table": {
+        "venue": "Venue",
+        "venueEntity": "Venue Entity",
+        "myService": "My Service"
+      },
+      "acceptModal": {
+        "title": "Accept membership",
+        "message": "Accept the membership at \"{{venue}}\"? This records your service's consent to trade at the venue; the venue's regulator must still approve the membership before trading is enabled.",
+        "confirm": "Accept"
+      },
+      "exitModal": {
+        "title": "Exit membership",
+        "message": "Exit the membership at \"{{venue}}\"? Your subscriptions will no longer be able to trade there.",
+        "confirm": "Exit"
       }
     },
     "tierFallback": "Tier {{n}}"
@@ -3331,7 +3402,10 @@
     "settlementConfirmSent": "Settlements - Confirm Sent",
     "settlementConfirmReceived": "Settlements - Confirm Received",
     "dexOfferingCreate": "DEX - Create Offering",
-    "dexOfferingCancel": "DEX - Cancel Offering"
+    "dexOfferingCancel": "DEX - Cancel Offering",
+    "dexMemberAdd": "DEX - Invite Venue Member",
+    "dexMemberAccept": "DEX - Accept Venue Membership",
+    "dexMemberRemove": "DEX - Remove Venue Member"
   },
   "custody": {
     "myServices": {

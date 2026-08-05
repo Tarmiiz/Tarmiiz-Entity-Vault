@@ -43,6 +43,11 @@
           [class.text-white]="activeTab() === 'trades'" [class.border-b-2]="activeTab() === 'trades'" [class.border-blue-600]="activeTab() === 'trades'" [class.bg-blue-600]="activeTab() === 'trades'">
           {{ 'dex.venues.details.tabs.trades' | translate }} ({{ venueTrades().length }})
         </button>
+        <button (click)="setTab('members')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'members'" [class.border-b-2]="activeTab() === 'members'" [class.border-blue-600]="activeTab() === 'members'" [class.bg-blue-600]="activeTab() === 'members'">
+          {{ 'dex.venues.details.tabs.members' | translate }} ({{ venueMembers().length }})
+        </button>
       </div>
     </div>
 
@@ -58,6 +63,7 @@
                 </div>
                 <div class="flex flex-row items-center gap-2">
                   <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStateClass(v.state)">{{ stateName(v.state) }}</span>
+                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ settlementModeName(v.settlementMode) }}</span>
                   @if (v.suspended) {
                     <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">{{ 'state.suspended' | translate }}</span>
                   }
@@ -268,6 +274,81 @@
             </div>
           </div>
         }
+
+        @if (activeTab() === 'members') {
+          <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.members.title' | translate }}</h2>
+                <p class="text-xs text-gray-600">{{ 'dex.members.description' | translate }}</p>
+              </div>
+              @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-member-add')) {
+                <button (click)="openAddMemberModal()"
+                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                  {{ 'dex.members.addButton' | translate }}
+                </button>
+              }
+            </div>
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.members.table.member' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.members.table.memberEntity' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.members.table.consent' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.members.table.approval' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.members.table.added' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'common.actions' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if (venueMembers().length === 0) {
+                    <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">{{ 'dex.members.table.noMembers' | translate }}</td></tr>
+                  } @else {
+                    @for (m of venueMembers(); track m.memberService; let i = $index; let isEven = $even) {
+                      <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <td class="px-6 py-2">{{ i + 1 }}</td>
+                        <td class="px-6 py-2">
+                          <div>{{ m.memberName || '—' }}</div>
+                          <div class="font-mono text-gray-500 break-all">{{ m.memberService }}</div>
+                        </td>
+                        <td class="px-6 py-2">{{ m.memberEntityName || '—' }}</td>
+                        <td class="px-6 py-2">
+                          @if (m.accepted) {
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'dex.members.consent.accepted' | translate }}</span>
+                          } @else {
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'dex.members.consent.awaiting' | translate }}</span>
+                          }
+                        </td>
+                        <td class="px-6 py-2">
+                          @if (m.state === 2) {
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'state.approved' | translate }}</span>
+                          } @else {
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ 'state.pending' | translate }}</span>
+                          }
+                        </td>
+                        <!-- addedAt is in MILLISECONDS — formatMs, never utils.formatDate directly. -->
+                        <td class="px-6 py-2">{{ formatMs(m.addedAt) }}</td>
+                        <td class="px-6 py-2">
+                          @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-member-remove')) {
+                            <button (click)="removeMember(m)"
+                              class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                              {{ 'common.remove' | translate }}
+                            </button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="flex items-center px-4 py-2 border-t">
+              <p class="text-xs font-medium text-gray-800">{{ 'dex.members.table.footer' | translate: { shown: venueMembers().length } }}</p>
+            </div>
+          </div>
+        }
       }
     </div>
 
@@ -275,3 +356,30 @@
 </main>
 
 <app-modal-venue-state />
+
+<!-- Add-member inline modal -->
+@if (addMemberModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'dex.members.addModal.title' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">{{ 'dex.members.addModal.subtitle' | translate }}</p>
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'dex.members.addModal.memberService' | translate }}</label>
+          <input type="text" [(ngModel)]="addMemberAddress" placeholder="0x..."
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <p class="text-xs text-gray-500">{{ 'dex.members.addModal.hint' | translate }}</p>
+        </div>
+        <p class="text-xs text-gray-400">{{ 'dex.members.addModal.lifecycle' | translate }}</p>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="addMemberModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitAddMember()" [disabled]="!addMemberAddress"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'dex.members.addModal.submit' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

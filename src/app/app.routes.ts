@@ -240,6 +240,13 @@ export const routes: Routes = [
               { path: '', redirectTo: 'list', pathMatch: 'full' },
             ],
           },
+          {
+            path: 'memberships',
+            children: [
+              { path: 'list', loadComponent: () => import('./pages/secure/dex/memberships/memberships.page').then( m => m.MembershipsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
           { path: '', redirectTo: '/authorized/dashboard', pathMatch: 'full' },
         ]
       },

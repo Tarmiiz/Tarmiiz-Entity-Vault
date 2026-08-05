@@ -14,6 +14,19 @@ import {
   DistributionAgreement, PrimaryTrade, DexOffering, DexOfferingFill,
 } from '../models/data.model';
 
+/**
+ * The tenant feature envelope returned by GET /vault/features[/me].
+ * `vaultMode` is the 'Entity Mode' Global Variables variable_id (1 = Token Issuer);
+ * `modeMenu` is the menu-key allow-list that mode permits, `null` = unrestricted.
+ */
+export interface VaultFeatures {
+  dex: boolean;
+  vaultMode: number | null;
+  vaultModeName: string | null;
+  modeMenu: string[] | null;
+  menu: Record<string, boolean>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -90,7 +103,9 @@ export class ApiService {
     }
   }
 
-  async vaultFeatures(): Promise<{ dex: boolean; vaultMode: string | null; menu: Record<string, boolean> } | null> {
+  // vaultMode is the 'Entity Mode' Global Variables variable_id; modeMenu is the menu-key
+  // allow-list that mode permits (null = unrestricted, i.e. Token Issuer).
+  async vaultFeatures(): Promise<VaultFeatures | null> {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
@@ -99,7 +114,13 @@ export class ApiService {
       });
       if (response.data?.type !== 'success') return null;
       const features = response.data.features ?? {};
-      return { dex: !!features.dex, vaultMode: features.vaultMode ?? null, menu: response.data.menu ?? {} };
+      return {
+        dex: !!features.dex,
+        vaultMode: features.vaultMode != null ? Number(features.vaultMode) : null,
+        vaultModeName: features.vaultModeName ?? null,
+        modeMenu: features.modeMenu ?? null,
+        menu: response.data.menu ?? {},
+      };
     } catch {
       return null;
     }
@@ -123,11 +144,18 @@ export class ApiService {
   // Authenticated per-user effective feature map (tenant folded with this user's
   // restrict-only overrides). Same shape as vaultFeatures() plus the systemFunctions map;
   // read once a session exists.
-  async vaultMyFeatures(): Promise<{ dex: boolean; vaultMode: string | null; menu: Record<string, boolean>; systemFunctions: Record<string, boolean> } | null> {
+  async vaultMyFeatures(): Promise<(VaultFeatures & { systemFunctions: Record<string, boolean> }) | null> {
     const data = await this.vaultGet('/features/me');
     if (!data) return null;
     const features = data.features ?? {};
-    return { dex: !!features.dex, vaultMode: features.vaultMode ?? null, menu: data.menu ?? {}, systemFunctions: data.systemFunctions ?? {} };
+    return {
+      dex: !!features.dex,
+      vaultMode: features.vaultMode != null ? Number(features.vaultMode) : null,
+      vaultModeName: features.vaultModeName ?? null,
+      modeMenu: features.modeMenu ?? null,
+      menu: data.menu ?? {},
+      systemFunctions: data.systemFunctions ?? {},
+    };
   }
 
   // Per-user menu overrides (admin Menu Access tab on User Details). Rows carry the
@@ -520,11 +548,33 @@ export class ApiService {
     const data = await this.vaultGet('/dex/venues/' + address);
     return data?.venue ?? null;
   }
-  async vaultDexVenueCreate(serviceAddress: string) {
-    return this.vaultPost('/dex/venues', { serviceAddress });
+  async vaultDexVenueCreate(serviceAddress: string, settlementMode = 1) {
+    return this.vaultPost('/dex/venues', { serviceAddress, settlementMode });
   }
   async vaultDexVenueSetState(address: string, newState: number) {
     return this.vaultPut('/dex/venues/' + address + '/state', { newState });
+  }
+
+  // Venue members (venue-operator side) + memberships (member-brokerage side).
+  async vaultDexVenueMembers(address: string) {
+    const data = await this.vaultGet('/dex/venues/' + address + '/members');
+    return data ? { count: data.count, members: data.members } : null;
+  }
+  async vaultDexVenueMemberAdd(address: string, memberService: string) {
+    return this.vaultPost('/dex/venues/' + address + '/members', { memberService });
+  }
+  async vaultDexVenueMemberRemove(address: string, member: string) {
+    return this.vaultDelete('/dex/venues/' + address + '/members/' + member);
+  }
+  async vaultDexMemberships() {
+    const data = await this.vaultGet('/dex/memberships');
+    return data ? { count: data.count, memberships: data.memberships } : null;
+  }
+  async vaultDexMembershipAccept(venue: string, memberService: string) {
+    return this.vaultPut('/dex/memberships/' + venue + '/accept', { memberService });
+  }
+  async vaultDexMembershipRemove(venue: string, member: string) {
+    return this.vaultDelete('/dex/memberships/' + venue + '/' + member);
   }
   async vaultDexAssetListingsList(start = 1, offset = 50) {
     const data = await this.vaultGet('/dex/asset-listings', { start, offset });
