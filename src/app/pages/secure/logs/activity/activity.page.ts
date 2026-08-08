@@ -13,6 +13,7 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ActivityLog, User } from '../../../../shared/models/data.model';
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 
 interface StateChangeLog {
   id: number;
@@ -40,7 +41,7 @@ interface StateChangeLog {
   templateUrl: './activity.page.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe]
+  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, PaginatorComponent]
 })
 export class ActivityPage implements OnInit {
   protected apiService = inject(ApiService);
@@ -76,7 +77,7 @@ export class ActivityPage implements OnInit {
   private actionDebounce: any = null;
 
   page = signal(1);
-  readonly pageSize = 25;
+  pageSize = signal(25);
 
   readonly activityCategories = ['navigation', 'export', 'filter', 'view', 'auth', 'action', 'approval', 'admin'];
   // Every type written into logs_state_changes — the API's own writers plus the
@@ -84,7 +85,7 @@ export class ActivityPage implements OnInit {
   readonly stateTypes = ['asset', 'asset_service', 'entity', 'party', 'service', 'subscription', 'user'];
 
   total = computed(() => this.activeTab() === 'activity' ? this.activityTotal() : this.stateTotal());
-  totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
+  totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
 
   async ngOnInit() {}
 
@@ -154,14 +155,14 @@ export class ActivityPage implements OnInit {
 
   async load() {
     this.loadingService.show(this.translate.instant('logs.activity.loading'));
-    const start = (this.page() - 1) * this.pageSize + 1;
+    const start = (this.page() - 1) * this.pageSize() + 1;
     try {
       if (this.activeTab() === 'activity') {
-        const data: any = await this.apiService.vaultGetActivityLogs(start, this.pageSize, ...this.activityArgs());
+        const data: any = await this.apiService.vaultGetActivityLogs(start, this.pageSize(), ...this.activityArgs());
         this.activityRows.set(data?.logs || []);
         this.activityTotal.set(Number(data?.count ?? 0));
       } else {
-        const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, this.pageSize, ...this.stateArgs());
+        const data: any = await this.apiService.vaultGetAllStateChangeLogs(start, this.pageSize(), ...this.stateArgs());
         this.stateRows.set(data?.logs || []);
         this.stateTotal.set(Number(data?.count ?? 0));
       }
@@ -201,11 +202,22 @@ export class ActivityPage implements OnInit {
     this.applyFilters();
   }
 
-  nextPage() {
-    if (this.page() < this.totalPages()) { this.page.set(this.page() + 1); this.load(); }
+  /**
+   * Server-paged: a page move refetches. Both setters bail on a no-op, because
+   * <app-paginator> fires pageSizeChange AND pageChange(1) for one size change —
+   * without the guard that is two requests.
+   */
+  setPage(p: number) {
+    if (p < 1 || p > this.totalPages() || p === this.page()) return;
+    this.page.set(p);
+    this.load();
   }
-  prevPage() {
-    if (this.page() > 1) { this.page.set(this.page() - 1); this.load(); }
+
+  setPageSize(size: number) {
+    if (size === this.pageSize()) return;
+    this.pageSize.set(size);
+    this.page.set(1);
+    this.load();
   }
 
   shortAddr(addr: string | null | undefined): string {

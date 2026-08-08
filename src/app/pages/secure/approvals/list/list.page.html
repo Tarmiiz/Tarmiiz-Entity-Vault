@@ -7,7 +7,7 @@
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); load()"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); approvalsPage.set(1); load()"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'state.pending' | translate }}</option>
@@ -20,7 +20,7 @@
       <div class="flex flex-col gap-1 flex-1 min-w-[200px]">
         <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'approvals.list.filters.searchPlaceholder' | translate"
-          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event); approvalsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-full">
       </div>
       <div class="flex items-end gap-3 ml-auto">
@@ -50,7 +50,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (a of filtered(); track a.requestId; let i = $index) {
+          @for (a of pagedApprovals(); track a.requestId; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
               <td class="px-4 py-2">{{ i + 1 }}</td>
               <td class="px-4 py-2 font-mono text-xs">{{ a.actionCategory }}</td>
@@ -87,5 +87,7 @@
         </tbody>
       </table>
     </div>
+    <app-paginator [total]="filtered().length" [page]="approvalsPage()" [pageSize]="approvalsPageSize()"
+      (pageChange)="approvalsPage.set($event)" (pageSizeChange)="approvalsPageSize.set($event)" />
   </div>
 </div>

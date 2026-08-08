@@ -12,13 +12,18 @@ export class ModalServiceCustodianService {
   currentCustodian = signal<string>('');
   serviceAddress = signal<string>('');
   regulatorAddress = signal<string>('');
+  // Addresses already attached to the service — hidden from the picker (attaching one
+  // again is a no-op on-chain, so offering it can only mislead). The service's OWN
+  // address appearing here means self-custody is already attached, so that option goes too.
+  excluded = signal<string[]>([]);
 
   private resolveFn?: (value: string | null) => void;
 
-  show(serviceAddress: string, currentCustodian: string, regulatorAddress: string): Promise<string | null> {
+  show(serviceAddress: string, currentCustodian: string, regulatorAddress: string, exclude: string[] = []): Promise<string | null> {
     const zeroAddr = '0x0000000000000000000000000000000000000000';
     this.serviceAddress.set(serviceAddress);
     this.regulatorAddress.set(regulatorAddress);
+    this.excluded.set(exclude.map(a => a.toLowerCase()));
     // Normalize: if current points at the service itself, show as self-custody sentinel.
     let initial = currentCustodian;
     if (!initial || initial === zeroAddr) {

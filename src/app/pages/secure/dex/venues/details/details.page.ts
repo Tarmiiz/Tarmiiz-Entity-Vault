@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -18,13 +18,14 @@ import { DexVenue, DexOrder, DexTrade, DexVenueMember } from '../../../../../sha
 
 import { ModalVenueStateService } from '../modals/modal-venue-state/modal-venue-state.service';
 import { ModalVenueStateComponent } from '../modals/modal-venue-state/modal-venue-state.component';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-dex-venue-details',
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, ModalVenueStateComponent, TranslatePipe],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, ModalVenueStateComponent, TranslatePipe, PaginatorComponent],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -45,9 +46,25 @@ export class DetailsPage implements OnInit, OnDestroy {
   venue = signal<DexVenue | undefined>(undefined);
   activeTab = signal<'info' | 'assets' | 'orders' | 'trades' | 'members'>('info');
   venueOrders = signal<DexOrder[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  vOrdersPage = signal(1);
+  vOrdersPageSize = signal(25);
+  pagedVOrders = computed(() => pageSlice(this.venueOrders(), this.vOrdersPage(), this.vOrdersPageSize()));
   venueTrades = signal<DexTrade[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  vTradesPage = signal(1);
+  vTradesPageSize = signal(25);
+  pagedVTrades = computed(() => pageSlice(this.venueTrades(), this.vTradesPage(), this.vTradesPageSize()));
   venueAssets = signal<any[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  vAssetsPage = signal(1);
+  vAssetsPageSize = signal(25);
+  pagedVAssets = computed(() => pageSlice(this.venueAssets(), this.vAssetsPage(), this.vAssetsPageSize()));
   venueMembers = signal<DexVenueMember[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  vMembersPage = signal(1);
+  vMembersPageSize = signal(25);
+  pagedVMembers = computed(() => pageSlice(this.venueMembers(), this.vMembersPage(), this.vMembersPageSize()));
   refreshing = signal(false);
 
   // Add Member inline modal
@@ -119,7 +136,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
   goAsset(baseAsset: string) { this.router.navigate(['/authorized/dex/asset-listings/details/' + baseAsset]); }
 
-  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : '0'; }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
 
   getStatusClass(s: number | undefined): string {

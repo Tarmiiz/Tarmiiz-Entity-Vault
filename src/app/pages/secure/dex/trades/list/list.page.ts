@@ -16,13 +16,14 @@ import { LoadingService } from '../../../../../shared/components/alerts/loading/
 import { SocketService } from '../../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
 import { DexTrade } from '../../../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-vault-dex-trades-list',
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, PaginatorComponent],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
@@ -65,6 +66,10 @@ export class ListPage implements OnInit, OnDestroy {
     }
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  tradesPage = signal(1);
+  tradesPageSize = signal(25);
+  pagedTrades = computed(() => pageSlice(this.filtered(), this.tradesPage(), this.tradesPageSize()));
   filtered = computed(() => {
     const term = this.search().toLowerCase();
     const scope = this.filterScope();
@@ -88,9 +93,10 @@ export class ListPage implements OnInit, OnDestroy {
     this.filterScope.set('');
     this.filterAsset.set('');
     this.filterVenue.set('');
+    this.tradesPage.set(1);
   }
 
-  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '0.00'; }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   fmtTotal(amount: string, priceWei: string) {
     try {

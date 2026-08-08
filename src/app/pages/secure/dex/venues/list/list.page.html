@@ -7,12 +7,12 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'dex.venues.list.searchPlaceholder' | translate"
-          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event); venuesPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); venuesPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'state.registered' | translate }}</option>
@@ -40,7 +40,7 @@
             {{ 'common.exportPdf' | translate }}
           </button>
         }
-        @if (userInfo && userInfo.role !== 3) {
+        @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-venue-create')) {
           <button (click)="createVenue()"
             class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -72,7 +72,7 @@
               <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (v of filteredVenues(); track v.serviceAddress; let i = $index; let isEven = $even) {
+            @for (v of pagedVenues(); track v.serviceAddress; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="viewDetails(v)">
@@ -119,9 +119,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.list.footer' | translate: { shown: filteredVenues().length, total: venues().length } }}</p>
-    </div>
+    <app-paginator [total]="filteredVenues().length" [page]="venuesPage()" [pageSize]="venuesPageSize()"
+      (pageChange)="venuesPage.set($event)" (pageSizeChange)="venuesPageSize.set($event)" />
   </div>
 
 </div>

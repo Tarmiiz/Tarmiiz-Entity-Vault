@@ -1,7 +1,4 @@
-import {
-  Component, Input, OnChanges, SimpleChanges, DestroyRef,
-  ChangeDetectionStrategy, inject, signal, computed
-} from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, DestroyRef, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +17,7 @@ import { ModalDocumentShareService } from '../../../pages/secure/documents/modal
 import { ModalDocumentShareComponent } from '../../../pages/secure/documents/modals/modal-document-share/modal-document-share.component';
 import { ModalDocumentSignService } from '../../../pages/secure/documents/modals/modal-document-sign/modal-document-sign.service';
 import { ModalDocumentSignComponent } from '../../../pages/secure/documents/modals/modal-document-sign/modal-document-sign.component';
+import { PaginatorComponent, pageSlice } from '../paginator/paginator.component';
 
 type ResourceType = 'service' | 'asset' | 'subscription';
 type RecipientKind = 'entity' | 'regulator' | 'service' | 'subscription';
@@ -81,7 +79,7 @@ interface InboundDoc {
   templateUrl: './documents-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, ModalDocumentShareComponent, ModalDocumentSignComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, ModalDocumentShareComponent, ModalDocumentSignComponent, PaginatorComponent],
 })
 export class DocumentsTabComponent implements OnChanges {
   @Input() resourceType!: ResourceType;
@@ -106,6 +104,10 @@ export class DocumentsTabComponent implements OnChanges {
 
   // Documents a foreign party shared directly with THIS template (inbound, read-only).
   inboundDocs = signal<InboundDoc[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  inboundPage = signal(1);
+  inboundPageSize = signal(25);
+  pagedInbound = computed(() => pageSlice(this.inboundDocs(), this.inboundPage(), this.inboundPageSize()));
 
   // Current recipients for the document open in the view modal. Refreshed each time View opens
   // and after every share / unshare so the list stays in sync with on-chain state.
@@ -120,6 +122,10 @@ export class DocumentsTabComponent implements OnChanges {
   filterTitle = signal('');
   filterType = signal('');
 
+  /** 1-based, per frontend Standard 1.5. */
+  docsPage = signal(1);
+  docsPageSize = signal(25);
+  pagedDocs = computed(() => pageSlice(this.filteredDocs(), this.docsPage(), this.docsPageSize()));
   filteredDocs = computed(() => {
     const t = this.filterTitle().toLowerCase().trim();
     const dt = this.filterType();
@@ -474,6 +480,7 @@ export class DocumentsTabComponent implements OnChanges {
   clearFilters() {
     this.filterTitle.set('');
     this.filterType.set('');
+    this.docsPage.set(1);
   }
 
   private resetRecipientPicker() {

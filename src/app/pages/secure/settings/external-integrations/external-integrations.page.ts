@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -8,6 +8,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { ExternalIntegration } from '../../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 // Pure-config records — the former eKYC adapter binding / live test / service links were
 // retired with the direct SP integrations (2026-07-15).
@@ -19,7 +20,7 @@ const SLUG = /^[a-z0-9_-]{2,32}$/;
   templateUrl: './external-integrations.page.html',
   styleUrls: ['./external-integrations.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, PaginatorComponent],
 })
 export class ExternalIntegrationsPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -27,6 +28,10 @@ export class ExternalIntegrationsPage implements OnInit {
   private alertService   = inject(AlertService);
   private translate      = inject(TranslateService);
 
+  /** 1-based, per frontend Standard 1.5. */
+  integrationsPage = signal(1);
+  integrationsPageSize = signal(25);
+  pagedIntegrations = computed(() => pageSlice(this.integrations(), this.integrationsPage(), this.integrationsPageSize()));
   integrations = signal<ExternalIntegration[]>([]);
   loading      = signal(false);
   busy         = signal(false);

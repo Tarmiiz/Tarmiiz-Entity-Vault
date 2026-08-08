@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -15,13 +15,15 @@ import { ModalListingVenueAddService } from '../modals/modal-listing-venue-add/m
 import { ModalListingVenueAddComponent } from '../modals/modal-listing-venue-add/modal-listing-venue-add.component';
 import { ModalListingVenueTierChangeService } from '../modals/modal-listing-venue-tier-change/modal-listing-venue-tier-change.service';
 import { ModalListingVenueTierChangeComponent } from '../modals/modal-listing-venue-tier-change/modal-listing-venue-tier-change.component';
+import { FeaturesService } from '../../../../../shared/services/features.service';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-dex-asset-listing-details',
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent, ModalListingVenueTierChangeComponent, TranslatePipe],
+  imports: [FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent, ModalListingVenueTierChangeComponent, TranslatePipe, PaginatorComponent],
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -31,6 +33,7 @@ export class DetailsPage implements OnInit {
   private alertService = inject(AlertService);
   private addVenueModal = inject(ModalListingVenueAddService);
   private tierChangeModal = inject(ModalListingVenueTierChangeService);
+  features = inject(FeaturesService);
   utils = inject(UtilsService);
   private authService = inject(AuthService);
   private translate = inject(TranslateService);
@@ -44,6 +47,10 @@ export class DetailsPage implements OnInit {
   addInitialTier = signal<1 | 2 | 3>(1);
 
   enabledVenues = signal<DexAssetListingVenue[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  enabledVenuesPage = signal(1);
+  enabledVenuesPageSize = signal(25);
+  pagedEnabledVenues = computed(() => pageSlice(this.enabledVenues(), this.enabledVenuesPage(), this.enabledVenuesPageSize()));
 
   constructor() {
     const asset = this.route.snapshot.paramMap.get('asset');

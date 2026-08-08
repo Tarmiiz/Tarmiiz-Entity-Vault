@@ -1,0 +1,74 @@
+@if (modalService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center overflow-y-auto py-8">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'dex.rfqs.quoteModal.title' | translate }}</h3>
+        <p class="mt-1 text-xs text-white/80">{{ modalService.ctx().assetLabel }}</p>
+      </div>
+
+      <div class="p-6 space-y-4">
+
+        <!-- The requester's terms, read-only. A dealer sets PRICE and nothing else —
+             offering the rest as inputs would imply a negotiation that happens later,
+             once the quote is a deal. -->
+        <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-700 grid grid-cols-2 gap-2">
+          <div>
+            <span class="text-gray-500">{{ 'dex.rfqs.quoteModal.yourSide' | translate }}</span>
+            <div class="font-semibold">{{ modalService.ctx().dealerSideLabel | translate }}</div>
+          </div>
+          <div>
+            <span class="text-gray-500">{{ 'dex.rfqs.table.amount' | translate }}</span>
+            <div class="font-semibold">{{ modalService.ctx().amount }}</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.actingAs' | translate }}</label>
+          <select [(ngModel)]="subscription"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+            @for (s of modalService.ctx().subscriptions; track s.address) {
+              <option [value]="s.address">{{ s.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">
+            {{ 'dex.rfqs.quoteModal.price' | translate }}
+            @if (modalService.ctx().currencyLabel) { <span class="text-gray-400">({{ modalService.ctx().currencyLabel }})</span> }
+          </label>
+          <input type="number" min="0" step="any" [(ngModel)]="price"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800" />
+          <p class="mt-1 text-xs text-gray-500">{{ 'dex.rfqs.quoteModal.priceHint' | translate }}</p>
+        </div>
+
+        @if (notional() > 0) {
+          <div class="rounded-md bg-indigo-50 border border-indigo-200 px-3 py-2 text-sm text-indigo-900 flex justify-between">
+            <span>{{ 'dex.deals.termsModal.notional' | translate }}</span>
+            <span class="font-semibold">{{ notional() }} {{ modalService.ctx().currencyLabel }}</span>
+          </div>
+        }
+
+        <!-- Under Firm funding the quote is collateralised the moment it is submitted,
+             so say so before the click rather than after the escrow moves. -->
+        <p class="text-xs rounded px-3 py-2"
+           [class]="modalService.ctx().funding === 1 ? 'bg-emerald-50 text-emerald-800' : 'bg-orange-50 text-orange-800'">
+          {{ (modalService.ctx().funding === 1 ? 'dex.rfqs.quoteModal.firmWarning' : 'dex.rfqs.quoteModal.indicativeWarning') | translate }}
+        </p>
+
+        @if (error()) {
+          <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ error() | translate }}</p>
+        }
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button type="button" (click)="onSubmit()"
+          class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
+          {{ 'dex.rfqs.quoteModal.submit' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -14,13 +14,15 @@ import { SocketService } from '../../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
 import { AuthService } from '../../../../../shared/services/auth.service';
 import { DexOrder } from '../../../../../shared/models/data.model';
+import { FeaturesService } from '../../../../../shared/services/features.service';
+import { RefreshButtonComponent } from '../../../../../shared/components/refresh-button/refresh-button.component';
 
 @Component({
   selector: 'app-vault-dex-order-book-view',
   templateUrl: './view.page.html',
   styleUrls: ['./view.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe],
+  imports: [RefreshButtonComponent, FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe],
 })
 export class ViewPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -30,6 +32,7 @@ export class ViewPage implements OnInit, OnDestroy {
   private alertService = inject(AlertService);
   private socket = inject(SocketService);
   private auth = inject(AuthService);
+  features = inject(FeaturesService);
   utils = inject(UtilsService);
   private translate = inject(TranslateService);
 
@@ -107,7 +110,7 @@ export class ViewPage implements OnInit, OnDestroy {
     }
   }
 
-  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : '0'; }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
 
   selectBuy(o: DexOrder) { this.selectedBuy.set(o.orderId === this.selectedBuy() ? null : o.orderId); }

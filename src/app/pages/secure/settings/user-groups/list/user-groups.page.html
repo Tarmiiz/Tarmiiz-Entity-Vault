@@ -28,7 +28,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (group of groups(); track group.groupId; let i = $index) {
+          @for (group of pagedGroups(); track group.groupId; let i = $index) {
             <tr class="cursor-pointer hover:bg-indigo-50" [class.bg-gray-50]="i % 2 === 1" (click)="openDetails(group)">
               <td class="px-4 py-2 font-medium text-gray-800">{{ group.name }}</td>
               <td class="px-4 py-2 text-gray-500">{{ group.description || '—' }}</td>
@@ -38,7 +38,7 @@
                 </span>
               </td>
               <td class="px-4 py-2">{{ group.memberCount }}</td>
-              <td class="px-4 py-2 text-xs text-gray-500">{{ group.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="px-4 py-2 text-xs text-gray-500">{{ group.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
             </tr>
           } @empty {
             <tr>
@@ -50,6 +50,8 @@
         </tbody>
       </table>
     </div>
+    <app-paginator [total]="groups().length" [page]="groupsPage()" [pageSize]="groupsPageSize()"
+      (pageChange)="groupsPage.set($event)" (pageSizeChange)="groupsPageSize.set($event)" />
   </div>
 </div>
 

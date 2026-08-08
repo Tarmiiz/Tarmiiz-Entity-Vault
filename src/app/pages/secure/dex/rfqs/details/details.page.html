@@ -1,0 +1,263 @@
+<app-header [title]="'dex.rfqs.title' | translate"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/dex/rfqs/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.rfqs.details.breadcrumb' | translate }}</a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-mono">{{ requestKey().slice(0, 12) }}…</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+  <div class="flex items-center gap-2">
+    <!--
+      Quoting is a DEALER's action and awarding is the REQUESTER's, so the two never
+      appear together. Awarding is per-quote and lives on the board rows, not here —
+      a single "Award" button would have nothing to name.
+    -->
+    @if (canQuote()) {
+      <button (click)="submitQuote()"
+        class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        {{ 'dex.rfqs.actions.quote' | translate }}
+      </button>
+    }
+    @if (canCancel()) {
+      <button (click)="cancelRequest()"
+        class="text-xs px-3 py-1.5 rounded border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
+        {{ 'dex.rfqs.actions.cancel' | translate }}
+      </button>
+    }
+    <app-refresh-button [loading]="refreshing()" (refresh)="load(true)" />
+    <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
+  </div>
+</div>
+
+<app-modal-rfq-quote />
+<app-modal-deal-reason />
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+    @if (request(); as q) {
+
+      @if (q.suspended) {
+        <div class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3">
+          <p class="text-sm font-semibold text-red-800">{{ 'dex.rfqs.details.suspendedBanner' | translate }}</p>
+          <p class="text-xs text-red-700 mt-1">{{ q.suspendedReason || ('dex.deals.details.noReason' | translate) }}</p>
+          <!-- Suspension stops the auction moving forward; it never traps anyone's
+               capital. Say so, or a dealer assumes its escrow is stuck. -->
+          <p class="text-xs text-red-600 mt-1.5">{{ 'dex.rfqs.details.suspendedExplain' | translate }}</p>
+        </div>
+      }
+
+      <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-200">
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-gray-800">
+                {{ q.assetName || q.assetSymbol || ('dex.rfqs.details.untitled' | translate) }}
+                @if (q.assetSymbol && q.assetName) { <span class="text-sm font-normal text-gray-500">({{ q.assetSymbol }})</span> }
+              </h2>
+              <p class="text-xs text-gray-500 mt-0.5 font-mono">{{ q.requestKey }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium" [class]="statusClass(q)">{{ statusLabel(q) }}</span>
+              <span class="px-2.5 py-1 rounded-full text-xs font-medium"
+                [class]="q.funding === 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'"
+                [title]="q.funding === 1 ? ('dex.deals.funding.firmHint' | translate) : ('dex.deals.funding.indicativeHint' | translate)">
+                {{ fundingLabel(q) }}
+              </span>
+              @if (q.openToAll) {
+                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">{{ 'dex.rfqs.openToAll' | translate }}</span>
+              }
+            </div>
+          </div>
+
+          <!-- Totals come from the HEADER — the board below is a sealed auction and on a
+               dealer tenant shows one row regardless of how many answered. -->
+          <div class="mt-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+            <div>
+              <div class="text-gray-500">{{ 'dex.rfqs.table.amount' | translate }}</div>
+              <div class="font-semibold text-gray-800">{{ fmtAmount(q.amount) }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">{{ 'dex.deals.table.side' | translate }}</div>
+              <div class="font-semibold text-gray-800">{{ sideLabel(q) }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">{{ 'dex.rfqs.table.quotes' | translate }}</div>
+              <div class="font-semibold text-gray-800">{{ q.quoteCount }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">{{ 'dex.rfqs.details.invited' | translate }}</div>
+              <div class="font-semibold text-gray-800">{{ q.openToAll ? ('dex.rfqs.openToAllShort' | translate) : q.invitedCount }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">{{ 'dex.deals.table.expires' | translate }}</div>
+              <div class="font-semibold text-gray-800">{{ expiresIn() }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center border-b border-gray-200">
+          <button (click)="tab.set('board')"
+            class="px-4 py-2.5 text-xs font-medium transition-colors border-b-2"
+            [class.border-indigo-600]="tab() === 'board'" [class.text-indigo-700]="tab() === 'board'"
+            [class.border-transparent]="tab() !== 'board'" [class.text-gray-500]="tab() !== 'board'">
+            {{ 'dex.rfqs.details.tabBoard' | translate }}
+          </button>
+          <button (click)="tab.set('terms')"
+            class="px-4 py-2.5 text-xs font-medium transition-colors border-b-2"
+            [class.border-indigo-600]="tab() === 'terms'" [class.text-indigo-700]="tab() === 'terms'"
+            [class.border-transparent]="tab() !== 'terms'" [class.text-gray-500]="tab() !== 'terms'">
+            {{ 'dex.rfqs.details.tabTerms' | translate }}
+          </button>
+        </div>
+
+        @if (tab() === 'board') {
+          <div class="p-4">
+            <!-- The sealed-auction caveat, stated where it matters: a dealer seeing one
+                 row must not read it as "I was the only one who answered". -->
+            @if (!weAreRequester()) {
+              <p class="mb-3 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-3 py-2">
+                {{ 'dex.rfqs.details.sealedHint' | translate }}
+              </p>
+            }
+
+            <div class="overflow-x-auto rounded-lg border border-gray-200">
+              <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                  <tr>
+                    <th class="px-4 py-2">{{ 'dex.rfqs.details.dealer' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'dex.rfqs.details.standing' | translate }}</th>
+                    <th class="px-4 py-2 text-right">{{ 'dex.rfqs.details.quotePrice' | translate }}</th>
+                    <th class="px-4 py-2 text-right">{{ 'dex.deals.table.total' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'dex.rfqs.details.quoteStatus' | translate }}</th>
+                    <th class="px-4 py-2">{{ 'dex.rfqs.details.quotedAt' | translate }}</th>
+                    <th class="px-4 py-2 text-right"></th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  @if (dealers().length === 0) {
+                    <tr class="bg-white border-b">
+                      <td class="px-4 py-2" colspan="7">{{ 'dex.rfqs.details.noDealers' | translate }}</td>
+                    </tr>
+                  } @else {
+                    @for (d of dealers(); track d.dealer; let isEven = $even) {
+                      <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <td class="px-4 py-2">
+                          <div class="font-medium text-gray-800">{{ dealerName(d) }}</div>
+                          @if (d.dealerServiceName) { <div class="text-[10px] text-gray-500">{{ d.dealerServiceName }}</div> }
+                        </td>
+                        <td class="px-4 py-2">
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="dealerStateClass(d)">{{ dealerStateLabel(d) }}</span>
+                        </td>
+                        <td class="px-4 py-2 text-right">
+                          @if (d.quotePrice !== null) {
+                            <span [class.font-semibold]="isBest(d)" [class.text-emerald-700]="isBest(d)">{{ d.quotePrice | money }}</span>
+                            @if (isBest(d)) {
+                              <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800">{{ 'dex.rfqs.details.best' | translate }}</span>
+                            }
+                          } @else { — }
+                        </td>
+                        <td class="px-4 py-2 text-right">
+                          {{ d.quotePrice !== null ? ((d.quotePrice * q.amount) | money) : '—' }}
+                        </td>
+                        <td class="px-4 py-2">
+                          @if (d.quoteStatus !== null) {
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="quoteStatusClass(d.quoteStatus)">{{ quoteStatusLabel(d.quoteStatus) }}</span>
+                          } @else { — }
+                        </td>
+                        <td class="px-4 py-2">{{ d.quotedAt ? utils.formatTime(d.quotedAt) : '—' }}</td>
+                        <td class="px-4 py-2 text-right whitespace-nowrap">
+                          @if (d.dealKey) {
+                            <button (click)="goDeal(d.dealKey)"
+                              class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                              {{ 'dex.rfqs.details.viewQuote' | translate }}
+                            </button>
+                          }
+                          @if (isAwardable(d)) {
+                            <button (click)="award(d)"
+                              class="ml-1 text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
+                              {{ 'dex.rfqs.actions.award' | translate }}
+                            </button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Awarding does not end the deal — it starts the venue's approval. Saying so
+                 here stops "Awarded" being read as "settled". -->
+            @if (q.status === 2 && q.awardedDeal) {
+              <div class="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3">
+                <p class="text-sm font-semibold text-emerald-800">{{ 'dex.rfqs.details.awardedBanner' | translate }}</p>
+                <p class="text-xs text-emerald-700 mt-1">{{ 'dex.rfqs.details.awardedExplain' | translate }}</p>
+                <button (click)="goDeal(q.awardedDeal)"
+                  class="mt-2 text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
+                  {{ 'dex.rfqs.details.openAwardedDeal' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        @if (tab() === 'terms') {
+          <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.deals.table.venue' | translate }}</span>
+              <button (click)="goVenue(q.dexService)" class="text-indigo-700 hover:underline">{{ q.dexServiceName || (q.dexService.slice(0,16) + '…') }}</button>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.deals.table.asset' | translate }}</span>
+              <button (click)="goAsset(q.baseAsset)" class="text-indigo-700 hover:underline">{{ q.assetSymbol || (q.baseAsset.slice(0,16) + '…') }}</button>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.rfqs.table.requester' | translate }}</span>
+              <span class="text-gray-800">{{ q.requesterEntityName || (q.requester.slice(0,16) + '…') }}</span>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.deals.table.side' | translate }}</span>
+              <span class="text-gray-800">{{ sideLabel(q) }}</span>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.rfqs.table.amount' | translate }}</span>
+              <span class="text-gray-800">{{ fmtAmount(q.amount) }}</span>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.deals.table.funding' | translate }}</span>
+              <span class="text-gray-800">{{ fundingLabel(q) }}</span>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.deals.termsModal.marketScope' | translate }}</span>
+              <span class="text-gray-800">{{ 'dex.common.tier' + q.marketScope | translate }}</span>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.rfqs.details.currency' | translate }}</span>
+              <span class="text-gray-800">{{ q.currencyName || q.currencyCode }}</span>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'dex.deals.table.expires' | translate }}</span>
+              <span class="text-gray-800">{{ q.expiresAt ? utils.formatTime(q.expiresAt) : '—' }}</span>
+            </div>
+            <div class="flex justify-between border-b border-gray-100 pb-2">
+              <span class="text-gray-500">{{ 'common.createdAt' | translate }}</span>
+              <span class="text-gray-800">{{ q.createdAt ? utils.formatTime(q.createdAt) : '—' }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+    } @else {
+      <div class="bg-white rounded-lg shadow-md p-6 text-sm text-gray-500">{{ 'common.noData' | translate }}</div>
+    }
+  </div>
+</main>

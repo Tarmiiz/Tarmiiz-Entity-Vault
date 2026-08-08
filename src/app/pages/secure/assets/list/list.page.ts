@@ -27,6 +27,7 @@ import { Asset, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-list',
@@ -38,6 +39,7 @@ import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
     HeaderComponent,
     LiveIndicatorComponent,
     ModalAssetAddComponent, ModalAssetRegisterExistingComponent, TranslatePipe,
+    PaginatorComponent,
   ]
 })
 export class ListPage implements OnInit {
@@ -76,6 +78,10 @@ export class ListPage implements OnInit {
     [...new Set(this.assets().map(a => a.currencyCode).filter(Boolean))].sort()
   );
 
+  /** 1-based, per frontend Standard 1.5. */
+  assetsPage = signal(1);
+  assetsPageSize = signal(25);
+  pagedAssets = computed(() => pageSlice(this.filteredAssets(), this.assetsPage(), this.assetsPageSize()));
   filteredAssets = computed(() => {
     const type = this.filterType();
     const state = this.filterState();
@@ -100,6 +106,7 @@ export class ListPage implements OnInit {
     this.filterCurrency.set('');
     this.filterCirculatingOp.set('');
     this.filterCirculatingAmt.set(null);
+    this.assetsPage.set(1);
   }
 
   private _socketSub: Subscription | null = null;

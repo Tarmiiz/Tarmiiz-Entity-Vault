@@ -10,17 +10,21 @@
         <div class="p-6">
           <label for="validator" class="block text-sm font-medium text-gray-700">{{ 'services.validatorModal.label' | translate }}</label>
           <select id="validator" formControlName="validator" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-            <option value="">{{ 'common.none' | translate }}</option>
+            <option value="" disabled>{{ 'services.validatorModal.placeholder' | translate }}</option>
             @for (v of validators(); track v.address) {
               <option [value]="v.address">{{ v.name || v.address }}</option>
             }
           </select>
+          @if (validators().length === 0) {
+            <p class="mt-2 text-xs text-amber-700">{{ 'services.validatorModal.empty' | translate }}</p>
+          }
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             {{ 'common.cancel' | translate }}
           </button>
-          <button type="submit" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+          <button type="submit" [disabled]="!validatorForm.get('validator')?.value"
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
             {{ 'services.validatorModal.submit' | translate }}
           </button>
         </div>

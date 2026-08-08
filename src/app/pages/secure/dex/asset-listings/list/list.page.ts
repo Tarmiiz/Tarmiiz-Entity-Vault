@@ -17,13 +17,14 @@ import { DexAssetListing } from '../../../../../shared/models/data.model';
 
 import { ModalListingCreateService } from '../modals/modal-listing-create/modal-listing-create.service';
 import { ModalListingCreateComponent } from '../modals/modal-listing-create/modal-listing-create.component';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-dex-asset-listings-list',
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalListingCreateComponent, TranslatePipe],
+  imports: [FormsModule, HeaderComponent, ModalListingCreateComponent, TranslatePipe, PaginatorComponent],
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -61,6 +62,10 @@ export class ListPage implements OnInit {
     this.router.navigate(['/authorized/dex/asset-listings/details/' + l.baseAsset]);
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  listingsPage = signal(1);
+  listingsPageSize = signal(25);
+  pagedListings = computed(() => pageSlice(this.filteredListings(), this.listingsPage(), this.listingsPageSize()));
   filteredListings = computed(() => {
     const term = this.searchTerm().toLowerCase();
     return this.listings().filter(l =>
@@ -81,6 +86,7 @@ export class ListPage implements OnInit {
       const r = await this.apiService.vaultDexAssetListingCreate(result.baseAsset, result.venue, result.country, result.global);
       if (r?.error) this.alertService.show(this.translate.instant('dex.listings.error'), r.error);
       else await this.listListings();
+  this.listingsPage.set(1);
     } finally { this.loadingService.hide(); }
   }
 

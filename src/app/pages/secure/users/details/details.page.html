@@ -205,9 +205,12 @@
                 <button (click)="openCredentialsModal()" class="text-xs px-3 py-1.5 rounded bg-violet-600 text-white hover:bg-violet-700 transition-colors">
                   {{ 'users.details.actions.changeCredentials' | translate }}
                 </button>
-                <button (click)="openChangeRoleModal()" class="text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors">
-                  {{ 'users.details.actions.changeRole' | translate }}
-                </button>
+                <!-- Never on your own record: the API 403s a self-targeted role change. -->
+                @if (!isSelf()) {
+                  <button (click)="openChangeRoleModal()" class="text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+                    {{ 'users.details.actions.changeRole' | translate }}
+                  </button>
+                }
                 @if (isExecutive(v.role)) {
                   <button (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()" class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ 'users.details.actions.changeApprovalRole' | translate }}

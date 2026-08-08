@@ -30,6 +30,13 @@ export class FeaturesService {
   // so core/unknown items never disappear.
   menu = signal<Record<string, boolean>>({});
 
+  // Decimal places every MONEY value renders with — SERVER-owned (Entity API app_config
+  // CURRENCY_DECIMALS, edited from the admin System Configuration page). Read by MoneyPipe
+  // and UtilsService.formatPrice/roundMoney, so it governs the screen, the PDF exports and
+  // the rounding applied to Excel cells alike. Seeded with the registry default so the
+  // first paint (before /features lands) matches the shipped look.
+  currencyDecimals = signal(6);
+
   // Per-user System Functions map { key: enabled } (action-button gating). Populated only
   // once authenticated (from /vault/features/me); absent key ⇒ enabled (matters only before
   // the post-login refresh, since these buttons live on authenticated pages).
@@ -92,6 +99,9 @@ export class FeaturesService {
           this.mode.set(features.vaultMode);
           this.modeMenu.set(features.modeMenu ?? null);
         }
+        // Keep the last known precision when the server didn't answer, for the same
+        // reason as the mode above — a blip must not re-render every figure.
+        if (features?.currencyDecimals != null) this.currencyDecimals.set(features.currencyDecimals);
         this.menu.set(features?.menu ?? {});
         // System functions only come back on the authenticated (per-user) call.
         this.systemFunctions.set((features as any)?.systemFunctions ?? {});

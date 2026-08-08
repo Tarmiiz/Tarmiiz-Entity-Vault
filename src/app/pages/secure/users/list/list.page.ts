@@ -15,6 +15,7 @@ import { User } from '../../../../shared/models/data.model';
 
 import { ModalUserAddComponent } from "../modals/modal-user-add/modal-user-add.component";
 import { ModalUserAddService } from '../modals/modal-user-add/modal-user-add.service';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-list',
@@ -24,8 +25,9 @@ import { ModalUserAddService } from '../modals/modal-user-add/modal-user-add.ser
   imports: [
     FormsModule,
     HeaderComponent,
-    ModalUserAddComponent, TranslatePipe
-]
+    ModalUserAddComponent, TranslatePipe,
+    PaginatorComponent,
+  ]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -99,6 +101,10 @@ export class ListPage implements OnInit {
     this.router.navigate(['/authorized/users/details/' + user.userId]);  
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  usersPage = signal(1);
+  usersPageSize = signal(25);
+  pagedUsers = computed(() => pageSlice(this.filteredUsers(), this.usersPage(), this.usersPageSize()));
   filteredUsers = computed(() => {
     const term  = this.filterSearch().toLowerCase();
     const role  = this.filterRole();
@@ -119,6 +125,7 @@ export class ListPage implements OnInit {
     this.filterSearch.set('');
     this.filterRole.set('');
     this.filterState.set('');
+    this.usersPage.set(1);
   }
 
   async openAddModal() {

@@ -14,6 +14,7 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { Document, DocumentShare, GlobalVariable } from '../../../../shared/models/data.model';
 import { ModalDocumentAddComponent } from '../modals/modal-document-add/modal-document-add.component';
 import { ModalDocumentAddService } from '../modals/modal-document-add/modal-document-add.service';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 // Single-list row: an own document OR an inbound share (the Vault has no detail
 // pages for foreign owners, so entity-level inbound shares live on this list;
@@ -37,7 +38,7 @@ interface DocRow {
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalDocumentAddComponent, TranslatePipe]
+  imports: [FormsModule, HeaderComponent, ModalDocumentAddComponent, TranslatePipe, PaginatorComponent]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -132,6 +133,10 @@ export class ListPage implements OnInit {
   // documents from parties with their own pages surface on those pages instead
   // (service / asset / subscription Documents tabs); everything reaching the
   // entity itself (e.g. regulator-shared docs) lands here.
+  /** 1-based, per frontend Standard 1.5. */
+  rowsPage = signal(1);
+  rowsPageSize = signal(25);
+  pagedRows = computed(() => pageSlice(this.rows(), this.rowsPage(), this.rowsPageSize()));
   rows = computed<DocRow[]>(() => {
     const term = this.search().toLowerCase();
     const t = this.filterType();
@@ -218,6 +223,7 @@ export class ListPage implements OnInit {
     this.search.set('');
     this.filterType.set('');
     this.filterState.set('');
+    this.rowsPage.set(1);
   }
 
   view(row: DocRow) {

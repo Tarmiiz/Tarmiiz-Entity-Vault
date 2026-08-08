@@ -17,6 +17,7 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { AuditLog } from '../../../../shared/models/data.model';
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 
 // Full taxonomy — keep in sync with the API's services/audit.js AUDIT_CATEGORIES.
 const AUDIT_CATEGORIES = [
@@ -34,7 +35,7 @@ const AUDIT_CATEGORIES = [
   styleUrls: ['./my.page.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe]
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, PaginatorComponent]
 })
 export class MyPage implements OnInit {
   protected apiService = inject(ApiService);
@@ -52,7 +53,7 @@ export class MyPage implements OnInit {
   total = signal(0);
   refreshing = signal(false);
   page = signal(1);
-  readonly pageSize = 25;
+  pageSize = signal(25);
 
   filterFrom = signal<string>('');
   filterTo = signal<string>('');
@@ -67,7 +68,7 @@ export class MyPage implements OnInit {
 
   uniqueActions = computed(() => [...new Set(this.rows().map(r => r.action).filter(Boolean))].sort());
 
-  totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
+  totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
 
   private _socketSub: Subscription | null = null;
   private _refreshTimer: any = null;
@@ -123,7 +124,7 @@ export class MyPage implements OnInit {
     }, 500);
   }
 
-  protected buildFilters(page: number = this.page(), pageSize: number = this.pageSize) {
+  protected buildFilters(page: number = this.page(), pageSize: number = this.pageSize()) {
     return {
       from: this.filterFrom() || undefined,
       to: this.filterTo() || undefined,
@@ -238,11 +239,22 @@ export class MyPage implements OnInit {
     this.applyFilters();
   }
 
-  nextPage() {
-    if (this.page() < this.totalPages()) { this.page.set(this.page() + 1); this.load(); }
+  /**
+   * Server-paged: a page move refetches. Both setters bail on a no-op, because
+   * <app-paginator> fires pageSizeChange AND pageChange(1) for one size change —
+   * without the guard that is two requests.
+   */
+  setPage(p: number) {
+    if (p < 1 || p > this.totalPages() || p === this.page()) return;
+    this.page.set(p);
+    this.load();
   }
-  prevPage() {
-    if (this.page() > 1) { this.page.set(this.page() - 1); this.load(); }
+
+  setPageSize(size: number) {
+    if (size === this.pageSize()) return;
+    this.pageSize.set(size);
+    this.page.set(1);
+    this.load();
   }
 
   shortAddr(addr: string | null | undefined, head = 6, tail = 4): string {

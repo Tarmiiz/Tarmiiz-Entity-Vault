@@ -14,12 +14,13 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { ConnectThread } from '../../../../shared/models/data.model';
 import { ModalNewThreadService } from '../modals/modal-new-thread/modal-new-thread.service';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-messages-list',
   templateUrl: './list.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, PaginatorComponent],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);
@@ -100,6 +101,10 @@ export class ListPage implements OnInit, OnDestroy {
     this.directory.set(current);
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  threadsPage = signal(1);
+  threadsPageSize = signal(25);
+  pagedThreads = computed(() => pageSlice(this.filteredThreads(), this.threadsPage(), this.threadsPageSize()));
   filteredThreads = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const partTerm = this.searchParticipant().toLowerCase();
@@ -150,6 +155,7 @@ export class ListPage implements OnInit, OnDestroy {
     this.filterState.set('all');
     const toggle = document.getElementById('ToggleMessagesUnread') as HTMLInputElement | null;
     if (toggle) toggle.checked = false;
+    this.threadsPage.set(1);
   }
 
   stateName(s: number): string {

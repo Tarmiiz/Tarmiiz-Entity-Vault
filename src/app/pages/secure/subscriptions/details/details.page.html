@@ -86,6 +86,11 @@
           >
             {{ 'subscriptions.details.tabs.documents' | translate }}
           </button>
+        }
+        <!-- Identity Data is gated by its OWN key, not view-documents: it renders the
+             decrypted eKYC payload (subscriber PII + ID images), which is a different
+             privilege from using the documents module. -->
+        @if (features.systemFunctionEnabled('view-identity-data')) {
           <button (click)="setTab('identity')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'identity'"
@@ -138,11 +143,11 @@
                   </div>
                   <div>
                     <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.marketValue' | translate }}</p>
-                    <p class="text-base font-semibold text-indigo-700">{{ row.marketValue | number:'1.2-2' }}</p>
+                    <p class="text-base font-semibold text-indigo-700">{{ row.marketValue | money }}</p>
                   </div>
                   <div>
                     <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.costBasis' | translate }}</p>
-                    <p class="text-base font-semibold text-gray-800">{{ row.cost | number:'1.2-2' }}</p>
+                    <p class="text-base font-semibold text-gray-800">{{ row.cost | money }}</p>
                   </div>
                   <div>
                     <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.pl' | translate }}</p>
@@ -150,7 +155,7 @@
                       [class.text-green-600]="row.pl > 0"
                       [class.text-red-600]="row.pl < 0"
                       [class.text-gray-500]="row.pl === 0">
-                      {{ row.pl | number:'1.2-2' }}
+                      {{ row.pl | money }}
                     </p>
                   </div>
                   <div>
@@ -178,9 +183,9 @@
                   @for (bal of activeCreditBalances(); track bal.currencyCode) {
                     <div>
                       <p class="text-xs text-gray-500 mb-1">{{ bal.currencyName }} <span class="badge-currency">{{ bal.currencySymbol }}</span></p>
-                      <p class="text-base font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</p>
-                      <p class="text-xs text-gray-500 mt-1">{{ 'subscriptions.details.withheld' | translate }}: <span class="font-semibold text-amber-700">{{ bal.withheld | number:'1.2-2' }}</span></p>
-                      <p class="text-xs text-gray-500">{{ 'subscriptions.details.available' | translate }}: <span class="font-semibold text-green-700">{{ bal.available | number:'1.2-2' }}</span></p>
+                      <p class="text-base font-semibold text-indigo-700">{{ bal.balance | money }}</p>
+                      <p class="text-xs text-gray-500 mt-1">{{ 'subscriptions.details.withheld' | translate }}: <span class="font-semibold text-amber-700">{{ bal.withheld | money }}</span></p>
+                      <p class="text-xs text-gray-500">{{ 'subscriptions.details.available' | translate }}: <span class="font-semibold text-green-700">{{ bal.available | money }}</span></p>
                     </div>
                   }
                 </div>
@@ -206,7 +211,7 @@
                 <div>
                   <p class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.overview.lastTransaction' | translate }}</p>
                   @if (lastTrx(); as lt) {
-                    <p class="text-xs font-medium text-gray-700">{{ lt.time * 1000 | date:'dd/MM/yyyy HH:mm' }}</p>
+                    <p class="text-xs font-medium text-gray-700">{{ lt.time * 1000 | date:'dd/MM/yyyy HH:mm:ss' }}</p>
                   } @else {
                     <p class="text-xs text-gray-400">—</p>
                   }
@@ -300,7 +305,7 @@
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.holdings.asset' | translate }}</label>
-                  <select [ngModel]="filterHoldingAsset()" (ngModelChange)="filterHoldingAsset.set($event); holdingPage.set(0)"
+                  <select [ngModel]="filterHoldingAsset()" (ngModelChange)="filterHoldingAsset.set($event); holdingPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (a of uniqueHoldingAssets(); track a[0]) {
@@ -310,7 +315,7 @@
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.currency' | translate }}</label>
-                  <select [ngModel]="filterHoldingCurrency()" (ngModelChange)="filterHoldingCurrency.set($event); holdingPage.set(0)"
+                  <select [ngModel]="filterHoldingCurrency()" (ngModelChange)="filterHoldingCurrency.set($event); holdingPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueHoldingCurrencies(); track c) {
@@ -321,13 +326,13 @@
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.holdings.balance' | translate }}</label>
                   <div class="flex items-center gap-1">
-                    <select [ngModel]="filterHoldingBalanceOp()" (ngModelChange)="filterHoldingBalanceOp.set($event); holdingPage.set(0)"
+                    <select [ngModel]="filterHoldingBalanceOp()" (ngModelChange)="filterHoldingBalanceOp.set($event); holdingPage.set(1)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                       <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
-                    <input type="number" min="0" [ngModel]="filterHoldingBalanceAmt()" (ngModelChange)="filterHoldingBalanceAmt.set($event === '' || $event === null ? null : +$event); holdingPage.set(0)"
+                    <input type="number" min="0" [ngModel]="filterHoldingBalanceAmt()" (ngModelChange)="filterHoldingBalanceAmt.set($event === '' || $event === null ? null : +$event); holdingPage.set(1)"
                       [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
@@ -403,14 +408,14 @@
                           } @else { 0 }
                         </td>
                         <td class="px-6 py-2 text-right text-green-700 font-semibold">{{ h.available | number: '1.0-2' }}</td>
-                        <td class="px-6 py-2 text-right">{{ h.cost | number: '1.6-6' }}</td>
-                        <td class="px-6 py-2 text-right">{{ h.balance * h.currentBid | number: '1.6-6' }}</td>
+                        <td class="px-6 py-2 text-right">{{ h.cost | money }}</td>
+                        <td class="px-6 py-2 text-right">{{ h.balance * h.currentBid | money }}</td>
                         @let pl = utils.round6(h.balance * h.currentBid - h.cost);
                         <td class="px-6 py-2 text-right font-semibold"
                             [class.text-green-600]="pl > 0"
                             [class.text-red-600]="pl < 0"
                             [class.text-gray-500]="pl === 0">
-                          {{ pl | number: '1.6-6' }}
+                          {{ pl | money }}
                         </td>
                         <td class="px-6 py-2 text-right font-semibold"
                             [class.text-green-600]="pl > 0"
@@ -472,7 +477,7 @@
                                       </td>
                                       <td class="px-2 py-1 font-mono text-[10px] text-gray-600" [title]="hold.placedBy">{{ hold.placedBy ? (hold.placedBy | slice:0:10) + '…' : '—' }}</td>
                                       <td class="px-2 py-1 text-gray-700">{{ hold.reason }}</td>
-                                      <td class="px-2 py-1 text-gray-500">{{ hold.createdAt | date:'short' }}</td>
+                                      <td class="px-2 py-1 text-gray-500">{{ hold.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                                     </tr>
                                   }
                                 </tbody>
@@ -486,24 +491,8 @@
                 </tbody>
               </table>
             </div>
-            <div class="flex items-center justify-between px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: pagedHoldings().length, total: filteredHoldings().length } }} {{ 'subscriptions.details.tabs.holdings' | translate }}</p>
-              @if (totalHoldingPages() > 1) {
-                <div class="flex items-center gap-3 text-xs text-gray-600">
-                  <span>{{ 'common.pageOf' | translate: { page: holdingPage() + 1, pages: totalHoldingPages() } }}</span>
-                  <div class="flex gap-2">
-                    <button (click)="holdingPage.set(holdingPage() - 1)" [disabled]="holdingPage() === 0"
-                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      {{ 'common.prev' | translate }}
-                    </button>
-                    <button (click)="holdingPage.set(holdingPage() + 1)" [disabled]="holdingPage() >= totalHoldingPages() - 1"
-                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      {{ 'common.next' | translate }}
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
+            <app-paginator [total]="filteredHoldings().length" [page]="holdingPage()" [pageSize]="holdingPageSize()"
+              (pageChange)="holdingPage.set($event)" (pageSizeChange)="holdingPageSize.set($event)" />
             </div>
           </div>
         }
@@ -525,7 +514,7 @@
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.holdings.asset' | translate }}</label>
-                  <select [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event); trxPage.set(0)"
+                  <select [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event); trxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (a of uniqueAssets(); track a[0]) {
@@ -536,20 +525,20 @@
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.transactions.tokens' | translate }}</label>
                   <div class="flex items-center gap-1">
-                    <select [ngModel]="filterTokensOp()" (ngModelChange)="filterTokensOp.set($event); trxPage.set(0)"
+                    <select [ngModel]="filterTokensOp()" (ngModelChange)="filterTokensOp.set($event); trxPage.set(1)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                       <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
-                    <input type="number" min="0" [ngModel]="filterTokensAmt()" (ngModelChange)="filterTokensAmt.set($event === '' || $event === null ? null : +$event); trxPage.set(0)"
+                    <input type="number" min="0" [ngModel]="filterTokensAmt()" (ngModelChange)="filterTokensAmt.set($event === '' || $event === null ? null : +$event); trxPage.set(1)"
                       [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.currency' | translate }}</label>
-                  <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); trxPage.set(0)"
+                  <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); trxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueCurrencies(); track c) {
@@ -559,12 +548,12 @@
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
-                  <input type="date" [ngModel]="filterStartDate()" (ngModelChange)="filterStartDate.set($event); trxPage.set(0)"
+                  <input type="date" [ngModel]="filterStartDate()" (ngModelChange)="filterStartDate.set($event); trxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
-                  <input type="date" [ngModel]="filterEndDate()" (ngModelChange)="filterEndDate.set($event); trxPage.set(0)"
+                  <input type="date" [ngModel]="filterEndDate()" (ngModelChange)="filterEndDate.set($event); trxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
@@ -627,32 +616,16 @@
                           <td class="px-6 py-2">@if(trx.assetSymbol){<span class="badge-symbol">{{ trx.assetSymbol }}</span>}</td>
                           <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
                           <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
-                          <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
-                          <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
+                          <td class="px-6 py-2 text-right">{{ trx.price | money }}</td>
+                          <td class="px-6 py-2 text-right">{{ trx.totalPrice | money }}</td>
                         </tr>
                       }
                     }
                   </tbody>
                 </table>
               </div>
-              <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: pagedTransactions().length, total: filteredTransactions().length } }} {{ 'subscriptions.details.tabs.transactions' | translate }}</p>
-                @if (totalTrxPages() > 1) {
-                  <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>{{ 'common.pageOf' | translate: { page: trxPage() + 1, pages: totalTrxPages() } }}</span>
-                    <div class="flex gap-2">
-                      <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.prev' | translate }}
-                      </button>
-                      <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.next' | translate }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-paginator [total]="filteredTransactions().length" [page]="trxPage()" [pageSize]="trxPageSize()"
+                (pageChange)="trxPage.set($event)" (pageSizeChange)="trxPageSize.set($event)" />
             </div>
           </div>
         }
@@ -672,9 +645,9 @@
                     <div class="bg-white rounded-lg border border-gray-200 px-3 py-1.5 flex items-center gap-2" [class.row-new]="changedCreditCodes().has(bal.currencyCode)">
                       <span class="text-xs text-gray-500">{{ bal.currencyName }}</span>
                       <span class="badge-currency">{{ bal.currencySymbol }}</span>
-                      <span class="text-sm font-semibold text-indigo-700">{{ bal.balance | number:'1.2-2' }}</span>
-                      <span class="text-[10px] text-amber-700">{{ 'subscriptions.details.credit.withheldAbbr' | translate }} {{ bal.withheld | number:'1.2-2' }}</span>
-                      <span class="text-[10px] text-green-700">{{ 'subscriptions.details.credit.availableAbbr' | translate }} {{ bal.available | number:'1.2-2' }}</span>
+                      <span class="text-sm font-semibold text-indigo-700">{{ bal.balance | money }}</span>
+                      <span class="text-[10px] text-amber-700">{{ 'subscriptions.details.credit.withheldAbbr' | translate }} {{ bal.withheld | money }}</span>
+                      <span class="text-[10px] text-green-700">{{ 'subscriptions.details.credit.availableAbbr' | translate }} {{ bal.available | money }}</span>
                     </div>
                   }
                 </div>
@@ -686,7 +659,7 @@
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
-                  <select [ngModel]="filterCreditType()" (ngModelChange)="filterCreditType.set($event); creditTrxPage.set(0)"
+                  <select [ngModel]="filterCreditType()" (ngModelChange)="filterCreditType.set($event); creditTrxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     <option value="Deposit">{{ 'subscriptions.details.credit.depositOption' | translate }}</option>
@@ -697,7 +670,7 @@
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.details.currency' | translate }}</label>
-                  <select [ngModel]="filterCreditCurrency()" (ngModelChange)="filterCreditCurrency.set($event); creditTrxPage.set(0)"
+                  <select [ngModel]="filterCreditCurrency()" (ngModelChange)="filterCreditCurrency.set($event); creditTrxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueCreditCurrencies(); track c) {
@@ -708,25 +681,25 @@
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.amount' | translate }}</label>
                   <div class="flex items-center gap-1">
-                    <select [ngModel]="filterCreditAmountOp()" (ngModelChange)="filterCreditAmountOp.set($event); creditTrxPage.set(0)"
+                    <select [ngModel]="filterCreditAmountOp()" (ngModelChange)="filterCreditAmountOp.set($event); creditTrxPage.set(1)"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                       <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
-                    <input type="number" min="0" [ngModel]="filterCreditAmountVal()" (ngModelChange)="filterCreditAmountVal.set($event === '' || $event === null ? null : +$event); creditTrxPage.set(0)"
+                    <input type="number" min="0" [ngModel]="filterCreditAmountVal()" (ngModelChange)="filterCreditAmountVal.set($event === '' || $event === null ? null : +$event); creditTrxPage.set(1)"
                       [placeholder]="'common.amount' | translate"
                       class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
-                  <input type="date" [ngModel]="filterCreditStartDate()" (ngModelChange)="filterCreditStartDate.set($event); creditTrxPage.set(0)"
+                  <input type="date" [ngModel]="filterCreditStartDate()" (ngModelChange)="filterCreditStartDate.set($event); creditTrxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
-                  <input type="date" [ngModel]="filterCreditEndDate()" (ngModelChange)="filterCreditEndDate.set($event); creditTrxPage.set(0)"
+                  <input type="date" [ngModel]="filterCreditEndDate()" (ngModelChange)="filterCreditEndDate.set($event); creditTrxPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
@@ -736,7 +709,7 @@
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
-                  @if (userInfo && userInfo.role !== 3) {
+                  @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('credit-deposit')) {
                     <button (click)="openCreditDeposit()"
                       class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -800,7 +773,7 @@
                             }
                           </td>
                           <td class="px-6 py-2"><span class="badge-currency">{{ trx.currencySymbol }}</span></td>
-                          <td class="px-6 py-2 text-right">{{ trx.amount | number: '1.2-2' }}</td>
+                          <td class="px-6 py-2 text-right">{{ trx.amount | money }}</td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span></td>
                         </tr>
                       }
@@ -808,24 +781,8 @@
                   </tbody>
                 </table>
               </div>
-              <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: pagedCreditTransactions().length, total: filteredCreditTransactions().length } }} {{ 'subscriptions.details.credit.creditTransactionsLabel' | translate }}</p>
-                @if (totalCreditTrxPages() > 1) {
-                  <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>{{ 'common.pageOf' | translate: { page: creditTrxPage() + 1, pages: totalCreditTrxPages() } }}</span>
-                    <div class="flex gap-2">
-                      <button (click)="creditTrxPage.set(creditTrxPage() - 1)" [disabled]="creditTrxPage() === 0"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.prev' | translate }}
-                      </button>
-                      <button (click)="creditTrxPage.set(creditTrxPage() + 1)" [disabled]="creditTrxPage() >= totalCreditTrxPages() - 1"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.next' | translate }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-paginator [total]="filteredCreditTransactions().length" [page]="creditTrxPage()" [pageSize]="creditTrxPageSize()"
+                (pageChange)="creditTrxPage.set($event)" (pageSizeChange)="creditTrxPageSize.set($event)" />
             </div>
           </div>
         }
@@ -845,7 +802,7 @@
         <!-- Identity Data tab — OWN-ORIGINATED eKYC verifications only (unified-eKYC §2.4):
              verifications this entity submitted for this subscriber, decrypted doc-first.
              Foreign-originated verifications never appear; the DID number is never shown. -->
-        @if (activeTab() === 'identity') {
+        @if (activeTab() === 'identity' && features.systemFunctionEnabled('view-identity-data')) {
           <div class="p-4 space-y-4">
             <p class="text-xs text-gray-500">{{ 'subscriptions.details.identity.hint' | translate }}</p>
             @if (ekycLoading() && !ekycVerifications().length) {

@@ -390,7 +390,11 @@ export class AssetService {
     public canQuote: boolean = false,
     // Distributor consent (accept-then-activate, D4): regulator activation to state 2
     // requires the distributor service's own acceptDistribution() on-chain.
-    public distributionAccepted: boolean = false
+    public distributionAccepted: boolean = false,
+    // Derived server-side: false when this service belongs to the asset's own issuer
+    // entity — not a distributor, exempt on-chain, activated directly by the regulator.
+    // Defaults true so an older API build keeps the previous rendering.
+    public consentRequired: boolean = true
   ) {}
 }
 
@@ -467,6 +471,8 @@ export interface DistributionAgreement {
   serviceName: string | null;
   state: number;
   distributionAccepted: boolean;
+  // Derived: false for a service of the asset's own issuer entity (not a distributor).
+  consentRequired: boolean;
 }
 
 // Primary-market trade (announced PrimarySubscribed / PrimaryRedeemed mesh rows).
@@ -528,6 +534,161 @@ export interface DexOfferingFill {
   createdAt: number;
 }
 
+// ─── DEX negotiated OTC deals (2026-08-07) ──────────────────────────────────
+// A deal is TARGETED and NAMED, unlike a book order: proposed to one counterparty,
+// counter-able by either side, accepted by one, then approved by the VENUE OPERATOR
+// before it crosses.
+//
+// `side` is the PROPOSER's and NEVER changes (1 = the proposer buys the base asset,
+// 2 = sells it) — do not read it as "this deal is a buy". `buyer` / `seller` are
+// derived server-side precisely so no surface re-derives them and gets one backwards.
+export interface DexDeal {
+  dealKey: string;
+  seq: number;
+  dexService: string;
+  dexServiceName: string;
+  venueEntity?: string;
+  venueEntityName?: string;
+  proposer: string;
+  proposerEntity?: string;
+  proposerEntityName?: string;
+  proposerServiceName?: string;
+  counterparty: string;
+  counterpartyEntity?: string;
+  counterpartyEntityName?: string;
+  counterpartyServiceName?: string;
+  baseAsset: string;
+  assetName: string;
+  assetSymbol: string;
+  side: number;            // 1 = proposer BUYS, 2 = proposer SELLS
+  funding: number;         // 1 = Firm, 2 = Indicative
+  marketScope: number;
+  status: number;          // 1 Proposed 2 Accepted 3 Settled 4 Rejected 5 Withdrawn 6 VenueRejected 7 Expired
+  lastMover: number;       // 1 = proposer, 2 = counterparty — whose quote is LIVE
+  suspended: boolean;      // regulator intervention, ORTHOGONAL to status
+  suspendedReason: string;
+  decisionReason: string;
+  round: number;
+  price: number;
+  amount: number;
+  currencyCode: number;
+  currencyName: string;
+  countryCode: number;
+  countryName: string;
+  buyFrozenFee: number;
+  sellFrozenFee: number;
+  buyFeeBearing: number;   // 0 = OnTop, 1 = Deducted
+  sellFeeBearing: number;
+  creditWithheld: number;
+  creditTrxId: number;
+  assetWithheld: number;
+  expiresAt: number;       // ONE clock: quote validity AND the venue-approval deadline
+  requestKey: string;      // RFQ parent, '' when standalone
+  buyOrderId: number;
+  sellOrderId: number;
+  tradeId: number;
+  createdAt: number;
+  updatedAt: number;
+  buyer: string;
+  seller: string;
+  isTerminal: boolean;
+}
+
+// One row per observed deal event — the negotiation trail. Keyed by log identity
+// server-side, so several rows may share a `roundNo`. Money/token fields are NULL on
+// the actions that set no terms; that is distinct from zero.
+export interface DexDealRound {
+  txHash: string;
+  logIndex: number;
+  roundNo: number;
+  action: number;          // 1 Propose 2 Counter 3 Accept 4 Reject 5 Withdraw 6 VenueApprove
+                           // 7 VenueReject 8 Expire 9 Suspend 10 Unsuspend 11 Funded 12 Released 13 Settled
+  actor: string;
+  price: number | null;
+  amount: number | null;
+  buyFrozenFee: number | null;
+  sellFrozenFee: number | null;
+  oldStatus: number | null;
+  newStatus: number | null;
+  reason: string;
+  blockNumber: number | null;
+  createdAt: number;
+}
+
+export interface DexDealCounterparty {
+  subscription: string;
+  entityAddress: string;
+  entityName: string;
+  serviceName: string;
+  dealCount: number;
+  lastDealtAt: number;
+}
+
+// ─── DEX RFQ (2026-08-08) ───────────────────────────────────────────────────
+// An RFQ is a FAN-OUT OVER DEALS. A dealer's answer IS a DexDeal, so a quote's
+// terms are read through vaultDexDealsList({ request }) — there is no quote model
+// and no quote endpoint. This carries the request header only.
+//
+// `side` is the REQUESTER's; every quote takes the opposite one. `amount` is FIXED
+// and `funding` is IMPOSED on every quote, which is what makes the answers
+// comparable and the award well-defined.
+export interface DexRfqRequest {
+  requestKey: string;
+  seq: number;
+  dexService: string;
+  dexServiceName: string;
+  venueEntity?: string;
+  venueEntityName?: string;
+  requester: string;
+  requesterEntity?: string;
+  requesterEntityName?: string;
+  requesterServiceName?: string;
+  baseAsset: string;
+  assetName: string;
+  assetSymbol: string;
+  side: number;            // 1 = requester BUYS, 2 = requester SELLS
+  marketScope: number;
+  status: number;          // 1 Open 2 Awarded 3 Cancelled 4 Expired
+  funding: number;         // 1 = Firm, 2 = Indicative — imposed on every quote
+  suspended: boolean;      // regulator intervention, ORTHOGONAL to status
+  suspendedReason: string;
+  openToAll: boolean;
+  amount: number;          // plain token count, FIXED
+  currencyCode: number;
+  currencyName: string;
+  countryCode: number;
+  countryName: string;
+  expiresAt: number;       // ONE clock, inherited verbatim by every child quote
+  invitedCount: number;
+  quoteCount: number;
+  awardedDeal: string;
+  createdAt: number;
+  updatedAt: number;
+  isOpen: boolean;
+}
+
+// Where one dealer stands on a request.
+//
+// ⚠️ Won / Lost / Passed have NO on-chain counterpart — a losing quote dies by
+// predicate and nothing ever marks it, so these states are the sync plugin's
+// inference. And the board is a SEALED AUCTION: the full dealer set is mirrored
+// only for the venue operator and the requester, so a single row means "all we may
+// see", never "all there was". Read totals off the request header instead.
+export interface DexRfqDealer {
+  dealer: string;
+  dealerEntity?: string;
+  dealerEntityName?: string;
+  dealerServiceName?: string;
+  state: number;                 // 1 Invited 2 Quoted 3 Won 4 Lost 5 Passed
+  dealKey: string;               // '' until they answer
+  invitedAt: number | null;      // null when they quoted an openToAll request uninvited
+  quotedAt: number | null;
+  updatedAt: number;
+  quotePrice: number | null;
+  quoteStatus: number | null;
+  quoteRound: number | null;
+}
+
 // External API integration row (admin settings; pure-config records — the former eKYC
 // adapter binding / service links are gone) — param VALUES never reach the frontend;
 // each key only carries `set` + `secret` flags.
@@ -562,6 +723,10 @@ export interface AppConfigItem {
   label: string;
   // Closed value set — present only on type 'enum' (rendered as a dropdown).
   options?: AppConfigOption[];
+  // Inclusive bounds — present only on bounded type 'number' keys. The API rejects
+  // out-of-range writes; these just let the input carry the same limits.
+  min?: number;
+  max?: number;
   restartRequired: boolean;
   value?: string | null;
   set?: boolean;

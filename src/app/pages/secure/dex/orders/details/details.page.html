@@ -146,7 +146,7 @@
                   @if (linkedTrades().length === 0) {
                     <tr class="bg-white border-b"><td class="px-6 py-2" colspan="6">{{ 'dex.orders.details.trades.empty' | translate }}</td></tr>
                   } @else {
-                    @for (t of linkedTrades(); track t.tradeId) {
+                    @for (t of pagedLinkedTrades(); track t.tradeId) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors bg-white"
                           (click)="goTrade(t.tradeId)">
                         <td class="px-6 py-2">{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</td>
@@ -161,6 +161,8 @@
                 </tbody>
               </table>
             </div>
+            <app-paginator [total]="linkedTrades().length" [page]="linkedTradesPage()" [pageSize]="linkedTradesPageSize()"
+              (pageChange)="linkedTradesPage.set($event)" (pageSizeChange)="linkedTradesPageSize.set($event)" />
             <div class="flex items-center px-4 py-2 border-t">
               <p class="text-xs font-medium text-gray-800">{{ 'dex.orders.details.trades.footer' | translate: { count: linkedTrades().length } }}</p>
             </div>

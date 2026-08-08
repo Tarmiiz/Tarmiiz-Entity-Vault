@@ -10,12 +10,12 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'documents.list.searchPlaceholder' | translate"
-          [ngModel]="search()" (ngModelChange)="search.set($event)"
+          [ngModel]="search()" (ngModelChange)="search.set($event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
-        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (v of docTypes(); track v.variableId) {
@@ -25,7 +25,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (v of docStates(); track v.variableId) {
@@ -95,7 +95,7 @@
                 <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
               </tr>
             } @else {
-              @for (row of rows(); track row.kind + ':' + row.owner + ':' + row.id; let i = $index; let isEven = $even) {
+              @for (row of pagedRows(); track row.kind + ':' + row.owner + ':' + row.id; let i = $index; let isEven = $even) {
                 <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                     [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="view(row)">
                   <td class="px-6 py-2">{{ i + 1 }}</td>
@@ -135,9 +135,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'documents.list.showingCount' | translate: { shown: rows().length, total: totalCount() } }}</p>
-    </div>
+    <app-paginator [total]="rows().length" [page]="rowsPage()" [pageSize]="rowsPageSize()"
+      (pageChange)="rowsPage.set($event)" (pageSizeChange)="rowsPageSize.set($event)" />
   </div>
 
   } @else {

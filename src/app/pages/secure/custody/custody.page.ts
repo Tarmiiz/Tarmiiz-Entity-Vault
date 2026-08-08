@@ -11,6 +11,7 @@ import { FeaturesService } from '../../../shared/services/features.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
 import { Service, User } from '../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
 
 interface CustodyMandate {
   service: string;
@@ -51,7 +52,7 @@ interface CustodyHold {
   templateUrl: './custody.page.html',
   styleUrls: ['./custody.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, PaginatorComponent],
 })
 export class CustodyPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -67,13 +68,25 @@ export class CustodyPage implements OnInit {
 
   // The entity's own type-2 (custodian-eligible) services.
   myCustodianServices = signal<Service[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  myServicesPage = signal(1);
+  myServicesPageSize = signal(25);
+  pagedMyServices = computed(() => pageSlice(this.myCustodianServices(), this.myServicesPage(), this.myServicesPageSize()));
 
   // Live reverse index (plugin-written custody_mandates from the ServicePartyChanged
   // announce fan-out): services that attached one of OUR services as their custodian.
   custodyMandates = signal<CustodyMandate[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  mandatesPage = signal(1);
+  mandatesPageSize = signal(25);
+  pagedMandates = computed(() => pageSlice(this.custodyMandates(), this.mandatesPage(), this.mandatesPageSize()));
 
   // Assets under custody (announce-fed mirror ⋈ mandates) + per-asset holds expand.
   custodiedAssets = signal<CustodiedAsset[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  custodiedPage = signal(1);
+  custodiedPageSize = signal(25);
+  pagedCustodied = computed(() => pageSlice(this.custodiedAssets(), this.custodiedPage(), this.custodiedPageSize()));
   expandedAsset = signal<string>('');
   assetHolds = signal<CustodyHold[]>([]);
 

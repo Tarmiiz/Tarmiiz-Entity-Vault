@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -12,6 +12,7 @@ import { AlertService } from '../../../../../shared/components/alerts/alert/aler
 import { UserGroup } from '../../../../../shared/models/data.model';
 import { menuLabelFor } from '../../../../../shared/constants/menu-labels';
 import { systemFunctionLabelFor } from '../../../../../shared/constants/system-function-labels';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 interface GroupMenuRow {
   menuKey: string;
@@ -32,7 +33,7 @@ interface GroupSystemFunctionRow {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, RouterLink],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, RouterLink, PaginatorComponent],
 })
 export class UserGroupDetailsPage implements OnInit {
   private route          = inject(ActivatedRoute);
@@ -55,6 +56,10 @@ export class UserGroupDetailsPage implements OnInit {
   sysFnSaving  = signal<string | null>(null);
 
   members        = signal<{ userId: string; assignedAt: number }[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  membersPage = signal(1);
+  membersPageSize = signal(25);
+  pagedMembers = computed(() => pageSlice(this.members(), this.membersPage(), this.membersPageSize()));
   membersLoading = signal(false);
 
   editName        = signal('');

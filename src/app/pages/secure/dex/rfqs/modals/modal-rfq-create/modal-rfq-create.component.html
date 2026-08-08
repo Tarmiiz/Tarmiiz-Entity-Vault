@@ -1,0 +1,157 @@
+@if (modalService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center overflow-y-auto py-8">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'dex.rfqs.createModal.title' | translate }}</h3>
+        <p class="mt-1 text-xs text-white/80">{{ 'dex.rfqs.createModal.subtitle' | translate }}</p>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.actingAs' | translate }}</label>
+          <select [(ngModel)]="subscription"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+            @for (s of modalService.ctx().subscriptions; track s.address) {
+              <option [value]="s.address">{{ s.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.venue' | translate }}</label>
+            <select [(ngModel)]="dexService"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+              @for (v of modalService.ctx().venues; track v.address) {
+                <option [value]="v.address">{{ v.label }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.asset' | translate }}</label>
+            <select [(ngModel)]="baseAsset"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+              @for (a of modalService.ctx().assets; track a.address) {
+                <option [value]="a.address">{{ a.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.rfqs.createModal.ourSide' | translate }}</label>
+            <select [(ngModel)]="side"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+              <option [ngValue]="1">{{ 'dex.deals.side.buy' | translate }}</option>
+              <option [ngValue]="2">{{ 'dex.deals.side.sell' | translate }}</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">{{ 'dex.rfqs.createModal.sideHint' | translate }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.marketScope' | translate }}</label>
+            <select [(ngModel)]="marketScope"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+              <option [ngValue]="1">{{ 'dex.common.tier1' | translate }}</option>
+              <option [ngValue]="2">{{ 'dex.common.tier2' | translate }}</option>
+              <option [ngValue]="3">{{ 'dex.common.tier3' | translate }}</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">{{ 'dex.deals.termsModal.scopeHint' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Size is FIXED and there is no price field: dealers answer with a price and
+             nothing else, which is what makes the answers comparable. -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">{{ 'dex.rfqs.createModal.amount' | translate }}</label>
+          <input type="number" min="0" step="1" [(ngModel)]="amount"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800" />
+          <p class="mt-1 text-xs text-gray-500">{{ 'dex.rfqs.createModal.amountHint' | translate }}</p>
+        </div>
+
+        <!-- Funding is imposed on every quote, so it decides who can afford to answer. -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.funding' | translate }}</label>
+          <select [(ngModel)]="funding"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+            <option [ngValue]="1">{{ 'dex.deals.funding.firm' | translate }}</option>
+            <option [ngValue]="2">{{ 'dex.deals.funding.indicative' | translate }}</option>
+          </select>
+          <p class="mt-1 text-xs rounded px-3 py-2"
+             [class]="funding() === 1 ? 'bg-emerald-50 text-emerald-800' : 'bg-orange-50 text-orange-800'">
+            {{ (funding() === 1 ? 'dex.rfqs.createModal.fundingFirmHint' : 'dex.rfqs.createModal.fundingIndicativeHint') | translate }}
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">{{ 'dex.rfqs.createModal.validFor' | translate }}</label>
+          <input type="number" min="0.25" step="0.25" [(ngModel)]="ttlHours"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800" />
+          <p class="mt-1 text-xs text-gray-500">{{ 'dex.rfqs.createModal.validForHint' | translate }}</p>
+        </div>
+
+        <!-- Who may answer. Inviting is cheap: fan-out is lazy on chain, so an invitee
+             who never answers costs one address and writes no deal ticket. -->
+        <div class="rounded-md border border-gray-200 p-3">
+          <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input type="checkbox" [(ngModel)]="openToAll" class="rounded border-gray-300" />
+            {{ 'dex.rfqs.createModal.openToAll' | translate }}
+          </label>
+          <p class="mt-1 text-xs text-gray-500">{{ 'dex.rfqs.createModal.openToAllHint' | translate }}</p>
+
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.rfqs.createModal.invite' | translate }}</label>
+
+            @if (modalService.ctx().counterparties.length) {
+              <div class="mt-1 max-h-32 overflow-y-auto border border-gray-200 rounded divide-y">
+                @for (c of modalService.ctx().counterparties; track c.subscription) {
+                  <label class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-800 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" [checked]="isInvited(c.subscription)"
+                      (change)="toggleInvite(c.subscription)" class="rounded border-gray-300" />
+                    <span class="font-medium">{{ c.entityName || c.subscription }}</span>
+                    @if (c.serviceName) { <span class="text-gray-500">· {{ c.serviceName }}</span> }
+                  </label>
+                }
+              </div>
+            }
+
+            <div class="mt-2 flex gap-2">
+              <input type="text" [(ngModel)]="manualDealer"
+                [placeholder]="'dex.rfqs.createModal.dealerPlaceholder' | translate"
+                class="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800 font-mono" />
+              <button type="button" (click)="addManualDealer()"
+                class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                {{ 'common.add' | translate }}
+              </button>
+            </div>
+
+            @if (invited().length) {
+              <div class="mt-2 flex flex-wrap gap-1">
+                @for (a of invited(); track a) {
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-mono">
+                    {{ a.slice(0, 10) }}…
+                    <button type="button" (click)="removeInvite(a)" class="text-indigo-600 hover:text-indigo-900">&times;</button>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (error()) {
+          <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ error() | translate }}</p>
+        }
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button type="button" (click)="onSubmit()"
+          class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
+          {{ 'dex.rfqs.createModal.submit' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

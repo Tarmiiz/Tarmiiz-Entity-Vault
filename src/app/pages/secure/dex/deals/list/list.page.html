@@ -1,0 +1,180 @@
+<app-header [title]="'dex.deals.title' | translate"></app-header>
+<app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
+<app-modal-deal-terms />
+
+<div class="flex-grow p-4 bg-gray-300 overflow-y-auto">
+
+  <!-- A deal reaches this tenant in three different roles; one merged table would bury
+       the only two that are actionable. -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-3">
+    <div class="flex items-center border-b border-gray-200">
+      <button (click)="setTab('inbox')"
+        class="px-4 py-2.5 text-xs font-medium transition-colors border-b-2"
+        [class.border-indigo-600]="tab() === 'inbox'" [class.text-indigo-700]="tab() === 'inbox'"
+        [class.border-transparent]="tab() !== 'inbox'" [class.text-gray-500]="tab() !== 'inbox'">
+        {{ 'dex.deals.tabs.inbox' | translate }}
+        @if (inbox().length) {
+          <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px]">{{ inbox().length }}</span>
+        }
+      </button>
+      <button (click)="setTab('approvals')"
+        class="px-4 py-2.5 text-xs font-medium transition-colors border-b-2"
+        [class.border-indigo-600]="tab() === 'approvals'" [class.text-indigo-700]="tab() === 'approvals'"
+        [class.border-transparent]="tab() !== 'approvals'" [class.text-gray-500]="tab() !== 'approvals'">
+        {{ 'dex.deals.tabs.approvals' | translate }}
+        @if (approvals().length) {
+          <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px]">{{ approvals().length }}</span>
+        }
+      </button>
+      <button (click)="setTab('all')"
+        class="px-4 py-2.5 text-xs font-medium transition-colors border-b-2"
+        [class.border-indigo-600]="tab() === 'all'" [class.text-indigo-700]="tab() === 'all'"
+        [class.border-transparent]="tab() !== 'all'" [class.text-gray-500]="tab() !== 'all'">
+        {{ 'dex.deals.tabs.all' | translate }}
+      </button>
+      <div class="ml-auto pr-3">
+        <app-refresh-button [loading]="refreshing()" (refresh)="refresh(true)" />
+      </div>
+    </div>
+
+    @if (tab() === 'inbox') {
+      <p class="px-4 py-2 text-xs text-gray-500 bg-blue-50">{{ 'dex.deals.tabs.inboxHint' | translate }}</p>
+    } @else if (tab() === 'approvals') {
+      <p class="px-4 py-2 text-xs text-gray-500 bg-amber-50">{{ 'dex.deals.tabs.approvalsHint' | translate }}</p>
+    }
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
+        <input type="text" [placeholder]="'dex.deals.list.searchPlaceholder' | translate"
+          [ngModel]="search()" (ngModelChange)="search.set($event); page.set(1)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">{{ 'common.status' | translate }}</label>
+        <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); page.set(1)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'dex.deals.status.proposed' | translate }}</option>
+          <option value="2">{{ 'dex.deals.status.accepted' | translate }}</option>
+          <option value="3">{{ 'dex.deals.status.settled' | translate }}</option>
+          <option value="4">{{ 'dex.deals.status.rejected' | translate }}</option>
+          <option value="5">{{ 'dex.deals.status.withdrawn' | translate }}</option>
+          <option value="6">{{ 'dex.deals.status.venueRejected' | translate }}</option>
+          <option value="7">{{ 'dex.deals.status.expired' | translate }}</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">{{ 'dex.deals.table.funding' | translate }}</label>
+        <select [ngModel]="filterFunding()" (ngModelChange)="filterFunding.set($event); page.set(1)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          <option value="">{{ 'common.all' | translate }}</option>
+          <option value="1">{{ 'dex.deals.funding.firm' | translate }}</option>
+          <option value="2">{{ 'dex.deals.funding.indicative' | translate }}</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-gray-500">{{ 'dex.deals.table.asset' | translate }}</label>
+        <input type="text" [placeholder]="'dex.deals.list.assetPlaceholder' | translate"
+          [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event); page.set(1)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+      </div>
+      <div class="flex flex-col justify-end">
+        <button (click)="clearFilters()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.clear' | translate }}</button>
+      </div>
+      <div class="flex ml-auto items-end gap-2">
+        <!-- The only write that starts here: everything else needs an existing deal
+             to act on and lives on that deal's page. -->
+        @if (canPropose()) {
+          <button (click)="proposeDeal()"
+            class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            {{ 'dex.deals.actions.propose' | translate }}
+          </button>
+        }
+        @if (features.systemFunctionEnabled('export-excel')) {
+          <button (click)="exportExcel()"
+            class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
+            {{ 'common.exportExcel' | translate }}
+          </button>
+        }
+        @if (features.systemFunctionEnabled('export-pdf')) {
+          <button (click)="exportPdf()"
+            class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M8 12l4 4 4-4M12 4v12"/></svg>
+            {{ 'common.exportPdf' | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <tr>
+            <th class="px-6 py-2">{{ 'common.status' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.deals.table.asset' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.deals.table.counterparty' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.deals.table.venue' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.deals.table.side' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.deals.table.funding' | translate }}</th>
+            <th class="px-6 py-2 text-right">{{ 'dex.deals.table.amount' | translate }}</th>
+            <th class="px-6 py-2 text-right">{{ 'dex.deals.table.price' | translate }}</th>
+            <th class="px-6 py-2 text-right">{{ 'dex.deals.table.total' | translate }}</th>
+            <th class="px-6 py-2 text-center">{{ 'dex.deals.table.round' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.deals.table.expires' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @if (filtered().length === 0) {
+            <tr class="bg-white border-b">
+              <td class="px-6 py-2" colspan="11">{{ 'common.noData' | translate }}</td>
+            </tr>
+          } @else {
+            @for (d of paged(); track d.dealKey; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
+                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
+                  (click)="view(d)">
+                <td class="px-6 py-2">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="statusClass(d)">{{ statusLabel(d) }}</span>
+                  @if (d.suspended) {
+                    <span class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800"
+                      [title]="d.suspendedReason || ('dex.deals.suspendedHint' | translate)">{{ 'dex.deals.suspended' | translate }}</span>
+                  }
+                </td>
+                <td class="px-6 py-2">
+                  <div class="font-medium text-gray-800">{{ d.assetName || '—' }}</div>
+                  <div class="text-[10px] text-gray-500">{{ d.assetSymbol || (d.baseAsset.slice(0,10) + '…') }}</div>
+                </td>
+                <td class="px-6 py-2">{{ otherParty(d) }}</td>
+                <td class="px-6 py-2">{{ d.dexServiceName || (d.dexService.slice(0,10) + '…') }}</td>
+                <td class="px-6 py-2">{{ sideLabel(d) }}</td>
+                <td class="px-6 py-2">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                    [class]="d.funding === 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'"
+                    [title]="d.funding === 1 ? ('dex.deals.funding.firmHint' | translate) : ('dex.deals.funding.indicativeHint' | translate)">
+                    {{ fundingLabel(d) }}
+                  </span>
+                </td>
+                <td class="px-6 py-2 text-right">{{ fmtAmount(d.amount) }}</td>
+                <td class="px-6 py-2 text-right">{{ d.price | money }}</td>
+                <td class="px-6 py-2 text-right">{{ (d.amount * d.price) | money }}</td>
+                <td class="px-6 py-2 text-center">{{ d.round }}</td>
+                <td class="px-6 py-2">{{ expiresIn(d) }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-paginator [total]="filtered().length" [page]="page()" [pageSize]="pageSize()"
+      (pageChange)="page.set($event)" (pageSizeChange)="pageSize.set($event)" />
+  </div>
+
+</div>

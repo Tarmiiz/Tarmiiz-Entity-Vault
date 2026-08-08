@@ -10,7 +10,7 @@
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.type' | translate }}</label>
-        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); assetsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-36">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (t of uniqueTypes(); track t) {
@@ -20,7 +20,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); assetsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'state.initiated' | translate }}</option>
@@ -31,7 +31,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.currency' | translate }}</label>
-        <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event)"
+        <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); assetsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (c of uniqueCurrencies(); track c) {
@@ -42,13 +42,13 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'assets.filters.circulating' | translate }}</label>
         <div class="flex items-center gap-1">
-          <select [ngModel]="filterCirculatingOp()" (ngModelChange)="filterCirculatingOp.set($event)"
+          <select [ngModel]="filterCirculatingOp()" (ngModelChange)="filterCirculatingOp.set($event); assetsPage.set(1)"
             class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
             <option value="">{{ 'assets.compare.any' | translate }}</option>
             <option value="gt">{{ 'assets.compare.gt' | translate }}</option>
             <option value="lt">{{ 'assets.compare.lt' | translate }}</option>
           </select>
-          <input type="number" min="0" [ngModel]="filterCirculatingAmt()" (ngModelChange)="filterCirculatingAmt.set($event === '' || $event === null ? null : +$event)"
+          <input type="number" min="0" [ngModel]="filterCirculatingAmt()" (ngModelChange)="filterCirculatingAmt.set($event === '' || $event === null ? null : +$event); assetsPage.set(1)"
             [placeholder]="'assets.filters.amount' | translate"
             class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
         </div>
@@ -60,7 +60,7 @@
         </button>
       </div>
       <div class="flex ml-auto items-end gap-2">
-        @if(userInfo && userInfo.role !== 3) {
+        @if(userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-create')) {
           <button (click)="openAddModal()" [disabled]="!entityActive"
             class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -68,6 +68,8 @@
             </svg>
             {{ 'assets.add' | translate }}
           </button>
+        }
+        @if(userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-register-existing')) {
           <button (click)="openRegisterExistingModal()" [disabled]="!entityActive"
             class="text-xs px-3 py-1.5 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             [title]="'assets.list.registerExistingTooltip' | translate">
@@ -124,7 +126,7 @@
                   </tr>
               }
               @else {
-                @for(data of filteredAssets(); track data.address; let i = $index; let isEven = $even;) {
+                @for(data of pagedAssets(); track data.address; let i = $index; let isEven = $even;) {
                     <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(data)">
                         <td class="px-6 py-2">{{ i + 1 }}</td>
                         <td class="px-6 py-2">{{ data.name }}</td>
@@ -157,9 +159,8 @@
           </tbody>
         </table>
       </div>
-      <div class="flex items-center px-4 py-2 border-t">
-        <p class="text-xs font-medium text-gray-800">{{ 'assets.list.footer' | translate: { shown: filteredAssets().length, total: assets().length } }}</p>
-      </div>
+      <app-paginator [total]="filteredAssets().length" [page]="assetsPage()" [pageSize]="assetsPageSize()"
+        (pageChange)="assetsPage.set($event)" (pageSizeChange)="assetsPageSize.set($event)" />
     </div>
 
 </div>

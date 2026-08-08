@@ -14,12 +14,13 @@ import { UtilsService } from '../../../../../shared/services/utils.service';
 import { Document, GlobalVariable } from '../../../../../shared/models/data.model';
 import { ModalDocumentAddService } from '../../../documents/modals/modal-document-add/modal-document-add.service';
 import { ModalDocumentAddComponent } from '../../../documents/modals/modal-document-add/modal-document-add.component';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-service-documents-list',
   templateUrl: './list.page.html',
   standalone: true,
-  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentAddComponent, TranslatePipe]
+  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentAddComponent, TranslatePipe, PaginatorComponent]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -76,6 +77,10 @@ export class ListPage implements OnInit {
     this.loadingService.hide();
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  docsPage = signal(1);
+  docsPageSize = signal(25);
+  pagedDocs = computed(() => pageSlice(this.filtered(), this.docsPage(), this.docsPageSize()));
   filtered = computed(() => {
     const term = this.search().toLowerCase();
     const t = this.filterType();
@@ -105,6 +110,7 @@ export class ListPage implements OnInit {
 
   view(doc: Document) {
     this.router.navigate(['/authorized/services/documents/details/' + this.serviceAddress() + '/' + doc.id]);
+  this.docsPage.set(1);
   }
 
   async add() {

@@ -1,7 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { FeaturesService } from './features.service';
 
 @Injectable({ providedIn: 'root' })
 export class UtilsService {
+  // Money precision is server-owned (app_config CURRENCY_DECIMALS).
+  private features = inject(FeaturesService);
 
   formatDate(timestamp: number): string {
     if (!timestamp) return '-';
@@ -53,8 +56,23 @@ export class UtilsService {
     return Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
 
+  // The MONEY formatter — screen (via MoneyPipe) and PDF exports both land here, so the
+  // admin's `CURRENCY_DECIMALS` governs every rendered currency figure. NOT for token
+  // quantities (`formatTokens`) or percentages.
   formatPrice(value: number): string {
-    return Number(value).toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+    const d = this.features.currencyDecimals();
+    return Number(value).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+
+  // The Excel counterpart of formatPrice: rounds to the configured precision but stays a
+  // NUMBER, so the cell keeps summing and sorting numerically instead of becoming text.
+  // Every money field written into an XLSX row goes through this.
+  roundMoney(value: number | string | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    const f = Math.pow(10, this.features.currencyDecimals());
+    return Math.round(n * f) / f;
   }
 
   // Numeric 6-decimal rounding — kills double-precision dust (e.g. 2.27e-13 from

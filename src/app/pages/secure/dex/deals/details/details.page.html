@@ -1,0 +1,302 @@
+<app-header [title]="'dex.deals.title' | translate"></app-header>
+
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/dex/deals/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.deals.details.breadcrumb' | translate }}</a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 font-mono">{{ dealKey().slice(0, 12) }}…</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+  <div class="flex items-center gap-2">
+    <!--
+      The action bar is driven entirely by `lastMover`: whoever's quote is live may
+      only WITHDRAW it, and the other side may counter / accept / decline it. Once
+      Accepted neither trader can act — only the venue operator or the clock — which
+      is the point of the approval step, so those buttons simply disappear.
+    -->
+    @if (canCounter()) {
+      <button (click)="counterDeal()"
+        class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        {{ 'dex.deals.actions.counter' | translate }}
+      </button>
+    }
+    @if (canAccept()) {
+      <button (click)="acceptDeal()"
+        class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        {{ 'dex.deals.actions.accept' | translate }}
+      </button>
+    }
+    @if (canDecline()) {
+      <button (click)="declineDeal()"
+        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+        {{ 'dex.deals.actions.decline' | translate }}
+      </button>
+    }
+    @if (canWithdraw()) {
+      <button (click)="withdrawDeal()"
+        class="text-xs px-3 py-1.5 rounded border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
+        {{ 'dex.deals.actions.withdraw' | translate }}
+      </button>
+    }
+    @if (canApprove()) {
+      <button (click)="approveCross()"
+        class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ 'dex.deals.actions.approve' | translate }}
+      </button>
+    }
+    @if (canDecide()) {
+      <button (click)="rejectCross()"
+        class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+        {{ 'dex.deals.actions.reject' | translate }}
+      </button>
+    }
+    <app-refresh-button [loading]="refreshing()" (refresh)="load(true)" />
+    <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
+  </div>
+</div>
+
+<app-modal-deal-terms />
+<app-modal-deal-reason />
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto">
+    @if (deal(); as d) {
+
+      @if (d.suspended) {
+        <div class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3">
+          <p class="text-sm font-semibold text-red-800">{{ 'dex.deals.details.suspendedBanner' | translate }}</p>
+          <p class="text-xs text-red-700 mt-1">{{ d.suspendedReason || ('dex.deals.details.noReason' | translate) }}</p>
+          <!-- Say plainly what a suspension does and does not do: it stops execution, it
+               never traps capital. Otherwise a counterparty assumes their escrow is stuck. -->
+          <p class="text-xs text-red-600 mt-1.5">{{ 'dex.deals.details.suspendedExplain' | translate }}</p>
+        </div>
+      }
+
+      <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-200">
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-gray-800">
+                {{ d.assetName || d.assetSymbol || ('dex.deals.details.untitled' | translate) }}
+                <span class="text-sm font-normal text-gray-500">· {{ d.assetSymbol }}</span>
+              </h2>
+              <p class="text-xs text-gray-500 mt-0.5 font-mono">{{ d.dealKey }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="statusClass(d)">{{ statusLabel(d) }}</span>
+              <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                [class]="d.funding === 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'">{{ fundingLabel(d) }}</span>
+            </div>
+          </div>
+          @if (d.funding === 2 && d.status === 1) {
+            <p class="mt-2 text-xs text-orange-700 bg-orange-50 rounded px-3 py-1.5">{{ 'dex.deals.funding.indicativeHint' | translate }}</p>
+          }
+        </div>
+
+        <div class="flex items-center border-b border-gray-200">
+          <button (click)="tab.set('terms')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors"
+            [class.border-indigo-600]="tab() === 'terms'" [class.text-indigo-700]="tab() === 'terms'"
+            [class.border-transparent]="tab() !== 'terms'" [class.text-gray-500]="tab() !== 'terms'">{{ 'dex.deals.details.tabs.terms' | translate }}</button>
+          <button (click)="tab.set('rounds')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors"
+            [class.border-indigo-600]="tab() === 'rounds'" [class.text-indigo-700]="tab() === 'rounds'"
+            [class.border-transparent]="tab() !== 'rounds'" [class.text-gray-500]="tab() !== 'rounds'">
+            {{ 'dex.deals.details.tabs.rounds' | translate }}
+            <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-700 text-[10px]">{{ rounds().length }}</span>
+          </button>
+          <button (click)="tab.set('settlement')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors"
+            [class.border-indigo-600]="tab() === 'settlement'" [class.text-indigo-700]="tab() === 'settlement'"
+            [class.border-transparent]="tab() !== 'settlement'" [class.text-gray-500]="tab() !== 'settlement'">{{ 'dex.deals.details.tabs.settlement' | translate }}</button>
+        </div>
+
+        @if (tab() === 'terms') {
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm text-gray-700">
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.table.amount' | translate }}</span>
+                <span class="font-medium">{{ fmtAmount(d.amount) }}</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.table.price' | translate }}</span>
+                <span class="font-medium">{{ d.price | money }} {{ d.currencyName || d.currencyCode }}</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.table.total' | translate }}</span>
+                <span class="font-medium">{{ (d.amount * d.price) | money }}</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.table.round' | translate }}</span>
+                <span class="font-medium">{{ d.round }}</span>
+              </div>
+
+              <!-- side names the PROPOSER's direction and never changes; buyer/seller are
+                   spelled out so nobody has to invert it in their head. -->
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.table.side' | translate }}</span>
+                <span class="font-medium">{{ sideLabel(d) }}</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.liveQuote' | translate }}</span>
+                <span class="font-medium">{{ lastMoverLabel(d) }}</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.buyer' | translate }}</span>
+                <span class="font-mono text-xs">{{ d.buyer.slice(0, 12) }}…</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.seller' | translate }}</span>
+                <span class="font-mono text-xs">{{ d.seller.slice(0, 12) }}…</span>
+              </div>
+
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.proposerParty' | translate }}</span>
+                <span class="font-medium">{{ d.proposerEntityName || (d.proposer.slice(0,10) + '…') }}</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.counterpartyParty' | translate }}</span>
+                <span class="font-medium">{{ d.counterpartyEntityName || (d.counterparty.slice(0,10) + '…') }}</span>
+              </div>
+
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.table.venue' | translate }}</span>
+                <button (click)="goVenue(d.dexService)" class="font-medium text-indigo-600 hover:underline">{{ d.dexServiceName || (d.dexService.slice(0,10) + '…') }}</button>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.table.asset' | translate }}</span>
+                <button (click)="goAsset(d.baseAsset)" class="font-medium text-indigo-600 hover:underline">{{ d.assetSymbol || (d.baseAsset.slice(0,10) + '…') }}</button>
+              </div>
+
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.buyFee' | translate }}</span>
+                <span class="font-medium">{{ d.buyFrozenFee | money }} <span class="text-xs text-gray-500">({{ bearingLabel(d.buyFeeBearing) }})</span></span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.sellFee' | translate }}</span>
+                <span class="font-medium">{{ d.sellFrozenFee | money }} <span class="text-xs text-gray-500">({{ bearingLabel(d.sellFeeBearing) }})</span></span>
+              </div>
+
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.expiresAt' | translate }}</span>
+                <span class="font-medium">{{ d.expiresAt ? utils.formatTime(d.expiresAt) : '—' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                <span class="text-gray-500">{{ 'dex.deals.details.created' | translate }}</span>
+                <span class="font-medium">{{ d.createdAt ? utils.formatTime(d.createdAt) : '—' }}</span>
+              </div>
+              @if (d.requestKey) {
+                <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span class="text-gray-500">{{ 'dex.deals.details.rfqParent' | translate }}</span>
+                  <span class="font-mono text-xs">{{ d.requestKey.slice(0, 12) }}…</span>
+                </div>
+              }
+              @if (d.decisionReason) {
+                <div class="flex justify-between border-b border-gray-100 pb-1.5 md:col-span-2">
+                  <span class="text-gray-500">{{ 'dex.deals.details.decisionReason' | translate }}</span>
+                  <span class="font-medium">{{ d.decisionReason }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Escrow only while the deal is in flight — every terminal status returns it,
+                 so showing a stale locked amount reads as trapped capital. -->
+            @if (showsEscrow(d)) {
+              <div class="mt-5 rounded-lg border border-purple-200 bg-purple-50 p-3">
+                <p class="text-xs font-semibold text-purple-800 mb-2">{{ 'dex.deals.details.escrow' | translate }}</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">{{ 'dex.deals.details.creditWithheld' | translate }}</span>
+                    <span class="font-medium">{{ d.creditWithheld | money }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">{{ 'dex.deals.details.assetWithheld' | translate }}</span>
+                    <span class="font-medium">{{ fmtAmount(d.assetWithheld) }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (tab() === 'rounds') {
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-700">
+              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <tr>
+                  <th class="px-6 py-2">{{ 'dex.deals.rounds.when' | translate }}</th>
+                  <th class="px-6 py-2 text-center">{{ 'dex.deals.table.round' | translate }}</th>
+                  <th class="px-6 py-2">{{ 'dex.deals.rounds.action' | translate }}</th>
+                  <th class="px-6 py-2">{{ 'dex.deals.rounds.actor' | translate }}</th>
+                  <th class="px-6 py-2 text-right">{{ 'dex.deals.table.amount' | translate }}</th>
+                  <th class="px-6 py-2 text-right">{{ 'dex.deals.table.price' | translate }}</th>
+                  <th class="px-6 py-2">{{ 'dex.deals.rounds.reason' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody class="text-xs">
+                @if (rounds().length === 0) {
+                  <tr class="bg-white border-b"><td class="px-6 py-2" colspan="7">{{ 'common.noData' | translate }}</td></tr>
+                } @else {
+                  @for (r of rounds(); track r.txHash + '-' + r.logIndex; let isEven = $even) {
+                    <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                      <td class="px-6 py-2">{{ r.createdAt ? utils.formatTime(r.createdAt) : '—' }}</td>
+                      <td class="px-6 py-2 text-center">{{ r.roundNo }}</td>
+                      <td class="px-6 py-2">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="actionClass(r)">{{ actionLabel(r) }}</span>
+                      </td>
+                      <td class="px-6 py-2 font-mono">{{ r.actor ? (r.actor.slice(0,10) + '…') : '—' }}</td>
+                      <!-- null ≠ 0 here: the action simply set no terms. -->
+                      <td class="px-6 py-2 text-right">{{ r.amount === null ? '—' : fmtAmount(r.amount) }}</td>
+                      <td class="px-6 py-2 text-right">{{ r.price === null ? '—' : (r.price | money) }}</td>
+                      <td class="px-6 py-2">{{ r.reason || '—' }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (tab() === 'settlement') {
+          <div class="p-4">
+            @if (d.status === 3) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm text-gray-700">
+                <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span class="text-gray-500">{{ 'dex.deals.details.tradeId' | translate }}</span>
+                  <button (click)="goTrade(d.tradeId)" class="font-medium text-indigo-600 hover:underline">#{{ d.tradeId }}</button>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span class="text-gray-500">{{ 'dex.deals.details.creditTrxId' | translate }}</span>
+                  <span class="font-medium">{{ d.creditTrxId || '—' }}</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span class="text-gray-500">{{ 'dex.deals.details.buyOrderId' | translate }}</span>
+                  <button (click)="goOrder(d.buyOrderId)" class="font-medium text-indigo-600 hover:underline">#{{ d.buyOrderId }}</button>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-1.5">
+                  <span class="text-gray-500">{{ 'dex.deals.details.sellOrderId' | translate }}</span>
+                  <button (click)="goOrder(d.sellOrderId)" class="font-medium text-indigo-600 hover:underline">#{{ d.sellOrderId }}</button>
+                </div>
+              </div>
+              <!-- The two order rows are real but OFF-BOOK: they exist so settlement could
+                   reuse the engine unchanged, and never appeared in the book. -->
+              <p class="mt-4 text-xs text-gray-500">{{ 'dex.deals.details.offBookNote' | translate }}</p>
+            } @else {
+              <p class="text-sm text-gray-500">{{ 'dex.deals.details.notSettled' | translate }}</p>
+            }
+          </div>
+        }
+      </div>
+
+    } @else {
+      <div class="bg-white rounded-lg shadow-md p-6 text-sm text-gray-500">{{ 'common.noData' | translate }}</div>
+    }
+  </div>
+</main>

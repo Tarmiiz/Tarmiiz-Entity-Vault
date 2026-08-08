@@ -41,7 +41,7 @@
               </td>
             </tr>
           } @else {
-            @for (p of integrations(); track p.name; let i = $index; let isEven = $even) {
+            @for (p of pagedIntegrations(); track p.name; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                 <td class="px-6 py-2">{{ i + 1 }}</td>
@@ -69,7 +69,7 @@
                   <span>{{ 'settings.externalIntegrations.paramsSetCount' | translate: { count: paramsSetCount(p) } }}</span>
                 </td>
                 <td class="px-6 py-2">
-                  @if (p.updatedAt != null) { {{ p.updatedAt | date:'medium' }} } @else { {{ 'common.notSet' | translate }} }
+                  @if (p.updatedAt != null) { {{ p.updatedAt | date:'dd/MM/yyyy HH:mm:ss' }} } @else { {{ 'common.notSet' | translate }} }
                 </td>
                 <td class="px-6 py-2">
                   <div class="flex gap-2">
@@ -100,9 +100,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'settings.externalIntegrations.showingTotal' | translate: { count: integrations().length } }}</p>
-    </div>
+    <app-paginator [total]="integrations().length" [page]="integrationsPage()" [pageSize]="integrationsPageSize()"
+      (pageChange)="integrationsPage.set($event)" (pageSizeChange)="integrationsPageSize.set($event)" />
   </div>
 </div>
 

@@ -8,7 +8,7 @@
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.filters.service' | translate }}</label>
-        <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event)"
+        <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event); subscriptionsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (s of uniqueServices(); track s[0]) {
@@ -18,7 +18,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'subscriptions.filters.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); subscriptionsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'state.initiated' | translate }}</option>
@@ -34,7 +34,7 @@
         </button>
       </div>
       <div class="flex gap-2 ml-auto">
-        @if (userInfo && userInfo.role !== 3) {
+        @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('subscriber-onboard')) {
           <button (click)="openAddSubscription()"
             class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -89,7 +89,7 @@
                   </tr>
               }
               @else {
-                  @for(subscription of filteredSubscriptions(); track subscription.subscription; let i = $index; let isEven = $even;) {
+                  @for(subscription of pagedSubscriptions(); track subscription.subscription; let i = $index; let isEven = $even;) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(subscription)">
                           <td class="px-6 py-2">{{ subscription.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2">{{ subscription.subscription }}</td>
@@ -118,9 +118,8 @@
           </tbody>
         </table>
       </div>
-      <div class="flex items-center px-4 py-2 border-t">
-        <p class="text-xs font-medium text-gray-800">{{ 'subscriptions.list.showingCount' | translate: { count: filteredSubscriptions().length, total: subscriptions().length } }}</p>
-      </div>
+      <app-paginator [total]="filteredSubscriptions().length" [page]="subscriptionsPage()" [pageSize]="subscriptionsPageSize()"
+        (pageChange)="subscriptionsPage.set($event)" (pageSizeChange)="subscriptionsPageSize.set($event)" />
     </div>
 
   </div>

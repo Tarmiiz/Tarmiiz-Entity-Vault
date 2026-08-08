@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -11,6 +11,8 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { DexOffering, DexOfferingFill, User } from '../../../../shared/models/data.model';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 interface AssetOption { address: string; name: string; symbol: string; }
 interface VenueOption { dexService: string; serviceName: string; state: number; }
@@ -27,7 +29,7 @@ interface VenueOption { dexService: string; serviceName: string; state: number; 
   templateUrl: './offerings.page.html',
   styleUrls: ['./offerings.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, MoneyPipe, PaginatorComponent],
 })
 export class OfferingsPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -41,6 +43,10 @@ export class OfferingsPage implements OnInit {
   userInfo!: User;
 
   offerings = signal<DexOffering[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  offeringsPage = signal(1);
+  offeringsPageSize = signal(25);
+  pagedOfferings = computed(() => pageSlice(this.offerings(), this.offeringsPage(), this.offeringsPageSize()));
   offeringsTotal = signal(0);
   loaded = signal(false);
 

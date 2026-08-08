@@ -18,7 +18,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (s of myCustodianServices(); track s.address; let i = $index) {
+          @for (s of pagedMyServices(); track s.address; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1" class="cursor-pointer hover:bg-blue-50" (click)="gotoService(s.address)">
               <td class="px-4 py-2 font-medium text-gray-900">{{ s.name }}</td>
               <td class="px-4 py-2 font-mono text-xs">{{ s.address }}</td>
@@ -38,6 +38,8 @@
         </tbody>
       </table>
     </div>
+    <app-paginator [total]="myCustodianServices().length" [page]="myServicesPage()" [pageSize]="myServicesPageSize()"
+      (pageChange)="myServicesPage.set($event)" (pageSizeChange)="myServicesPageSize.set($event)" />
   </div>
 
   <!-- Services under my custody (live reverse index) -->
@@ -57,7 +59,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (m of custodyMandates(); track (m.service + m.party); let i = $index) {
+          @for (m of pagedMandates(); track (m.service + m.party); let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
               <td class="px-4 py-2 font-mono text-xs">{{ m.service }}</td>
               <td class="px-4 py-2 font-medium text-gray-900">{{ m.partyName || m.party }}</td>
@@ -68,7 +70,7 @@
                   <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'custody.underCustody.detached' | translate }}</span>
                 }
               </td>
-              <td class="px-4 py-2 text-xs">{{ m.updatedAt | date: 'yyyy-MM-dd HH:mm' }}</td>
+              <td class="px-4 py-2 text-xs">{{ m.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
             </tr>
           } @empty {
             <tr>
@@ -80,6 +82,8 @@
         </tbody>
       </table>
     </div>
+    <app-paginator [total]="custodyMandates().length" [page]="mandatesPage()" [pageSize]="mandatesPageSize()"
+      (pageChange)="mandatesPage.set($event)" (pageSizeChange)="mandatesPageSize.set($event)" />
   </div>
 
   <!-- Assets under custody + holds -->
@@ -100,7 +104,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (a of custodiedAssets(); track a.address; let i = $index) {
+          @for (a of pagedCustodied(); track a.address; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
               <td class="px-4 py-2 font-medium text-gray-900">{{ a.name }}</td>
               <td class="px-4 py-2">
@@ -187,6 +191,8 @@
         </tbody>
       </table>
     </div>
+    <app-paginator [total]="custodiedAssets().length" [page]="custodiedPage()" [pageSize]="custodiedPageSize()"
+      (pageChange)="custodiedPage.set($event)" (pageSizeChange)="custodiedPageSize.set($event)" />
   </div>
 </div>
 

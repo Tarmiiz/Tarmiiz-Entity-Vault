@@ -38,12 +38,12 @@
                 @for (c of currencies(); track c.code) {
                   <div class="shrink-0 rounded-lg bg-indigo-900/40 border border-indigo-400/30 px-4 py-3 min-w-[180px] min-h-[100px]">
                     <div class="flex items-baseline gap-2">
-                      <p class="text-2xl font-bold">{{ c.totalAum | number:'1.2-2' }}</p>
+                      <p class="text-2xl font-bold">{{ c.totalAum | money }}</p>
                       <span class="text-xs font-semibold text-indigo-200">{{ c.code }}</span>
                     </div>
                     <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ c.assetCount }} {{ (c.assetCount === 1 ? 'dashboard.assetSingular' : 'dashboard.assetPlural') | translate }}</p>
                     <p class="text-xs mt-1" [class]="c.netFlow30d >= 0 ? 'text-green-300' : 'text-red-300'">
-                      {{ c.netFlow30d >= 0 ? '▲' : '▼' }} {{ (c.netFlow30d < 0 ? -c.netFlow30d : c.netFlow30d) | number:'1.2-2' }}
+                      {{ c.netFlow30d >= 0 ? '▲' : '▼' }} {{ (c.netFlow30d < 0 ? -c.netFlow30d : c.netFlow30d) | money }}
                       <span class="text-indigo-300 font-normal">{{ 'dashboard.netFlowPeriod' | translate }}</span>
                     </p>
                   </div>
@@ -65,7 +65,7 @@
                 @for (t of activeCreditTotals(); track t.currencyCode) {
                   <div class="shrink-0 rounded-lg bg-indigo-900/40 border border-indigo-400/30 px-4 py-3 min-w-[180px] min-h-[100px] cursor-pointer hover:bg-indigo-900/60 transition-colors" (click)="goTo('/authorized/credit/list')">
                     <div class="flex items-baseline gap-2">
-                      <p class="text-2xl font-bold">{{ t.balance | number:'1.2-2' }}</p>
+                      <p class="text-2xl font-bold">{{ t.balance | money }}</p>
                       <span class="text-xs font-semibold text-indigo-200">{{ t.currencySymbol }}</span>
                     </div>
                     <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ t.currencyName }}</p>
@@ -132,18 +132,18 @@
                 <div class="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <p class="text-gray-500 uppercase tracking-wider">{{ 'dashboard.liquidity.obligation' | translate }}</p>
-                    <p class="font-mono font-semibold text-gray-800">{{ row.obligation | number:'1.2-2' }}</p>
+                    <p class="font-mono font-semibold text-gray-800">{{ row.obligation | money }}</p>
                   </div>
                   <div>
                     <p class="text-gray-500 uppercase tracking-wider">{{ 'dashboard.liquidity.liquidityLabel' | translate }}</p>
-                    <p class="font-mono font-semibold text-gray-800">{{ row.liquidity | number:'1.2-2' }}</p>
+                    <p class="font-mono font-semibold text-gray-800">{{ row.liquidity | money }}</p>
                   </div>
                 </div>
                 @if (row.shortfall > 0) {
                   <p class="mt-2 text-xs font-semibold"
                     [class.text-red-700]="!withinShortfallTolerance(row.shortfall)"
                     [class.text-amber-700]="withinShortfallTolerance(row.shortfall)">
-                    {{ 'dashboard.liquidity.shortfallPrefix' | translate }} <span class="font-mono">{{ row.shortfall | number:'1.2-2' }} {{ row.currency }}</span>
+                    {{ 'dashboard.liquidity.shortfallPrefix' | translate }} <span class="font-mono">{{ row.shortfall | money }} {{ row.currency }}</span>
                     @if (withinShortfallTolerance(row.shortfall)) {
                       <!-- &ngsp; not a literal space: Angular's whitespace removal (preserveWhitespaces:false)
                            drops whitespace-only text nodes, so a plain space before "(" disappears. -->
@@ -186,14 +186,14 @@
                       (click)="goToServiceLiquidity(row.service)">
                       <td class="px-3 py-2 font-medium text-gray-800">{{ row.serviceName }}</td>
                       <td class="px-3 py-2"><span class="badge-currency">{{ row.currency }}</span></td>
-                      <td class="px-3 py-2 text-right font-mono">{{ row.obligation | number:'1.2-2' }}</td>
-                      <td class="px-3 py-2 text-right font-mono">{{ row.liquidity | number:'1.2-2' }}</td>
+                      <td class="px-3 py-2 text-right font-mono">{{ row.obligation | money }}</td>
+                      <td class="px-3 py-2 text-right font-mono">{{ row.liquidity | money }}</td>
                       <td class="px-3 py-2 text-right font-mono"
                         [class.text-red-700]="row.shortfall > 0 && !withinShortfallTolerance(row.shortfall)"
                         [class.text-amber-700]="withinShortfallTolerance(row.shortfall)"
                         [class.font-semibold]="row.shortfall > 0">
                         @if (row.shortfall > 0) {
-                          {{ row.shortfall | number:'1.2-2' }}
+                          {{ row.shortfall | money }}
                           @if (withinShortfallTolerance(row.shortfall)) {
                             <span class="block text-[10px] font-normal text-gray-400">
                               {{ 'dashboard.liquidity.withinTolerance' | translate:{ amount: toleranceHeadroom(row.shortfall) } }}
@@ -245,6 +245,42 @@
           }
         </div> -->
       </div>
+
+      <!--
+        OTC work waiting on us. Deliberately a SEPARATE row from the stats above and
+        hidden when all three are zero: those cards are inventory (how many services,
+        how many assets), these are a QUEUE — each one is work someone has to clear
+        against a clock that expires it. A permanent row of zeros would train the eye
+        to skip exactly the thing that matters when it is non-zero.
+      -->
+      @if (features.dex() && hasOtcWork()) {
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 badges">
+          @if (otcDealsAwaitingUs() > 0) {
+            <div class="p-4 rounded-xl shadow-md border border-blue-200 bg-white flex flex-col cursor-pointer hover:bg-blue-50 transition-colors"
+                 (click)="goTo('/authorized/dex/deals/list')">
+              <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dashboard.otc.dealsAwaitingUs' | translate }}</p>
+              <p class="text-xl font-bold text-blue-700">{{ otcDealsAwaitingUs() | number }}</p>
+              <p class="text-[11px] text-gray-500 mt-0.5">{{ 'dashboard.otc.dealsAwaitingUsHint' | translate }}</p>
+            </div>
+          }
+          @if (otcDealsAwaitingOurVenue() > 0) {
+            <div class="p-4 rounded-xl shadow-md border border-amber-200 bg-white flex flex-col cursor-pointer hover:bg-amber-50 transition-colors"
+                 (click)="goTo('/authorized/dex/deals/list')">
+              <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dashboard.otc.venueApprovals' | translate }}</p>
+              <p class="text-xl font-bold text-amber-700">{{ otcDealsAwaitingOurVenue() | number }}</p>
+              <p class="text-[11px] text-gray-500 mt-0.5">{{ 'dashboard.otc.venueApprovalsHint' | translate }}</p>
+            </div>
+          }
+          @if (otcRfqsToQuote() > 0) {
+            <div class="p-4 rounded-xl shadow-md border border-indigo-200 bg-white flex flex-col cursor-pointer hover:bg-indigo-50 transition-colors"
+                 (click)="goTo('/authorized/dex/rfqs/list')">
+              <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dashboard.otc.rfqsToQuote' | translate }}</p>
+              <p class="text-xl font-bold text-indigo-700">{{ otcRfqsToQuote() | number }}</p>
+              <p class="text-[11px] text-gray-500 mt-0.5">{{ 'dashboard.otc.rfqsToQuoteHint' | translate }}</p>
+            </div>
+          }
+        </div>
+      }
 
       <!-- Chart Row 1: Activity chart (full width) — bars for tokens, lines for value -->
       <div class="mb-6 badges">
@@ -360,8 +396,8 @@
                         <span class="badge-currency">{{ asset.currency }}</span>
                       </td>
                       <td class="px-4 py-2 text-right font-mono">{{ asset.circulating | number:'1.0-0' }}</td>
-                      <td class="px-4 py-2 text-right font-mono">{{ asset.bid | number:'1.4-4' }}</td>
-                      <td class="px-4 py-2 text-right font-mono font-semibold text-gray-800">{{ asset.aum | number:'1.2-2' }}</td>
+                      <td class="px-4 py-2 text-right font-mono">{{ asset.bid | money }}</td>
+                      <td class="px-4 py-2 text-right font-mono font-semibold text-gray-800">{{ asset.aum | money }}</td>
                       <td class="px-4 py-2 text-right font-mono text-sm">
                         @if (priceChange(asset) === 0) {
                           <span class="text-gray-400">{{ 'common.notSet' | translate }}</span>
@@ -432,8 +468,8 @@
                     <td class="px-4 py-2">@if(t.assetSymbol){<span class="badge-symbol">{{ t.assetSymbol }}</span>}</td>
                     <td class="px-4 py-2">{{ t.serviceName }}</td>
                     <td class="px-4 py-2 text-right font-mono">{{ t.tokens | number:'1.0-0' }}</td>
-                    <td class="px-4 py-2 text-right font-mono">{{ t.price | number:'1.6-6' }}</td>
-                    <td class="px-4 py-2 text-right font-mono">{{ t.totalPrice | number:'1.6-6' }}</td>
+                    <td class="px-4 py-2 text-right font-mono">{{ t.price | money }}</td>
+                    <td class="px-4 py-2 text-right font-mono">{{ t.totalPrice | money }}</td>
                   </tr>
                 }
               }

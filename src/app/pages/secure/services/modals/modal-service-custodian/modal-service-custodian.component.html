@@ -14,17 +14,23 @@
           <label for="custodian" class="block text-sm font-medium text-gray-700">{{ 'services.custodianModal.label' | translate }}</label>
           <select id="custodian" formControlName="custodian" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
             <option value="" disabled>{{ 'services.custodianModal.placeholder' | translate }}</option>
-            <option [value]="SELF_CUSTODY">{{ 'services.custodianModal.selfCustody' | translate }}</option>
+            @if (selfCustodyAvailable()) {
+              <option [value]="SELF_CUSTODY">{{ 'services.custodianModal.selfCustody' | translate }}</option>
+            }
             @for (c of custodians(); track c.address) {
               <option [value]="c.address">{{ c.name || c.address }}</option>
             }
           </select>
+          @if (!selfCustodyAvailable() && custodians().length === 0) {
+            <p class="text-xs text-amber-700">{{ 'services.custodianModal.empty' | translate }}</p>
+          }
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             {{ 'common.cancel' | translate }}
           </button>
-          <button type="submit" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+          <button type="submit" [disabled]="!custodianForm.get('custodian')?.value"
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
             {{ 'services.custodianModal.submit' | translate }}
           </button>
         </div>

@@ -36,7 +36,7 @@
           <div class="flex flex-wrap gap-2 items-center">
             <label class="text-xs font-medium text-gray-500 whitespace-nowrap">{{ 'common.search' | translate }}</label>
             <input type="text" [placeholder]="'variables.countriesTab.searchPlaceholder' | translate"
-              [ngModel]="countriesSearchTerm()" (ngModelChange)="countriesSearchTerm.set($event)"
+              [ngModel]="countriesSearchTerm()" (ngModelChange)="countriesSearchTerm.set($event); countriesPage.set(1)"
               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
           </div>
         </div>
@@ -62,7 +62,7 @@
                     <td colspan="7" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
                   </tr>
                 } @else {
-                  @for (country of filteredCountries(); track country.countryCode; let isEven = $even) {
+                  @for (country of pagedCountries(); track country.countryCode; let isEven = $even) {
                     <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                       <td class="px-6 py-2 font-medium">{{ country.countryCode }}</td>
                       <td class="px-6 py-2 font-medium">{{ country.nameShort }}</td>
@@ -77,9 +77,8 @@
               </tbody>
             </table>
           </div>
-          <div class="flex items-center px-4 py-2 border-t">
-            <p class="text-xs font-medium text-gray-800">{{ 'variables.countriesTab.footer' | translate: { shown: filteredCountries().length, total: countries().length } }}</p>
-          </div>
+          <app-paginator [total]="filteredCountries().length" [page]="countriesPage()" [pageSize]="countriesPageSize()"
+            (pageChange)="countriesPage.set($event)" (pageSizeChange)="countriesPageSize.set($event)" />
         </div>
 
       </div>
@@ -94,7 +93,7 @@
           <div class="flex flex-wrap gap-2 items-center">
             <label class="text-xs font-medium text-gray-500 whitespace-nowrap">{{ 'common.search' | translate }}</label>
             <input type="text" [placeholder]="'variables.filters.searchPlaceholder' | translate"
-              [ngModel]="variablesSearchTerm()" (ngModelChange)="variablesSearchTerm.set($event)"
+              [ngModel]="variablesSearchTerm()" (ngModelChange)="variablesSearchTerm.set($event); variablesPage.set(1)"
               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
           </div>
         </div>
@@ -116,7 +115,7 @@
                     <td colspan="3" class="px-6 py-2">{{ 'variables.empty' | translate }}</td>
                   </tr>
                 } @else {
-                  @for (variable of filteredVariables(); track variable.variableId + variable.category; let i = $index; let isEven = $even) {
+                  @for (variable of pagedVariables(); track variable.variableId + variable.category; let i = $index; let isEven = $even) {
                     @let prevCategory = i > 0 ? filteredVariables()[i-1].category : null;
                     <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                       @if (variable.category !== prevCategory) {
@@ -132,9 +131,8 @@
               </tbody>
             </table>
           </div>
-          <div class="flex items-center px-4 py-2 border-t">
-            <p class="text-xs font-medium text-gray-800">{{ 'variables.footer' | translate: { shown: filteredVariables().length, total: globalVariables().length } }}</p>
-          </div>
+          <app-paginator [total]="filteredVariables().length" [page]="variablesPage()" [pageSize]="variablesPageSize()"
+            (pageChange)="variablesPage.set($event)" (pageSizeChange)="variablesPageSize.set($event)" />
         </div>
 
       </div>

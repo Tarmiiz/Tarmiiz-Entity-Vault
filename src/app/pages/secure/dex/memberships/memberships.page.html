@@ -25,7 +25,7 @@
           </tr>
         </thead>
         <tbody class="text-xs">
-          @for (m of memberships(); track m.dexService + '-' + m.memberService; let i = $index; let isEven = $even) {
+          @for (m of pagedMemberships(); track m.dexService + '-' + m.memberService; let i = $index; let isEven = $even) {
             <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
               <td class="px-4 py-2">{{ i + 1 }}</td>
               <td class="px-4 py-2">
@@ -80,6 +80,8 @@
         </tbody>
       </table>
     </div>
+    <app-paginator [total]="memberships().length" [page]="membershipsPage()" [pageSize]="membershipsPageSize()"
+      (pageChange)="membershipsPage.set($event)" (pageSizeChange)="membershipsPageSize.set($event)" />
     <div class="flex items-center px-4 py-2 border-t">
       <p class="text-xs font-medium text-gray-800">{{ 'dex.memberships.footer' | translate: { shown: memberships().length } }}</p>
     </div>

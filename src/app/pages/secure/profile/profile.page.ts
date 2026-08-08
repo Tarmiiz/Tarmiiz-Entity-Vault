@@ -16,6 +16,7 @@ import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit/m
 import { ModalProfileMetadataEditComponent } from './modal-profile-metadata-edit/modal-profile-metadata-edit.component';
 import { ModalImageAddService } from '../../../shared/components/modal-image-add/modal-image-add.service';
 import { ModalImageAddComponent } from '../../../shared/components/modal-image-add/modal-image-add.component';
+import { FeaturesService } from '../../../shared/services/features.service';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
 export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
@@ -39,6 +40,7 @@ export interface MediaIndex {
 ]
 })
 export class ProfilePage implements OnInit {
+  features = inject(FeaturesService);
   private apiService = inject(ApiService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);

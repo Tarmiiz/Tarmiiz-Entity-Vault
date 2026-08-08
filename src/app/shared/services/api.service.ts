@@ -2,16 +2,15 @@ import { inject, Injectable, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { CapacitorHttp } from '@capacitor/core';
 
-import { CryptoService } from './crypto.service';
 import { EthersService } from './ethers.service';
 import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 
-import { ParseProofUtils } from '../utils/parse-proof.utils';
 import {
   FeeConfig, ExternalIntegration, UserGroup, AppConfigItem,
   CreditPosition, CreditObligation, CreditSettlement,
   DistributionAgreement, PrimaryTrade, DexOffering, DexOfferingFill,
+  DexDeal, DexDealRound, DexDealCounterparty, DexRfqRequest, DexRfqDealer,
 } from '../models/data.model';
 
 /**
@@ -24,6 +23,9 @@ export interface VaultFeatures {
   vaultMode: number | null;
   vaultModeName: string | null;
   modeMenu: string[] | null;
+  // Decimal places every MONEY value renders with (app_config CURRENCY_DECIMALS).
+  // null = the server did not answer; the caller keeps its current value.
+  currencyDecimals: number | null;
   menu: Record<string, boolean>;
 }
 
@@ -32,7 +34,6 @@ export interface VaultFeatures {
 })
 export class ApiService {
 
-  private cryptoService = inject(CryptoService);
   private ethersService = inject(EthersService);
   private configService = inject(ConfigService);
   private sessionService = inject(SessionService);
@@ -63,7 +64,7 @@ export class ApiService {
   // Public (no-auth) URL that streams the tenant entity's avatar image (folded media.avatar).
   // Bound directly by the login page + app-shell logo; 404s when no avatar is set so the
   // template's (error) handler falls back to the static logo.
-  get avatarUrl(): string { return this.apiURL + '/vault/avatar'; }
+  get avatarUrl(): string { return this.apiURL + '/avatar'; }
 
   private async authHeader(): Promise<Record<string, string>> {
     const token = await this.sessionService.getActiveToken();
@@ -93,7 +94,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
-        url: this.apiURL + '/vault/config',
+        url: this.apiURL + '/config',
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.data?.type !== 'success') return null;
@@ -109,7 +110,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
-        url: this.apiURL + '/vault/features',
+        url: this.apiURL + '/features',
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.data?.type !== 'success') return null;
@@ -119,6 +120,7 @@ export class ApiService {
         vaultMode: features.vaultMode != null ? Number(features.vaultMode) : null,
         vaultModeName: features.vaultModeName ?? null,
         modeMenu: features.modeMenu ?? null,
+        currencyDecimals: features.currencyDecimals != null ? Number(features.currencyDecimals) : null,
         menu: response.data.menu ?? {},
       };
     } catch {
@@ -153,6 +155,7 @@ export class ApiService {
       vaultMode: features.vaultMode != null ? Number(features.vaultMode) : null,
       vaultModeName: features.vaultModeName ?? null,
       modeMenu: features.modeMenu ?? null,
+      currencyDecimals: features.currencyDecimals != null ? Number(features.currencyDecimals) : null,
       menu: data.menu ?? {},
       systemFunctions: data.systemFunctions ?? {},
     };
@@ -164,7 +167,7 @@ export class ApiService {
   async vaultUserMenuConfigList(userId: string | number): Promise<
     { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean }[]
   > {
-    const data = await this.vaultGet('/users/' + userId + '/menu-config');
+    const data = await this.vaultGet('/staff/' + userId + '/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
       menuKey: r.menuKey,
       tenantEnabled: !!r.tenantEnabled,
@@ -175,12 +178,12 @@ export class ApiService {
   }
 
   async vaultUserMenuConfigSet(userId: string | number, key: string, enabled: boolean) {
-    return this.vaultPut('/users/' + userId + '/menu-config/' + key, { enabled });
+    return this.vaultPut('/staff/' + userId + '/menu-config/' + key, { enabled });
   }
 
   // Remove a per-user override so the key falls back to the group setting / role default.
   async vaultUserMenuConfigClear(userId: string | number, key: string) {
-    return this.vaultDelete('/users/' + userId + '/menu-config/' + key);
+    return this.vaultDelete('/staff/' + userId + '/menu-config/' + key);
   }
 
   // Per-user System Functions (admin System Functions tab on User Details). Returns only the
@@ -188,7 +191,7 @@ export class ApiService {
   async vaultUserSystemFunctionConfigList(userId: string | number): Promise<
     { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean }[]
   > {
-    const data = await this.vaultGet('/users/' + userId + '/system-functions');
+    const data = await this.vaultGet('/staff/' + userId + '/system-functions');
     return (data?.functions ?? []).map((r: any) => ({
       functionKey: r.functionKey,
       defaultEnabled: !!r.defaultEnabled,
@@ -199,40 +202,40 @@ export class ApiService {
   }
 
   async vaultUserSystemFunctionConfigSet(userId: string | number, key: string, enabled: boolean) {
-    return this.vaultPut('/users/' + userId + '/system-functions/' + key, { enabled });
+    return this.vaultPut('/staff/' + userId + '/system-functions/' + key, { enabled });
   }
 
   async vaultUserSystemFunctionConfigClear(userId: string | number, key: string) {
-    return this.vaultDelete('/users/' + userId + '/system-functions/' + key);
+    return this.vaultDelete('/staff/' + userId + '/system-functions/' + key);
   }
 
   // ── User Groups (role-scoped Menu Access + System Functions presets) ─────────────
   async vaultUserGroupsList(): Promise<UserGroup[]> {
-    const data = await this.vaultGet('/user-groups');
+    const data = await this.vaultGet('/staff-groups');
     return (data?.groups ?? []).map((g: any) => this.mapUserGroup(g));
   }
 
   async vaultUserGroupGet(groupId: string): Promise<UserGroup | null> {
-    const data = await this.vaultGet('/user-groups/' + groupId);
+    const data = await this.vaultGet('/staff-groups/' + groupId);
     return data?.group ? this.mapUserGroup(data.group) : null;
   }
 
   async vaultUserGroupCreate(body: { name: string; description?: string; role: number }) {
-    return this.vaultPost('/user-groups', body);
+    return this.vaultPost('/staff-groups', body);
   }
 
   async vaultUserGroupUpdate(groupId: string, body: { name?: string; description?: string }) {
-    return this.vaultPut('/user-groups/' + groupId, body);
+    return this.vaultPut('/staff-groups/' + groupId, body);
   }
 
   async vaultUserGroupDelete(groupId: string) {
-    return this.vaultDelete('/user-groups/' + groupId);
+    return this.vaultDelete('/staff-groups/' + groupId);
   }
 
   async vaultUserGroupMenuConfigList(groupId: string): Promise<
     { menuKey: string; tenantEnabled: boolean; groupEnabled: boolean | null; effective: boolean }[]
   > {
-    const data = await this.vaultGet('/user-groups/' + groupId + '/menu-config');
+    const data = await this.vaultGet('/staff-groups/' + groupId + '/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
       menuKey: r.menuKey,
       tenantEnabled: !!r.tenantEnabled,
@@ -242,13 +245,13 @@ export class ApiService {
   }
 
   async vaultUserGroupMenuConfigSet(groupId: string, key: string, enabled: boolean) {
-    return this.vaultPut('/user-groups/' + groupId + '/menu-config/' + key, { enabled });
+    return this.vaultPut('/staff-groups/' + groupId + '/menu-config/' + key, { enabled });
   }
 
   async vaultUserGroupSystemFunctionConfigList(groupId: string): Promise<
     { functionKey: string; defaultEnabled: boolean; groupEnabled: boolean | null; effective: boolean }[]
   > {
-    const data = await this.vaultGet('/user-groups/' + groupId + '/system-functions');
+    const data = await this.vaultGet('/staff-groups/' + groupId + '/system-functions');
     return (data?.functions ?? []).map((r: any) => ({
       functionKey: r.functionKey,
       defaultEnabled: !!r.defaultEnabled,
@@ -258,18 +261,18 @@ export class ApiService {
   }
 
   async vaultUserGroupSystemFunctionConfigSet(groupId: string, key: string, enabled: boolean) {
-    return this.vaultPut('/user-groups/' + groupId + '/system-functions/' + key, { enabled });
+    return this.vaultPut('/staff-groups/' + groupId + '/system-functions/' + key, { enabled });
   }
 
   async vaultUserGroupMembers(groupId: string): Promise<{ userId: string; assignedAt: number }[]> {
-    const data = await this.vaultGet('/user-groups/' + groupId + '/members');
+    const data = await this.vaultGet('/staff-groups/' + groupId + '/members');
     return (data?.members ?? []).map((m: any) => ({ userId: String(m.userId), assignedAt: Number(m.assignedAt) }));
   }
 
   // Per-user membership: the user's assigned group (null when none) + whether its target
   // role still matches the user's on-chain role (false ⇒ the group layer is inert).
   async vaultUserGroupMembershipGet(userId: string | number): Promise<{ group: UserGroup | null; roleMatch: boolean }> {
-    const data = await this.vaultGet('/users/' + userId + '/group');
+    const data = await this.vaultGet('/staff/' + userId + '/group');
     return {
       group: data?.group ? this.mapUserGroup(data.group) : null,
       roleMatch: data?.roleMatch !== false,
@@ -277,11 +280,11 @@ export class ApiService {
   }
 
   async vaultUserGroupMembershipSet(userId: string | number, groupId: string) {
-    return this.vaultPut('/users/' + userId + '/group', { groupId });
+    return this.vaultPut('/staff/' + userId + '/group', { groupId });
   }
 
   async vaultUserGroupMembershipClear(userId: string | number) {
-    return this.vaultDelete('/users/' + userId + '/group');
+    return this.vaultDelete('/staff/' + userId + '/group');
   }
 
   private mapUserGroup(g: any): UserGroup {
@@ -354,7 +357,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
-        url: this.apiURL + '/vault' + path,
+        url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -382,7 +385,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
-        url: this.apiURL + '/vault' + path,
+        url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -402,7 +405,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'PATCH',
-        url: this.apiURL + '/vault' + path,
+        url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -418,16 +421,20 @@ export class ApiService {
     }
   }
 
-  private async vaultDelete(path: string) {
+  // `body` is optional and only sent when supplied, so every existing call site is
+  // unchanged. Needed because withdrawing a deal is semantically a DELETE but must
+  // still name WHICH of our subscriptions is acting (and the round we rendered).
+  private async vaultDelete(path: string, body?: Record<string, any>) {
     try {
       const response = await CapacitorHttp.request({
         method: 'DELETE',
-        url: this.apiURL + '/vault' + path,
+        url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
           ...this.getAuditHeaders(),
         },
+        ...(body ? { data: body } : {}),
       });
       if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
       if (response.data?.type !== 'success') return { error: this.extractError(response) };
@@ -441,7 +448,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'PUT',
-        url: this.apiURL + '/vault' + path,
+        url: this.apiURL + path,
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -773,7 +780,7 @@ export class ApiService {
     payload: { debtorEntity: string; creditorEntity: string; settlementId: number; wireRef: string; currencyCode: number; amount: string; memo?: string },
     receiptFile: File | null,
   ) {
-    return this._postMultipartFields('/vault/settlements/confirm-sent', {
+    return this._postMultipartFields('/settlements/confirm-sent', {
       debtorEntity:   payload.debtorEntity,
       creditorEntity: payload.creditorEntity,
       settlementId:   String(payload.settlementId),
@@ -796,12 +803,12 @@ export class ApiService {
   // ─── Distribution agreements + primary-market trades ──────────────────────────
 
   async vaultDistributionInbound(): Promise<DistributionAgreement[]> {
-    const data = await this.vaultGet('/distribution/inbound');
+    const data = await this.vaultGet('/distribution-agreements/inbound');
     return data?.agreements ?? [];
   }
 
   async vaultDistributionAccept(asset: string, service: string) {
-    return this.vaultPost('/distribution/' + asset + '/accept', { service });
+    return this.vaultPost('/distribution-agreements/' + asset + '/accept', { service });
   }
 
   async vaultPrimaryTrades(params: { asset?: string; service?: string; subscription?: string; start?: number; offset?: number } = {}) {
@@ -831,6 +838,172 @@ export class ApiService {
 
   async vaultDexOfferingCancel(key: string, refNo: string) {
     return this.vaultDelete('/dex/offerings/' + key + '?refNo=' + encodeURIComponent(refNo));
+  }
+
+  // ─── DEX negotiated OTC deals (2026-08-07) ─────────────────────────────────
+  // Counterparty names are resolved from CHAIN by the API — a deal's far side is
+  // cross-tenant by construction, so no mirror join can supply them.
+
+  async vaultDexDealsList(params: {
+    venue?: string; asset?: string; status?: number | string; party?: string;
+    request?: string; open?: boolean; start?: number; offset?: number;
+  } = {}) {
+    const q: any = { start: params.start ?? 0, offset: params.offset ?? 200 };
+    if (params.venue)  q.venue  = params.venue;
+    if (params.asset)  q.asset  = params.asset;
+    if (params.party)  q.party  = params.party;
+    if (params.request) q.request = params.request;
+    if (params.status !== undefined && params.status !== '') q.status = params.status;
+    if (params.open) q.open = true;
+    const data = await this.vaultGet('/dex/deals', q);
+    return data ? { totalCount: data.totalCount ?? 0, deals: (data.deals ?? []) as DexDeal[] } : null;
+  }
+
+  /** Deals waiting on US to counter, accept or decline. */
+  async vaultDexDealsInbox(start = 0, offset = 200) {
+    const data = await this.vaultGet('/dex/deals/inbox', { start, offset });
+    return data ? { totalCount: data.totalCount ?? 0, deals: (data.deals ?? []) as DexDeal[] } : null;
+  }
+
+  /** The venue operator's pre-trade approval queue. */
+  async vaultDexDealsPendingApproval(start = 0, offset = 200) {
+    const data = await this.vaultGet('/dex/deals/pending-approval', { start, offset });
+    return data ? { totalCount: data.totalCount ?? 0, deals: (data.deals ?? []) as DexDeal[] } : null;
+  }
+
+  async vaultDexDealCounterparties(limit = 50) {
+    const data = await this.vaultGet('/dex/deals/counterparties', { limit });
+    return (data?.counterparties ?? []) as DexDealCounterparty[];
+  }
+
+  async vaultDexDealInfo(key: string) {
+    const data = await this.vaultGet('/dex/deals/' + key);
+    return data ? {
+      deal: data.deal as DexDeal,
+      rounds: (data.rounds ?? []) as DexDealRound[],
+      roundsCount: data.roundsCount ?? 0,
+    } : null;
+  }
+
+  async vaultDexDealRounds(key: string, start = 0, offset = 200) {
+    const data = await this.vaultGet('/dex/deals/' + key + '/rounds', { start, offset });
+    return data ? { totalCount: data.totalCount ?? 0, rounds: (data.rounds ?? []) as DexDealRound[] } : null;
+  }
+
+  // ─── Deal writes ────────────────────────────────────────────────────────────
+  //
+  // `price` goes in WHOLE CURRENCY UNITS and `amount` as a plain token count — the
+  // API wei-encodes the price and passes the amount through. Do NOT pre-scale either
+  // here: this app's convention (unlike the Token Exchange's direct-on-chain path,
+  // which hands the contract wei) is that the API owns the conversion.
+  //
+  // `expectedRound` is the round the page RENDERED. The API compares it against a
+  // LIVE chain read and answers 409 on a mismatch, which is what stops a user
+  // accepting terms that were countered between the render and the click. Always
+  // send it from a UI surface.
+
+  async vaultDexDealPropose(body: {
+    subscription: string; dexService: string; counterparty: string; baseAsset: string;
+    side: number; funding: number; marketScope: number;
+    price: number; amount: number; expiresAt: number;
+  }) {
+    return this.vaultPost('/dex/deals', body);
+  }
+
+  async vaultDexDealCounter(key: string, body: { subscription: string; price: number; amount: number; expectedRound?: number }) {
+    return this.vaultPost('/dex/deals/' + key + '/counter', body);
+  }
+
+  async vaultDexDealAccept(key: string, subscription: string, expectedRound?: number) {
+    return this.vaultPut('/dex/deals/' + key + '/accept', { subscription, expectedRound });
+  }
+
+  async vaultDexDealDecline(key: string, subscription: string, reason = '', expectedRound?: number) {
+    return this.vaultPut('/dex/deals/' + key + '/decline', { subscription, reason, expectedRound });
+  }
+
+  /** Withdraw OUR OWN live quote — only the current lastMover may. */
+  async vaultDexDealWithdraw(key: string, subscription: string, reason = '', expectedRound?: number) {
+    return this.vaultDelete('/dex/deals/' + key, { subscription, reason, expectedRound });
+  }
+
+  async vaultDexDealVenueApprove(key: string, reason = '', expectedRound?: number) {
+    return this.vaultPut('/dex/deals/' + key + '/venue-approve', { reason, expectedRound });
+  }
+
+  async vaultDexDealVenueReject(key: string, reason = '', expectedRound?: number) {
+    return this.vaultPut('/dex/deals/' + key + '/venue-reject', { reason, expectedRound });
+  }
+
+  // ─── DEX RFQ (2026-08-08) ───────────────────────────────────────────────────
+  //
+  // An RFQ is a FAN-OUT OVER DEALS, so there is no quote-listing method here by
+  // design: a quote IS a deal, read with `vaultDexDealsList({ request: key })`.
+  // Likewise `vaultDexRfqAward` is `accept` on the winning CHILD — the endpoint
+  // exists to check parentage, not because awarding is its own on-chain verb.
+
+  async vaultDexRfqsList(params: {
+    venue?: string; asset?: string; status?: number | string; requester?: string;
+    mine?: boolean; invited?: boolean; open?: boolean; start?: number; offset?: number;
+  } = {}) {
+    const q: any = { start: params.start ?? 0, offset: params.offset ?? 200 };
+    if (params.venue)     q.venue     = params.venue;
+    if (params.asset)     q.asset     = params.asset;
+    if (params.requester) q.requester = params.requester;
+    if (params.status !== undefined && params.status !== '') q.status = params.status;
+    if (params.mine)    q.mine    = true;
+    if (params.invited) q.invited = true;
+    if (params.open)    q.open    = true;
+    const data = await this.vaultGet('/dex/rfqs', q);
+    return data ? { totalCount: data.totalCount ?? 0, requests: (data.requests ?? []) as DexRfqRequest[] } : null;
+  }
+
+  /** Open requests we were invited to and have not answered yet. */
+  async vaultDexRfqsInbox(start = 0, offset = 200) {
+    const data = await this.vaultGet('/dex/rfqs/inbox', { start, offset });
+    return data ? { totalCount: data.totalCount ?? 0, requests: (data.requests ?? []) as DexRfqRequest[] } : null;
+  }
+
+  /**
+   * Header + dealer board. The board is a SEALED AUCTION — the API mirrors every
+   * dealer row only when this tenant operates the venue or made the request; as an
+   * invited dealer we get our own row alone. Never derive totals from `dealers`;
+   * `request.invitedCount` / `quoteCount` are the authoritative ones.
+   */
+  async vaultDexRfqInfo(key: string) {
+    const data = await this.vaultGet('/dex/rfqs/' + key);
+    return data ? {
+      request: data.request as DexRfqRequest,
+      dealers: (data.dealers ?? []) as DexRfqDealer[],
+    } : null;
+  }
+
+  async vaultDexRfqDealers(key: string) {
+    const data = await this.vaultGet('/dex/rfqs/' + key + '/dealers');
+    return (data?.dealers ?? []) as DexRfqDealer[];
+  }
+
+  /** `amount` is a plain token count; a request carries NO price. */
+  async vaultDexRfqCreate(body: {
+    subscription: string; dexService: string; baseAsset: string;
+    side: number; funding: number; marketScope: number;
+    amount: number; expiresAt: number; openToAll?: boolean; invited?: string[];
+  }) {
+    return this.vaultPost('/dex/rfqs', body);
+  }
+
+  /** Only PRICE is ours to set — size, expiry, scope and funding come from the request. */
+  async vaultDexRfqQuote(key: string, subscription: string, price: number) {
+    return this.vaultPost('/dex/rfqs/' + key + '/quotes', { subscription, price });
+  }
+
+  /** Award = accept the winning quote. `expectedRound` is the quote's round as rendered. */
+  async vaultDexRfqAward(key: string, subscription: string, dealKey: string, expectedRound?: number) {
+    return this.vaultPut('/dex/rfqs/' + key + '/award', { subscription, dealKey, expectedRound });
+  }
+
+  async vaultDexRfqCancel(key: string, subscription: string, reason = '') {
+    return this.vaultDelete('/dex/rfqs/' + key, { subscription, reason });
   }
 
   async vaultGetAssetPriceHistory(address: string, start = 0, offset = 50) {
@@ -1105,6 +1278,12 @@ export class ApiService {
     return data ?? null;
   }
 
+  /** Negotiated OTC — the desk's counterpart to vaultGetDexVolume's view of the book. */
+  async vaultGetNegotiatedActivity(interval = '1d', points = 30) {
+    const data = await this.vaultGet(`/analytics/negotiated-activity?interval=${encodeURIComponent(interval)}&points=${points}`);
+    return data ?? null;
+  }
+
   async vaultGetValidatorReliance() {
     const data = await this.vaultGet('/analytics/validator-reliance');
     return data ?? null;
@@ -1123,7 +1302,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
-        url: this.apiURL + '/vault/assets',
+        url: this.apiURL + '/assets',
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -1245,14 +1424,23 @@ export class ApiService {
 
   // ─── Vault — Validators & Payment Processors ─────────────────────────────────
 
+  // The three per-type picker endpoints were merged into one parameterized route. These
+  // keep their names + return shapes so no call site changed. NOTE this is the
+  // regulator-offered CANDIDATE list (live chain), not `vaultGetServiceProviders()` below,
+  // which is the entity's own registered providers (mirror) — different sets, hence the
+  // `/available` sub-path rather than a `?type=` on the same endpoint.
+  private async vaultGetProvidersAvailable(type: 'validator' | 'payment-processor' | 'custodian', start = 1, offset = 50) {
+    return await this.vaultGet('/service-providers/available', { type, start, offset });
+  }
+
   async vaultGetValidators(start = 1, offset = 50) {
-    const data = await this.vaultGet('/validators', { start, offset });
-    return data ? { count: data.count, validators: data.validators } : null;
+    const data = await this.vaultGetProvidersAvailable('validator', start, offset);
+    return data ? { count: data.count, validators: data.providers } : null;
   }
 
   async vaultGetPaymentProcessors(start = 1, offset = 50) {
-    const data = await this.vaultGet('/payment-processors', { start, offset });
-    return data ? { count: data.count, paymentProcessors: data.paymentProcessors } : null;
+    const data = await this.vaultGetProvidersAvailable('payment-processor', start, offset);
+    return data ? { count: data.count, paymentProcessors: data.providers } : null;
   }
 
   // `regulatorAddress` is accepted for call-site compatibility but no longer sent — the Entity API's
@@ -1260,8 +1448,8 @@ export class ApiService {
   // mirroring /validators and /payment-processors. (The old /regulators/:addr/custodians/endorsed
   // route never existed, so the picker always came back empty.)
   async vaultGetEndorsedCustodians(_regulatorAddress: string, start = 1, offset = 50) {
-    const data = await this.vaultGet('/custodians', { start, offset });
-    return data ? { count: data.count, custodians: data.custodians } : null;
+    const data = await this.vaultGetProvidersAvailable('custodian', start, offset);
+    return data ? { count: data.count, custodians: data.providers } : null;
   }
 
   // ─── Vault — Entity-curated service providers ────────────────────────────────
@@ -1347,61 +1535,65 @@ export class ApiService {
   // ─── Vault — Users ────────────────────────────────────────────────────────────
 
   async vaultGetUsers(start = 0, offset = 50) {
-    const data = await this.vaultGet('/users', { start, offset });
+    const data = await this.vaultGet('/staff', { start, offset });
     return data ? { count: data.count, users: data.users } : null;
   }
 
   async vaultGetUser(id: string) {
-    const data = await this.vaultGet('/users/' + id);
+    const data = await this.vaultGet('/staff/' + id);
     return data?.user ?? null;
   }
 
   async vaultGetUserDefaultKey(id: string | number) {
-    const data = await this.vaultGet('/users/' + id + '/default-key');
+    const data = await this.vaultGet('/staff/' + id + '/default-key');
     return data ? { address: data.address as string | null, keyId: data.keyId as number | null } : null;
   }
 
   async vaultCreateUser(body: Record<string, any>) {
-    const data = await this.vaultPost('/users', body);
+    const data = await this.vaultPost('/staff', body);
     return data ?? null;
   }
 
   async vaultUpdateUserData(id: string, body: Record<string, any>) {
-    const data = await this.vaultPut('/users/' + id + '/data', body);
+    const data = await this.vaultPut('/staff/' + id + '/data', body);
     return data ?? null;
   }
 
   async vaultUpdateUserState(id: string, state: number) {
-    const data = await this.vaultPut('/users/' + id + '/state', { state });
+    const data = await this.vaultPut('/staff/' + id + '/state', { state });
     return data ?? null;
   }
 
   async vaultUpdateUserRole(id: string, role: number) {
-    const data = await this.vaultPut('/users/' + id + '/role', { role });
+    const data = await this.vaultPut('/staff/' + id + '/role', { role });
     return data ?? null;
   }
 
   async vaultUpdateUserPassword(id: string, username: string, password: string) {
-    const data = await this.vaultPut('/users/' + id + '/password', { username, password });
+    const data = await this.vaultPut('/staff/' + id + '/password', { username, password });
     return data ?? null;
   }
 
   async vaultUpdateUserCredentials(id: string, body: Record<string, any>) {
-    const data = await this.vaultPut('/users/' + id + '/credentials', body);
+    const data = await this.vaultPut('/staff/' + id + '/credentials', body);
     return data ?? null;
   }
 
   // Self-service password change (My Profile) — verifies the caller's current password
   // server-side before rotating (password-only; keeps the username).
   async vaultUserSelfCredentials(id: string, body: { currentPassword: string; password: string }) {
-    const data = await this.vaultPut('/users/' + id + '/self-credentials', body);
+    const data = await this.vaultPut('/staff/' + id + '/self-credentials', body);
     return data ?? null;
   }
 
   // ─── Vault — Reference data ───────────────────────────────────────────────────
 
+  // `/services/own` was removed from the API — its handler was byte-identical to the
+  // plain list (one Entity API serves one tenant, so every mirrored service IS its own).
+  // Kept as a named method because call sites read better with the intent spelled out.
+  // NOTE: `start` is a 0-based SQL OFFSET here, not the contracts' 1-based `start`.
   async vaultGetServicesOwn(start = 0, offset = 50) {
-    const data = await this.vaultGet('/services/own', { start, offset });
+    const data = await this.vaultGet('/services', { start, offset });
     return data ? { count: data.count, services: data.services } : null;
   }
 
@@ -1478,7 +1670,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
-        url: this.apiURL + '/users/onboard/' + mode,
+        url: this.apiURL + '/subscribers/onboard/' + mode,
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -1496,19 +1688,20 @@ export class ApiService {
     }
   }
 
+  // Reference data lives once, under /vault/global/*. These three kept their names and
+  // return shapes so no call site changed, but they now delegate to the canonical
+  // endpoints — the /vault/countries + /vault/global-variables twins they used to hit
+  // were removed as strict subsets (no ?search=, no ?visible=, no count).
   async vaultGetCountries() {
-    const data = await this.vaultGet('/countries');
-    return data?.countries ?? null;
+    return (await this.vaultGetGlobalCountries())?.countries ?? null;
   }
 
   async vaultGetGlobalVariables() {
-    const data = await this.vaultGet('/global-variables');
-    return data?.variables ?? null;
+    return (await this.vaultGetGlobalVariablesList())?.variables ?? null;
   }
 
   async vaultGetGlobalVariablesByCategory(category: string) {
-    const data = await this.vaultGet('/global-variables/' + encodeURIComponent(category));
-    return data?.variables ?? null;
+    return (await this.vaultGetGlobalVariablesList(category))?.variables ?? null;
   }
 
   async vaultGetRegulatorsByCountry(countryCode: string, start = 0, offset = 100) {
@@ -1538,7 +1731,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
-        url: this.apiURL + '/vault/entity/login',
+        url: this.apiURL + '/entity/login',
         headers: { 'Content-Type': 'application/json' },
         data: { ...rest, privateKey: key.privateKey },
       });
@@ -1570,7 +1763,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
-        url: this.apiURL + '/vault/users/claim-status?loginHash=' + encodeURIComponent(loginHash),
+        url: this.apiURL + '/staff/claim-status?loginHash=' + encodeURIComponent(loginHash),
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.data?.type === 'success') return response.data.status;
@@ -1584,7 +1777,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
-        url: this.apiURL + '/vault/users/credentials-data?loginHash=' + encodeURIComponent(loginHash),
+        url: this.apiURL + '/staff/credentials-data?loginHash=' + encodeURIComponent(loginHash),
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.data?.type === 'success') return response.data.credentials;
@@ -1596,7 +1789,7 @@ export class ApiService {
   // placeholder commitment — the just-established admin session is what authenticates the call
   // on chain (contract enforces authorizedUser[msg.sender] == 1).
   async vaultUserAdminClaim(newCommitment: string, profile?: { name: string; username: string; email: string }) {
-    const data = await this.vaultPost('/users/admin-claim', { newCommitment, ...(profile || {}) });
+    const data = await this.vaultPost('/staff/admin-claim', { newCommitment, ...(profile || {}) });
     return data ?? null;
   }
 
@@ -1625,7 +1818,7 @@ export class ApiService {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
-        url: this.apiURL + '/vault/identity/credentials-data?identityAddress=' + encodeURIComponent(identityAddress),
+        url: this.apiURL + '/identity/credentials-data?identityAddress=' + encodeURIComponent(identityAddress),
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.data?.type === 'success') return response.data.credentials;
@@ -2159,16 +2352,6 @@ export class ApiService {
     return await this.authGet('/regulator/submissions', { regulatorAddress, start: String(start), offset: String(offset) });
   }
 
-  // ─── Transaction Operations ───────────────────────────────────────────────────
-
-  async transactionSubscribe(body: Record<string, any>) {
-    return await this.authPost('/transactions/subscribe', body);
-  }
-
-  async transactionRedeem(body: Record<string, any>) {
-    return await this.authPost('/transactions/redeem', body);
-  }
-
   // ─── Vault — Global controller ────────────────────────────────────────────────
 
   async vaultGetGlobalCountries(search?: string) {
@@ -2188,8 +2371,11 @@ export class ApiService {
     return data ? { count: data.count as number, categories: data.categories as string[] } : null;
   }
 
-  async vaultGetGlobalVariablesList(category: string, visibleOnly?: boolean) {
-    const params: Record<string, any> = { category };
+  // `category` omitted ⇒ every variable (what the removed /vault/global-variables served).
+  // `visible` only narrows a category listing, so the API 400s it without one.
+  async vaultGetGlobalVariablesList(category?: string, visibleOnly?: boolean) {
+    const params: Record<string, any> = {};
+    if (category) params['category'] = category;
     if (visibleOnly !== undefined) params['visible'] = String(visibleOnly);
     const data = await this.vaultGet('/global/variables', params);
     return data ? { count: data.count as number, variables: data.variables as any[] } : null;
@@ -2205,181 +2391,13 @@ export class ApiService {
     return data ?? null;
   }
 
-  async identityContactCheck(email: string, mobile: string) {
-    try {
-
-      const options = {
-        url: this.apiURL + '/identity/check/contact',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      };      
-
-      const data = {
-        email,
-        mobile
-      };
-
-      const response = await CapacitorHttp.request({ ...options, method: 'POST', data });
-      if(!response.data.success) return null;
-      return response.data.exists;
-    }
-    catch (error: any) {
-      return null;
-    }
-  }
-
-  async identityContactVarify(email: string, emailOTP: number, mobile: string, mobileOTP: number) {
-    try {
-
-      const options = {
-        url: this.apiURL + '/identity/varify/otp',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      };      
-
-      const data = {
-        email, emailOTP, mobile, mobileOTP
-      };
-
-      const response = await CapacitorHttp.request({ ...options, method: 'POST', data });      
-      if(!response.data.success) return null;
-      return response.data;
-    }
-    catch (error: any) {
-      return null;
-    }
-  }
-
-  async identityVerifyNID(idFrontFile: File, idBackFile: File, contactData: string) {
-    try {
-      // Convert files to base64
-      const idFrontBase64 = await this.fileToBase64(idFrontFile);
-      const idBackBase64 = await this.fileToBase64(idBackFile);
-
-      // Create FormData
-      const formData = new FormData();
-      formData.append('idFront', idFrontFile);
-      formData.append('idBack', idBackFile);
-      formData.append('contactData', contactData);
-
-      // Use native fetch for FormData upload (CapacitorHttp doesn't handle FormData well)
-      const response = await fetch(this.apiURL + '/identity/validate/nid', {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-      
-      if (!data.success) return null;
-      return data;
-    }
-    catch (error: any) {
-      console.error('Error verifying NID:', error);
-      return null;
-    }
-  }
-
-  async identityRegister(idType: number, uniqueIdHash: string, email: string, mobile: string, password: string, metadata: string, validatorId: number) {
-    try {
-
-      const emailHash = await this.cryptoService.shaHash(email);
-      const mobileHash = await this.cryptoService.shaHash(mobile);
-
-      // Initialize ParseProofUtils
-      await ParseProofUtils.init();
-  
-      // Convert to BigInts
-      const emailBigInt = ParseProofUtils.stringToBigInt(email);
-      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(this.ethersService.globalSalt);
-
-      // Generate hashes for contract
-      const emailHashHex = ParseProofUtils.hashStringForContract(emailBigInt);
-      const secretHex = ParseProofUtils.generateCommitment(emailBigInt, passwordBigInt, globalSaltBigInt);      
-
-      const options = {
-        url: this.apiURL + '/identity/register',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      };      
-
-      const data = {
-        idType, uniqueIdHash, emailHash, mobileHash, 
-        loginHash: emailHashHex, 
-        secret: secretHex, 
-        metadata, validatorId
-      };
-
-      const response = await CapacitorHttp.request({ ...options, method: 'POST', data });      
-      console.log(response);
-      if(!response.data.success) return null;
-      return response.data;
-    }
-    catch (error: any) {
-      return null;
-    }
-  }
-
-  async ipfsFetchDataMeta(cid: string) {
-    try {
-
-      const options = {
-        url: this.apiURL + '/ipfs/data/meta/' + cid,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      };      
-
-      const response = await CapacitorHttp.request({ ...options, method: 'GET' });
-      if(!response.data.success) return null;
-      return response.data.data;
-    }
-    catch (error: any) {
-      return null;
-    }
-  }
-
-  async ipfsFetchDataImage(cid: string) {
-    try {
-
-      const options = {
-        url: this.apiURL + '/ipfs/data/image/' + cid,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      };      
-
-      const response = await CapacitorHttp.request({ ...options, method: 'GET' });
-      if(!response.data.success) return null;
-      return await this.base64ToImage(response.data.data);
-    }
-    catch (error: any) {
-      return null;
-    }
-  }  
-
-  private fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-  
   // ─── Activity Logs ──────────────────────────────────────────────────────────
 
   async vaultPostActivityLog(body: Record<string, any>) {
     try {
       await CapacitorHttp.request({
         method: 'POST',
-        url: this.apiURL + '/vault/activity-log',
+        url: this.apiURL + '/logs/activity',
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -2393,7 +2411,7 @@ export class ApiService {
     try {
       await CapacitorHttp.request({
         method: 'POST',
-        url: this.apiURL + '/vault/audit-log',
+        url: this.apiURL + '/logs/audit',
         headers: {
           'Content-Type': 'application/json',
           ...(await this.authHeader()),
@@ -2447,7 +2465,7 @@ export class ApiService {
   }
 
   async auditById(id: number | string) {
-    return this.authGet('/audit/by-id/' + encodeURIComponent(String(id)));
+    return this.authGet('/audit/' + encodeURIComponent(String(id)));
   }
 
   async auditByTarget(address: string, page = 1, pageSize = 50) {
@@ -2468,22 +2486,7 @@ export class ApiService {
     if (fromTs) params['from'] = String(fromTs);
     if (toTs) params['to'] = String(toTs);
     if (action) params['action'] = action;
-    return this.vaultGet('/activity-logs', params);
-  }
-
-  private async base64ToImage(base64: string): Promise<HTMLImageElement | null> {
-    try {
-      const image = new Image();
-      image.src = `data:image/jpg;base64,${base64}`;
-      await new Promise((resolve) => {
-        image.onload = resolve;
-        image.onerror = () => resolve(null);
-      });
-      return image;
-    } catch (error) {
-      console.error('Error converting base64 to image:', error);
-      return null;
-    }
+    return this.vaultGet('/logs/activity', params);
   }
 
   // ─── Connect (messaging) ──────────────────────────────────────────────────
@@ -2514,7 +2517,7 @@ export class ApiService {
         if (body.initialMessage) form.append('initialMessage', JSON.stringify(body.initialMessage));
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', this.apiURL + '/vault/connect/threads');
+        xhr.open('POST', this.apiURL + '/connect/threads');
         xhr.setRequestHeader('Authorization', 'Bearer ' + token);
         const audit = this.getAuditHeaders();
         for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
@@ -2652,7 +2655,7 @@ export class ApiService {
   }
 
   // ─── Approvals (maker/checker workflow) ────────────────────────────────────
-  // Mounted on /api/v1/approvals* and /api/v1/users/:id/approval-role (NOT
+  // Mounted on /api/v1/approvals* and /api/v1/staff/:id/approval-role (NOT
   // under /vault/...) so we use the authPut/Get/Post/Delete wrappers.
 
   async vaultApprovalsList(opts: { state?: number; category?: string; target?: string; makerUserId?: string; start?: number; offset?: number } = {}) {
@@ -2673,6 +2676,6 @@ export class ApiService {
   // Admin: policy + per-user roles
   async vaultApprovalsPolicyList()                                              { return this.authGet('/approvals/policy'); }
   async vaultApprovalsPolicySet(category: string, requiresApproval: boolean)    { return this.authPut('/approvals/policy/' + category, { requiresApproval }); }
-  async vaultUserApprovalRoleGet(userId: number | string)                       { return this.authGet('/users/' + userId + '/approval-role'); }
-  async vaultUserApprovalRoleSet(userId: number | string, approvalRole: 'none' | 'maker' | 'checker') { return this.authPut('/users/' + userId + '/approval-role', { approvalRole }); }
+  async vaultUserApprovalRoleGet(userId: number | string)                       { return this.authGet('/staff/' + userId + '/approval-role'); }
+  async vaultUserApprovalRoleSet(userId: number | string, approvalRole: 'none' | 'maker' | 'checker') { return this.authPut('/staff/' + userId + '/approval-role', { approvalRole }); }
 }

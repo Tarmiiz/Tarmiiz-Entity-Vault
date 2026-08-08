@@ -17,13 +17,14 @@ import { DexVenue } from '../../../../../shared/models/data.model';
 
 import { ModalVenueCreateService } from '../modals/modal-venue-create/modal-venue-create.service';
 import { ModalVenueCreateComponent } from '../modals/modal-venue-create/modal-venue-create.component';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-dex-venues-list',
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalVenueCreateComponent, TranslatePipe],
+  imports: [FormsModule, HeaderComponent, ModalVenueCreateComponent, TranslatePipe, PaginatorComponent],
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -83,6 +84,10 @@ export class ListPage implements OnInit {
     this.router.navigate(['/authorized/dex/venues/details/' + v.serviceAddress]);
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  venuesPage = signal(1);
+  venuesPageSize = signal(25);
+  pagedVenues = computed(() => pageSlice(this.filteredVenues(), this.venuesPage(), this.venuesPageSize()));
   filteredVenues = computed(() => {
     const term  = this.searchTerm().toLowerCase();
     const state = this.filterState();
@@ -97,6 +102,7 @@ export class ListPage implements OnInit {
   clearFilters() {
     this.searchTerm.set('');
     this.filterState.set('');
+    this.venuesPage.set(1);
   }
 
   async createVenue() {

@@ -53,18 +53,18 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'credit.filters.subscription' | translate }}</label>
         <input type="text" [placeholder]="'common.address' | translate"
-          [ngModel]="searchSubscription()" (ngModelChange)="searchSubscription.set($event)"
+          [ngModel]="searchSubscription()" (ngModelChange)="searchSubscription.set($event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'credit.filters.service' | translate }}</label>
         <input type="text" [placeholder]="'credit.filters.serviceNameOrAddressPlaceholder' | translate"
-          [ngModel]="searchService()" (ngModelChange)="searchService.set($event)"
+          [ngModel]="searchService()" (ngModelChange)="searchService.set($event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'credit.table.currency' | translate }}</label>
-        <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event)"
+        <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (c of uniqueCurrencies(); track c.currencyCode) {
@@ -74,7 +74,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'credit.table.balance' | translate }}</label>
-        <select [ngModel]="filterBalanceOp()" (ngModelChange)="filterBalanceOp.set($event)"
+        <select [ngModel]="filterBalanceOp()" (ngModelChange)="filterBalanceOp.set($event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.any' | translate }}</option>
           <option value="gt">&gt;</option>
@@ -83,7 +83,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.amount' | translate }}</label>
-        <input type="number" [ngModel]="filterBalanceAmt()" (ngModelChange)="filterBalanceAmt.set($event === null || $event === '' ? null : +$event)"
+        <input type="number" [ngModel]="filterBalanceAmt()" (ngModelChange)="filterBalanceAmt.set($event === null || $event === '' ? null : +$event); rowsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
       </div>
       <div class="flex flex-col justify-end">
@@ -136,7 +136,7 @@
               <td class="px-6 py-2" [attr.colspan]="4 + uniqueCurrencies().length">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (row of filteredRows(); track row.subscription; let i = $index; let isEven = $even) {
+            @for (row of pagedRows(); track row.subscription; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="viewSubscription(row.subscription)">
@@ -169,9 +169,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'credit.table.showing' | translate: { count: filteredRows().length, total: rows().length } }}</p>
-    </div>
+    <app-paginator [total]="filteredRows().length" [page]="rowsPage()" [pageSize]="rowsPageSize()"
+      (pageChange)="rowsPage.set($event)" (pageSizeChange)="rowsPageSize.set($event)" />
   </div>
 
 </div>

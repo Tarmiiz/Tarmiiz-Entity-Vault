@@ -35,7 +35,7 @@
                 <td class="px-6 py-2" colspan="7">{{ 'signerKeys.empty' | translate }}</td>
               </tr>
             } @else {
-              @for (k of keys(); track k.keyId; let i = $index; let isEven = $even) {
+              @for (k of pagedKeys(); track k.keyId; let i = $index; let isEven = $even) {
                 <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                   <td class="px-6 py-2">{{ i + 1 }}</td>
                   <td class="px-6 py-2">{{ k.keyId }}</td>
@@ -58,9 +58,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'signerKeys.totalCount' | translate: { count: total } }}</p>
-    </div>
+    <app-paginator [total]="keys().length" [page]="keysPage()" [pageSize]="keysPageSize()"
+      (pageChange)="keysPage.set($event)" (pageSizeChange)="keysPageSize.set($event)" />
   </div>
 </div>
 

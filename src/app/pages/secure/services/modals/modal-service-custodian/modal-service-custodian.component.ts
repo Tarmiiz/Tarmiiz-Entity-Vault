@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, effect } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -22,6 +22,9 @@ export class ModalServiceCustodianComponent {
   readonly SELF_CUSTODY = SELF_CUSTODY_SENTINEL;
 
   custodians = signal<{ address: string; name: string; state: number }[]>([]);
+  // Self-custody is offered only while the service is not already its own custodian.
+  selfCustodyAvailable = computed(() =>
+    !this.custodianService.excluded().includes(this.custodianService.serviceAddress().toLowerCase()));
 
   custodianForm = this.fb.group({
     custodian: [''],
@@ -48,7 +51,11 @@ export class ModalServiceCustodianComponent {
     ]);
     if (data?.custodians) {
       const curatedSet = new Set((curated?.providers ?? []).map((p: any) => p.address.toLowerCase()));
-      this.custodians.set(data.custodians.filter((c: any) => (c.state === 2 || c.state === true || c.state === 1) && curatedSet.has(c.address.toLowerCase())));
+      const excluded = new Set(this.custodianService.excluded());
+      this.custodians.set(data.custodians.filter((c: any) =>
+        (c.state === 2 || c.state === true || c.state === 1)
+        && curatedSet.has(c.address.toLowerCase())
+        && !excluded.has(c.address.toLowerCase())));
     } else {
       this.custodians.set([]);
     }

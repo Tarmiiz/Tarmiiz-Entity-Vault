@@ -30,12 +30,12 @@
           </tr>
         </thead>
         <tbody>
-          @for (o of offerings(); track o.offeringKey; let i = $index) {
+          @for (o of pagedOfferings(); track o.offeringKey; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
               <td class="px-4 py-2 font-mono text-xs" [title]="o.offeringKey">{{ shortKey(o.offeringKey) }}</td>
               <td class="px-4 py-2 font-mono text-xs">{{ o.baseAsset }}</td>
               <td class="px-4 py-2 font-mono text-xs">{{ o.dexService }}</td>
-              <td class="px-4 py-2">{{ o.price | number: '1.0-6' }}</td>
+              <td class="px-4 py-2">{{ o.price | money }}</td>
               <td class="px-4 py-2">
                 <div class="flex items-center gap-2">
                   <span class="text-xs">{{ o.sold | number }} / {{ o.amount | number }}</span>
@@ -91,10 +91,10 @@
                           <td class="px-3 py-1.5">{{ f.fillId }}</td>
                           <td class="px-3 py-1.5 font-mono">{{ f.subscription }}</td>
                           <td class="px-3 py-1.5">{{ f.amount | number }}</td>
-                          <td class="px-3 py-1.5">{{ f.price | number: '1.0-6' }}</td>
-                          <td class="px-3 py-1.5">{{ f.gross | number: '1.0-6' }}</td>
-                          <td class="px-3 py-1.5">{{ f.venueFee | number: '1.0-6' }}</td>
-                          <td class="px-3 py-1.5">{{ f.netToIssuer | number: '1.0-6' }}</td>
+                          <td class="px-3 py-1.5">{{ f.price | money }}</td>
+                          <td class="px-3 py-1.5">{{ f.gross | money }}</td>
+                          <td class="px-3 py-1.5">{{ f.venueFee | money }}</td>
+                          <td class="px-3 py-1.5">{{ f.netToIssuer | money }}</td>
                           <td class="px-3 py-1.5">{{ utils.formatTime(f.createdAt) }}</td>
                         </tr>
                       } @empty {
@@ -115,6 +115,8 @@
         </tbody>
       </table>
     </div>
+    <app-paginator [total]="offerings().length" [page]="offeringsPage()" [pageSize]="offeringsPageSize()"
+      (pageChange)="offeringsPage.set($event)" (pageSizeChange)="offeringsPageSize.set($event)" />
   </div>
 </div>
 

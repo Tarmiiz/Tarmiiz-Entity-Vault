@@ -13,13 +13,15 @@ import { AlertService } from '../../../../../shared/components/alerts/alert/aler
 import { SocketService } from '../../../../../shared/services/socket.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
 import { DexOrder, DexTrade } from '../../../../../shared/models/data.model';
+import { FeaturesService } from '../../../../../shared/services/features.service';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-vault-dex-order-details',
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe],
+  imports: [HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe, PaginatorComponent],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -28,6 +30,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
   private socket = inject(SocketService);
+  features = inject(FeaturesService);
   utils = inject(UtilsService);
   private authService = inject(AuthService);
   private translate = inject(TranslateService);
@@ -35,6 +38,10 @@ export class DetailsPage implements OnInit, OnDestroy {
   orderId = signal<number>(0);
   order = signal<DexOrder | undefined>(undefined);
   linkedTrades = signal<DexTrade[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  linkedTradesPage = signal(1);
+  linkedTradesPageSize = signal(25);
+  pagedLinkedTrades = computed(() => pageSlice(this.linkedTrades(), this.linkedTradesPage(), this.linkedTradesPageSize()));
   activeTab = signal<'info' | 'trades'>('info');
   refreshing = signal(false);
 
@@ -77,7 +84,7 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   setTab(t: 'info' | 'trades') { this.activeTab.set(t); }
 
-  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '0.00'; }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   fillPct(o: DexOrder | undefined): number {
     if (!o) return 0;
@@ -102,7 +109,9 @@ export class DetailsPage implements OnInit, OnDestroy {
   canCancel = computed(() => {
     const o = this.order();
     if (!o) return false;
-    return (Number(o.status) === 1 || Number(o.status) === 2) && Number(this.authService.userInfo?.role) !== 3;
+    return (Number(o.status) === 1 || Number(o.status) === 2)
+        && Number(this.authService.userInfo?.role) !== 3
+        && this.features.systemFunctionEnabled('dex-order-cancel');
   });
 
   async cancel() {

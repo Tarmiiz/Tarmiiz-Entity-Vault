@@ -41,7 +41,11 @@ export class ModalServicePaymentProcessorComponent {
     ]);
     if (data?.paymentProcessors) {
       const curatedSet = new Set((curated?.providers ?? []).map((p: any) => p.address.toLowerCase()));
-      this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2 && curatedSet.has(s.address.toLowerCase())));
+      const excluded = new Set(this.paymentProcessorService.excluded());
+      this.paymentProcessors.set(data.paymentProcessors.filter((s: any) =>
+        s.state === 2
+        && curatedSet.has(s.address.toLowerCase())
+        && !excluded.has(s.address.toLowerCase())));
     }
   }
 

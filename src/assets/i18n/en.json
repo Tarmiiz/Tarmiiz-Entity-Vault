@@ -107,7 +107,14 @@
     "offline": "Offline",
     "breadcrumb": "Breadcrumb",
     "preparingExport": "Preparing export...",
-    "uploading": "Uploading"
+    "uploading": "Uploading",
+    "rows": "Rows",
+    "rowRange": "{{from}}–{{to}} of {{total}}",
+    "pageIndicator": "Page {{page}} / {{pages}}",
+    "first": "First page",
+    "last": "Last page",
+    "unknown": "Unknown",
+    "status": "Status"
   },
   "state": {
     "all": "All",
@@ -200,7 +207,9 @@
     "settlements": "Settlements",
     "distribution": "Distribution",
     "dexOfferings": "Offerings",
-    "dexMemberships": "Memberships"
+    "dexMemberships": "Memberships",
+    "dexDeals": "Negotiated Deals",
+    "dexRfqs": "Requests for Quote"
   },
   "login": {
     "title": "Sign In",
@@ -426,7 +435,15 @@
     },
     "serviceSingular": "service",
     "status": "Status",
-    "topAssetsTitle": "Top Assets by AUM"
+    "topAssetsTitle": "Top Assets by AUM",
+    "otc": {
+      "dealsAwaitingUs": "Deals awaiting your move",
+      "dealsAwaitingUsHint": "The other side quoted last — counter, accept or decline.",
+      "venueApprovals": "Crosses awaiting your approval",
+      "venueApprovalsHint": "Both sides agreed on a venue you operate.",
+      "rfqsToQuote": "Requests awaiting your quote",
+      "rfqsToQuoteHint": "You were invited and have not answered yet."
+    }
   },
   "services": {
     "title": "Services",
@@ -458,6 +475,7 @@
       "title": "Service Details",
       "tabs": {
         "info": "Information",
+        "providers": "Service Providers",
         "metadata": "Metadata",
         "subscriptions": "Subscriptions",
         "assets": "Assets",
@@ -467,6 +485,31 @@
         "logs": "Audit Trail",
         "liquidity": "Liquidity",
         "overview": "Overview"
+      },
+      "providers": {
+        "title": "Service Providers",
+        "summary": "{{validators}} validators · {{paymentProcessors}} payment processors · {{custodians}} custodians",
+        "manage": "Manage Providers",
+        "addValidator": "Add Validator",
+        "addPaymentProcessor": "Add Payment Processor",
+        "addCustodian": "Add Custodian",
+        "showing": "Showing {{showing}} of Total {{total}} Providers",
+        "active": "Active",
+        "inactive": "Inactive",
+        "required": "Required",
+        "selfCustody": "Self-custody",
+        "noneAttached": "No providers attached.",
+        "validatorInactiveTooltip": "This validator is suspended or no longer endorsed by the regulator.",
+        "custodianInactiveTooltip": "This custodian is suspended or no longer endorsed by the regulator.",
+        "lastCustodianTooltip": "A service must keep at least one custodian — attach another before removing this one.",
+        "table": {
+          "type": "Type",
+          "name": "Name",
+          "address": "Address",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "custodianCapTooltip": "A service holds one custodian. It is set when the service is created and cannot be replaced from the Vault — ask your regulator if it must change."
       },
       "metadata": {
         "additionalFields": "Additional Fields",
@@ -494,18 +537,11 @@
         "attachProviderError": "Failed to attach the provider.",
         "changeState": "Change State",
         "changeVisibility": "Change Visibility",
-        "custodianInactiveTooltip": "This custodian is suspended or no longer endorsed by the regulator.",
-        "custodiansCount": "Custodians ({{count}})",
         "detachConfirm": "Remove {{label}} from this service?",
         "detachProviderError": "Failed to detach the provider.",
         "editMetadata": "Edit Metadata",
         "editMetadataModalTitle": "Edit Service Metadata",
-        "inactive": "Inactive",
-        "noValidatorsAttached": "No validators attached.",
-        "noneAttached": "None attached.",
-        "paymentProcessorsCount": "Payment Processors ({{count}})",
         "removeProviderTitle": "Remove Provider",
-        "selfCustody": "Self-custody",
         "serviceType": "Service Type",
         "updateCustodianError": "Failed to update the custodian.",
         "updateMetadataError": "Failed to update metadata.",
@@ -513,8 +549,6 @@
         "updateServiceError": "Failed to update the service.",
         "updateValidatorError": "Failed to update the validator.",
         "updateVisibilityError": "Failed to update visibility.",
-        "validatorInactiveTooltip": "This validator is suspended or no longer endorsed by the regulator.",
-        "validatorsCount": "Validators ({{count}})",
         "partyLabelValidator": "Validator",
         "partyLabelPaymentProcessor": "Payment Processor",
         "partyLabelCustodian": "Custodian"
@@ -666,12 +700,13 @@
       "visibilityPublic": "Public"
     },
     "custodianModal": {
-      "description": "Select the custodian service that will hold this service's assets.",
+      "description": "Select a custodian to attach to this service. A service may hold several — its assets are held by all of them.",
       "label": "Custodian",
       "placeholder": "Select a custodian…",
       "selfCustody": "Self-custody",
-      "submit": "Update",
-      "title": "Reassign Custodian"
+      "submit": "Add",
+      "title": "Add Custodian",
+      "empty": "No custodians available — every eligible custodian is already attached."
     },
     "editModal": {
       "fields": {
@@ -729,8 +764,10 @@
     },
     "paymentProcessorModal": {
       "label": "Payment Processor",
-      "submit": "Update",
-      "title": "Reassign Payment Processor"
+      "submit": "Add",
+      "title": "Add Payment Processor",
+      "placeholder": "Select a payment processor…",
+      "empty": "No payment processors available — every eligible payment processor is already attached."
     },
     "stateModal": {
       "newState": "New State",
@@ -740,8 +777,10 @@
     },
     "validatorModal": {
       "label": "Validator",
-      "submit": "Update",
-      "title": "Reassign Validator"
+      "submit": "Add",
+      "title": "Add Validator",
+      "placeholder": "Select a validator…",
+      "empty": "No validators available — every eligible validator is already attached, or none is endorsed at this service’s verification level."
     }
   },
   "assets": {
@@ -946,8 +985,10 @@
       },
       "holdersAt": {
         "account": "Account",
+        "blockAheadOfHead": "Block {{block}} is ahead of the latest block ({{head}}). Pick a block at or below {{head}}.",
         "blockNumber": "Block Number",
         "blockOption": "Block",
+        "latestBlock": "Latest block: {{block}}",
         "blockPlaceholder": "e.g. 1234567",
         "dateLabel": "Date (as of end of day)",
         "dateOption": "Date",
@@ -959,6 +1000,7 @@
         "lookupBy": "Lookup by",
         "noHoldersAtBlock": "No holders at block {{block}}",
         "pickDate": "Pick a date.",
+        "totalBalance": "Total balance",
         "pickValidDate": "Pick a valid date.",
         "reconstructing": "Reconstructing holder set…",
         "summaryPrefix": "{{count}} holder(s) at block {{block}}",
@@ -1016,11 +1058,13 @@
         "updatingCanQuote": "Updating price-quoting permission...",
         "updatingServiceState": "Updating service state...",
         "consentHeader": "Distribution Consent",
-        "consentTooltip": "Regulator activation to Active requires the distributor service’s own on-chain acceptance (own-entity services auto-consent).",
+        "consentTooltip": "Regulator activation to Active requires the distributor service’s own on-chain acceptance. Services of your own entity are not distributors and are exempt.",
         "accepted": "Accepted",
         "acceptedTooltip": "The distributor service has consented to distributing this asset.",
         "awaitingConsent": "Awaiting consent",
-        "awaitingConsentTooltip": "The distributor has not yet accepted this distribution agreement."
+        "awaitingConsentTooltip": "The distributor has not yet accepted this distribution agreement.",
+        "notRequired": "Not required",
+        "notRequiredTooltip": "This service belongs to the asset’s own issuer entity, so it is not a distributor. No consent is needed — the regulator activates it directly."
       },
       "actions": {
         "title": "Asset Actions",
@@ -1916,6 +1960,35 @@
         "share": "Share",
         "totalActive": "Total active",
         "validator": "Validator"
+      }
+    },
+    "negotiated": {
+      "title": "Negotiated OTC",
+      "subtitle": "The desk, not the book: how much of your negotiated flow was competitively priced, how often a negotiation closes, and whether your auctions draw answers.",
+      "emptyMessage": "No negotiated deals or requests for quote in this window.",
+      "chart": {
+        "datasetRfq": "From an RFQ",
+        "datasetBilateral": "Bilateral",
+        "notionalAxis": "Settled notional",
+        "dealCounts": "Deals: {{rfq}} from RFQ · {{bilateral}} bilateral"
+      },
+      "funnel": {
+        "requests": "Requests broadcast",
+        "quoted": "Drew a quote",
+        "awarded": "Awarded",
+        "avgQuotes": "Quotes per request",
+        "responseRate": "answered",
+        "awardRate": "of quoted awarded"
+      },
+      "outcomes": {
+        "title": "How negotiations ended",
+        "closedCount": "{{n}} closed in this window",
+        "none": "No negotiations closed in this window.",
+        "settled": "Settled",
+        "rejected": "Declined",
+        "withdrawn": "Withdrawn",
+        "venueRejected": "Venue rejected",
+        "expired": "Expired"
       }
     }
   },
@@ -3316,7 +3389,305 @@
         "confirm": "Exit"
       }
     },
-    "tierFallback": "Tier {{n}}"
+    "tierFallback": "Tier {{n}}",
+    "deals": {
+      "title": "Negotiated Deals",
+      "loadingList": "Loading deals...",
+      "loadingOne": "Loading deal...",
+      "suspended": "Suspended",
+      "suspendedHint": "Suspended by the regulator",
+      "expired": "Expired",
+      "tabs": {
+        "inbox": "My Turn",
+        "inboxHint": "Deals waiting on you to counter, accept or decline. You can never counter your own live quote — these are the ones where the other side moved last.",
+        "approvals": "Venue Approvals",
+        "approvalsHint": "Both sides have agreed on a venue you operate. Approving crosses the deal; rejecting returns both escrows in full.",
+        "all": "All Deals"
+      },
+      "status": {
+        "proposed": "Proposed",
+        "accepted": "Accepted",
+        "settled": "Settled",
+        "rejected": "Rejected",
+        "withdrawn": "Withdrawn",
+        "venueRejected": "Venue Rejected",
+        "expired": "Expired"
+      },
+      "side": {
+        "proposerBuys": "Proposer buys",
+        "proposerSells": "Proposer sells",
+        "buy": "Buy",
+        "sell": "Sell"
+      },
+      "funding": {
+        "firm": "Firm",
+        "indicative": "Indicative",
+        "firmHint": "The live quote is collateralised — accepting cannot fail on the quoter’s money.",
+        "indicativeHint": "Terms only. Nothing is locked until acceptance, so acceptance is subject to funds at that moment."
+      },
+      "bearing": {
+        "onTop": "On top",
+        "deducted": "Deducted"
+      },
+      "mover": {
+        "proposer": "Proposer",
+        "counterparty": "Counterparty"
+      },
+      "action": {
+        "propose": "Proposed",
+        "counter": "Countered",
+        "accept": "Accepted",
+        "reject": "Rejected",
+        "withdraw": "Withdrawn",
+        "venueApprove": "Venue approved",
+        "venueReject": "Venue rejected",
+        "expire": "Expired",
+        "suspend": "Suspended",
+        "unsuspend": "Unsuspended",
+        "funded": "Escrow posted",
+        "released": "Escrow released",
+        "settled": "Settled"
+      },
+      "table": {
+        "asset": "Asset",
+        "counterparty": "Counterparty",
+        "venue": "Venue",
+        "side": "Side",
+        "funding": "Funding",
+        "amount": "Amount",
+        "price": "Price",
+        "total": "Total",
+        "round": "Round",
+        "expires": "Expires in"
+      },
+      "list": {
+        "searchPlaceholder": "Deal, asset, counterparty…",
+        "assetPlaceholder": "Name or symbol"
+      },
+      "rounds": {
+        "when": "When",
+        "action": "Action",
+        "actor": "Actor",
+        "reason": "Reason"
+      },
+      "details": {
+        "breadcrumb": "Negotiated Deals",
+        "untitled": "Deal",
+        "tabs": {
+          "terms": "Terms",
+          "rounds": "Negotiation",
+          "settlement": "Settlement"
+        },
+        "suspendedBanner": "Suspended by the regulator",
+        "suspendedExplain": "A suspension blocks acceptance and the venue’s approval only. Withdraw, decline and expiry still work, so escrow can always be recovered.",
+        "noReason": "No reason recorded.",
+        "liveQuote": "Live quote by",
+        "buyer": "Buyer",
+        "seller": "Seller",
+        "proposerParty": "Proposer",
+        "counterpartyParty": "Counterparty",
+        "buyFee": "Buy-side venue fee",
+        "sellFee": "Sell-side venue fee",
+        "expiresAt": "Expires",
+        "created": "Created",
+        "rfqParent": "RFQ request",
+        "decisionReason": "Decision reason",
+        "escrow": "Escrow currently locked",
+        "creditWithheld": "Credit withheld",
+        "assetWithheld": "Tokens withheld",
+        "tradeId": "Trade",
+        "creditTrxId": "Credit transaction",
+        "buyOrderId": "Buy order",
+        "sellOrderId": "Sell order",
+        "offBookNote": "The two order rows are real but off-book: they exist so settlement could reuse the standard engine unchanged, and never appeared in the order book.",
+        "notSettled": "This deal has not settled, so there is no trade to show yet."
+      },
+      "actions": {
+        "propose": "Propose Deal",
+        "counter": "Counter",
+        "accept": "Accept",
+        "decline": "Decline",
+        "withdraw": "Withdraw",
+        "approve": "Approve Cross",
+        "reject": "Reject Cross",
+        "proposing": "Proposing deal…",
+        "countering": "Sending counter…",
+        "accepting": "Accepting…",
+        "declining": "Declining…",
+        "withdrawing": "Withdrawing…",
+        "approving": "Approving the cross…",
+        "rejecting": "Rejecting…",
+        "noSubscriptions": "This entity has no subscriptions, so there is nothing to trade from. Create a subscription on a service first.",
+        "acceptConfirmTitle": "Accept these terms?",
+        "acceptConfirmFirm": "Accepting locks BOTH sides now and moves the deal to the venue operator for approval. Neither party can withdraw after this — only the venue or the expiry clock can resolve it.",
+        "acceptConfirmIndicative": "This is an INDICATIVE quote, so nothing has been escrowed yet. Accepting pulls both sides now and will fail if the quoting party no longer has the funds. It also moves the deal to the venue operator for approval, after which neither party can withdraw.",
+        "approveConfirmTitle": "Approve this cross?",
+        "approveConfirmMsg": "Approving settles the trade immediately: both escrows are consumed, the tokens and credit move, and a trade is recorded. This cannot be undone."
+      },
+      "termsModal": {
+        "titlePropose": "Propose a Deal",
+        "titleCounter": "Counter the Quote",
+        "actingAs": "Acting subscription",
+        "venue": "Venue",
+        "asset": "Asset",
+        "counterparty": "Counterparty",
+        "counterpartyPick": "Pick a previous counterparty…",
+        "counterpartyPlaceholder": "Or paste a subscription address (0x…)",
+        "ourSide": "Our side",
+        "sideHint": "Fixed for the life of the deal — counters move price and size, never who is buying.",
+        "marketScope": "Market scope",
+        "scopeHint": "Must match the tier this asset/venue pairing is approved at. Usually Country for a third-party venue.",
+        "funding": "Funding",
+        "fundingFirmHint": "Firm: your side is escrowed now and re-escrowed on every counter you make, so the counterparty knows acceptance cannot fail on your money. Your capital stays locked for the whole negotiation.",
+        "fundingIndicativeHint": "Indicative: nothing is locked until someone accepts — subject to funds at acceptance. If you have spent the money by then, their acceptance fails.",
+        "validFor": "Valid for (hours)",
+        "validForHint": "One clock for both quote validity and the venue-approval deadline. Cannot be extended by a counter. 15 minutes to 30 days.",
+        "currentPrice": "Live price",
+        "currentAmount": "Live amount",
+        "counterHint": "A counter sets new terms and passes the quote back. The expiry does not move.",
+        "price": "Price",
+        "amount": "Amount (tokens)",
+        "notional": "Notional",
+        "vsLiveQuote": "vs live quote",
+        "submitPropose": "Send Proposal",
+        "submitCounter": "Send Counter",
+        "errPrice": "Price must be greater than zero.",
+        "errAmount": "Amount must be greater than zero.",
+        "errSubscription": "Choose the subscription acting on this deal.",
+        "errVenue": "Choose a venue.",
+        "errAsset": "Choose an asset.",
+        "errCounterparty": "Name the counterparty subscription.",
+        "errSelfDeal": "A deal needs two distinct subscriptions.",
+        "errTtlMin": "The quote must be valid for at least 15 minutes.",
+        "errTtlMax": "The quote cannot be valid for more than 30 days."
+      },
+      "reasonModal": {
+        "titleDecline": "Decline Deal",
+        "titleWithdraw": "Withdraw Quote",
+        "titleVenueReject": "Reject the Cross",
+        "noteDecline": "Declining ends the deal and releases any escrow held against it.",
+        "noteWithdraw": "Withdrawing pulls your own live quote and releases your escrow. You can propose again on new terms.",
+        "noteVenueReject": "Rejecting ends an agreed deal and releases BOTH parties' escrow in full. This is also how a stuck accepted deal is unwound.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Optional note to the other side",
+        "reasonRequiredHint": "Required — the counterparties are told why their agreed trade was not crossed."
+      }
+    },
+    "common": {
+      "tier1": "Tier 1 — Venue",
+      "tier2": "Tier 2 — Country",
+      "tier3": "Tier 3 — Global"
+    },
+    "rfqs": {
+      "title": "Requests for Quote",
+      "loadingList": "Loading requests...",
+      "loadingOne": "Loading request...",
+      "openToAll": "Open to all traders",
+      "openToAllShort": "Open",
+      "tabs": {
+        "inbox": "To Quote",
+        "inboxHint": "Open requests you were invited to and have not answered. You quote a price only — the size, expiry and funding mode are the requester’s terms.",
+        "mine": "My Requests",
+        "mineHint": "Requests you broadcast. Award one quote to turn it into a deal; the others simply stop being acceptable.",
+        "all": "All Requests"
+      },
+      "status": {
+        "open": "Open",
+        "awarded": "Awarded",
+        "cancelled": "Cancelled",
+        "expired": "Expired"
+      },
+      "side": {
+        "requesterBuys": "Requester buys",
+        "requesterSells": "Requester sells"
+      },
+      "dealerState": {
+        "invited": "Invited",
+        "quoted": "Quoted",
+        "won": "Won",
+        "lost": "Lost",
+        "passed": "Passed"
+      },
+      "table": {
+        "requester": "Requester",
+        "amount": "Size",
+        "quotes": "Quotes"
+      },
+      "list": {
+        "searchPlaceholder": "Request, asset, requester…"
+      },
+      "details": {
+        "breadcrumb": "Requests for Quote",
+        "untitled": "Request",
+        "tabBoard": "Dealer Board",
+        "tabTerms": "Terms",
+        "dealer": "Dealer",
+        "standing": "Standing",
+        "quotePrice": "Quote",
+        "quoteStatus": "Quote status",
+        "quotedAt": "Quoted",
+        "viewQuote": "View",
+        "best": "Best",
+        "invited": "Invited",
+        "currency": "Currency",
+        "noDealers": "No dealers to show yet.",
+        "sealedHint": "A request is a sealed auction — you see your own standing only, never the other dealers’ quotes or how many answered. The counts above are the requester’s totals.",
+        "suspendedBanner": "This request is suspended by the regulator",
+        "suspendedExplain": "While suspended it cannot be quoted or awarded. Cancelling stays available and any escrow held against a quote can still be recovered — a suspension never traps capital.",
+        "awardedBanner": "A quote has been awarded",
+        "awardedExplain": "The winning quote is now an accepted deal and still needs the venue operator’s approval before it settles. The other quotes can no longer be accepted; each dealer can close theirs to release any escrow.",
+        "openAwardedDeal": "Open the awarded deal"
+      },
+      "actions": {
+        "create": "New Request",
+        "creating": "Broadcasting request...",
+        "quote": "Submit Quote",
+        "quoting": "Submitting quote...",
+        "award": "Award",
+        "awarding": "Awarding...",
+        "awardConfirmTitle": "Award this quote?",
+        "awardConfirmMsg": "Award {{dealer}} at {{price}}. Both sides lock immediately, and the resulting deal still needs the venue operator’s approval before it settles. Every other quote stops being acceptable.",
+        "cancel": "Cancel Request",
+        "cancelling": "Cancelling request...",
+        "noEligibleSubscription": "None of your subscriptions may answer this request."
+      },
+      "createModal": {
+        "title": "New Request for Quote",
+        "subtitle": "Fix the size and ask dealers for a price.",
+        "ourSide": "Your side",
+        "sideHint": "Dealers answer on the opposite side.",
+        "amount": "Size",
+        "amountHint": "Fixed for every quote — dealers compete on price alone. Plain token count.",
+        "validFor": "Valid for (hours)",
+        "validForHint": "One clock for the whole request: every quote inherits it and none can extend it. 15 minutes to 30 days.",
+        "fundingFirmHint": "Firm: a dealer’s capital is escrowed the moment they quote, so any quote you award is already funded. Fewer dealers can afford to answer.",
+        "fundingIndicativeHint": "Indicative: nothing is locked until you award, so awarding can fail if the dealer has since spent the money.",
+        "openToAll": "Open to any admitted trader",
+        "openToAllHint": "Anyone allowed to trade this asset on the venue may quote, in addition to whoever you invite.",
+        "invite": "Invite dealers",
+        "dealerPlaceholder": "Dealer subscription address",
+        "errSubscription": "Choose which of your subscriptions is making the request.",
+        "errVenue": "Choose a venue.",
+        "errAsset": "Choose an asset.",
+        "errAmount": "Size must be greater than zero.",
+        "errNoDealers": "Invite at least one dealer, or open the request to all traders — otherwise nobody can answer it.",
+        "errSelfInvite": "You cannot invite yourself to your own request.",
+        "errTtlMin": "A request must be valid for at least 15 minutes.",
+        "errTtlMax": "A request cannot be valid for more than 30 days.",
+        "submit": "Broadcast Request"
+      },
+      "quoteModal": {
+        "title": "Submit a Quote",
+        "yourSide": "Your side",
+        "price": "Your price",
+        "priceHint": "Price is the only thing you set — size, expiry and funding come from the request.",
+        "firmWarning": "This is a firm request: submitting escrows your side immediately, and it stays locked until the request is awarded, cancelled or expires.",
+        "indicativeWarning": "This is an indicative request: nothing is locked now, but if the requester awards your quote both sides lock at that moment — so the funds must still be there.",
+        "errSubscription": "Choose which of your subscriptions is quoting.",
+        "errPrice": "Enter a price greater than zero.",
+        "submit": "Submit Quote"
+      }
+    }
   },
   "menuLabels": {
     "analytics": "Analytics",
@@ -3398,6 +3769,7 @@
     "subscriptionChangeState": "Subscription - Change State",
     "venueChangeState": "Venue - Change State",
     "viewDocuments": "View Documents",
+    "viewIdentityData": "View Identity Data (eKYC)",
     "settlementCreate": "Settlements - Create Settlement",
     "settlementConfirmSent": "Settlements - Confirm Sent",
     "settlementConfirmReceived": "Settlements - Confirm Received",
@@ -3405,7 +3777,48 @@
     "dexOfferingCancel": "DEX - Cancel Offering",
     "dexMemberAdd": "DEX - Invite Venue Member",
     "dexMemberAccept": "DEX - Accept Venue Membership",
-    "dexMemberRemove": "DEX - Remove Venue Member"
+    "dexMemberRemove": "DEX - Remove Venue Member",
+    "assetCreate": "Assets - Add Asset",
+    "assetRegisterExisting": "Assets - Register Existing Asset",
+    "assetEditMetadata": "Asset - Edit Metadata",
+    "assetMint": "Asset - Mint Supply",
+    "assetBurn": "Asset - Burn Supply",
+    "assetSetPrice": "Asset - Add Price",
+    "assetAddService": "Asset - Add Distributing Service",
+    "assetServiceCanQuote": "Asset - Change Service Quoting",
+    "assetServiceChangeState": "Asset - Change Service State",
+    "assetExecuteDistribution": "Asset - Execute Distribution",
+    "assetFinalizeDistribution": "Asset - Finalize Distribution",
+    "creditDeposit": "Credit - Deposit",
+    "creditWithdraw": "Credit - Withdraw",
+    "serviceCreate": "Services - Add Service",
+    "serviceLiquidityInject": "Service - Inject Liquidity",
+    "serviceLiquidityWithdraw": "Service - Withdraw Liquidity",
+    "serviceFeeConfig": "Service - Edit Fees",
+    "entityEditMetadata": "Profile - Edit Entity Metadata",
+    "entityExternalContracts": "Profile - Manage External Contracts",
+    "subscriberOnboard": "Subscriptions - Add Subscription",
+    "transactionCreate": "Transactions - Add Transaction",
+    "settlementCancel": "Settlements - Cancel Settlement",
+    "dexVenueCreate": "DEX - Create Venue",
+    "dexVenueTierRequest": "DEX - Request Venue Tier",
+    "dexListingCreate": "DEX - Create Listing",
+    "dexListingVenueManage": "DEX - Manage Listing Venues",
+    "dexOrderPlace": "DEX - Place Order",
+    "dexOrderCancel": "DEX - Cancel Order",
+    "dexMatch": "DEX - Match Orders",
+    "distributionAccept": "Distribution - Accept Agreement",
+    "manageDocuments": "Action - Manage Documents",
+    "dexDealPropose": "DEX - Propose Negotiated Deal",
+    "dexDealCounter": "DEX - Counter Negotiated Deal",
+    "dexDealAccept": "DEX - Accept Negotiated Deal",
+    "dexDealDecline": "DEX - Decline Negotiated Deal",
+    "dexDealWithdraw": "DEX - Withdraw Own Deal Quote",
+    "dexDealVenueDecision": "DEX - Approve / Reject Deal Cross (venue operator)",
+    "dexRfqCreate": "DEX - Create RFQ",
+    "dexRfqQuote": "DEX - Quote RFQ",
+    "dexRfqAward": "DEX - Award RFQ",
+    "dexRfqCancel": "DEX - Cancel RFQ"
   },
   "custody": {
     "myServices": {
@@ -3733,9 +4146,11 @@
       "confirmResetMessage": "Reset \"{{name}}\" to its default value? Any custom override will be removed.",
       "categories": {
         "features": "Features",
+        "display": "Display",
         "sessions": "Sessions",
         "chain": "Blockchain",
         "audit": "Audit",
+        "monitoring": "Monitoring",
         "settings": "Settings",
         "email": "Email",
         "ipfs": "IPFS",
@@ -3851,17 +4266,19 @@
     },
     "agreements": {
       "title": "Distribution Agreements",
-      "description": "Assets registered on your services by their issuers. Accepting is required before the regulator can activate the agreement.",
+      "description": "Assets registered on your services. Assets from other issuers need your acceptance before the regulator can activate the agreement; your own entity’s assets do not.",
       "asset": "Asset",
       "myService": "My Service",
       "consent": "Consent",
       "accepted": "Accepted",
-      "awaiting": "Awaiting acceptance",
+      "awaiting": "Awaiting consent",
+      "notRequired": "Not required",
+      "notRequiredTooltip": "This is your own entity’s asset, so this service is not a distributor. No consent is needed — the regulator activates it directly.",
       "empty": "No distribution agreements."
     },
     "trades": {
-      "title": "Primary-Market Trades",
-      "description": "Subscribe / redeem trades on this tenant’s assets and services - including trades on your assets executed by foreign distributors.",
+      "title": "Distribution Trades",
+      "description": "Subscribe / redeem on your assets executed by other entities’ services, and trades your services executed on other issuers’ assets. Trades inside your own entity are not distribution and appear under Transactions.",
       "creditTrx": "Credit Trx",
       "direction": "Direction",
       "subscribe": "Subscribe",

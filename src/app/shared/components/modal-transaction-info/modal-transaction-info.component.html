@@ -106,12 +106,12 @@
           </div>
           <div class="border-t pt-3">
             <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.tokenPrice' | translate }}</p>
-            <p class="text-right font-semibold">{{ trx.price | number: '1.6-6' }}</p>
+            <p class="text-right font-semibold">{{ trx.price | money }}</p>
           </div>
 
           <div class="border-t pt-3 col-span-2">
             <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.total' | translate }}</p>
-            <p class="text-right font-semibold text-base">{{ trx.totalPrice | number: '1.6-6' }}</p>
+            <p class="text-right font-semibold text-base">{{ trx.totalPrice | money }}</p>
           </div>
 
         </div>

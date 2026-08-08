@@ -10,6 +10,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { LiveIndicatorComponent } from "../../../../shared/components/live-indicator/live-indicator.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
+import { AuthService } from '../../../../shared/services/auth.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { User } from '../../../../shared/models/data.model';
@@ -71,6 +72,7 @@ export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private userEditService = inject(ModalUserEditService);
@@ -98,6 +100,12 @@ export class DetailsPage implements OnInit {
 
   userId = signal<number>(0);
   user = signal<User | undefined>(undefined);
+
+  // True when the admin is looking at their OWN record. Change Role is hidden then: the API
+  // 403s a self-targeted role change (an admin excluded from a `roles: [2]` System Function
+  // could otherwise demote themselves to collect it, and the last admin could lock the
+  // tenant out of every admin surface). Hiding the button is UX — the server is the gate.
+  isSelf = computed(() => Number(this.authService.userInfo?.userId) === this.userId());
 
   approvalRole       = signal<'none' | 'maker' | 'checker'>('none');
   approvalRoleSaving = signal(false);

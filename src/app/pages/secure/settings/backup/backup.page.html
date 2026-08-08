@@ -42,7 +42,7 @@
               <td class="px-4 py-2">{{ row.localRows }}</td>
               <td class="px-4 py-2">
                 @if (row.chainUpdatedAt != null) {
-                  {{ row.chainUpdatedAt | date:'medium' }}
+                  {{ row.chainUpdatedAt | date:'dd/MM/yyyy HH:mm:ss' }}
                 } @else {
                   <span class="text-gray-400">{{ 'settings.backup.never' | translate }}</span>
                 }

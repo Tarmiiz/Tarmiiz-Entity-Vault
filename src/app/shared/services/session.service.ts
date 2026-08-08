@@ -76,6 +76,13 @@ export class SessionService {
     return await this.refreshToken();
   }
 
+  // A refresh we could not complete is not a failed session. If the access token has real
+  // time left (we refresh ~60s early), hand it back so the caller keeps working and the
+  // guard does not bounce; once it is genuinely expired there is nothing usable to return.
+  private tokenIfUnexpired(): string | null {
+    return Date.now() < this.expiresAt ? this.token : null;
+  }
+
   private async refreshToken(): Promise<string | null> {
     if (this._refreshInFlight) return this._refreshInFlight;
     this._refreshInFlight = (async () => {
@@ -83,7 +90,7 @@ export class SessionService {
         const apiURL = this.configService.get('apiURL');
         const response = await CapacitorHttp.request({
           method: 'POST',
-          url: apiURL + '/vault/entity/refresh',
+          url: apiURL + '/entity/refresh',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + (this.token || ''),
@@ -94,11 +101,22 @@ export class SessionService {
           await this.setSession(response.data.token, response.data.expiresAt, response.data.refreshExpiresAt);
           return this.token;
         }
-        await this.clear();
-        return null;
+        // ONLY a definitive rejection ends the session. This used to clear on any
+        // non-success, which meant a refresh landing while the API was restarting hit the
+        // catch below, wiped the stored token, and logged the user out — defeating the
+        // whole point of the API keeping sessions across restarts. A 503 (store briefly
+        // unreachable), a 5xx, or a proxy error page all mean "we could not ask", not
+        // "you are logged out".
+        if (response.status === 401) {
+          await this.clear();
+          return null;
+        }
+        return this.tokenIfUnexpired();
       } catch {
-        await this.clear();
-        return null;
+        // Network-level failure — the API is restarting, offline, or unreachable. Keep the
+        // token: the next attempt succeeds once it is back, provided we are still inside
+        // the refresh window (getActiveToken checks that before ever calling us).
+        return this.tokenIfUnexpired();
       } finally {
         this._refreshInFlight = null;
       }

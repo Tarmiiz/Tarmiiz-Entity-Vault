@@ -19,6 +19,8 @@ import { AuthService } from '../../../shared/services/auth.service';
 import { ModalTransactionInfoService } from '../../../shared/components/modal-transaction-info/modal-transaction-info.service';
 import { ModalTransactionInfoComponent } from '../../../shared/components/modal-transaction-info/modal-transaction-info.component';
 import { AuditService } from '../../../shared/services/audit.service';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
+import { FeaturesService } from '../../../shared/services/features.service';
 
 interface StatCard {
   title: string;
@@ -91,6 +93,14 @@ interface DashboardSummary {
   liquidityCoverageByService?: LiquidityCoverageByServiceRow[];
   shortfallTolerance?: number | null;
   shortfallToleranceIsSet?: boolean;
+  /** OTC queues waiting on this tenant. Absent on an API that predates them. */
+  otc?: OtcWorkQueue;
+}
+
+interface OtcWorkQueue {
+  dealsAwaitingUs: number;
+  dealsAwaitingOurVenue: number;
+  rfqsToQuote: number;
 }
 
 interface ActivityResponse {
@@ -126,8 +136,7 @@ const ACTIVITY_INTERVALS: { value: string; label: string }[] = [
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
-    ModalTransactionInfoComponent, TranslatePipe,
-  ]
+    ModalTransactionInfoComponent, TranslatePipe, MoneyPipe]
 })
 export class DashboardPage implements OnInit {
   private apiService = inject(ApiService);
@@ -139,6 +148,8 @@ export class DashboardPage implements OnInit {
   socketService = inject(SocketService);
   private modalTransactionInfoService = inject(ModalTransactionInfoService);
   private auditService = inject(AuditService);
+  // Public for the template — the OTC row is gated on the DEX module being on at all.
+  features = inject(FeaturesService);
 
   userInfo!: User;
 
@@ -197,6 +208,15 @@ export class DashboardPage implements OnInit {
     return this.currencies().find(c => c.code === code)?.name ?? code ?? '';
   });
   topAssets       = computed(() => this.dashboardSummary()?.topAssets ?? []);
+
+  // OTC queues. Each card hides at zero and the whole row hides when all three are —
+  // these are work, not inventory, and a standing row of zeros trains the eye to skip
+  // the one place a non-zero actually matters.
+  otcDealsAwaitingUs       = computed(() => this.dashboardSummary()?.otc?.dealsAwaitingUs ?? 0);
+  otcDealsAwaitingOurVenue = computed(() => this.dashboardSummary()?.otc?.dealsAwaitingOurVenue ?? 0);
+  otcRfqsToQuote           = computed(() => this.dashboardSummary()?.otc?.rfqsToQuote ?? 0);
+  hasOtcWork = computed(() =>
+    this.otcDealsAwaitingUs() > 0 || this.otcDealsAwaitingOurVenue() > 0 || this.otcRfqsToQuote() > 0);
   liquidityCoverage = computed(() => (this.dashboardSummary()?.liquidityCoverage ?? []).filter(r => r.shortfall > 0));
   liquidityCoverageByService = computed(() => (this.dashboardSummary()?.liquidityCoverageByService ?? []).filter(r => r.shortfall > 0));
   hasLiquidityWarnings = computed(() => this.liquidityCoverage().length > 0 || this.liquidityCoverageByService().length > 0);

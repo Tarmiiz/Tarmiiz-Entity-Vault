@@ -46,6 +46,9 @@ import { ModalAssetImageAddComponent } from '../modals/modal-asset-image-add/mod
 import { ModalAssetPublicViewService } from '../modals/modal-asset-public-view/modal-asset-public-view.service';
 import { ModalAssetPublicViewComponent } from '../modals/modal-asset-public-view/modal-asset-public-view.component';
 import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models/data.model';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 // Entry inside the asset metadata's server-owned `media` key (public docs/images index).
 export interface AssetMediaEntry { documentId: number; cid: string; title: string; fileType: string; }
@@ -63,7 +66,7 @@ export interface AssetMedia {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [
+  imports: [RefreshButtonComponent, 
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
@@ -79,7 +82,8 @@ export interface AssetMedia {
     ModalDistributionDeclareComponent,
     MetadataEditModalComponent,
     ModalAssetImageAddComponent,
-    ModalAssetPublicViewComponent, TranslatePipe,
+    ModalAssetPublicViewComponent, TranslatePipe, MoneyPipe,
+    PaginatorComponent,
   ]
 })
 export class DetailsPage implements OnInit {
@@ -132,11 +136,19 @@ export class DetailsPage implements OnInit {
   // DEX listing state — populated lazily when the DEX tab opens.
   dexListing       = signal<DexAssetListing | undefined>(undefined);
   dexListingVenues = signal<DexAssetListingVenue[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  dexVenuesPage = signal(1);
+  dexVenuesPageSize = signal(25);
+  pagedDexVenues = computed(() => pageSlice(this.dexListingVenues(), this.dexVenuesPage(), this.dexVenuesPageSize()));
   dexListingLoaded = signal(false);
 
   // Distributions state — populated lazily when the Distributions tab opens.
   // distState codes: 1 Declared, 2 Executing, 3 Completed, 4 PartiallyCompleted.
   distributions       = signal<any[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  distributionsPage = signal(1);
+  distributionsPageSize = signal(25);
+  pagedDistributions = computed(() => pageSlice(this.distributions(), this.distributionsPage(), this.distributionsPageSize()));
   distributionsLoaded = signal(false);
   distributionsLoading = signal(false);
 
@@ -146,11 +158,25 @@ export class DetailsPage implements OnInit {
   holdersAtMode       = signal<'block' | 'date'>('block');
   holdersAtBlockInput = signal<string>('');
   holdersAtDateInput  = signal<string>('');   // yyyy-mm-dd from <input type="date">
-  holdersAt           = signal<{ account: string; balance: string }[]>([]);
+  holdersAt           = signal<{ account: string; balance: string | null }[]>([]);
   holdersAtCount      = signal<number>(0);
   holdersAtLoading    = signal(false);
   holdersAtQueried    = signal<number | null>(null);
   holdersAtTime       = signal<number | null>(null);  // block timestamp (unix seconds)
+  chainHead           = signal<number | null>(null);  // latest block — caps the block input
+
+  // Balances arrive as decimal STRINGS (they are uint256 on the wire). Parse once
+  // here so the table, the total and both exports all read the same numbers.
+  /** 1-based, per frontend Standard 1.5. */
+  holdersAtPage = signal(1);
+  holdersAtPageSize = signal(25);
+  pagedHoldersAt = computed(() => pageSlice(this.holdersAtRows(), this.holdersAtPage(), this.holdersAtPageSize()));
+  holdersAtRows = computed(() => this.holdersAt().map(h => ({
+    account: h.account,
+    balance: h.balance === null || h.balance === '' ? null : Number(h.balance),
+  })));
+  // Token quantities are plain integers platform-wide, so a plain sum is correct.
+  holdersAtTotal = computed(() => this.holdersAtRows().reduce((sum, r) => sum + (r.balance ?? 0), 0));
 
   loadingData: boolean = false;
   refreshing = signal(false);
@@ -161,8 +187,8 @@ export class DetailsPage implements OnInit {
   suspensionReason = signal<string>('');
   priceHistory = signal<AssetPrice[]>([]);
   newPriceTimestamps = signal<Set<number>>(new Set());
-  pricePage = signal(0);
-  readonly pricePageSize = 10;
+  pricePage = signal(1);
+  pricePageSize = signal(25);
 
   readonly intervalOptions: { value: string; label: string; seconds: number }[] = [
     { value: '1m',  label: this.translate.instant('assets.details.price.intervals.oneMin'),    seconds: 60 },
@@ -231,23 +257,19 @@ export class DetailsPage implements OnInit {
     const endTs   = this.filterPriceEndDate()   ? Math.floor(new Date(this.filterPriceEndDate()).getTime()   / 1000) + 86399 : Infinity;
     return this.priceHistory().filter(p => p.timestamp >= startTs && p.timestamp <= endTs);
   });
-  pagedPriceHistory = computed(() => {
-    const start = this.pricePage() * this.pricePageSize;
-    return this.filteredPriceTable().slice(start, start + this.pricePageSize);
-  });
-  totalPricePages = computed(() => Math.ceil(this.filteredPriceTable().length / this.pricePageSize));
+  pagedPriceHistory = computed(() => pageSlice(this.filteredPriceTable(), this.pricePage(), this.pricePageSize()));
 
   clearPriceFilter() {
     this.filterPriceStartDate.set('');
     this.filterPriceEndDate.set('');
-    this.pricePage.set(0);
+    this.pricePage.set(1);
   }
 
   exportPricesExcel() {
     const rows = this.filteredPriceTable().map(p => ({
       'Date': this.utils.formatDate(p.timestamp),
-      'Bid': p.bid,
-      'Ask': p.ask,
+      'Bid': this.utils.roundMoney(p.bid),
+      'Ask': this.utils.roundMoney(p.ask),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -314,7 +336,7 @@ export class DetailsPage implements OnInit {
 
   setPriceInterval(value: string) {
     this.priceInterval.set(value);
-    this.pricePage.set(0);
+    this.pricePage.set(1);
     setTimeout(() => this.renderChart(), 50);
   }
 
@@ -322,8 +344,8 @@ export class DetailsPage implements OnInit {
 
   holders = signal<AssetHolder[]>([]);
   currentBid = signal<number>(0);
-  holderPage = signal(0);
-  readonly holderPageSize = 10;
+  holderPage = signal(1);
+  holderPageSize = signal(25);
   filterHolder = signal<string>('');
   filterBalanceOp = signal<'' | 'gt' | 'lt'>('');
   filterBalanceAmt = signal<number | null>(null);
@@ -340,15 +362,11 @@ export class DetailsPage implements OnInit {
       return true;
     });
   });
-  pagedHolders = computed(() => {
-    const start = this.holderPage() * this.holderPageSize;
-    return this.filteredHolders().slice(start, start + this.holderPageSize);
-  });
-  totalHolderPages = computed(() => Math.ceil(this.filteredHolders().length / this.holderPageSize));
+  pagedHolders = computed(() => pageSlice(this.filteredHolders(), this.holderPage(), this.holderPageSize()));
 
   transactions = signal<AssetTransaction[]>([]);
-  trxPage = signal(0);
-  readonly trxPageSize = 10;
+  trxPage = signal(1);
+  trxPageSize = signal(25);
 
   // filters
   filterType = signal<string>('');
@@ -394,11 +412,7 @@ export class DetailsPage implements OnInit {
     });
   });
 
-  pagedTransactions = computed(() => {
-    const start = this.trxPage() * this.trxPageSize;
-    return this.filteredTransactions().slice(start, start + this.trxPageSize);
-  });
-  totalTrxPages = computed(() => Math.ceil(this.filteredTransactions().length / this.trxPageSize));
+  pagedTransactions = computed(() => pageSlice(this.filteredTransactions(), this.trxPage(), this.trxPageSize()));
 
   // overview computed signals
   latestPrice = computed(() => {
@@ -520,7 +534,18 @@ export class DetailsPage implements OnInit {
     if (tab === 'trxs') this.getTransactions(1, 500);
     if (tab === 'dex') this.loadDexListing();
     if (tab === 'distributions') this.loadDistributions();
-    // 'holdersAt' is user-driven (needs a block number) — no auto-load on tab open.
+    // 'holdersAt' is user-driven (needs a block number) — no auto-load on tab open,
+    // but fetch the chain head so the input can be capped and hinted.
+    if (tab === 'holdersAt') this.loadChainHead();
+  }
+
+  // Latest block height, so the operator can't ask for a block that doesn't exist yet.
+  async loadChainHead() {
+    try {
+      const s = await this.apiService.vaultGetSyncStatus();
+      const head = Number(s?.current_block ?? 0);
+      this.chainHead.set(head > 0 ? head : null);
+    } catch { this.chainHead.set(null); }
   }
 
   async loadHoldersAt() {
@@ -536,6 +561,17 @@ export class DetailsPage implements OnInit {
     } else {
       blk = Math.floor(Number(this.holdersAtBlockInput()));
       if (!blk || blk <= 0) { this.alertService.show(this.translate.instant('assets.details.holdersAt.invalidBlockTitle'), this.translate.instant('assets.details.holdersAt.enterPositiveBlock')); return; }
+      // Refresh the head first — it advances while the tab is open, so a cached value
+      // would reject a block that has since been mined.
+      await this.loadChainHead();
+      const head = this.chainHead();
+      if (head !== null && blk > head) {
+        this.alertService.show(
+          this.translate.instant('assets.details.holdersAt.invalidBlockTitle'),
+          this.translate.instant('assets.details.holdersAt.blockAheadOfHead', { block: blk, head }),
+        );
+        return;
+      }
     }
     this.holdersAtLoading.set(true);
     try {
@@ -802,6 +838,8 @@ export class DetailsPage implements OnInit {
           stateName: s.state_name ?? this.getServiceStateName(s.state),
           canQuote: !!(s.can_quote ?? s.canQuote ?? 0),
           distributionAccepted: !!(s.distribution_accepted ?? s.distributionAccepted ?? 0),
+          // Own-entity services need no consent; default true so an older API keeps today's rendering.
+          consentRequired: (s.consent_required ?? s.consentRequired) !== false,
         }));
       }
       this.asset.set(asset);
@@ -1223,7 +1261,7 @@ export class DetailsPage implements OnInit {
     }
 
     this.priceHistory.set(next);
-    this.pricePage.set(0);
+    this.pricePage.set(1);
 
     // Wait for Angular to render the canvas before drawing
     setTimeout(() => this.renderChart(), 50);
@@ -1341,7 +1379,7 @@ export class DetailsPage implements OnInit {
     ]);
     if (holdersData?.holders) this.holders.set(holdersData.holders);
     if (priceData?.bid) this.currentBid.set(priceData.bid);
-    this.holderPage.set(0);
+    this.holderPage.set(1);
     if (!silent) this.loadingService.hide();
   }
 
@@ -1349,7 +1387,7 @@ export class DetailsPage implements OnInit {
     if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetTransactions({ asset: this.assetAddress }, start - 1, offset);
     if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
-    this.trxPage.set(0);
+    this.trxPage.set(1);
     if (!silent) this.loadingService.hide();
   }
 
@@ -1362,14 +1400,14 @@ export class DetailsPage implements OnInit {
     this.filterTokensAmt.set(null);
     this.filterStartDate.set('');
     this.filterEndDate.set('');
-    this.trxPage.set(0);
+    this.trxPage.set(1);
   }
 
   clearHolderFilter() {
     this.filterHolder.set('');
     this.filterBalanceOp.set('');
     this.filterBalanceAmt.set(null);
-    this.holderPage.set(0);
+    this.holderPage.set(1);
   }
 
   exportHoldersExcel() {
@@ -1380,9 +1418,9 @@ export class DetailsPage implements OnInit {
       return {
         'Holder': h.holder,
         'Balance': h.balance,
-        'Cost': this.utils.round6(h.cost),
-        'Value': value,
-        'P/L': pl,
+        'Cost': this.utils.roundMoney(h.cost),
+        'Value': this.utils.roundMoney(value),
+        'P/L': this.utils.roundMoney(pl),
         'P/L %': h.cost > 0 ? +(pl / h.cost * 100).toFixed(4) : null,
       };
     });
@@ -1455,6 +1493,77 @@ export class DetailsPage implements OnInit {
     applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
     doc.save(`asset_holders_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'asset_holders');
+  }
+
+  // Historical snapshot exports. The block (and its on-chain time) is the whole
+  // point of the artefact — an evidence pack that doesn't say WHICH block it
+  // reconstructs is worthless — so both carry it in the filename and the sheet.
+  exportHoldersAtExcel() {
+    const blk = this.holdersAtQueried();
+    const t   = this.holdersAtTime();
+    const rows: Record<string, string | number>[] = this.holdersAtRows().map((h, i) => ({
+      '#': i + 1,
+      'Account': h.account,
+      'Balance': h.balance ?? '',
+      'Block': blk ?? '',
+      'Block Time': t !== null ? new Date(t * 1000).toISOString() : '',
+    }));
+    // Trailing total row — the sheet is the artefact, so it has to carry the same
+    // bottom line the screen shows rather than making the reader re-add the column.
+    rows.push({ '#': '', 'Account': 'TOTAL', 'Balance': this.holdersAtTotal(), 'Block': '', 'Block Time': '' });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Holders at Block');
+    XLSX.writeFile(wb, `asset_holders_at_block_${blk ?? 'unknown'}.xlsx`);
+    this.auditService.logExport('excel', 'asset_holders_at_block');
+  }
+
+  exportHoldersAtPdf() {
+    const blk = this.holdersAtQueried();
+    const t   = this.holdersAtTime();
+    const asset = this.asset();
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pad = 14;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Holders at Block ${blk ?? ''} — ${asset?.name ?? ''}`, pad, 15);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(
+      `Block: ${blk ?? '—'}${t !== null ? `  |  Block time: ${new Date(t * 1000).toISOString()}` : ''}  |  Holders: ${this.holdersAtCount()}`,
+      pad, 24,
+    );
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 31,
+      margin: { left: pad, right: pad },
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [74, 85, 104] },
+      footStyles: { fillColor: [237, 242, 247], textColor: 20, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 10 }, 2: { halign: 'right' } },
+      head: [[
+        { content: '#' },
+        { content: 'Account' },
+        { content: 'Balance', styles: { halign: 'right' } },
+      ]],
+      body: this.holdersAtRows().map((h, i) => [
+        i + 1,
+        h.account,
+        h.balance === null ? '—' : this.utils.formatTokens(h.balance),
+      ]),
+      foot: [[
+        { content: '' },
+        { content: 'Total' },
+        { content: this.utils.formatTokens(this.holdersAtTotal()), styles: { halign: 'right' } },
+      ]],
+    });
+
+    applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
+    doc.save(`asset_holders_at_block_${blk ?? 'unknown'}.pdf`);
+    this.auditService.logExport('pdf', 'asset_holders_at_block');
   }
 
   exportPdf() {
@@ -1568,8 +1677,8 @@ export class DetailsPage implements OnInit {
       'Service': t.serviceName,
       'Subscription': t.subscription,
       'Tokens': t.tokens,
-      'Price': t.price,
-      'Total': t.totalPrice,
+      'Price': this.utils.roundMoney(t.price),
+      'Total': this.utils.roundMoney(t.totalPrice),
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);

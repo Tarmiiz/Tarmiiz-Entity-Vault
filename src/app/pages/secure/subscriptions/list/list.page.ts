@@ -26,6 +26,7 @@ import { ModalAddSubscriptionComponent } from '../modals/modal-add-subscription/
 import { ModalAddSubscriptionService } from '../modals/modal-add-subscription/modal-add-subscription.service';
 
 import { Subscription, User } from '../../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-list',
@@ -37,6 +38,7 @@ import { Subscription, User } from '../../../../shared/models/data.model';
     HeaderComponent,
     LiveIndicatorComponent,
     ModalAddSubscriptionComponent, TranslatePipe,
+    PaginatorComponent,
   ]
 })
 export class ListPage implements OnInit {
@@ -159,6 +161,10 @@ export class ListPage implements OnInit {
     }
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  subscriptionsPage = signal(1);
+  subscriptionsPageSize = signal(25);
+  pagedSubscriptions = computed(() => pageSlice(this.filteredSubscriptions(), this.subscriptionsPage(), this.subscriptionsPageSize()));
   filteredSubscriptions = computed(() => {
     const service = this.filterService();
     const state = this.filterState();
@@ -171,6 +177,7 @@ export class ListPage implements OnInit {
   clearFilters() {
     this.filterService.set('');
     this.filterState.set('');
+    this.subscriptionsPage.set(1);
   }
 
   exportPdf() {

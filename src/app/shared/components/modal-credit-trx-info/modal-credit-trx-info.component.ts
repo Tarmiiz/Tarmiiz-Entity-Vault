@@ -13,13 +13,14 @@ import { LoadingService } from '../alerts/loading/loading.service';
 import { applyPdfFooter } from '../../utils/pdf-export.utils';
 import { CreditTransaction } from '../../models/data.model';
 import { ModalCreditTrxInfoService } from './modal-credit-trx-info.service';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 
 @Component({
   selector: 'app-modal-credit-trx-info',
   templateUrl: './modal-credit-trx-info.component.html',
   styleUrls: ['./modal-credit-trx-info.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, MoneyPipe],
 })
 export class ModalCreditTrxInfoComponent {
   modalService = inject(ModalCreditTrxInfoService);

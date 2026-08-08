@@ -9,13 +9,14 @@ import { AuthService } from '../../services/auth.service';
 import { FeaturesService } from '../../services/features.service';
 import { applyPdfFooter } from '../../utils/pdf-export.utils';
 import { ModalTransactionInfoService } from './modal-transaction-info.service';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 
 @Component({
   selector: 'app-modal-transaction-info',
   templateUrl: './modal-transaction-info.component.html',
   styleUrls: ['./modal-transaction-info.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, MoneyPipe],
 })
 export class ModalTransactionInfoComponent {
   modalService = inject(ModalTransactionInfoService);

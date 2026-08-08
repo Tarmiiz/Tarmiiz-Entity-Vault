@@ -42,18 +42,18 @@
             </tr>
           </thead>
           <tbody>
-            @for (p of positions(); track (p.counterparty + '|' + p.currencyCode); let i = $index) {
+            @for (p of pagedPositions(); track (p.counterparty + '|' + p.currencyCode); let i = $index) {
               <tr [class.bg-gray-50]="i % 2 === 1">
                 <td class="px-4 py-2 font-mono text-xs">{{ p.counterparty }}</td>
                 <td class="px-4 py-2">{{ currencyLabel(p.currencyCode) }}</td>
                 <td class="px-4 py-2">
                   @if (p.netOwedBySelf > 0) {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
-                      {{ 'settlements.positions.youOwe' | translate }} {{ p.netOwedBySelf | number: '1.0-6' }}
+                      {{ 'settlements.positions.youOwe' | translate }} {{ p.netOwedBySelf | money }}
                     </span>
                   } @else if (p.netOwedBySelf < 0) {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                      {{ 'settlements.positions.owedToYou' | translate }} {{ -p.netOwedBySelf | number: '1.0-6' }}
+                      {{ 'settlements.positions.owedToYou' | translate }} {{ -p.netOwedBySelf | money }}
                     </span>
                   } @else {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">0</span>
@@ -79,6 +79,8 @@
           </tbody>
         </table>
       </div>
+      <app-paginator [total]="positions().length" [page]="positionsPage()" [pageSize]="positionsPageSize()"
+        (pageChange)="positionsPage.set($event)" (pageSizeChange)="positionsPageSize.set($event)" />
     </div>
   }
 
@@ -105,7 +107,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (o of obligations(); track (o.debtorEntity + o.creditorEntity + o.obligationId); let i = $index) {
+            @for (o of pagedObligations(); track (o.debtorEntity + o.creditorEntity + o.obligationId); let i = $index) {
               <tr [class.bg-gray-50]="i % 2 === 1">
                 <td class="px-4 py-2 text-xs">{{ o.obligationId }}</td>
                 <td class="px-4 py-2">
@@ -117,7 +119,7 @@
                 </td>
                 <td class="px-4 py-2 font-mono text-xs">{{ counterpartyOf(o) }}</td>
                 <td class="px-4 py-2">{{ currencyLabel(o.currencyCode) }}</td>
-                <td class="px-4 py-2">{{ o.amount | number: '1.0-6' }}</td>
+                <td class="px-4 py-2">{{ o.amount | money }}</td>
                 <td class="px-4 py-2 text-xs">{{ obligationKindName(o.kind) }}</td>
                 <td class="px-4 py-2 text-xs">{{ o.creditTrxId || '—' }}</td>
                 <td class="px-4 py-2 text-xs">{{ o.ref || '—' }}</td>
@@ -133,6 +135,8 @@
           </tbody>
         </table>
       </div>
+      <app-paginator [total]="obligations().length" [page]="obligationsPage()" [pageSize]="obligationsPageSize()"
+        (pageChange)="obligationsPage.set($event)" (pageSizeChange)="obligationsPageSize.set($event)" />
       @if (obligationsTotal() > obligations().length) {
         <div class="px-4 py-2 text-xs text-gray-500 border-t border-gray-200">
           {{ 'settlements.showingCount' | translate: { showing: obligations().length, total: obligationsTotal() } }}
@@ -172,7 +176,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (s of settlements(); track (s.debtorEntity + s.creditorEntity + s.settlementId); let i = $index) {
+            @for (s of pagedSettlements(); track (s.debtorEntity + s.creditorEntity + s.settlementId); let i = $index) {
               <tr [class.bg-gray-50]="i % 2 === 1">
                 <td class="px-4 py-2 text-xs">{{ s.settlementId }}</td>
                 <td class="px-4 py-2">
@@ -184,7 +188,7 @@
                 </td>
                 <td class="px-4 py-2 font-mono text-xs">{{ counterpartyOf(s) }}</td>
                 <td class="px-4 py-2">{{ currencyLabel(s.currencyCode) }}</td>
-                <td class="px-4 py-2">{{ s.amount | number: '1.0-6' }}</td>
+                <td class="px-4 py-2">{{ s.amount | money }}</td>
                 <td class="px-4 py-2">
                   <span class="text-xs px-2 py-0.5 rounded-full" [class]="settlementStateClass(s.state)">{{ settlementStateName(s.state) }}</span>
                 </td>
@@ -198,7 +202,7 @@
                         {{ 'settlements.confirmSentBtn' | translate }}
                       </button>
                     }
-                    @if (isDebtor(s) && s.state === 1 && canAct()) {
+                    @if (isDebtor(s) && s.state === 1 && canAct() && features.systemFunctionEnabled('settlement-cancel')) {
                       <button (click)="cancelSettlement(s)"
                         class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                         {{ 'common.cancel' | translate }}
@@ -223,6 +227,8 @@
           </tbody>
         </table>
       </div>
+      <app-paginator [total]="settlements().length" [page]="settlementsPage()" [pageSize]="settlementsPageSize()"
+        (pageChange)="settlementsPage.set($event)" (pageSizeChange)="settlementsPageSize.set($event)" />
     </div>
   }
 </div>
@@ -249,7 +255,7 @@
             <div>{{ 'settlements.createModal.netOwed' | translate }}: <span class="font-medium">{{ pf.netOwedByCaller }}</span></div>
             <div>{{ 'settlements.createModal.inFlight' | translate }}: <span class="font-medium">{{ pf.inFlightOwedByCaller }}</span></div>
             @if (availableToSettle() !== null) {
-              <div>{{ 'settlements.createModal.available' | translate }}: <span class="font-semibold">{{ availableToSettle() | number: '1.0-6' }}</span></div>
+              <div>{{ 'settlements.createModal.available' | translate }}: <span class="font-semibold">{{ availableToSettle() | money }}</span></div>
             }
           </div>
         }
@@ -282,7 +288,7 @@
     <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
       <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'settlements.sentModal.title' | translate }}</h3>
       <p class="text-xs text-gray-500 mb-4">
-        #{{ sentSettlement()?.settlementId }} — {{ sentSettlement()?.amount | number: '1.0-6' }} ({{ currencyLabel(sentSettlement()?.currencyCode ?? 0) }})
+        #{{ sentSettlement()?.settlementId }} — {{ sentSettlement()?.amount | money }} ({{ currencyLabel(sentSettlement()?.currencyCode ?? 0) }})
       </p>
       <div class="space-y-3">
         <div class="flex flex-col gap-1">
@@ -320,7 +326,7 @@
     <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
       <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'settlements.receivedModal.title' | translate }}</h3>
       <p class="text-xs text-gray-500 mb-4">
-        #{{ receivedSettlement()?.settlementId }} — {{ receivedSettlement()?.amount | number: '1.0-6' }} ({{ currencyLabel(receivedSettlement()?.currencyCode ?? 0) }})
+        #{{ receivedSettlement()?.settlementId }} — {{ receivedSettlement()?.amount | money }} ({{ currencyLabel(receivedSettlement()?.currencyCode ?? 0) }})
         · {{ 'settlements.wireRef' | translate }}: {{ receivedSettlement()?.wireRef || '—' }}
       </p>
       <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-3">

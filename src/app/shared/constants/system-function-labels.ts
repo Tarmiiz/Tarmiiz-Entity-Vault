@@ -34,6 +34,56 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'export-excel': 'systemFunctionLabels.exportExcel',
   'export-pdf': 'systemFunctionLabels.exportPdf',
   'view-documents': 'systemFunctionLabels.viewDocuments',
+  'view-identity-data': 'systemFunctionLabels.viewIdentityData',
+  // ─── Comprehensive sweep (2026-08-06) ───────────────────────────────────────
+  'asset-create':                'systemFunctionLabels.assetCreate',
+  'asset-register-existing':     'systemFunctionLabels.assetRegisterExisting',
+  'asset-edit-metadata':         'systemFunctionLabels.assetEditMetadata',
+  'asset-mint':                  'systemFunctionLabels.assetMint',
+  'asset-burn':                  'systemFunctionLabels.assetBurn',
+  'asset-set-price':             'systemFunctionLabels.assetSetPrice',
+  'asset-add-service':           'systemFunctionLabels.assetAddService',
+  'asset-service-can-quote':     'systemFunctionLabels.assetServiceCanQuote',
+  'asset-service-change-state':  'systemFunctionLabels.assetServiceChangeState',
+  'asset-execute-distribution':  'systemFunctionLabels.assetExecuteDistribution',
+  'asset-finalize-distribution': 'systemFunctionLabels.assetFinalizeDistribution',
+  'credit-deposit':              'systemFunctionLabels.creditDeposit',
+  'credit-withdraw':             'systemFunctionLabels.creditWithdraw',
+  'service-create':              'systemFunctionLabels.serviceCreate',
+  'service-liquidity-inject':    'systemFunctionLabels.serviceLiquidityInject',
+  'service-liquidity-withdraw':  'systemFunctionLabels.serviceLiquidityWithdraw',
+  'service-fee-config':          'systemFunctionLabels.serviceFeeConfig',
+  'entity-edit-metadata':        'systemFunctionLabels.entityEditMetadata',
+  'entity-external-contracts':   'systemFunctionLabels.entityExternalContracts',
+  'subscriber-onboard':          'systemFunctionLabels.subscriberOnboard',
+  'transaction-create':          'systemFunctionLabels.transactionCreate',
+  'settlement-cancel':           'systemFunctionLabels.settlementCancel',
+  'dex-venue-create':            'systemFunctionLabels.dexVenueCreate',
+  'dex-venue-tier-request':      'systemFunctionLabels.dexVenueTierRequest',
+  'dex-listing-create':          'systemFunctionLabels.dexListingCreate',
+  'dex-listing-venue-manage':    'systemFunctionLabels.dexListingVenueManage',
+  'dex-order-place':             'systemFunctionLabels.dexOrderPlace',
+  'dex-order-cancel':            'systemFunctionLabels.dexOrderCancel',
+  'dex-match':                   'systemFunctionLabels.dexMatch',
+  // Negotiated OTC deals — five trader verbs kept separate because they are five
+  // different powers (proposing commits nothing; accepting locks both sides), plus
+  // one pair key for the venue operator's approve/reject decision.
+  'dex-deal-propose':            'systemFunctionLabels.dexDealPropose',
+  'dex-deal-counter':            'systemFunctionLabels.dexDealCounter',
+  'dex-deal-accept':             'systemFunctionLabels.dexDealAccept',
+  'dex-deal-decline':            'systemFunctionLabels.dexDealDecline',
+  'dex-deal-withdraw':           'systemFunctionLabels.dexDealWithdraw',
+  'dex-deal-venue-decision':     'systemFunctionLabels.dexDealVenueDecision',
+  // RFQ. `dex-rfq-award` is separate from `dex-deal-accept` even though awarding IS an
+  // accept on the winning child: answering someone else's RFQ takes on one position the
+  // desk chose, while awarding picks a winner out of a competitive field the desk itself
+  // convened — and that selection is what a supervisor wants attributable to a person.
+  'dex-rfq-create':              'systemFunctionLabels.dexRfqCreate',
+  'dex-rfq-quote':               'systemFunctionLabels.dexRfqQuote',
+  'dex-rfq-award':               'systemFunctionLabels.dexRfqAward',
+  'dex-rfq-cancel':              'systemFunctionLabels.dexRfqCancel',
+  'distribution-accept':         'systemFunctionLabels.distributionAccept',
+  'manage-documents':            'systemFunctionLabels.manageDocuments',
 };
 
 // Translation key for a system-function key (pipe through `| translate` /

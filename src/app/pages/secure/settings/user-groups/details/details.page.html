@@ -171,10 +171,10 @@
               </tr>
             </thead>
             <tbody>
-              @for (member of members(); track member.userId; let i = $index) {
+              @for (member of pagedMembers(); track member.userId; let i = $index) {
                 <tr [class.bg-gray-50]="i % 2 === 1">
                   <td class="px-4 py-2 font-mono">{{ member.userId }}</td>
-                  <td class="px-4 py-2 text-xs text-gray-500">{{ member.assignedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="px-4 py-2 text-xs text-gray-500">{{ member.assignedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                   <td class="px-4 py-2 text-right">
                     <a [routerLink]="['/authorized/users/details', member.userId]" class="text-xs text-indigo-600 hover:underline">
                       {{ 'settings.userGroups.details.viewUser' | translate }}
@@ -191,6 +191,8 @@
             </tbody>
           </table>
         </div>
+        <app-paginator [total]="members().length" [page]="membersPage()" [pageSize]="membersPageSize()"
+          (pageChange)="membersPage.set($event)" (pageSizeChange)="membersPageSize.set($event)" />
       </div>
 
     }

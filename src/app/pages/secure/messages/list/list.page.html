@@ -23,18 +23,18 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.from' | translate }}</label>
         <input type="text" [placeholder]="'messages.list.filters.fromPlaceholder' | translate"
-               [ngModel]="searchParticipant()" (ngModelChange)="searchParticipant.set($event)"
+               [ngModel]="searchParticipant()" (ngModelChange)="searchParticipant.set($event); threadsPage.set(1)"
                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.subject' | translate }}</label>
         <input type="text" [placeholder]="'messages.list.filters.searchPlaceholder' | translate"
-               [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+               [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event); threadsPage.set(1)"
                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.type' | translate }}</label>
-        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); threadsPage.set(1)"
                 class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="all">{{ 'messages.list.filters.typeAll' | translate }}</option>
           <option value="entity">{{ 'messages.list.filters.typeEntity' | translate }}</option>
@@ -44,7 +44,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); threadsPage.set(1)"
                 class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="all">{{ 'state.all' | translate }}</option>
           <option value="1">{{ 'state.open' | translate }}</option>
@@ -74,31 +74,31 @@
 
   <!-- Threads list -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-    <div class="max-h-[70vh] overflow-auto">
-      <table class="min-w-full text-xs">
-        <thead class="text-xs text-white uppercase sticky top-0" style="background-color: #4a5568;">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
           <tr>
-            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.lastActivity' | translate }}</th>
-            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.from' | translate }}</th>
-            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.subject' | translate }}</th>
-            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.messages' | translate }}</th>
-            <th scope="col" class="text-left px-3 py-2">{{ 'messages.list.table.state' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.lastActivity' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.from' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.subject' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.messages' | translate }}</th>
+            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.state' | translate }}</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="text-xs">
           @if (filteredThreads().length === 0 && !loadingData) {
-            <tr class="bg-white border-b"><td colspan="5" class="px-3 py-6 text-center text-gray-500">{{ 'common.noData' | translate }}</td></tr>
+            <tr class="bg-white border-b"><td colspan="5" class="px-6 py-6 text-center text-gray-500">{{ 'common.noData' | translate }}</td></tr>
           } @else {
-            @for (t of filteredThreads(); track t.id; let i = $index; let isEven = $even) {
+            @for (t of pagedThreads(); track t.id; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="viewDetails(t)">
-                <td class="px-3 py-2 text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : ('common.notSet' | translate) }}</td>
-                <td class="px-3 py-2 text-gray-700">{{ nameFor(t.creator) }}</td>
-                <td class="px-3 py-2 font-medium text-gray-800">{{ t.subject || ('messages.noSubject' | translate) }}</td>
-                <td class="px-3 py-2 text-gray-700">{{ t.messageCount }}</td>
-                <td class="px-3 py-2">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-medium" [ngClass]="stateClass(t.state)">
+                <td class="px-6 py-2 text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : ('common.notSet' | translate) }}</td>
+                <td class="px-6 py-2 text-gray-700">{{ nameFor(t.creator) }}</td>
+                <td class="px-6 py-2 font-medium text-gray-800">{{ t.subject || ('messages.noSubject' | translate) }}</td>
+                <td class="px-6 py-2 text-gray-700">{{ t.messageCount }}</td>
+                <td class="px-6 py-2">
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [ngClass]="stateClass(t.state)">
                     {{ stateName(t.state) }}
                   </span>
                 </td>
@@ -108,8 +108,7 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'messages.showingOfTotal' | translate: { showing: filteredThreads().length, total: threads().length } }}</p>
-    </div>
+    <app-paginator [total]="filteredThreads().length" [page]="threadsPage()" [pageSize]="threadsPageSize()"
+      (pageChange)="threadsPage.set($event)" (pageSizeChange)="threadsPageSize.set($event)" />
   </div>
 </div>

@@ -117,7 +117,7 @@
                       <p class="text-sm font-semibold text-gray-700">{{ tierLabel($any(tier)) }}</p>
                       <span class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
                             [class]="tierStatus($any(tier)).cls">{{ tierStatus($any(tier)).label }}</span>
-                      @if (tierStatus($any(tier)).code === 'none' && userInfo && userInfo.role !== 3) {
+                      @if (tierStatus($any(tier)).code === 'none' && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-venue-tier-request')) {
                         <div class="mt-3">
                           <button (click)="requestTier($any(tier))"
                             class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
@@ -152,7 +152,7 @@
                   @if (venueAssets().length === 0) {
                     <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">{{ 'dex.venues.details.assetsTable.noAssets' | translate }}</td></tr>
                   } @else {
-                    @for (a of venueAssets(); track a.baseAsset + '-' + a.tier; let i = $index; let isEven = $even) {
+                    @for (a of pagedVAssets(); track a.baseAsset + '-' + a.tier; let i = $index; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                           [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                           (click)="goAsset(a.baseAsset)">
@@ -177,6 +177,8 @@
                 </tbody>
               </table>
             </div>
+            <app-paginator [total]="venueAssets().length" [page]="vAssetsPage()" [pageSize]="vAssetsPageSize()"
+              (pageChange)="vAssetsPage.set($event)" (pageSizeChange)="vAssetsPageSize.set($event)" />
             <div class="flex items-center px-4 py-2 border-t">
               <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.details.assetsTable.footer' | translate: { shown: venueAssets().length, total: venueAssets().length } }}</p>
             </div>
@@ -204,7 +206,7 @@
                   @if (venueOrders().length === 0) {
                     <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">{{ 'dex.venues.details.ordersTable.noOrders' | translate }}</td></tr>
                   } @else {
-                    @for (o of venueOrders(); track o.orderId; let i = $index; let isEven = $even) {
+                    @for (o of pagedVOrders(); track o.orderId; let i = $index; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                           [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                           (click)="goOrder(o.orderId)">
@@ -223,6 +225,8 @@
                 </tbody>
               </table>
             </div>
+            <app-paginator [total]="venueOrders().length" [page]="vOrdersPage()" [pageSize]="vOrdersPageSize()"
+              (pageChange)="vOrdersPage.set($event)" (pageSizeChange)="vOrdersPageSize.set($event)" />
             <div class="flex items-center px-4 py-2 border-t">
               <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.details.ordersTable.footer' | translate: { shown: venueOrders().length } }}</p>
             </div>
@@ -250,7 +254,7 @@
                   @if (venueTrades().length === 0) {
                     <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">{{ 'dex.venues.details.tradesTable.noTrades' | translate }}</td></tr>
                   } @else {
-                    @for (t of venueTrades(); track t.tradeId; let i = $index; let isEven = $even) {
+                    @for (t of pagedVTrades(); track t.tradeId; let i = $index; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                           [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                           (click)="goTrade(t.tradeId)">
@@ -269,6 +273,8 @@
                 </tbody>
               </table>
             </div>
+            <app-paginator [total]="venueTrades().length" [page]="vTradesPage()" [pageSize]="vTradesPageSize()"
+              (pageChange)="vTradesPage.set($event)" (pageSizeChange)="vTradesPageSize.set($event)" />
             <div class="flex items-center px-4 py-2 border-t">
               <p class="text-xs font-medium text-gray-800">{{ 'dex.venues.details.tradesTable.footer' | translate: { shown: venueTrades().length } }}</p>
             </div>
@@ -306,7 +312,7 @@
                   @if (venueMembers().length === 0) {
                     <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">{{ 'dex.members.table.noMembers' | translate }}</td></tr>
                   } @else {
-                    @for (m of venueMembers(); track m.memberService; let i = $index; let isEven = $even) {
+                    @for (m of pagedVMembers(); track m.memberService; let i = $index; let isEven = $even) {
                       <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                         <td class="px-6 py-2">{{ i + 1 }}</td>
                         <td class="px-6 py-2">
@@ -344,6 +350,8 @@
                 </tbody>
               </table>
             </div>
+            <app-paginator [total]="venueMembers().length" [page]="vMembersPage()" [pageSize]="vMembersPageSize()"
+              (pageChange)="vMembersPage.set($event)" (pageSizeChange)="vMembersPageSize.set($event)" />
             <div class="flex items-center px-4 py-2 border-t">
               <p class="text-xs font-medium text-gray-800">{{ 'dex.members.table.footer' | translate: { shown: venueMembers().length } }}</p>
             </div>

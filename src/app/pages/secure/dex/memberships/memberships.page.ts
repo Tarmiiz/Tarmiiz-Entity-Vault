@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -14,6 +14,7 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { DexVenueMember, User } from '../../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 /**
  * DEX Memberships — the member-brokerage side of venue membership (2026-08-05).
@@ -27,7 +28,7 @@ import { DexVenueMember, User } from '../../../../shared/models/data.model';
   templateUrl: './memberships.page.html',
   styleUrls: ['./memberships.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, PaginatorComponent],
 })
 export class MembershipsPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);
@@ -42,6 +43,10 @@ export class MembershipsPage implements OnInit, OnDestroy {
   userInfo!: User;
 
   memberships = signal<DexVenueMember[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  membershipsPage = signal(1);
+  membershipsPageSize = signal(25);
+  pagedMemberships = computed(() => pageSlice(this.memberships(), this.membershipsPage(), this.membershipsPageSize()));
   loaded = signal(false);
   refreshing = signal(false);
 

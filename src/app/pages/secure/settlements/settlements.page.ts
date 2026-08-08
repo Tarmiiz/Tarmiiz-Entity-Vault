@@ -11,6 +11,8 @@ import { UtilsService } from '../../../shared/services/utils.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
 import { CreditPosition, CreditObligation, CreditSettlement, User } from '../../../shared/models/data.model';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
+import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
 
 /**
  * Settlements — the fiat leg of the credit ledger (issuer/DEX model D9-D11).
@@ -24,7 +26,7 @@ import { CreditPosition, CreditObligation, CreditSettlement, User } from '../../
   templateUrl: './settlements.page.html',
   styleUrls: ['./settlements.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, MoneyPipe, PaginatorComponent],
 })
 export class SettlementsPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -43,9 +45,21 @@ export class SettlementsPage implements OnInit {
   loaded = signal(false);
 
   positions   = signal<CreditPosition[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  positionsPage = signal(1);
+  positionsPageSize = signal(25);
+  pagedPositions = computed(() => pageSlice(this.positions(), this.positionsPage(), this.positionsPageSize()));
   obligations = signal<CreditObligation[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  obligationsPage = signal(1);
+  obligationsPageSize = signal(25);
+  pagedObligations = computed(() => pageSlice(this.obligations(), this.obligationsPage(), this.obligationsPageSize()));
   obligationsTotal = signal(0);
   settlements = signal<CreditSettlement[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  settlementsPage = signal(1);
+  settlementsPageSize = signal(25);
+  pagedSettlements = computed(() => pageSlice(this.settlements(), this.settlementsPage(), this.settlementsPageSize()));
   settlementsTotal = signal(0);
 
   // code → display name from the approved-currencies read (best-effort).

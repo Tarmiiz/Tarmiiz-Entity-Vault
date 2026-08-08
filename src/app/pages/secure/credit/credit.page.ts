@@ -26,6 +26,7 @@ import { AuditService } from '../../../shared/services/audit.service';
 import { applyPdfFooter } from '../../../shared/utils/pdf-export.utils';
 
 import { CreditBalance } from '../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
 
 interface CreditRow {
   subscription: string;
@@ -42,7 +43,7 @@ interface CreditRow {
   templateUrl: './credit.page.html',
   styleUrls: ['./credit.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, ModalBankTransferComponent, ModalRouteTransferComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, ModalBankTransferComponent, ModalRouteTransferComponent, PaginatorComponent],
 })
 export class CreditPage implements OnInit {
   private apiService = inject(ApiService);
@@ -82,6 +83,10 @@ export class CreditPage implements OnInit {
     return [...map.values()].sort((a, b) => a.currencyCode - b.currencyCode);
   });
 
+  /** 1-based, per frontend Standard 1.5. */
+  rowsPage = signal(1);
+  rowsPageSize = signal(25);
+  pagedRows = computed(() => pageSlice(this.filteredRows(), this.rowsPage(), this.rowsPageSize()));
   filteredRows = computed(() => {
     const subQ = this.searchSubscription().toLowerCase();
     const svcQ = this.searchService().toLowerCase();
@@ -189,6 +194,7 @@ export class CreditPage implements OnInit {
     this.filterCurrency.set('');
     this.filterBalanceOp.set('');
     this.filterBalanceAmt.set(null);
+    this.rowsPage.set(1);
   }
 
   viewSubscription(address: string) {

@@ -9,6 +9,7 @@ import { ApiService } from '../../../shared/services/api.service';
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 
 import { Country, GlobalVariable } from '../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
 
 
 @Component({
@@ -18,8 +19,9 @@ import { Country, GlobalVariable } from '../../../shared/models/data.model';
   standalone: true,
   imports: [
     FormsModule,
-    HeaderComponent, TranslatePipe
-]
+    HeaderComponent, TranslatePipe,
+    PaginatorComponent,
+  ]
 })
 export class SystemPage implements OnInit {
   private loadingService = inject(LoadingService);
@@ -63,6 +65,10 @@ export class SystemPage implements OnInit {
     )) ?? []);
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  countriesPage = signal(1);
+  countriesPageSize = signal(25);
+  pagedCountries = computed(() => pageSlice(this.filteredCountries(), this.countriesPage(), this.countriesPageSize()));
   filteredCountries = computed(() => {
     const term = this.countriesSearchTerm().toLowerCase();
     if (!term) return this.countries();
@@ -76,6 +82,10 @@ export class SystemPage implements OnInit {
     );
   });
 
+  /** 1-based, per frontend Standard 1.5. */
+  variablesPage = signal(1);
+  variablesPageSize = signal(25);
+  pagedVariables = computed(() => pageSlice(this.filteredVariables(), this.variablesPage(), this.variablesPageSize()));
   filteredVariables = computed(() => {
     const term = this.variablesSearchTerm().toLowerCase();
     if (!term) return this.globalVariables();

@@ -31,12 +31,12 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'assets.documents.list.searchPlaceholder' | translate"
-          [ngModel]="search()" (ngModelChange)="search.set($event)"
+          [ngModel]="search()" (ngModelChange)="search.set($event); docsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
-        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event)"
+        <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); docsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (v of docTypes(); track v.variableId) {
@@ -46,7 +46,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); docsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           @for (v of docStates(); track v.variableId) {
@@ -91,7 +91,7 @@
             @if (filtered().length == 0) {
               <tr class="bg-white border-b"><td class="px-6 py-2" colspan="7">{{ 'common.noData' | translate }}</td></tr>
             } @else {
-              @for (doc of filtered(); track doc.id; let i = $index; let isEven = $even) {
+              @for (doc of pagedDocs(); track doc.id; let i = $index; let isEven = $even) {
                 <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                     [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="view(doc)">
                   <td class="px-6 py-2">{{ i + 1 }}</td>
@@ -112,9 +112,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'assets.documents.list.showingCount' | translate: { shown: filtered().length, total: documents().length } }}</p>
-    </div>
+    <app-paginator [total]="filtered().length" [page]="docsPage()" [pageSize]="docsPageSize()"
+      (pageChange)="docsPage.set($event)" (pageSizeChange)="docsPageSize.set($event)" />
   </div>
 
   } @else {

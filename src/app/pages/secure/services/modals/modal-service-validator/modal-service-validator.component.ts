@@ -42,7 +42,11 @@ export class ModalServiceValidatorComponent {
     if (data?.validators) {
       const level = this.validatorService.verificationLevel();
       const curatedSet = new Set((curated?.providers ?? []).map((p: any) => p.address.toLowerCase()));
-      this.validators.set(data.validators.filter((v: any) => v.state === 2 && v.validationLevel >= level && curatedSet.has(v.address.toLowerCase())));
+      const excluded = new Set(this.validatorService.excluded());
+      this.validators.set(data.validators.filter((v: any) =>
+        v.state === 2 && v.validationLevel >= level
+        && curatedSet.has(v.address.toLowerCase())
+        && !excluded.has(v.address.toLowerCase())));
     }
   }
 

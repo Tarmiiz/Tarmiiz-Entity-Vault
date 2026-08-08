@@ -1,5 +1,5 @@
 // ekyc-canonical.ts — GENERATED mirror of the platform canonical identity schema.
-// Source: Tarmiiz eKYC/Services/eKYC API/src/canonical/ekyc-canonical.schema.json (v3).
+// Source: Tarmiiz Plugin eKYC/Services/eKYC API/src/canonical/ekyc-canonical.schema.json (v3).
 // DO NOT EDIT BY HAND — regenerate with `node scripts/gen-canonical-ts.js` in the eKYC Service repo.
 // Drift vs the schema is reported by d:\Code\Products\scripts\check-canonical-sync.ps1.
 

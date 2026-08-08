@@ -143,7 +143,7 @@
 
           <div class="border-t pt-3 col-span-2">
             <p class="text-xs font-medium text-gray-500">{{ 'common.amount' | translate }}</p>
-            <p class="text-right font-semibold text-base">{{ trx.amount | number: '1.2-2' }} <span class="text-gray-500 font-normal text-sm">{{ trx.currencySymbol }}</span></p>
+            <p class="text-right font-semibold text-base">{{ trx.amount | money }} <span class="text-gray-500 font-normal text-sm">{{ trx.currencySymbol }}</span></p>
           </div>
 
         </div>

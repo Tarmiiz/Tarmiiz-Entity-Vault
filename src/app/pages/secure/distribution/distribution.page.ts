@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +14,8 @@ import { AlertService } from '../../../shared/components/alerts/alert/alert.serv
 import { ModalServiceFeeConfigService } from '../services/modals/modal-service-fee-config/modal-service-fee-config.service';
 import { ModalServiceFeeConfigComponent } from '../services/modals/modal-service-fee-config/modal-service-fee-config.component';
 import { DistributionAgreement, PrimaryTrade, User } from '../../../shared/models/data.model';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
+import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
 
 /**
  * Distribution — the distributor side of the issuer/distributor model (D1/D4).
@@ -29,7 +31,7 @@ import { DistributionAgreement, PrimaryTrade, User } from '../../../shared/model
   templateUrl: './distribution.page.html',
   styleUrls: ['./distribution.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, ModalServiceFeeConfigComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, HeaderComponent, ModalServiceFeeConfigComponent, TranslatePipe, MoneyPipe, PaginatorComponent],
 })
 export class DistributionPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -48,7 +50,15 @@ export class DistributionPage implements OnInit {
   loaded = signal(false);
 
   agreements = signal<DistributionAgreement[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  agreementsPage = signal(1);
+  agreementsPageSize = signal(25);
+  pagedAgreements = computed(() => pageSlice(this.agreements(), this.agreementsPage(), this.agreementsPageSize()));
   trades = signal<PrimaryTrade[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  tradesPage = signal(1);
+  tradesPageSize = signal(25);
+  pagedTrades = computed(() => pageSlice(this.trades(), this.tradesPage(), this.tradesPageSize()));
   tradesTotal = signal(0);
 
   ngOnInit() {}
@@ -65,7 +75,10 @@ export class DistributionPage implements OnInit {
   }
 
   private async loadAgreements() {
-    this.agreements.set(await this.apiService.vaultDistributionInbound());
+    const rows = await this.apiService.vaultDistributionInbound();
+    // Own-entity services are not distributors and need no consent. Default to
+    // required so an older API build (no such field) keeps the previous rendering.
+    this.agreements.set(rows.map(a => ({ ...a, consentRequired: a.consentRequired !== false })));
   }
 
   private async loadTrades() {

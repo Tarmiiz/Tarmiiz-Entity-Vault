@@ -7,7 +7,7 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'dex.listings.list.searchPlaceholder' | translate"
-          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+          [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event); listingsPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col justify-end">
@@ -29,7 +29,7 @@
             {{ 'common.exportPdf' | translate }}
           </button>
         }
-        @if (userInfo && userInfo.role !== 3) {
+        @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-listing-create')) {
           <button (click)="createListing()"
             class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -61,7 +61,7 @@
               <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (l of filteredListings(); track l.baseAsset; let i = $index; let isEven = $even) {
+            @for (l of pagedListings(); track l.baseAsset; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="viewDetails(l)">
@@ -108,9 +108,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'dex.listings.list.showing' | translate: { shown: filteredListings().length, total: listings().length } }}</p>
-    </div>
+    <app-paginator [total]="filteredListings().length" [page]="listingsPage()" [pageSize]="listingsPageSize()"
+      (pageChange)="listingsPage.set($event)" (pageSizeChange)="listingsPageSize.set($event)" />
   </div>
 
 </div>

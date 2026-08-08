@@ -125,20 +125,8 @@
       </table>
     </div>
 
-    <div class="flex items-center justify-between px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'common.showing' | translate: { showing: rows().length, total: total() } }}</p>
-      @if (totalPages() > 1) {
-        <div class="flex items-center gap-3 text-xs text-gray-600">
-          <span>{{ 'common.pageOf' | translate: { page: page(), pages: totalPages() } }}</span>
-          <div class="flex gap-2">
-            <button (click)="prevPage()" [disabled]="page() === 1"
-              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{{ 'common.prev' | translate }}</button>
-            <button (click)="nextPage()" [disabled]="page() >= totalPages()"
-              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{{ 'common.next' | translate }}</button>
-          </div>
-        </div>
-      }
-    </div>
+    <app-paginator [total]="total()" [page]="page()" [pageSize]="pageSize()"
+      (pageChange)="setPage($event)" (pageSizeChange)="setPageSize($event)" />
   </div>
 
 </div>

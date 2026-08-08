@@ -1,0 +1,173 @@
+@if (modalService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center overflow-y-auto py-8">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          {{ (isPropose() ? 'dex.deals.termsModal.titlePropose' : 'dex.deals.termsModal.titleCounter') | translate }}
+        </h3>
+        @if (!isPropose() && modalService.ctx().assetLabel) {
+          <p class="mt-1 text-xs text-white/80">{{ modalService.ctx().assetLabel }}</p>
+        }
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+
+        <!-- Acting subscription: which of OUR books this trade belongs to. Also decides
+             whose escrow moves, since escrow is attributed to the trader's home service. -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.actingAs' | translate }}</label>
+          <select [(ngModel)]="subscription"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800">
+            @for (s of modalService.ctx().subscriptions; track s.address) {
+              <option [value]="s.address">{{ s.label }}</option>
+            }
+          </select>
+        </div>
+
+        @if (isPropose()) {
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.venue' | translate }}</label>
+              <select [(ngModel)]="dexService"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+                @for (v of modalService.ctx().venues; track v.address) {
+                  <option [value]="v.address">{{ v.label }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.asset' | translate }}</label>
+              <select [(ngModel)]="baseAsset"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+                @for (a of modalService.ctx().assets; track a.address) {
+                  <option [value]="a.address">{{ a.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- Named counterparty. A deal is always targeted — there is no open book here.
+               The picker is seeded from who we have dealt with before; the free-text field
+               covers a first-time counterparty. -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.counterparty' | translate }}</label>
+            @if (modalService.ctx().counterparties?.length) {
+              <select [(ngModel)]="counterparty"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+                <option value="">{{ 'dex.deals.termsModal.counterpartyPick' | translate }}</option>
+                @for (c of modalService.ctx().counterparties; track c.subscription) {
+                  <option [value]="c.subscription">{{ c.entityName || c.subscription }} @if (c.serviceName) { · {{ c.serviceName }} }</option>
+                }
+              </select>
+            }
+            <input type="text" [(ngModel)]="counterparty" [placeholder]="'dex.deals.termsModal.counterpartyPlaceholder' | translate"
+              class="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800 font-mono" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.ourSide' | translate }}</label>
+              <select [(ngModel)]="side"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+                <option [ngValue]="1">{{ 'dex.deals.side.buy' | translate }}</option>
+                <option [ngValue]="2">{{ 'dex.deals.side.sell' | translate }}</option>
+              </select>
+              <p class="mt-1 text-xs text-gray-500">{{ 'dex.deals.termsModal.sideHint' | translate }}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.marketScope' | translate }}</label>
+              <select [(ngModel)]="marketScope"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+                <option [ngValue]="1">{{ 'dex.common.tier1' | translate }}</option>
+                <option [ngValue]="2">{{ 'dex.common.tier2' | translate }}</option>
+                <option [ngValue]="3">{{ 'dex.common.tier3' | translate }}</option>
+              </select>
+              <p class="mt-1 text-xs text-gray-500">{{ 'dex.deals.termsModal.scopeHint' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Funding is the single most consequential choice on this form and it is
+               IMMUTABLE, so it gets a full explanation rather than a bare dropdown. -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.funding' | translate }}</label>
+            <select [(ngModel)]="funding"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+              <option [ngValue]="1">{{ 'dex.deals.funding.firm' | translate }}</option>
+              <option [ngValue]="2">{{ 'dex.deals.funding.indicative' | translate }}</option>
+            </select>
+            <p class="mt-1 text-xs rounded px-3 py-2"
+               [class]="funding() === 1 ? 'bg-emerald-50 text-emerald-800' : 'bg-orange-50 text-orange-800'">
+              {{ (funding() === 1 ? 'dex.deals.termsModal.fundingFirmHint' : 'dex.deals.termsModal.fundingIndicativeHint') | translate }}
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.validFor' | translate }}</label>
+            <input type="number" min="0.25" step="0.25" [(ngModel)]="ttlHours"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800" />
+            <p class="mt-1 text-xs text-gray-500">{{ 'dex.deals.termsModal.validForHint' | translate }}</p>
+          </div>
+        }
+
+        @if (!isPropose()) {
+          <!-- The live quote, so the user is editing against something rather than into a
+               blank field. It is also the last chance to see what they are moving away from. -->
+          <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-700 grid grid-cols-2 gap-2">
+            <div>
+              <span class="text-gray-500">{{ 'dex.deals.termsModal.currentPrice' | translate }}</span>
+              <div class="font-semibold">{{ modalService.ctx().currentPrice }}</div>
+            </div>
+            <div>
+              <span class="text-gray-500">{{ 'dex.deals.termsModal.currentAmount' | translate }}</span>
+              <div class="font-semibold">{{ modalService.ctx().currentAmount }}</div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500">{{ 'dex.deals.termsModal.counterHint' | translate }}</p>
+        }
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              {{ 'dex.deals.termsModal.price' | translate }}
+              @if (modalService.ctx().currencyLabel) { <span class="text-gray-400">({{ modalService.ctx().currencyLabel }})</span> }
+            </label>
+            <input type="number" min="0" step="any" [(ngModel)]="price"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800" />
+            @if (priceDelta() !== null) {
+              <p class="mt-1 text-xs" [class]="(priceDelta() ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-700'">
+                {{ (priceDelta() ?? 0) >= 0 ? '+' : '' }}{{ (priceDelta() ?? 0) | number:'1.2-2' }}%
+                {{ 'dex.deals.termsModal.vsLiveQuote' | translate }}
+              </p>
+            }
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.amount' | translate }}</label>
+            <!-- Token counts are plain integers platform-wide — no decimals offered. -->
+            <input type="number" min="0" step="1" [(ngModel)]="amount"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800" />
+          </div>
+        </div>
+
+        @if (notional() > 0) {
+          <div class="rounded-md bg-indigo-50 border border-indigo-200 px-3 py-2 text-sm text-indigo-900 flex justify-between">
+            <span>{{ 'dex.deals.termsModal.notional' | translate }}</span>
+            <span class="font-semibold">{{ notional() | number:'1.2-6' }} {{ modalService.ctx().currencyLabel }}</span>
+          </div>
+        }
+
+        @if (error()) {
+          <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ error() | translate }}</p>
+        }
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button type="button" (click)="onSubmit()"
+          class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
+          {{ (isPropose() ? 'dex.deals.termsModal.submitPropose' : 'dex.deals.termsModal.submitCounter') | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

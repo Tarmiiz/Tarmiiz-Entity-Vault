@@ -8,12 +8,12 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'dex.orders.list.searchPlaceholder' | translate"
-          [ngModel]="search()" (ngModelChange)="search.set($event)"
+          [ngModel]="search()" (ngModelChange)="search.set($event); ordersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'dex.orders.table.status' | translate }}</label>
-        <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)"
+        <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); ordersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'dex.orders.status.open' | translate }}</option>
@@ -24,7 +24,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'dex.orders.table.side' | translate }}</label>
-        <select [ngModel]="filterSide()" (ngModelChange)="filterSide.set($event)"
+        <select [ngModel]="filterSide()" (ngModelChange)="filterSide.set($event); ordersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'dex.orders.side.buy' | translate }}</option>
@@ -34,13 +34,13 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'dex.orders.table.asset' | translate }}</label>
         <input type="text" [placeholder]="'dex.orders.list.assetPlaceholder' | translate"
-          [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event)"
+          [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event); ordersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'dex.orders.table.venue' | translate }}</label>
         <input type="text" [placeholder]="'dex.orders.list.venuePlaceholder' | translate"
-          [ngModel]="filterVenue()" (ngModelChange)="filterVenue.set($event)"
+          [ngModel]="filterVenue()" (ngModelChange)="filterVenue.set($event); ordersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
       </div>
       <div class="flex flex-col justify-end">
@@ -96,7 +96,7 @@
               <td class="px-6 py-2" colspan="12">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (o of filtered(); track o.orderId; let i = $index; let isEven = $even) {
+            @for (o of pagedOrders(); track o.orderId; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="view(o)">
@@ -123,7 +123,7 @@
                 <td class="px-6 py-2">{{ o.dexServiceName || (o.dexService.slice(0,10) + '…') }}</td>
                 <td class="px-6 py-2">{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</td>
                 <td class="px-6 py-2">
-                  @if (isOpen(o) && userInfo && userInfo.role !== 3) {
+                  @if (isOpen(o) && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-order-cancel')) {
                     <button (click)="cancel(o, $event)"
                       class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">{{ 'common.cancel' | translate }}</button>
                   }
@@ -134,9 +134,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'dex.orders.list.showing' | translate: { shown: filtered().length, total: orders().length } }}</p>
-    </div>
+    <app-paginator [total]="filtered().length" [page]="ordersPage()" [pageSize]="ordersPageSize()"
+      (pageChange)="ordersPage.set($event)" (pageSizeChange)="ordersPageSize.set($event)" />
   </div>
 
 </div>

@@ -109,7 +109,7 @@
                 }
 
                 @case ('number') {
-                  <input type="number" step="any"
+                  <input type="number" step="any" [min]="item.min ?? null" [max]="item.max ?? null"
                     [ngModel]="editValue(item.key)" (ngModelChange)="setEdit(item.key, $event)"
                     class="block w-40 max-w-[45vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
                   <button type="button" (click)="saveValue(item)"

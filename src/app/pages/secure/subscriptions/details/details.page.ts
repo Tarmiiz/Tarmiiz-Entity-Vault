@@ -31,6 +31,8 @@ import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { FeaturesService } from '../../../../shared/services/features.service';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 
 
@@ -48,8 +50,9 @@ import { FeaturesService } from '../../../../shared/services/features.service';
     ModalCreditTrxInfoComponent,
     ModalCreditDepositComponent,
     DocumentsTabComponent,
-    LiveIndicatorComponent, TranslatePipe,
-]
+    LiveIndicatorComponent, TranslatePipe, MoneyPipe,
+    PaginatorComponent,
+  ]
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -93,8 +96,8 @@ export class DetailsPage implements OnInit {
   subscription = signal<Subscription | undefined>(undefined);
   suspensionReason = signal<string>('');
   holdings = signal<SubscriptionHolding[]>([]);
-  holdingPage = signal(0);
-  readonly holdingPageSize = 10;
+  holdingPage = signal(1);
+  holdingPageSize = signal(25);
 
   // holdings filters
   filterHoldingAsset = signal<string>('');
@@ -127,15 +130,11 @@ export class DetailsPage implements OnInit {
     });
   });
 
-  pagedHoldings = computed(() => {
-    const start = this.holdingPage() * this.holdingPageSize;
-    return this.filteredHoldings().slice(start, start + this.holdingPageSize);
-  });
-  totalHoldingPages = computed(() => Math.ceil(this.filteredHoldings().length / this.holdingPageSize));
+  pagedHoldings = computed(() => pageSlice(this.filteredHoldings(), this.holdingPage(), this.holdingPageSize()));
 
   transactions = signal<AssetTransaction[]>([]);
-  trxPage = signal(0);
-  readonly trxPageSize = 10;
+  trxPage = signal(1);
+  trxPageSize = signal(25);
 
   // filters
   filterType = signal<string>('');
@@ -176,11 +175,7 @@ export class DetailsPage implements OnInit {
     });
   });
 
-  pagedTransactions = computed(() => {
-    const start = this.trxPage() * this.trxPageSize;
-    return this.filteredTransactions().slice(start, start + this.trxPageSize);
-  });
-  totalTrxPages = computed(() => Math.ceil(this.filteredTransactions().length / this.trxPageSize));
+  pagedTransactions = computed(() => pageSlice(this.filteredTransactions(), this.trxPage(), this.trxPageSize()));
 
   // overview computed signals
   totalPortfolioValue = computed(() => this.utils.round6(this.holdings().reduce((sum, h) => sum + h.balance * h.currentBid, 0)));
@@ -223,8 +218,8 @@ export class DetailsPage implements OnInit {
   // credit tab state
   creditBalances = signal<CreditBalance[]>([]);
   creditTransactions = signal<CreditTransaction[]>([]);
-  creditTrxPage = signal(0);
-  readonly creditTrxPageSize = 10;
+  creditTrxPage = signal(1);
+  creditTrxPageSize = signal(25);
 
   filterCreditType = signal<string>('');
   filterCreditCurrency = signal<string>('');
@@ -258,11 +253,7 @@ export class DetailsPage implements OnInit {
     });
   });
 
-  pagedCreditTransactions = computed(() => {
-    const start = this.creditTrxPage() * this.creditTrxPageSize;
-    return this.filteredCreditTransactions().slice(start, start + this.creditTrxPageSize);
-  });
-  totalCreditTrxPages = computed(() => Math.ceil(this.filteredCreditTransactions().length / this.creditTrxPageSize));
+  pagedCreditTransactions = computed(() => pageSlice(this.filteredCreditTransactions(), this.creditTrxPage(), this.creditTrxPageSize()));
 
   // change-highlight signals (cleared 2s after a silent refresh)
   newHoldingKeys      = signal<Set<string>>(new Set());
@@ -335,6 +326,9 @@ export class DetailsPage implements OnInit {
 
   // ── Identity Data loaders (own-originated verifications only) ─────────────────
   async loadIdentityData() {
+    // The API 403s without `view-identity-data`; skip the call rather than fire a request
+    // we know is denied (setTab can still be reached by a stale deep link).
+    if (!this.features.systemFunctionEnabled('view-identity-data')) return;
     if (this.ekycLoaded()) return;
     this.ekycLoading.set(true);
     try {
@@ -551,7 +545,7 @@ export class DetailsPage implements OnInit {
       }
       this.holdings.set(next);
     }
-    if (!silent) this.holdingPage.set(0);
+    if (!silent) this.holdingPage.set(1);
     if (!silent) this.loadingService.hide();
   }
 
@@ -601,7 +595,7 @@ export class DetailsPage implements OnInit {
       }
       this.transactions.set(next);
     }
-    if (!silent) this.trxPage.set(0);
+    if (!silent) this.trxPage.set(1);
     if (!silent) this.loadingService.hide();
   }
 
@@ -618,7 +612,7 @@ export class DetailsPage implements OnInit {
     this.filterHoldingCurrency.set('');
     this.filterHoldingBalanceOp.set('');
     this.filterHoldingBalanceAmt.set(null);
-    this.holdingPage.set(0);
+    this.holdingPage.set(1);
   }
 
   clearFilters() {
@@ -629,7 +623,7 @@ export class DetailsPage implements OnInit {
     this.filterTokensAmt.set(null);
     this.filterStartDate.set('');
     this.filterEndDate.set('');
-    this.trxPage.set(0);
+    this.trxPage.set(1);
   }
 
   exportPdf() {
@@ -813,9 +807,9 @@ export class DetailsPage implements OnInit {
         'Asset': `${h.assetName}${h.assetSymbol ? ` (${h.assetSymbol})` : ''}`,
         'Currency': h.currencyCode,
         'Balance': h.balance,
-        'Cost': this.utils.round6(h.cost),
-        'Value': value,
-        'P/L': pl,
+        'Cost': this.utils.roundMoney(h.cost),
+        'Value': this.utils.roundMoney(value),
+        'P/L': this.utils.roundMoney(pl),
         'P/L %': h.cost > 0 ? pl / h.cost * 100 : null,
       };
     });
@@ -836,8 +830,8 @@ export class DetailsPage implements OnInit {
       'Asset': `${t.assetName} (${t.assetSymbol})`,
       'Tokens': t.tokens,
       'Currency': t.currencyCode,
-      'Price': t.price,
-      'Total': t.totalPrice,
+      'Price': this.utils.roundMoney(t.price),
+      'Total': this.utils.roundMoney(t.totalPrice),
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -982,7 +976,7 @@ export class DetailsPage implements OnInit {
       mapped.sort((a: CreditTransaction, b: CreditTransaction) => b.startTime - a.startTime);
       this.creditTransactions.set(mapped);
     }
-    this.creditTrxPage.set(0);
+    this.creditTrxPage.set(1);
     this.loadingService.hide();
   }
 
@@ -993,7 +987,7 @@ export class DetailsPage implements OnInit {
     this.filterCreditAmountVal.set(null);
     this.filterCreditStartDate.set('');
     this.filterCreditEndDate.set('');
-    this.creditTrxPage.set(0);
+    this.creditTrxPage.set(1);
   }
 
   getCreditTrxTypeClass(trxType: number): string {
@@ -1101,7 +1095,7 @@ export class DetailsPage implements OnInit {
       'Date': this.utils.formatDate(t.startTime),
       'Type': t.trxTypeName,
       'Currency': t.currencySymbol,
-      'Amount': t.amount,
+      'Amount': this.utils.roundMoney(t.amount),
       'State': t.trxStateName,
       'From': t.from,
       'To': t.to,

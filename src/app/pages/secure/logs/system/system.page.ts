@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { MyPage } from '../my/my.page';
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-logs-system',
@@ -12,7 +13,7 @@ import { MyPage } from '../my/my.page';
   styleUrls: ['./system.page.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe]
+  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, PaginatorComponent]
 })
 export class SystemPage extends MyPage {
   protected override fetch(page?: number, pageSize?: number) {

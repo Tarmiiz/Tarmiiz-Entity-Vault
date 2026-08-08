@@ -14,13 +14,14 @@ import { EntityServiceProvider, User } from '../../../../shared/models/data.mode
 
 import { ModalSpAddComponent } from '../modals/modal-sp-add/modal-sp-add.component';
 import { ModalSpAddService } from '../modals/modal-sp-add/modal-sp-add.service';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-list',
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalSpAddComponent, TranslatePipe],
+  imports: [FormsModule, HeaderComponent, ModalSpAddComponent, TranslatePipe, PaginatorComponent],
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -83,6 +84,10 @@ export class ListPage implements OnInit {
     this.loadingService.hide();
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  providersPage = signal(1);
+  providersPageSize = signal(25);
+  pagedProviders = computed(() => pageSlice(this.filteredProviders(), this.providersPage(), this.providersPageSize()));
   filteredProviders = computed(() => {
     const term  = this.filterSearch().toLowerCase();
     const type  = this.filterType();
@@ -101,6 +106,7 @@ export class ListPage implements OnInit {
     this.filterSearch.set('');
     this.filterType.set('');
     this.filterState.set('');
+    this.providersPage.set(1);
   }
 
   async openAddModal() {

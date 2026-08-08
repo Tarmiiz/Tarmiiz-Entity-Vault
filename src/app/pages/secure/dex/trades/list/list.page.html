@@ -8,12 +8,12 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'dex.trades.list.searchPlaceholder' | translate"
-          [ngModel]="search()" (ngModelChange)="search.set($event)"
+          [ngModel]="search()" (ngModelChange)="search.set($event); tradesPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-56">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'dex.trades.list.scopeLabel' | translate }}</label>
-        <select [ngModel]="filterScope()" (ngModelChange)="filterScope.set($event)"
+        <select [ngModel]="filterScope()" (ngModelChange)="filterScope.set($event); tradesPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'dex.trades.list.scopeOptions.tier1' | translate }}</option>
@@ -24,13 +24,13 @@
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'dex.trades.table.asset' | translate }}</label>
         <input type="text" [placeholder]="'dex.trades.list.assetPlaceholder' | translate"
-          [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event)"
+          [ngModel]="filterAsset()" (ngModelChange)="filterAsset.set($event); tradesPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'dex.trades.table.venue' | translate }}</label>
         <input type="text" [placeholder]="'dex.trades.list.venuePlaceholder' | translate"
-          [ngModel]="filterVenue()" (ngModelChange)="filterVenue.set($event)"
+          [ngModel]="filterVenue()" (ngModelChange)="filterVenue.set($event); tradesPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
       </div>
       <div class="flex flex-col justify-end">
@@ -78,7 +78,7 @@
               <td class="px-6 py-2" colspan="9">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (t of filtered(); track t.tradeId; let isEven = $even) {
+            @for (t of pagedTrades(); track t.tradeId; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="view(t)">
@@ -97,9 +97,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'dex.trades.list.showing' | translate: { shown: filtered().length, total: trades().length } }}</p>
-    </div>
+    <app-paginator [total]="filtered().length" [page]="tradesPage()" [pageSize]="tradesPageSize()"
+      (pageChange)="tradesPage.set($event)" (pageSizeChange)="tradesPageSize.set($event)" />
   </div>
 
 </div>

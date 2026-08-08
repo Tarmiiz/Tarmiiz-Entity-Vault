@@ -228,6 +228,27 @@ export const routes: Routes = [
             ],
           },
           {
+            // Negotiated OTC deals — the bilateral surface (2026-08-07). Keyed by the
+            // bytes32 deal key, not a numeric id like orders/trades.
+            path: 'deals',
+            children: [
+              { path: 'list',         loadComponent: () => import('./pages/secure/dex/deals/list/list.page').then( m => m.ListPage), canActivate: [AuthGuard] },
+              { path: 'details/:key', loadComponent: () => import('./pages/secure/dex/deals/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
+          {
+            // RFQ — the competitive surface layered over deals (2026-08-08). Keyed by
+            // the bytes32 request key. It sits under the same `dex` menu key as deals:
+            // an RFQ is a fan-out over them, not a separate product.
+            path: 'rfqs',
+            children: [
+              { path: 'list',         loadComponent: () => import('./pages/secure/dex/rfqs/list/list.page').then( m => m.ListPage), canActivate: [AuthGuard] },
+              { path: 'details/:key', loadComponent: () => import('./pages/secure/dex/rfqs/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
+              { path: '', redirectTo: 'list', pathMatch: 'full' },
+            ],
+          },
+          {
             path: 'order-book',
             children: [
               { path: 'view/:asset', loadComponent: () => import('./pages/secure/dex/order-book/view/view.page').then( m => m.ViewPage), canActivate: [AuthGuard] },

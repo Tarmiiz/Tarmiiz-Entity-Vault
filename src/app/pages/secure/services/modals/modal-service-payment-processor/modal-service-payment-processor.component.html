@@ -10,17 +10,21 @@
         <div class="p-6">
           <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">{{ 'services.paymentProcessorModal.label' | translate }}</label>
           <select id="paymentProcessor" formControlName="paymentProcessor" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-            <option value="">{{ 'common.none' | translate }}</option>
+            <option value="" disabled>{{ 'services.paymentProcessorModal.placeholder' | translate }}</option>
             @for (cs of paymentProcessors(); track cs.address) {
               <option [value]="cs.address">{{ cs.name || cs.address }}</option>
             }
           </select>
+          @if (paymentProcessors().length === 0) {
+            <p class="mt-2 text-xs text-amber-700">{{ 'services.paymentProcessorModal.empty' | translate }}</p>
+          }
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             {{ 'common.cancel' | translate }}
           </button>
-          <button type="submit" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+          <button type="submit" [disabled]="!paymentProcessorForm.get('paymentProcessor')?.value"
+            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
             {{ 'services.paymentProcessorModal.submit' | translate }}
           </button>
         </div>

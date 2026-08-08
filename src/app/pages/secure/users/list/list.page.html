@@ -11,12 +11,12 @@
           type="text"
           [placeholder]="'users.filters.searchPlaceholder' | translate"
           [ngModel]="filterSearch()"
-          (ngModelChange)="filterSearch.set($event)"
+          (ngModelChange)="filterSearch.set($event); usersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'users.filters.role' | translate }}</label>
-        <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event)"
+        <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); usersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'role.admin' | translate }}</option>
@@ -27,7 +27,7 @@
       </div>
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-gray-500">{{ 'users.filters.state' | translate }}</label>
-        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event)"
+        <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); usersPage.set(1)"
           class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'state.initiated' | translate }}</option>
@@ -78,7 +78,7 @@
               </tr>
             }
             @else {
-              @for (user of filteredUsers(); track user.userId; let i = $index; let isEven = $even) {
+              @for (user of pagedUsers(); track user.userId; let i = $index; let isEven = $even) {
                 <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                     [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                     (click)="viewDetails(user)">
@@ -98,9 +98,8 @@
         </tbody>
       </table>
     </div>
-    <div class="flex items-center px-4 py-2 border-t">
-      <p class="text-xs font-medium text-gray-800">{{ 'users.list.showingCount' | translate: { shown: filteredUsers().length, total: users().length } }}</p>
-    </div>
+    <app-paginator [total]="filteredUsers().length" [page]="usersPage()" [pageSize]="usersPageSize()"
+      (pageChange)="usersPage.set($event)" (pageSizeChange)="usersPageSize.set($event)" />
   </div>
 
 </div>

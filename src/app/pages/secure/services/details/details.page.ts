@@ -41,6 +41,9 @@ import { DocumentsTabComponent } from '../../../../shared/components/documents-t
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ModalImageAddService } from '../../../../shared/components/modal-image-add/modal-image-add.service';
 import { ModalImageAddComponent } from '../../../../shared/components/modal-image-add/modal-image-add.component';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
 export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
@@ -57,7 +60,7 @@ export interface MediaIndex {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [
+  imports: [RefreshButtonComponent, 
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
@@ -71,8 +74,9 @@ export interface MediaIndex {
     MetadataEditModalComponent,
     DocumentsTabComponent,
     ModalImageAddComponent,
-    LiveIndicatorComponent, TranslatePipe,
-]
+    LiveIndicatorComponent, TranslatePipe, MoneyPipe,
+    PaginatorComponent,
+  ]
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -102,7 +106,7 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'providers' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
 
   // Public-profile metadata parsed from the service's on-chain metadata JSON string.
   // `contact` is rendered in its own Contact section; `entries` are the free-form
@@ -179,6 +183,10 @@ export class DetailsPage implements OnInit {
   liquidityLoading = signal(false);
   // Liquidity change history (plugin-mirrored credit ledger, origin 3=inject / 4=withdraw).
   liquidityHistory = signal<any[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  liqHistoryPage = signal(1);
+  liqHistoryPageSize = signal(25);
+  pagedLiqHistory = computed(() => pageSlice(this.liquidityHistory(), this.liqHistoryPage(), this.liqHistoryPageSize()));
   liquidityHistoryLoading = signal(false);
   private readonly creditOriginNames: Record<number, string> = {
     1: 'Deposit', 2: 'Withdraw', 3: 'Liquidity Inject', 4: 'Liquidity Withdraw',
@@ -218,17 +226,45 @@ export class DetailsPage implements OnInit {
   // 1:N provider attachments for this service (validators / payment processors / custodians).
   // `name` is resolved lazily from the regulator-scoped registries (resolvePartyNames).
   serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [] });
+
+  // Flattened view of the three 1:N attachment sets for the Service Providers tab's single table.
+  // `removable` encodes the on-chain rule that a service must keep at least one custodian.
+  allServiceParties = computed<{ partyType: number; typeLabelKey: string; address: string; name: string; active: boolean; selfCustody: boolean; removable: boolean }[]>(() => {
+    const p = this.serviceParties();
+    const row = (partyType: number, typeLabelKey: string, x: { address: string; active: boolean; name?: string }, removable: boolean) => ({
+      partyType, typeLabelKey, address: x.address, name: x.name ?? '', active: x.active,
+      selfCustody: partyType === 3 && this.isSelfCustodyAddress(x.address),
+      removable,
+    });
+    return [
+      ...p.validators.map(v => row(1, 'services.details.info.partyLabelValidator', v, true)),
+      ...p.paymentProcessors.map(v => row(2, 'services.details.info.partyLabelPaymentProcessor', v, true)),
+      ...p.custodians.map(v => row(3, 'services.details.info.partyLabelCustodian', v, p.custodians.length > 1)),
+    ];
+  });
+
+  // providers tab filter
+  filterPartyType = signal<string>('');
+  /** 1-based, per frontend Standard 1.5. */
+  servicePartiesPage = signal(1);
+  servicePartiesPageSize = signal(25);
+  pagedServiceParties = computed(() => pageSlice(this.filteredServiceParties(), this.servicePartiesPage(), this.servicePartiesPageSize()));
+  filteredServiceParties = computed(() => {
+    const t = this.filterPartyType();
+    return t ? this.allServiceParties().filter(p => String(p.partyType) === t) : this.allServiceParties();
+  });
+  clearPartyFilters() { this.filterPartyType.set(''); }
   subscriptions = signal<Subscription[]>([]);
   assets = signal<Asset[]>([]);
   transactions = signal<AssetTransaction[]>([]);
-  trxPage = signal(0);
-  readonly trxPageSize = 10;
+  trxPage = signal(1);
+  trxPageSize = signal(25);
 
   // assets tab filter + pagination
   filterAssetName = signal<string>('');
   filterAssetState = signal<string>('');
-  assetPage = signal(0);
-  readonly assetPageSize = 10;
+  assetPage = signal(1);
+  assetPageSize = signal(25);
   uniqueAssetStates = computed(() =>
     [...new Set(this.assets().map(a => a.stateName).filter(Boolean))].sort()
   );
@@ -240,17 +276,13 @@ export class DetailsPage implements OnInit {
       (!state || a.stateName === state)
     );
   });
-  pagedAssets = computed(() => {
-    const start = this.assetPage() * this.assetPageSize;
-    return this.filteredAssets().slice(start, start + this.assetPageSize);
-  });
-  totalAssetPages = computed(() => Math.ceil(this.filteredAssets().length / this.assetPageSize));
+  pagedAssets = computed(() => pageSlice(this.filteredAssets(), this.assetPage(), this.assetPageSize()));
 
   // subscriptions tab filter + pagination
   filterSubAddress = signal<string>('');
   filterSubState = signal<string>('');
-  subPage = signal(0);
-  readonly subPageSize = 10;
+  subPage = signal(1);
+  subPageSize = signal(25);
   uniqueSubStates = computed(() =>
     [...new Set(this.subscriptions().map(s => s.stateName).filter(Boolean))].sort()
   );
@@ -262,11 +294,7 @@ export class DetailsPage implements OnInit {
       (!state || s.stateName === state)
     );
   });
-  pagedSubscriptions = computed(() => {
-    const start = this.subPage() * this.subPageSize;
-    return this.filteredSubscriptions().slice(start, start + this.subPageSize);
-  });
-  totalSubPages = computed(() => Math.ceil(this.filteredSubscriptions().length / this.subPageSize));
+  pagedSubscriptions = computed(() => pageSlice(this.filteredSubscriptions(), this.subPage(), this.subPageSize()));
 
   filterTrxType = signal<string>('');
   filterTrxAsset = signal<string>('');
@@ -304,11 +332,7 @@ export class DetailsPage implements OnInit {
     );
   });
 
-  pagedTransactions = computed(() => {
-    const start = this.trxPage() * this.trxPageSize;
-    return this.filteredTrxs().slice(start, start + this.trxPageSize);
-  });
-  totalTrxPages = computed(() => Math.ceil(this.filteredTrxs().length / this.trxPageSize));
+  pagedTransactions = computed(() => pageSlice(this.filteredTrxs(), this.trxPage(), this.trxPageSize()));
 
   // overview computed signals
   subscribeCount = computed(() => this.transactions().filter(t => t.trxType === 'Subscribe').length);
@@ -331,8 +355,8 @@ export class DetailsPage implements OnInit {
   async ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
     const requested = this.route.snapshot.queryParamMap.get('tab') as
-      ('overview' | 'info' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
-    const allowed = ['overview', 'info', 'metadata', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
+      ('overview' | 'info' | 'providers' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
+    const allowed = ['overview', 'info', 'providers', 'metadata', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
     let initialTab = requested && (allowed as readonly string[]).includes(requested) ? requested : 'overview';
     // Overview is hidden for service-provider tenants — fall back to Information.
     if (this.isServiceProvider && initialTab === 'overview') initialTab = 'info';
@@ -362,9 +386,9 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
+  setTab(tab: 'overview' | 'info' | 'providers' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
     this.activeTab.set(tab);
-    if (tab === 'info' || tab === 'metadata') this.getServiceDetails();
+    if (tab === 'info' || tab === 'metadata' || tab === 'providers') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
     if (tab === 'trxs') this.getTransactions(1, 500);
@@ -921,13 +945,15 @@ export class DetailsPage implements OnInit {
   async attachValidator() {
     const currentService = this.service();
     if (!currentService) return;
-    const chosen = await this.validatorModalService.show('', currentService.verificationLevel);
+    const chosen = await this.validatorModalService.show('', currentService.verificationLevel,
+      this.serviceParties().validators.map(p => p.address));
     if (!chosen) return;
     await this._attachParty(1, chosen);
   }
 
   async attachPaymentProcessor() {
-    const chosen = await this.paymentProcessorModalService.show('');
+    const chosen = await this.paymentProcessorModalService.show('',
+      this.serviceParties().paymentProcessors.map(p => p.address));
     if (!chosen) return;
     await this._attachParty(2, chosen);
   }
@@ -935,7 +961,10 @@ export class DetailsPage implements OnInit {
   async attachCustodian() {
     const currentService = this.service();
     if (!currentService) return;
-    const chosen = await this.custodianModalService.show(currentService.address, '', currentService.regulator);
+    // The attached list stores self-custody as the service's OWN address, which the picker
+    // reads to drop the Self-custody option once it is taken.
+    const chosen = await this.custodianModalService.show(currentService.address, '', currentService.regulator,
+      this.serviceParties().custodians.map(p => p.address));
     if (!chosen) return;
     await this._attachParty(3, chosen);
   }
@@ -1072,7 +1101,7 @@ export class DetailsPage implements OnInit {
     if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const data = await this.apiService.vaultGetTransactions({ service: this.serviceAddress }, start - 1, offset);
     if (data?.transactions) this.transactions.set(data.transactions.map((t: any) => this.mapVaultTransaction(t)));
-    this.trxPage.set(0);
+    this.trxPage.set(1);
     if (!silent) this.loadingService.hide();
   }
 
@@ -1152,7 +1181,7 @@ export class DetailsPage implements OnInit {
   clearAssetFilters() {
     this.filterAssetName.set('');
     this.filterAssetState.set('');
-    this.assetPage.set(0);
+    this.assetPage.set(1);
   }
 
   exportAssetsExcel() {
@@ -1226,7 +1255,7 @@ export class DetailsPage implements OnInit {
   clearSubFilters() {
     this.filterSubAddress.set('');
     this.filterSubState.set('');
-    this.subPage.set(0);
+    this.subPage.set(1);
   }
 
   exportSubsExcel() {
@@ -1298,7 +1327,7 @@ export class DetailsPage implements OnInit {
     this.filterTrxCurrency.set('');
     this.filterTrxStartDate.set('');
     this.filterTrxEndDate.set('');
-    this.trxPage.set(0);
+    this.trxPage.set(1);
   }
 
   exportTrxExcel() {
@@ -1310,8 +1339,8 @@ export class DetailsPage implements OnInit {
       'Subscription': t.subscription,
       'Tokens': t.tokens,
       'Currency': t.currencyCode,
-      'Price': t.price,
-      'Total': t.totalPrice,
+      'Price': this.utils.roundMoney(t.price),
+      'Total': this.utils.roundMoney(t.totalPrice),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();

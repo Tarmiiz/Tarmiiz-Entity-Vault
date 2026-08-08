@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,13 +11,14 @@ import { AlertService } from '../../../../../shared/components/alerts/alert/aler
 import { UserGroup } from '../../../../../shared/models/data.model';
 import { ModalGroupAddComponent } from '../modals/modal-group-add/modal-group-add.component';
 import { ModalGroupAddService } from '../modals/modal-group-add/modal-group-add.service';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-user-groups',
   templateUrl: './user-groups.page.html',
   styleUrls: ['./user-groups.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, ModalGroupAddComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, ModalGroupAddComponent, PaginatorComponent],
 })
 export class UserGroupsPage implements OnInit {
   private apiService      = inject(ApiService);
@@ -28,6 +29,10 @@ export class UserGroupsPage implements OnInit {
   private translate       = inject(TranslateService);
 
   groups  = signal<UserGroup[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  groupsPage = signal(1);
+  groupsPageSize = signal(25);
+  pagedGroups = computed(() => pageSlice(this.groups(), this.groupsPage(), this.groupsPageSize()));
   loading = signal(false);
 
   ngOnInit() {}

@@ -23,6 +23,8 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { AuditService } from '../../../../shared/services/audit.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { AssetTransaction } from '../../../../shared/models/data.model';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-list',
@@ -33,7 +35,8 @@ import { AssetTransaction } from '../../../../shared/models/data.model';
     CommonModule, FormsModule,
     HeaderComponent,
     ModalTransactionInfoComponent,
-    ModalTransactionAddComponent, TranslatePipe,
+    ModalTransactionAddComponent, TranslatePipe, MoneyPipe,
+    PaginatorComponent,
   ]
 })
 export class ListPage implements OnInit {
@@ -55,8 +58,9 @@ export class ListPage implements OnInit {
   totalCount = signal<number>(0);
   newTrxIds = signal<Set<number>>(new Set());
 
-  page = signal(0);
-  readonly trxPageSize = 20;
+  /** 1-based, per frontend Standard 1.5. */
+  page = signal(1);
+  trxPageSize = signal(25);
 
   filterType = signal<string>('');
   filterAsset = signal<string>('');
@@ -85,12 +89,7 @@ export class ListPage implements OnInit {
     [...new Set(this.transactions().map(t => t.currencyCode).filter(Boolean))].sort()
   );
 
-  pagedTransactions = computed(() => {
-    const p = this.page();
-    return this.filteredTransactions().slice(p * this.trxPageSize, (p + 1) * this.trxPageSize);
-  });
-
-  totalPages = computed(() => Math.max(1, Math.ceil(this.filteredTransactions().length / this.trxPageSize)));
+  pagedTransactions = computed(() => pageSlice(this.filteredTransactions(), this.page(), this.trxPageSize()));
 
   filteredTransactions = computed(() => {
     const type = this.filterType();
@@ -143,7 +142,7 @@ export class ListPage implements OnInit {
   constructor() {
     effect(() => {
       this.filteredTransactions();
-      this.page.set(0);
+      this.page.set(1);
     });
   }
 
@@ -310,8 +309,8 @@ export class ListPage implements OnInit {
       'Subscription': t.subscription,
       'Tokens': t.tokens,
       'Currency': t.currencyCode,
-      'Price': t.price,
-      'Total': t.totalPrice,
+      'Price': this.utils.roundMoney(t.price),
+      'Total': this.utils.roundMoney(t.totalPrice),
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);

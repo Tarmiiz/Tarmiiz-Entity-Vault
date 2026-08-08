@@ -21,13 +21,14 @@ import { DexOrder } from '../../../../../shared/models/data.model';
 
 import { ModalPlaceOrderService } from '../modals/modal-place-order/modal-place-order.service';
 import { ModalPlaceOrderComponent } from '../modals/modal-place-order/modal-place-order.component';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-vault-dex-orders-list',
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, ModalPlaceOrderComponent, TranslatePipe],
+  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, ModalPlaceOrderComponent, TranslatePipe, PaginatorComponent],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
@@ -76,6 +77,10 @@ export class ListPage implements OnInit, OnDestroy {
     }
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  ordersPage = signal(1);
+  ordersPageSize = signal(25);
+  pagedOrders = computed(() => pageSlice(this.filtered(), this.ordersPage(), this.ordersPageSize()));
   filtered = computed(() => {
     const term = this.search().toLowerCase();
     const status = this.filterStatus();
@@ -102,6 +107,7 @@ export class ListPage implements OnInit, OnDestroy {
     this.filterSide.set('');
     this.filterAsset.set('');
     this.filterVenue.set('');
+    this.ordersPage.set(1);
   }
 
   isOpen(o: DexOrder): boolean { return Number(o.status) === 1 || Number(o.status) === 2; }
@@ -119,7 +125,7 @@ export class ListPage implements OnInit, OnDestroy {
     return Number(s) === 1 ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
   }
 
-  fmtPrice(v: string | number) { const n = Number(v ?? 0); return Number.isFinite(n) ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) : '0.00'; }
+  fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   fillPct(o: DexOrder): number {
     const a = Number(o.amount || '0');

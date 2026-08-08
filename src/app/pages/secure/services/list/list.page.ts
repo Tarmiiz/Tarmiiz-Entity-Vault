@@ -26,6 +26,8 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
+import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-list',
@@ -37,8 +39,9 @@ import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
     DecimalPipe,
     HeaderComponent,
     LiveIndicatorComponent,
-    ModalServiceAddComponent, TranslatePipe
-]
+    ModalServiceAddComponent, TranslatePipe, MoneyPipe,
+    PaginatorComponent,
+  ]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -86,6 +89,7 @@ export class ListPage implements OnInit {
   clearFilters() {
     this.filterState.set('');
     this.filterVerificationLevel.set('');
+    this.servicesPage.set(1);
   }
 
   private _socketSub: Subscription | null = null;
@@ -238,6 +242,10 @@ export class ListPage implements OnInit {
     this.router.navigate(['/authorized/services/details/' + service.address]);
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  servicesPage = signal(1);
+  servicesPageSize = signal(25);
+  pagedServices = computed(() => pageSlice(this.filteredServices(), this.servicesPage(), this.servicesPageSize()));
   filteredServices = computed(() => {
     const state = this.filterState();
     const level = this.filterVerificationLevel();

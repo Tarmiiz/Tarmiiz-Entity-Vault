@@ -51,6 +51,17 @@
         >
           {{ 'services.details.tabs.info' | translate }}
         </button>
+        @if (isTokenIssuer()) {
+          <button (click)="setTab('providers')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'providers'"
+            [class.border-b-2]="activeTab() === 'providers'"
+            [class.border-blue-600]="activeTab() === 'providers'"
+            [class.bg-blue-600]="activeTab() === 'providers'"
+          >
+            {{ 'services.details.tabs.providers' | translate }}
+          </button>
+        }
         <button (click)="setTab('metadata')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'metadata'"
@@ -179,7 +190,7 @@
                     @for (c of withheldCredit(); track c.currencyCode) {
                       <div>
                         <p class="text-xs text-gray-500">{{ c.currencyName }} <span class="badge-currency">{{ c.currencySymbol }}</span></p>
-                        <p class="text-base font-semibold text-amber-700">{{ c.withheld | number:'1.2-2' }}</p>
+                        <p class="text-base font-semibold text-amber-700">{{ c.withheld | money }}</p>
                       </div>
                     }
                   </div>
@@ -218,7 +229,7 @@
                 <div>
                   <p class="text-xs text-gray-500 mb-1">{{ 'services.details.overview.lastTransaction' | translate }}</p>
                   @if (lastTrx(); as lt) {
-                    <p class="text-xs font-medium text-gray-700">{{ lt.time * 1000 | date:'dd/MM/yyyy HH:mm' }}</p>
+                    <p class="text-xs font-medium text-gray-700">{{ lt.time * 1000 | date:'dd/MM/yyyy HH:mm:ss' }}</p>
                   } @else {
                     <p class="text-xs text-gray-400">—</p>
                   }
@@ -290,90 +301,23 @@
                   }
                 </div>
                 @if (isTokenIssuer()) {
-                  @let canEdit = entityActive && userInfo && userInfo.role !== 3;
-
-                  <!-- Validators (1:N) -->
-                  <div class="border-t pt-4 sm:col-span-2">
-                    <div class="flex items-center justify-between">
-                      <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.validatorsCount' | translate: { count: serviceParties().validators.length } }}</p>
-                      @if (canEdit && features.systemFunctionEnabled('service-add-validator')) {
-                        <button (click)="attachValidator()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>{{ 'common.add' | translate }}</button>
-                      }
-                    </div>
-                    @for (p of serviceParties().validators; track p.address) {
-                      <div class="flex items-center gap-2 flex-wrap mt-2">
-                        @if (p.name) {
-                          <span class="text-base">{{ p.name }}</span>
-                          <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
-                        } @else {
-                          <span class="font-mono text-xs break-all">{{ p.address }}</span>
-                        }
-                        @if (!p.active) {
-                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" [title]="'services.details.info.validatorInactiveTooltip' | translate">{{ 'services.details.info.inactive' | translate }}</span>
-                        }
-                        @if (canEdit) {
-                          <button (click)="detachParty(1, p.address)" class="text-xs text-red-600 hover:text-red-800">{{ 'common.remove' | translate }}</button>
-                        }
+                  <!-- Attached service providers live on their own tab; keep a summary + jump-off here. -->
+                  <div class="border-t pt-4 md:col-span-2">
+                    <div class="flex items-center justify-between gap-4 flex-wrap">
+                      <div>
+                        <p class="text-sm font-medium text-gray-500">{{ 'services.details.providers.title' | translate }}</p>
+                        <p class="text-base">
+                          {{ 'services.details.providers.summary' | translate: {
+                            validators: serviceParties().validators.length,
+                            paymentProcessors: serviceParties().paymentProcessors.length,
+                            custodians: serviceParties().custodians.length
+                          } }}
+                        </p>
                       </div>
-                    } @empty {
-                      <p class="text-base text-gray-400 italic mt-1">{{ 'services.details.info.noValidatorsAttached' | translate }}</p>
-                    }
-                  </div>
-
-                  <!-- Payment processors (1:N) -->
-                  <div class="border-t pt-4 sm:col-span-2">
-                    <div class="flex items-center justify-between">
-                      <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.paymentProcessorsCount' | translate: { count: serviceParties().paymentProcessors.length } }}</p>
-                      @if (canEdit && features.systemFunctionEnabled('service-add-payment-processor')) {
-                        <button (click)="attachPaymentProcessor()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>{{ 'common.add' | translate }}</button>
-                      }
+                      <button (click)="setTab('providers')" class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                        {{ 'services.details.providers.manage' | translate }}
+                      </button>
                     </div>
-                    @for (p of serviceParties().paymentProcessors; track p.address) {
-                      <div class="flex items-center gap-2 flex-wrap mt-2">
-                        @if (p.name) {
-                          <span class="text-base">{{ p.name }}</span>
-                          <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
-                        } @else {
-                          <span class="font-mono text-xs break-all">{{ p.address }}</span>
-                        }
-                        @if (canEdit) {
-                          <button (click)="detachParty(2, p.address)" class="text-xs text-red-600 hover:text-red-800">{{ 'common.remove' | translate }}</button>
-                        }
-                      </div>
-                    } @empty {
-                      <p class="text-base text-gray-400 italic mt-1">{{ 'services.details.info.noneAttached' | translate }}</p>
-                    }
-                  </div>
-
-                  <!-- Custodians (1:N, ≥1 required) -->
-                  <div class="border-t pt-4 sm:col-span-2">
-                    <div class="flex items-center justify-between">
-                      <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.custodiansCount' | translate: { count: serviceParties().custodians.length } }}</p>
-                      @if (canEdit && features.systemFunctionEnabled('service-add-custodian')) {
-                        <button (click)="attachCustodian()" class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>{{ 'common.add' | translate }}</button>
-                      }
-                    </div>
-                    @for (p of serviceParties().custodians; track p.address) {
-                      <div class="flex items-center gap-2 flex-wrap mt-2">
-                        @if (isSelfCustodyAddress(p.address)) {
-                          <span class="text-base">{{ 'services.details.info.selfCustody' | translate }}</span>
-                          <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
-                        } @else if (p.name) {
-                          <span class="text-base">{{ p.name }}</span>
-                          <span class="font-mono text-xs text-gray-400 break-all">{{ p.address }}</span>
-                        } @else {
-                          <span class="font-mono text-xs break-all">{{ p.address }}</span>
-                        }
-                        @if (!p.active) {
-                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800" [title]="'services.details.info.custodianInactiveTooltip' | translate">{{ 'services.details.info.inactive' | translate }}</span>
-                        }
-                        @if (canEdit && serviceParties().custodians.length > 1) {
-                          <button (click)="detachParty(3, p.address)" class="text-xs text-red-600 hover:text-red-800">{{ 'common.remove' | translate }}</button>
-                        }
-                      </div>
-                    } @empty {
-                      <p class="text-base text-gray-400 italic mt-1">{{ 'services.details.info.noneAttached' | translate }}</p>
-                    }
                   </div>
                 }
               </div>
@@ -395,6 +339,139 @@
                 </div>
               }
 
+            </div>
+          </div>
+        }
+
+        <!-- service providers (SPs) tab — attached validators / payment processors / custodians (1:N each) -->
+        @if (activeTab() === 'providers') {
+          @let canEditParty = entityActive && userInfo && userInfo.role !== 3;
+          <div class="space-y-3">
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+              <div class="flex flex-wrap gap-2 items-end">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-gray-500">{{ 'services.details.providers.table.type' | translate }}</label>
+                  <select [ngModel]="filterPartyType()" (ngModelChange)="filterPartyType.set($event)"
+                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <option value="">{{ 'common.all' | translate }}</option>
+                    <option value="1">{{ 'services.details.info.partyLabelValidator' | translate }}</option>
+                    <option value="2">{{ 'services.details.info.partyLabelPaymentProcessor' | translate }}</option>
+                    <option value="3">{{ 'services.details.info.partyLabelCustodian' | translate }}</option>
+                  </select>
+                </div>
+                <div class="flex flex-col justify-end">
+                  <button (click)="clearPartyFilters()"
+                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    {{ 'common.clear' | translate }}
+                  </button>
+                </div>
+                @if (canEditParty) {
+                  <div class="flex gap-2 ml-auto">
+                    @if (features.systemFunctionEnabled('service-add-validator')) {
+                      <button (click)="attachValidator()"
+                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ 'services.details.providers.addValidator' | translate }}
+                      </button>
+                    }
+                    @if (features.systemFunctionEnabled('service-add-payment-processor')) {
+                      <button (click)="attachPaymentProcessor()"
+                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ 'services.details.providers.addPaymentProcessor' | translate }}
+                      </button>
+                    }
+                    @if (features.systemFunctionEnabled('service-add-custodian')) {
+                      <!-- A service holds exactly one custodian: once one is attached, Add is closed. -->
+                      <button (click)="attachCustodian()" [disabled]="serviceParties().custodians.length > 0"
+                        [title]="serviceParties().custodians.length > 0 ? ('services.details.providers.custodianCapTooltip' | translate) : ''"
+                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ 'services.details.providers.addCustodian' | translate }}
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm text-left text-gray-700">
+                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                    <tr>
+                      <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'services.details.providers.table.type' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'common.name' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'services.details.providers.table.address' | translate }}</th>
+                      <th scope="col" class="px-6 py-2">{{ 'services.details.providers.table.status' | translate }}</th>
+                      <th scope="col" class="px-6 py-2 text-right">{{ 'services.details.providers.table.actions' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    @if (filteredServiceParties().length === 0) {
+                      <tr class="bg-white border-b hover:bg-gray-50">
+                        <td colspan="6" class="px-6 py-2">{{ 'services.details.providers.noneAttached' | translate }}</td>
+                      </tr>
+                    }
+                    @else {
+                      @for (p of pagedServiceParties(); track p.partyType + ':' + p.address; let i = $index; let isEven = $even;) {
+                        <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                          <td class="px-6 py-2">{{ i + 1 }}</td>
+                          <td class="px-6 py-2">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                              [class.bg-indigo-100]="p.partyType === 1" [class.text-indigo-800]="p.partyType === 1"
+                              [class.bg-sky-100]="p.partyType === 2"    [class.text-sky-800]="p.partyType === 2"
+                              [class.bg-purple-100]="p.partyType === 3" [class.text-purple-800]="p.partyType === 3">
+                              {{ p.typeLabelKey | translate }}
+                            </span>
+                          </td>
+                          <td class="px-6 py-2">
+                            @if (p.selfCustody) {
+                              {{ 'services.details.providers.selfCustody' | translate }}
+                            } @else {
+                              {{ p.name || '—' }}
+                            }
+                          </td>
+                          <td class="px-6 py-2 font-mono">{{ p.address }}</td>
+                          <td class="px-6 py-2">
+                            @if (p.active) {
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'services.details.providers.active' | translate }}</span>
+                            } @else {
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800"
+                                [title]="(p.partyType === 3 ? 'services.details.providers.custodianInactiveTooltip' : 'services.details.providers.validatorInactiveTooltip') | translate">
+                                {{ 'services.details.providers.inactive' | translate }}
+                              </span>
+                            }
+                          </td>
+                          <td class="px-6 py-2 text-right">
+                            @if (canEditParty && p.removable) {
+                              <button type="button" (click)="detachParty(p.partyType, p.address)"
+                                class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition-colors">
+                                {{ 'common.remove' | translate }}
+                              </button>
+                            } @else if (canEditParty) {
+                              <span class="text-xs text-gray-400" [title]="'services.details.providers.lastCustodianTooltip' | translate">{{ 'services.details.providers.required' | translate }}</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <app-paginator [total]="filteredServiceParties().length" [page]="servicePartiesPage()" [pageSize]="servicePartiesPageSize()"
+                (pageChange)="servicePartiesPage.set($event)" (pageSizeChange)="servicePartiesPageSize.set($event)" />
+              <div class="flex items-center justify-between px-4 py-2 border-t">
+                <p class="text-xs font-medium text-gray-800">{{ 'services.details.providers.showing' | translate: { showing: filteredServiceParties().length, total: allServiceParties().length } }}</p>
+              </div>
             </div>
           </div>
         }
@@ -550,13 +627,13 @@
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'services.details.assets.filterNameSymbol' | translate }}</label>
-                  <input type="text" [ngModel]="filterAssetName()" (ngModelChange)="filterAssetName.set($event); assetPage.set(0)"
+                  <input type="text" [ngModel]="filterAssetName()" (ngModelChange)="filterAssetName.set($event); assetPage.set(1)"
                     [placeholder]="'services.details.assets.searchPlaceholder' | translate"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
-                  <select [ngModel]="filterAssetState()" (ngModelChange)="filterAssetState.set($event); assetPage.set(0)"
+                  <select [ngModel]="filterAssetState()" (ngModelChange)="filterAssetState.set($event); assetPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (s of uniqueAssetStates(); track s) {
@@ -616,7 +693,7 @@
                     @else {
                       @for(data of pagedAssets(); track data.address; let i = $index; let isEven = $even;) {
                         <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoAsset(data)">
-                          <td class="px-6 py-2">{{ assetPage() * assetPageSize + i + 1 }}</td>
+                          <td class="px-6 py-2">{{ (assetPage() - 1) * assetPageSize() + i + 1 }}</td>
                           <td class="px-6 py-2">{{ data.name }}</td>
                           <td class="px-6 py-2"><span class="badge-symbol">{{ data.symbol }}</span></td>
                           <td class="px-6 py-2">{{ data.issuerName }}</td>
@@ -634,7 +711,7 @@
                             </div>
                           </td>
                           <td class="px-6 py-2 text-right" (click)="$event.stopPropagation()">
-                            @if (userInfo && userInfo.role !== 3) {
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-fee-config')) {
                               <button type="button"
                                       (click)="openVenueFeeConfigModal(data.address, data.symbol)"
                                       [disabled]="!entityActive"
@@ -649,24 +726,8 @@
                   </tbody>
                 </table>
               </div>
-              <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">{{ 'services.details.assets.showing' | translate: { showing: pagedAssets().length, total: filteredAssets().length } }}</p>
-                @if (totalAssetPages() > 1) {
-                  <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>{{ 'common.pageOf' | translate: { page: assetPage() + 1, pages: totalAssetPages() } }}</span>
-                    <div class="flex gap-2">
-                      <button (click)="assetPage.set(assetPage() - 1)" [disabled]="assetPage() === 0"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.prev' | translate }}
-                      </button>
-                      <button (click)="assetPage.set(assetPage() + 1)" [disabled]="assetPage() >= totalAssetPages() - 1"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.next' | translate }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-paginator [total]="filteredAssets().length" [page]="assetPage()" [pageSize]="assetPageSize()"
+                (pageChange)="assetPage.set($event)" (pageSizeChange)="assetPageSize.set($event)" />
             </div>
           </div>
         }
@@ -679,13 +740,13 @@
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'services.details.subscriptions.filterAddress' | translate }}</label>
-                  <input type="text" [ngModel]="filterSubAddress()" (ngModelChange)="filterSubAddress.set($event); subPage.set(0)"
+                  <input type="text" [ngModel]="filterSubAddress()" (ngModelChange)="filterSubAddress.set($event); subPage.set(1)"
                     [placeholder]="'services.details.subscriptions.searchPlaceholder' | translate"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
-                  <select [ngModel]="filterSubState()" (ngModelChange)="filterSubState.set($event); subPage.set(0)"
+                  <select [ngModel]="filterSubState()" (ngModelChange)="filterSubState.set($event); subPage.set(1)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (s of uniqueSubStates(); track s) {
@@ -743,14 +804,14 @@
                     @else {
                       @for(sub of pagedSubscriptions(); track sub.subscription; let i = $index; let isEven = $even;) {
                         <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoSubscriber(sub.subscription)">
-                          <td class="px-6 py-2">{{ subPage() * subPageSize + i + 1 }}</td>
+                          <td class="px-6 py-2">{{ (subPage() - 1) * subPageSize() + i + 1 }}</td>
                           <td class="px-6 py-2">{{ sub.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td class="px-6 py-2">{{ sub.subscription }}</td>
                           <td class="px-6 py-2 text-right font-mono">
                             @if (sub.holdingsByCurrency && sub.holdingsByCurrency.length > 0) {
                               <div class="flex flex-col items-end gap-0.5">
                                 @for (h of sub.holdingsByCurrency; track h.currency) {
-                                  <span>{{ h.value | number:'1.2-2' }} <span class="text-[10px] text-gray-500">{{ h.currency }}</span></span>
+                                  <span>{{ h.value | money }} <span class="text-[10px] text-gray-500">{{ h.currency }}</span></span>
                                 }
                               </div>
                             } @else {
@@ -775,24 +836,8 @@
                   </tbody>
                 </table>
               </div>
-              <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">{{ 'services.details.subscriptions.showing' | translate: { showing: pagedSubscriptions().length, total: filteredSubscriptions().length } }}</p>
-                @if (totalSubPages() > 1) {
-                  <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>{{ 'common.pageOf' | translate: { page: subPage() + 1, pages: totalSubPages() } }}</span>
-                    <div class="flex gap-2">
-                      <button (click)="subPage.set(subPage() - 1)" [disabled]="subPage() === 0"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.prev' | translate }}
-                      </button>
-                      <button (click)="subPage.set(subPage() + 1)" [disabled]="subPage() >= totalSubPages() - 1"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                        {{ 'common.next' | translate }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-paginator [total]="filteredSubscriptions().length" [page]="subPage()" [pageSize]="subPageSize()"
+                (pageChange)="subPage.set($event)" (pageSizeChange)="subPageSize.set($event)" />
             </div>
           </div>
         }
@@ -805,7 +850,7 @@
             <div class="flex flex-wrap gap-2 items-end">
               <div class="flex flex-col gap-1">
                 <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
-                <select [ngModel]="filterTrxType()" (ngModelChange)="filterTrxType.set($event); trxPage.set(0)"
+                <select [ngModel]="filterTrxType()" (ngModelChange)="filterTrxType.set($event); trxPage.set(1)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                   <option value="">{{ 'common.all' | translate }}</option>
                   <option value="Subscribe">{{ 'services.details.trxs.typeSubscribe' | translate }}</option>
@@ -815,7 +860,7 @@
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-xs font-medium text-gray-500">{{ 'services.details.common.asset' | translate }}</label>
-                <select [ngModel]="filterTrxAsset()" (ngModelChange)="filterTrxAsset.set($event); trxPage.set(0)"
+                <select [ngModel]="filterTrxAsset()" (ngModelChange)="filterTrxAsset.set($event); trxPage.set(1)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
                   <option value="">{{ 'common.all' | translate }}</option>
                   @for (a of uniqueTrxAssets(); track a[0]) {
@@ -825,7 +870,7 @@
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-xs font-medium text-gray-500">{{ 'services.details.common.subscription' | translate }}</label>
-                <select [ngModel]="filterTrxSubscription()" (ngModelChange)="filterTrxSubscription.set($event); trxPage.set(0)"
+                <select [ngModel]="filterTrxSubscription()" (ngModelChange)="filterTrxSubscription.set($event); trxPage.set(1)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44">
                   <option value="">{{ 'common.all' | translate }}</option>
                   @for (sub of uniqueTrxSubscriptions(); track sub) {
@@ -835,7 +880,7 @@
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-xs font-medium text-gray-500">{{ 'services.details.common.currency' | translate }}</label>
-                <select [ngModel]="filterTrxCurrency()" (ngModelChange)="filterTrxCurrency.set($event); trxPage.set(0)"
+                <select [ngModel]="filterTrxCurrency()" (ngModelChange)="filterTrxCurrency.set($event); trxPage.set(1)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                   <option value="">{{ 'common.all' | translate }}</option>
                   @for (c of uniqueTrxCurrencies(); track c) {
@@ -845,12 +890,12 @@
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
-                <input type="date" [ngModel]="filterTrxStartDate()" (ngModelChange)="filterTrxStartDate.set($event); trxPage.set(0)"
+                <input type="date" [ngModel]="filterTrxStartDate()" (ngModelChange)="filterTrxStartDate.set($event); trxPage.set(1)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
-                <input type="date" [ngModel]="filterTrxEndDate()" (ngModelChange)="filterTrxEndDate.set($event); trxPage.set(0)"
+                <input type="date" [ngModel]="filterTrxEndDate()" (ngModelChange)="filterTrxEndDate.set($event); trxPage.set(1)"
                   class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
               </div>
               <div class="flex flex-col justify-end">
@@ -910,32 +955,16 @@
                                 <td class="px-6 py-2">{{ trx.assetName }}@if(trx.assetSymbol){ <span class="badge-symbol ml-1">{{ trx.assetSymbol }}</span>}</td>
                                 <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
                                 <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
-                                <td class="px-6 py-2 text-right">{{ trx.price | number: '1.6-6' }}</td>
-                                <td class="px-6 py-2 text-right">{{ trx.totalPrice | number: '1.6-6' }}</td>
+                                <td class="px-6 py-2 text-right">{{ trx.price | money }}</td>
+                                <td class="px-6 py-2 text-right">{{ trx.totalPrice | money }}</td>
                             </tr>
                         }
                     }
                 </tbody>
               </table>
             </div>
-            <div class="flex items-center justify-between px-4 py-2 border-t">
-              <p class="text-xs font-medium text-gray-800">{{ 'services.details.trxs.showing' | translate: { showing: pagedTransactions().length, total: filteredTrxs().length, grandTotal: transactions().length } }}</p>
-              @if (totalTrxPages() > 1) {
-                <div class="flex items-center gap-3 text-xs text-gray-600">
-                  <span>{{ 'common.pageOf' | translate: { page: trxPage() + 1, pages: totalTrxPages() } }}</span>
-                  <div class="flex gap-2">
-                    <button (click)="trxPage.set(trxPage() - 1)" [disabled]="trxPage() === 0"
-                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      {{ 'common.prev' | translate }}
-                    </button>
-                    <button (click)="trxPage.set(trxPage() + 1)" [disabled]="trxPage() >= totalTrxPages() - 1"
-                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      {{ 'common.next' | translate }}
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
+            <app-paginator [total]="filteredTrxs().length" [page]="trxPage()" [pageSize]="trxPageSize()"
+              (pageChange)="trxPage.set($event)" (pageSizeChange)="trxPageSize.set($event)" />
           </div>
         }
 
@@ -957,10 +986,7 @@
                   </p>
                 }
               </div>
-              <button (click)="getLiquidity()"
-                class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                {{ 'common.refresh' | translate }}
-              </button>
+              <app-refresh-button (refresh)="getLiquidity()" />
             </div>
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div class="overflow-x-auto rounded-lg">
@@ -999,25 +1025,25 @@
                             <span class="badge-currency">{{ row.currencyAlpha || row.currencySymbol }}</span>
                             <span class="ml-2 text-gray-500">{{ row.currencyName }}</span>
                           </td>
-                          <td class="px-6 py-2 text-right font-mono">{{ row.balance | number:'1.2-2' }}</td>
+                          <td class="px-6 py-2 text-right font-mono">{{ row.balance | money }}</td>
                           <td class="px-6 py-2 text-right font-mono">
-                            @if (row.withheld > 0) { <span class="text-amber-700">{{ row.withheld | number:'1.2-2' }}</span> }
+                            @if (row.withheld > 0) { <span class="text-amber-700">{{ row.withheld | money }}</span> }
                             @else { <span class="text-gray-300">—</span> }
                           </td>
-                          <td class="px-6 py-2 text-right font-mono font-semibold">{{ row.available | number:'1.2-2' }}</td>
+                          <td class="px-6 py-2 text-right font-mono font-semibold">{{ row.available | money }}</td>
                           <td class="px-6 py-2 text-right font-mono">
-                            @if (row.obligation > 0) { {{ row.obligation | number:'1.2-2' }} }
+                            @if (row.obligation > 0) { {{ row.obligation | money }} }
                             @else { <span class="text-gray-300">—</span> }
                           </td>
                           <td class="px-6 py-2 text-right font-mono">
                             @if (row.shortfall > 0) {
                               @if (withinShortfallTolerance(row.shortfall)) {
-                                <span class="text-amber-700 font-semibold">{{ row.shortfall | number:'1.2-2' }}</span>
+                                <span class="text-amber-700 font-semibold">{{ row.shortfall | money }}</span>
                                 <span class="block text-[10px] font-normal text-gray-400">
                                   {{ 'services.details.liquidity.withinTolerance' | translate:{ amount: toleranceHeadroom(row.shortfall) } }}
                                 </span>
                               } @else {
-                                <span class="text-red-700 font-semibold">{{ row.shortfall | number:'1.2-2' }}</span>
+                                <span class="text-red-700 font-semibold">{{ row.shortfall | money }}</span>
                               }
                             }
                             @else { <span class="text-gray-300">—</span> }
@@ -1035,11 +1061,13 @@
                             }
                           </td>
                           <td class="px-6 py-2 text-right">
-                            @if (userInfo && userInfo.role !== 3) {
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-liquidity-inject')) {
                               <button (click)="openLiquidityModal('inject', row)" [disabled]="!entityActive"
                                 class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
                                 {{ 'services.details.liquidity.inject' | translate }}
                               </button>
+                            }
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-liquidity-withdraw')) {
                               <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive || row.available <= 0"
                                 class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {{ 'services.details.liquidity.withdraw' | translate }}
@@ -1061,7 +1089,7 @@
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
               <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-gray-700">Liquidity Change History</h3>
-                <button type="button" (click)="getLiquidityHistory()" class="text-xs text-blue-600 hover:text-blue-800">Refresh</button>
+                <app-refresh-button (refresh)="getLiquidityHistory()" />
               </div>
               <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -1080,9 +1108,9 @@
                     } @else if (liquidityHistory().length === 0) {
                       <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">No liquidity changes recorded.</td></tr>
                     } @else {
-                      @for (row of liquidityHistory(); track row.trx_id) {
+                      @for (row of pagedLiqHistory(); track row.trx_id) {
                         <tr>
-                          <td class="px-6 py-2 text-gray-500 whitespace-nowrap">{{ row.start_time ? (row.start_time * 1000 | date:'yyyy-MM-dd HH:mm:ss') : '—' }}</td>
+                          <td class="px-6 py-2 text-gray-500 whitespace-nowrap">{{ row.start_time ? (row.start_time * 1000 | date:'dd/MM/yyyy HH:mm:ss') : '—' }}</td>
                           <td class="px-6 py-2">
                             <span class="px-2 py-0.5 rounded-full text-xs font-medium"
                               [class.bg-green-100]="row.origin === 3" [class.text-green-700]="row.origin === 3"
@@ -1099,6 +1127,8 @@
                   </tbody>
                 </table>
               </div>
+              <app-paginator [total]="liquidityHistory().length" [page]="liqHistoryPage()" [pageSize]="liqHistoryPageSize()"
+                (pageChange)="liqHistoryPage.set($event)" (pageSizeChange)="liqHistoryPageSize.set($event)" />
             </div>
           </div>
 
@@ -1121,7 +1151,7 @@
                 <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                   @if (liquidityModalAction() === 'withdraw') {
                     <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600">
-                      {{ 'services.details.liquidity.available' | translate }}: <span class="font-mono font-semibold text-gray-800">{{ liquidityModalAvailable() | number:'1.2-2' }}</span>
+                      {{ 'services.details.liquidity.available' | translate }}: <span class="font-mono font-semibold text-gray-800">{{ liquidityModalAvailable() | money }}</span>
                       <span class="badge-currency ml-1">{{ liquidityModalCurrency()?.symbol }}</span>
                     </div>
                   }

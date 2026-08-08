@@ -11,15 +11,17 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+import { UtilsService } from '../../../../shared/services/utils.service';
 
 import { PendingApproval } from '../../../../shared/models/data.model';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 @Component({
   selector: 'app-approvals-list',
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, PaginatorComponent],
 })
 export class ListPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);
@@ -28,6 +30,7 @@ export class ListPage implements OnInit, OnDestroy {
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
   private translate      = inject(TranslateService);
+  private utils          = inject(UtilsService);
 
   approvals = signal<PendingApproval[]>([]);
   count     = signal(0);
@@ -84,6 +87,10 @@ export class ListPage implements OnInit, OnDestroy {
     }
   }
 
+  /** 1-based, per frontend Standard 1.5. */
+  approvalsPage = signal(1);
+  approvalsPageSize = signal(25);
+  pagedApprovals = computed(() => pageSlice(this.filtered(), this.approvalsPage(), this.approvalsPageSize()));
   filtered = computed(() => {
     const t = this.searchTerm().trim().toLowerCase();
     if (!t) return this.approvals();
@@ -158,9 +165,11 @@ export class ListPage implements OnInit, OnDestroy {
     }
   }
 
+  // `created_at` / `decided_at` are millisecond epochs — formatTime, not formatDate
+  // (the latter multiplies by 1000 for raw on-chain seconds).
   formatDate(ms: number | null): string {
     if (!ms) return '';
-    return new Date(ms).toLocaleString();
+    return this.utils.formatTime(ms);
   }
 
   stateBadgeClass(s: number): string {

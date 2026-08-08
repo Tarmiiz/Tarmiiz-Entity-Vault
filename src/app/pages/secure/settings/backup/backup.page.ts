@@ -6,6 +6,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { ApiService } from '../../../../shared/services/api.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+import { UtilsService } from '../../../../shared/services/utils.service';
 
 interface BackupStatusRow {
   name: string;
@@ -39,6 +40,7 @@ export class SettingsBackupPage implements OnInit {
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
   private translate      = inject(TranslateService);
+  private utils          = inject(UtilsService);
 
   rows    = signal<BackupStatusRow[]>([]);
   loading = signal(false);
@@ -100,7 +102,7 @@ export class SettingsBackupPage implements OnInit {
       this.translate.instant('settings.backup.confirmRestoreTitle'),
       this.translate.instant('settings.backup.confirmRestoreMessage', {
         name: this.labelFor(row.name),
-        date: new Date(row.chainUpdatedAt).toLocaleString(),
+        date: this.utils.formatTime(row.chainUpdatedAt),
       }),
       this.translate.instant('settings.backup.restore'),
     );

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -10,11 +10,11 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 
 import { ModalSignerKeyAddService } from '../modals/modal-signer-key-add/modal-signer-key-add.service';
 import { ModalSignerKeyAddComponent } from '../modals/modal-signer-key-add/modal-signer-key-add.component';
+import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 interface SignerKey {
   keyId: number;
   signer: string;
-  encryptedPrivateKey: string;
   description: string;
   state: number;
   createdAt: number;
@@ -25,7 +25,7 @@ interface SignerKey {
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, ModalSignerKeyAddComponent, TranslatePipe]
+  imports: [FormsModule, HeaderComponent, ModalSignerKeyAddComponent, TranslatePipe, PaginatorComponent]
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
@@ -36,6 +36,10 @@ export class ListPage implements OnInit {
   private addModal = inject(ModalSignerKeyAddService);
 
   loading = false;
+  /** 1-based, per frontend Standard 1.5. */
+  keysPage = signal(1);
+  keysPageSize = signal(25);
+  pagedKeys = computed(() => pageSlice(this.keys(), this.keysPage(), this.keysPageSize()));
   keys = signal<SignerKey[]>([]);
   total = 0;
 
