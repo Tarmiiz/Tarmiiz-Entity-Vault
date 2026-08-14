@@ -62,8 +62,12 @@ export class SettlementsPage implements OnInit {
   pagedSettlements = computed(() => pageSlice(this.settlements(), this.settlementsPage(), this.settlementsPageSize()));
   settlementsTotal = signal(0);
 
-  // code → display name from the approved-currencies read (best-effort).
-  private currencyNames = signal<Record<number, string>>({});
+  // code → display name / alpha symbol from the approved-currencies read (best-effort).
+  private currencyNames   = signal<Record<number, string>>({});
+  private currencySymbols = signal<Record<number, string>>({});
+  // The picker for the create-settlement modal — an operator picks "EGP", never types an
+  // ISO numeric code. Value stays the numeric code, which is what the contract takes.
+  currencyOptions = signal<{ code: number; label: string }[]>([]);
 
   // ── Create-settlement modal state ─────────────────────────────────────────
   createModalOpen = signal(false);
@@ -97,6 +101,10 @@ export class SettlementsPage implements OnInit {
 
   async ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
+    // Must be awaited BEFORE selfEntity is read: on a page reload entityInfo is empty
+    // until something fetches it, and every row action on this page keys off knowing
+    // which side of the pair we are.
+    await this.authService.ensureEntityInfo();
     this.selfEntity = (this.authService.entityInfo?.address || '').toLowerCase();
     this.loadingService.show(this.translate.instant('common.loadingData'));
     try {
@@ -105,6 +113,11 @@ export class SettlementsPage implements OnInit {
         this.loadObligations(),
         this.loadSettlements(),
         this.loadCurrencies(),
+      ]);
+      await this.resolveEntityNames([
+        ...this.positions().map(p => p.counterparty),
+        ...this.obligations().flatMap(o => [o.debtorEntity, o.creditorEntity]),
+        ...this.settlements().flatMap(s => [s.debtorEntity, s.creditorEntity]),
       ]);
     } finally {
       this.loadingService.hide();
@@ -131,13 +144,64 @@ export class SettlementsPage implements OnInit {
   private async loadCurrencies() {
     const data = await this.apiService.vaultGetApprovedCurrencies();
     const map: Record<number, string> = {};
-    for (const c of (data?.currencies ?? [])) map[Number(c.code)] = c.name || c.symbol || '';
+    const symbols: Record<number, string> = {};
+    const options: { code: number; label: string }[] = [];
+    for (const c of (data?.currencies ?? [])) {
+      const code = Number(c.code);
+      map[code] = c.name || c.symbol || '';
+      symbols[code] = c.symbol || '';
+      options.push({ code, label: c.symbol || c.name || String(code) });
+    }
     this.currencyNames.set(map);
+    this.currencySymbols.set(symbols);
+    this.currencyOptions.set(options.sort((a, b) => a.label.localeCompare(b.label)));
   }
 
+  /**
+   * The platform renders a currency as its ALPHA code in a `.badge-currency` pill —
+   * "EGP", the same as the Transactions table. Never the ISO numeric code ("818" is a
+   * wire-format detail), and not the long name either: the pill is a column-width
+   * element and "Egyptian Pound" does not belong in one.
+   *
+   * Name then numeric are fallbacks only, for a currency the registry didn't return.
+   */
   currencyLabel(code: number): string {
-    const name = this.currencyNames()[Number(code)];
-    return name ? `${name} (${code})` : String(code);
+    const c = Number(code);
+    return this.currencySymbols()[c] || this.currencyNames()[c] || String(code);
+  }
+
+  /**
+   * A counterparty is by definition a FOREIGN entity, so the local mirror holds no name
+   * for it and every column here rendered a bare 0x address. Resolve through the
+   * Directory (chain-backed, so it answers for any party) and cache per address;
+   * an unresolvable address keeps rendering as the address rather than blanking.
+   */
+  private entityNames = signal<Record<string, string>>({});
+
+  /** Resolved name, or '' — drives the mono fallback styling in the template. */
+  entityName(addr: string): string {
+    return this.entityNames()[String(addr || '').toLowerCase()] || '';
+  }
+
+  /** What the cell shows: the name, like every other party column in the app. */
+  entityLabel(addr: string): string {
+    return this.entityName(addr) || addr || '';
+  }
+
+  private async resolveEntityNames(addresses: string[]) {
+    const known = this.entityNames();
+    const missing = [...new Set(
+      addresses.map(a => String(a || '').toLowerCase()).filter(a => a && !(a in known)),
+    )];
+    if (!missing.length) return;
+    const next = { ...known };
+    await Promise.all(missing.map(async (a) => {
+      try {
+        const r = await this.apiService.directoryByAddress(a);
+        if (r?.entry?.name) next[a] = r.entry.name;
+      } catch { /* not in the directory — the address stays the label */ }
+    }));
+    this.entityNames.set(next);
   }
 
   isSelf(addr: string): boolean {
@@ -301,6 +365,31 @@ export class SettlementsPage implements OnInit {
     } finally {
       this.loadingService.hide();
     }
+  }
+
+  // ── Receipt ───────────────────────────────────────────────────────────────
+  /**
+   * Opens the wire receipt in a new tab. Deliberately NOT a link to a document detail
+   * page: a settlement records only the receipt's CID, so there is no (owner, documentId)
+   * pair to route to — the API resolves it per side (own document for the debtor, inbound
+   * share for the creditor) and streams the decrypted bytes, which we hand straight to the
+   * viewer. Since 2026-08-09 those bytes are the uploaded file itself, so the browser
+   * renders the PDF/image rather than a JSON envelope.
+   */
+  async openReceipt(s: CreditSettlement) {
+    if (!s.receiptCid) return;
+    this.loadingService.show(this.translate.instant('settlements.receiptOpening'));
+    let file: { blobUrl: string; contentType: string } | null = null;
+    try {
+      file = await this.apiService.vaultSettlementReceiptFile(s.debtorEntity, s.creditorEntity, s.settlementId);
+    } finally {
+      this.loadingService.hide();
+    }
+    if (!file) {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('settlements.receiptError'));
+      return;
+    }
+    window.open(file.blobUrl, '_blank');
   }
 
   // ── Cancel (debtor side, Pending only) ────────────────────────────────────

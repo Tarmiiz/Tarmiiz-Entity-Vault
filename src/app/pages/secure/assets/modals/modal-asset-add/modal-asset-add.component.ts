@@ -7,6 +7,7 @@ import { ModalAssetAddService, AddAssetData, WizardDocFile, WizardImageFile } fr
 import { ApiService } from '../../../../../shared/services/api.service';
 import { UtilsService } from '../../../../../shared/services/utils.service';
 import { FeaturesService } from '../../../../../shared/services/features.service';
+import { ISIN_TYPE_NAME, normalizeIdentifierValue, validateIdentifierValue } from '../../../../../shared/utils/identifier.utils';
 
 @Component({
   selector: 'app-modal-asset-add',
@@ -25,7 +26,7 @@ export class ModalAssetAddComponent {
 
   // Reference data
   services = signal<{ address: string; name: string; paymentProcessor: string | null }[]>([]);
-  countries = signal<{ countryCode: number; nameShort: string; currencyCode: string }[]>([]);
+  countries = signal<{ countryCode: number; nameShort: string; currencyCode: string; currencyName: string }[]>([]);
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
   // Supply modes — the 1 = Fixed / 2 = Dynamic choice that the on-chain T20Template carries
   // as immutable `_supplyMode`. Sourced from the 'Asset Supply Mode' global category
@@ -129,6 +130,11 @@ export class ModalAssetAddComponent {
       }
       if (key.toLowerCase() === 'contact') {
         return '"contact" is reserved — set contact info from the asset details page after creation.';
+      }
+      // Both are reserved by the Identifiers field on this step. `isin` is called out by name
+      // because it is what people typed before that field existed — this hint used to suggest it.
+      if (key.toLowerCase() === 'identifiers' || key.toLowerCase() === 'isin') {
+        return '"identifiers" and "isin" are reserved — use the ISIN field on this step, or the asset details page later.';
       }
       if (seen.has(key)) {
         return `Duplicate key: "${key}".`;
@@ -414,7 +420,7 @@ export class ModalAssetAddComponent {
 
   getCurrencyDisplay(): string {
     const c = this.countries().find(c => c.countryCode === Number(this.addForm.get('currency')?.value));
-    return c ? `${c.nameShort} (${c.currencyCode})` : '';
+    return c ? `${c.currencyName} (${c.currencyCode})` : '';
   }
 
   getRegulatorDisplay(): string {
@@ -456,6 +462,9 @@ export class ModalAssetAddComponent {
           countryCode: c.country_code,
           nameShort: c.name_short,
           currencyCode: c.currency_code,
+          // The picker labels the CURRENCY, not the country — fall back to the country
+          // name only when global_countries carries no currency_name for the row.
+          currencyName: c.currency_name || c.name_short,
         })));
     }
     if (entity) {
@@ -493,6 +502,32 @@ export class ModalAssetAddComponent {
     if (assetTypesRaw) {
       this.assetTypes.set(assetTypesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
     }
+
+    // ISIN's numeric id is Global Variables insertion order, so resolve it by NAME. A chain
+    // without the 'ID Type - Asset' category seeded leaves this 0 and the field stays hidden
+    // rather than submitting an idType the API would reject.
+    try {
+      const idTypesRaw = await this.apiService.vaultGetGlobalVariablesByCategory('ID Type - Asset');
+      const isin = (idTypesRaw ?? []).find((v: any) => String(v.name).toUpperCase() === ISIN_TYPE_NAME);
+      this.isinTypeId.set(isin ? Number(isin.variable_id) : 0);
+    } catch {
+      this.isinTypeId.set(0);
+    }
+  }
+
+  // --- ISIN (optional at creation) ---
+  // Deliberately ONE optional field rather than the full type picker the detail page uses: an
+  // ISIN is frequently assigned after issuance, so the post-creation route is the primary
+  // path and this is a convenience for issuers who already have the number.
+
+  isinTypeId = signal(0);
+  isinValue = signal('');
+  isinError = signal('');
+
+  onIsinChanged(value: string) {
+    this.isinValue.set(value);
+    // Empty is fine — the field is optional. Only a typed value is judged.
+    this.isinError.set(value.trim() ? validateIdentifierValue(ISIN_TYPE_NAME, value) : '');
   }
 
   // --- Form submission ---
@@ -504,6 +539,16 @@ export class ModalAssetAddComponent {
       this.metadataError.set(metadataErr);
       return;
     }
+
+    // Re-check the ISIN before emitting — a paste can bypass the input event.
+    const isinRaw = this.isinValue().trim();
+    if (isinRaw) {
+      const err = validateIdentifierValue(ISIN_TYPE_NAME, isinRaw);
+      if (err) { this.isinError.set(err); return; }
+    }
+    const identifiers = (isinRaw && this.isinTypeId() > 0)
+      ? [{ idType: this.isinTypeId(), name: ISIN_TYPE_NAME, value: normalizeIdentifierValue(ISIN_TYPE_NAME, isinRaw) }]
+      : [];
 
     const customMetadata: Record<string, string> = {};
     for (const ctrl of this.metadataRows.controls) {
@@ -534,6 +579,7 @@ export class ModalAssetAddComponent {
       assetType: Number(formValue.assetType),
       creditSettlement: formValue.noCreditSettlement !== true,
       customMetadata,
+      identifiers,
       documents: this.docFiles().map(d => ({ ...d, title: d.title.trim() || d.file.name })),
       images: this.imageFiles().map(d => ({ ...d, title: d.title.trim() || d.file.name })),
       // Initial supply is Fixed-supply-only (minted to the contract at init).

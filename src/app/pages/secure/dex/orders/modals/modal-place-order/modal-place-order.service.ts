@@ -8,6 +8,10 @@ export interface PlaceOrderResult {
   marketScope: number;
   price: string;   // wei string
   amount: string;  // plain integer string
+  // Time in force. Unix SECONDS (the chain's + the API's unit), 0 = good-till-cancelled.
+  // NOT the milliseconds the order row reports back — the two units meet on this feature and
+  // conflating them yields a deadline ~1000x in the future, i.e. a silent GTC.
+  expiresAt: number;
 }
 
 @Injectable({ providedIn: 'root' })

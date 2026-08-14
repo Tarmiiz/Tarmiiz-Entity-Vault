@@ -10,10 +10,12 @@ import { AlertService } from '../../../shared/components/alerts/alert/alert.serv
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { AuthService } from '../../../shared/services/auth.service';
 
-import { Entity } from '../../../shared/models/data.model';
+import { Entity, EntityIdentifier, GlobalVariable } from '../../../shared/models/data.model';
 
 import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit/modal-profile-metadata-edit.service';
 import { ModalProfileMetadataEditComponent } from './modal-profile-metadata-edit/modal-profile-metadata-edit.component';
+import { ModalIdentifierService } from '../../../shared/components/modal-identifier/modal-identifier.service';
+import { ModalIdentifierComponent } from '../../../shared/components/modal-identifier/modal-identifier.component';
 import { ModalImageAddService } from '../../../shared/components/modal-image-add/modal-image-add.service';
 import { ModalImageAddComponent } from '../../../shared/components/modal-image-add/modal-image-add.component';
 import { FeaturesService } from '../../../shared/services/features.service';
@@ -36,6 +38,7 @@ export interface MediaIndex {
     FormsModule,
     HeaderComponent,
     ModalProfileMetadataEditComponent,
+    ModalIdentifierComponent,
     ModalImageAddComponent, TranslatePipe
 ]
 })
@@ -45,12 +48,16 @@ export class ProfilePage implements OnInit {
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private metadataEditService = inject(ModalProfileMetadataEditService);
+  private identifierModal = inject(ModalIdentifierService);
   private imageAddModal = inject(ModalImageAddService);
   private authService = inject(AuthService);
   private translate = inject(TranslateService);
 
-  activeTab = signal<'info' | 'metadata' | 'images'>('info');
+  activeTab = signal<'info' | 'metadata' | 'identifiers' | 'images'>('info');
   info = signal<Entity | undefined>(undefined);
+
+  identifiers = signal<EntityIdentifier[]>([]);
+  idTypes = signal<GlobalVariable[]>([]);
 
   get entityActive() { return this.authService.entityActive(); }
 
@@ -66,9 +73,10 @@ export class ProfilePage implements OnInit {
     this.revokeMediaImageUrls();
   }
 
-  setTab(tab: 'info' | 'metadata' | 'images') {
+  setTab(tab: 'info' | 'metadata' | 'identifiers' | 'images') {
     this.activeTab.set(tab);
     if (tab === 'info' || tab === 'metadata') this.getInfo();
+    if (tab === 'identifiers') this.loadIdentifiers();
     if (tab === 'images') this.loadMediaImages();
   }
 
@@ -78,6 +86,73 @@ export class ProfilePage implements OnInit {
     this.info.set(info ?? undefined);
     this.loadingService.hide();
     if (this.activeTab() === 'images') this.loadMediaImages();
+  }
+
+  // ─── Identifiers (LEI, commercial registry, tax id …) ───────────────────────
+
+  identifiersLoading = signal(false);
+
+  async loadIdentifiers() {
+    this.identifiersLoading.set(true);
+    try {
+      // The ID Type vocabulary comes from Global Variables, never a hardcoded list — a
+      // chain can seed the category in a different order, and new types are added on-chain
+      // with no frontend change.
+      const [rows, types] = await Promise.all([
+        this.apiService.vaultGetEntityIdentifiers(),
+        this.idTypes().length ? Promise.resolve(this.idTypes()) : this.apiService.vaultGetGlobalVariablesByCategory('ID Type - Entity'),
+      ]);
+      this.identifiers.set(Array.isArray(rows) ? rows : []);
+      if (Array.isArray(types)) this.idTypes.set(types);
+    } catch {
+      this.identifiers.set([]);
+    } finally {
+      this.identifiersLoading.set(false);
+    }
+  }
+
+  canEditIdentifiers(): boolean {
+    return this.entityActive && this.features.systemFunctionEnabled('entity-edit-identifiers');
+  }
+
+  // Types not yet held. Offering a held type in the ADD picker would look like a second
+  // slot, but the chain holds one hash per type — saving it would silently REPLACE.
+  availableIdTypes(): GlobalVariable[] {
+    const held = new Set(this.identifiers().map(i => Number(i.idType)));
+    return this.idTypes().filter(t => !held.has(Number(t.variableId)));
+  }
+
+  async openIdentifierModal(existing?: EntityIdentifier) {
+    const idTypes = existing
+      ? this.idTypes().filter(t => Number(t.variableId) === Number(existing.idType))
+      : this.availableIdTypes();
+    if (!idTypes.length) return;
+
+    const result = await this.identifierModal.show({
+      idTypes,
+      ...(existing ? { idType: Number(existing.idType), value: existing.value } : {}),
+    });
+    if (!result) return;
+
+    this.loadingService.show(this.translate.instant('profile.identifiers.saving'));
+    try {
+      const res: any = await this.apiService.vaultUpdateEntityIdentifier(result);
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      } else if (res?.metadataError) {
+        // The hash landed but the readable value did not — say so plainly rather than
+        // reporting success over a half-written state. Re-saving the same value heals it.
+        this.alertService.show(
+          this.translate.instant('profile.identifiers.partialTitle'),
+          this.translate.instant('profile.identifiers.partialMessage'),
+        );
+      }
+      await this.loadIdentifiers();
+    } catch {
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   // ─── Images (public media — avatar / banner / gallery) ──────────────────────

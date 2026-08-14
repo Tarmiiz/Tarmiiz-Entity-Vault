@@ -88,16 +88,46 @@ export class MembershipsPage implements OnInit, OnDestroy {
     return this.utils.formatDate(Math.floor(ms / 1000));
   }
 
-  async acceptMembership(m: DexVenueMember) {
-    const ok = await this.alertService.show(
-      this.translate.instant('dex.memberships.acceptModal.title'),
-      this.translate.instant('dex.memberships.acceptModal.message', { venue: m.venueName || m.dexService }),
-      this.translate.instant('dex.memberships.acceptModal.confirm'),
-    );
-    if (!ok) return;
-    this.loadingService.show(this.translate.instant('dex.memberships.accepting'));
+  // ── Request to join (INVERTED 2026-08-11) ─────────────────────────────────
+  //
+  // This page used to carry an "Accept" button per row, because the VENUE invited and the member
+  // consented. It is the other way round now: the member picks a venue and applies, and the
+  // consent shown on each row is the VENUE's answer. That is why the row action disappeared and
+  // a Request-to-join control took its place.
+  requestModalOpen = signal(false);
+  eligibleVenues = signal<any[]>([]);
+  ownServices = signal<any[]>([]);
+  requestVenue = '';
+  requestService = '';
+
+  async openRequestModal() {
+    this.requestVenue = '';
+    this.requestService = '';
+    this.loadingService.show(this.translate.instant('common.loadingData'));
     try {
-      const res = await this.apiService.vaultDexMembershipAccept(m.dexService, m.memberService);
+      const [venues, services] = await Promise.all([
+        this.apiService.vaultDexMembershipEligibleVenues(),
+        // Only a type-1 service can be a member — the chain rejects a type-2 outright.
+        this.apiService.vaultGetServicesOwn(0, 200),
+      ]);
+      this.eligibleVenues.set(venues?.venues ?? []);
+      // `/services` returns DB-mirror rows VERBATIM (vaultGetServicesOwn does no
+      // snake_case mapping), so the column is `service_type`. Reading only
+      // `serviceType` yields undefined -> NaN -> every service silently filtered
+      // out and an empty picker, which is indistinguishable from "you own no
+      // eligible service". Same defensive form as modal-asset-add-service.
+      this.ownServices.set(
+        (services?.services ?? []).filter((x: any) => Number(x.service_type ?? x.serviceType) === 1));
+    } finally { this.loadingService.hide(); }
+    this.requestModalOpen.set(true);
+  }
+
+  async submitRequest() {
+    if (!this.requestVenue || !this.requestService) return;
+    this.requestModalOpen.set(false);
+    this.loadingService.show(this.translate.instant('dex.memberships.requesting'));
+    try {
+      const res = await this.apiService.vaultDexMembershipRequest(this.requestVenue, this.requestService);
       if (res?.error) {
         this.alertService.show(this.translate.instant('alerts.error'), res.error);
       } else if (res?.requestId) {

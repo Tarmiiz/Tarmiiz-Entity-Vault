@@ -41,6 +41,9 @@ import { ModalDistributionDeclareService } from '../modals/modal-distribution-de
 import { ModalDistributionDeclareComponent } from '../modals/modal-distribution-declare/modal-distribution-declare.component';
 import { MetadataEditModalService } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.service';
 import { MetadataEditModalComponent } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.component';
+import { ModalIdentifierService } from '../../../../shared/components/modal-identifier/modal-identifier.service';
+import { ModalIdentifierComponent } from '../../../../shared/components/modal-identifier/modal-identifier.component';
+import { GlobalVariable } from '../../../../shared/models/data.model';
 import { ModalAssetImageAddService } from '../modals/modal-asset-image-add/modal-asset-image-add.service';
 import { ModalAssetImageAddComponent } from '../modals/modal-asset-image-add/modal-asset-image-add.component';
 import { ModalAssetPublicViewService } from '../modals/modal-asset-public-view/modal-asset-public-view.service';
@@ -52,6 +55,10 @@ import { PaginatorComponent, pageSlice } from '../../../../shared/components/pag
 
 // Entry inside the asset metadata's server-owned `media` key (public docs/images index).
 export interface AssetMediaEntry { documentId: number; cid: string; title: string; fileType: string; }
+// Entry inside the asset metadata's server-owned `identifiers` key (ISIN, …). Unlike an
+// entity identifier there is no on-chain hash to reconcile against — the metadata IS the
+// record — so there is no "bound / out of sync" state to render here.
+export interface AssetIdentifier { idType: number; name: string; value: string; }
 export interface AssetMedia {
   avatar?: AssetMediaEntry;
   banner?: AssetMediaEntry;
@@ -81,6 +88,7 @@ export interface AssetMedia {
     ModalAssetSupplyComponent,
     ModalDistributionDeclareComponent,
     MetadataEditModalComponent,
+    ModalIdentifierComponent,
     ModalAssetImageAddComponent,
     ModalAssetPublicViewComponent, TranslatePipe, MoneyPipe,
     PaginatorComponent,
@@ -99,6 +107,7 @@ export class DetailsPage implements OnInit {
   private priceModal = inject(ModalAssetPriceService);
   private supplyModal = inject(ModalAssetSupplyService);
   private metadataEditModal = inject(MetadataEditModalService);
+  private identifierModal = inject(ModalIdentifierService);
   private imageAddModal = inject(ModalAssetImageAddService);
   private publicViewModal = inject(ModalAssetPublicViewService);
   distributionDeclareModal = inject(ModalDistributionDeclareService);
@@ -427,10 +436,10 @@ export class DetailsPage implements OnInit {
     if (!t || t.length === 0) return null;
     return [...t].sort((a, b) => b.time - a.time)[0];
   });
-  parsedMetadata = computed<{ description: string; contact: ContactInfo; entries: [string, string][]; media: AssetMedia | null; raw: string; valid: boolean }>(() => {
+  parsedMetadata = computed<{ description: string; contact: ContactInfo; entries: [string, string][]; media: AssetMedia | null; identifiers: AssetIdentifier[]; raw: string; valid: boolean }>(() => {
     const raw = this.asset()?.metadata ?? '';
     const emptyContact: ContactInfo = { email: '', phone: '', website: '', address: '' };
-    if (!raw) return { description: '', contact: emptyContact, entries: [], media: null, raw: '', valid: true };
+    if (!raw) return { description: '', contact: emptyContact, entries: [], media: null, identifiers: [], raw: '', valid: true };
     try {
       const obj = JSON.parse(raw);
       if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
@@ -447,15 +456,25 @@ export class DetailsPage implements OnInit {
         // `media` is the server-owned public docs/images index — rendered by the Images
         // section, excluded from the free-form key/value table (like `description`).
         const media = (obj.media && typeof obj.media === 'object' && !Array.isArray(obj.media)) ? obj.media as AssetMedia : null;
-        const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address']);
+        // `identifiers` is the server-owned security-identifier array (ISIN, …) — rendered by
+        // its own section, so it must be excluded from the free-form KV table or an ISIN
+        // would show up twice, once of them as raw JSON.
+        const identifiers: AssetIdentifier[] = Array.isArray(obj.identifiers)
+          ? obj.identifiers
+              .filter((e: any) => e && typeof e === 'object')
+              .map((e: any) => ({ idType: Number(e.idType) || 0, name: String(e.name ?? ''), value: String(e.value ?? '') }))
+              .filter((e: AssetIdentifier) => e.idType > 0)
+              .sort((a: AssetIdentifier, b: AssetIdentifier) => a.idType - b.idType)
+          : [];
+        const RESERVED = new Set(['description', 'media', 'contact', 'identifiers', 'email', 'telephone', 'mobile', 'website', 'address']);
         const entries = Object.entries(obj)
           .filter(([k]) => !RESERVED.has(k))
           .map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)] as [string, string])
           .sort((a, b) => a[0].localeCompare(b[0]));
-        return { description, contact, entries, media, raw, valid: true };
+        return { description, contact, entries, media, identifiers, raw, valid: true };
       }
     } catch (_) { /* fall through */ }
-    return { description: '', contact: emptyContact, entries: [], media: null, raw, valid: false };
+    return { description: '', contact: emptyContact, entries: [], media: null, identifiers: [], raw, valid: false };
   });
 
   hasContact = computed(() => {
@@ -992,6 +1011,116 @@ export class DetailsPage implements OnInit {
       }
     } catch (error) {
       console.error('Failed to update metadata', error);
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // ─── Identifiers section (metadata tab) ──────────────────────────────────────
+  // Security identifiers (ISIN, …) recorded in the asset's public metadata. Unlike the
+  // entity's, these are NOT bound on-chain: the metadata is the whole record, so there is
+  // no hash to reconcile and no "out of sync" state — but also nothing to catch a typo,
+  // which is why the format check runs both here and in the API.
+
+  assetIdTypes = signal<GlobalVariable[]>([]);
+
+  canEditIdentifiers(): boolean {
+    return this.canManage()
+      && this.userInfo?.role !== 3
+      && this.features.systemFunctionEnabled('asset-edit-identifiers');
+  }
+
+  // The vocabulary comes from Global Variables, never a hardcoded list — a chain seeded with
+  // extra types (CUSIP, SEDOL, …) has to offer them without a Vault rebuild. Fetched once.
+  private async ensureAssetIdTypes(): Promise<GlobalVariable[]> {
+    if (this.assetIdTypes().length) return this.assetIdTypes();
+    try {
+      const types = await this.apiService.vaultGetGlobalVariablesByCategory('ID Type - Asset');
+      this.assetIdTypes.set(types ?? []);
+    } catch {
+      this.assetIdTypes.set([]);
+    }
+    return this.assetIdTypes();
+  }
+
+  async openIdentifierModal(existing?: AssetIdentifier) {
+    const asset = this.asset();
+    if (!asset) return;
+
+    const all = await this.ensureAssetIdTypes();
+    if (!all.length) {
+      this.alertService.show(
+        this.translate.instant('alerts.error'),
+        this.translate.instant('assets.details.identifiers.noTypes'),
+      );
+      return;
+    }
+
+    // Editing locks the type to the row being edited. Adding offers only UNHELD types:
+    // one entry per type, so offering a held one looks like a second slot while silently
+    // replacing the existing value.
+    const held = new Set(this.parsedMetadata().identifiers.map(i => i.idType));
+    const idTypes = existing
+      ? all.filter(t => t.variableId === existing.idType)
+      : all.filter(t => !held.has(t.variableId));
+    if (!idTypes.length) {
+      this.alertService.show(
+        this.translate.instant('alerts.error'),
+        this.translate.instant('assets.details.identifiers.allHeld'),
+      );
+      return;
+    }
+
+    const result = await this.identifierModal.show({
+      idTypes,
+      // No reason field: this is a plain metadata edit with nowhere to record one, unlike
+      // the entity write which carries a reason into the on-chain audit row.
+      showReason: false,
+      ...(existing ? { idType: existing.idType, value: existing.value } : {}),
+    });
+    if (!result) return;
+
+    this.loadingService.show(this.translate.instant('assets.details.identifiers.saving'));
+    try {
+      const res: any = await this.apiService.vaultSetAssetIdentifier(asset.address, {
+        idType: result.idType,
+        value:  result.value,
+      });
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      } else {
+        await this.getAssetDetails();
+      }
+    } catch (error) {
+      console.error('Failed to save asset identifier', error);
+      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async removeIdentifier(row: AssetIdentifier) {
+    const asset = this.asset();
+    if (!asset) return;
+
+    const confirmed = await this.alertService.show(
+      this.translate.instant('assets.details.identifiers.removeTitle'),
+      this.translate.instant('assets.details.identifiers.removeMessage', { name: row.name || String(row.idType), value: row.value }),
+      this.translate.instant('common.remove'),
+    );
+    if (!confirmed) return;
+
+    this.loadingService.show(this.translate.instant('assets.details.identifiers.removing'));
+    try {
+      const res: any = await this.apiService.vaultRemoveAssetIdentifier(asset.address, row.idType);
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      } else {
+        await this.getAssetDetails();
+      }
+    } catch (error) {
+      console.error('Failed to remove asset identifier', error);
       this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();

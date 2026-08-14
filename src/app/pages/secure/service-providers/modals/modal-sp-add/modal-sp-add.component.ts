@@ -62,6 +62,11 @@ export class ModalSpAddComponent {
         const d = await this.apiService.vaultGetEndorsedCustodians('', 1, 50);
         items = (d?.custodians ?? []).filter((c: any) => c.state === 2 || c.state === 1 || c.state === true)
           .map((c: any) => ({ address: c.address, name: c.name, level: c.level }));
+      } else if (spType === 4) {
+        // Clearing House — Regulator Party Type 4, the last of the contiguous attachable band.
+        const d = await this.apiService.vaultGetClearingHouses(1, 50);
+        items = (d?.clearingHouses ?? []).filter((c: any) => c.state === 2)
+          .map((c: any) => ({ address: c.address, name: c.name, level: c.level }));
       }
       const existing = this.spAddService.existing();
       this.options.set(items.filter(i => !existing.includes(i.address.toLowerCase())));

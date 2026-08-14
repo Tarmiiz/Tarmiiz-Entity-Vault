@@ -10,12 +10,13 @@ import { FeaturesService } from '../../../../shared/services/features.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
-import { DexOffering, DexOfferingFill, User } from '../../../../shared/models/data.model';
+import { DexOffering, User } from '../../../../shared/models/data.model';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 interface AssetOption { address: string; name: string; symbol: string; }
 interface VenueOption { dexService: string; serviceName: string; state: number; }
+interface SubscriptionOption { address: string; label: string; }
 
 /**
  * DEX Offerings — the issuer-side IPO facility (issuer/DEX model C1, 2026-08-03).
@@ -50,9 +51,10 @@ export class OfferingsPage implements OnInit {
   offeringsTotal = signal(0);
   loaded = signal(false);
 
-  // Per-offering fills expand.
-  expandedKey = signal<string>('');
-  fills = signal<DexOfferingFill[]>([]);
+  // NOTE: there is no per-offering fills list here. A fill IS a transaction — the tap
+  // writes an Assets-registry subscribe row (plus its credit legs), so it shows on the
+  // Transactions page like every other subscribe. A second per-offering table restated
+  // the same rows in a place nobody would think to reconcile against.
 
   // ── Create-offering modal state ───────────────────────────────────────────
   createModalOpen = signal(false);
@@ -64,6 +66,13 @@ export class OfferingsPage implements OnInit {
   createAmount = '';
   createMinFill = '';
   createMaxPerSubscription = '';
+
+  // ── Buy (fill) modal state ────────────────────────────────────────────────
+  buyModalOpen = signal(false);
+  buyOffering = signal<DexOffering | null>(null);
+  mySubscriptions = signal<SubscriptionOption[]>([]);
+  buySubscription = '';
+  buyAmount = '';
 
   ngOnInit() {}
 
@@ -119,20 +128,13 @@ export class OfferingsPage implements OnInit {
     return `${key.slice(0, 10)}…${key.slice(-6)}`;
   }
 
-  async toggleFills(o: DexOffering) {
-    if (this.expandedKey() === o.offeringKey) {
-      this.expandedKey.set('');
-      this.fills.set([]);
-      return;
-    }
-    this.loadingService.show(this.translate.instant('common.loadingData'));
-    try {
-      const data = await this.apiService.vaultDexOfferingInfo(o.offeringKey);
-      this.fills.set(data?.fills ?? []);
-      this.expandedKey.set(o.offeringKey);
-    } finally {
-      this.loadingService.hide();
-    }
+  // The offering key is a bytes32 that every API call against the offering needs
+  // (notably POST /dex/offerings/:key/fill), and the table can only show it
+  // truncated. A hover title is not selectable, so the cell is a copy button —
+  // same pattern as the document CID / SHA-256 cells.
+  async copyToClipboard(value: string | null) {
+    if (!value) return;
+    try { await navigator.clipboard.writeText(value); } catch { /* clipboard unavailable */ }
   }
 
   // ── Create offering ───────────────────────────────────────────────────────
@@ -194,6 +196,107 @@ export class OfferingsPage implements OnInit {
           this.translate.instant('alerts.ok'),
         );
       }
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // ── Buy from an offering (primary issuance) ───────────────────────────────
+  //
+  // Deliberately NOT gated to the brokerage entity mode. Buying for a client is the
+  // brokerage's defining act, but the endpoint admits ANY entity whose subscription is
+  // admitted at the venue — a token issuer taking another issuer's new issue for its own
+  // subscribers is legitimate, and a mode gate would hide it with no on-chain rule behind it.
+  //
+  // The offering is chosen by the ROW, not a second asset picker: an asset picker could
+  // offer an asset that has no live offering, which is not a state the user can act on.
+  canBuy(o: DexOffering): boolean {
+    return Number(o.status) === 2 && !o.suspended && this.remaining(o) > 0
+      && this.canAct() && this.features.systemFunctionEnabled('dex-offering-fill');
+  }
+
+  async openBuyModal(o: DexOffering) {
+    this.buyOffering.set(o);
+    this.buySubscription = '';
+    this.buyAmount = '';
+    this.buyModalOpen.set(true);
+    if (this.mySubscriptions().length === 0) {
+      const data = await this.apiService.vaultGetSubscriptions(undefined, 0, 500);
+      // `vaultGetSubscriptions` returns RAW mirror rows, not mapped Subscription models:
+      // the subscription address is `address` (not `subscription`) and the joined names
+      // are snake_case. Getting either wrong yields options with an empty value, which
+      // silently disables Buy.
+      //
+      // Active + unsuspended only — the chain rejects the rest, and offering a row that
+      // can only fail is worse than omitting it.
+      //
+      // Labelled by FULL address: a brokerage's subscriptions all sit under the same
+      // service, so the service name alone cannot tell two clients apart, and there is no
+      // subscriber name to fall back on (the DID is deliberately never exposed here).
+      // Misidentifying which client a purchase is booked against is not a recoverable error.
+      this.mySubscriptions.set((data?.subscriptions ?? [])
+        .filter((s: any) => Number(s.state) === 2 && !s.suspended)
+        .map((s: any) => ({
+          address: s.address,
+          label: s.service_name ? `${s.address} · ${s.service_name}` : s.address,
+        })));
+    }
+  }
+
+  /** Gross cost preview = amount × the offering's frozen price. Venue fees are zero-bps here. */
+  buyGross(): number {
+    const o = this.buyOffering();
+    const n = Number(this.buyAmount);
+    if (!o || !(n > 0)) return 0;
+    return n * Number(o.price);
+  }
+
+  /**
+   * Client-side twin of the API's pre-checks — same limits, so the user is told before a
+   * round trip. The server re-checks and the contract is the boundary; this is UX only.
+   */
+  buyError(): string {
+    const o = this.buyOffering();
+    if (!o) return '';
+    const n = Number(this.buyAmount);
+    if (!this.buyAmount) return '';
+    if (!(n > 0) || !Number.isInteger(n)) return this.translate.instant('dexOfferings.buyModal.errAmount');
+    const rem = this.remaining(o);
+    if (n > rem) return this.translate.instant('dexOfferings.buyModal.errRemaining', { remaining: rem });
+    // minFill is waived when taking the exact remainder — mirrors the contract.
+    if (Number(o.minFill) > 0 && n !== rem && n < Number(o.minFill)) {
+      return this.translate.instant('dexOfferings.buyModal.errMinFill', { minFill: Number(o.minFill) });
+    }
+    if (Number(o.maxPerSubscription) > 0 && n > Number(o.maxPerSubscription)) {
+      return this.translate.instant('dexOfferings.buyModal.errMaxPerSub', { max: Number(o.maxPerSubscription) });
+    }
+    return '';
+  }
+
+  buyDisabled(): boolean {
+    return !this.buySubscription || !this.buyAmount || !!this.buyError();
+  }
+
+  async submitBuy() {
+    const o = this.buyOffering();
+    if (!o || this.buyDisabled()) return;
+    this.buyModalOpen.set(false);
+    this.loadingService.show(this.translate.instant('dexOfferings.buying'));
+    try {
+      const res = await this.apiService.vaultDexOfferingFill(o.offeringKey, {
+        subscription: this.buySubscription,
+        amount: String(Math.floor(Number(this.buyAmount))),
+      });
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        return;
+      }
+      await this.loadOfferings();
+      this.alertService.show(
+        this.translate.instant('dexOfferings.buyModal.doneTitle'),
+        this.translate.instant('dexOfferings.buyModal.doneMessage', { amount: res?.amount ?? '', gross: res?.gross ?? '' }),
+        this.translate.instant('alerts.ok'),
+      );
     } finally {
       this.loadingService.hide();
     }

@@ -1,0 +1,507 @@
+<app-header [title]="'sidebar.clearing' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Tab bar. The set is derived from the data (do we operate a CCP / are we a member), so a
+       tenant that is both sides sees both halves — see visibleTabs() in the component. -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-4 px-4 pt-2 flex items-center gap-1">
+    @for (tab of visibleTabs(); track tab) {
+      <button (click)="activeTab.set(tab)"
+        class="text-sm px-4 py-2 border-b-2 transition-colors"
+        [class]="activeTab() === tab
+          ? 'border-indigo-600 text-indigo-700 font-semibold'
+          : 'border-transparent text-gray-500 hover:text-gray-700'">
+        {{ ('clearing.tabs.' + tab) | translate }}
+      </button>
+    }
+    <div class="ms-auto pb-2">
+      <app-refresh-button [loading]="refreshing()" (refresh)="refresh()"></app-refresh-button>
+    </div>
+  </div>
+
+  <!-- ══ ACCOUNT ══ The centrepiece: ONE running account per (clearing house, currency), in
+       place of one net and one fiat wire per counterparty. Live chain read, not a mirror row. -->
+  @if (activeTab() === 'account') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'clearing.account.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'clearing.account.description' | translate }}</p>
+      </div>
+
+      <div class="p-4 flex flex-wrap items-end gap-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">{{ 'clearing.clearingHouse' | translate }}</label>
+          <select [ngModel]="accountHouse()" (ngModelChange)="accountHouse.set($event)"
+            class="text-sm border border-gray-300 rounded px-3 py-1.5 min-w-[16rem] text-gray-800">
+            @for (m of memberships(); track m.clearingHouse) {
+              <option [value]="m.clearingHouse">{{ entityLabel(m.clearingHouse) }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">{{ 'clearing.currency' | translate }}</label>
+          <select [ngModel]="accountCurrency()" (ngModelChange)="accountCurrency.set($event)"
+            class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-800">
+            @for (c of currencyOptions(); track c.code) {
+              <option [value]="c.code">{{ c.label }}</option>
+            }
+          </select>
+        </div>
+        <button (click)="loadAccount()"
+          class="text-xs px-3 py-2 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+          {{ 'clearing.account.load' | translate }}
+        </button>
+      </div>
+
+      @if (accountError()) {
+        <div class="mx-4 mb-4 p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-800">
+          {{ accountError() }}
+        </div>
+      }
+
+      @if (account(); as a) {
+        <div class="p-4 pt-0 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="rounded-lg border border-gray-200 p-4">
+            <div class="text-xs text-gray-600">{{ 'clearing.account.funded' | translate }}</div>
+            <div class="text-2xl font-semibold text-gray-800">{{ +a.funded | money }}</div>
+            <div class="text-xs text-gray-500 mt-1">{{ 'clearing.account.fundedHint' | translate }}</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 p-4">
+            <div class="text-xs text-gray-600">{{ 'clearing.account.owed' | translate }}</div>
+            <div class="text-2xl font-semibold" [class]="+a.owed > 0 ? 'text-red-700' : 'text-green-700'">
+              {{ +a.owed | money }}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">{{ 'clearing.account.owedHint' | translate }}</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 p-4">
+            <div class="text-xs text-gray-600">{{ 'clearing.account.withdrawable' | translate }}</div>
+            <div class="text-2xl font-semibold text-gray-800">{{ +a.withdrawable | money }}</div>
+            <!-- ADVISORY: releasing an escrow is onlyService, so only the CCP's own template can
+                 do it and nothing on-chain enforces this bound. -->
+            <div class="text-xs text-amber-700 mt-1">{{ 'clearing.account.withdrawableHint' | translate }}</div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══ DELIVERIES ══ Pending settlement. A trade shows here between match and delivery, which
+       is exactly the window in which the DEX trades mirror is still blind to it. -->
+  @if (activeTab() === 'deliveries') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-800">{{ 'clearing.deliveries.title' | translate }}</h2>
+          <p class="text-xs text-gray-600">{{ 'clearing.deliveries.description' | translate }}</p>
+        </div>
+        <select [ngModel]="deliveryStatusFilter()"
+          (ngModelChange)="deliveryStatusFilter.set($event); deliveriesPage.set(1)"
+          class="text-xs border border-gray-300 rounded px-2 py-1.5 text-gray-800">
+          <option value="">{{ 'clearing.allStatuses' | translate }}</option>
+          <option [value]="1">{{ 'clearing.deliveryStates.pending' | translate }}</option>
+          <option [value]="2">{{ 'clearing.deliveryStates.ready' | translate }}</option>
+          <option [value]="3">{{ 'clearing.deliveryStates.delivered' | translate }}</option>
+          <option [value]="4">{{ 'clearing.deliveryStates.failed' | translate }}</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'clearing.deliveries.key' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.deliveries.kind' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.deliveries.side' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.deliveries.amount' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.deliveries.proceeds' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.deliveries.deadline' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.status' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of pagedDeliveries(); track d.deliveryKey; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2 text-xs font-mono">{{ shortKey(d.deliveryKey) }}</td>
+                <td class="px-4 py-2 text-xs">{{ deliveryKindName(d.kind) }}</td>
+                <td class="px-4 py-2 text-xs">{{ sideOf(d) }}</td>
+                <!-- Token quantity: plain integer, never money-formatted. -->
+                <td class="px-4 py-2 text-xs">{{ d.amount | number:'1.0-0' }}</td>
+                <td class="px-4 py-2 text-xs">
+                  {{ d.sellerProceeds | money }}
+                  <span class="badge-currency ms-1">{{ currencyLabel(d.currencyCode) }}</span>
+                </td>
+                <td class="px-4 py-2 text-xs">{{ d.deadline ? utils.formatTime(d.deadline) : '—' }}</td>
+                <td class="px-4 py-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="deliveryStatusClass(d.status)">
+                    {{ deliveryStatusName(d.status) }}
+                  </span>
+                  @if (d.holdCount > 0) {
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 ms-1">
+                      {{ 'clearing.deliveries.held' | translate }} ({{ d.holdCount }})
+                    </span>
+                  }
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                  <button (click)="toggleDelivery(d)" class="text-xs text-blue-700 hover:underline">
+                    {{ (expandedDelivery() === d.deliveryKey ? 'common.hide' : 'common.view') | translate }}
+                  </button>
+                  @if (canDeliver(d)) {
+                    <button (click)="executeDelivery(d)" class="text-xs ms-2 px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">
+                      {{ 'clearing.deliveries.deliver' | translate }}
+                    </button>
+                  }
+                  @if (canFail(d)) {
+                    <button (click)="failDelivery(d)" class="text-xs ms-2 px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800">
+                      {{ 'clearing.deliveries.fail' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+              @if (expandedDelivery() === d.deliveryKey) {
+                <tr class="bg-gray-50 border-b">
+                  <td class="px-4 py-3" colspan="8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs mb-3">
+                      <div><span class="text-gray-500">{{ 'clearing.deliveries.venue' | translate }}:</span>
+                        <span class="font-mono">{{ d.dexService }}</span></div>
+                      <div><span class="text-gray-500">{{ 'clearing.deliveries.asset' | translate }}:</span>
+                        <span class="font-mono">{{ d.baseAsset }}</span></div>
+                      <div><span class="text-gray-500">{{ 'clearing.clearingHouse' | translate }}:</span>
+                        <span class="font-mono">{{ d.clearingHouse }}</span></div>
+                      <div><span class="text-gray-500">{{ 'clearing.deliveries.cycle' | translate }}:</span>
+                        <span class="font-mono">{{ d.cycleKey ? shortKey(d.cycleKey) : '—' }}</span></div>
+                      <div><span class="text-gray-500">{{ 'clearing.deliveries.buyEntity' | translate }}:</span>
+                        {{ entityLabel(d.buyEntity) }}</div>
+                      <div><span class="text-gray-500">{{ 'clearing.deliveries.sellEntity' | translate }}:</span>
+                        {{ entityLabel(d.sellEntity) }}</div>
+                      <div><span class="text-gray-500">{{ 'clearing.deliveries.price' | translate }}:</span>
+                        {{ d.price | money }}</div>
+                      <div><span class="text-gray-500">{{ 'clearing.deliveries.creditConsumed' | translate }}:</span>
+                        {{ d.creditConsumed | money }}</div>
+                    </div>
+                    <!-- Custody settlement holds. A hold blocks DELIVERY only, never the unwind —
+                         otherwise a custodian could strand both sides' capital by doing nothing. -->
+                    <div class="text-xs font-semibold text-gray-700 mb-1">{{ 'clearing.holds.title' | translate }}</div>
+                    @if (holdsFor(d.deliveryKey).length === 0) {
+                      <div class="text-xs text-gray-500">{{ 'clearing.holds.none' | translate }}</div>
+                    } @else {
+                      <table class="w-full text-xs text-left text-gray-700">
+                        <thead class="text-gray-500">
+                          <tr>
+                            <th class="py-1">{{ 'clearing.holds.id' | translate }}</th>
+                            <th class="py-1">{{ 'clearing.holds.placedBy' | translate }}</th>
+                            <th class="py-1">{{ 'clearing.holds.reason' | translate }}</th>
+                            <th class="py-1">{{ 'common.status' | translate }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (h of holdsFor(d.deliveryKey); track h.holdId) {
+                            <tr class="border-t border-gray-200">
+                              <td class="py-1">{{ h.holdId }}</td>
+                              <td class="py-1 font-mono">{{ h.placedBy }}</td>
+                              <td class="py-1">{{ h.reason || '—' }}</td>
+                              <td class="py-1">
+                                <span class="px-2 py-0.5 rounded-full"
+                                  [class]="h.released ? 'bg-gray-200 text-gray-600' : 'bg-amber-100 text-amber-800'">
+                                  {{ (h.released ? 'clearing.holds.released' : 'clearing.holds.active') | translate }}
+                                </span>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="8">
+                {{ 'clearing.deliveries.empty' | translate }}
+              </td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginator [page]="deliveriesPage()" [pageSize]="deliveriesPageSize()"
+        [total]="filteredDeliveries().length"
+        (pageChange)="deliveriesPage.set($event)"
+        (pageSizeChange)="deliveriesPageSize.set($event)"></app-paginator>
+    </div>
+  }
+
+  <!-- ══ CYCLES ══ One per (country, currency, clearing house). -->
+  @if (activeTab() === 'cycles') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'clearing.cycles.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'clearing.cycles.description' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'clearing.cycles.key' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.clearingHouse' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.currency' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.cycles.closesAt' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.status' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of pagedCycles(); track c.cycleKey; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2 text-xs font-mono">{{ shortKey(c.cycleKey) }}</td>
+                <td class="px-4 py-2 text-xs">{{ entityLabel(c.clearingHouse) }}</td>
+                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(c.currencyCode) }}</span></td>
+                <td class="px-4 py-2 text-xs">{{ c.closesAt ? utils.formatTime(c.closesAt) : '—' }}</td>
+                <td class="px-4 py-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="cycleStatusClass(c.status)">
+                    {{ cycleStatusName(c.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                  <button (click)="toggleCycle(c)" class="text-xs text-blue-700 hover:underline">
+                    {{ (expandedCycle() === c.cycleKey ? 'common.hide' : 'clearing.cycles.positions') | translate }}
+                  </button>
+                  @if (canCloseCycle(c)) {
+                    <button (click)="closeCycle(c)" class="text-xs ms-2 px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800">
+                      {{ 'clearing.cycles.close' | translate }}
+                    </button>
+                  }
+                  @if (canFinalizeCycle(c)) {
+                    <button (click)="finalizeCycle(c)" class="text-xs ms-2 px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">
+                      {{ 'clearing.cycles.finalize' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+              @if (expandedCycle() === c.cycleKey) {
+                <tr class="bg-gray-50 border-b">
+                  <td class="px-4 py-3" colspan="6">
+                    <!-- Snapshot positions, taken at close from the running obligation account —
+                         NOT accumulated per delivery, which is why a failed delivery self-corrects. -->
+                    <div class="text-xs font-semibold text-gray-700 mb-1">{{ 'clearing.positions.title' | translate }}</div>
+                    @if (positionsFor(c.cycleKey).length === 0) {
+                      <div class="text-xs text-gray-500">
+                        {{ (c.status === 1 ? 'clearing.positions.notYetClosed' : 'clearing.positions.none') | translate }}
+                      </div>
+                    } @else {
+                      <table class="w-full text-xs text-left text-gray-700">
+                        <thead class="text-gray-500">
+                          <tr>
+                            <th class="py-1">{{ 'clearing.member' | translate }}</th>
+                            <th class="py-1">{{ 'clearing.positions.net' | translate }}</th>
+                            <th class="py-1">{{ 'clearing.positions.paidIn' | translate }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (p of positionsFor(c.cycleKey); track p.entity) {
+                            <tr class="border-t border-gray-200">
+                              <td class="py-1">{{ entityLabel(p.entity) }}</td>
+                              <td class="py-1">
+                                <!-- Signed from the MEMBER's perspective: negative = the member owes. -->
+                                @if (p.net < 0) {
+                                  <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                                    {{ 'clearing.positions.owes' | translate }} {{ -p.net | money }}
+                                  </span>
+                                } @else if (p.net > 0) {
+                                  <span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                                    {{ 'clearing.positions.owedTo' | translate }} {{ p.net | money }}
+                                  </span>
+                                } @else {
+                                  <span class="px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">0</span>
+                                }
+                              </td>
+                              <td class="py-1">
+                                <span class="px-2 py-0.5 rounded-full"
+                                  [class]="p.paidIn ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">
+                                  {{ (p.paidIn ? 'common.yes' : 'common.no') | translate }}
+                                </span>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    }
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="6">
+                {{ 'clearing.cycles.empty' | translate }}
+              </td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginator [page]="cyclesPage()" [pageSize]="cyclesPageSize()" [total]="cycles().length"
+        (pageChange)="cyclesPage.set($event)"
+        (pageSizeChange)="cyclesPageSize.set($event)"></app-paginator>
+    </div>
+  }
+
+  <!-- ══ PAY-INS ══ The CCP operator's worklist, across every CLOSED cycle. -->
+  @if (activeTab() === 'payins') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'clearing.payIns.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'clearing.payIns.description' | translate }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ 'clearing.payIns.settlementHint' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'clearing.member' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.cycles.key' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.currency' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.payIns.due' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.payIns.settlement' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.positions.paidIn' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of payIns(); track (row.cycle.cycleKey + '|' + row.position.entity); let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2 text-xs">{{ entityLabel(row.position.entity) }}</td>
+                <td class="px-4 py-2 text-xs font-mono">{{ shortKey(row.cycle.cycleKey) }}</td>
+                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(row.cycle.currencyCode) }}</span></td>
+                <td class="px-4 py-2 text-xs font-semibold text-red-700">{{ -row.position.net | money }}</td>
+                <!-- Evidence on the PAIR, not for this cycle — the amounts are not comparable, so
+                     the settlement's own amount is shown beside it and never differenced. -->
+                <td class="px-4 py-2">
+                  @let s = latestSettlement(row.position);
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="settlementClass(s)">
+                    {{ settlementLabel(s) }}
+                  </span>
+                  @if (s) {
+                    <div class="text-xs text-gray-600 mt-0.5">{{ s.amount | money }}</div>
+                    @if (s.wireRef) {
+                      <div class="text-xs text-gray-500 font-mono">{{ s.wireRef }}</div>
+                    }
+                    @if (s.receiptCid && features.systemFunctionEnabled('view-documents')) {
+                      <button (click)="openReceipt(s)" class="text-xs text-blue-700 hover:underline mt-0.5">
+                        {{ 'clearing.payIns.viewReceipt' | translate }}
+                      </button>
+                    }
+                  }
+                </td>
+                <td class="px-4 py-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full"
+                    [class]="row.position.paidIn ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">
+                    {{ (row.position.paidIn ? 'common.yes' : 'common.no') | translate }}
+                  </span>
+                </td>
+                <td class="px-4 py-2">
+                  @if (!row.position.paidIn && canAct() && features.systemFunctionEnabled('clearing-confirm-pay-in')) {
+                    <button (click)="confirmPayIn(row)"
+                      class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800">
+                      {{ 'clearing.payIns.confirm' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="7">
+                {{ 'clearing.payIns.empty' | translate }}
+              </td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ══ MEMBERS ══ Operator view: who we have admitted. -->
+  @if (activeTab() === 'members') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'clearing.members.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'clearing.members.description' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'clearing.member' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.clearingHouse' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.fundingService' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.status' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.updated' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of members(); track (m.clearingHouse + '|' + m.entity); let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2 text-xs">{{ entityLabel(m.entity) }}</td>
+                <td class="px-4 py-2 text-xs">{{ entityLabel(m.clearingHouse) }}</td>
+                <td class="px-4 py-2 text-xs font-mono">{{ m.fundingService || '—' }}</td>
+                <td class="px-4 py-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="memberStateClass(m.state)">
+                    {{ memberStateName(m.state) }}
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-xs">{{ utils.formatTime(m.updatedAt) }}</td>
+              </tr>
+            } @empty {
+              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="5">
+                {{ 'clearing.members.empty' | translate }}
+              </td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ══ MEMBERSHIPS ══ Member view: the houses we belong to, and the accept step. -->
+  @if (activeTab() === 'memberships') {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="text-sm font-semibold text-gray-800">{{ 'clearing.memberships.title' | translate }}</h2>
+        <p class="text-xs text-gray-600">{{ 'clearing.memberships.description' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700">
+          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <tr>
+              <th class="px-4 py-2">{{ 'clearing.clearingHouse' | translate }}</th>
+              <th class="px-4 py-2">{{ 'clearing.fundingService' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.status' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.updated' | translate }}</th>
+              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of memberships(); track m.clearingHouse; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2 text-xs">{{ entityLabel(m.clearingHouse) }}</td>
+                <td class="px-4 py-2 text-xs font-mono">{{ m.fundingService || '—' }}</td>
+                <td class="px-4 py-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full" [class]="memberStateClass(m.state)">
+                    {{ memberStateName(m.state) }}
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-xs">{{ utils.formatTime(m.updatedAt) }}</td>
+                <td class="px-4 py-2">
+                  @if (needsAccept(m) && features.systemFunctionEnabled('clearing-member-accept')) {
+                    <button (click)="acceptMembership(m)"
+                      class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">
+                      {{ 'clearing.memberships.accept' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="5">
+                {{ 'clearing.memberships.empty' | translate }}
+              </td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+</div>

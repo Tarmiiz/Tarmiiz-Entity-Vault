@@ -5,7 +5,11 @@
       <!-- Header -->
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">
-          {{ 'services.feeConfigModal.title' | translate: { symbol: input.assetSymbol } }}
+          @if (isDefaultMode()) {
+            {{ 'services.feeConfigModal.defaultTitle' | translate }}
+          } @else {
+            {{ 'services.feeConfigModal.title' | translate: { symbol: input.assetSymbol } }}
+          }
         </h3>
         <p class="text-xs text-gray-400 mt-1">
           {{ 'services.feeConfigModal.distributedBy' | translate: { name: input.serviceName } }}

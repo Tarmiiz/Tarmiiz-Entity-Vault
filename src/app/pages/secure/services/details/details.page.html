@@ -358,6 +358,7 @@
                     <option value="1">{{ 'services.details.info.partyLabelValidator' | translate }}</option>
                     <option value="2">{{ 'services.details.info.partyLabelPaymentProcessor' | translate }}</option>
                     <option value="3">{{ 'services.details.info.partyLabelCustodian' | translate }}</option>
+                    <option value="5">{{ 'services.details.info.partyLabelClearingHouse' | translate }}</option>
                   </select>
                 </div>
                 <div class="flex flex-col justify-end">
@@ -397,6 +398,18 @@
                         {{ 'services.details.providers.addCustodian' | translate }}
                       </button>
                     }
+                    @if (features.systemFunctionEnabled('service-add-clearing-house')) {
+                      <!-- No cap and no floor: an EMPTY clearing-house set is itself meaningful
+                           ("this market's credit is final"), so unlike custody there is nothing
+                           to keep and nothing to limit. -->
+                      <button (click)="attachClearingHouse()"
+                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ 'services.details.providers.addClearingHouse' | translate }}
+                      </button>
+                    }
                   </div>
                 }
               </div>
@@ -429,7 +442,8 @@
                             <span class="px-3 py-1 text-xs font-semibold rounded-full"
                               [class.bg-indigo-100]="p.partyType === 1" [class.text-indigo-800]="p.partyType === 1"
                               [class.bg-sky-100]="p.partyType === 2"    [class.text-sky-800]="p.partyType === 2"
-                              [class.bg-purple-100]="p.partyType === 3" [class.text-purple-800]="p.partyType === 3">
+                              [class.bg-purple-100]="p.partyType === 3" [class.text-purple-800]="p.partyType === 3"
+                              [class.bg-teal-100]="p.partyType === 4"   [class.text-teal-800]="p.partyType === 4">
                               {{ p.typeLabelKey | translate }}
                             </span>
                           </td>
@@ -469,9 +483,6 @@
               </div>
               <app-paginator [total]="filteredServiceParties().length" [page]="servicePartiesPage()" [pageSize]="servicePartiesPageSize()"
                 (pageChange)="servicePartiesPage.set($event)" (pageSizeChange)="servicePartiesPageSize.set($event)" />
-              <div class="flex items-center justify-between px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">{{ 'services.details.providers.showing' | translate: { showing: filteredServiceParties().length, total: allServiceParties().length } }}</p>
-              </div>
             </div>
           </div>
         }
@@ -1092,8 +1103,8 @@
                 <app-refresh-button (refresh)="getLiquidityHistory()" />
               </div>
               <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                  <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                <table class="w-full text-sm text-left text-gray-700">
+                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
                     <tr>
                       <th class="px-6 py-2 text-left">Date</th>
                       <th class="px-6 py-2 text-left">Action</th>
@@ -1102,14 +1113,14 @@
                       <th class="px-6 py-2 text-left">Reference</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-100">
+                  <tbody>
                     @if (liquidityHistoryLoading()) {
                       <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">Loading…</td></tr>
                     } @else if (liquidityHistory().length === 0) {
                       <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">No liquidity changes recorded.</td></tr>
                     } @else {
-                      @for (row of pagedLiqHistory(); track row.trx_id) {
-                        <tr>
+                      @for (row of pagedLiqHistory(); track row.trx_id; let isEven = $even) {
+                        <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                           <td class="px-6 py-2 text-gray-500 whitespace-nowrap">{{ row.start_time ? (row.start_time * 1000 | date:'dd/MM/yyyy HH:mm:ss') : '—' }}</td>
                           <td class="px-6 py-2">
                             <span class="px-2 py-0.5 rounded-full text-xs font-medium"
@@ -1222,6 +1233,7 @@
 <app-modal-service-state></app-modal-service-state>
 <app-modal-service-validator></app-modal-service-validator>
 <app-modal-service-payment-processor></app-modal-service-payment-processor>
+<app-modal-service-clearing-house></app-modal-service-clearing-house>
 <app-modal-service-custodian></app-modal-service-custodian>
 <app-modal-service-fee-config></app-modal-service-fee-config>
 <app-metadata-edit-modal></app-metadata-edit-modal>

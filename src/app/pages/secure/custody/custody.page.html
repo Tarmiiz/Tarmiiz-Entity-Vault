@@ -18,8 +18,8 @@
           </tr>
         </thead>
         <tbody>
-          @for (s of pagedMyServices(); track s.address; let i = $index) {
-            <tr [class.bg-gray-50]="i % 2 === 1" class="cursor-pointer hover:bg-blue-50" (click)="gotoService(s.address)">
+          @for (s of pagedMyServices(); track s.address; let i = $index; let isEven = $even) {
+            <tr class="border-b cursor-pointer hover:bg-blue-50 hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoService(s.address)">
               <td class="px-4 py-2 font-medium text-gray-900">{{ s.name }}</td>
               <td class="px-4 py-2 font-mono text-xs">{{ s.address }}</td>
               <td class="px-4 py-2">
@@ -59,8 +59,8 @@
           </tr>
         </thead>
         <tbody>
-          @for (m of pagedMandates(); track (m.service + m.party); let i = $index) {
-            <tr [class.bg-gray-50]="i % 2 === 1">
+          @for (m of pagedMandates(); track (m.service + m.party); let i = $index; let isEven = $even) {
+            <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
               <td class="px-4 py-2 font-mono text-xs">{{ m.service }}</td>
               <td class="px-4 py-2 font-medium text-gray-900">{{ m.partyName || m.party }}</td>
               <td class="px-4 py-2">

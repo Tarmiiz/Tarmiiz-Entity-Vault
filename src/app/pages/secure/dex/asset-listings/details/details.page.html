@@ -164,12 +164,13 @@
                       <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
                       <th class="px-6 py-2">{{ 'dex.listings.details.venues.venueStateCol' | translate }}</th>
                       <th class="px-6 py-2">{{ 'dex.listings.details.venues.approvalCol' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.hostingCol' | translate }}</th>
                       <th class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if (enabledVenues().length === 0) {
-                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="9">{{ 'dex.listings.details.venues.empty' | translate }}</td></tr>
+                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="10">{{ 'dex.listings.details.venues.empty' | translate }}</td></tr>
                     } @else {
                       @for (v of pagedEnabledVenues(); track v.dexService; let i = $index; let isEven = $even) {
                         <tr class="border-b transition-colors"
@@ -195,6 +196,19 @@
                               {{ (v.state === 2 ? 'state.approved' : 'dex.listings.details.venues.awaitingApproval') | translate }}
                             </span>
                           </td>
+                          <!-- The VENUE's own leg — read-only here. Without it a pairing
+                               stalled on the venue looks identical to one stalled at the
+                               regulator, and the issuer has no way to tell who to chase. -->
+                          <td class="px-6 py-2">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.hostState)">
+                              {{ (v.hostState === 2 ? 'state.active'
+                                  : v.hostState === 3 ? 'state.suspended'
+                                  : 'dex.listings.details.venues.awaitingVenue') | translate }}
+                            </span>
+                            @if (v.hostState === 3 && v.hostHaltReason) {
+                              <div class="text-xs text-gray-500 mt-1">{{ v.hostHaltReason }}</div>
+                            }
+                          </td>
                           <td class="px-6 py-2 text-right whitespace-nowrap">
                             @if (canManage() && features.systemFunctionEnabled('dex-listing-venue-manage')) {
                               <button (click)="openTierChange(v)"
@@ -215,9 +229,6 @@
               </div>
               <app-paginator [total]="enabledVenues().length" [page]="enabledVenuesPage()" [pageSize]="enabledVenuesPageSize()"
                 (pageChange)="enabledVenuesPage.set($event)" (pageSizeChange)="enabledVenuesPageSize.set($event)" />
-              <div class="flex items-center px-4 py-2 border-t">
-                <p class="text-xs font-medium text-gray-800">{{ 'dex.listings.details.venues.showing' | translate: { shown: enabledVenues().length, total: enabledVenues().length } }}</p>
-              </div>
             </div>
 
           </div>

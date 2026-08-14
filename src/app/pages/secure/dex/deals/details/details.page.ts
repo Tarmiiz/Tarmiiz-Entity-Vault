@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
@@ -23,6 +23,7 @@ import {
   DEAL_STATUS_LABEL, DEAL_STATUS_CLASS, DEAL_ACTION_LABEL, DEAL_ACTION_CLASS,
   dealSideLabel, dealFundingLabel,
 } from '../deal-labels';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 /**
  * One negotiated deal: its terms, its two escrow legs, and the round-by-round trail.
@@ -40,6 +41,7 @@ import {
   imports: [
     HeaderComponent, LiveIndicatorComponent, RefreshButtonComponent, RouterLink, TranslatePipe, MoneyPipe,
     ModalDealTermsComponent, ModalDealReasonComponent,
+    PaginatorComponent,
   ],
 })
 export class DetailsPage implements OnInit, OnDestroy {
@@ -59,6 +61,10 @@ export class DetailsPage implements OnInit, OnDestroy {
   dealKey = signal<string>('');
   deal = signal<DexDeal | undefined>(undefined);
   rounds = signal<DexDealRound[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  roundsPage = signal(1);
+  roundsPageSize = signal(25);
+  pagedRounds = computed(() => pageSlice(this.rounds(), this.roundsPage(), this.roundsPageSize()));
   refreshing = signal(false);
   tab = signal<'terms' | 'rounds' | 'settlement'>('terms');
 

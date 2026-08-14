@@ -35,8 +35,8 @@
             </tr>
           </thead>
           <tbody>
-            @for (a of pagedAgreements(); track (a.asset + '|' + a.service); let i = $index) {
-              <tr [class.bg-gray-50]="i % 2 === 1">
+            @for (a of pagedAgreements(); track (a.asset + '|' + a.service); let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                 <td class="px-4 py-2">
                   <span class="text-indigo-800 hover:text-indigo-600 cursor-pointer font-medium" (click)="gotoAsset(a.asset)">
                     {{ a.assetName || a.asset }}
@@ -117,8 +117,8 @@
             </tr>
           </thead>
           <tbody>
-            @for (t of pagedTrades(); track t.creditTrxId; let i = $index) {
-              <tr [class.bg-gray-50]="i % 2 === 1">
+            @for (t of pagedTrades(); track t.creditTrxId; let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                 <td class="px-4 py-2 text-xs">{{ t.creditTrxId }}</td>
                 <td class="px-4 py-2">
                   @if (t.direction === 1) {
@@ -155,7 +155,7 @@
         (pageChange)="tradesPage.set($event)" (pageSizeChange)="tradesPageSize.set($event)" />
       @if (tradesTotal() > trades().length) {
         <div class="px-4 py-2 text-xs text-gray-500 border-t border-gray-200">
-          {{ 'settlements.showingCount' | translate: { showing: trades().length, total: tradesTotal() } }}
+          {{ 'common.fetchCapNotice' | translate: { showing: trades().length, total: tradesTotal() } }}
         </div>
       }
     </div>

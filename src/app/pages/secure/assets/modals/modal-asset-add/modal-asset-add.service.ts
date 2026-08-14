@@ -36,6 +36,10 @@ export interface AddAssetData {
   initialSupply?: number;
   creditSettlement: boolean;
   customMetadata: Record<string, string>;
+  // Security identifiers (ISIN, …) for the metadata's server-owned `identifiers` key. Empty
+  // when none was typed — an ISIN is often assigned after issuance, so it is optional here
+  // and the asset details page is the primary place to record it.
+  identifiers: { idType: number; name: string; value: string }[];
   // Optional attachments — uploaded post-create by the list page (documents first, then images).
   documents: WizardDocFile[];
   images: WizardImageFile[];

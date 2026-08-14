@@ -9,11 +9,22 @@
 // must pipe the result through `| translate` (templates) or pass it to
 // translate.instant() (TS).
 export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
+  'entity-edit-identifiers': 'systemFunctionLabels.entityEditIdentifiers',
   'credit-bank-transfer': 'systemFunctionLabels.creditBankTransfer',
   'credit-route-credit':  'systemFunctionLabels.creditRouteCredit',
   'service-add-validator':         'systemFunctionLabels.serviceAddValidator',
   'service-add-payment-processor': 'systemFunctionLabels.serviceAddPaymentProcessor',
   'service-add-custodian':         'systemFunctionLabels.serviceAddCustodian',
+  'service-add-clearing-house':    'systemFunctionLabels.serviceAddClearingHouse',
+  // Clearing (deferred DvP). The CCP's own acts + a member's consent. The three permissionless
+  // triggers (finalize / deliver / fail) have NO key on purpose — anyone may drive them on chain.
+  'clearing-member-admit':         'systemFunctionLabels.clearingMemberAdmit',
+  'clearing-member-accept':        'systemFunctionLabels.clearingMemberAccept',
+  'clearing-member-state':         'systemFunctionLabels.clearingMemberState',
+  'clearing-currency':             'systemFunctionLabels.clearingCurrency',
+  'clearing-cycle-close':          'systemFunctionLabels.clearingCycleClose',
+  'clearing-confirm-pay-in':       'systemFunctionLabels.clearingConfirmPayIn',
+  'clearing-funding-service':      'systemFunctionLabels.clearingFundingService',
   'service-edit-metadata':         'systemFunctionLabels.serviceEditMetadata',
   'service-change-visibility':     'systemFunctionLabels.serviceChangeVisibility',
   'service-change-state':          'systemFunctionLabels.serviceChangeState',
@@ -39,6 +50,7 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'asset-create':                'systemFunctionLabels.assetCreate',
   'asset-register-existing':     'systemFunctionLabels.assetRegisterExisting',
   'asset-edit-metadata':         'systemFunctionLabels.assetEditMetadata',
+  'asset-edit-identifiers':      'systemFunctionLabels.assetEditIdentifiers',
   'asset-mint':                  'systemFunctionLabels.assetMint',
   'asset-burn':                  'systemFunctionLabels.assetBurn',
   'asset-set-price':             'systemFunctionLabels.assetSetPrice',
@@ -62,6 +74,11 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'dex-venue-tier-request':      'systemFunctionLabels.dexVenueTierRequest',
   'dex-listing-create':          'systemFunctionLabels.dexListingCreate',
   'dex-listing-venue-manage':    'systemFunctionLabels.dexListingVenueManage',
+  // The venue operator's leg on a pairing — the mirror of dex-listing-venue-manage
+  // above, which is the ISSUER's side of the same relation.
+  'dex-venue-asset-accept':      'systemFunctionLabels.dexVenueAssetAccept',
+  'dex-venue-asset-halt':        'systemFunctionLabels.dexVenueAssetHalt',
+  'dex-venue-asset-remove':      'systemFunctionLabels.dexVenueAssetRemove',
   'dex-order-place':             'systemFunctionLabels.dexOrderPlace',
   'dex-order-cancel':            'systemFunctionLabels.dexOrderCancel',
   'dex-match':                   'systemFunctionLabels.dexMatch',

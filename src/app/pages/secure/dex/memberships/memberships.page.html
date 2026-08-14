@@ -8,7 +8,17 @@
         <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.memberships.title' | translate }}</h2>
         <p class="text-xs text-gray-600">{{ 'dex.memberships.description' | translate }}</p>
       </div>
-      <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
+      <div class="flex items-center gap-3">
+        <!-- The member initiates now (inverted 2026-08-11): it picks a venue and applies, then
+             the venue consents and the VENUE's regulator approves. -->
+        @if (canAct() && features.systemFunctionEnabled('dex-member-add')) {
+          <button (click)="openRequestModal()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            {{ 'dex.memberships.requestButton' | translate }}
+          </button>
+        }
+        <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
+      </div>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm text-left text-gray-700">
@@ -39,9 +49,9 @@
               </td>
               <td class="px-4 py-2">
                 @if (m.accepted) {
-                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'dex.members.consent.accepted' | translate }}</span>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'dex.members.consent.venueAccepted' | translate }}</span>
                 } @else {
-                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'dex.members.consent.awaiting' | translate }}</span>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'dex.members.consent.awaitingVenue' | translate }}</span>
                 }
               </td>
               <td class="px-4 py-2">
@@ -55,12 +65,6 @@
               <td class="px-4 py-2">{{ formatMs(m.addedAt) }}</td>
               <td class="px-4 py-2">
                 <div class="flex gap-2">
-                  @if (!m.accepted && canAct() && features.systemFunctionEnabled('dex-member-accept')) {
-                    <button (click)="acceptMembership(m)"
-                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
-                      {{ 'dex.memberships.acceptButton' | translate }}
-                    </button>
-                  }
                   @if (canAct() && features.systemFunctionEnabled('dex-member-remove')) {
                     <button (click)="exitMembership(m)"
                       class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
@@ -87,3 +91,50 @@
     </div>
   </div>
 </div>
+
+<!-- Request-to-join. The venue list is filtered SERVER-side to venues we are actually eligible
+     for (same country, live, brokerage-licensed, not already requested, not our own), so an
+     empty picker is a meaningful answer rather than a broken one. -->
+@if (requestModalOpen()) {
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
+      <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-800">{{ 'dex.memberships.requestModal.title' | translate }}</h3>
+        <button (click)="requestModalOpen.set(false)" class="text-gray-400 hover:text-gray-600">&#10005;</button>
+      </div>
+      <div class="p-5 flex flex-col gap-4">
+        <p class="text-xs text-gray-600">{{ 'dex.memberships.requestModal.hint' | translate }}</p>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">{{ 'dex.memberships.requestModal.venue' | translate }}</label>
+          <select [(ngModel)]="requestVenue" class="w-full text-sm border border-gray-300 rounded px-3 py-2 text-gray-800">
+            <option value="">{{ 'common.select' | translate }}</option>
+            @for (v of eligibleVenues(); track v.serviceAddress) {
+              <!-- dex_venues carries ADDRESSES ONLY (no name columns) — the mirror is chain-wide,
+                   so a foreign venue's name is not ours to hold. Append the entity part only when
+                   something resolved it, else every row renders a dangling em-dash. -->
+              <option [value]="v.serviceAddress">{{ v.serviceName || v.serviceAddress }}{{ v.entityName ? ' — ' + v.entityName : '' }}</option>
+            }
+          </select>
+          @if (eligibleVenues().length === 0) {
+            <p class="text-xs text-amber-700 mt-1">{{ 'dex.memberships.requestModal.noVenues' | translate }}</p>
+          }
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">{{ 'dex.memberships.requestModal.service' | translate }}</label>
+          <select [(ngModel)]="requestService" class="w-full text-sm border border-gray-300 rounded px-3 py-2 text-gray-800">
+            <option value="">{{ 'common.select' | translate }}</option>
+            @for (s of ownServices(); track s.address) {
+              <option [value]="s.address">{{ s.name || s.address }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">
+        <button (click)="requestModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitRequest()" [disabled]="!requestVenue || !requestService"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50">{{ 'dex.memberships.requestModal.submit' | translate }}</button>
+      </div>
+    </div>
+  </div>
+}

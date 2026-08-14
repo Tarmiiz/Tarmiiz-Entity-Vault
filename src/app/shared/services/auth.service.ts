@@ -172,6 +172,33 @@ export class AuthService {
 
   }
 
+  /**
+   * `entityInfo` is an in-memory field written by login() and refreshEntityState(), and
+   * the latter only runs from the two dashboard pages. A page RELOAD keeps the session
+   * (it lives in storage) but drops this field, so any consumer that compares against
+   * OUR OWN address silently degraded — the settlements page's isDebtor()/counterpartyOf()
+   * fell through to "not us", which hid the debtor's Confirm Sent / Cancel buttons and
+   * labelled our own outgoing settlements "Incoming" against our own address.
+   * Idempotent and coalesced: one fetch per reload, no-op once populated.
+   */
+  private _entityInfoFetch: Promise<void> | null = null;
+  async ensureEntityInfo(): Promise<void> {
+    if (this.entityInfo?.address) return;
+    if (!this._entityInfoFetch) {
+      this._entityInfoFetch = (async () => {
+        try {
+          const entityData = await this.apiService.vaultGetEntityInfo();
+          if (entityData) {
+            this.entityInfo = entityData;
+            this.entityActive.set(entityData.state === 2);
+          }
+        } catch { /* leave unset — callers must tolerate a missing self address */ }
+        finally { this._entityInfoFetch = null; }
+      })();
+    }
+    return this._entityInfoFetch;
+  }
+
   async refreshEntityState() {
     try {
       const entityData = await this.apiService.vaultGetEntityInfo();

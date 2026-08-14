@@ -171,8 +171,8 @@
               </tr>
             </thead>
             <tbody>
-              @for (member of pagedMembers(); track member.userId; let i = $index) {
-                <tr [class.bg-gray-50]="i % 2 === 1">
+              @for (member of pagedMembers(); track member.userId; let i = $index; let isEven = $even) {
+                <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                   <td class="px-4 py-2 font-mono">{{ member.userId }}</td>
                   <td class="px-4 py-2 text-xs text-gray-500">{{ member.assignedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                   <td class="px-4 py-2 text-right">

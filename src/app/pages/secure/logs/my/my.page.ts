@@ -25,8 +25,8 @@ const AUDIT_CATEGORIES = [
   'Service', 'Subscription', 'Asset', 'Credit', 'DEX', 'Identity',
   'Regulator', 'Validator', 'Payment Processor', 'Connect', 'SignerKey',
   'Directory', 'Validator Endorsement', 'Payment Processor Endorsement',
-  'Custodian', 'Custodian Endorsement', 'Data Provider',
-  'Data Provider Endorsement', 'Currency', 'Distribution', 'ServiceProvider'
+  'Custodian', 'Custodian Endorsement',
+  'Currency', 'Distribution', 'ServiceProvider'
 ];
 
 @Component({

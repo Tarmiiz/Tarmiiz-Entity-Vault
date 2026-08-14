@@ -244,7 +244,7 @@ export class Validator {
 export class EntityServiceProvider {
   constructor (
     public address: string,
-    public spType: number,        // 1=Validator, 2=PaymentProcessor, 3=Custodian
+    public spType: number,        // Regulator Party Type: 1=Validator, 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse
     public spTypeName: string,
     public name: string,
     public level: number,
@@ -284,6 +284,19 @@ export class Entity {
   ) {}
 }
 
+// One identifier held against the entity's own DID. Both halves are carried because they
+// can disagree: `value` is the readable copy in public metadata, `uniqueIdHash` is what is
+// actually bound on-chain, and `matches` is null when only one half exists.
+export class EntityIdentifier {
+  constructor (
+    public idType: number,
+    public name: string,
+    public value: string,
+    public uniqueIdHash: string,
+    public matches: boolean | null = null,
+  ) {}
+}
+
 export class Service {
   constructor (
     public address: string,
@@ -314,7 +327,7 @@ export class Service {
     public custodian: string = '',
     public custodianActive: boolean = true,
     // Entity-declared sub-type for service providers (serviceType 2): 1=Validator,
-    // 2=PaymentProcessor, 3=Custodian, 4=DataProvider; 0 for token issuers.
+    // 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse; 0 for token issuers.
     public providerType: number = 0,
     public providerTypeName: string = '',
     // Nested public contact info (2026-07-20) — derived from the service metadata's `contact`
@@ -459,6 +472,124 @@ export interface CreditSettlement {
   updatedAt: number;
 }
 
+// ─── Clearing (deferred DvP + central clearing) ────────────────────────────────
+//
+// When a clearing house is attached to a venue, a cross-entity fill does NOT settle at match: the
+// cash obligation is NOVATED onto the CCP at trade date and both legs stay escrowed until the
+// netted cycle settles in fiat. Novation is what collapses N bilateral nets into ONE running
+// account per member per currency — which is the whole point of the feature.
+//
+// ⚠ Keys are 0x-hex STRINGS, not numbers: the on-chain ids are keccak-derived uint256 and would
+// lose precision in a JS number (the `dex_deals.deal_key` precedent).
+// ⚠ Money fields are already whole currency units and `amount` is a plain token integer — both
+// converted at the sync plugin's write boundary. Never divide by 1e18 again.
+// ⚠ Every *_at is MILLISECONDS on this mirror — render with utils.formatTime, not formatDate.
+
+// One deferred delivery. status: 1 Pending / 2 Ready / 3 Delivered / 4 Failed.
+export interface ClearingDelivery {
+  deliveryKey: string;
+  // 1 BookTrade / 2 OfferingFill. Read this BEFORE rendering `seller`: it is a SUBSCRIPTION for a
+  // book trade and the ISSUER SERVICE for an offering fill.
+  kind: number;
+  tradeId: string;
+  dexService: string;
+  buyer: string;
+  seller: string;
+  buyEntity: string;
+  sellEntity: string;
+  buyHome: string;
+  sellHome: string;
+  baseAsset: string;
+  amount: number;
+  price: number;
+  currencyCode: number;
+  creditConsumed: number;
+  // The ONLY novated part of creditConsumed — fees are not the CCP's problem.
+  sellerProceeds: number;
+  clearingHouse: string;
+  cycleKey: string | null;
+  deadline: number;
+  status: number;
+  holdCount: number;
+  createdAt: number;
+  blockNumber: number;
+  updatedAt: number;
+}
+
+// A custodian's settlement hold on ONE delivery — a third claim class, because the T20
+// regulatorHold needs FREE balance and so can never overlap escrowed units. It blocks DELIVERY,
+// never the unwind: otherwise a custodian could strand both sides' capital by doing nothing.
+export interface ClearingHold {
+  holdId: number;
+  deliveryKey: string;
+  placedBy: string;
+  reason: string;
+  released: boolean;
+  blockNumber: number;
+  updatedAt: number;
+}
+
+// One netting cycle per (country, currency, clearing house).
+// status: 1 Open / 2 Closed / 3 Finalized / 4 Abandoned.
+export interface ClearingCycle {
+  cycleKey: string;
+  clearingHouse: string;
+  countryCode: number;
+  currencyCode: number;
+  status: number;
+  closesAt: number;
+  blockNumber: number;
+  updatedAt: number;
+}
+
+// A member's SNAPSHOT position in one cycle, taken at close from the Credit Registry's running
+// obligation account — not accumulated per delivery, which is what makes a failed delivery
+// self-correcting. `net` is SIGNED from the member's perspective: negative = the member owes.
+export interface ClearingPosition {
+  cycleKey: string;
+  entity: string;
+  entityName?: string;
+  net: number;
+  paidIn: boolean;
+  blockNumber: number;
+  updatedAt: number;
+  // Live inbound settlements from this member on the pair + cycle currency, newest first — the
+  // evidence behind a pay-in confirmation. Only populated by the pay-in board endpoint.
+  //
+  // ⚠ NOT this cycle's settlement. `net` is a multilateral snapshot; a settlement discharges the
+  // bilateral running pair net. The amounts are not expected to match — never render a delta.
+  settlements?: CreditSettlement[];
+}
+
+// Clearing membership. Novation substitutes the CCP as counterparty to BOTH sides, so the entity
+// must have agreed first: the CCP admits, the member accepts.
+// state: 1 Initiated (admitted, not yet accepted) / 2 Active / 3 Suspended / 4 Removed.
+export interface ClearingMember {
+  clearingHouse: string;
+  clearingHouseName?: string;
+  entity: string;
+  entityName?: string;
+  // The member's service whose credit funds the account. Membership is keyed by ENTITY (obligations
+  // net per entity pair) but an entity holds no credit itself — its type-1 service does.
+  fundingService: string | null;
+  state: number;
+  blockNumber: number;
+  updatedAt: number;
+}
+
+// The running clearing account — ONE per (member, clearing house, currency), in place of one net
+// and one fiat wire per counterparty. Live chain read, not a mirror row.
+// ⚠ `withdrawable` is ADVISORY: releasing an escrow is onlyService, so only the CCP's own
+// ServiceTemplate can do it and nothing on-chain enforces the bound.
+export interface ClearingAccount {
+  clearingHouse: string;
+  entity: string;
+  currencyCode: number;
+  funded: string;
+  owed: string;
+  withdrawable: string;
+}
+
 // Inbound distribution agreement: an (asset, my service) registration with its
 // activation state + this side's consent flag.
 export interface DistributionAgreement {
@@ -497,11 +628,21 @@ export interface PrimaryTrade {
 
 // DEX offering (primary issuance on a venue — IPO facility). kind 2 = Tap;
 // status: 1 Pending, 2 Approved (live), 6 Completed, 7 Cancelled, 8 Rejected.
+// The names are resolved API-side: the mirror joins are tenant-local, so whichever
+// side of the offering is foreign (our asset on someone else's venue, or a hosted
+// asset on our venue) is backfilled from chain. Still fall back to the address in the
+// template — a venue/asset the chain read could not reach comes back empty.
 export interface DexOffering {
   offeringKey: string;
   seq: number;
   baseAsset: string;
+  assetName: string;
+  assetSymbol: string;
   dexService: string;
+  dexServiceName: string;
+  dexServiceEntity: string;
+  dexServiceEntityName: string;
+  currencyName: string;
   issuerService: string;
   kind: number;
   status: number;
@@ -519,19 +660,6 @@ export interface DexOffering {
   maxPerSubscription: number;
   createdAt: number;
   updatedAt: number;
-}
-
-export interface DexOfferingFill {
-  fillId: number;
-  subscription: string;
-  amount: number;
-  price: number;
-  gross: number;
-  venueFee: number;
-  netToIssuer: number;
-  withholdTrxId: number;
-  assetTrxId: number;
-  createdAt: number;
 }
 
 // ─── DEX negotiated OTC deals (2026-08-07) ──────────────────────────────────
@@ -1082,10 +1210,14 @@ export class DexVenue {
     public tier2Approved: boolean = false,
     public tier3Pending: boolean = false,
     public tier3Approved: boolean = false,
-    // 1 = Venue-settled (venue holds client funds), 2 = Member-settled
-    // (traditional exchange — all trading through member brokerages).
-    // Immutable after creation.
-    public settlementMode: number = 1,
+    // Regulator-licensed trading surfaces, replacing the retired `settlementMode` enum
+    // (2026-08-09). `allowP2P` is the DEX-vs-Exchange axis and is DERIVED on chain from
+    // whether the venue's service has a registered payment processor: true = it holds
+    // client cash and takes native subscribers; false = every trader arrives through an
+    // approved member brokerage.
+    public allowP2P: boolean = true,
+    public allowBrokerage: boolean = true,
+    public allowDeals: boolean = true,
   ) {}
 }
 
@@ -1128,6 +1260,13 @@ export class DexAssetListingVenue {
     // Separate from venueState (the venue's own lifecycle) — an Active venue still
     // cannot trade this asset until the asset's regulator approves the pairing.
     public state: number = 1,
+    // The VENUE OPERATOR's own leg, on the platform's standard state ladder:
+    // 1 = Initiated (awaiting the venue's consent), 2 = Active, 3 = Suspended (the
+    // venue halted this one asset). A THIRD distinct thing from the two above —
+    // trading needs state === 2 AND hostState === 2. Read-only for the issuer:
+    // only the venue operator can move it, from its own venue detail page.
+    public hostState: number = 1,
+    public hostHaltReason: string = '',
   ) {}
 }
 
@@ -1189,6 +1328,11 @@ export interface DexOrder {
   currencyName?: string;
   countryCode: number;
   countryName?: string;
+  // Time in force (2026-08-11). MILLISECONDS, like createdAt/updatedAt beside it — the chain
+  // stores unix SECONDS and the sync plugin converts at the write boundary, so render it with
+  // `utils.formatTime`, never `formatDate`. **0 = good-till-cancelled, NOT epoch 0** — branch
+  // on 0 first or every GTC order shows a 1970 deadline.
+  expiresAt?: number;
   createdAt: number;
   updatedAt: number;
 }

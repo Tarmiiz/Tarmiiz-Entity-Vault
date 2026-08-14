@@ -75,6 +75,10 @@ export const routes: Routes = [
         loadComponent: async () => {
           const features = inject(FeaturesService);
           if (!features.loaded()) await features.refresh();
+          // Order matters: a clearing house IS a service provider, so its check runs first.
+          if (features.isClearingHouse()) {
+            return (await import('./pages/secure/dashboard/clearing-house/clearing-house-dashboard.page')).ClearingHouseDashboardPage;
+          }
           return features.isServiceProvider()
             ? (await import('./pages/secure/dashboard/service-provider/service-provider-dashboard.page')).ServiceProviderDashboardPage
             : (await import('./pages/secure/dashboard/dashboard.page')).DashboardPage;
@@ -313,6 +317,15 @@ export const routes: Routes = [
         path: 'settlements',
         loadComponent: () => import('./pages/secure/settlements/settlements.page').then(m => m.SettlementsPage),
         canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('settlements')],
+        data: { allowedRoles: [2, 3] },
+      },
+      // clearing — deferred DvP: the running clearing account, pending deliveries, netting
+      // cycles, the pay-in board, and both sides of clearing membership. One page because a
+      // tenant can be BOTH the clearing house and a member of another one.
+      {
+        path: 'clearing',
+        loadComponent: () => import('./pages/secure/clearing/clearing.page').then(m => m.ClearingPage),
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('clearing')],
         data: { allowedRoles: [2, 3] },
       },
       // distribution — inbound distribution agreements + primary-market trade feed

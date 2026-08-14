@@ -139,6 +139,26 @@
           <!-- Step 3: Metadata -->
           @if (currentStep() === 3) {
             <p class="text-sm text-gray-500 mb-2">{{ 'assets.addModal.wizard.step3Intro' | translate }}</p>
+
+            <!-- ISIN — optional. Hidden when the 'ID Type - Asset' category is not seeded on
+                 this chain, since there would be no idType to submit. -->
+            @if (isinTypeId() > 0) {
+              <div class="mb-4">
+                <label for="isin" class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.isinLabel' | translate }}</label>
+                <input type="text" id="isin" autocomplete="off" [value]="isinValue()"
+                  (input)="onIsinChanged($any($event.target).value)"
+                  placeholder="US0378331005"
+                  class="block w-full border rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs text-black"
+                  [class.border-red-400]="isinError()"
+                  [class.border-gray-300]="!isinError()">
+                @if (isinError()) {
+                  <p class="text-xs text-red-600 mt-1">{{ isinError() | translate }}</p>
+                } @else {
+                  <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.isinHint' | translate }}</p>
+                }
+              </div>
+            }
+
             <div formArrayName="metadata">
               <div class="flex items-center justify-between mb-2">
                 <label class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.additionalMetadataLabel' | translate }}</label>
@@ -184,7 +204,7 @@
                 class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
                 <option value="" disabled selected hidden>{{ 'assets.addModal.wizard.selectCurrencyPlaceholder' | translate }}</option>
                 @for (country of countries(); track country.countryCode) {
-                  <option [value]="country.countryCode">{{ country.nameShort }} ({{ country.currencyCode }})</option>
+                  <option [value]="country.countryCode">{{ country.currencyName }} ({{ country.currencyCode }})</option>
                 }
               </select>
             </div>

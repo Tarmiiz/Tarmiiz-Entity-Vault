@@ -148,7 +148,7 @@
                       <td class="px-4 py-2" colspan="7">{{ 'dex.rfqs.details.noDealers' | translate }}</td>
                     </tr>
                   } @else {
-                    @for (d of dealers(); track d.dealer; let isEven = $even) {
+                    @for (d of pagedDealers(); track d.dealer; let isEven = $even) {
                       <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                         <td class="px-4 py-2">
                           <div class="font-medium text-gray-800">{{ dealerName(d) }}</div>
@@ -194,6 +194,8 @@
                 </tbody>
               </table>
             </div>
+            <app-paginator [total]="dealers().length" [page]="dealersPage()" [pageSize]="dealersPageSize()"
+              (pageChange)="dealersPage.set($event)" (pageSizeChange)="dealersPageSize.set($event)" />
 
             <!-- Awarding does not end the deal — it starts the venue's approval. Saying so
                  here stops "Awarded" being read as "settled". -->

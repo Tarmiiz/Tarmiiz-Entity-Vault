@@ -62,11 +62,18 @@
             {{ 'common.exportPdf' | translate }}
           </button>
         }
-        <!-- <button (click)="openPlaceOrder()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-          Place Order
-        </button> -->
+        <!-- The BROKERAGE trade verb for the P2P book. Enabled 2026-08-11 (built long before,
+             but commented out): a member brokerage places for a CLIENT, so the modal picks a
+             client subscription rather than acting for the house. On a venue with a clearing
+             house attached the resulting fill does not settle at match — it lands on the
+             Clearing page as a pending delivery. -->
+        @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-order-place')) {
+          <button (click)="openPlaceOrder()"
+            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            {{ 'dex.orders.list.placeOrder' | translate }}
+          </button>
+        }
       </div>
     </div>
   </div>
@@ -126,6 +133,14 @@
                   @if (isOpen(o) && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-order-cancel')) {
                     <button (click)="cancel(o, $event)"
                       class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">{{ 'common.cancel' | translate }}</button>
+                  }
+                  <!-- Expire carries NO ownership check and NO System Function: the chain
+                       entrypoint is permissionless and the escrow returns to the order's own
+                       subscription whoever calls, so gating it would only strand capital when
+                       the owner is absent. It is still viewer-gated, being a write. -->
+                  @if (isOpen(o) && isLapsed(o) && userInfo && userInfo.role !== 3) {
+                    <button (click)="expire(o, $event)"
+                      class="text-xs px-2 py-1 rounded bg-amber-700 text-white hover:bg-amber-800 transition-colors ml-1">{{ 'dex.orders.expire' | translate }}</button>
                   }
                 </td>
               </tr>

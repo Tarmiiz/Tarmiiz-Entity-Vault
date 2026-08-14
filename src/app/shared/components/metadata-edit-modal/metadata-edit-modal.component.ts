@@ -83,6 +83,13 @@ export class MetadataEditModalComponent {
       if (key.toLowerCase() === 'contact') {
         return this.translate.instant('shared.metadataEditModal.errors.contactReserved');
       }
+      // `identifiers` is server-owned (the Identifiers section is its only writer) and is
+      // carried forward across this edit, so a free-form row of that name would be silently
+      // discarded — say so instead. `isin` is caught too: it is the value users typed before
+      // the dedicated field existed, and the wizard hint used to suggest it.
+      if (key.toLowerCase() === 'identifiers' || key.toLowerCase() === 'isin') {
+        return this.translate.instant('shared.metadataEditModal.errors.identifiersReserved');
+      }
       if (seen.has(key)) {
         return this.translate.instant('shared.metadataEditModal.errors.duplicateKey', { key });
       }

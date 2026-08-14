@@ -29,6 +29,7 @@ export class ModalServiceAddComponent {
   allValidators = signal<{ address: string; name: string; validationLevel: number; state: number }[]>([]);
   paymentProcessors = signal<{ address: string; name: string; serviceLevel: number; state: number }[]>([]);
   custodians = signal<{ address: string; name: string; state: number }[]>([]);
+  clearingHouses = signal<{ address: string; name: string; state: number }[]>([]);
   readonly SELF_CUSTODY = SELF_CUSTODY_SENTINEL;
   selectedVerificationLevel = signal<number>(Number(DEFAULT_VERIFICATION_LEVEL));
   selectedServiceType = signal<number>(0);
@@ -49,7 +50,7 @@ export class ModalServiceAddComponent {
   isTokenIssuer = computed(() => this.selectedServiceType() === 1);
   // serviceType 2 = Service Provider. The entity DECLARES its sub-type (providerType) here;
   // the regulator confirms it later, after which it appears under that regulator's
-  // validators / payment processors / custodians / data providers list.
+  // validators / payment processors / custodians / clearing houses list.
   isServiceProvider = computed(() => this.selectedServiceType() === 2);
 
   addForm = this.fb.group({
@@ -65,6 +66,7 @@ export class ModalServiceAddComponent {
     validator: [''],
     paymentProcessor: [''],
     custodian: [SELF_CUSTODY_SENTINEL],
+    clearingHouse: [''],
     visibility: [1, Validators.required],
   });
 
@@ -76,7 +78,7 @@ export class ModalServiceAddComponent {
         this.addForm.reset({
           serviceType: '', providerType: '', name: '', description: '', website: '',
           email: '', mobile: '', verificationLevel: DEFAULT_VERIFICATION_LEVEL, regulator: '',
-          validator: '', paymentProcessor: '', custodian: SELF_CUSTODY_SENTINEL, visibility: 1,
+          validator: '', paymentProcessor: '', custodian: SELF_CUSTODY_SENTINEL, clearingHouse: '', visibility: 1,
         });
         this.loadServiceTypes();
         this.loadProviderTypes();
@@ -84,6 +86,7 @@ export class ModalServiceAddComponent {
         this.loadRegulators();
         this.loadValidators();
         this.loadPaymentProcessors();
+        this.loadClearingHouses();
       }
     });
 
@@ -103,6 +106,7 @@ export class ModalServiceAddComponent {
         this.addForm.get('validator')!.setValue('');
         this.addForm.get('paymentProcessor')!.setValue('');
         this.addForm.get('custodian')!.setValue('');
+        this.addForm.get('clearingHouse')!.setValue('');
         // Verification level only applies to token-issuer services — drop the requirement for others.
         verificationLevel.setValue('');
         verificationLevel.clearValidators();
@@ -145,12 +149,21 @@ export class ModalServiceAddComponent {
     }
   }
 
+  // The 'Regulator Party Type' catalog is broader than what a service may DECLARE itself as:
+  // ids 1..4 (Validator / PaymentProcessor / Custodian / ClearingHouse) are the registrable
+  // band, while Consultant(5) and Appraiser(6) are catalog entries with no RegulatorsProxy add
+  // path. ServiceTemplate.initialize rejects anything above 4, so offering one here would just
+  // produce a revert at submit. Widen this bound when — and only when — a new type gets a
+  // PT_ constant + wrapper block on chain.
+  private static readonly MAX_REGISTRABLE_PROVIDER_TYPE = 4;
+
   async loadProviderTypes() {
     const data = await this.apiService.vaultGetGlobalVariables();
     if (data) {
       this.providerTypes.set(
         data
-          .filter((item: any) => item.category === 'Regulator Party Type')
+          .filter((item: any) => item.category === 'Regulator Party Type'
+            && Number(item.variable_id) <= ModalServiceAddComponent.MAX_REGISTRABLE_PROVIDER_TYPE)
           .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
       );
     }
@@ -177,8 +190,8 @@ export class ModalServiceAddComponent {
   }
 
   // Set of the entity's curated, active service-provider addresses for a given type
-  // (1=Validator, 2=PaymentProcessor, 3=Custodian). Service creation may only pick from
-  // this admin-curated subset — enforced on-chain too.
+  // (1=Validator, 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse). Service creation may
+  // only pick from this admin-curated subset — enforced on-chain too.
   private async curatedAddresses(spType: number): Promise<Set<string>> {
     const data = await this.apiService.vaultGetServiceProviders(spType, 'active');
     return new Set((data?.providers ?? []).map((p: any) => p.address.toLowerCase()));
@@ -196,6 +209,26 @@ export class ModalServiceAddComponent {
     if (data?.paymentProcessors) {
       this.paymentProcessors.set(data.paymentProcessors.filter((s: any) => s.state === 2 && curated.has(s.address.toLowerCase())));
     }
+  }
+
+  // Curated + regulator-authorised CCPs, same intersection the detail-page picker applies:
+  // ServiceTemplate requires BOTH at seed time, so offering one that fails either would only
+  // produce a revert at submit. Curated spType is 4 — the same id used to attach.
+  async loadClearingHouses() {
+    const [data, curated] = await Promise.all([
+      this.apiService.vaultGetClearingHouses(1, 50),
+      this.curatedAddresses(4),
+    ]);
+    if (data?.clearingHouses) {
+      this.clearingHouses.set(data.clearingHouses.filter((c: any) => c.state === 2 && curated.has(c.address.toLowerCase())));
+    } else {
+      this.clearingHouses.set([]);
+    }
+  }
+
+  getClearingHouseName(): string {
+    const c = this.clearingHouses().find(c => c.address === this.addForm.get('clearingHouse')?.value);
+    return c ? (c.name || c.address) : 'None';
   }
 
   async loadCustodians(regulator: string) {
@@ -315,6 +348,9 @@ export class ModalServiceAddComponent {
       paymentProcessor: formValue.paymentProcessor ?? '',
       // Custodian is only meaningful for type-1 services. Non-type-1 send empty (treated as unset by the API).
       custodian: Number(formValue.serviceType) === 1 ? (formValue.custodian || SELF_CUSTODY_SENTINEL) : '',
+      // Type-1 only, and deliberately NO default: an empty clearing set is the meaningful
+      // "this market's credit is final", not an omission to be filled in.
+      clearingHouse: Number(formValue.serviceType) === 1 ? (formValue.clearingHouse || '') : '',
       visibility: Number(formValue.visibility) || 1,
     };
     this.addServiceService.confirm(data);

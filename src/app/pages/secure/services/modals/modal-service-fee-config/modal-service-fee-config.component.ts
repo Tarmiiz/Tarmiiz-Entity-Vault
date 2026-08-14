@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, effect, computed, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, effect, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ethers } from 'ethers';
@@ -32,6 +32,9 @@ export class ModalServiceFeeConfigComponent {
   private fb: FormBuilder = inject(FormBuilder);
 
   submitError = signal<string>('');
+  // True while the form is showing an INHERITED value the operator has not changed.
+  inheriting = signal<boolean>(false);
+  dirty = signal<boolean>(false);
 
   form = this.fb.group({
     buyFeeMode:     ['0', Validators.required],
@@ -42,20 +45,35 @@ export class ModalServiceFeeConfigComponent {
     sellFeeBearing: ['0'],
   });
 
-  buyMode  = computed(() => Number(this.form.controls.buyFeeMode.value) || 0);
-  sellMode = computed(() => Number(this.form.controls.sellFeeMode.value) || 0);
+  // Mirrors of the two mode controls. Signals, NOT computed() over control.value — a
+  // reactive-form value is not a signal, so a computed over it has no dependency to
+  // invalidate on: it caches its first read forever and the Value/Bearing inputs the
+  // template gates on it never appear again after an open that showed None.
+  buyMode  = signal(0);
+  sellMode = signal(0);
 
   constructor() {
     effect(() => {
       const input = this.modal.input();
       if (!input || !this.modal.isVisible()) return;
       this.submitError.set('');
-      const fc = input.feeConfig;
+      this.dirty.set(false);
+      // When this asset currently INHERITS, pre-fill from the service default so the operator
+      // sees what is actually being charged — but remember it, so Save can stay disabled
+      // until something changes. Opening and saving an inherited row must NOT silently pin
+      // an override.
+      const inheriting = input.mode !== 'default' && input.isSet === false;
+      this.inheriting.set(inheriting);
+      const fc = input.feeConfig ?? (inheriting ? (input.inherited ?? null) : null);
       if (!fc) {
+        // emitEvent: false — a pre-fill is not an operator edit. Letting reset() emit
+        // would flip `dirty` on open and defeat the inherited-row guard below.
         this.form.reset({
           buyFeeMode: '0', buyFeeValue: '', buyFeeBearing: '0',
           sellFeeMode: '0', sellFeeValue: '', sellFeeBearing: '0',
-        });
+        }, { emitEvent: false });
+        this.buyMode.set(0);
+        this.sellMode.set(0);
         return;
       }
       this.form.reset({
@@ -65,16 +83,22 @@ export class ModalServiceFeeConfigComponent {
         sellFeeMode: String(fc.sellFeeMode ?? 0),
         sellFeeValue: this.fromOnChain(fc.sellFeeMode, fc.sellFeeValue),
         sellFeeBearing: String(fc.sellFeeBearing ?? 0),
-      });
+      }, { emitEvent: false });
+      this.buyMode.set(Number(fc.buyFeeMode ?? 0) || 0);
+      this.sellMode.set(Number(fc.sellFeeMode ?? 0) || 0);
     });
 
+    this.form.valueChanges.subscribe(() => this.dirty.set(true));
+
     this.form.controls.buyFeeMode.valueChanges.subscribe(m => {
+      this.buyMode.set(Number(m) || 0);
       if (m === '0') {
         this.form.controls.buyFeeValue.setValue('');
         this.form.controls.buyFeeBearing.setValue('0');
       }
     });
     this.form.controls.sellFeeMode.valueChanges.subscribe(m => {
+      this.sellMode.set(Number(m) || 0);
       if (m === '0') {
         this.form.controls.sellFeeValue.setValue('');
         this.form.controls.sellFeeBearing.setValue('0');
@@ -90,7 +114,15 @@ export class ModalServiceFeeConfigComponent {
     return String(value);
   }
 
+  // The DEFAULT slot rejects Fixed on chain: `gross` is certificates x price on the primary
+  // market but amount x price with no 1e18 division on the DEX, so one fixed number cannot be
+  // right in both roles the single slot serves. Say so here rather than surfacing a revert.
+  isDefaultMode(): boolean { return this.modal.input()?.mode === 'default'; }
+
   validateSide(mode: number, valueStr: string): string {
+    if (this.isDefaultMode() && mode === 2) {
+      return 'A Fixed fee cannot be used as the service default — set it on the asset instead.';
+    }
     if (mode === 0) {
       if (valueStr && valueStr !== '0') return 'When mode is None, value must be empty or 0.';
       return '';
@@ -105,6 +137,8 @@ export class ModalServiceFeeConfigComponent {
   }
 
   isValid(): boolean {
+    // An inherited row needs an actual edit before it can be saved — see the pre-fill note.
+    if (this.inheriting() && !this.dirty()) return false;
     const v = this.form.value;
     if (this.validateSide(Number(v.buyFeeMode),  v.buyFeeValue  ?? '')) return false;
     if (this.validateSide(Number(v.sellFeeMode), v.sellFeeValue ?? '')) return false;

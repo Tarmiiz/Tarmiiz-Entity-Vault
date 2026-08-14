@@ -12,6 +12,7 @@ export const MENU_LABELS: Record<string, string> = {
   transactions:   'menuLabels.transactions',
   credit:         'menuLabels.credit',
   settlements:    'menuLabels.settlements',
+  clearing:       'menuLabels.clearing',
   distribution:   'menuLabels.distribution',
   analytics:      'menuLabels.analytics',
   dex:            'menuLabels.dex',

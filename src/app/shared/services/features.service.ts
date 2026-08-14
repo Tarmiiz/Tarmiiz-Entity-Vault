@@ -7,6 +7,11 @@ import { SessionService } from './session.service';
 // Variables category (see the Entity API's MODE_MENU).
 const MODE_TOKEN_ISSUER = 1;
 
+// The CCP — the type-5 party that novates. It gets its own dashboard because none of the
+// service-provider home's content (service portfolio, provider types) is what a clearing house
+// operates on: cycles, the pay-in board, deliveries and members are.
+const MODE_CLEARING_HOUSE = 7;
+
 @Injectable({ providedIn: 'root' })
 export class FeaturesService {
   private apiService = inject(ApiService);
@@ -59,6 +64,17 @@ export class FeaturesService {
    * issuer-service concepts and stay hidden for every provider type.
    */
   isServiceProvider = (): boolean => (this.mode() ?? MODE_TOKEN_ISSUER) !== MODE_TOKEN_ISSUER;
+
+  /**
+   * True for a clearing-house tenant. Used ONLY to pick the dashboard variant.
+   *
+   * ⚠ Deliberately a MODE check, not `menuEnabled('clearing')` — the two answer different
+   * questions. `clearing` is allowed under mode 1 as well (a Token Issuer that is a clearing
+   * MEMBER legitimately enables it), so keying the home page on the menu key would hand an
+   * issuer the CCP dashboard. Every other per-provider-type decision should still gate on a
+   * menu key, per `isServiceProvider`'s note.
+   */
+  isClearingHouse = (): boolean => this.mode() === MODE_CLEARING_HOUSE;
 
   /** Whether a toggleable key is permitted by the deployment's entity-type mode. */
   modeAllows(key: string): boolean {

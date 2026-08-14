@@ -224,6 +224,7 @@ export class ListPage implements OnInit {
         validator: data.validator || '',
         payment_processor: data.paymentProcessor || '',
         custodian: data.custodian || '',
+        clearing_house: data.clearingHouse || '',
         visibility: data.visibility || 1,
       });
       if (result) {

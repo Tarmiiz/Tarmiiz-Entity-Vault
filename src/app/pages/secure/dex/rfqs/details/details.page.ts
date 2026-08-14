@@ -24,6 +24,7 @@ import {
   rfqSideLabel, rfqDealerSideLabel, rfqFundingLabel, isBetterQuote,
 } from '../rfq-labels';
 import { DEAL_STATUS_LABEL, DEAL_STATUS_CLASS } from '../../deals/deal-labels';
+import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
 
 /**
  * One request for quote: its fixed terms, the dealer board, and the quotes themselves.
@@ -45,6 +46,7 @@ import { DEAL_STATUS_LABEL, DEAL_STATUS_CLASS } from '../../deals/deal-labels';
   imports: [
     HeaderComponent, LiveIndicatorComponent, RefreshButtonComponent, RouterLink, TranslatePipe, MoneyPipe,
     ModalRfqQuoteComponent, ModalDealReasonComponent,
+    PaginatorComponent,
   ],
 })
 export class DetailsPage implements OnInit, OnDestroy {
@@ -64,6 +66,10 @@ export class DetailsPage implements OnInit, OnDestroy {
   requestKey = signal<string>('');
   request = signal<DexRfqRequest | undefined>(undefined);
   dealers = signal<DexRfqDealer[]>([]);
+  /** 1-based, per frontend Standard 1.5. */
+  dealersPage = signal(1);
+  dealersPageSize = signal(25);
+  pagedDealers = computed(() => pageSlice(this.dealers(), this.dealersPage(), this.dealersPageSize()));
   quotes = signal<DexDeal[]>([]);
   refreshing = signal(false);
   tab = signal<'terms' | 'board'>('board');

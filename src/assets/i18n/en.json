@@ -1,4 +1,20 @@
 {
+  "identifiers": {
+    "addTitle": "Add Identifier",
+    "editTitle": "Edit Identifier",
+    "idType": "ID Type",
+    "value": "Value",
+    "valuePlaceholder": "Enter the identifier value",
+    "typeLocked": "The ID type cannot be changed. Add a new identifier instead.",
+    "reason": "Reason (optional)",
+    "reasonPlaceholder": "Why this identifier is being recorded",
+    "unverifiedWarning": "This identifier is self-declared. It is recorded but is not verified until a validator or your regulator attests to it.",
+    "errors": {
+      "required": "A value is required.",
+      "invalidLei": "Invalid LEI. Expected 20 characters ending in two check digits (ISO 17442).",
+      "invalidIsin": "Invalid ISIN. Expected 12 characters (ISO 6166): a 2-letter country prefix, 9-character security identifier and a check digit."
+    }
+  },
   "media": {
     "tabTitle": "Images",
     "heading": "Images",
@@ -114,7 +130,14 @@
     "first": "First page",
     "last": "Last page",
     "unknown": "Unknown",
-    "status": "Status"
+    "status": "Status",
+    "fetchCapNotice": "Only the first {{showing}} of {{total}} records are loaded",
+    "accept": "Accept",
+    "reject": "Reject",
+    "reset": "Reset",
+    "hide": "Hide",
+    "updated": "Updated",
+    "select": "Select…"
   },
   "state": {
     "all": "All",
@@ -209,7 +232,8 @@
     "dexOfferings": "Offerings",
     "dexMemberships": "Memberships",
     "dexDeals": "Negotiated Deals",
-    "dexRfqs": "Requests for Quote"
+    "dexRfqs": "Requests for Quote",
+    "clearing": "Clearing"
   },
   "login": {
     "title": "Sign In",
@@ -493,6 +517,7 @@
         "addValidator": "Add Validator",
         "addPaymentProcessor": "Add Payment Processor",
         "addCustodian": "Add Custodian",
+        "addClearingHouse": "Add Clearing House",
         "showing": "Showing {{showing}} of Total {{total}} Providers",
         "active": "Active",
         "inactive": "Inactive",
@@ -551,7 +576,8 @@
         "updateVisibilityError": "Failed to update visibility.",
         "partyLabelValidator": "Validator",
         "partyLabelPaymentProcessor": "Payment Processor",
-        "partyLabelCustodian": "Custodian"
+        "partyLabelCustodian": "Custodian",
+        "partyLabelClearingHouse": "Clearing House"
       },
       "assets": {
         "editVenueFees": "Edit Venue Fees",
@@ -661,7 +687,8 @@
         "validator": "Validator",
         "validatorOptional": "Validator (optional)",
         "verificationLevel": "Verification Level",
-        "visibility": "Visibility"
+        "visibility": "Visibility",
+        "clearingHouse": "Clearing House"
       },
       "header": "Add Service",
       "intro": {
@@ -697,7 +724,9 @@
       "submit": "Create Service",
       "useEntityInfo": "Use Entity Info",
       "visibilityPrivate": "Private",
-      "visibilityPublic": "Public"
+      "visibilityPublic": "Public",
+      "noClearingHouse": "None — credit is final here",
+      "clearingHouseNote": "Optional. Attach a central counterparty if cross-entity trades on this service must settle in a netted cycle. Leave as None when this market’s credit is final and every fill should settle immediately."
     },
     "custodianModal": {
       "description": "Select a custodian to attach to this service. A service may hold several — its assets are held by all of them.",
@@ -719,6 +748,7 @@
     "feeConfigModal": {
       "bpsNote": "100 bps = 1% · cap 2000 bps = 20%.",
       "buySide": "Buy Side",
+      "defaultTitle": "Service Fees — Venue Default",
       "distributedBy": "Service: {{name}}",
       "info": {
         "line1": "Fee charged by this service on credit-settled flows of this asset (primary distribution and DEX trades alike).",
@@ -761,6 +791,13 @@
       "suspendedSuffix": "(Suspended)",
       "validatorInactive": "Validator inactive",
       "validatorInactiveTooltip": "One or more attached validators are suspended or no longer endorsed by the regulator."
+    },
+    "clearingHouseModal": {
+      "label": "Clearing House",
+      "submit": "Add",
+      "title": "Add Clearing House",
+      "placeholder": "Select a clearing house…",
+      "empty": "No clearing houses available — register one in Service Providers first, or every eligible clearing house is already attached."
     },
     "paymentProcessorModal": {
       "label": "Payment Processor",
@@ -904,6 +941,17 @@
         "updateFailedDefault": "Failed to update metadata.",
         "updatingMetadata": "Updating metadata...",
         "value": "Value"
+      },
+      "identifiers": {
+        "title": "Identifiers",
+        "add": "Add Identifier",
+        "empty": "No security identifier recorded yet.",
+        "noTypes": "No asset ID types are configured on this network.",
+        "allHeld": "This asset already carries every available identifier type.",
+        "saving": "Saving identifier...",
+        "removing": "Removing identifier...",
+        "removeTitle": "Remove Identifier",
+        "removeMessage": "Remove the {{name}} identifier \"{{value}}\" from this asset?"
       },
       "publicView": {
         "button": "View Asset",
@@ -1216,7 +1264,9 @@
         "standardLabel": "Standard",
         "step1Intro": "Select the asset standard and supply mode.",
         "step2Intro": "Define the asset's name, symbol, and description.",
-        "step3Intro": "Add free-form key/value pairs stored as JSON alongside the description (e.g. ISIN, share class, inception date). All fields are optional.",
+        "isinLabel": "ISIN (optional)",
+        "isinHint": "Leave blank if the ISIN has not been assigned yet — you can record it from the asset details page at any time.",
+        "step3Intro": "Add free-form key/value pairs stored as JSON alongside the description (e.g. share class, inception date). All fields are optional.",
         "step4Intro": "Select which service will host this asset and its denomination currency.",
         "step5Intro": "Set the governance addresses, regulator, and credit settlement option.",
         "step6Intro": "Review the details below before creating the asset.",
@@ -2682,7 +2732,8 @@
       "info": "Information",
       "metadata": "Metadata",
       "operator": "Operator",
-      "api": "API"
+      "api": "API",
+      "identifiers": "Identifiers"
     },
     "info": {
       "name": "Name",
@@ -2737,7 +2788,20 @@
       "saveChanges": "Save Changes",
       "title": "Edit Metadata"
     },
-    "updateFailedTitle": "Update Failed"
+    "updateFailedTitle": "Update Failed",
+    "identifiers": {
+      "intro": "Identifiers registered against this entity's on-chain identity. Each value is also bound as a hash, which is unique across the whole platform.",
+      "add": "Add Identifier",
+      "empty": "No identifiers recorded yet.",
+      "onChain": "On-chain",
+      "bound": "Bound",
+      "mismatch": "Out of sync",
+      "notBound": "Not bound",
+      "hashOnly": "Hash only",
+      "saving": "Recording identifier...",
+      "partialTitle": "Partly saved",
+      "partialMessage": "The identifier was bound on-chain but the readable value could not be stored. Save it again to finish."
+    }
   },
   "approvals": {
     "title": "Approvals",
@@ -2964,7 +3028,9 @@
           "venueCol": "Venue",
           "venueStateCol": "Venue State",
           "approvalCol": "Regulator Approval",
-          "awaitingApproval": "Awaiting Approval"
+          "awaitingApproval": "Awaiting Approval",
+          "hostingCol": "Hosting",
+          "awaitingVenue": "Awaiting Venue"
         },
         "hostedNotice": "This listing belongs to another issuer and is hosted on one of your venues. Listing changes (tiers, venues) can only be made by the issuer."
       },
@@ -3120,7 +3186,8 @@
         "placingOrder": "Placing order...",
         "searchPlaceholder": "ID, asset, venue, sub...",
         "showing": "Showing {{shown}} of Total {{total}} Orders",
-        "venuePlaceholder": "venue name or addr"
+        "venuePlaceholder": "venue name or addr",
+        "placeOrder": "Place Order"
       },
       "placeModal": {
         "amountHint": "Token quantity (whole units).",
@@ -3179,9 +3246,26 @@
       },
       "status": {
         "cancelled": "Cancelled",
+        "expired": "Expired",
         "filled": "Filled",
         "open": "Open",
         "partial": "Partially Filled"
+      },
+      "expire": "Expire",
+      "expireConfirm": {
+        "title": "Expire order",
+        "message": "Close expired order #{{id}}? Locked credit or asset will be released back to the subscription that placed it. Anyone may do this once an order has lapsed.",
+        "confirm": "Expire Order",
+        "loading": "Expiring order..."
+      },
+      "place": {
+        "timeInForce": "Time in force",
+        "tifGtc": "Good till cancelled",
+        "tifGtd": "Expires at",
+        "tifHint": "A good-till-cancelled order rests until you cancel it. With a deadline set, the order stops being matchable and stops being quoted once it passes — then anyone can close it and release the locked funds.",
+        "expiryRequired": "Pick a date and time, or choose Good till cancelled.",
+        "expiryInvalid": "That is not a valid date and time.",
+        "expiryPast": "The deadline is already in the past."
       }
     },
     "trades": {
@@ -3240,21 +3324,31 @@
         "selectService": "Select a service...",
         "service": "Service",
         "serviceHint": "The service must have an attached payment processor to be registered as a venue.",
-        "settlementMode": "Settlement Mode",
-        "venueSettled": "Venue-settled",
-        "venueSettledHint": "The venue holds client funds (requires a payment processor).",
-        "memberSettled": "Member-settled",
-        "memberSettledHint": "An exchange; clients trade through member brokerages (no payment processor needed).",
-        "settlementModeImmutable": "The settlement mode cannot be changed after the venue is created.",
         "suspendedNotice": "The regulator may suspend a venue at any time; trading halts until the suspension is lifted.",
-        "title": "Create Venue"
+        "title": "Create Venue",
+        "surfaceNotice": "Whether this venue can run a native order book is set automatically from whether its service has a registered payment processor. Its regulator can adjust the licensed surfaces afterwards."
       },
       "details": {
         "assetsTable": {
           "enabled": "Enabled",
           "footer": "Showing {{shown}} of Total {{total}} Assets",
           "issuer": "Issuer",
-          "noAssets": "No assets enabled on this venue yet."
+          "noAssets": "No assets enabled on this venue yet.",
+          "hosting": "Hosting",
+          "accept": "Accept",
+          "halt": "Halt",
+          "resume": "Resume",
+          "fees": "Fees (buy / sell)",
+          "feeOverride": "Override",
+          "feeInherited": "Inherited",
+          "feeNone": "None",
+          "editFees": "Edit fees",
+          "resetFee": "Reset",
+          "resetFeeTitle": "Reset to default fee?",
+          "resetFeeMessage": "Remove the fee override on {{asset}}? It will inherit the venue default from then on.",
+          "feeError": "The fee could not be updated. Please try again.",
+          "defaultFees": "Default fees",
+          "defaultFeeHint": "Assets without their own override are charged the venue default fee."
         },
         "changeState": "Change State",
         "deactivateConfirm": "Deactivate",
@@ -3291,7 +3385,31 @@
           "tradeId": "Trade ID"
         },
         "unnamedService": "Unnamed Service",
-        "updatingState": "Updating venue state..."
+        "updatingState": "Updating venue state...",
+        "accepting": "Accepting asset…",
+        "halting": "Halting asset…",
+        "resuming": "Resuming asset…",
+        "removingAsset": "Removing asset…",
+        "acceptModal": {
+          "title": "Accept this asset?",
+          "message": "Your venue will host {{asset}}. Trading still requires the asset regulator’s approval of the pairing."
+        },
+        "rejectModal": {
+          "title": "Reject this request?",
+          "message": "The request to list {{asset}} on your venue will be removed. The issuer can request it again later."
+        },
+        "removeAssetModal": {
+          "title": "Remove this asset?",
+          "message": "{{asset}} will no longer be hosted on your venue and its pairing will be deleted."
+        },
+        "haltModal": {
+          "haltTitle": "Halt this asset",
+          "resumeTitle": "Resume this asset",
+          "haltSubtitle": "Stop trading {{asset}} on your venue without pausing the whole venue.",
+          "resumeSubtitle": "Resume trading {{asset}} on your venue.",
+          "reasonHint": "Recorded on-chain in the event and shown to the issuer and its regulator.",
+          "freezeNote": "A halt blocks new orders, deals, offerings and settlement of resting orders. Cancelling an order always stays available, so no funds can be trapped."
+        }
       },
       "fullTitle": "DEX Venues",
       "list": {
@@ -3325,14 +3443,14 @@
         "scopeVenue": "Venue",
         "withScope": "Tier {{n}} — {{scope}}"
       },
-      "settlementMode": {
-        "venueSettled": "Venue-settled",
-        "memberSettled": "Member-settled"
+      "surface": {
+        "dex": "DEX (holds client cash)",
+        "exchange": "Exchange (member-routed)"
       }
     },
     "members": {
       "title": "Venue Members",
-      "description": "Foreign member services (brokerages) admitted to trade at this venue. A member must accept the invitation and the venue's regulator must approve it before its subscriptions can trade here.",
+      "description": "Membership requests from foreign services (brokerages) that want to trade at this venue. Accept a request to consent; the venue's regulator must then approve it before that member's subscriptions can trade here.",
       "addButton": "Add Member",
       "adding": "Inviting member...",
       "removing": "Removing member...",
@@ -3347,7 +3465,11 @@
       },
       "consent": {
         "accepted": "Accepted",
-        "awaiting": "Awaiting consent"
+        "awaiting": "Awaiting consent",
+        "acceptedByUs": "Accepted",
+        "awaitingUs": "Awaiting your consent",
+        "venueAccepted": "Venue accepted",
+        "awaitingVenue": "Awaiting venue"
       },
       "addModal": {
         "title": "Add Member",
@@ -3362,11 +3484,16 @@
         "title": "Remove member",
         "message": "Remove \"{{name}}\" from this venue? Its subscriptions will no longer be able to trade here.",
         "confirm": "Remove"
-      }
+      },
+      "accept": "Accept",
+      "reject": "Reject",
+      "acceptTitle": "Accept membership request",
+      "acceptConfirm": "Accept {{member}} as a member of this venue? Its clients will trade here, and their escrow will be attributed to it. Your regulator still has to approve.",
+      "accepting": "Accepting…"
     },
     "memberships": {
       "title": "My Venue Memberships",
-      "description": "Memberships your services hold at foreign trading venues. Accept an invitation to consent; the venue's regulator must then approve it before your subscriptions can trade there.",
+      "description": "Memberships your services hold at foreign trading venues. Request to join a venue; the venue consents first, then its regulator approves, before your subscriptions can trade there.",
       "empty": "Your services hold no venue memberships yet.",
       "footer": "Showing {{shown}} Memberships",
       "acceptButton": "Accept",
@@ -3387,6 +3514,16 @@
         "title": "Exit membership",
         "message": "Exit the membership at \"{{venue}}\"? Your subscriptions will no longer be able to trade there.",
         "confirm": "Exit"
+      },
+      "requestButton": "Request to Join",
+      "requesting": "Sending request…",
+      "requestModal": {
+        "title": "Request to join a venue",
+        "hint": "Pick a venue and the service that will trade there. The venue consents first, then its regulator approves.",
+        "venue": "Venue",
+        "service": "My service",
+        "submit": "Send request",
+        "noVenues": "No venues are open to you right now. A venue must be in your country, trading, and licensed to host brokerages."
       }
     },
     "tierFallback": "Tier {{n}}",
@@ -3687,7 +3824,8 @@
         "errPrice": "Enter a price greater than zero.",
         "submit": "Submit Quote"
       }
-    }
+    },
+    "deferredHint": "If this venue clears through a clearing house, the trade will not settle immediately — it appears on the Clearing page as a pending delivery until the netted cycle settles."
   },
   "menuLabels": {
     "analytics": "Analytics",
@@ -3707,7 +3845,8 @@
     "transactions": "Transactions",
     "variables": "System Variables",
     "settlements": "Settlements",
-    "distribution": "Distribution"
+    "distribution": "Distribution",
+    "clearing": "Clearing"
   },
   "serviceProviders": {
     "actions": {
@@ -3722,6 +3861,7 @@
       "selectPlaceholder": "Select a provider…",
       "title": "Add Service Provider",
       "typeCustodian": "Custodian",
+      "typeClearingHouse": "Clearing House",
       "typePaymentProcessor": "Payment Processor",
       "typeValidator": "Validator"
     },
@@ -3761,6 +3901,7 @@
     "exportExcel": "Export Excel",
     "exportPdf": "Export PDF",
     "serviceAddCustodian": "Service - Add Custodian",
+    "serviceAddClearingHouse": "Service - Add Clearing House",
     "serviceAddPaymentProcessor": "Service - Add Payment Processor",
     "serviceAddValidator": "Service - Add Validator",
     "serviceChangeState": "Service - Change State",
@@ -3781,6 +3922,7 @@
     "assetCreate": "Assets - Add Asset",
     "assetRegisterExisting": "Assets - Register Existing Asset",
     "assetEditMetadata": "Asset - Edit Metadata",
+    "assetEditIdentifiers": "Asset - Edit Identifiers",
     "assetMint": "Asset - Mint Supply",
     "assetBurn": "Asset - Burn Supply",
     "assetSetPrice": "Asset - Add Price",
@@ -3818,7 +3960,18 @@
     "dexRfqCreate": "DEX - Create RFQ",
     "dexRfqQuote": "DEX - Quote RFQ",
     "dexRfqAward": "DEX - Award RFQ",
-    "dexRfqCancel": "DEX - Cancel RFQ"
+    "dexRfqCancel": "DEX - Cancel RFQ",
+    "dexVenueAssetAccept": "DEX: Accept Asset on My Venue",
+    "dexVenueAssetHalt": "DEX: Halt / Resume Asset on My Venue",
+    "dexVenueAssetRemove": "DEX: Remove Asset from My Venue",
+    "clearingMemberAdmit": "Clearing - Admit member",
+    "clearingMemberAccept": "Clearing - Accept membership",
+    "clearingMemberState": "Clearing - Change member state",
+    "clearingCurrency": "Clearing - Manage currencies",
+    "clearingCycleClose": "Clearing - Close cycle",
+    "clearingConfirmPayIn": "Clearing - Confirm pay-in",
+    "clearingFundingService": "Clearing - Set funding service",
+    "entityEditIdentifiers": "Profile - Edit Entity Identifiers"
   },
   "custody": {
     "myServices": {
@@ -3970,6 +4123,7 @@
         "contactReserved": "\"contact\" is a reserved key — use the Contact Info fields above.",
         "descriptionReserved": "\"description\" is a reserved key — use the Description field above.",
         "duplicateKey": "Duplicate key: {{key}}",
+        "identifiersReserved": "\"identifiers\" and \"isin\" are reserved keys — use the Identifiers section on the asset details page.",
         "mediaReserved": "\"media\" is a reserved key — it is managed automatically from the asset's public documents and images."
       },
       "keyPlaceholder": "Key",
@@ -4184,6 +4338,11 @@
     "outgoing": "Outgoing",
     "incoming": "Incoming",
     "wireRef": "Wire Reference",
+    "receipt": "Receipt",
+    "receiptAttached": "Attached",
+    "receiptView": "View receipt",
+    "receiptOpening": "Opening receipt...",
+    "receiptError": "Could not open the receipt.",
     "createBtn": "Create Settlement",
     "settleBtn": "Settle",
     "confirmSentBtn": "Confirm Sent",
@@ -4228,7 +4387,7 @@
     "createModal": {
       "title": "Create Settlement",
       "subtitle": "Debtor-side: propose settling part of the net you owe a counterparty. The amount is locked as in-flight cover until confirmed or cancelled.",
-      "currencyCode": "Currency Code",
+      "currencyCode": "Currency",
       "amount": "Amount (currency units)",
       "memo": "Memo",
       "netOwed": "Net owed by you",
@@ -4305,8 +4464,6 @@
     "progress": "Sold / Total",
     "createdAt": "Created",
     "suspended": "Suspended",
-    "viewFills": "Fills",
-    "hideFills": "Hide",
     "empty": "No offerings yet.",
     "creating": "Creating offering...",
     "cancelling": "Cancelling offering...",
@@ -4321,15 +4478,6 @@
       "cancelled": "Cancelled",
       "rejected": "Rejected"
     },
-    "fills": {
-      "subscription": "Subscription",
-      "amount": "Tokens",
-      "gross": "Gross",
-      "venueFee": "Venue Fee",
-      "netToIssuer": "Net to Issuer",
-      "time": "Time",
-      "empty": "No fills yet."
-    },
     "createModal": {
       "title": "Create Offering",
       "subtitle": "Standing tap: buyers fill at a fixed price directly against the issuer’s reserve. Venue fees are frozen into the offering at creation.",
@@ -4339,6 +4487,177 @@
       "minFill": "Min fill (0 = none)",
       "maxPerSubscription": "Max per subscription (0 = unlimited)",
       "note": "Requires regulator approval before going live. Fixed-supply assets escrow the offered amount from the reserve."
+    },
+    "buyBtn": "Buy",
+    "buying": "Placing order...",
+    "buyModal": {
+      "title": "Buy from Offering",
+      "subtitle": "Primary issuance at the offering's fixed price, with the issuer as counterparty. Credit is debited from the selected subscriber and the tokens are issued to them in one atomic transaction.",
+      "subscriber": "Subscriber",
+      "noSubscribers": "No active subscriptions available. A subscriber must be active and admitted at this venue to buy.",
+      "amountLabel": "Amount (tokens)",
+      "remaining": "Remaining",
+      "totalCost": "Total cost",
+      "note": "The subscriber must hold enough credit to cover the total. Venue fees, if any, are frozen into the offering.",
+      "errAmount": "Amount must be a whole number greater than zero.",
+      "errRemaining": "Only {{remaining}} tokens remain in this offering.",
+      "errMinFill": "This offering has a minimum fill of {{minFill}} tokens.",
+      "errMaxPerSub": "This offering caps each subscriber at {{max}} tokens.",
+      "doneTitle": "Order Placed",
+      "doneMessage": "Bought {{amount}} tokens for {{gross}}."
+    }
+  },
+  "clearing": {
+    "tabs": {
+      "account": "Clearing Account",
+      "deliveries": "Deliveries",
+      "cycles": "Cycles",
+      "payins": "Pay-ins",
+      "members": "Members",
+      "memberships": "My Memberships"
+    },
+    "clearingHouse": "Clearing House",
+    "member": "Member",
+    "currency": "Currency",
+    "fundingService": "Funding Service",
+    "allStatuses": "All statuses",
+    "dashboard": {
+      "bookTitle": "Clearing Book",
+      "awaitingPayInLabel": "members owe fiat",
+      "unevidencedHint": "{{count}} with no confirmed settlement in the credit ledger.",
+      "membersLabel": "Members",
+      "noMembersYet": "No members admitted yet.",
+      "payInsHint": "Members that owe fiat on a closed cycle, and the latest settlement they have sent you on that pair.",
+      "cyclesTitle": "Cycles Needing a Decision",
+      "noCycles": "No open or closed cycles.",
+      "moduleOffTitle": "The Clearing module is switched off",
+      "moduleOffBody": "This tenant runs a clearing house, but the Clearing module is disabled in Menu Settings so cycles, pay-ins, deliveries and members are hidden. An admin can enable it under User Management → Menu Settings.",
+      "stats": {
+        "awaitingPayIn": "Awaiting Pay-in",
+        "deliveriesReady": "Deliveries Ready",
+        "deliveriesHeld": "Deliveries Held",
+        "pastDeadline": "Past Deadline",
+        "pendingMembers": "Pending Members",
+        "pendingApprovals": "Pending Approvals",
+        "unreadMessages": "Unread Messages"
+      }
+    },
+    "account": {
+      "title": "Running Clearing Account",
+      "description": "One account per clearing house and currency, in place of a separate net and fiat wire with every counterparty. Read live from the chain.",
+      "load": "Load",
+      "funded": "Funded",
+      "fundedHint": "Your credit locked in favour of the clearing house.",
+      "owed": "Owed",
+      "owedHint": "Live obligation net. Positive means you owe the clearing house.",
+      "withdrawable": "Withdrawable",
+      "withdrawableHint": "Advisory only. The clearing house releases escrow, and this bound is not enforced on chain.",
+      "unavailable": "Could not read this account. You may not be a member of this clearing house in that currency."
+    },
+    "deliveries": {
+      "title": "Pending Settlement",
+      "description": "Trades that cleared but have not yet delivered. Both legs stay escrowed until the cash settles.",
+      "key": "Delivery",
+      "kind": "Kind",
+      "side": "Side",
+      "amount": "Amount",
+      "proceeds": "Seller Proceeds",
+      "deadline": "Deadline",
+      "held": "Held",
+      "deliver": "Deliver",
+      "fail": "Unwind",
+      "venue": "Venue",
+      "asset": "Asset",
+      "cycle": "Cycle",
+      "buyEntity": "Buyer Entity",
+      "sellEntity": "Seller Entity",
+      "price": "Price",
+      "creditConsumed": "Credit Consumed",
+      "sideBuy": "Buying",
+      "sideSell": "Selling",
+      "sideVenue": "Venue",
+      "empty": "No deliveries.",
+      "failTitle": "Unwind delivery",
+      "failConfirm": "This delivery is past its deadline. Unwinding reverses the trade and returns both sides' escrow. Continue?"
+    },
+    "deliveryStates": {
+      "pending": "Pending",
+      "ready": "Ready",
+      "delivered": "Delivered",
+      "failed": "Unwound"
+    },
+    "deliveryKinds": {
+      "bookTrade": "Book trade",
+      "offeringFill": "Offering fill"
+    },
+    "holds": {
+      "title": "Settlement Holds",
+      "none": "No holds on this delivery.",
+      "id": "ID",
+      "placedBy": "Placed By",
+      "reason": "Reason",
+      "active": "Active",
+      "released": "Released"
+    },
+    "cycles": {
+      "title": "Netting Cycles",
+      "description": "One cycle per country, currency and clearing house. Closing snapshots what every member owes; finalizing releases the deliveries.",
+      "key": "Cycle",
+      "closesAt": "Closes At",
+      "positions": "Positions",
+      "close": "Close",
+      "finalize": "Finalize",
+      "empty": "No cycles.",
+      "closeTitle": "Close cycle",
+      "closeConfirm": "Closing snapshots every member's demand from their running account. Continue?"
+    },
+    "cycleStates": {
+      "open": "Open",
+      "closed": "Closed",
+      "finalized": "Finalized",
+      "abandoned": "Abandoned"
+    },
+    "positions": {
+      "title": "Member Positions",
+      "net": "Net",
+      "paidIn": "Paid In",
+      "owes": "Owes",
+      "owedTo": "Owed",
+      "none": "No positions recorded.",
+      "notYetClosed": "Positions are snapshotted when the cycle closes."
+    },
+    "payIns": {
+      "title": "Pay-in Board",
+      "description": "Members that owe the clearing house real fiat, across every closed cycle.",
+      "due": "Due",
+      "confirm": "Confirm Pay-in",
+      "empty": "Nothing outstanding.",
+      "confirmTitle": "Confirm pay-in",
+      "confirmBody": "Confirm that {{entity}} has wired {{amount}}. Nothing on chain can prove this, so you are attesting to it.",
+      "confirmNoSettlement": "⚠ This member has not confirmed sending any settlement to you in this currency. They may have wired outside the platform — but the credit ledger has no record of it.",
+      "settlement": "Credit Settlement",
+      "settlementNone": "None",
+      "settlementHint": "The Credit Settlement column shows the member's latest settlement with you on this pair and currency — not a settlement for this cycle. A cycle position is a multilateral snapshot while a settlement discharges the running bilateral net, so the two amounts are not expected to match.",
+      "viewReceipt": "View receipt"
+    },
+    "members": {
+      "title": "Clearing Members",
+      "description": "Entities admitted to the clearing houses you operate.",
+      "empty": "No members yet."
+    },
+    "memberships": {
+      "title": "My Memberships",
+      "description": "Clearing houses you belong to. Novation makes the clearing house your counterparty, so an admission takes effect only once you accept it.",
+      "accept": "Accept",
+      "empty": "No memberships.",
+      "acceptTitle": "Accept membership",
+      "acceptConfirm": "Accepting makes this clearing house the counterparty to both sides of every trade it clears for you. Continue?"
+    },
+    "memberStates": {
+      "initiated": "Admitted",
+      "active": "Active",
+      "suspended": "Suspended",
+      "removed": "Removed"
     }
   }
 }

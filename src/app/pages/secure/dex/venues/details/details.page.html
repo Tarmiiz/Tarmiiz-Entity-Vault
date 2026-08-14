@@ -63,7 +63,8 @@
                 </div>
                 <div class="flex flex-row items-center gap-2">
                   <span class="px-4 py-1.5 text-sm font-semibold rounded-full" [class]="getStateClass(v.state)">{{ stateName(v.state) }}</span>
-                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ settlementModeName(v.settlementMode) }}</span>
+                  <span class="px-4 py-1.5 text-sm font-semibold rounded-full"
+                        [class]="v.allowP2P === false ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'">{{ venueSurfaceName(v) }}</span>
                   @if (v.suspended) {
                     <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-red-100 text-red-800">{{ 'state.suspended' | translate }}</span>
                   }
@@ -135,6 +136,15 @@
 
         @if (activeTab() === 'assets') {
           <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-fee-config')) {
+              <div class="flex items-center justify-between px-6 py-3 border-b border-gray-200">
+                <p class="text-xs text-gray-500">{{ 'dex.venues.details.assetsTable.defaultFeeHint' | translate }}</p>
+                <button (click)="editDefaultFee()"
+                  class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap">
+                  {{ 'dex.venues.details.assetsTable.defaultFees' | translate }}
+                </button>
+              </div>
+            }
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
@@ -145,20 +155,25 @@
                     <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
                     <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.issuer' | translate }}</th>
                     <th class="px-6 py-2">{{ 'common.address' | translate }}</th>
+                    <!-- This venue's OWN leg on the pairing. Deliberately NOT labelled
+                         "state": the row also carries the asset regulator's approval,
+                         and conflating the two is what made the venue look powerless. -->
+                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.hosting' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.fees' | translate }}</th>
                     <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.enabled' | translate }}</th>
+                    <th class="px-6 py-2">{{ 'common.actions' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueAssets().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">{{ 'dex.venues.details.assetsTable.noAssets' | translate }}</td></tr>
+                    <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="10">{{ 'dex.venues.details.assetsTable.noAssets' | translate }}</td></tr>
                   } @else {
                     @for (a of pagedVAssets(); track a.baseAsset + '-' + a.tier; let i = $index; let isEven = $even) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                          (click)="goAsset(a.baseAsset)">
-                        <td class="px-6 py-2">{{ i + 1 }}</td>
-                        <td class="px-6 py-2">{{ a.assetName || '—' }}</td>
-                        <td class="px-6 py-2">@if (a.assetSymbol) { <span class="badge-symbol">{{ a.assetSymbol }}</span> } @else { — }</td>
+                      <tr class="border-b transition-colors"
+                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <td class="px-6 py-2 cursor-pointer" (click)="goAsset(a.baseAsset)">{{ i + 1 }}</td>
+                        <td class="px-6 py-2 cursor-pointer" (click)="goAsset(a.baseAsset)">{{ a.assetName || '—' }}</td>
+                        <td class="px-6 py-2 cursor-pointer" (click)="goAsset(a.baseAsset)">@if (a.assetSymbol) { <span class="badge-symbol">{{ a.assetSymbol }}</span> } @else { — }</td>
                         <td class="px-6 py-2">{{ tierLabelShort(a.tier) }}</td>
                         <!-- issuerEntityName, NOT entityName: the row comes from the
                              (asset, venue) join, whose `entityName` is THIS VENUE's
@@ -166,11 +181,60 @@
                              issuer of every foreign asset it hosts. -->
                         <td class="px-6 py-2">{{ a.issuerEntityName || '—' }}</td>
                         <td class="px-6 py-2 font-mono break-all">{{ a.baseAsset }}</td>
+                        <td class="px-6 py-2">
+                          <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="hostStateClass(a.hostState)">
+                            {{ hostStateLabel(a.hostState) | translate }}
+                          </span>
+                          @if (a.hostState === 3 && a.hostHaltReason) {
+                            <div class="text-gray-500 mt-1">{{ a.hostHaltReason }}</div>
+                          }
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap">
+                          <div>{{ feeLabel(a) }}</div>
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="feeSourceClass(a)">
+                            {{ feeSourceKey(a) | translate }}
+                          </span>
+                        </td>
                         <!-- formatTime, not formatDate: dex_asset_venues.added_at is stamped in
                              MILLISECONDS by both writers (plugin System.currentTimeMillis /
                              API Date.now), unlike the chain-derived *_at columns in seconds.
                              formatDate's ×1000 rendered it as the year 58548. -->
                         <td class="px-6 py-2">{{ a.addedAt ? utils.formatTime(a.addedAt) : '—' }}</td>
+                        <td class="px-6 py-2">
+                          <div class="flex flex-wrap gap-1">
+                            @if (userInfo && userInfo.role !== 3 && a.hostState === 1 && features.systemFunctionEnabled('dex-venue-asset-accept')) {
+                              <button (click)="acceptHostedAsset(a)"
+                                class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                                {{ 'dex.venues.details.assetsTable.accept' | translate }}
+                              </button>
+                            }
+                            @if (userInfo && userInfo.role !== 3 && (a.hostState === 2 || a.hostState === 3) && features.systemFunctionEnabled('dex-venue-asset-halt')) {
+                              <button (click)="setHostedAssetHalted(a, a.hostState !== 3)"
+                                class="text-xs px-3 py-1.5 rounded border transition-colors"
+                                [class]="a.hostState === 3 ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-amber-300 text-amber-700 hover:bg-amber-50'">
+                                {{ (a.hostState === 3 ? 'dex.venues.details.assetsTable.resume' : 'dex.venues.details.assetsTable.halt') | translate }}
+                              </button>
+                            }
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-fee-config')) {
+                              <button (click)="editAssetFee(a)"
+                                class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+                                {{ 'dex.venues.details.assetsTable.editFees' | translate }}
+                              </button>
+                            }
+                            @if (userInfo && userInfo.role !== 3 && a.isSet && features.systemFunctionEnabled('service-fee-config')) {
+                              <button (click)="resetAssetFee(a)"
+                                class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-500 hover:bg-gray-100 transition-colors">
+                                {{ 'dex.venues.details.assetsTable.resetFee' | translate }}
+                              </button>
+                            }
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-venue-asset-remove')) {
+                              <button (click)="removeHostedAsset(a)"
+                                class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                                {{ (a.hostState === 1 ? 'common.reject' : 'common.remove') | translate }}
+                              </button>
+                            }
+                          </div>
+                        </td>
                       </tr>
                     }
                   }
@@ -288,12 +352,6 @@
                 <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.members.title' | translate }}</h2>
                 <p class="text-xs text-gray-600">{{ 'dex.members.description' | translate }}</p>
               </div>
-              @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-member-add')) {
-                <button (click)="openAddMemberModal()"
-                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
-                  {{ 'dex.members.addButton' | translate }}
-                </button>
-              }
             </div>
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-sm text-left text-gray-700">
@@ -322,9 +380,9 @@
                         <td class="px-6 py-2">{{ m.memberEntityName || '—' }}</td>
                         <td class="px-6 py-2">
                           @if (m.accepted) {
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'dex.members.consent.accepted' | translate }}</span>
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'dex.members.consent.acceptedByUs' | translate }}</span>
                           } @else {
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'dex.members.consent.awaiting' | translate }}</span>
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'dex.members.consent.awaitingUs' | translate }}</span>
                           }
                         </td>
                         <td class="px-6 py-2">
@@ -337,10 +395,18 @@
                         <!-- addedAt is in MILLISECONDS — formatMs, never utils.formatDate directly. -->
                         <td class="px-6 py-2">{{ formatMs(m.addedAt) }}</td>
                         <td class="px-6 py-2">
+                          <!-- The venue answers a REQUEST here. Accept only while unconsented;
+                               Remove works from any state and is therefore also the REJECT. -->
+                          @if (userInfo && userInfo.role !== 3 && !m.accepted && features.systemFunctionEnabled('dex-member-accept')) {
+                            <button (click)="acceptMember(m)"
+                              class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors me-1">
+                              {{ 'dex.members.accept' | translate }}
+                            </button>
+                          }
                           @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-member-remove')) {
                             <button (click)="removeMember(m)"
                               class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
-                              {{ 'common.remove' | translate }}
+                              {{ (m.accepted ? 'common.remove' : 'dex.members.reject') | translate }}
                             </button>
                           }
                         </td>
@@ -366,28 +432,34 @@
 <app-modal-venue-state />
 
 <!-- Add-member inline modal -->
-@if (addMemberModalOpen()) {
+@if (haltModalOpen()) {
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
-      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'dex.members.addModal.title' | translate }}</h3>
-      <p class="text-xs text-gray-500 mb-4">{{ 'dex.members.addModal.subtitle' | translate }}</p>
+      <h3 class="text-base font-semibold text-gray-800 mb-1">
+        {{ (haltTarget()?.halted ? 'dex.venues.details.haltModal.haltTitle' : 'dex.venues.details.haltModal.resumeTitle') | translate }}
+      </h3>
+      <p class="text-xs text-gray-500 mb-4">
+        {{ (haltTarget()?.halted ? 'dex.venues.details.haltModal.haltSubtitle' : 'dex.venues.details.haltModal.resumeSubtitle') | translate:
+           { asset: haltTarget()?.assetName || haltTarget()?.baseAsset } }}
+      </p>
       <div class="space-y-3">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'dex.members.addModal.memberService' | translate }}</label>
-          <input type="text" [(ngModel)]="addMemberAddress" placeholder="0x..."
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          <p class="text-xs text-gray-500">{{ 'dex.members.addModal.hint' | translate }}</p>
+          <label class="text-xs font-medium text-gray-500">{{ 'common.reason' | translate }}</label>
+          <textarea [(ngModel)]="haltReason" rows="3"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400"></textarea>
+          <p class="text-xs text-gray-500">{{ 'dex.venues.details.haltModal.reasonHint' | translate }}</p>
         </div>
-        <p class="text-xs text-gray-400">{{ 'dex.members.addModal.lifecycle' | translate }}</p>
+        <p class="text-xs text-gray-400">{{ 'dex.venues.details.haltModal.freezeNote' | translate }}</p>
       </div>
       <div class="mt-5 flex justify-end gap-2">
-        <button (click)="addMemberModalOpen.set(false)"
+        <button (click)="haltModalOpen.set(false)"
           class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
-        <button (click)="submitAddMember()" [disabled]="!addMemberAddress"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-          {{ 'dex.members.addModal.submit' | translate }}
+        <button (click)="submitHalt()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+          {{ (haltTarget()?.halted ? 'dex.venues.details.assetsTable.halt' : 'dex.venues.details.assetsTable.resume') | translate }}
         </button>
       </div>
     </div>
   </div>
 }
+<app-modal-service-fee-config></app-modal-service-fee-config>

@@ -1,0 +1,247 @@
+<app-header [title]="'sidebar.home' | translate"></app-header>
+
+<div class="grow p-1 bg-gray-300 pt-4 overflow-y-auto">
+
+  @if(userInfo) {
+
+    <!-- non-admin view (exec / viewer) -->
+    @if(userInfo.role != 1) {
+
+      <!-- Entity inactive warning -->
+      @if (!entityActive) {
+        <div class="rounded-xl shadow-md border border-red-300 bg-red-50 p-4 mb-6 flex items-center gap-3 badges">
+          <svg class="w-6 h-6 text-red-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div>
+            <p class="text-sm font-semibold text-red-800">{{ 'dashboard.inactiveWarning.title' | translate: { state: entityStateName || ('dashboard.inactiveWarning.notActive' | translate) } }}</p>
+            <p class="text-xs text-red-600">{{ 'dashboard.inactiveWarning.body' | translate }}</p>
+          </div>
+        </div>
+      }
+
+      <!-- Clearing module switched off — the whole page depends on it, so say so rather than
+           rendering an empty CCP home that looks like "no activity". -->
+      @if (!clearingVisible()) {
+        <div class="rounded-xl shadow-md border border-amber-300 bg-amber-50 p-4 mb-6 flex items-start gap-3 badges">
+          <svg class="w-6 h-6 text-amber-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div>
+            <p class="text-sm font-semibold text-amber-800">{{ 'clearing.dashboard.moduleOffTitle' | translate }}</p>
+            <p class="text-xs text-amber-700 mt-1">{{ 'clearing.dashboard.moduleOffBody' | translate }}</p>
+          </div>
+        </div>
+      }
+
+      <!-- Clearing book banner -->
+      <div class="rounded-xl shadow-md border border-indigo-200 bg-linear-to-r from-indigo-600 to-indigo-800 text-white p-5 mb-6 badges">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'clearing.dashboard.bookTitle' | translate }}</p>
+            <div class="flex items-baseline gap-2">
+              <p class="text-4xl font-bold">{{ outstandingPayIns() }}</p>
+              <span class="text-xs font-semibold text-indigo-200">{{ 'clearing.dashboard.awaitingPayInLabel' | translate }}</span>
+            </div>
+            <p class="text-xs mt-1 text-indigo-200">
+              <span class="text-blue-200 font-semibold">{{ openCycles() }}</span> {{ 'clearing.cycleStates.open' | translate }}
+              · <span class="text-amber-200 font-semibold">{{ closedCycles() }}</span> {{ 'clearing.cycleStates.closed' | translate }}
+              · <span class="text-green-300 font-semibold">{{ finalizedCycles() }}</span> {{ 'clearing.cycleStates.finalized' | translate }}
+            </p>
+            @if (unevidencedPayIns() > 0) {
+              <p class="text-xs mt-1 text-amber-200">{{ 'clearing.dashboard.unevidencedHint' | translate: { count: unevidencedPayIns() } }}</p>
+            }
+          </div>
+
+          <div class="shrink-0 flex-1 md:border-l md:border-indigo-400/30 md:pl-4">
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'clearing.dashboard.membersLabel' | translate }}</p>
+            @if (members().length === 0) {
+              <p class="text-sm text-indigo-200 italic">{{ 'clearing.dashboard.noMembersYet' | translate }}</p>
+            } @else {
+              <div class="flex flex-wrap gap-2">
+                <div class="rounded-lg bg-indigo-900/40 border border-indigo-400/30 px-3 py-2">
+                  <p class="text-lg font-bold leading-none">{{ activeMembers() }}</p>
+                  <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ 'clearing.memberStates.active' | translate }}</p>
+                </div>
+                <div class="rounded-lg bg-indigo-900/40 border border-indigo-400/30 px-3 py-2">
+                  <p class="text-lg font-bold leading-none">{{ pendingMembers() }}</p>
+                  <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ 'clearing.memberStates.initiated' | translate }}</p>
+                </div>
+                <div class="rounded-lg bg-indigo-900/40 border border-indigo-400/30 px-3 py-2">
+                  <p class="text-lg font-bold leading-none">{{ suspendedMembers() }}</p>
+                  <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ 'clearing.memberStates.suspended' | translate }}</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="text-center shrink-0">
+            <p class="text-xs text-indigo-300 uppercase tracking-wider">{{ 'dashboard.status' | translate }}</p>
+            <div class="flex items-center justify-center gap-1.5 mt-1">
+              <span class="w-2 h-2 rounded-full" [class]="socketService.connected() ? 'bg-green-400' : 'bg-red-400'"></span>
+              <span class="text-sm font-medium text-indigo-200">{{ (socketService.connected() ? 'common.live' : 'common.offline') | translate }}</span>
+            </div>
+            <p class="text-xs text-indigo-300 mt-1">{{ lastUpdated() ? (lastUpdated()! | date:'HH:mm:ss') : ('common.notSet' | translate) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operational signals -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 badges">
+        @for (stat of opStats(); track stat.title) {
+          <div class="p-4 rounded-xl shadow-md border border-gray-200 flex flex-col cursor-pointer hover:bg-indigo-50 transition-colors"
+            [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" (click)="goTo(stat.path)">
+            <p class="text-xs font-medium text-gray-500 mb-1">{{ stat.title | translate }}</p>
+            @if (loading()) {
+              <svg class="animate-spin h-5 w-5 text-blue-500 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            } @else {
+              <p class="text-xl font-bold"
+                [class]="stat.value > 0 ? (stat.alert ? 'text-amber-700' : 'text-indigo-700') : 'text-gray-800'">
+                {{ stat.value | number }}
+              </p>
+            }
+          </div>
+        }
+      </div>
+
+      @if (clearingVisible()) {
+
+        <!-- ══ PAY-IN BOARD ══ The worklist: who owes fiat on a closed cycle, and what the
+             credit ledger says they have actually sent. -->
+        <div [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-6 badges">
+          <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-semibold text-white">{{ 'clearing.payIns.title' | translate }}</h2>
+              <p class="text-xs text-gray-300 mt-0.5">{{ 'clearing.dashboard.payInsHint' | translate }}</p>
+            </div>
+            <button class="text-sm text-gray-300 hover:text-white shrink-0" (click)="goTo('/authorized/clearing')">{{ 'common.viewAll' | translate }}</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500">
+              <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                <tr>
+                  <th class="px-4 py-2">{{ 'clearing.member' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'clearing.cycles.key' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'clearing.currency' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'clearing.payIns.due' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'clearing.payIns.settlement' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'clearing.positions.paidIn' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (loading()) {
+                  @for (i of [1,2,3,4,5]; track i) {
+                    <tr class="border-b"><td colspan="6" class="px-4 py-3"><div class="h-3 bg-gray-200 rounded w-full"></div></td></tr>
+                  }
+                } @else if (topPayIns().length === 0) {
+                  <tr><td colspan="6" class="px-4 py-4 text-center text-gray-400">{{ 'clearing.payIns.empty' | translate }}</td></tr>
+                } @else {
+                  @for (row of topPayIns(); track (row.cycle.cycleKey + '|' + row.position.entity)) {
+                    <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/clearing')">
+                      <td class="px-4 py-2 font-medium text-gray-800">{{ entityLabel(row.position.entity) }}</td>
+                      <td class="px-4 py-2 text-xs font-mono">{{ shortKey(row.cycle.cycleKey) }}</td>
+                      <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(row.cycle.currencyCode) }}</span></td>
+                      <td class="px-4 py-2 font-semibold text-red-700">{{ -row.position.net | money }}</td>
+                      <td class="px-4 py-2">
+                        @let s = latestSettlement(row.position);
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="settlementClass(s)">
+                          {{ settlementLabelKey(s) | translate }}
+                        </span>
+                        @if (s) {
+                          <span class="text-xs text-gray-500 ml-1">{{ s.amount | money }}</span>
+                        }
+                      </td>
+                      <td class="px-4 py-2">
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                          [class]="row.position.paidIn ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">
+                          {{ (row.position.paidIn ? 'common.yes' : 'common.no') | translate }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══ CYCLES ══ Open (closeable) and Closed (finalizable) — what needs a decision. -->
+        <div [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
+          <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-white">{{ 'clearing.dashboard.cyclesTitle' | translate }}</h2>
+            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/clearing')">{{ 'common.viewAll' | translate }}</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500">
+              <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                <tr>
+                  <th class="px-4 py-2">{{ 'clearing.cycles.key' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'clearing.currency' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
+                  <th class="px-4 py-2">{{ 'clearing.cycles.closesAt' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (loading()) {
+                  @for (i of [1,2,3]; track i) {
+                    <tr class="border-b"><td colspan="4" class="px-4 py-3"><div class="h-3 bg-gray-200 rounded w-full"></div></td></tr>
+                  }
+                } @else if (actionableCycles().length === 0) {
+                  <tr><td colspan="4" class="px-4 py-4 text-center text-gray-400">{{ 'clearing.dashboard.noCycles' | translate }}</td></tr>
+                } @else {
+                  @for (c of actionableCycles(); track c.cycleKey) {
+                    <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/clearing')">
+                      <td class="px-4 py-2 text-xs font-mono text-gray-800">{{ shortKey(c.cycleKey) }}</td>
+                      <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(c.currencyCode) }}</span></td>
+                      <td class="px-4 py-2">
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="cycleStatusClass(c.status)">
+                          {{ cycleStatusKey(c.status) | translate }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-2 text-xs">{{ cycleCloses(c) }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      }
+
+    } @else {
+
+      <!-- Bootstrap-admin: no executive user yet -->
+      @if (showBootstrapNudge()) {
+        <div class="rounded-xl shadow-md border border-amber-300 bg-amber-50 p-4 mb-6 flex items-start gap-3 badges">
+          <svg class="w-6 h-6 text-amber-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div class="grow">
+            <p class="text-sm font-semibold text-amber-800">{{ 'dashboard.bootstrapAdminTitle' | translate }}</p>
+            <p class="text-xs text-amber-700 mt-1">{{ 'dashboard.bootstrapAdminBody' | translate }}</p>
+          </div>
+          <button (click)="goTo('/authorized/users/list')"
+            class="text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1 shrink-0">
+            {{ 'dashboard.bootstrapAdminCta' | translate }}
+          </button>
+        </div>
+      }
+
+      <!-- admin placeholder view — the clearing surfaces are roles [2,3] -->
+      <div class="flex flex-col items-center justify-center py-24 text-center">
+        <svg class="w-16 h-16 text-gray-400 mb-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 17H4a1 1 0 0 1-1-1 3 3 0 0 1 3-3h1m0-3.05A2.5 2.5 0 1 1 9 5.5M19.5 17h.5a1 1 0 0 0 1-1 3 3 0 0 0-3-3h-1m0-3.05a2.5 2.5 0 1 0-2-4.45m.5 13.5h-7a1 1 0 0 1-1-1 3 3 0 0 1 3-3h3a3 3 0 0 1 3 3 1 1 0 0 1-1 1Zm-1-9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>
+        </svg>
+        <h2 class="text-xl font-semibold text-gray-600 mb-2">{{ 'dashboard.adminPlaceholder.title' | translate }}</h2>
+        <p class="text-sm text-gray-400">{{ 'dashboard.adminPlaceholder.body' | translate }}</p>
+      </div>
+
+    }
+
+  }
+
+</div>

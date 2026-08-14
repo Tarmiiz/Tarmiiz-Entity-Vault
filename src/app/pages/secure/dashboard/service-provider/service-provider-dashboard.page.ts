@@ -11,9 +11,15 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { Service, User } from '../../../../shared/models/data.model';
 
-// Provider sub-types for type-2 (service-provider) services.
+// Provider sub-types for type-2 (service-provider) services — the REGULATOR party numbering
+// (`Regulator Party Type` in Global Variables). Keep in step with it: a missing id falls back to
+// 'Other' in the Provider Types chips while the table row below still reads the correct name from
+// the server's `provider_type_name`, so the two disagree silently rather than erroring.
 const PROVIDER_TYPE_NAMES: Record<number, string> = {
-  1: 'Validator', 2: 'Payment Processor', 3: 'Custodian', 4: 'Data Provider',
+  1: 'Validator', 2: 'Payment Processor', 3: 'Custodian', 4: 'Clearing House',
+  // 5/6 are catalog-only — no service can declare them today, but naming them keeps the chip
+  // readable if one is ever given a registration path.
+  5: 'Consultant', 6: 'Appraiser',
 };
 
 interface ProviderTypeCount { type: number; name: string; count: number; }

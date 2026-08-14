@@ -151,6 +151,42 @@ export class ListPage implements OnInit, OnDestroy {
     } finally { this.loadingService.hide(); }
   }
 
+  /**
+   * Time in force (2026-08-11). `expiresAt` is MILLISECONDS on the mirror row, and **0 means
+   * good-till-cancelled, not epoch 0** — so every read branches on 0 first.
+   */
+  isLapsed(o: DexOrder): boolean {
+    const exp = Number(o.expiresAt || 0);
+    return exp > 0 && Date.now() >= exp;
+  }
+
+  expiryLabel(o: DexOrder): string {
+    const exp = Number(o.expiresAt || 0);
+    return exp > 0 ? this.utils.formatTime(exp) : this.translate.instant('dex.orders.place.tifGtc');
+  }
+
+  /**
+   * Close a lapsed order and return its escrow. Offered whenever the order is still live and
+   * its clock has run out — deliberately NOT gated on ownership or a System Function, because
+   * the chain entrypoint is permissionless and the funds go back to the order's own
+   * subscription whoever calls. Gating it would only strand capital when the owner is away.
+   */
+  async expire(o: DexOrder, ev: Event) {
+    ev.stopPropagation();
+    const ok = await this.alertService.show(
+      this.translate.instant('dex.orders.expireConfirm.title'),
+      this.translate.instant('dex.orders.expireConfirm.message', { id: o.orderId }),
+      this.translate.instant('dex.orders.expireConfirm.confirm')
+    );
+    if (!ok) return;
+    this.loadingService.show(this.translate.instant('dex.orders.expireConfirm.loading'));
+    try {
+      const r = await this.apiService.vaultDexExpireOrder(o.orderId);
+      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      await this.refresh();
+    } finally { this.loadingService.hide(); }
+  }
+
   async openPlaceOrder() {
     const result = await this.placeOrderModal.show();
     if (!result) return;

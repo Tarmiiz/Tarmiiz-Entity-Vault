@@ -42,10 +42,10 @@
             </tr>
           </thead>
           <tbody>
-            @for (p of pagedPositions(); track (p.counterparty + '|' + p.currencyCode); let i = $index) {
-              <tr [class.bg-gray-50]="i % 2 === 1">
-                <td class="px-4 py-2 font-mono text-xs">{{ p.counterparty }}</td>
-                <td class="px-4 py-2">{{ currencyLabel(p.currencyCode) }}</td>
+            @for (p of pagedPositions(); track (p.counterparty + '|' + p.currencyCode); let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                <td class="px-4 py-2 text-xs" [class.font-mono]="!entityName(p.counterparty)">{{ entityLabel(p.counterparty) }}</td>
+                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(p.currencyCode) }}</span></td>
                 <td class="px-4 py-2">
                   @if (p.netOwedBySelf > 0) {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
@@ -107,8 +107,8 @@
             </tr>
           </thead>
           <tbody>
-            @for (o of pagedObligations(); track (o.debtorEntity + o.creditorEntity + o.obligationId); let i = $index) {
-              <tr [class.bg-gray-50]="i % 2 === 1">
+            @for (o of pagedObligations(); track (o.debtorEntity + o.creditorEntity + o.obligationId); let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                 <td class="px-4 py-2 text-xs">{{ o.obligationId }}</td>
                 <td class="px-4 py-2">
                   @if (isDebtor(o)) {
@@ -117,8 +117,8 @@
                     <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'settlements.receivable' | translate }}</span>
                   }
                 </td>
-                <td class="px-4 py-2 font-mono text-xs">{{ counterpartyOf(o) }}</td>
-                <td class="px-4 py-2">{{ currencyLabel(o.currencyCode) }}</td>
+                <td class="px-4 py-2 text-xs" [class.font-mono]="!entityName(counterpartyOf(o))">{{ entityLabel(counterpartyOf(o)) }}</td>
+                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(o.currencyCode) }}</span></td>
                 <td class="px-4 py-2">{{ o.amount | money }}</td>
                 <td class="px-4 py-2 text-xs">{{ obligationKindName(o.kind) }}</td>
                 <td class="px-4 py-2 text-xs">{{ o.creditTrxId || '—' }}</td>
@@ -139,7 +139,7 @@
         (pageChange)="obligationsPage.set($event)" (pageSizeChange)="obligationsPageSize.set($event)" />
       @if (obligationsTotal() > obligations().length) {
         <div class="px-4 py-2 text-xs text-gray-500 border-t border-gray-200">
-          {{ 'settlements.showingCount' | translate: { showing: obligations().length, total: obligationsTotal() } }}
+          {{ 'common.fetchCapNotice' | translate: { showing: obligations().length, total: obligationsTotal() } }}
         </div>
       }
     </div>
@@ -171,13 +171,14 @@
               <th class="px-4 py-2">{{ 'common.amount' | translate }}</th>
               <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
               <th class="px-4 py-2">{{ 'settlements.wireRef' | translate }}</th>
+              <th class="px-4 py-2">{{ 'settlements.receipt' | translate }}</th>
               <th class="px-4 py-2">{{ 'settlements.updated' | translate }}</th>
               <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            @for (s of pagedSettlements(); track (s.debtorEntity + s.creditorEntity + s.settlementId); let i = $index) {
-              <tr [class.bg-gray-50]="i % 2 === 1">
+            @for (s of pagedSettlements(); track (s.debtorEntity + s.creditorEntity + s.settlementId); let i = $index; let isEven = $even) {
+              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                 <td class="px-4 py-2 text-xs">{{ s.settlementId }}</td>
                 <td class="px-4 py-2">
                   @if (isDebtor(s)) {
@@ -186,13 +187,34 @@
                     <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'settlements.incoming' | translate }}</span>
                   }
                 </td>
-                <td class="px-4 py-2 font-mono text-xs">{{ counterpartyOf(s) }}</td>
-                <td class="px-4 py-2">{{ currencyLabel(s.currencyCode) }}</td>
+                <td class="px-4 py-2 text-xs" [class.font-mono]="!entityName(counterpartyOf(s))">{{ entityLabel(counterpartyOf(s)) }}</td>
+                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(s.currencyCode) }}</span></td>
                 <td class="px-4 py-2">{{ s.amount | money }}</td>
                 <td class="px-4 py-2">
                   <span class="text-xs px-2 py-0.5 rounded-full" [class]="settlementStateClass(s.state)">{{ settlementStateName(s.state) }}</span>
                 </td>
                 <td class="px-4 py-2 text-xs">{{ s.wireRef || '—' }}</td>
+                <td class="px-4 py-2 text-xs">
+                  @if (s.receiptCid) {
+                    <!-- Opens the file itself. Both sides of the wire hold it: the debtor as
+                         its own document, the creditor through the DEK wrapped for it at pin
+                         time — the API resolves the CID per side, so one button covers both. -->
+                    @if (features.systemFunctionEnabled('view-documents')) {
+                      <button (click)="openReceipt(s)" [title]="('settlements.receiptView' | translate) + ' — ' + s.receiptCid"
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        {{ 'settlements.receiptAttached' | translate }}
+                      </button>
+                    } @else {
+                      <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700" [title]="s.receiptCid">
+                        {{ 'settlements.receiptAttached' | translate }}
+                      </span>
+                    }
+                  } @else { — }
+                </td>
                 <td class="px-4 py-2 text-xs">{{ utils.formatTime(s.updatedAt) }}</td>
                 <td class="px-4 py-2">
                   <div class="flex gap-2">
@@ -219,7 +241,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="9" class="px-4 py-6 text-center text-gray-500 text-sm">
+                <td colspan="10" class="px-4 py-6 text-center text-gray-500 text-sm">
                   @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'settlements.list.empty' | translate }} }
                 </td>
               </tr>
@@ -247,11 +269,18 @@
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.currencyCode' | translate }}</label>
-          <input type="number" min="1" step="1" [(ngModel)]="createCurrencyCode" (blur)="refreshPreflight()"
+          <select [(ngModel)]="createCurrencyCode" (ngModelChange)="refreshPreflight()"
             class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option [ngValue]="0">—</option>
+            @for (c of currencyOptions(); track c.code) {
+              <option [ngValue]="c.code">{{ c.label }}</option>
+            }
+          </select>
         </div>
         @if (createPreflight(); as pf) {
-          <div class="text-xs bg-gray-50 border border-gray-200 rounded p-2 space-y-0.5">
+          <!-- text-gray-700 is load-bearing: without an explicit colour this panel inherits a
+               near-white one and the whole pre-flight reads as blank. -->
+          <div class="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded p-2 space-y-0.5">
             <div>{{ 'settlements.createModal.netOwed' | translate }}: <span class="font-medium">{{ pf.netOwedByCaller }}</span></div>
             <div>{{ 'settlements.createModal.inFlight' | translate }}: <span class="font-medium">{{ pf.inFlightOwedByCaller }}</span></div>
             @if (availableToSettle() !== null) {

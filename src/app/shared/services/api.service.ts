@@ -9,7 +9,8 @@ import { SessionService } from './session.service';
 import {
   FeeConfig, ExternalIntegration, UserGroup, AppConfigItem,
   CreditPosition, CreditObligation, CreditSettlement,
-  DistributionAgreement, PrimaryTrade, DexOffering, DexOfferingFill,
+  ClearingDelivery, ClearingHold, ClearingCycle, ClearingPosition, ClearingMember, ClearingAccount,
+  DistributionAgreement, PrimaryTrade, DexOffering,
   DexDeal, DexDealRound, DexDealCounterparty, DexRfqRequest, DexRfqDealer,
 } from '../models/data.model';
 
@@ -555,8 +556,10 @@ export class ApiService {
     const data = await this.vaultGet('/dex/venues/' + address);
     return data?.venue ?? null;
   }
-  async vaultDexVenueCreate(serviceAddress: string, settlementMode = 1) {
-    return this.vaultPost('/dex/venues', { serviceAddress, settlementMode });
+  // No settlementMode since 2026-08-09 - the venue's trading surfaces are derived on
+  // chain from whether its service has a registered payment processor.
+  async vaultDexVenueCreate(serviceAddress: string) {
+    return this.vaultPost('/dex/venues', { serviceAddress });
   }
   async vaultDexVenueSetState(address: string, newState: number) {
     return this.vaultPut('/dex/venues/' + address + '/state', { newState });
@@ -567,18 +570,41 @@ export class ApiService {
     const data = await this.vaultGet('/dex/venues/' + address + '/members');
     return data ? { count: data.count, members: data.members } : null;
   }
-  async vaultDexVenueMemberAdd(address: string, memberService: string) {
-    return this.vaultPost('/dex/venues/' + address + '/members', { memberService });
+  // The VENUE consents to a request (venueAcceptAsset twin). INVERTED 2026-08-11: this was the
+  // member accepting an invitation. To REJECT, call vaultDexVenueMemberRemove — there is no
+  // separate reject route, matching the pairing surface where remove doubles as reject.
+  async vaultDexVenueMemberAccept(address: string, member: string) {
+    return this.vaultPut('/dex/venues/' + address + '/members/' + member + '/accept', {});
   }
   async vaultDexVenueMemberRemove(address: string, member: string) {
     return this.vaultDelete('/dex/venues/' + address + '/members/' + member);
+  }
+  // Venue hosting — this venue's own leg on an (asset, venue) pairing. The mirror
+  // image of the vaultDexAssetListingVenue* trio below, which is the ISSUER's side
+  // of the same relation and is gated on-chain to the asset's issuer.
+  async vaultDexVenueAssetAccept(address: string, asset: string) {
+    return this.vaultPut('/dex/venues/' + address + '/assets/' + asset + '/accept', {});
+  }
+  async vaultDexVenueAssetSetHalted(address: string, asset: string, halted: boolean, reason: string) {
+    return this.vaultPut('/dex/venues/' + address + '/assets/' + asset + '/halt', { halted, reason });
+  }
+  async vaultDexVenueAssetRemove(address: string, asset: string) {
+    return this.vaultDelete('/dex/venues/' + address + '/assets/' + asset);
   }
   async vaultDexMemberships() {
     const data = await this.vaultGet('/dex/memberships');
     return data ? { count: data.count, memberships: data.memberships } : null;
   }
-  async vaultDexMembershipAccept(venue: string, memberService: string) {
-    return this.vaultPut('/dex/memberships/' + venue + '/accept', { memberService });
+  // The MEMBER requests to join. INVERTED 2026-08-11: the venue used to invite by address, so a
+  // brokerage could not reach a market without persuading its operator to type its address.
+  async vaultDexMembershipRequest(dexService: string, memberService: string) {
+    return this.vaultPost('/dex/memberships', { dexService, memberService });
+  }
+  // Drives the venue picker behind the request — filtered server-side to same-country, live,
+  // brokerage-licensed venues we do not already hold a membership row for.
+  async vaultDexMembershipEligibleVenues() {
+    const data = await this.vaultGet('/dex/memberships/eligible-venues');
+    return data ? { count: data.count, venues: data.venues } : null;
   }
   async vaultDexMembershipRemove(venue: string, member: string) {
     return this.vaultDelete('/dex/memberships/' + venue + '/' + member);
@@ -644,11 +670,17 @@ export class ApiService {
     const data = await this.vaultGet('/dex/orders/' + orderId);
     return data?.order ?? null;
   }
-  async vaultDexPlaceOrder(body: { subscription: string; dexService: string; baseAsset: string; side: number; marketScope: number; price: string; amount: string }) {
+  // `expiresAt` is time in force: unix SECONDS, 0 = good-till-cancelled. NOT milliseconds —
+  // the order row reports its expiry back in ms, and the two units meet on this one feature.
+  async vaultDexPlaceOrder(body: { subscription: string; dexService: string; baseAsset: string; side: number; marketScope: number; price: string; amount: string; expiresAt?: number }) {
     return this.vaultPost('/dex/orders', body);
   }
   async vaultDexCancelOrder(orderId: number | string) {
     return this.vaultPut('/dex/orders/' + orderId + '/cancel', {});
+  }
+  /** Close a LAPSED order and return its escrow. Permissionless on chain — see the API route. */
+  async vaultDexExpireOrder(orderId: number | string) {
+    return this.vaultPut('/dex/orders/' + orderId + '/expire', {});
   }
   async vaultDexMatchOrders(buyOrderId: number, sellOrderId: number) {
     return this.vaultPut('/dex/match', { buyOrderId, sellOrderId });
@@ -724,10 +756,42 @@ export class ApiService {
   // per-service fee config was removed with the issuer/DEX model redesign. Each side
   // carries { mode, value, bearing (0 OnTop / 1 Deducted) }; the destination is forced
   // on-chain to the configuring service's own account.
-  async vaultGetServiceFeeConfig(service: string, asset: string): Promise<{ feeConfig: FeeConfig | null } | null> {
+  // ⚠ `feeConfig` is the RAW per-asset override and stays that way — edit forms pre-fill from
+  // it, so returning the effective value here would make every Save silently PIN an override.
+  // `effective` is what the chain will quote; `isSet` says which of the two you are looking at.
+  async vaultGetServiceFeeConfig(service: string, asset: string): Promise<{
+    feeConfig: FeeConfig | null; isSet: boolean; source: string;
+    default: FeeConfig | null; effective: FeeConfig | null;
+  } | null> {
     const data = await this.vaultGet('/services/' + service + '/assets/' + asset + '/fee-config');
     if (!data) return null;
+    return {
+      feeConfig: data.feeConfig ?? null,
+      isSet:     data.isSet === true,
+      source:    data.source ?? 'none',
+      default:   data.default ?? null,
+      effective: data.effective ?? null,
+    };
+  }
+
+  // The SERVICE-LEVEL default every un-overridden asset inherits — one write covers every
+  // listing. A sibling literal path, deliberately not an asset sentinel (see the API routes).
+  async vaultGetServiceDefaultFeeConfig(service: string): Promise<{ feeConfig: FeeConfig | null } | null> {
+    const data = await this.vaultGet('/services/' + service + '/fee-config');
+    if (!data) return null;
     return { feeConfig: data.feeConfig ?? null };
+  }
+
+  async vaultSetServiceDefaultFeeConfig(service: string, feeConfig: FeeConfig) {
+    const data = await this.vaultPut('/services/' + service + '/fee-config', { feeConfig });
+    return data ?? null;
+  }
+
+  // Reset-to-inherit. NOT the same as saving an all-None config, which means "this asset is
+  // free" and still overrides the default.
+  async vaultClearServiceFeeConfig(service: string, asset: string) {
+    const data = await this.vaultDelete('/services/' + service + '/assets/' + asset + '/fee-config');
+    return data ?? null;
   }
 
   async vaultSetServiceFeeConfig(service: string, asset: string, feeConfig: FeeConfig) {
@@ -800,6 +864,115 @@ export class ApiService {
     return this.vaultDelete('/settlements/' + debtor + '/' + creditor + '/' + id);
   }
 
+  // Streams the wire-receipt FILE for one settlement. A settlement records only the receipt's
+  // CID (never a documentId), and the document is owned by the DEBTOR's template — the API
+  // resolves that per side (own document / inbound share), so both sides call this same path.
+  async vaultSettlementReceiptFile(debtor: string, creditor: string, id: number) {
+    return this._fetchFileBlob('/settlements/' + debtor + '/' + creditor + '/' + id + '/receipt');
+  }
+
+  // ─── Clearing (deferred DvP + central clearing) ───────────────────────────────
+  //
+  // Reads come off the plugin-owned mirror; the account is a live chain read. Writes split by
+  // WHO acts: the CCP operator's verbs, the member's own verbs, and three PERMISSIONLESS triggers
+  // that anyone may drive (which is why they carry no maker/checker — queueing a delivery release
+  // behind a checker does not delay it, it strands a buyer who already wired real fiat).
+
+  async vaultClearingDeliveries(params: { status?: number; cycle?: string; venue?: string; start?: number; offset?: number } = {}): Promise<ClearingDelivery[]> {
+    const data = await this.vaultGet('/clearing/deliveries', params);
+    return data?.deliveries ?? [];
+  }
+
+  async vaultClearingDelivery(deliveryKey: string) {
+    const data = await this.vaultGet('/clearing/deliveries/' + deliveryKey);
+    return data ? { delivery: data.delivery as ClearingDelivery, holds: (data.holds ?? []) as ClearingHold[] } : null;
+  }
+
+  async vaultClearingCycles(params: { clearingHouse?: string; status?: number; start?: number; offset?: number } = {}): Promise<ClearingCycle[]> {
+    const data = await this.vaultGet('/clearing/cycles', params);
+    return data?.cycles ?? [];
+  }
+
+  async vaultClearingCyclePositions(cycleKey: string): Promise<ClearingPosition[]> {
+    const data = await this.vaultGet('/clearing/cycles/' + cycleKey + '/positions');
+    return data?.positions ?? [];
+  }
+
+  // The PAY-IN BOARD. The API filters `net < 0`, NOT `paidIn === false` — close pre-satisfies
+  // every member that owes nothing, so filtering on paidIn here would show an empty board on a
+  // perfectly ordinary cycle. Do not "improve" this by re-filtering client-side.
+  async vaultClearingCyclePayIns(cycleKey: string): Promise<ClearingPosition[]> {
+    const data = await this.vaultGet('/clearing/cycles/' + cycleKey + '/pay-ins');
+    return data?.payIns ?? [];
+  }
+
+  // Members of a clearing house WE operate.
+  async vaultClearingMembers(clearingHouse?: string): Promise<ClearingMember[]> {
+    const data = await this.vaultGet('/clearing/members', clearingHouse ? { clearingHouse } : {});
+    return data?.members ?? [];
+  }
+
+  // The other direction: clearing houses THIS entity is a member of.
+  async vaultClearingMemberships(): Promise<ClearingMember[]> {
+    const data = await this.vaultGet('/clearing/memberships');
+    return data?.memberships ?? [];
+  }
+
+  // THE CENTREPIECE — one running account per (member, clearing house, currency). `entity` is
+  // permitted only for a member of a clearing house this entity operates; omit it for our own.
+  async vaultClearingAccount(clearingHouse: string, currencyCode: number, entity?: string): Promise<ClearingAccount | null> {
+    const data = await this.vaultGet('/clearing/account/' + clearingHouse + '/' + currencyCode, entity ? { entity } : {});
+    return data?.type === 'success' ? (data as ClearingAccount) : null;
+  }
+
+  // CCP-operator verbs.
+  async vaultClearingMemberAdmit(payload: { clearingHouse: string; entity: string; fundingService?: string; refNo?: string }) {
+    return this.vaultPost('/clearing/members', payload);
+  }
+
+  async vaultClearingMemberSetState(clearingHouse: string, entity: string, state: number, refNo?: string) {
+    return this.vaultPut('/clearing/members/' + clearingHouse + '/' + entity + '/state', { state, refNo });
+  }
+
+  async vaultClearingHouseSetCurrency(payload: { clearingHouse: string; currencyCode: number; cleared?: boolean; refNo?: string }) {
+    return this.vaultPost('/clearing/currencies', payload);
+  }
+
+  async vaultClearingCycleClose(cycleId: string, refNo?: string) {
+    return this.vaultPost('/clearing/cycles/close', { cycleId, refNo });
+  }
+
+  // THE single discretionary act in the whole flow — nothing on-chain can prove an off-chain wire
+  // arrived, and after novation the creditor of that leg is the CCP.
+  async vaultClearingConfirmPayIn(cycleId: string, entity: string, refNo?: string) {
+    return this.vaultPost('/clearing/cycles/pay-in', { cycleId, entity, refNo });
+  }
+
+  // Member-side verbs. There is no `entity` argument on accept BY DESIGN: being made a
+  // counterparty of a clearing house is not something a third party may do on your behalf.
+  async vaultClearingMemberAccept(clearingHouse: string, refNo?: string) {
+    return this.vaultPost('/clearing/memberships/accept', { clearingHouse, refNo });
+  }
+
+  async vaultClearingSetFundingService(clearingHouse: string, fundingService: string, refNo?: string) {
+    return this.vaultPost('/clearing/memberships/funding-service', { clearingHouse, fundingService, refNo });
+  }
+
+  // Permissionless triggers — no maker/checker, deliberately (see the block comment above).
+  async vaultClearingCycleFinalize(cycleId: string) {
+    return this.vaultPost('/clearing/cycles/finalize', { cycleId });
+  }
+
+  async vaultClearingDeliveryExecute(deliveryId: string) {
+    return this.vaultPost('/clearing/deliveries/execute', { deliveryId });
+  }
+
+  // action 1 = hold (a custodian of either side's home service), 2 = hold release (placer-scoped),
+  // 3 = fail (permissionless, after the deadline). `id` is a deliveryId for 1 and 3, a holdId for 2.
+  async vaultClearingDeliveryAct(action: number, id: string, reason?: string, refNo?: string) {
+    return this.vaultPost('/clearing/deliveries/act', { action, id, reason, refNo });
+  }
+
   // ─── Distribution agreements + primary-market trades ──────────────────────────
 
   async vaultDistributionInbound(): Promise<DistributionAgreement[]> {
@@ -823,21 +996,20 @@ export class ApiService {
     return data ? { totalCount: data.totalCount ?? 0, offerings: (data.offerings ?? []) as DexOffering[] } : null;
   }
 
-  async vaultDexOfferingInfo(key: string) {
-    const data = await this.vaultGet('/dex/offerings/' + key);
-    return data ? {
-      offering: data.offering as DexOffering,
-      fills: (data.fills ?? []) as DexOfferingFill[],
-      fillsTotal: data.fillsTotal ?? 0,
-    } : null;
-  }
-
   async vaultDexOfferingCreate(payload: { baseAsset: string; dexService: string; price: string; amount: string; minFill?: number; maxPerSubscription?: number; refNo: string }) {
     return this.vaultPost('/dex/offerings', payload);
   }
 
   async vaultDexOfferingCancel(key: string, refNo: string) {
     return this.vaultDelete('/dex/offerings/' + key + '?refNo=' + encodeURIComponent(refNo));
+  }
+
+  // Buy from a live tap offering — primary issuance at the offering's frozen price,
+  // with the ISSUER as counterparty. `amount` is a plain token count. Available to
+  // every entity mode: any entity whose subscription is admitted at the venue may
+  // fill, a brokerage buying for a client being the common case.
+  async vaultDexOfferingFill(key: string, payload: { subscription: string; amount: string; refNo?: string }) {
+    return this.vaultPost('/dex/offerings/' + key + '/fill', payload);
   }
 
   // ─── DEX negotiated OTC deals (2026-08-07) ─────────────────────────────────
@@ -1374,11 +1546,13 @@ export class ApiService {
     return data ?? null;
   }
 
-  // Service providers are 1:N. partyType: 1=Validator, 2=PaymentProcessor, 3=Custodian.
+  // Service providers are 1:N. partyType is the SHARED platform numbering — the same ids as
+  // `spType` on the curated set and as ServicePartiesLib's on-chain roles:
+  // 1=Validator, 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse.
 
-  async vaultGetServiceParties(address: string): Promise<{ validators: Array<{ address: string; active: boolean }>; paymentProcessors: Array<{ address: string; active: boolean }>; custodians: Array<{ address: string; active: boolean }> } | null> {
+  async vaultGetServiceParties(address: string): Promise<{ validators: Array<{ address: string; active: boolean }>; paymentProcessors: Array<{ address: string; active: boolean }>; custodians: Array<{ address: string; active: boolean }>; clearingHouses: Array<{ address: string; active: boolean }> } | null> {
     const data = await this.vaultGet('/services/' + address + '/parties');
-    return data ? { validators: data.validators ?? [], paymentProcessors: data.paymentProcessors ?? [], custodians: data.custodians ?? [] } : null;
+    return data ? { validators: data.validators ?? [], paymentProcessors: data.paymentProcessors ?? [], custodians: data.custodians ?? [], clearingHouses: data.clearingHouses ?? [] } : null;
   }
 
   async vaultAttachServiceParty(address: string, partyType: number, party: string) {
@@ -1397,7 +1571,12 @@ export class ApiService {
   // until the multi-attach service-detail UI lands.
   private async _replaceServiceParty(address: string, partyType: number, party: string) {
     const parties = await this.vaultGetServiceParties(address);
-    const current = partyType === 1 ? parties?.validators : partyType === 2 ? parties?.paymentProcessors : parties?.custodians;
+    // Every role gets its own branch — the clearing-house case was missing, so a type-4
+    // replace read the CUSTODIANS bucket and detached those instead.
+    const current = partyType === 1 ? parties?.validators
+                  : partyType === 2 ? parties?.paymentProcessors
+                  : partyType === 4 ? parties?.clearingHouses
+                  : parties?.custodians;
     if (party) {
       const res = await this.vaultAttachServiceParty(address, partyType, party);
       if (res?.error) return res;
@@ -1429,7 +1608,7 @@ export class ApiService {
   // regulator-offered CANDIDATE list (live chain), not `vaultGetServiceProviders()` below,
   // which is the entity's own registered providers (mirror) — different sets, hence the
   // `/available` sub-path rather than a `?type=` on the same endpoint.
-  private async vaultGetProvidersAvailable(type: 'validator' | 'payment-processor' | 'custodian', start = 1, offset = 50) {
+  private async vaultGetProvidersAvailable(type: 'validator' | 'payment-processor' | 'custodian' | 'clearing-house', start = 1, offset = 50) {
     return await this.vaultGet('/service-providers/available', { type, start, offset });
   }
 
@@ -1450,6 +1629,12 @@ export class ApiService {
   async vaultGetEndorsedCustodians(_regulatorAddress: string, start = 1, offset = 50) {
     const data = await this.vaultGetProvidersAvailable('custodian', start, offset);
     return data ? { count: data.count, custodians: data.providers } : null;
+  }
+
+  // Clearing houses (CCPs) — party type 5, the same id used to curate AND to attach.
+  async vaultGetClearingHouses(start = 1, offset = 50) {
+    const data = await this.vaultGetProvidersAvailable('clearing-house', start, offset);
+    return data ? { count: data.count, clearingHouses: data.providers } : null;
   }
 
   // ─── Vault — Entity-curated service providers ────────────────────────────────
@@ -1836,8 +2021,34 @@ export class ApiService {
     return data ?? null;
   }
 
+  // Identifiers bound to the entity's own DID (LEI, commercial registry, tax id …).
+  // Each row carries BOTH the readable value and the on-chain hash, plus `matches` —
+  // see the API's GET /entity/identifiers for why the two can disagree.
+  async vaultGetEntityIdentifiers() {
+    const data = await this.vaultGet('/entity/identifiers');
+    return data?.identifiers ?? [];
+  }
+
+  async vaultUpdateEntityIdentifier(body: { idType: number; value: string; reason?: string }) {
+    const data = await this.vaultPut('/entity/identifiers', body);
+    return data ?? null;
+  }
+
   async vaultUpdateAssetMetadata(address: string, metadata: Record<string, any>) {
     const data = await this.vaultPut('/assets/' + address + '/metadata', { metadata });
+    return data ?? null;
+  }
+
+  // Security identifiers (ISIN, …) live under the SERVER-OWNED `identifiers` key inside the
+  // same metadata blob, so these two are its only writers — vaultUpdateAssetMetadata above
+  // carries the existing value forward and never accepts one from the client.
+  async vaultSetAssetIdentifier(address: string, body: { idType: number; value: string }) {
+    const data = await this.vaultPut('/assets/' + address + '/identifiers', body);
+    return data ?? null;
+  }
+
+  async vaultRemoveAssetIdentifier(address: string, idType: number) {
+    const data = await this.vaultDelete('/assets/' + address + '/identifiers/' + idType);
     return data ?? null;
   }
 

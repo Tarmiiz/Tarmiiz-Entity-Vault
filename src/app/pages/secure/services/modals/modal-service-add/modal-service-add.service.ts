@@ -8,12 +8,15 @@ export interface AddServiceData {
   mobile: string;
   verificationLevel: number;
   serviceType: number;
-  // Entity-declared sub-type for service providers (1=Validator,2=PaymentProcessor,3=Custodian,4=DataProvider; 0=issuer).
+  // Entity-declared sub-type for service providers (1=Validator,2=PaymentProcessor,3=Custodian,4=ClearingHouse; 0=issuer).
   providerType: number;
   regulator: string;
   validator: string;
   paymentProcessor: string;
   custodian: string;
+  // Optional, type-1 only. Empty = none, which is MEANINGFUL rather than missing: no clearing
+  // house means this market's credit is final and every fill settles immediately.
+  clearingHouse: string;
   visibility: number;
 }
 

@@ -32,9 +32,22 @@
         <tbody>
           @for (o of pagedOfferings(); track o.offeringKey; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
-              <td class="px-4 py-2 font-mono text-xs" [title]="o.offeringKey">{{ shortKey(o.offeringKey) }}</td>
-              <td class="px-4 py-2 font-mono text-xs">{{ o.baseAsset }}</td>
-              <td class="px-4 py-2 font-mono text-xs">{{ o.dexService }}</td>
+              <td class="px-4 py-2">
+                <button (click)="copyToClipboard(o.offeringKey)"
+                  class="font-mono text-xs text-indigo-700 hover:underline" [title]="o.offeringKey">
+                  {{ shortKey(o.offeringKey) }}
+                </button>
+              </td>
+              <td class="px-4 py-2">
+                <div class="font-medium text-gray-800">{{ o.assetName || shortKey(o.baseAsset) }}</div>
+                <div class="text-[10px] text-gray-500">{{ o.assetSymbol || shortKey(o.baseAsset) }}</div>
+              </td>
+              <td class="px-4 py-2">
+                <div class="text-gray-800">{{ o.dexServiceName || shortKey(o.dexService) }}</div>
+                @if (o.dexServiceEntityName) {
+                  <div class="text-[10px] text-gray-500">{{ o.dexServiceEntityName }}</div>
+                }
+              </td>
               <td class="px-4 py-2">{{ o.price | money }}</td>
               <td class="px-4 py-2">
                 <div class="flex items-center gap-2">
@@ -56,10 +69,12 @@
               <td class="px-4 py-2 text-xs">{{ utils.formatDate(o.createdAt) }}</td>
               <td class="px-4 py-2">
                 <div class="flex gap-2">
-                  <button (click)="toggleFills(o)"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-                    {{ (expandedKey() === o.offeringKey ? 'dexOfferings.hideFills' : 'dexOfferings.viewFills') | translate }}
-                  </button>
+                  @if (canBuy(o)) {
+                    <button (click)="openBuyModal(o)"
+                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      {{ 'dexOfferings.buyBtn' | translate }}
+                    </button>
+                  }
                   @if ((o.status === 1 || o.status === 2) && canAct() && features.systemFunctionEnabled('dex-offering-cancel')) {
                     <button (click)="cancelOffering(o)"
                       class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
@@ -69,42 +84,6 @@
                 </div>
               </td>
             </tr>
-            @if (expandedKey() === o.offeringKey) {
-              <tr>
-                <td colspan="8" class="px-4 py-3 bg-gray-50">
-                  <table class="w-full text-xs text-left text-gray-700 border border-gray-200 rounded">
-                    <thead class="text-xs text-gray-600 uppercase bg-gray-100">
-                      <tr>
-                        <th class="px-3 py-1.5">#</th>
-                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.subscription' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.amount' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'dexOfferings.price' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.gross' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.venueFee' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.netToIssuer' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'dexOfferings.fills.time' | translate }}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (f of fills(); track f.fillId) {
-                        <tr class="border-t border-gray-200">
-                          <td class="px-3 py-1.5">{{ f.fillId }}</td>
-                          <td class="px-3 py-1.5 font-mono">{{ f.subscription }}</td>
-                          <td class="px-3 py-1.5">{{ f.amount | number }}</td>
-                          <td class="px-3 py-1.5">{{ f.price | money }}</td>
-                          <td class="px-3 py-1.5">{{ f.gross | money }}</td>
-                          <td class="px-3 py-1.5">{{ f.venueFee | money }}</td>
-                          <td class="px-3 py-1.5">{{ f.netToIssuer | money }}</td>
-                          <td class="px-3 py-1.5">{{ utils.formatTime(f.createdAt) }}</td>
-                        </tr>
-                      } @empty {
-                        <tr><td colspan="8" class="px-3 py-3 text-center text-gray-500">{{ 'dexOfferings.fills.empty' | translate }}</td></tr>
-                      }
-                    </tbody>
-                  </table>
-                </td>
-              </tr>
-            }
           } @empty {
             <tr>
               <td colspan="8" class="px-4 py-6 text-center text-gray-500 text-sm">
@@ -180,6 +159,85 @@
         <button (click)="submitCreate()" [disabled]="!createAsset || !createVenue || !createPrice || !createAmount"
           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'dexOfferings.createBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Buy-from-offering modal (primary issuance). Available to EVERY entity mode:
+     any entity whose subscription is admitted at the venue may fill — a brokerage
+     buying for a client is the common case, not the only one. -->
+@if (buyModalOpen() && buyOffering(); as o) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'dexOfferings.buyModal.title' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">{{ 'dexOfferings.buyModal.subtitle' | translate }}</p>
+
+      <div class="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 mb-4 space-y-1">
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-500">{{ 'dexOfferings.asset' | translate }}</span>
+          <span class="text-gray-800" [title]="o.baseAsset">
+            {{ o.assetName || shortKey(o.baseAsset) }}{{ o.assetSymbol ? ' (' + o.assetSymbol + ')' : '' }}
+          </span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-500">{{ 'dexOfferings.venue' | translate }}</span>
+          <span class="text-gray-800" [title]="o.dexService">{{ o.dexServiceName || shortKey(o.dexService) }}</span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-500">{{ 'dexOfferings.price' | translate }}</span>
+          <span class="text-gray-800">{{ o.price | money }}</span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-500">{{ 'dexOfferings.buyModal.remaining' | translate }}</span>
+          <span class="text-gray-800">{{ remaining(o) | number }}</span>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.buyModal.subscriber' | translate }}</label>
+          <select [(ngModel)]="buySubscription"
+            class="text-xs font-mono border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option value="">—</option>
+            @for (s of mySubscriptions(); track s.address) {
+              <option [value]="s.address">{{ s.label }}</option>
+            }
+          </select>
+          @if (mySubscriptions().length === 0) {
+            <p class="text-xs text-amber-700">{{ 'dexOfferings.buyModal.noSubscribers' | translate }}</p>
+          }
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">{{ 'dexOfferings.buyModal.amountLabel' | translate }}</label>
+          <input type="number" min="1" step="1" [(ngModel)]="buyAmount"
+            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          @if (buyError()) {
+            <p class="text-xs text-red-600">{{ buyError() }}</p>
+          }
+        </div>
+
+        <div class="flex justify-between items-center rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2">
+          <span class="text-xs font-medium text-indigo-900">{{ 'dexOfferings.buyModal.totalCost' | translate }}</span>
+          <span class="text-sm font-semibold text-indigo-900">{{ buyGross() | money }}</span>
+        </div>
+
+        <p class="text-xs text-gray-400">{{ 'dexOfferings.buyModal.note' | translate }}</p>
+      </div>
+
+      <!-- A fill on a venue with a clearing house attached does NOT complete at submit: the
+           cash is novated onto the clearing house and both legs stay escrowed until the netted
+           cycle settles. Without this line a successful submit reads as a settled trade. -->
+      <p class="mt-4 text-xs text-gray-500 border-t border-gray-200 pt-3">{{ 'dex.deferredHint' | translate }}</p>
+
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="buyModalOpen.set(false)"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitBuy()" [disabled]="buyDisabled()"
+          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'dexOfferings.buyBtn' | translate }}
         </button>
       </div>
     </div>

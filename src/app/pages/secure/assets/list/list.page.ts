@@ -243,7 +243,13 @@ export class ListPage implements OnInit {
         manager: data.manager,
         name: data.name,
         symbol: data.symbol,
-        metadata: JSON.stringify({ description: data.description, ...data.customMetadata }),
+        // `identifiers` is server-owned: the API re-validates and rebuilds it here, and after
+        // creation only PUT/DELETE /assets/:address/identifiers may touch it.
+        metadata: JSON.stringify({
+          description: data.description,
+          ...data.customMetadata,
+          ...(data.identifiers?.length ? { identifiers: data.identifiers } : {}),
+        }),
         currency: data.currency,
         regulator: data.regulator,
         tokenType: data.tokenType,

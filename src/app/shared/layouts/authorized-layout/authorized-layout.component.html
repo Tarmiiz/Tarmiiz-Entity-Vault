@@ -71,6 +71,16 @@
             </ion-item>
           }
 
+          <!-- exec/viewer only: clearing (deferred DvP — account, deliveries, cycles, membership) -->
+          @if(userInfo && (userInfo.role == 2 || userInfo.role == 3) && features.menuEnabled('clearing')) {
+            <ion-item button routerLink="/authorized/clearing" routerDirection="root" (click)="closeMenuOnMobile()">
+              <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2 rtl:mr-0 rtl:ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v18m0-18 7 4v10l-7 4-7-4V7l7-4Z"/>
+              </svg>
+              <ion-label>{{ 'sidebar.clearing' | translate }}</ion-label>
+            </ion-item>
+          }
+
           <!-- exec/viewer only: distribution (inbound agreements + primary trades) -->
           @if(userInfo && (userInfo.role == 2 || userInfo.role == 3) && features.menuEnabled('distribution')) {
             <ion-item button routerLink="/authorized/distribution" routerDirection="root" (click)="closeMenuOnMobile()">

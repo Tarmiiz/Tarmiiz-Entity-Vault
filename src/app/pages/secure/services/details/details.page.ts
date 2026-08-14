@@ -29,6 +29,8 @@ import { ModalServiceValidatorService } from '../modals/modal-service-validator/
 import { ModalServiceValidatorComponent } from '../modals/modal-service-validator/modal-service-validator.component';
 import { ModalServicePaymentProcessorService } from '../modals/modal-service-payment-processor/modal-service-payment-processor.service';
 import { ModalServicePaymentProcessorComponent } from '../modals/modal-service-payment-processor/modal-service-payment-processor.component';
+import { ModalServiceClearingHouseService } from '../modals/modal-service-clearing-house/modal-service-clearing-house.service';
+import { ModalServiceClearingHouseComponent } from '../modals/modal-service-clearing-house/modal-service-clearing-house.component';
 import { ModalServiceCustodianService, SELF_CUSTODY_SENTINEL } from '../modals/modal-service-custodian/modal-service-custodian.service';
 import { ModalServiceCustodianComponent } from '../modals/modal-service-custodian/modal-service-custodian.component';
 import { ModalServiceFeeConfigService } from '../modals/modal-service-fee-config/modal-service-fee-config.service';
@@ -69,6 +71,7 @@ export interface MediaIndex {
     ModalTransactionInfoComponent,
     ModalServiceValidatorComponent,
     ModalServicePaymentProcessorComponent,
+    ModalServiceClearingHouseComponent,
     ModalServiceCustodianComponent,
     ModalServiceFeeConfigComponent,
     MetadataEditModalComponent,
@@ -90,6 +93,7 @@ export class DetailsPage implements OnInit {
   trxInfoService = inject(ModalTransactionInfoService);
   private validatorModalService = inject(ModalServiceValidatorService);
   private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
+  private clearingHouseModalService = inject(ModalServiceClearingHouseService);
   private custodianModalService = inject(ModalServiceCustodianService);
   private feeConfigModal = inject(ModalServiceFeeConfigService);
   private metadataEditModal = inject(MetadataEditModalService);
@@ -225,10 +229,14 @@ export class DetailsPage implements OnInit {
   custodianName = signal<string>('');
   // 1:N provider attachments for this service (validators / payment processors / custodians).
   // `name` is resolved lazily from the regulator-scoped registries (resolvePartyNames).
-  serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [] });
+  serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[]; clearingHouses: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [], clearingHouses: [] });
 
-  // Flattened view of the three 1:N attachment sets for the Service Providers tab's single table.
-  // `removable` encodes the on-chain rule that a service must keep at least one custodian.
+  // Flattened view of the four 1:N attachment sets for the Service Providers tab's single table.
+  // `partyType` is the SHARED platform numbering (4 = Clearing House) — the same ids the Add
+  // modal's spType uses, and the same ids ServicePartiesLib uses on chain. One enum, 1..4.
+  // `removable` encodes the on-chain rule that a service must keep at least one custodian — a
+  // clearing house has no such floor, because an EMPTY set is itself meaningful ("this market's
+  // credit is final, settle every fill immediately").
   allServiceParties = computed<{ partyType: number; typeLabelKey: string; address: string; name: string; active: boolean; selfCustody: boolean; removable: boolean }[]>(() => {
     const p = this.serviceParties();
     const row = (partyType: number, typeLabelKey: string, x: { address: string; active: boolean; name?: string }, removable: boolean) => ({
@@ -240,6 +248,7 @@ export class DetailsPage implements OnInit {
       ...p.validators.map(v => row(1, 'services.details.info.partyLabelValidator', v, true)),
       ...p.paymentProcessors.map(v => row(2, 'services.details.info.partyLabelPaymentProcessor', v, true)),
       ...p.custodians.map(v => row(3, 'services.details.info.partyLabelCustodian', v, p.custodians.length > 1)),
+      ...p.clearingHouses.map(v => row(5, 'services.details.info.partyLabelClearingHouse', v, true)),
     ];
   });
 
@@ -541,7 +550,18 @@ export class DetailsPage implements OnInit {
       this.service.set(service);
       this.resolveLinkedNames(raw.validator, raw.payment_processor, raw.custodian, raw.address);
       this.apiService.vaultGetServiceParties(this.serviceAddress)
-        .then(p => { this.serviceParties.set(p ?? { validators: [], paymentProcessors: [], custodians: [] }); this.resolvePartyNames(); })
+        // Each bucket is defaulted individually, not just the whole object: an API that predates
+        // the clearing-house role returns the other three and no `clearingHouses`, and a bare
+        // `p ?? {…}` would leave it undefined for `resolvePartyNames` to dereference.
+        .then(p => {
+          this.serviceParties.set({
+            validators: p?.validators ?? [],
+            paymentProcessors: p?.paymentProcessors ?? [],
+            custodians: p?.custodians ?? [],
+            clearingHouses: p?.clearingHouses ?? [],
+          });
+          this.resolvePartyNames();
+        })
         .catch(() => {});
       if (service.suspended) {
         const logs = await this.apiService.vaultGetStateChangeLogs(service.address, 1, 1);
@@ -711,10 +731,11 @@ export class DetailsPage implements OnInit {
   private async resolvePartyNames() {
     const parties = this.serviceParties();
     const regulator = this.service()?.regulator;
-    const [valData, ppData, custData] = await Promise.all([
+    const [valData, ppData, custData, chData] = await Promise.all([
       parties.validators.length ? this.apiService.vaultGetValidators(1, 200).catch(() => null) : Promise.resolve(null),
       parties.paymentProcessors.length ? this.apiService.vaultGetPaymentProcessors(1, 200).catch(() => null) : Promise.resolve(null),
       (parties.custodians.length && regulator) ? this.apiService.vaultGetEndorsedCustodians(regulator, 1, 200).catch(() => null) : Promise.resolve(null),
+      parties.clearingHouses.length ? this.apiService.vaultGetClearingHouses(1, 200).catch(() => null) : Promise.resolve(null),
     ]);
     const nameFrom = (list: any[] | undefined, addr: string): string | undefined => {
       const m = (list ?? []).find((x: any) => x.address?.toLowerCase() === addr.toLowerCase());
@@ -724,6 +745,7 @@ export class DetailsPage implements OnInit {
       validators: parties.validators.map(p => ({ ...p, name: nameFrom(valData?.validators, p.address) })),
       paymentProcessors: parties.paymentProcessors.map(p => ({ ...p, name: nameFrom(ppData?.paymentProcessors, p.address) })),
       custodians: parties.custodians.map(p => ({ ...p, name: nameFrom(custData?.custodians, p.address) })),
+      clearingHouses: parties.clearingHouses.map(p => ({ ...p, name: nameFrom(chData?.clearingHouses, p.address) })),
     });
   }
 
@@ -901,8 +923,10 @@ export class DetailsPage implements OnInit {
   }
 
   // ─── 1:N provider attach / detach ──────────────────────────────────────────
-  // partyType: 1=Validator, 2=PaymentProcessor, 3=Custodian. Reuses the existing picker
-  // modals to choose an address to ATTACH (a service may hold many of each role).
+  // partyType: 1=Validator, 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse — the SHARED
+  // platform numbering, identical to the curated spType and to ServicePartiesLib's on-chain
+  // roles. Reuses the existing picker modals to choose an address to ATTACH (a service may
+  // hold many of each role).
 
   private async _attachParty(partyType: number, party: string) {
     const currentService = this.service();
@@ -924,7 +948,10 @@ export class DetailsPage implements OnInit {
   async detachParty(partyType: number, party: string) {
     const currentService = this.service();
     if (!currentService) return;
-    const labelKey = partyType === 1 ? 'services.details.info.partyLabelValidator' : partyType === 2 ? 'services.details.info.partyLabelPaymentProcessor' : 'services.details.info.partyLabelCustodian';
+    const labelKey = partyType === 1 ? 'services.details.info.partyLabelValidator'
+                   : partyType === 2 ? 'services.details.info.partyLabelPaymentProcessor'
+                   : partyType === 4 ? 'services.details.info.partyLabelClearingHouse'
+                   : 'services.details.info.partyLabelCustodian';
     const label = this.translate.instant(labelKey);
     const ok = await this.alertService.show(this.translate.instant('services.details.info.removeProviderTitle'), this.translate.instant('services.details.info.detachConfirm', { label }), this.translate.instant('common.remove'));
     if (!ok) return;
@@ -956,6 +983,14 @@ export class DetailsPage implements OnInit {
       this.serviceParties().paymentProcessors.map(p => p.address));
     if (!chosen) return;
     await this._attachParty(2, chosen);
+  }
+
+  async attachClearingHouse() {
+    const chosen = await this.clearingHouseModalService.show('',
+      this.serviceParties().clearingHouses.map(p => p.address));
+    if (!chosen) return;
+    // Role 5 — the SAME id the curated set and the Regulators Registry use.
+    await this._attachParty(5, chosen);
   }
 
   async attachCustodian() {

@@ -244,7 +244,7 @@
                 @if (rounds().length === 0) {
                   <tr class="bg-white border-b"><td class="px-6 py-2" colspan="7">{{ 'common.noData' | translate }}</td></tr>
                 } @else {
-                  @for (r of rounds(); track r.txHash + '-' + r.logIndex; let isEven = $even) {
+                  @for (r of pagedRounds(); track r.txHash + '-' + r.logIndex; let isEven = $even) {
                     <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
                       <td class="px-6 py-2">{{ r.createdAt ? utils.formatTime(r.createdAt) : '—' }}</td>
                       <td class="px-6 py-2 text-center">{{ r.roundNo }}</td>
@@ -262,6 +262,8 @@
               </tbody>
             </table>
           </div>
+          <app-paginator [total]="rounds().length" [page]="roundsPage()" [pageSize]="roundsPageSize()"
+            (pageChange)="roundsPage.set($event)" (pageSizeChange)="roundsPageSize.set($event)" />
         }
 
         @if (tab() === 'settlement') {

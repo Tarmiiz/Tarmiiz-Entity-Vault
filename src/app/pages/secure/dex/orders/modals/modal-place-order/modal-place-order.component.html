@@ -134,6 +134,34 @@
             <p class="text-xs text-gray-500 mt-1">{{ 'dex.orders.placeModal.amountHint' | translate }}</p>
           </div>
 
+          <!-- Time in force (2026-08-11). Default GTC, which is what every order was before
+               this existed — so an operator who ignores this control gets the old behaviour.
+               A GTD deadline is entered in LOCAL time and converted to unix seconds. -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.place.timeInForce' | translate }}</label>
+            <div class="mt-1 flex gap-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="tif" [checked]="tif() === 'gtc'" (change)="tif.set('gtc')"
+                  class="h-4 w-4 text-indigo-600 border-gray-300">
+                <span class="text-sm text-gray-800">{{ 'dex.orders.place.tifGtc' | translate }}</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="tif" [checked]="tif() === 'gtd'" (change)="tif.set('gtd')"
+                  class="h-4 w-4 text-indigo-600 border-gray-300">
+                <span class="text-sm text-gray-800">{{ 'dex.orders.place.tifGtd' | translate }}</span>
+              </label>
+            </div>
+            @if (tif() === 'gtd') {
+              <input type="datetime-local"
+                [ngModel]="expiryLocal()" (ngModelChange)="expiryLocal.set($event)"
+                class="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              @if (expiryError()) {
+                <p class="text-xs text-red-600 mt-1">{{ expiryError() | translate }}</p>
+              }
+            }
+            <p class="text-xs text-gray-500 mt-1">{{ 'dex.orders.place.tifHint' | translate }}</p>
+          </div>
+
           <div class="bg-gray-50 rounded p-3">
             <p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.estimatedTotal' | translate }}</p>
             <p class="text-sm font-semibold text-gray-800">{{ estimatedTotal() }} {{ selectedListingCurrency() }}</p>
@@ -148,7 +176,7 @@
         @if (step() === 3) {
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.subscription' | translate }}</p><p class="text-sm font-mono break-all">{{ subscription() }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.subscription' | translate }}</p><p class="text-sm">{{ subscriptionLabel() }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.venue' | translate }}</p><p class="text-sm font-mono break-all">{{ dexService() }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.asset' | translate }}</p><p class="text-sm">{{ selectedListing()?.assetSymbol || '?' }} — {{ selectedListing()?.assetName || '' }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.currency' | translate }}</p><p class="text-sm">{{ selectedListingCurrency() }}</p></div>
@@ -156,7 +184,12 @@
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.side' | translate }}</p><p class="text-sm font-semibold" [class.text-green-700]="side() === 1" [class.text-orange-700]="side() === 2">{{ (side() === 1 ? 'dex.orders.side.buy' : 'dex.orders.side.sell') | translate }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.price' | translate }}</p><p class="text-sm">{{ priceText() }} {{ selectedListingCurrency() }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'common.amount' | translate }}</p><p class="text-sm">{{ amountText() }}</p></div>
+              <div><p class="text-xs text-gray-500">{{ 'dex.orders.place.timeInForce' | translate }}</p><p class="text-sm">{{ tif() === 'gtc' ? ('dex.orders.place.tifGtc' | translate) : expiryLocal() }}</p></div>
               <div class="col-span-2"><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.estimatedTotal' | translate }}</p><p class="text-base font-bold">{{ estimatedTotal() }} {{ selectedListingCurrency() }}</p></div>
+              <!-- On a venue with a clearing house attached the fill does NOT settle at match:
+                   it lands on the Clearing page as a pending delivery until the netted cycle
+                   settles in fiat. Said here so a successful submit is not read as a done trade. -->
+              <div class="col-span-2"><p class="text-xs text-gray-500 border-t border-gray-200 pt-2">{{ 'dex.deferredHint' | translate }}</p></div>
             </div>
             <label class="flex items-start gap-2 mt-4 cursor-pointer">
               <input type="checkbox" [checked]="reviewConfirmed()" (change)="reviewConfirmed.set($any($event.target).checked)" class="mt-1">

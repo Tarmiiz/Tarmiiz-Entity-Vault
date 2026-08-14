@@ -204,6 +204,19 @@
               </select>
               <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.custodianNote' | translate }}</p>
             </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.clearingHouse' | translate }}</label>
+              <!-- No "recommended" default, unlike custody: leaving this empty is a real answer,
+                   not an omission — it says this market's credit is final. -->
+              <select formControlName="clearingHouse"
+                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">{{ 'services.addModal.noClearingHouse' | translate }}</option>
+                @for (c of clearingHouses(); track c.address) {
+                  <option [value]="c.address">{{ c.name || c.address }}</option>
+                }
+              </select>
+              <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.clearingHouseNote' | translate }}</p>
+            </div>
           }
 
           <!-- Review & Confirm (last step) -->
@@ -277,6 +290,10 @@
                   <div class="flex justify-between">
                     <span class="text-gray-500">{{ 'services.addModal.fields.custodian' | translate }}</span>
                     <span class="text-black font-medium">{{ getCustodianDisplay() }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">{{ 'services.addModal.fields.clearingHouse' | translate }}</span>
+                    <span class="text-black font-medium">{{ getClearingHouseName() }}</span>
                   </div>
                 </div>
               </div>
