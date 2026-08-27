@@ -1,4 +1,4 @@
-﻿@if (paymentProcessorService.isVisible()) {
+@if (paymentProcessorService.isVisible()) {
   <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 transform transition-all duration-300 ease-in-out scale-100">
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
@@ -6,29 +6,94 @@
           {{ 'services.paymentProcessorModal.title' | translate }}
         </h3>
       </div>
-      <form [formGroup]="paymentProcessorForm" (ngSubmit)="onSave()">
+
+      @if (hasCurrencies()) {
+        <form [formGroup]="paymentProcessorForm" (ngSubmit)="onSave()">
+          <div class="p-6 space-y-5">
+
+            <!-- Provider -->
+            <div>
+              <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">{{ 'services.paymentProcessorModal.label' | translate }}</label>
+              <select id="paymentProcessor" formControlName="paymentProcessor" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                <option value="" disabled>{{ 'services.paymentProcessorModal.placeholder' | translate }}</option>
+                @for (cs of paymentProcessors(); track cs.address) {
+                  <option [value]="cs.address">{{ cs.name || cs.address }}</option>
+                }
+              </select>
+              @if (paymentProcessors().length === 0) {
+                <p class="mt-2 text-xs text-amber-700">{{ 'services.paymentProcessorModal.empty' | translate }}</p>
+              }
+            </div>
+
+            <!-- Currency + the role it implies. The attachment is (provider, currency, role): a
+                 provider is attached PER CURRENCY, and the role is read off that currency's
+                 election — never picked here. -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="currencyCode" class="block text-sm font-medium text-gray-700">Currency</label>
+                <select id="currencyCode" formControlName="currencyCode"
+                  (change)="onCurrencyChange($any($event.target).value)"
+                  class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                  @for (c of paymentProcessorService.currencies(); track c.currencyCode) {
+                    <option [value]="c.currencyCode">{{ c.currencyName }}</option>
+                  }
+                </select>
+              </div>
+
+              <div>
+                <span class="block text-sm font-medium text-gray-700">Role <span class="font-normal text-gray-400">(derived)</span></span>
+                <div class="mt-1 flex w-full items-center px-3 py-2 text-base sm:text-sm border border-gray-200 bg-gray-100 rounded-md text-gray-700 cursor-not-allowed select-none">
+                  @if (currentRoleName()) {
+                    {{ currentRoleName() }}
+                  } @else {
+                    <span class="text-gray-400">&mdash;</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <p class="text-xs text-gray-500">
+              The role is not a choice &mdash; it follows from the election your regulator declared for
+              the selected currency, and the contract rejects any other value. A service may hold a
+              different election per currency, so switching currency here can change the role.
+            </p>
+          </div>
+
+          <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+            <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+              {{ 'common.cancel' | translate }}
+            </button>
+            <button type="submit" [disabled]="!paymentProcessorForm.get('paymentProcessor')?.value || !currentRoleName()"
+              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+              {{ 'services.paymentProcessorModal.submit' | translate }}
+            </button>
+          </div>
+        </form>
+      } @else {
+        <!-- No election anywhere ⇒ there is no role to attach with, so there is no valid form to
+             show. Submit is absent entirely rather than disabled. -->
         <div class="p-6">
-          <label for="paymentProcessor" class="block text-sm font-medium text-gray-700">{{ 'services.paymentProcessorModal.label' | translate }}</label>
-          <select id="paymentProcessor" formControlName="paymentProcessor" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-            <option value="" disabled>{{ 'services.paymentProcessorModal.placeholder' | translate }}</option>
-            @for (cs of paymentProcessors(); track cs.address) {
-              <option [value]="cs.address">{{ cs.name || cs.address }}</option>
-            }
-          </select>
-          @if (paymentProcessors().length === 0) {
-            <p class="mt-2 text-xs text-amber-700">{{ 'services.paymentProcessorModal.empty' | translate }}</p>
-          }
+          <div class="rounded-md border border-amber-200 bg-amber-50 p-4">
+            <p class="text-sm font-medium text-amber-900">No currency election has been declared yet</p>
+            <p class="mt-2 text-xs text-amber-800">
+              A payment provider is attached per currency, and the role it attaches with is derived from
+              that currency's election. No election has been declared for any currency on this service,
+              so there is no role to attach a provider with.
+            </p>
+            <p class="mt-2 text-xs text-amber-800">
+              Your <span class="font-medium">regulator</span> declares the election, per currency &mdash;
+              ask them to declare one, then add the payment provider here. You can see the current state
+              on this service's <span class="font-medium">Election</span> tab.
+            </p>
+          </div>
         </div>
+
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
           <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
-            {{ 'common.cancel' | translate }}
-          </button>
-          <button type="submit" [disabled]="!paymentProcessorForm.get('paymentProcessor')?.value"
-            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-            {{ 'services.paymentProcessorModal.submit' | translate }}
+            {{ 'common.close' | translate }}
           </button>
         </div>
-      </form>
+      }
     </div>
   </div>
 }

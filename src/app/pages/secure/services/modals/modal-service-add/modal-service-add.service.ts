@@ -8,16 +8,45 @@ export interface AddServiceData {
   mobile: string;
   verificationLevel: number;
   serviceType: number;
-  // Entity-declared sub-type for service providers (1=Validator,2=PaymentProcessor,3=Custodian,4=ClearingHouse; 0=issuer).
-  providerType: number;
+  // Entity-declared sub-type for SERVICE PROVIDERS (serviceType 2) — the `Party Class` catalog
+  // id (1=Validator, 2=Payment Gateway, 3=Bank, 4=Custodian, 5=Clearing House, 6=Escrow CH).
+  // 0 on a token provider.
+  partyClass: number;
+  // Entity-declared sub-type for TOKEN PROVIDERS (serviceType 1) — the `Market Class` catalog
+  // id (1=Issuer, 2=Exchange, 3=Brokerage). 0 on a service provider; never 0 on a type-1.
+  marketClass: number;
   regulator: string;
   validator: string;
+  // ⚠️ Always '' now — there is no picker for it. A payment provider does not attach through
+  // `partyAttach`: it attaches PER CURRENCY via `addPaymentProvider(provider, currencyCode,
+  // payRole)`, and the role is validated against that currency's election — which only the
+  // REGULATOR declares. Nothing can be attached at create time, so the field is inert and the
+  // create payload no longer carries it. Attach from the service's Service Providers tab once
+  // the regulator has declared the election.
   paymentProcessor: string;
   custodian: string;
   // Optional, type-1 only. Empty = none, which is MEANINGFUL rather than missing: no clearing
   // house means this market's credit is final and every fill settles immediately.
   clearingHouse: string;
   visibility: number;
+}
+
+// ⚠️ THE WIZARD NO LONGER SETS AN ELECTION, and the constants below are kept for the surfaces
+// that still need the vocabulary (the service detail page's Election tab and its switch-request
+// modal). The entity cannot declare an election at all: `P_ELECTION_DECLARE` is gated
+// `K_REGULATOR_OF`, so the REGULATOR declares a service's initial onc/offc election, per currency.
+// A wizard field for it would be a promise the platform refuses at submit.
+//
+// The election -> payRole mapping stays in ONE place. Note the INVERSION: ELECTION_ONC (1) maps
+// to PAY_ROLE_MINTER (2) and ELECTION_OFFC (2) to PAY_ROLE_RAIL (1). Writing it inline anywhere
+// is an invitation to pass the election through as the role, which encodes cleanly and attaches
+// the wrong kind of provider. Mirrors `ServiceTemplate._payRoleFor`.
+export const ELECTION_ONC = 1;
+export const ELECTION_OFFC = 2;
+export const PAY_ROLE_RAIL = 1;
+export const PAY_ROLE_MINTER = 2;
+export function payRoleForElection(election: number): number {
+  return Number(election) === ELECTION_ONC ? PAY_ROLE_MINTER : PAY_ROLE_RAIL;
 }
 
 // Sentinel for self-custody at serviceCreate; ServiceTemplate substitutes address(this) at init.

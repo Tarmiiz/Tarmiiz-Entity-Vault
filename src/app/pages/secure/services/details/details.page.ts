@@ -11,6 +11,7 @@ import { Subscription as RxSubscription } from 'rxjs';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
+import { PARTY_CLASS, partyClassName } from '../../../../shared/constants/party-class';
 import { ApiService } from '../../../../shared/services/api.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
@@ -35,6 +36,10 @@ import { ModalServiceCustodianService, SELF_CUSTODY_SENTINEL } from '../modals/m
 import { ModalServiceCustodianComponent } from '../modals/modal-service-custodian/modal-service-custodian.component';
 import { ModalServiceFeeConfigService } from '../modals/modal-service-fee-config/modal-service-fee-config.service';
 import { ModalServiceFeeConfigComponent } from '../modals/modal-service-fee-config/modal-service-fee-config.component';
+// Opened in 'switch' mode ONLY. Its 'declare' mode is unreachable from here by design — the
+// regulator declares a service's initial election (see the authority-model note on getElections).
+import { ModalServiceElectionService, payRoleForElection } from '../modals/modal-service-election/modal-service-election.service';
+import { ModalServiceElectionComponent } from '../modals/modal-service-election/modal-service-election.component';
 import { MetadataEditModalService } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.service';
 import { MetadataEditModalComponent } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.component';
 import { SocketService } from '../../../../shared/services/socket.service';
@@ -74,6 +79,7 @@ export interface MediaIndex {
     ModalServiceClearingHouseComponent,
     ModalServiceCustodianComponent,
     ModalServiceFeeConfigComponent,
+    ModalServiceElectionComponent,
     MetadataEditModalComponent,
     DocumentsTabComponent,
     ModalImageAddComponent,
@@ -96,6 +102,7 @@ export class DetailsPage implements OnInit {
   private clearingHouseModalService = inject(ModalServiceClearingHouseService);
   private custodianModalService = inject(ModalServiceCustodianService);
   private feeConfigModal = inject(ModalServiceFeeConfigService);
+  private electionModalService = inject(ModalServiceElectionService);
   private metadataEditModal = inject(MetadataEditModalService);
   private imageAddModal = inject(ModalImageAddService);
   private socketService = inject(SocketService);
@@ -110,7 +117,15 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'providers' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+
+  // ── the onc/offc election (S5, S63-S68) ─────────────────────────────────────────────
+  // A LIST, not a field: the election is per CURRENCY, so a service may be onc in one and
+  // offc in another. Every payment leg reads it LIVE (S11) — this mirror is for display.
+  elections = signal<any[]>([]);
+  paymentProviders = signal<any[]>([]);
+  electionsLoading = signal(false);
+  migratingCcy = signal<number | null>(null);
 
   // Public-profile metadata parsed from the service's on-chain metadata JSON string.
   // `contact` is rendered in its own Contact section; `entries` are the free-form
@@ -222,18 +237,46 @@ export class DetailsPage implements OnInit {
   service = signal<Service | undefined>(undefined);
   withheldCredit  = signal<{ currencyCode: number; currencyName: string; currencySymbol: string; withheld: number }[]>([]);
   withheldAssets  = signal<{ asset: string; name: string; symbol: string; totalWithheld: number }[]>([]);
-  isTokenIssuer = computed(() => this.service()?.serviceType === 1);
+  isTokenProvider = computed(() => this.service()?.serviceType === 1);
+  // Neither half of the `serviceType` axis says enough on its own: "Service Provider" doesn't
+  // say WHICH kind of provider, and "Token Provider" covers three different businesses
+  // (Issuer / Exchange / Brokerage). Each half carries its OWN sub-type field and exactly one
+  // is ever non-zero, so read the one that matches the type — never the wrong one, which would
+  // render a Payment Gateway as an "Exchange" (both are class 2 in their own catalogs).
+  serviceTypeDisplay = computed(() => {
+    const s = this.service();
+    if (!s) return '';
+    const base = s.serviceTypeName ?? '';
+    if (s.serviceType === 2 && s.partyClassName) return `${base} / ${s.partyClassName}`;
+    if (s.serviceType === 1 && s.marketClassName) return `${base} / ${s.marketClassName}`;
+    return base;
+  });
+  // A type-1 service's declared marketClass is not operative until its regulator confirms it —
+  // the DEX gates read the confirmation, not the declaration. Unconfirmed is the NORMAL state
+  // of a freshly created service, so it renders neutral (gray), never as an error.
+  showMarketClassPill = computed(() => {
+    const s = this.service();
+    return !!s && s.serviceType === 1 && !!s.marketClass;
+  });
+  marketClassConfirmed = computed(() => this.service()?.marketClassConfirmed === true);
   suspensionReason = signal<string>('');
   validatorName = signal<string>('');
   paymentProcessorName = signal<string>('');
   custodianName = signal<string>('');
   // 1:N provider attachments for this service (validators / payment processors / custodians).
   // `name` is resolved lazily from the regulator-scoped registries (resolvePartyNames).
-  serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[]; clearingHouses: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [], clearingHouses: [] });
+  // FIVE buckets — the API's `listServiceParties` returns escrowClearingHouses as its own,
+  // deliberately NOT merged into clearingHouses: a venue's escrow CH is a SEPARATE
+  // appointment from the entities' CH. Declaring four here is why those attachments
+  // existed on chain and rendered nowhere.
+  serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[]; clearingHouses: { address: string; active: boolean; name?: string }[]; escrowClearingHouses: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [], clearingHouses: [], escrowClearingHouses: [] });
 
   // Flattened view of the four 1:N attachment sets for the Service Providers tab's single table.
-  // `partyType` is the SHARED platform numbering (4 = Clearing House) — the same ids the Add
-  // modal's spType uses, and the same ids ServicePartiesLib uses on chain. One enum, 1..4.
+  // `partyType` is the SHARED platform numbering — the same ids the Add modal's spType uses
+  // and the same ids ServicePartiesLib uses on chain. ⚠️ NEVER write the digit here: the
+  // catalog renumbered (Bank inserted at 3, Custodian 3 -> 4, Clearing House 4 -> 5) and the
+  // old values are all still VALID, so a stale literal silently names a different family
+  // rather than failing. It is also APPEND-ONLY on chain, so `1..N` is not a closed range.
   // `removable` encodes the on-chain rule that a service must keep at least one custodian — a
   // clearing house has no such floor, because an EMPTY set is itself meaningful ("this market's
   // credit is final, settle every fill immediately").
@@ -241,14 +284,18 @@ export class DetailsPage implements OnInit {
     const p = this.serviceParties();
     const row = (partyType: number, typeLabelKey: string, x: { address: string; active: boolean; name?: string }, removable: boolean) => ({
       partyType, typeLabelKey, address: x.address, name: x.name ?? '', active: x.active,
-      selfCustody: partyType === 3 && this.isSelfCustodyAddress(x.address),
+      selfCustody: partyType === PARTY_CLASS.CUSTODIAN && this.isSelfCustodyAddress(x.address),
       removable,
     });
     return [
-      ...p.validators.map(v => row(1, 'services.details.info.partyLabelValidator', v, true)),
-      ...p.paymentProcessors.map(v => row(2, 'services.details.info.partyLabelPaymentProcessor', v, true)),
-      ...p.custodians.map(v => row(3, 'services.details.info.partyLabelCustodian', v, p.custodians.length > 1)),
-      ...p.clearingHouses.map(v => row(5, 'services.details.info.partyLabelClearingHouse', v, true)),
+      ...p.validators.map(v => row(PARTY_CLASS.VALIDATOR, 'services.details.info.partyLabelValidator', v, true)),
+      // The API merges BOTH rail classes (gateway 2 + bank 3) into this bucket, so the id is
+      // the gateway's. It labels the ROLE, not the rail type — the per-currency attachment
+      // carries the rail, and every consumer here asks one question: who processes payments.
+      ...p.paymentProcessors.map(v => row(PARTY_CLASS.PAYMENT_GATEWAY, 'services.details.info.partyLabelPaymentProcessor', v, true)),
+      ...p.custodians.map(v => row(PARTY_CLASS.CUSTODIAN, 'services.details.info.partyLabelCustodian', v, p.custodians.length > 1)),
+      ...p.clearingHouses.map(v => row(PARTY_CLASS.CLEARING_HOUSE, 'services.details.info.partyLabelClearingHouse', v, true)),
+      ...(p.escrowClearingHouses ?? []).map(v => row(PARTY_CLASS.ESCROW_CH, 'services.details.info.partyLabelEscrowClearingHouse', v, true)),
     ];
   });
 
@@ -363,15 +410,21 @@ export class DetailsPage implements OnInit {
   
   async ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
+    // ⚠️ 'election' belongs in BOTH the cast and the allow-list. A tab missing from either is
+    // silently rewritten to Overview, so `?tab=election` did not survive a refresh — and the
+    // election is exactly the surface an operator deep-links to while chasing a regulator's
+    // declaration or a pending switch.
     const requested = this.route.snapshot.queryParamMap.get('tab') as
-      ('overview' | 'info' | 'providers' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
-    const allowed = ['overview', 'info', 'providers', 'metadata', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
+      ('overview' | 'info' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
+    const allowed = ['overview', 'info', 'providers', 'election', 'metadata', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
     let initialTab = requested && (allowed as readonly string[]).includes(requested) ? requested : 'overview';
     // Overview is hidden for service-provider tenants — fall back to Information.
     if (this.isServiceProvider && initialTab === 'overview') initialTab = 'info';
     this.activeTab.set(initialTab);
     await this.reload();
     if (initialTab === 'liquidity') this.getLiquidity();
+    // `setTab` is what normally loads the election rows; a deep link bypasses it.
+    if (initialTab === 'election') this.getElections();
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.reload(true));
   }
 
@@ -395,7 +448,189 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'providers' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
+  // ── The onc/offc election (S5, S63-S68) ─────────────────────────────────────────────────
+  //
+  // Whether this service's money is `onc` (fiat already in reserve, so a movement is final) or
+  // `offc` (credit records the movement and fiat settles behind it). DECLARED, never inferred
+  // from the attachments (S63) — attachment validates AGAINST it (S6).
+  //
+  // ⚠️ AUTHORITY MODEL — the REGULATOR declares, the entity only requests changes:
+  //   • the REGULATOR declares a service's initial election, PER CURRENCY, per service
+  //     (`P_ELECTION_DECLARE` is gated `K_REGULATOR_OF`) — so this page has NO declare action,
+  //   • the ENTITY may REQUEST a switch and the REGULATOR approves it, in both directions,
+  //   • anyone may drive the paged migration (`P_ELECTION_MIGRATE` is `K_OPEN`).
+  //
+  // This used to let the entity declare. `onc` means the service MINTS credit against fiat it
+  // claims to hold in reserve, and under the old rule the regulator approved every LATER switch
+  // but never the STARTING position — so a service that declared onc on day one passed through
+  // no approval at all. The regulator can now also allow one service to run onc and refuse
+  // another. Do not reintroduce a declare button here; the call is refused on chain.
+  //
+  // The entity CAN still withdraw its own pending request, because approval freezes the currency
+  // and a stale request is a hazard rather than clutter.
+
+  async getElections() {
+    const address = this.service()?.address;
+    if (!address) return;
+    this.electionsLoading.set(true);
+    try {
+      const [el, pp] = await Promise.all([
+        this.apiService.vaultServiceElection(address),
+        this.apiService.vaultServicePaymentProviders(address),
+      ]);
+      this.elections.set(el?.elections || []);
+      this.paymentProviders.set(pp?.providers || []);
+    } catch {
+      this.elections.set([]);
+      this.paymentProviders.set([]);
+    } finally {
+      this.electionsLoading.set(false);
+    }
+  }
+
+  // WHO made the last election transition, of ANY kind. The API derives the kind by comparing the
+  // announced actor against this service's entity and regulator; 'unknown' means the row predates
+  // the field and must render as neither.
+  //
+  // ⚠️ This is NOT the field to render a verdict from — use `clearedByKind` below. Kept because it
+  // is still the honest answer to "who touched this last", which a future audit surface may want.
+  lastActorKind(e: any): string {
+    return String(e?.lastActorKind || 'unknown');
+  }
+
+  // WHO cleared the last PENDING REQUEST — the field the breadcrumb renders (Phase 20.1).
+  //
+  // Withdrawing a request yourself and having it declined are the SAME on-chain transition, so the
+  // actor is the entire signal. But `lastActorKind` answers a WIDER question, and rendering it as a
+  // verdict was wrong in two directions: a freshly DECLARED election is a regulator act, so the row
+  // claimed "your regulator declined the last request" before any request existed; and a SUCCESSFUL
+  // approval also zeroes `requested`, so it read as a refusal too.
+  //
+  // `clearedBy` is written by the sync plugin only when a pending request was genuinely cleared
+  // (state unchanged), and NULLed otherwise — so 'unknown' here means "nothing was cleared" and the
+  // template correctly falls through to the bare em-dash.
+  clearedByKind(e: any): string {
+    return String(e?.clearedByKind || 'unknown');
+  }
+
+  electionLabel(v: number): string {
+    // 3 = migrating is a state the service IS IN, not an event between states — its payment legs
+    // in that currency are refused while it runs (S64).
+    // `onc` / `offc` are the RULE vocabulary (S5, S63–S68) and stay that way in code and in the
+    // rule documents. Nothing an operator reads uses them — this helper feeds every election
+    // surface on the page, so the two spellings can never diverge across the tab.
+    return ({ 1: 'On-Chain', 2: 'Off-Chain', 3: 'Migrating' } as Record<number, string>)[Number(v)] || 'Undeclared';
+  }
+
+  payRoleLabel(v: number): string {
+    // The pay role is INVERTED relative to the election ids (onc 1 -> minter 2, offc 2 -> rail 1),
+    // which is exactly why the label names the election it belongs to rather than standing alone.
+    return ({ 1: 'Rail (Off-Chain)', 2: 'Minter (On-Chain)' } as Record<number, string>)[Number(v)] || '—';
+  }
+
+  providersForCurrency(currencyCode: number) {
+    return this.paymentProviders().filter(p => Number(p.currencyCode) === Number(currencyCode));
+  }
+
+  /** Drives ONE page of an in-flight migration. Permissionless on chain (S68); paginated (S10). */
+  async migrateElection(row: any) {
+    const address = this.service()?.address;
+    if (!address) return;
+    this.migratingCcy.set(Number(row.currencyCode));
+    try {
+      const res = await this.apiService.vaultServiceElectionMigrate(address, Number(row.currencyCode), 50);
+      if (res?.error) {
+        this.alertService.show(this.translate.instant('alerts.updateFailed'), res.error);
+        return;
+      }
+      await this.getElections();
+    } catch (error) {
+      console.error('Failed to drive migration', error);
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.migratingCcy.set(null);
+    }
+  }
+
+  /**
+   * True when this currency's election can be switched by a request from us: it must already be
+   * DECLARED (1 onc / 2 offc), not mid-migration (3), and not already carrying a pending request.
+   *
+   * Undeclared (0) is deliberately NOT offered — there is nothing to switch FROM, and the entity
+   * cannot create the starting position either; only the regulator declares it.
+   */
+  canRequestSwitch(row: any): boolean {
+    // Gated on the SAME System Function the Entity API enforces on
+    // POST/DELETE /services/:address/election/switch. Without this an executive whose admin
+    // turned the key off still saw the button and got an opaque 403 at submit.
+    if (!this.features.systemFunctionEnabled('service-election-switch')) return false;
+    const el = Number(row?.election);
+    return (el === 1 || el === 2) && !row?.requestedTo;
+  }
+
+  /**
+   * Requests a switch of an ALREADY-DECLARED election. This is a REQUEST, not a change: the
+   * service's regulator approves it (in both directions), and only then does the paged migration
+   * begin. Reuses the declare/switch modal in its 'switch' mode, where the currency is fixed and
+   * the operator picks a target that must differ from what is in force.
+   */
+  async requestElectionSwitch(row: any) {
+    const address = this.service()?.address;
+    if (!address || !this.canRequestSwitch(row)) return;
+
+    const currencyCode = Number(row.currencyCode);
+    const chosen = await this.electionModalService.show('switch', {
+      // Switch mode fixes the currency; the list exists only so the modal can label it.
+      currencies: [{ currencyCode, currencyName: row.currencySymbol || String(currencyCode) }],
+      currencyCode,
+      currentElection: Number(row.election),
+    });
+    if (!chosen) return;
+
+    this.loadingService.show(this.translate.instant('common.updating'));
+    try {
+      const res = await this.apiService.vaultServiceElectionRequestSwitch(address, currencyCode, chosen.election);
+      if ((res as any)?.error) {
+        this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error);
+        return;
+      }
+      await this.getElections();
+      if ((res as any)?.requestId) {
+        this.alertService.show(this.translate.instant('approvals.submittedTitle'),
+          this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+      }
+    } catch (error) {
+      console.error('Failed to request election switch', error);
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  /** Withdraws a PENDING switch request. Approval freezes the currency — a stale request is a hazard. */
+  async withdrawElectionSwitch(row: any) {
+    const address = this.service()?.address;
+    if (!address) return;
+    const ok = await this.alertService.show(
+      'Withdraw switch request',
+      `Withdraw the pending switch to ${this.electionLabel(row.requestedTo)} for currency `
+      + `${row.currencySymbol || row.currencyCode}? The election stays as it is.`,
+      this.translate.instant('common.remove'));
+    if (!ok) return;
+    this.loadingService.show(this.translate.instant('common.updating'));
+    try {
+      const res = await this.apiService.vaultServiceElectionWithdraw(address, Number(row.currencyCode));
+      if (res?.error) { this.alertService.show(this.translate.instant('alerts.updateFailed'), res.error); return; }
+      await this.getElections();
+    } catch (error) {
+      console.error('Failed to withdraw switch request', error);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  setTab(tab: 'overview' | 'info' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
+    if (tab === 'election') this.getElections();
     this.activeTab.set(tab);
     if (tab === 'info' || tab === 'metadata' || tab === 'providers') this.getServiceDetails();
     if (tab === 'assets') this.getAssets();
@@ -437,8 +672,11 @@ export class DetailsPage implements OnInit {
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
       serviceType: raw.service_type ?? 0,
       serviceTypeName: raw.service_type_name ?? '',
-      providerType: raw.provider_type ?? 0,
-      providerTypeName: raw.provider_type_name ?? '',
+      partyClass: raw.party_class ?? 0,
+      partyClassName: raw.party_class_name ?? '',
+      marketClass: raw.market_class ?? 0,
+      marketClassName: raw.market_class_name ?? '',
+      marketClassConfirmed: raw.market_class_confirmed === true || raw.market_class_confirmed === 1,
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
@@ -459,10 +697,8 @@ export class DetailsPage implements OnInit {
       address: raw.address,
       name: raw.name,
       symbol: raw.symbol,
-      tokenType: raw.token_type ?? 0,
-      tokenTypeName: raw.token_type_name ?? String(raw.token_type ?? ''),
-      assetType: raw.asset_type ?? 0,
-      assetTypeName: raw.asset_type_name ?? String(raw.asset_type ?? ''),
+      assetClass: raw.asset_class ?? 0,
+      assetClassName: raw.asset_class_name ?? String(raw.asset_class ?? ''),
       metadata: typeof raw.metadata === 'object' ? JSON.stringify(raw.metadata ?? {}) : (raw.metadata ?? ''),
       totalSupply: raw.total_supply ?? 0,
       circulating: raw.circulating ?? 0,
@@ -559,6 +795,7 @@ export class DetailsPage implements OnInit {
             paymentProcessors: p?.paymentProcessors ?? [],
             custodians: p?.custodians ?? [],
             clearingHouses: p?.clearingHouses ?? [],
+            escrowClearingHouses: p?.escrowClearingHouses ?? [],
           });
           this.resolvePartyNames();
         })
@@ -746,6 +983,9 @@ export class DetailsPage implements OnInit {
       paymentProcessors: parties.paymentProcessors.map(p => ({ ...p, name: nameFrom(ppData?.paymentProcessors, p.address) })),
       custodians: parties.custodians.map(p => ({ ...p, name: nameFrom(custData?.custodians, p.address) })),
       clearingHouses: parties.clearingHouses.map(p => ({ ...p, name: nameFrom(chData?.clearingHouses, p.address) })),
+      // No name lookup: there is no escrow-CH directory endpoint, so the address stands alone
+      // rather than borrowing the entities-CH list, which is a DIFFERENT appointment.
+      escrowClearingHouses: (parties.escrowClearingHouses ?? []).map(p => ({ ...p, name: '' })),
     });
   }
 
@@ -923,10 +1163,13 @@ export class DetailsPage implements OnInit {
   }
 
   // ─── 1:N provider attach / detach ──────────────────────────────────────────
-  // partyType: 1=Validator, 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse — the SHARED
-  // platform numbering, identical to the curated spType and to ServicePartiesLib's on-chain
-  // roles. Reuses the existing picker modals to choose an address to ATTACH (a service may
-  // hold many of each role).
+  // partyType: 1=Validator, 2=PaymentGateway, 3=Bank, 4=Custodian, 5=ClearingHouse,
+  // 6=EscrowClearingHouse — the SHARED platform numbering, identical to the curated spType and to
+  // ServicePartiesLib's on-chain roles. ⚠️ This comment read "3=Custodian, 4=ClearingHouse" (the
+  // pre-split numbering, before BANK was inserted at 3) and the custodian attach below followed
+  // it into an always-reverting call. Use PARTY_CLASS, never a literal.
+  // Reuses the existing picker modals to choose an address to ATTACH (a service may hold many of
+  // each role).
 
   private async _attachParty(partyType: number, party: string) {
     const currentService = this.service();
@@ -945,14 +1188,43 @@ export class DetailsPage implements OnInit {
     }
   }
 
+  // One place for the party-class badge colour. Six `[class.bg-x]="p.partyType === N"` bindings
+  // in the template were six naked digits that would silently mis-colour on the next renumber —
+  // and, being presentational, would never fail loudly.
+  partyBadgeClass(partyType: number): string {
+    return ({
+      [PARTY_CLASS.VALIDATOR]:       'bg-indigo-100 text-indigo-800',
+      [PARTY_CLASS.PAYMENT_GATEWAY]: 'bg-sky-100 text-sky-800',
+      [PARTY_CLASS.BANK]:            'bg-cyan-100 text-cyan-800',
+      [PARTY_CLASS.CUSTODIAN]:       'bg-purple-100 text-purple-800',
+      [PARTY_CLASS.CLEARING_HOUSE]:  'bg-teal-100 text-teal-800',
+      [PARTY_CLASS.ESCROW_CH]:       'bg-amber-100 text-amber-800',
+    } as Record<number, string>)[partyType] ?? 'bg-gray-100 text-gray-700';
+  }
+
+  /** The inactive-pill tooltip differs for a custodian; everything else reads as a validator. */
+  partyInactiveTooltipKey(partyType: number): string {
+    return partyType === PARTY_CLASS.CUSTODIAN
+      ? 'services.details.providers.custodianInactiveTooltip'
+      : 'services.details.providers.validatorInactiveTooltip';
+  }
+
   async detachParty(partyType: number, party: string) {
     const currentService = this.service();
     if (!currentService) return;
-    const labelKey = partyType === 1 ? 'services.details.info.partyLabelValidator'
-                   : partyType === 2 ? 'services.details.info.partyLabelPaymentProcessor'
-                   : partyType === 4 ? 'services.details.info.partyLabelClearingHouse'
-                   : 'services.details.info.partyLabelCustodian';
-    const label = this.translate.instant(labelKey);
+    // Keyed off PARTY_CLASS, and it FALLS BACK to the canonical name rather than to a guess.
+    // The old chain ended `: custodian`, so after the renumbering every unlisted id — the
+    // clearing house among them — was labelled 'Custodian' in the confirmation for a
+    // destructive action. An unknown class is a fact worth showing, not a default to absorb.
+    const labelKey = ({
+      [PARTY_CLASS.VALIDATOR]:       'services.details.info.partyLabelValidator',
+      [PARTY_CLASS.PAYMENT_GATEWAY]: 'services.details.info.partyLabelPaymentProcessor',
+      [PARTY_CLASS.BANK]:            'services.details.info.partyLabelPaymentProcessor',
+      [PARTY_CLASS.CUSTODIAN]:       'services.details.info.partyLabelCustodian',
+      [PARTY_CLASS.CLEARING_HOUSE]:  'services.details.info.partyLabelClearingHouse',
+      [PARTY_CLASS.ESCROW_CH]:       'services.details.info.partyLabelEscrowClearingHouse',
+    } as Record<number, string>)[partyType];
+    const label = labelKey ? this.translate.instant(labelKey) : partyClassName(partyType);
     const ok = await this.alertService.show(this.translate.instant('services.details.info.removeProviderTitle'), this.translate.instant('services.details.info.detachConfirm', { label }), this.translate.instant('common.remove'));
     if (!ok) return;
     this.loadingService.show(this.translate.instant('services.details.loadingMsgs.detachingProvider'));
@@ -978,11 +1250,74 @@ export class DetailsPage implements OnInit {
     await this._attachParty(1, chosen);
   }
 
+  /**
+   * A payment provider does NOT attach through `partyAttach` — its currency-less role sets are
+   * RETIRED (`ServicePartiesLib.Layout.paymentGateways` is commented as such and nothing reads it).
+   * It attaches PER CURRENCY via `addPaymentProvider(provider, currencyCode, payRole)`, and the
+   * contract validates the role against that currency's ELECTION.
+   *
+   * This used to call `_attachParty(2, …)`. On chain that lands in `_partyAuthorised`, whose
+   * role branches cover only VALIDATOR and CUSTODIAN — everything else falls through to
+   * `_isClearingHouseFor`. So attaching a payment gateway asked whether it was a CLEARING HOUSE
+   * and failed with "ServiceTemplate: party not authorised for regulator", which names the wrong
+   * problem entirely.
+   */
   async attachPaymentProcessor() {
+    const address = this.service()?.address;
+    if (!address) return;
+
+    // ⚠️ Load the elections FIRST. They are otherwise only fetched when the Election TAB is
+    // opened, so arriving straight on Service Providers (a deep link, or the Information tab's
+    // "Manage Providers" jump-off) left `elections()` empty and this reported "no election
+    // declared" for a service that has one — blaming the regulator for our own missing fetch.
+    await this.getElections();
+
+    // Only a currency with a DECLARED election can accept an attachment — before that there is no
+    // role to validate against. A MIGRATING currency accepts the DESTINATION's role, matching
+    // `_requirePayRoleMatchesElection`, so it is offered too rather than silently dropped.
+    const currencies = this.elections()
+      .map((e: any) => {
+        const declared = Number(e.election);
+        const effective = declared === 3 ? Number(e.migratingTo) : declared;
+        if (effective !== 1 && effective !== 2) return null;
+        // ⚠️ INVERTED (onc 1 -> minter 2, offc 2 -> rail 1) — hence the shared helper rather than
+        // a second inline copy. An inline copy is exactly how the election gets passed through as
+        // the role: it encodes cleanly and attaches the wrong KIND of provider.
+        const payRole = payRoleForElection(effective);
+        return {
+          currencyCode: Number(e.currencyCode),
+          currencyName: e.currencySymbol || String(e.currencyCode),
+          election: effective,
+          payRole,
+          payRoleName: payRole === 2 ? 'Minter' : 'Rail',
+        };
+      })
+      .filter((c: any) => c !== null);
+
     const chosen = await this.paymentProcessorModalService.show('',
-      this.serviceParties().paymentProcessors.map(p => p.address));
+      this.serviceParties().paymentProcessors.map(p => p.address), currencies as any);
     if (!chosen) return;
-    await this._attachParty(2, chosen);
+
+    this.loadingService.show(this.translate.instant('common.updating'));
+    try {
+      const res = await this.apiService.vaultAttachPaymentProvider(
+        address, chosen.provider, chosen.currencyCode, chosen.payRole);
+      if ((res as any)?.error) {
+        this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error);
+        return;
+      }
+      await this.getServiceDetails();
+      await this.getElections();
+      if ((res as any)?.requestId) {
+        this.alertService.show(this.translate.instant('approvals.submittedTitle'),
+          this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+      }
+    } catch (error) {
+      console.error('Failed to attach payment provider', error);
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   async attachClearingHouse() {
@@ -1001,7 +1336,12 @@ export class DetailsPage implements OnInit {
     const chosen = await this.custodianModalService.show(currentService.address, '', currentService.regulator,
       this.serviceParties().custodians.map(p => p.address));
     if (!chosen) return;
-    await this._attachParty(3, chosen);
+    // ⚠️ Role 4 — this passed the literal 3, the PRE-SPLIT id for Custodian. Since BANK was
+    // inserted at 3, `partyAttach` checked `isPartyFor(regulator, party, 3)` against a class-4
+    // custodian and ALWAYS reverted "party not authorised for regulator" — attaching a custodian
+    // from this page could never succeed. `attachClearingHouse` directly above was corrected to 5
+    // and this one was missed, which is why the constant is used here now.
+    await this._attachParty(PARTY_CLASS.CUSTODIAN, chosen);
   }
 
   // Self-custody sentinel detection for the custodian list label.
@@ -1033,28 +1373,13 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  async openChangePaymentProcessorModal() {
-    const currentService = this.service();
-    if (!currentService) return;
-
-    const newPaymentProcessor = await this.paymentProcessorModalService.show(currentService.paymentProcessor);
-    if (newPaymentProcessor === null) return;
-
-    const zeroAddr = '0x0000000000000000000000000000000000000000';
-    const currentNormalized = (currentService.paymentProcessor && currentService.paymentProcessor !== zeroAddr) ? currentService.paymentProcessor : '';
-    if (newPaymentProcessor === currentNormalized) return;
-
-    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingPaymentProcessor'));
-    try {
-      await this.apiService.vaultSetServicePaymentProcessor(currentService.address, newPaymentProcessor);
-      await this.getServiceDetails();
-    } catch (error) {
-      console.error('Failed to change payment processor', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updatePaymentProcessorError'));
-    } finally {
-      this.loadingService.hide();
-    }
-  }
+  // `openChangePaymentProcessorModal` was DELETED (2026-08-23). It had no template caller and was
+  // doubly wrong: it routed through `vaultSetServicePaymentProcessor` -> `_replaceServiceParty` ->
+  // `POST /services/:address/parties`, i.e. the `partyAttach` path, whose payment role sets are
+  // RETIRED — and `_replaceServiceParty` additionally DETACHES every other row in the payment
+  // bucket, so a "change" would silently drop the service's other currencies' providers.
+  // A payment provider attaches per CURRENCY via `attachPaymentProcessor()` above; there is no
+  // "the service's payment processor" to change.
 
   async openChangeCustodianModal() {
     const currentService = this.service();
@@ -1186,20 +1511,21 @@ export class DetailsPage implements OnInit {
       this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.positiveAmount'));
       return;
     }
-    if (this.liquidityModalAction() === 'withdraw' && amt > this.liquidityModalAvailable()) {
-      this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.exceedsAvailable', { available: this.liquidityModalAvailable() }));
-      return;
-    }
     this.liquidityModalSubmitting.set(true);
     this.liquidityModalError.set('');
     try {
-      const body: any = { currencyCode: cur.code, amount: amt };
-      const refNo = this.liquidityModalRefNo().trim();
-      if (refNo) body.refNo = refNo;
-      const fn = this.liquidityModalAction() === 'inject'
-        ? this.apiService.vaultServiceLiquidityInject.bind(this.apiService)
-        : this.apiService.vaultServiceLiquidityWithdraw.bind(this.apiService);
-      const result = await fn(this.serviceAddress, body);
+      // ⚠️ INJECT ONLY. The withdraw half is gone: the bare pool drain has no on-chain call
+      // left (S37/S78), and money leaves a pool through the withdrawal lifecycle instead. The
+      // reference is now REQUIRED and named `providerTrxRefNo` — an injection is a deposit into
+      // the pool, so it must say which transfer funded it.
+      const ref = this.liquidityModalRefNo().trim();
+      if (!ref) {
+        this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.refRequired'));
+        this.liquidityModalSubmitting.set(false);
+        return;
+      }
+      const body: any = { currencyCode: cur.code, amount: amt, providerTrxRefNo: ref };
+      const result = await this.apiService.vaultServiceLiquidityInject(this.serviceAddress, body);
       if (!result || result.error || result.type === 'error') {
         this.liquidityModalError.set(result?.error || this.translate.instant('alerts.failed'));
       } else {
@@ -1225,7 +1551,7 @@ export class DetailsPage implements OnInit {
       'Name': a.name,
       'Symbol': a.symbol,
       'Issuer': a.issuerName,
-      'Type': a.assetTypeName,
+      'Class': a.assetClassName,
       'State': a.stateName,
       'Suspended': a.suspended ? 'Yes' : 'No',
     }));
@@ -1276,7 +1602,7 @@ export class DetailsPage implements OnInit {
         a.name,
         a.symbol,
         a.issuerName,
-        a.assetTypeName,
+        a.assetClassName,
         a.suspended ? `${a.stateName} (Suspended)` : a.stateName,
       ]),
     });

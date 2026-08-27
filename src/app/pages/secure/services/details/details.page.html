@@ -51,7 +51,7 @@
         >
           {{ 'services.details.tabs.info' | translate }}
         </button>
-        @if (isTokenIssuer()) {
+        @if (isTokenProvider()) {
           <button (click)="setTab('providers')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'providers'"
@@ -60,6 +60,17 @@
             [class.bg-blue-600]="activeTab() === 'providers'"
           >
             {{ 'services.details.tabs.providers' | translate }}
+          </button>
+        }
+        @if (isTokenProvider()) {
+          <button (click)="setTab('election')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'election'"
+            [class.border-b-2]="activeTab() === 'election'"
+            [class.border-blue-600]="activeTab() === 'election'"
+            [class.bg-blue-600]="activeTab() === 'election'"
+          >
+            Election
           </button>
         }
         <button (click)="setTab('metadata')"
@@ -71,7 +82,7 @@
         >
           {{ 'services.details.tabs.metadata' | translate }}
         </button>
-        @if (isTokenIssuer()) {
+        @if (isTokenProvider()) {
           <button (click)="setTab('assets')"
             class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
             [class.text-white]="activeTab() === 'assets'"
@@ -99,7 +110,7 @@
           >
             {{ 'services.details.tabs.transactions' | translate }}
           </button>
-          @if (isTokenIssuer()) {
+          @if (isTokenProvider()) {
             <button (click)="setTab('liquidity')"
               class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
               [class.text-white]="activeTab() === 'liquidity'"
@@ -156,7 +167,7 @@
 
             <!-- Counts row -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              @if (isTokenIssuer()) {
+              @if (isTokenProvider()) {
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                   <p class="text-xs text-gray-500 mb-1">{{ 'services.details.tabs.assets' | translate }}</p>
                   <p class="text-base font-semibold text-gray-800">{{ assets().length }}</p>
@@ -168,7 +179,13 @@
               }
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                 <p class="text-xs text-gray-500 mb-1">{{ 'services.details.info.serviceType' | translate }}</p>
-                <p class="text-base font-semibold text-gray-800">{{ v.serviceTypeName }}</p>
+                <p class="text-base font-semibold text-gray-800">{{ serviceTypeDisplay() }}</p>
+                @if (showMarketClassPill()) {
+                  <span class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full"
+                        [class]="marketClassConfirmed() ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+                    {{ (marketClassConfirmed() ? 'services.marketClass.confirmed' : 'services.marketClass.awaitingConfirmation') | translate }}
+                  </span>
+                }
               </div>
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                 <p class="text-xs text-gray-500 mb-1">{{ 'common.country' | translate }}</p>
@@ -181,7 +198,7 @@
             </div>
 
             <!-- Currently Withheld -->
-            @if (isTokenIssuer() && (withheldCredit().length > 0 || withheldAssets().length > 0)) {
+            @if (isTokenProvider() && (withheldCredit().length > 0 || withheldAssets().length > 0)) {
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'services.details.overview.currentlyWithheld' | translate }}</p>
                 @if (withheldCredit().length > 0) {
@@ -210,7 +227,7 @@
             }
 
             <!-- Transactions summary -->
-            @if (isTokenIssuer()) {
+            @if (isTokenProvider()) {
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
               <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'services.details.tabs.transactions' | translate }}</p>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -283,7 +300,16 @@
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.serviceType' | translate }}</p>
-                  <p class="text-base">{{ v.serviceTypeName }}</p>
+                  <p class="text-base">{{ serviceTypeDisplay() }}</p>
+                  @if (showMarketClassPill()) {
+                    <span class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full"
+                          [class]="marketClassConfirmed() ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+                      {{ (marketClassConfirmed() ? 'services.marketClass.confirmed' : 'services.marketClass.awaitingConfirmation') | translate }}
+                    </span>
+                    <p class="text-xs text-gray-500 mt-1">
+                      {{ (marketClassConfirmed() ? 'services.marketClass.confirmedHint' : 'services.marketClass.awaitingConfirmationHint') | translate }}
+                    </p>
+                  }
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.verificationLevel' | translate }}</p>
@@ -300,7 +326,7 @@
                     <p class="font-mono text-xs text-gray-400">{{ v.regulator }}</p>
                   }
                 </div>
-                @if (isTokenIssuer()) {
+                @if (isTokenProvider()) {
                   <!-- Attached service providers live on their own tab; keep a summary + jump-off here. -->
                   <div class="border-t pt-4 md:col-span-2">
                     <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -343,7 +369,173 @@
           </div>
         }
 
-        <!-- service providers (SPs) tab — attached validators / payment processors / custodians (1:N each) -->
+        <!-- onc / offc election tab — DECLARED BY THE REGULATOR, per currency. There is deliberately
+             no Declare action here: the entity may only request a SWITCH of one already in force. -->
+        @if (activeTab() === 'election') {
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+            <div class="px-6 py-3 border-b border-gray-100">
+              <h3 class="text-sm font-semibold text-gray-700">On-Chain / Off-Chain Election</h3>
+              <p class="text-xs text-gray-500 mt-1">
+                Whether this service's money is <span class="font-semibold">On-Chain</span> (fiat already in
+                reserve, so a movement is final) or <span class="font-semibold">Off-Chain</span> (credit records
+                the movement and real fiat settles behind it). Your
+                <span class="font-semibold">regulator declares it</span>, <span class="font-semibold">per
+                currency</span> &mdash; so this service can be one in EGP and the other in USD, and the
+                regulator may allow one of its services to run On-Chain while refusing another. You may
+                <span class="font-semibold">request a switch</span> of a declared election; your regulator
+                approves it in both directions. Once approved, anyone may drive the migration.
+              </p>
+            </div>
+
+            @if (electionsLoading()) {
+              <div class="px-6 py-6 text-sm text-gray-500">Loading&hellip;</div>
+            } @else if (elections().length === 0) {
+              <div class="px-6 py-6 text-sm text-gray-500">
+                <span class="font-semibold text-gray-700">No election declared yet.</span>
+                This service's <span class="font-semibold">regulator</span> declares its election, one
+                currency at a time &mdash; it is not something this service sets for itself, because an
+                An On-Chain election lets it mint credit against fiat it claims to hold in reserve.
+                <span class="block mt-1">
+                  Until the regulator declares one, <span class="font-semibold">no payment provider can be
+                  attached</span> for that currency: a provider's role is validated against the election,
+                  so before it exists there is nothing to validate against.
+                </span>
+              </div>
+            } @else {
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th class="px-6 py-2 text-left font-semibold">Currency</th>
+                      <th class="px-6 py-2 text-left font-semibold">Election</th>
+                      <th class="px-6 py-2 text-left font-semibold">Pending request</th>
+                      <th class="px-6 py-2 text-left font-semibold">Payment providers</th>
+                      <th class="px-6 py-2 text-right font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+                    @for (e of elections(); track e.currencyCode) {
+                      <tr>
+                        <td class="px-6 py-3 align-top">
+                          <div class="font-semibold text-gray-800">{{ e.currencySymbol || e.currencyCode }}</div>
+                          <!-- The NAME, not the ISO numeric. "EGP / 818" reads as two codes for the
+                               same thing; "EGP / Egyptian Pound" is the pair a person needs. The
+                               numeric falls back in only when the currency is unknown to CreditProxy,
+                               where it is the sole identifying fact we have. -->
+                          <div class="text-xs text-gray-500">{{ e.currencyName || e.currencyCode }}</div>
+                        </td>
+                        <td class="px-6 py-3 align-top">
+                          <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                                [class.bg-emerald-100]="e.election === 1"
+                                [class.text-emerald-700]="e.election === 1"
+                                [class.bg-sky-100]="e.election === 2"
+                                [class.text-sky-700]="e.election === 2"
+                                [class.bg-amber-100]="e.election === 3"
+                                [class.text-amber-700]="e.election === 3">
+                            {{ electionLabel(e.election) }}
+                          </span>
+                          @if (e.election === 3) {
+                            <div class="text-xs text-gray-500 mt-1">
+                              {{ electionLabel(e.migratingFrom) }} &rarr; {{ electionLabel(e.migratingTo) }} &middot;
+                              <span class="font-mono">{{ e.migrationCursor }}</span> converted
+                            </div>
+                            <div class="text-xs text-amber-700 mt-1">
+                              Payment legs in this currency are refused until the migration completes.
+                            </div>
+                          }
+                        </td>
+                        <td class="px-6 py-3 align-top">
+                          @if (e.requestedTo) {
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                              &rarr; {{ electionLabel(e.requestedTo) }}
+                            </span>
+                            <div class="text-xs text-gray-500 mt-1">{{ 'services.details.election.awaitingRegulator' | translate }}</div>
+                          } @else if (clearedByKind(e) === 'regulator') {
+                            <!-- Your regulator REFUSED the last request. Withdrawing it yourself and
+                                 having it declined are the SAME on-chain transition (the contract's
+                                 `withdrawRequest` is the only non-approve path that zeroes it), so
+                                 the ACTOR is the entire signal.
+                                 ⚠️ Reads `clearedByKind`, NOT `lastActorKind` (Phase 20.1). The
+                                 latter is "who moved this election last, by ANY means" — which on a
+                                 freshly DECLARED election is the regulator, so this branch used to
+                                 tell you your regulator had declined a request you never made. It
+                                 also fired after a SUCCESSFUL approval. `clearedBy` is NULL unless
+                                 a pending request was genuinely cleared. -->
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                              {{ 'services.details.election.declinedPill' | translate }}
+                            </span>
+                            <div class="text-xs text-gray-500 mt-1">
+                              {{ 'services.details.election.declinedHint' | translate }}
+                            </div>
+                          } @else if (clearedByKind(e) === 'entity') {
+                            <span class="text-gray-400">&mdash;</span>
+                            <div class="text-xs text-gray-500 mt-1">{{ 'services.details.election.withdrawnHint' | translate }}</div>
+                          } @else {
+                            <span class="text-gray-400">&mdash;</span>
+                          }
+                        </td>
+                        <td class="px-6 py-3 align-top">
+                          @if (providersForCurrency(e.currencyCode).length === 0) {
+                            <span class="text-gray-400">none attached</span>
+                          } @else {
+                            @for (p of providersForCurrency(e.currencyCode); track p.provider) {
+                              <div class="text-xs">
+                                <span class="font-mono">{{ p.provider }}</span>
+                                <span class="ml-2 px-2 py-0.5 rounded-full font-semibold"
+                                      [class.bg-sky-100]="p.payRole === 1" [class.text-sky-700]="p.payRole === 1"
+                                      [class.bg-emerald-100]="p.payRole === 2" [class.text-emerald-700]="p.payRole === 2">
+                                  {{ payRoleLabel(p.payRole) }}
+                                </span>
+                              </div>
+                            }
+                          }
+                        </td>
+                        <td class="px-6 py-3 text-right align-top">
+                          @if (userInfo && userInfo.role !== 3) {
+                            @if (e.election === 3) {
+                              <button (click)="migrateElection(e)"
+                                [disabled]="migratingCcy() === e.currencyCode"
+                                class="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:opacity-50">
+                                {{ migratingCcy() === e.currencyCode ? 'Converting…' : 'Convert next page' }}
+                              </button>
+                            } @else if (e.requestedTo && features.systemFunctionEnabled('service-election-switch')) {
+                              <!-- Same key as the request: withdrawing IS the request surface, and the
+                                   Entity API gates POST and DELETE on that one key. -->
+                              <button (click)="withdrawElectionSwitch(e)"
+                                class="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50">
+                                Withdraw request
+                              </button>
+                            } @else if (canRequestSwitch(e)) {
+                              <!-- A REQUEST, not a change — the regulator approves it, in both
+                                   directions. Only offered for an election already in force:
+                                   there is no switch from undeclared, and the entity cannot
+                                   create the starting position either. -->
+                              <button (click)="requestElectionSwitch(e)"
+                                class="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50">
+                                Request switch
+                              </button>
+                            } @else {
+                              <span class="text-gray-400">&mdash;</span>
+                            }
+                          } @else {
+                            <span class="text-gray-400">&mdash;</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-6 py-3 border-t border-gray-100 text-xs text-gray-500">
+                A migration is <span class="font-semibold">forward-only</span> and its remaining pages are
+                permissionlessly executable &mdash; anyone may drive it, and since this service cannot
+                transact in that currency while it runs, sooner is strictly better. Undoing a switch is a
+                new switch in the opposite direction, needing its own approval.
+              </div>
+            }
+          </div>
+        }
+
         @if (activeTab() === 'providers') {
           @let canEditParty = entityActive && userInfo && userInfo.role !== 3;
           <div class="space-y-3">
@@ -354,11 +546,20 @@
                   <label class="text-xs font-medium text-gray-500">{{ 'services.details.providers.table.type' | translate }}</label>
                   <select [ngModel]="filterPartyType()" (ngModelChange)="filterPartyType.set($event)"
                     class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <!-- ⚠️ These MUST be `PARTY_CLASS` ids — the filter compares them against each
+                         row's `partyType`, which `allServiceParties` builds from the constants.
+                         Custodian is 4, not 3: the payment rail split into two TYPES, inserting
+                         Bank at 3 and pushing Custodian 3 -> 4 and Clearing House 4 -> 5. The old
+                         values are all still VALID ids, so `3` did not error — it just matched no
+                         row and made the Custodian filter silently return an empty table.
+                         Escrow Clearing House (6) is its own option: it is a SEPARATE appointment
+                         from the entities' clearing house and has its own bucket. -->
                     <option value="">{{ 'common.all' | translate }}</option>
                     <option value="1">{{ 'services.details.info.partyLabelValidator' | translate }}</option>
                     <option value="2">{{ 'services.details.info.partyLabelPaymentProcessor' | translate }}</option>
-                    <option value="3">{{ 'services.details.info.partyLabelCustodian' | translate }}</option>
+                    <option value="4">{{ 'services.details.info.partyLabelCustodian' | translate }}</option>
                     <option value="5">{{ 'services.details.info.partyLabelClearingHouse' | translate }}</option>
+                    <option value="6">{{ 'services.details.info.partyLabelEscrowClearingHouse' | translate }}</option>
                   </select>
                 </div>
                 <div class="flex flex-col justify-end">
@@ -440,10 +641,7 @@
                           <td class="px-6 py-2">{{ i + 1 }}</td>
                           <td class="px-6 py-2">
                             <span class="px-3 py-1 text-xs font-semibold rounded-full"
-                              [class.bg-indigo-100]="p.partyType === 1" [class.text-indigo-800]="p.partyType === 1"
-                              [class.bg-sky-100]="p.partyType === 2"    [class.text-sky-800]="p.partyType === 2"
-                              [class.bg-purple-100]="p.partyType === 3" [class.text-purple-800]="p.partyType === 3"
-                              [class.bg-teal-100]="p.partyType === 4"   [class.text-teal-800]="p.partyType === 4">
+                              [class]="'px-3 py-1 text-xs font-semibold rounded-full ' + partyBadgeClass(p.partyType)">
                               {{ p.typeLabelKey | translate }}
                             </span>
                           </td>
@@ -460,7 +658,7 @@
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'services.details.providers.active' | translate }}</span>
                             } @else {
                               <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800"
-                                [title]="(p.partyType === 3 ? 'services.details.providers.custodianInactiveTooltip' : 'services.details.providers.validatorInactiveTooltip') | translate">
+                                [title]="partyInactiveTooltipKey(p.partyType) | translate">
                                 {{ 'services.details.providers.inactive' | translate }}
                               </span>
                             }
@@ -708,7 +906,7 @@
                           <td class="px-6 py-2">{{ data.name }}</td>
                           <td class="px-6 py-2"><span class="badge-symbol">{{ data.symbol }}</span></td>
                           <td class="px-6 py-2">{{ data.issuerName }}</td>
-                          <td class="px-6 py-2">{{ data.assetTypeName }}</td>
+                          <td class="px-6 py-2">{{ data.assetClassName }}</td>
                           <td class="px-6 py-2">
                             <div class="flex items-center gap-1.5">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(data.state)">
@@ -1078,12 +1276,12 @@
                                 {{ 'services.details.liquidity.inject' | translate }}
                               </button>
                             }
-                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-liquidity-withdraw')) {
-                              <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive || row.available <= 0"
-                                class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ 'services.details.liquidity.withdraw' | translate }}
-                              </button>
-                            }
+                            <!-- ⚠️ The WITHDRAW button is REMOVED, not hidden. The bare pool drain has no
+                                 on-chain call left (S37/S78): money leaves a service's pool through the
+                                 withdrawal lifecycle — request, then fulfil — which is queued,
+                                 coverage-gated and evidenced. Leaving the button wired would have been
+                                 worse than removing it, because the submit handler is now inject-only:
+                                 clicking "Withdraw" would have ADDED money to the pool. -->
                           </td>
                         </tr>
                       }
@@ -1236,6 +1434,8 @@
 <app-modal-service-clearing-house></app-modal-service-clearing-house>
 <app-modal-service-custodian></app-modal-service-custodian>
 <app-modal-service-fee-config></app-modal-service-fee-config>
+<!-- Opened in 'switch' mode only — the regulator declares a service's initial election. -->
+<app-modal-service-election></app-modal-service-election>
 <app-metadata-edit-modal></app-metadata-edit-modal>
 <app-modal-image-add></app-modal-image-add>
 <app-modal-transaction-info></app-modal-transaction-info>

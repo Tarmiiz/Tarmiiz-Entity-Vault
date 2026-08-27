@@ -21,12 +21,11 @@ import { PaginatorComponent } from '../../../../shared/components/paginator/pagi
 
 // Full taxonomy — keep in sync with the API's services/audit.js AUDIT_CATEGORIES.
 const AUDIT_CATEGORIES = [
-  'User', 'Role', 'Auth', 'State', 'Config', 'Document', 'Entity',
-  'Service', 'Subscription', 'Asset', 'Credit', 'DEX', 'Identity',
-  'Regulator', 'Validator', 'Payment Processor', 'Connect', 'SignerKey',
-  'Directory', 'Validator Endorsement', 'Payment Processor Endorsement',
-  'Custodian', 'Custodian Endorsement',
-  'Currency', 'Distribution', 'ServiceProvider'
+  'User', 'Role', 'Auth', 'State', 'Config', 'Document', 'Entity', 'Service', 'Subscription',
+  'Asset', 'Credit', 'DEX', 'Identity', 'Regulator', 'Connect', 'SignerKey', 'Directory',
+  'Currency', 'Distribution', 'ServiceProvider', 'Party', 'Party Class', 'Party Endorsement',
+  'Asset Class', 'Asset Party', 'Clearing', 'Custody Control', 'Fiat Account',
+  'Minter Capability', 'Payout Instrument', 'Service Election', 'Service Fee',
 ];
 
 @Component({

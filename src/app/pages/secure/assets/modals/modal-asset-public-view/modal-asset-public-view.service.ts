@@ -10,7 +10,7 @@ export interface AssetPublicViewData {
   name: string;
   symbol: string;
   entityName: string;
-  assetTypeName: string;
+  assetClassName: string;
   currencyCode: string;
   description: string;
   contact: ContactInfo;

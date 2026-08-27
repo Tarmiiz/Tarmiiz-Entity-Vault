@@ -39,18 +39,13 @@
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div class="min-w-0">
             <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'clearing.dashboard.bookTitle' | translate }}</p>
+            <!-- The headline was the outstanding pay-in count over the cycle-state tallies.
+                 Both are gone with the cycles; netting is continuous, so the operator's live
+                 number is margin coverage, which has no board yet (see the page component). -->
             <div class="flex items-baseline gap-2">
-              <p class="text-4xl font-bold">{{ outstandingPayIns() }}</p>
-              <span class="text-xs font-semibold text-indigo-200">{{ 'clearing.dashboard.awaitingPayInLabel' | translate }}</span>
+              <p class="text-4xl font-bold">{{ readyDeliveries() }}</p>
+              <span class="text-xs font-semibold text-indigo-200">{{ 'clearing.dashboard.stats.deliveriesReady' | translate }}</span>
             </div>
-            <p class="text-xs mt-1 text-indigo-200">
-              <span class="text-blue-200 font-semibold">{{ openCycles() }}</span> {{ 'clearing.cycleStates.open' | translate }}
-              · <span class="text-amber-200 font-semibold">{{ closedCycles() }}</span> {{ 'clearing.cycleStates.closed' | translate }}
-              · <span class="text-green-300 font-semibold">{{ finalizedCycles() }}</span> {{ 'clearing.cycleStates.finalized' | translate }}
-            </p>
-            @if (unevidencedPayIns() > 0) {
-              <p class="text-xs mt-1 text-amber-200">{{ 'clearing.dashboard.unevidencedHint' | translate: { count: unevidencedPayIns() } }}</p>
-            }
           </div>
 
           <div class="shrink-0 flex-1 md:border-l md:border-indigo-400/30 md:pl-4">
@@ -109,106 +104,10 @@
 
       @if (clearingVisible()) {
 
-        <!-- ══ PAY-IN BOARD ══ The worklist: who owes fiat on a closed cycle, and what the
-             credit ledger says they have actually sent. -->
-        <div [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-6 badges">
-          <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
-            <div>
-              <h2 class="text-xl font-semibold text-white">{{ 'clearing.payIns.title' | translate }}</h2>
-              <p class="text-xs text-gray-300 mt-0.5">{{ 'clearing.dashboard.payInsHint' | translate }}</p>
-            </div>
-            <button class="text-sm text-gray-300 hover:text-white shrink-0" (click)="goTo('/authorized/clearing')">{{ 'common.viewAll' | translate }}</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-500">
-              <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                <tr>
-                  <th class="px-4 py-2">{{ 'clearing.member' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'clearing.cycles.key' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'clearing.currency' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'clearing.payIns.due' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'clearing.payIns.settlement' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'clearing.positions.paidIn' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (loading()) {
-                  @for (i of [1,2,3,4,5]; track i) {
-                    <tr class="border-b"><td colspan="6" class="px-4 py-3"><div class="h-3 bg-gray-200 rounded w-full"></div></td></tr>
-                  }
-                } @else if (topPayIns().length === 0) {
-                  <tr><td colspan="6" class="px-4 py-4 text-center text-gray-400">{{ 'clearing.payIns.empty' | translate }}</td></tr>
-                } @else {
-                  @for (row of topPayIns(); track (row.cycle.cycleKey + '|' + row.position.entity)) {
-                    <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/clearing')">
-                      <td class="px-4 py-2 font-medium text-gray-800">{{ entityLabel(row.position.entity) }}</td>
-                      <td class="px-4 py-2 text-xs font-mono">{{ shortKey(row.cycle.cycleKey) }}</td>
-                      <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(row.cycle.currencyCode) }}</span></td>
-                      <td class="px-4 py-2 font-semibold text-red-700">{{ -row.position.net | money }}</td>
-                      <td class="px-4 py-2">
-                        @let s = latestSettlement(row.position);
-                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="settlementClass(s)">
-                          {{ settlementLabelKey(s) | translate }}
-                        </span>
-                        @if (s) {
-                          <span class="text-xs text-gray-500 ml-1">{{ s.amount | money }}</span>
-                        }
-                      </td>
-                      <td class="px-4 py-2">
-                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
-                          [class]="row.position.paidIn ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">
-                          {{ (row.position.paidIn ? 'common.yes' : 'common.no') | translate }}
-                        </span>
-                      </td>
-                    </tr>
-                  }
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ══ CYCLES ══ Open (closeable) and Closed (finalizable) — what needs a decision. -->
-        <div [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
-          <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
-            <h2 class="text-xl font-semibold text-white">{{ 'clearing.dashboard.cyclesTitle' | translate }}</h2>
-            <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/clearing')">{{ 'common.viewAll' | translate }}</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-500">
-              <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                <tr>
-                  <th class="px-4 py-2">{{ 'clearing.cycles.key' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'clearing.currency' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'clearing.cycles.closesAt' | translate }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (loading()) {
-                  @for (i of [1,2,3]; track i) {
-                    <tr class="border-b"><td colspan="4" class="px-4 py-3"><div class="h-3 bg-gray-200 rounded w-full"></div></td></tr>
-                  }
-                } @else if (actionableCycles().length === 0) {
-                  <tr><td colspan="4" class="px-4 py-4 text-center text-gray-400">{{ 'clearing.dashboard.noCycles' | translate }}</td></tr>
-                } @else {
-                  @for (c of actionableCycles(); track c.cycleKey) {
-                    <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="goTo('/authorized/clearing')">
-                      <td class="px-4 py-2 text-xs font-mono text-gray-800">{{ shortKey(c.cycleKey) }}</td>
-                      <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(c.currencyCode) }}</span></td>
-                      <td class="px-4 py-2">
-                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="cycleStatusClass(c.status)">
-                          {{ cycleStatusKey(c.status) | translate }}
-                        </span>
-                      </td>
-                      <td class="px-4 py-2 text-xs">{{ cycleCloses(c) }}</td>
-                    </tr>
-                  }
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <!-- The PAY-IN BOARD and the CYCLES board are GONE. They answered "who owes fiat on a
+             closed cycle" — a question that no longer exists: netting is continuous and a member's
+             demand is its live margin requirement. The replacement (a margin-coverage board) is a
+             design decision, not a port of the old one, and is deliberately left undone. -->
 
       }
 

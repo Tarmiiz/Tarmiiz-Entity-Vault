@@ -15,6 +15,83 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-08-27
+
+#### Changed
+- **Internal rule-spec notation removed from user-visible copy** — `Registration (A8)`,
+  `Requirements you compose (A24)`, `Class parties (A2)`, and the Add Asset wizard's
+  *"The A1 class this asset belongs to"*. 7 strings here (en + ar); 13 platform-wide with the
+  Regulator Dashboard. Code comments keep the notation on purpose. Now
+  [Standard 5.5](../../../docs/frontend-standards.md).
+
+#### Fixed
+- **"What the approval checks" on the asset Registration tab rendered as three bare ✓/✗ marks with
+  invisible labels.** The `<li>` text inherits its colour and the inherited value here is
+  near-white; only the tick/cross `<span>` carried an explicit `text-green-600` / `text-red-600`,
+  so the marks showed and the sentences beside them did not. Added `text-gray-700` to the parent
+  `<ul>` ([details.page.html:449](src/app/pages/secure/assets/details/details.page.html#L449)).
+  The i18n keys were verified present and populated in **both** locales first — this was never a
+  missing-translation bug, which is the other way this failure mode presents.
+  - Same class as the Connect To-picker / Add-participants defect: any text placed on an
+    unstyled container in this app inherits an invisible colour. Scanned the rest of the
+    Registration block for siblings — these three `<li>`s were the only ones.
+  - Only became visible once the Entity API's `.result`/`.data` defect was fixed the same day (see
+    that repo's CHANGELOG); before it, the whole tab was an empty state and the invisible labels
+    were unreachable.
+- **The election table told the ENTITY that its regulator had declined a request the entity had
+  never made.** The Pending-request cell branched on `lastActorKind` — *who made the last election
+  transition of ANY kind* — and rendered that as a verdict on the last pending REQUEST. They are
+  not the same question. A DECLARE is a regulator act, so a freshly declared election read
+  "Declined by the regulator" from the moment it existed: measured live on service
+  `0x1966f613…` / currency 818, the row carried that accusation for 53 blocks before any request
+  had been made. A SUCCESSFUL approval zeroes `requested` too, so an approval ALSO rendered as a
+  refusal. The cell now branches on the Entity API's new plugin-derived `clearedByKind`, which is
+  populated only when a pending request was genuinely cleared and NULL on every other transition —
+  so `unknown` means "nothing was cleared" and the template correctly falls through to the bare
+  em-dash ([details.page.html:453](src/app/pages/secure/services/details/details.page.html#L453)).
+  - **`lastActorKind()` is KEPT beside the new `clearedByKind()`**
+    ([details.page.ts:497](src/app/pages/secure/services/details/details.page.ts#L497)) rather than
+    renamed away — it is still the honest answer to "who touched this last", which a future audit
+    surface may want. Its comment now says in as many words that it is not the field to render a
+    verdict from; deleting it would have left the next reader free to re-derive the same wrong
+    branch from the same data.
+  - Withdrawing your own request and having it declined remain the SAME on-chain transition, so the
+    ACTOR is still the entire signal — that half of the original design was right, and both
+    branches (`regulator` ⇒ Declined pill, `entity` ⇒ "withdrawn by you") are otherwise unchanged.
+  - **Of the two surfaces carrying this defect, the Vault was the worse one.** The Regulator
+    Dashboard twin showed a regulator a wrong label on its own act; this page showed an entity an
+    accusation about somebody else.
+- **The same cell's copy was HARDCODED ENGLISH** — four strings with no `| translate`, on a page
+  where everything around them is keyed, while the Regulator Dashboard twin had been i18n'd from
+  the start. An Arabic tenant read the entire verdict in English. Added an `election` block
+  (`awaitingRegulator` / `declinedPill` / `declinedHint` / `withdrawnHint`) to **both**
+  [en.json](src/assets/i18n/en.json) and [ar.json](src/assets/i18n/ar.json) — the two locales move
+  together, per the standing rule that a missing `ar` leaf renders the raw key path with no English
+  fallback — and the template now reads the keys.
+
+### 2026-08-24
+
+#### Fixed
+- **The Add Asset wizard could not be completed — Next stayed disabled on step 1 no matter what was selected, so no asset could be created at all.** `supplyMode` kept `Validators.required` and its place in `stepFields[1]` after its PICKER was removed from the step (the asset class fixes the supply model, A5), so the control could never be satisfied. Nothing rendered an error either: a disabled Next with every visible field filled reads as a UI glitch, not a blocked form. The same omission silently hid the **Initial Supply** input, which renders on `isFixedSupply`.
+  - The class now DERIVES the supply mode from a map mirroring the Assets Registry's `AssetClassLib.supplyModeFor` — the authority, since `Assets.create` refuses a mismatched pair, so a wrong value is a revert rather than a preference. Verified against the on-chain `Asset Class` category: ids 1-11 match the contract constants exactly.
+  - Non-Custom classes show the derived model **read-only** (a picker could only offer ways to build a reverting transaction); **Custom (11)** is the one class that genuinely lets the issuer choose, so it gets the select and `required` blocks Next until they pick. An unknown class id — the category is on-chain and extensible — is treated like Custom rather than guessing.
+- **The Price Mode hint still described the RETIRED Single / Bid-Ask meaning** while the dropdown had already been corrected to Fixed-priced / Market-priced (V30). Both vocabularies use 1 and 2, so the stale hint rendered plausibly over a different meaning — exactly the trap the component's own comment warns about. `step1Intro` likewise still said "asset standard and supply mode" though the standard radio is gone.
+
+#### Changed
+- **Every election surface displays On-Chain / Off-Chain instead of `onc` / `offc`** — `electionLabel()`, `payRoleLabel()` (which also names the election each role belongs to, since the pay-role ids are INVERTED relative to the election ids), the election tab header and prose, the switch modal's title and both radio labels, and the System Function label. en + ar moved together.
+
+### 2026-08-19
+
+#### Changed
+- **`tokenType` + `assetType` -> `assetClass`** across the model, both read paths, service detail and
+  the public view. The Add Asset wizard lost its STANDARD step (8 -> 7: `tokenType` chose between the
+  T20 and T3643 factories, and there is one factory now) and its class dropdown reads `Asset Class`.
+- **`priceMode` labels corrected for a MEANING change** (V30: 1 = Fixed-priced, 2 = Market-priced —
+  NOT the old Single / Bid-Ask pair, which described the shape of a QUOTE). Both vocabularies use 1
+  and 2, so the stale labels rendered plausibly over a different meaning.
+- The create payload drops the `|| 0` fallback: class 0 is invalid, not "unspecified".
+- The Cycles + Pay-ins tabs and the three cycle client methods are gone with the cycle family.
+
 ### 2026-08-13
 
 #### Added

@@ -452,9 +452,10 @@
       "noServicesFound": "No services found",
       "noServicesYet": "No services yet",
       "portfolioTitle": "Service Portfolio",
-      "providerTypeCol": "Provider Type",
-      "providerTypesLabel": "Provider Types",
+      "serviceClassCol": "Class",
+      "serviceClassesLabel": "Service Classes",
       "suspendedLabel": "suspended",
+      "unclassified": "Unclassified",
       "verification": "Verification"
     },
     "serviceSingular": "service",
@@ -477,9 +478,15 @@
       "state": "State",
       "type": "Type",
       "typeAll": "All",
-      "type1": "Token Issuer",
-      "type2": "Validator / PP",
+      "type1": "Token Provider",
+      "type2": "Service Provider",
       "verificationLevel": "Verification Level"
+    },
+    "marketClass": {
+      "confirmed": "Confirmed",
+      "confirmedHint": "The regulator has confirmed this market class.",
+      "awaitingConfirmation": "Awaiting confirmation",
+      "awaitingConfirmationHint": "This entity declared the market class; the regulator has not confirmed it yet. Confirmation is what unlocks the market powers it names."
     },
     "table": {
       "id": "#",
@@ -577,7 +584,8 @@
         "partyLabelValidator": "Validator",
         "partyLabelPaymentProcessor": "Payment Processor",
         "partyLabelCustodian": "Custodian",
-        "partyLabelClearingHouse": "Clearing House"
+        "partyLabelClearingHouse": "Clearing House",
+        "partyLabelEscrowClearingHouse": "Escrow Clearing House"
       },
       "assets": {
         "editVenueFees": "Edit Venue Fees",
@@ -600,7 +608,8 @@
         "coverage": "Coverage",
         "errors": {
           "exceedsAvailable": "Amount exceeds the available balance ({{available}}).",
-          "positiveAmount": "Enter a positive amount."
+          "positiveAmount": "Enter a positive amount.",
+          "refRequired": "A reference is required."
         },
         "helpText": "Obligation is what the service would owe if all holders redeemed at current prices. Coverage = available balance ÷ obligation; a shortfall appears when the obligation exceeds the available balance.",
         "inject": "Inject",
@@ -656,7 +665,13 @@
         "typeTransfer": "Transfer"
       },
       "visibilityPrivate": "Private",
-      "visibilityPublic": "Public"
+      "visibilityPublic": "Public",
+      "election": {
+        "awaitingRegulator": "awaiting your regulator",
+        "declinedPill": "Declined",
+        "declinedHint": "your regulator declined the last request — you may request it again",
+        "withdrawnHint": "last request withdrawn by you"
+      }
     },
     "add": "Add Service",
     "addModal": {
@@ -665,10 +680,11 @@
         "descriptionRequired": "Description is required.",
         "emailInvalid": "Enter a valid email address.",
         "emailRequired": "Email is required.",
+        "marketClassRequired": "Market class is required.",
         "mobileInvalid": "Enter a valid mobile number.",
         "mobileRequired": "Mobile number is required.",
         "nameRequired": "Service name is required.",
-        "providerTypeRequired": "Provider type is required.",
+        "partyClassRequired": "Party class is required.",
         "regulatorRequired": "Regulator is required.",
         "serviceTypeRequired": "Service type is required.",
         "verificationLevelRequired": "Verification level is required.",
@@ -678,9 +694,10 @@
       "fields": {
         "custodian": "Custodian",
         "description": "Description",
+        "marketClass": "Market Class",
+        "partyClass": "Party Class",
         "paymentProcessor": "Payment Processor",
         "paymentProcessorOptional": "Payment Processor (optional)",
-        "providerType": "Provider Type",
         "regulator": "Regulator",
         "serviceName": "Service Name",
         "serviceType": "Service Type",
@@ -698,12 +715,14 @@
         "linked": "Attach the validator, payment processor, and custodian this service will use.",
         "review": "Review the details below before creating the service."
       },
+      "marketClassNote": "Declare what this service does: an Issuer issues its own assets, an Exchange operates a trading venue, a Brokerage trades on other venues for its clients. The regulator confirms this declaration separately.",
       "pendingConfirmation": "(pending regulator confirmation)",
       "placeholders": {
         "description": "Describe this service...",
         "email": "e.g. service@company.com",
         "mobile": "e.g. +20 100 000 0000",
-        "selectProviderType": "Select provider type...",
+        "selectMarketClass": "Select market class...",
+        "selectPartyClass": "Select party class...",
         "selectRegulator": "Select a regulator...",
         "selectServiceType": "Select service type...",
         "selectVerificationLevel": "Select verification level...",
@@ -726,7 +745,10 @@
       "visibilityPrivate": "Private",
       "visibilityPublic": "Public",
       "noClearingHouse": "None — credit is final here",
-      "clearingHouseNote": "Optional. Attach a central counterparty if cross-entity trades on this service must settle in a netted cycle. Leave as None when this market’s credit is final and every fill should settle immediately."
+      "clearingHouseNote": "Optional. Attach a central counterparty if cross-entity trades on this service must settle in a netted cycle. Leave as None when this market’s credit is final and every fill should settle immediately.",
+      "hints": {
+        "paymentProviderAfterCreate": "Attached after creation — a payment provider is attached per currency, once this service has an election for that currency. Use the Election and Service Providers tabs."
+      }
     },
     "custodianModal": {
       "description": "Select a custodian to attach to this service. A service may hold several — its assets are held by all of them.",
@@ -899,7 +921,6 @@
         "symbol": "Symbol",
         "address": "Asset Address",
         "tokenType": "Token Type",
-        "assetType": "Asset Type",
         "manager": "Manager",
         "regulator": "Regulator",
         "country": "Country",
@@ -928,7 +949,8 @@
         "servicesAssignedCount": "{{count}} service(s) assigned",
         "supplyMode": "Supply Mode",
         "supplyModeDynamic": "Dynamic",
-        "supplyModeFixed": "Fixed"
+        "supplyModeFixed": "Fixed",
+        "assetClass": "Asset Class"
       },
       "metadata": {
         "additionalFields": "Additional Fields",
@@ -1030,6 +1052,66 @@
         "searchPlaceholder": "Search by address...",
         "showingRecords": "Showing {{showing}} of {{total}} Holders",
         "value": "Value"
+      },
+      "registration": {
+        "tab": "Registration",
+        "title": "Registration",
+        "intro": "This asset cannot trade until its regulator approves it. Complete the declaration below, attach any parties your requirements imply, then wait for the decision.",
+        "empty": "No registration record for this asset.",
+        "declared": "Awaiting approval",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "decisionReason": "Regulator's reason",
+        "readiness": "What the approval checks",
+        "checkProfile": "A compliance profile is declared",
+        "checkWrapper": "A legal wrapper document is pinned",
+        "checkParties": "Every required role has an accepted party",
+        "declaration": "Declaration",
+        "declarationHint": "The compliance profile and the legal wrapper. Both are required before the regulator can approve, and neither can be changed once it has.",
+        "holderCap": "Holder cap (0 = unlimited)",
+        "minTicket": "Minimum ticket",
+        "maxTicket": "Maximum ticket (0 = none)",
+        "lockupUntil": "Lock-up until",
+        "legalWrapper": "Legal wrapper document id",
+        "legalWrapperHint": "The document id of the pinned SPV / prospectus",
+        "saveDeclaration": "Save Declaration",
+        "composition": "Requirements you compose",
+        "compositionHint": "A Custom asset requires nothing by default — you choose. Composing can only ever ADD an obligation, never remove one the model or your jurisdiction imposes. It is FROZEN the moment your regulator approves, so get it right first.",
+        "compositionFrozen": "Frozen by approval",
+        "needsParty": "Needs a party",
+        "evidenceOnly": "Evidence only",
+        "impliedRoles": "Roles this implies",
+        "saveComposition": "Save Composition",
+        "requirements": "Requirements in force",
+        "requirementsHint": "Resolved through four layers, most specific first: your regulator's override, your composition, the jurisdiction matrix, then the model default. Only rows that apply are listed.",
+        "requirement": "Requirement",
+        "role": "Role",
+        "state": "State",
+        "source": "Source",
+        "composedByUs": "Composed by us",
+        "fromPolicy": "Policy / class default",
+        "noRequirements": "This asset requires nothing beyond the declaration.",
+        "parties": "Class parties",
+        "partiesHint": "You propose a party; the party accepts for itself. An invitation nobody accepted does not satisfy the role.",
+        "partiesSatisfied": "All required roles accepted",
+        "partiesUnsatisfied": "A required role is missing or unaccepted",
+        "partiesEmpty": "No parties attached.",
+        "party": "Party",
+        "consent": "Consent",
+        "partyAddress": "Provider service address",
+        "pickRoleOption": "Select a role…",
+        "attachParty": "Attach Party",
+        "attachPartyHint": "The provider must already be admitted by a regulator for this role, and roles requiring independence cannot be one of your own services.",
+        "partyProposedMsg": "Proposed. The party must now accept the role before it counts toward approval.",
+        "removePartyTitle": "Remove party",
+        "removePartyConfirm": "Remove this party from the asset? If the role is required, the asset stops being approvable until another party accepts it.",
+        "savedTitle": "Saved",
+        "savedMsg": "Composition updated.",
+        "declarationSavedMsg": "Declaration updated.",
+        "failedTitle": "Could not save",
+        "nothingToSave": "Fill at least one field before saving.",
+        "badPartyAddress": "Enter a valid 0x address for the provider service.",
+        "pickRole": "Select the role this party will fill."
       },
       "holdersAt": {
         "account": "Account",
@@ -1228,9 +1310,6 @@
         "attachmentsReviewHint": "{{count}} public file(s) will be indexed in the asset's public metadata.",
         "additionalMetadataLabel": "Additional metadata",
         "assetNameLabel": "Asset Name",
-        "assetStandardLabel": "Asset Standard",
-        "assetTypeHint": "The real-world category this asset represents.",
-        "assetTypeLabel": "Asset Type",
         "confirmReviewLabel": "I have carefully reviewed all asset details and confirm they are correct.",
         "creditSettlementLabel": "Credit Settlement",
         "currencyLabel": "Currency",
@@ -1249,7 +1328,7 @@
         "noPaymentProcessorHint": "The selected service does not have a payment processor configured.",
         "ownerAddressLabel": "Owner Address",
         "ownerReviewLabel": "Owner",
-        "priceModeHint": "Single: one price (bid == ask). Bid/Ask: separate bid and ask quotes. This is immutable after creation.",
+        "priceModeHint": "Fixed-priced: the issuer publishes the price. Market-priced: the price is discovered by trading. Immutable after creation.",
         "priceModeLabel": "Price Mode",
         "regulatorLabel": "Regulator",
         "rolesComplianceHeading": "Roles & Compliance",
@@ -1258,11 +1337,13 @@
         "selectRegulatorPlaceholder": "Select a regulator...",
         "selectServicePlaceholder": "Select a service...",
         "selectSupplyModePlaceholder": "Select supply mode...",
+        "supplyModeCustomHint": "Custom is the only class that lets you choose the supply model.",
+        "supplyModeDerivedHint": "Fixed by the asset class — it cannot be changed.",
         "serviceCurrencyHeading": "Service & Currency",
         "serviceLabel": "Service",
         "standardHint": "T20 is the general-purpose Tarmiiz fund/RWA standard. T3643 adds ERC-3643 security-token surface (compliance hooks, agents, identity binding). Immutable after creation.",
         "standardLabel": "Standard",
-        "step1Intro": "Select the asset standard and supply mode.",
+        "step1Intro": "Select the asset class and price mode.",
         "step2Intro": "Define the asset's name, symbol, and description.",
         "isinLabel": "ISIN (optional)",
         "isinHint": "Leave blank if the ISIN has not been assigned yet — you can record it from the asset details page at any time.",
@@ -1279,7 +1360,9 @@
         "tokenConfigHeading": "Token Configuration",
         "tokensSuffix": "tokens",
         "useSelf": "Use Self",
-        "valuePlaceholder": "Value"
+        "valuePlaceholder": "Value",
+        "assetClassLabel": "Asset Class",
+        "assetClassHint": "The class this asset belongs to. Immutable, and it fixes the supply model."
       }
     },
     "registerExistingModal": {
@@ -3323,10 +3406,12 @@
         "description": "Register one of your services as a DEX trading venue.",
         "selectService": "Select a service...",
         "service": "Service",
-        "serviceHint": "The service must have an attached payment processor to be registered as a venue.",
+        "serviceHint": "The service must be a token provider whose Exchange market class has been confirmed by its regulator.",
         "suspendedNotice": "The regulator may suspend a venue at any time; trading halts until the suspension is lifted.",
         "title": "Create Venue",
-        "surfaceNotice": "Whether this venue can run a native order book is set automatically from whether its service has a registered payment processor. Its regulator can adjust the licensed surfaces afterwards."
+        "surfaceNotice": "Whether this venue can run a native order book is set automatically from whether its service has a registered payment processor. Its regulator can adjust the licensed surfaces afterwards.",
+        "pendingSuffix": "awaiting regulator confirmation",
+        "pendingNotice": "Greyed-out services have declared the Exchange market class, but their regulator has not confirmed it yet. A venue cannot be created until it does."
       },
       "details": {
         "assetsTable": {
@@ -3862,8 +3947,10 @@
       "title": "Add Service Provider",
       "typeCustodian": "Custodian",
       "typeClearingHouse": "Clearing House",
-      "typePaymentProcessor": "Payment Processor",
-      "typeValidator": "Validator"
+      "typeValidator": "Validator",
+      "typePaymentGateway": "Payment Gateway",
+      "typeBank": "Bank",
+      "typeEscrowClearingHouse": "Escrow Clearing House"
     },
     "alerts": {
       "addFailedTitle": "Add Failed",
@@ -3883,8 +3970,11 @@
     "filters": {
       "searchPlaceholder": "Search by name or address",
       "typeCustodian": "Custodian",
-      "typePaymentProcessor": "Payment Processor",
-      "typeValidator": "Validator"
+      "typeValidator": "Validator",
+      "typePaymentGateway": "Payment Gateway",
+      "typeBank": "Bank",
+      "typeClearingHouse": "Clearing House",
+      "typeEscrowClearingHouse": "Escrow Clearing House"
     },
     "footer": {
       "showing": "Showing {{shown}} of {{total}}"
@@ -3923,6 +4013,10 @@
     "assetRegisterExisting": "Assets - Register Existing Asset",
     "assetEditMetadata": "Asset - Edit Metadata",
     "assetEditIdentifiers": "Asset - Edit Identifiers",
+    "assetDeclaration": "Asset - File Registration Declaration",
+    "assetCompose": "Asset - Compose Requirements",
+    "assetPartyAttach": "Asset - Attach Class Party",
+    "assetPartyAccept": "Asset - Accept Class Party Role",
     "assetMint": "Asset - Mint Supply",
     "assetBurn": "Asset - Burn Supply",
     "assetSetPrice": "Asset - Add Price",
@@ -3971,7 +4065,8 @@
     "clearingCycleClose": "Clearing - Close cycle",
     "clearingConfirmPayIn": "Clearing - Confirm pay-in",
     "clearingFundingService": "Clearing - Set funding service",
-    "entityEditIdentifiers": "Profile - Edit Entity Identifiers"
+    "entityEditIdentifiers": "Profile - Edit Entity Identifiers",
+    "serviceElectionSwitch": "Service - Request On-Chain / Off-Chain Election Switch"
   },
   "custody": {
     "myServices": {

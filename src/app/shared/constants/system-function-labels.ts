@@ -10,6 +10,10 @@
 // translate.instant() (TS).
 export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'entity-edit-identifiers': 'systemFunctionLabels.entityEditIdentifiers',
+  // The entity may REQUEST an onc/offc switch; the regulator approves it. There is deliberately
+  // no 'service-election-declare' entry here — that key is inert on this side, because the
+  // SERVICE'S REGULATOR declares the election (P_ELECTION_DECLARE is gated K_REGULATOR_OF).
+  'service-election-switch': 'systemFunctionLabels.serviceElectionSwitch',
   'credit-bank-transfer': 'systemFunctionLabels.creditBankTransfer',
   'credit-route-credit':  'systemFunctionLabels.creditRouteCredit',
   'service-add-validator':         'systemFunctionLabels.serviceAddValidator',
@@ -51,6 +55,14 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'asset-register-existing':     'systemFunctionLabels.assetRegisterExisting',
   'asset-edit-metadata':         'systemFunctionLabels.assetEditMetadata',
   'asset-edit-identifiers':      'systemFunctionLabels.assetEditIdentifiers',
+  // A8 registration lifecycle (Phase 15) — four separately delegable acts: filing the
+  // declaration is compliance, composing a Custom asset's rows is product, appointing a
+  // provider is procurement, and ACCEPTING a role is this tenant answering as a PROVIDER on
+  // someone else's asset — the only one where we are not the issuer.
+  'asset-declaration':           'systemFunctionLabels.assetDeclaration',
+  'asset-compose':               'systemFunctionLabels.assetCompose',
+  'asset-party-attach':          'systemFunctionLabels.assetPartyAttach',
+  'asset-party-accept':          'systemFunctionLabels.assetPartyAccept',
   'asset-mint':                  'systemFunctionLabels.assetMint',
   'asset-burn':                  'systemFunctionLabels.assetBurn',
   'asset-set-price':             'systemFunctionLabels.assetSetPrice',

@@ -140,7 +140,7 @@ export class DetailsPage implements OnInit {
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
-  activeTab = signal<'overview' | 'info' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt'>('overview');
+  activeTab = signal<'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt'>('overview');
 
   // DEX listing state — populated lazily when the DEX tab opens.
   dexListing       = signal<DexAssetListing | undefined>(undefined);
@@ -543,9 +543,10 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt') {
+  setTab(tab: 'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
+    if (tab === 'registration') this.loadRegistration();
     if (tab === 'metadata') this.loadMediaImages();
     if (tab === 'services') this.getAssetDetails();
     if (tab === 'price') this.getPriceHistory(1, 500);
@@ -559,6 +560,226 @@ export class DetailsPage implements OnInit {
   }
 
   // Latest block height, so the operator can't ask for a block that doesn't exist yet.
+  // ── A8 REGISTRATION (Phase 15) — the ISSUER's half ────────────────────────────
+  //
+  // An asset lands in approvalState 1 (Declared) at registration, and every capability reads
+  // `isAssetApproved` — `isAssetTradable` requires it. So until the regulator decides, the
+  // asset exists in the registry and can do nothing. Three steps, in A8's order:
+  //   1. DECLARE  — compliance profile (A9) + the pinned legal wrapper document.
+  //   2. COMPOSE + ATTACH — a Custom asset says WHAT it needs (A24), then WHO provides it (A2).
+  //   3. APPROVE  — the regulator's, on the Regulator Dashboard.
+  //
+  // Everything here is pre-approval by construction: the API refuses a declaration once the
+  // state leaves 1 and refuses a composition once frozen. We surface those refusals rather
+  // than re-implementing them.
+  registration = signal<any | null>(null);
+  registrationLoading = signal(false);
+  classCatalog = signal<{ requirements: any[]; roles: any[] } | null>(null);
+
+  /** Working set for the composition editor — mirrors the on-chain set until Save. */
+  compositionDraft = signal<number[]>([]);
+  compositionSaving = signal(false);
+
+  partyForm = signal<{ party: string; role: number }>({ party: '', role: 0 });
+
+  declarationForm = signal<{
+    holderCap: string; minTicket: string; maxTicket: string; lockupUntil: string; legalWrapperDocumentId: string;
+  }>({ holderCap: '', minTicket: '', maxTicket: '', lockupUntil: '', legalWrapperDocumentId: '' });
+
+  requirementName(id: number) {
+    const c = this.classCatalog();
+    return c?.requirements?.find((r) => Number(r.id) === Number(id))?.name || `Requirement ${id}`;
+  }
+  roleName(role: number) {
+    const c = this.classCatalog();
+    return c?.roles?.find((r) => Number(r.role) === Number(role))?.name || `Role ${role}`;
+  }
+  reqStateName(state: number) {
+    // 0 is UNSET and falls THROUGH to the next layer — it never means "off".
+    return ({ 0: 'Unset', 1: 'Required', 2: 'Optional', 3: 'Off' } as Record<number, string>)[Number(state)] ?? String(state);
+  }
+  partyStateName(state: number) {
+    return ({ 1: 'Proposed', 2: 'Accepted', 3: 'Removed' } as Record<number, string>)[Number(state)] ?? String(state);
+  }
+  approvalStateName(state: number) {
+    return ({ 1: 'Declared', 2: 'Approved', 3: 'Rejected' } as Record<number, string>)[Number(state)] ?? '—';
+  }
+
+  isCustomAsset() { return Number(this.registration()?.assetClass) === 11; }
+  isFrozen()      { return this.registration()?.compositionFrozen === true; }
+  isDeclared()    { return Number(this.registration()?.declaration?.approvalState ?? 0) === 1; }
+
+  /** Only rows that apply — 15 rows of mostly "Off" is noise, not information. */
+  activeRequirements() {
+    return (this.registration()?.requirements || []).filter((r: any) => Number(r.state) === 1 || Number(r.state) === 2);
+  }
+
+  /** Rows that IMPLY a party — the only ones the composition editor turns into a picker. */
+  partyRequirements() { return (this.classCatalog()?.requirements || []).filter((r: any) => r.impliesParty); }
+  /** Evidence-only rows (insurance, SPV, concentration limits, debtor verification). */
+  evidenceRequirements() { return (this.classCatalog()?.requirements || []).filter((r: any) => !r.impliesParty); }
+
+  isComposed(id: number) { return this.compositionDraft().includes(Number(id)); }
+  toggleComposed(id: number) {
+    if (this.isFrozen()) return;
+    const n = Number(id);
+    const cur = this.compositionDraft();
+    this.compositionDraft.set(cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n].sort((a, b) => a - b));
+  }
+  compositionDirty() {
+    const a = [...this.compositionDraft()].sort((x, y) => x - y).join(',');
+    const b = [...(this.registration()?.composition || [])].map(Number).sort((x, y) => x - y).join(',');
+    return a !== b;
+  }
+
+  /** Roles the DRAFT implies, deduplicated — mirrors `assetRequiredRoles` rather than re-deriving. */
+  draftRoles(): number[] {
+    const cat = this.classCatalog()?.requirements || [];
+    const seen = new Set<number>();
+    for (const id of this.compositionDraft()) {
+      const r = cat.find((x: any) => Number(x.id) === Number(id));
+      if (r?.role) seen.add(Number(r.role));
+    }
+    return [...seen].sort((a, b) => a - b);
+  }
+
+  /** A role is satisfied when at least one ACCEPTED party fills it. */
+  roleSatisfied(role: number) {
+    return (this.registration()?.parties || []).some((p: any) => Number(p.role) === Number(role) && Number(p.state) === 2);
+  }
+
+  async loadRegistration() {
+    if (!this.assetAddress) return;
+    this.registrationLoading.set(true);
+    try {
+      // The catalog is static, so fetch it once and keep it.
+      if (!this.classCatalog()) {
+        try { this.classCatalog.set(await this.apiService.assetClassCatalog()); } catch { /* labels degrade to ids */ }
+      }
+      const res = await this.apiService.assetClassInfo(this.assetAddress);
+      this.registration.set(res || null);
+      this.compositionDraft.set(((res?.composition || []) as any[]).map(Number));
+      const p = res?.complianceProfile;
+      const d = res?.declaration;
+      this.declarationForm.set({
+        holderCap: p?.holderCap ? String(p.holderCap) : '',
+        minTicket: p?.minTicket && Number(p.minTicket) ? String(p.minTicket) : '',
+        maxTicket: p?.maxTicket && Number(p.maxTicket) ? String(p.maxTicket) : '',
+        lockupUntil: p?.lockupUntil ? new Date(Number(p.lockupUntil)).toISOString().slice(0, 10) : '',
+        legalWrapperDocumentId: d?.legalWrapperDocumentId ? String(d.legalWrapperDocumentId) : '',
+      });
+    } catch {
+      this.registration.set(null);
+    } finally {
+      this.registrationLoading.set(false);
+    }
+  }
+
+  private _regAlert(titleKey: string, msg: string) {
+    this.alertService.show(this.translate.instant(titleKey), msg, this.translate.instant('common.close'), 'max-w-md', true);
+  }
+
+  async saveComposition() {
+    const asset = this.assetAddress;
+    if (!asset || this.isFrozen()) return;
+    this.compositionSaving.set(true);
+    try {
+      const res: any = await this.apiService.assetSetComposition(asset, this.compositionDraft());
+      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
+      await this.loadRegistration();
+      this._regAlert('assets.details.registration.savedTitle', this.translate.instant('assets.details.registration.savedMsg'));
+    } catch (e: any) {
+      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
+    } finally {
+      this.compositionSaving.set(false);
+    }
+  }
+
+  async saveDeclaration() {
+    const asset = this.assetAddress;
+    if (!asset) return;
+    const f = this.declarationForm();
+    const body: any = {};
+
+    // Send the profile whenever any of its fields is filled. `set: true` is forced server-side.
+    if (f.holderCap || f.minTicket || f.maxTicket || f.lockupUntil) {
+      body.complianceProfile = {
+        holderCap: Number(f.holderCap || 0),
+        minTicket: f.minTicket || '0',
+        maxTicket: f.maxTicket || '0',
+        // MILLISECONDS out — the API divides to seconds for the chain.
+        lockupUntil: f.lockupUntil ? new Date(f.lockupUntil + 'T00:00:00Z').getTime() : 0,
+        eligibleJurisdictions: [],
+      };
+    }
+    if (f.legalWrapperDocumentId) body.legalWrapperDocumentId = Number(f.legalWrapperDocumentId);
+
+    if (!Object.keys(body).length) {
+      this._regAlert('assets.details.registration.failedTitle', this.translate.instant('assets.details.registration.nothingToSave'));
+      return;
+    }
+
+    this.loadingService.show(this.translate.instant('common.processing'));
+    try {
+      const res: any = await this.apiService.assetSetDeclaration(asset, body);
+      this.loadingService.hide();
+      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
+      await this.loadRegistration();
+      this._regAlert('assets.details.registration.savedTitle', this.translate.instant('assets.details.registration.declarationSavedMsg'));
+    } catch (e: any) {
+      this.loadingService.hide();
+      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
+    }
+  }
+
+  async attachParty() {
+    const asset = this.assetAddress;
+    const f = this.partyForm();
+    if (!asset) return;
+    if (!/^0x[0-9a-fA-F]{40}$/.test(f.party)) {
+      this._regAlert('assets.details.registration.failedTitle', this.translate.instant('assets.details.registration.badPartyAddress'));
+      return;
+    }
+    if (!f.role) {
+      this._regAlert('assets.details.registration.failedTitle', this.translate.instant('assets.details.registration.pickRole'));
+      return;
+    }
+    this.loadingService.show(this.translate.instant('common.processing'));
+    try {
+      const res: any = await this.apiService.assetPartyAttach(asset, f.party, Number(f.role));
+      this.loadingService.hide();
+      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
+      this.partyForm.set({ party: '', role: 0 });
+      await this.loadRegistration();
+      // The party must now ACCEPT for itself — say so, or the issuer waits for nothing.
+      this._regAlert('assets.details.registration.savedTitle', this.translate.instant('assets.details.registration.partyProposedMsg'));
+    } catch (e: any) {
+      this.loadingService.hide();
+      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
+    }
+  }
+
+  async removeParty(party: string) {
+    const asset = this.assetAddress;
+    if (!asset) return;
+    const ok = await this.alertService.show(
+      this.translate.instant('assets.details.registration.removePartyTitle'),
+      this.translate.instant('assets.details.registration.removePartyConfirm'),
+      this.translate.instant('common.remove'),
+    );
+    if (!ok) return;
+    this.loadingService.show(this.translate.instant('common.processing'));
+    try {
+      const res: any = await this.apiService.assetPartyRemove(asset, party);
+      this.loadingService.hide();
+      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
+      await this.loadRegistration();
+    } catch (e: any) {
+      this.loadingService.hide();
+      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
+    }
+  }
+
   async loadChainHead() {
     try {
       const s = await this.apiService.vaultGetSyncStatus();
@@ -777,10 +998,8 @@ export class DetailsPage implements OnInit {
       address: raw.address,
       name: raw.name,
       symbol: raw.symbol,
-      tokenType: raw.token_type ?? 0,
-      tokenTypeName: raw.token_type_name ?? String(raw.token_type ?? ''),
-      assetType: raw.asset_type ?? 0,
-      assetTypeName: raw.asset_type_name ?? String(raw.asset_type ?? ''),
+      assetClass: raw.asset_class ?? 0,
+      assetClassName: raw.asset_class_name ?? String(raw.asset_class ?? ''),
       metadata: typeof raw.metadata === 'object' ? JSON.stringify(raw.metadata ?? {}) : (raw.metadata ?? ''),
       totalSupply: raw.total_supply ?? 0,
       circulating: raw.circulating ?? 0,
@@ -1180,7 +1399,7 @@ export class DetailsPage implements OnInit {
         name:          asset.name,
         symbol:        asset.symbol,
         entityName:    entity?.name || '',
-        assetTypeName: asset.assetTypeName || '',
+        assetClassName: asset.assetClassName || '',
         currencyCode:  asset.currencyCode || '',
         description:   pm.description,
         contact:       pm.contact,

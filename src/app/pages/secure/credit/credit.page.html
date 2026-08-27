@@ -22,17 +22,12 @@
         }
       </div>
 
-      @if (features.systemFunctionEnabled('credit-bank-transfer') || features.systemFunctionEnabled('credit-route-credit')) {
+      @if (features.systemFunctionEnabled('credit-route-credit')) {
       <div class="flex flex-wrap gap-2 shrink-0">
-        @if (features.systemFunctionEnabled('credit-bank-transfer')) {
-        <button (click)="openBankTransfer()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-6h6v6" />
-          </svg>
-          {{ 'credit.actions.bankTransfer' | translate }}
-        </button>
-        }
+        <!-- ⚠️ The Bank Transfer button is REMOVED, not hidden. `/credit/bank-transfer` folded
+             into Route Credit: both moved an identity's credit between two of its OWN
+             subscriptions, and route-transfer is the shape that never names — or exposes — the
+             destination subscription. A button pointing at the old path would 404. -->
         @if (features.systemFunctionEnabled('credit-route-credit')) {
         <button (click)="openRouteTransfer()"
           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
@@ -175,5 +170,4 @@
 
 </div>
 
-<app-modal-bank-transfer></app-modal-bank-transfer>
 <app-modal-route-transfer></app-modal-route-transfer>

@@ -49,6 +49,15 @@
         >
           {{ 'assets.details.tabs.info' | translate }}
         </button>
+        <button (click)="setTab('registration')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'registration'"
+          [class.border-b-2]="activeTab() === 'registration'"
+          [class.border-blue-600]="activeTab() === 'registration'"
+          [class.bg-blue-600]="activeTab() === 'registration'"
+        >
+          {{ 'assets.details.registration.tab' | translate }}
+        </button>
         <button (click)="setTab('metadata')"
           class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
           [class.text-white]="activeTab() === 'metadata'"
@@ -328,17 +337,15 @@
                   <p class="text-sm font-medium text-gray-500">{{ 'common.country' | translate }}</p>
                   <p class="text-base">{{ v.countryName }}</p>
                 </div>
-                <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.contractType' | translate }}</p>
-                  <p class="text-base">{{ v.tokenType === 2 ? 'T3643' : 'T20' }}</p>
-                </div>
+                <!-- The token-standard field is GONE: one standard remains, so it labelled a choice
+                       nobody makes. -->
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.supplyMode' | translate }}</p>
                   <p class="text-base">{{ v.supplyModeName || ((v.supplyMode === 2 ? 'assets.details.info.supplyModeDynamic' : 'assets.details.info.supplyModeFixed') | translate) }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.assetType' | translate }}</p>
-                  <p class="text-base">{{ v.assetTypeName }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.assetClass' | translate }}</p>
+                  <p class="text-base">{{ v.assetClassName }}</p>
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'assets.details.info.priceMode' | translate }}</p>
@@ -394,6 +401,296 @@
               }
     
             </div>
+          </div>
+        }
+
+        <!--
+          A8 REGISTRATION (Phase 15) — the ISSUER's half. The asset lands in Declared at
+          registration and every capability reads isAssetApproved, so until the regulator signs
+          it exists in the registry and can do nothing. Declare -> (compose + attach) -> approve.
+          Everything here is pre-approval by construction: the API refuses a declaration once
+          the state leaves Declared, and refuses a composition once frozen.
+        -->
+        @if (activeTab() === 'registration') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto p-4 space-y-6">
+            @if (!registration()) {
+              <p class="text-sm text-gray-500 py-6 text-center">
+                {{ (registrationLoading() ? 'common.loading' : 'assets.details.registration.empty') | translate }}
+              </p>
+            } @else {
+
+              <!-- status strip -->
+              <div class="flex flex-wrap items-center gap-3 border-b border-gray-200 pb-4">
+                <div>
+                  <h4 class="text-sm font-semibold text-gray-700">{{ 'assets.details.registration.title' | translate }}</h4>
+                  <p class="text-xs text-gray-500 mt-1 max-w-3xl">{{ 'assets.details.registration.intro' | translate }}</p>
+                </div>
+                <span class="ltr:ml-auto rtl:mr-auto"></span>
+                @if (registration().declaration?.approvalState === 2) {
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">{{ 'assets.details.registration.approved' | translate }}</span>
+                } @else if (registration().declaration?.approvalState === 3) {
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">{{ 'assets.details.registration.rejected' | translate }}</span>
+                } @else {
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">{{ 'assets.details.registration.declared' | translate }}</span>
+                }
+                <app-refresh-button [loading]="registrationLoading()" (click)="loadRegistration()"></app-refresh-button>
+              </div>
+
+              @if (registration().declaration?.decisionReason) {
+                <div class="text-sm bg-red-50 border border-red-200 rounded px-3 py-2 text-red-800">
+                  <span class="font-semibold">{{ 'assets.details.registration.decisionReason' | translate }}:</span>
+                  {{ registration().declaration.decisionReason }}
+                </div>
+              }
+
+              <!-- readiness — the three things the regulator's approval re-checks on chain -->
+              <div>
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.details.registration.readiness' | translate }}</h4>
+                <!-- text-gray-700 is REQUIRED, not decoration: the ✓/✗ span carries its own
+                     colour but the label beside it inherits, and the inherited colour here is
+                     near-white — so the three checks rendered as bare ticks with invisible text. -->
+                <ul class="text-sm space-y-1 text-gray-700">
+                  <li class="flex items-center gap-2">
+                    <span [class]="registration().complianceProfile?.set ? 'text-green-600' : 'text-red-600'">{{ registration().complianceProfile?.set ? '✓' : '✗' }}</span>
+                    {{ 'assets.details.registration.checkProfile' | translate }}
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span [class]="registration().declaration?.legalWrapperDocumentId ? 'text-green-600' : 'text-red-600'">{{ registration().declaration?.legalWrapperDocumentId ? '✓' : '✗' }}</span>
+                    {{ 'assets.details.registration.checkWrapper' | translate }}
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span [class]="registration().partiesSatisfied ? 'text-green-600' : 'text-red-600'">{{ registration().partiesSatisfied ? '✓' : '✗' }}</span>
+                    {{ 'assets.details.registration.checkParties' | translate }}
+                  </li>
+                </ul>
+              </div>
+
+              <!-- 1. DECLARATION -->
+              <div class="border-t border-gray-200 pt-4">
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ 'assets.details.registration.declaration' | translate }}</h4>
+                <p class="text-xs text-gray-500 mb-3 max-w-3xl">{{ 'assets.details.registration.declarationHint' | translate }}</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <label class="text-sm">
+                    <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.registration.holderCap' | translate }}</span>
+                    <input type="number" min="0" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800"
+                      [disabled]="!isDeclared() || !canManage() || (!userInfo || userInfo.role === 3)"
+                      [ngModel]="declarationForm().holderCap"
+                      (ngModelChange)="declarationForm.set({ ...declarationForm(), holderCap: $event })" />
+                  </label>
+                  <label class="text-sm">
+                    <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.registration.minTicket' | translate }}</span>
+                    <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800"
+                      [disabled]="!isDeclared() || !canManage() || (!userInfo || userInfo.role === 3)"
+                      [ngModel]="declarationForm().minTicket"
+                      (ngModelChange)="declarationForm.set({ ...declarationForm(), minTicket: $event })" />
+                  </label>
+                  <label class="text-sm">
+                    <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.registration.maxTicket' | translate }}</span>
+                    <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800"
+                      [disabled]="!isDeclared() || !canManage() || (!userInfo || userInfo.role === 3)"
+                      [ngModel]="declarationForm().maxTicket"
+                      (ngModelChange)="declarationForm.set({ ...declarationForm(), maxTicket: $event })" />
+                  </label>
+                  <label class="text-sm">
+                    <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.registration.lockupUntil' | translate }}</span>
+                    <input type="date" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800"
+                      [disabled]="!isDeclared() || !canManage() || (!userInfo || userInfo.role === 3)"
+                      [ngModel]="declarationForm().lockupUntil"
+                      (ngModelChange)="declarationForm.set({ ...declarationForm(), lockupUntil: $event })" />
+                  </label>
+                  <label class="text-sm md:col-span-2">
+                    <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.registration.legalWrapper' | translate }}</span>
+                    <input type="number" min="1" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800"
+                      [placeholder]="'assets.details.registration.legalWrapperHint' | translate"
+                      [disabled]="!isDeclared() || !canManage() || (!userInfo || userInfo.role === 3)"
+                      [ngModel]="declarationForm().legalWrapperDocumentId"
+                      (ngModelChange)="declarationForm.set({ ...declarationForm(), legalWrapperDocumentId: $event })" />
+                  </label>
+                </div>
+                @if (isDeclared() && canManage() && userInfo && userInfo.role !== 3 && entityActive && features.systemFunctionEnabled('asset-declaration')) {
+                  <button (click)="saveDeclaration()"
+                    class="mt-3 text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                    {{ 'assets.details.registration.saveDeclaration' | translate }}
+                  </button>
+                }
+              </div>
+
+              <!--
+                2a. COMPOSITION — CUSTOM (class 11) only. Every other class states its
+                requirements through the model or the jurisdiction; a "compose" control there
+                would imply a choice nobody makes.
+              -->
+              @if (isCustomAsset()) {
+                <div class="border-t border-gray-200 pt-4">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'assets.details.registration.composition' | translate }}</h4>
+                    @if (isFrozen()) {
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">{{ 'assets.details.registration.compositionFrozen' | translate }}</span>
+                    }
+                  </div>
+                  <p class="text-xs text-gray-500 mb-3 max-w-3xl">{{ 'assets.details.registration.compositionHint' | translate }}</p>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-xs font-semibold text-gray-600 mb-1">{{ 'assets.details.registration.needsParty' | translate }}</p>
+                      <div class="space-y-1">
+                        @for (r of partyRequirements(); track r.id) {
+                          <label class="flex items-start gap-2 text-sm text-gray-800">
+                            <input type="checkbox" class="mt-0.5" [disabled]="isFrozen() || !canManage() || (!userInfo || userInfo.role === 3)"
+                              [checked]="isComposed(r.id)" (change)="toggleComposed(r.id)" />
+                            <span>{{ r.name }} <span class="text-xs text-gray-400">— {{ r.roleName }}</span></span>
+                          </label>
+                        }
+                      </div>
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold text-gray-600 mb-1">{{ 'assets.details.registration.evidenceOnly' | translate }}</p>
+                      <div class="space-y-1">
+                        @for (r of evidenceRequirements(); track r.id) {
+                          <label class="flex items-start gap-2 text-sm text-gray-800">
+                            <input type="checkbox" class="mt-0.5" [disabled]="isFrozen() || !canManage() || (!userInfo || userInfo.role === 3)"
+                              [checked]="isComposed(r.id)" (change)="toggleComposed(r.id)" />
+                            <span>{{ r.name }}</span>
+                          </label>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  @if (draftRoles().length) {
+                    <div class="mt-3 text-xs text-gray-600">
+                      <span class="text-gray-400">{{ 'assets.details.registration.impliedRoles' | translate }}:</span>
+                      @for (role of draftRoles(); track role) {
+                        <span class="inline-block ltr:ml-1 rtl:mr-1 px-2 py-0.5 rounded border"
+                              [class]="roleSatisfied(role) ? 'bg-green-50 text-green-800 border-green-200' : 'bg-amber-50 text-amber-800 border-amber-200'">
+                          {{ roleName(role) }}
+                        </span>
+                      }
+                    </div>
+                  }
+
+                  @if (!isFrozen() && canManage() && userInfo && userInfo.role !== 3 && entityActive && features.systemFunctionEnabled('asset-compose')) {
+                    <button (click)="saveComposition()" [disabled]="!compositionDirty() || compositionSaving()"
+                      class="mt-3 text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      {{ 'assets.details.registration.saveComposition' | translate }}
+                    </button>
+                  }
+                </div>
+              }
+
+              <!-- 2b. RESOLVED MATRIX -->
+              <div class="border-t border-gray-200 pt-4">
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ 'assets.details.registration.requirements' | translate }}</h4>
+                <p class="text-xs text-gray-500 mb-2 max-w-3xl">{{ 'assets.details.registration.requirementsHint' | translate }}</p>
+                @if (activeRequirements().length) {
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                      <thead style="background-color:#4a5568" class="text-white">
+                        <tr>
+                          <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.registration.requirement' | translate }}</th>
+                          <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.registration.role' | translate }}</th>
+                          <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.registration.state' | translate }}</th>
+                          <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.registration.source' | translate }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (r of activeRequirements(); track r.requirementId; let even = $even) {
+                          <tr [class.bg-gray-50]="!even">
+                            <td class="px-3 py-2 text-gray-800">{{ r.name }}</td>
+                            <td class="px-3 py-2 text-gray-600">{{ r.roleName || '—' }}</td>
+                            <td class="px-3 py-2">
+                              <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                                    [class]="r.state === 1 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">{{ r.stateName }}</span>
+                            </td>
+                            <td class="px-3 py-2 text-xs text-gray-600">
+                              {{ (r.composed ? 'assets.details.registration.composedByUs' : 'assets.details.registration.fromPolicy') | translate }}
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="text-sm text-gray-500">{{ 'assets.details.registration.noRequirements' | translate }}</p>
+                }
+              </div>
+
+              <!-- 3. PARTIES -->
+              <div class="border-t border-gray-200 pt-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'assets.details.registration.parties' | translate }}</h4>
+                  @if (registration().partiesSatisfied) {
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">{{ 'assets.details.registration.partiesSatisfied' | translate }}</span>
+                  } @else {
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">{{ 'assets.details.registration.partiesUnsatisfied' | translate }}</span>
+                  }
+                </div>
+                <p class="text-xs text-gray-500 mb-2 max-w-3xl">{{ 'assets.details.registration.partiesHint' | translate }}</p>
+
+                @if (registration().parties?.length) {
+                  <div class="overflow-x-auto mb-3">
+                    <table class="min-w-full text-sm">
+                      <thead style="background-color:#4a5568" class="text-white">
+                        <tr>
+                          <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.registration.role' | translate }}</th>
+                          <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.registration.party' | translate }}</th>
+                          <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.registration.consent' | translate }}</th>
+                          <th class="px-3 py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (p of registration().parties; track p.party; let even = $even) {
+                          <tr [class.bg-gray-50]="!even">
+                            <td class="px-3 py-2 text-gray-800">{{ p.roleName }}</td>
+                            <td class="px-3 py-2 font-mono text-xs text-gray-600">{{ p.party }}</td>
+                            <td class="px-3 py-2">
+                              <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                                    [class]="p.state === 2 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">{{ p.stateName }}</span>
+                            </td>
+                            <td class="px-3 py-2 ltr:text-right rtl:text-left">
+                              @if (isDeclared() && canManage() && userInfo && userInfo.role !== 3 && entityActive) {
+                                <button (click)="removeParty(p.party)"
+                                  class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                                  {{ 'common.remove' | translate }}
+                                </button>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="text-sm text-gray-500 mb-3">{{ 'assets.details.registration.partiesEmpty' | translate }}</p>
+                }
+
+                @if (isDeclared() && canManage() && userInfo && userInfo.role !== 3 && entityActive && features.systemFunctionEnabled('asset-party-attach')) {
+                  <div class="flex flex-wrap items-end gap-2">
+                    <label class="text-sm grow min-w-64">
+                      <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.registration.partyAddress' | translate }}</span>
+                      <input type="text" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 font-mono"
+                        placeholder="0x…" [ngModel]="partyForm().party"
+                        (ngModelChange)="partyForm.set({ ...partyForm(), party: $event })" />
+                    </label>
+                    <label class="text-sm">
+                      <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.registration.role' | translate }}</span>
+                      <select class="border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800"
+                        [ngModel]="partyForm().role" (ngModelChange)="partyForm.set({ ...partyForm(), role: +$event })">
+                        <option [ngValue]="0">{{ 'assets.details.registration.pickRoleOption' | translate }}</option>
+                        @for (r of (classCatalog()?.roles || []); track r.role) {
+                          <option [ngValue]="r.role">{{ r.name }}</option>
+                        }
+                      </select>
+                    </label>
+                    <button (click)="attachParty()"
+                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      {{ 'assets.details.registration.attachParty' | translate }}
+                    </button>
+                  </div>
+                  <p class="text-xs text-gray-400 mt-1">{{ 'assets.details.registration.attachPartyHint' | translate }}</p>
+                }
+              </div>
+            }
           </div>
         }
 

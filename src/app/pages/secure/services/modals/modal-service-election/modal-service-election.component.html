@@ -1,0 +1,148 @@
+<!-- No (click) on the backdrop: a Tarmiiz modal never dismisses on a backdrop click. -->
+@if (modal.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center overflow-y-auto py-8">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4">
+
+      <!-- Header -->
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          @if (isSwitch()) { Request Election Switch } @else { Declare On-Chain / Off-Chain Election }
+        </h3>
+        <p class="mt-1 text-xs text-white/80">
+          @if (isSwitch()) {
+            Your regulator approves the switch. Once approved, every subscription in this currency is
+            converted page by page before the new election takes effect.
+          } @else {
+            Declared per currency &mdash; this service can be one in EGP and the other in USD.
+          }
+        </p>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+
+        <!-- Currency: chosen in declare mode, fixed in switch mode -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Currency</label>
+
+          @if (isSwitch()) {
+            <div class="mt-1 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+              <div class="text-sm font-semibold text-gray-800">{{ fixedCurrencyLabel() }}</div>
+              <div class="text-xs text-gray-500 mt-0.5">
+                Current election:
+                <span class="font-semibold text-gray-700">{{ electionLabel(currentElection()) }}</span>
+              </div>
+            </div>
+          } @else if (modal.input().currencies.length === 0) {
+            <p class="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+              No currency is available to declare. Every currency this service handles already carries
+              an election &mdash; change one with a switch request instead.
+            </p>
+          } @else {
+            <select [(ngModel)]="currencyCode"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
+              <option [ngValue]="0" disabled>Select a currency&hellip;</option>
+              @for (c of modal.input().currencies; track c.currencyCode) {
+                <option [ngValue]="c.currencyCode">{{ c.currencyName }} ({{ c.currencyCode }})</option>
+              }
+            </select>
+          }
+        </div>
+
+        <!-- The election itself -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">
+            @if (isSwitch()) { Switch to } @else { Election }
+          </label>
+
+          <div class="mt-2 space-y-2">
+            <label class="flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors"
+              [class]="election() === ELECTION_ONC ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:bg-gray-50'">
+              <input type="radio" name="election" class="mt-1"
+                [checked]="election() === ELECTION_ONC" (change)="election.set(ELECTION_ONC)"
+                [disabled]="migrationInFlight() || (isSwitch() && currentElection() === ELECTION_ONC)" />
+              <span class="min-w-0">
+                <span class="block text-sm font-semibold text-gray-800">On-Chain</span>
+                <span class="block text-xs text-gray-600 mt-0.5">
+                  Fiat is already in reserve; a movement is final and credit is minted against it.
+                </span>
+                @if (isSwitch() && currentElection() === ELECTION_ONC) {
+                  <span class="block text-xs text-gray-400 mt-1">Already in force.</span>
+                }
+              </span>
+            </label>
+
+            <label class="flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors"
+              [class]="election() === ELECTION_OFFC ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:bg-gray-50'">
+              <input type="radio" name="election" class="mt-1"
+                [checked]="election() === ELECTION_OFFC" (change)="election.set(ELECTION_OFFC)"
+                [disabled]="migrationInFlight() || (isSwitch() && currentElection() === ELECTION_OFFC)" />
+              <span class="min-w-0">
+                <span class="block text-sm font-semibold text-gray-800">Off-Chain</span>
+                <span class="block text-xs text-gray-600 mt-0.5">
+                  Credit records the movement; real fiat settles behind it.
+                </span>
+                @if (isSwitch() && currentElection() === ELECTION_OFFC) {
+                  <span class="block text-xs text-gray-400 mt-1">Already in force.</span>
+                }
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- The DERIVED consequence — shown before confirming, never chosen -->
+        @if (derivedPayRoleLabel()) {
+          <div class="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+            <p class="text-xs text-gray-600">
+              Payment providers for this currency will attach as:
+              <span class="font-semibold text-gray-800">{{ derivedPayRoleLabel() }}</span>
+            </p>
+            <p class="text-xs text-gray-500 mt-0.5">{{ derivedPayRoleHint() }}</p>
+          </div>
+        }
+
+        <!-- Switch mode: the transition, stated plainly -->
+        @if (isSwitch() && !migrationInFlight() && election() && election() !== currentElection()) {
+          <div class="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700">
+            <span class="font-semibold">{{ electionLabel(currentElection()) }}</span>
+            &rarr;
+            <span class="font-semibold">{{ electionLabel(election()) }}</span>
+            &middot; awaiting your regulator once requested
+          </div>
+        }
+
+        @if (migrationInFlight()) {
+          <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            A migration is already running for this currency. Convert every remaining subscription
+            before requesting another switch &mdash; payment legs in this currency are refused until
+            it completes.
+          </p>
+        }
+
+        <!-- Declare mode: this is not a casual setting -->
+        @if (!isSwitch()) {
+          <div class="rounded-md border border-amber-200 bg-amber-50 px-3 py-3">
+            <p class="text-xs font-semibold text-amber-900">This is not a casual setting.</p>
+            <p class="text-xs text-amber-800 mt-1">
+              Changing it later is not an edit. It takes a switch request, approval by your regulator,
+              and a paged migration over <span class="font-semibold">every subscription</span> in this
+              currency &mdash; during which this service cannot transact in it at all. Undoing a switch
+              is a new switch in the opposite direction, needing its own approval.
+            </p>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          Cancel
+        </button>
+        <button type="button" (click)="onConfirm()" [disabled]="!canConfirm()"
+          class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+          @if (isSwitch()) { Request Switch } @else { Declare Election }
+        </button>
+      </div>
+    </div>
+  </div>
+}

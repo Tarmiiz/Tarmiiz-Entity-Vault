@@ -26,13 +26,12 @@ export interface AddAssetData {
   service: string;
   currency: number;
   regulator: string;
-  // tokenType: leaf-template kind (V1: 1 = T20; T3643 follow-up adds 2).
-  tokenType: number;
+  // assetClass: the A1 ladder 1..11 — IMMUTABLE, and it fixes the supply model.
   // supplyMode: 1 = Fixed (initialSupply minted to contract at init), 2 = Dynamic (mint on subscribe).
   supplyMode: number;
   priceMode: number;
   // Real-world asset category (1=Precious Metals … 6=Commodities). Required for all supply modes.
-  assetType: number;
+  assetClass: number;
   initialSupply?: number;
   creditSettlement: boolean;
   customMetadata: Record<string, string>;

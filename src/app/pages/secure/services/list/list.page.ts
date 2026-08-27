@@ -116,6 +116,26 @@ export class ListPage implements OnInit {
     this._socketSub = null;
   }
   
+  // Neither half of the `serviceType` axis says enough on its own: "Service Provider" doesn't
+  // say WHICH kind of provider, and "Token Provider" covers three different businesses
+  // (Issuer / Exchange / Brokerage). Each half carries its OWN sub-type field and exactly one
+  // is ever non-zero, so read the one that matches the type — never both, and never the wrong
+  // one, which would render a Payment Gateway as an "Exchange" (both are class 2 in their own
+  // catalogs). A missing name falls back to the bare service-type name.
+  typeDisplay(s: Service): string {
+    const base = s.serviceTypeName ?? '';
+    if (s.serviceType === 2 && s.partyClassName) return `${base} / ${s.partyClassName}`;
+    if (s.serviceType === 1 && s.marketClassName) return `${base} / ${s.marketClassName}`;
+    return base;
+  }
+
+  // A type-1 service's declared marketClass is not operative until its regulator confirms it —
+  // the DEX gates read the confirmation, not the declaration. Unconfirmed is the NORMAL state
+  // of a freshly created service, so it renders neutral (gray), never as an error.
+  showMarketClassPill(s: Service): boolean {
+    return s.serviceType === 1 && !!s.marketClass;
+  }
+
   getStateClass(stateId: number | undefined): string {
     if (stateId === undefined) return 'bg-gray-100 text-gray-800';
     switch(stateId) {
@@ -169,8 +189,11 @@ export class ListPage implements OnInit {
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
       serviceType: raw.service_type ?? 0,
       serviceTypeName: raw.service_type_name ?? '',
-      providerType: raw.provider_type ?? 0,
-      providerTypeName: raw.provider_type_name ?? '',
+      partyClass: raw.party_class ?? 0,
+      partyClassName: raw.party_class_name ?? '',
+      marketClass: raw.market_class ?? 0,
+      marketClassName: raw.market_class_name ?? '',
+      marketClassConfirmed: raw.market_class_confirmed === true || raw.market_class_confirmed === 1,
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
@@ -218,19 +241,32 @@ export class ListPage implements OnInit {
         metadata: JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile }),
         verification_level: data.verificationLevel,
         service_type: data.serviceType,
-        providerType: data.providerType || 0,
+        partyClass: data.partyClass || 0,
+        marketClass: data.marketClass || 0,
         country_code: (entityInfo as any)?.country_code ?? 0,
         regulator: data.regulator,
         validator: data.validator || '',
-        payment_processor: data.paymentProcessor || '',
+        // No `payment_processor` — the Entity API ignores it. A payment provider attaches per
+        // CURRENCY under a payRole validated against that currency's election, and the election
+        // is declared by the service's REGULATOR, so nothing is attachable at create time.
         custodian: data.custodian || '',
         clearing_house: data.clearingHouse || '',
         visibility: data.visibility || 1,
       });
-      if (result) {
+      // `vaultPost` returns `{ error }` on failure — a TRUTHY object — so a bare `if (result)` took
+      // the success branch on every failure and the error alert below was unreachable. The address
+      // is the only honest success signal, and it is what the follow-up calls need anyway.
+      const newAddress: string = result?.address ?? '';
+      if (newAddress) {
+        // ⚠️ NO post-create election declare / payment-provider attach here, and there cannot be
+        // one. `P_ELECTION_DECLARE` is gated `K_REGULATOR_OF`: the REGULATOR declares a service's
+        // initial onc/offc election, per currency. An entity-side declare call would simply be
+        // refused, so the wizard collects neither the currency nor the election, and a payment
+        // provider — whose payRole is validated against that election — has nothing to attach
+        // under until the regulator has acted.
         await this.listServices();
       } else {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('services.list.createFailed'));
+        this.alertService.show(this.translate.instant('alerts.error'), result?.error || this.translate.instant('services.list.createFailed'));
       }
     } catch (error) {
       this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));

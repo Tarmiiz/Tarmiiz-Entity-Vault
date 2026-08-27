@@ -21,10 +21,9 @@
             <p class="font-mono text-xs text-gray-400 break-all">{{ trx.asset }}</p>
           </div>
 
-          <div class="border-t pt-3">
-            <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.globalTrxId' | translate }}</p>
-            <p class="font-mono">{{ trx.trxId }}</p>
-          </div>
+          <!-- The GLOBAL trx id is deliberately not shown: it is a platform-wide counter, so it
+               leaks the total transaction volume across every tenant to whoever opens one row.
+               The SERVICE trx id is the number that means something to this tenant. -->
           <div class="border-t pt-3">
             <p class="text-xs font-medium text-gray-500">{{ 'transactions.infoModal.serviceTrxId' | translate }}</p>
             <p class="font-mono">{{ trx.serviceTrxId }}</p>

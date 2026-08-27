@@ -10,6 +10,10 @@
 
       <!-- Step Indicator -->
       <div class="flex items-center justify-center gap-1 px-6 py-3 bg-gray-50 border-b">
+        <!-- Must cover totalSteps() EXACTLY — a token provider is 5 steps again now that
+             'Currency & Payments' is gone. Too few hides the last dot and leaves the connector
+             after it dangling (`step < totalSteps()` stays true); too many renders a dot past
+             the end of the wizard. -->
         @for (step of [1, 2, 3, 4, 5]; track step) {
           @if (step <= totalSteps()) {
             <div class="flex items-center">
@@ -56,19 +60,37 @@
             </div>
             @if (isServiceProvider()) {
               <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.providerType' | translate }}</label>
-                <select formControlName="providerType"
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.partyClass' | translate }}</label>
+                <select formControlName="partyClass"
                   class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  [class.border-red-500]="addForm.get('providerType')?.touched && addForm.get('providerType')?.invalid"
-                  [class.border-gray-300]="!(addForm.get('providerType')?.touched && addForm.get('providerType')?.invalid)">
-                  <option value="" disabled selected hidden>{{ 'services.addModal.placeholders.selectProviderType' | translate }}</option>
-                  @for (pt of providerTypes(); track pt.variableId) {
-                    <option [value]="pt.variableId">{{ pt.name }}</option>
+                  [class.border-red-500]="addForm.get('partyClass')?.touched && addForm.get('partyClass')?.invalid"
+                  [class.border-gray-300]="!(addForm.get('partyClass')?.touched && addForm.get('partyClass')?.invalid)">
+                  <option value="" disabled selected hidden>{{ 'services.addModal.placeholders.selectPartyClass' | translate }}</option>
+                  @for (pc of partyClasses(); track pc.variableId) {
+                    <option [value]="pc.variableId">{{ pc.name }}</option>
                   }
                 </select>
-                <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.providerConfirmNote' | translate: { type: getProviderTypeName() || ('services.addModal.providerFallback' | translate) } }}</p>
-                @if (addForm.get('providerType')?.touched && addForm.get('providerType')?.hasError('required')) {
-                  <p class="mt-1 text-xs text-red-600">{{ 'services.addModal.errors.providerTypeRequired' | translate }}</p>
+                <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.providerConfirmNote' | translate: { type: getPartyClassName() || ('services.addModal.providerFallback' | translate) } }}</p>
+                @if (addForm.get('partyClass')?.touched && addForm.get('partyClass')?.hasError('required')) {
+                  <p class="mt-1 text-xs text-red-600">{{ 'services.addModal.errors.partyClassRequired' | translate }}</p>
+                }
+              </div>
+            }
+            @if (isTokenProvider()) {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.marketClass' | translate }}</label>
+                <select formControlName="marketClass"
+                  class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  [class.border-red-500]="addForm.get('marketClass')?.touched && addForm.get('marketClass')?.invalid"
+                  [class.border-gray-300]="!(addForm.get('marketClass')?.touched && addForm.get('marketClass')?.invalid)">
+                  <option value="" disabled selected hidden>{{ 'services.addModal.placeholders.selectMarketClass' | translate }}</option>
+                  @for (mc of marketClasses(); track mc.variableId) {
+                    <option [value]="mc.variableId">{{ mc.name }}</option>
+                  }
+                </select>
+                <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.marketClassNote' | translate }}</p>
+                @if (addForm.get('marketClass')?.touched && addForm.get('marketClass')?.hasError('required')) {
+                  <p class="mt-1 text-xs text-red-600">{{ 'services.addModal.errors.marketClassRequired' | translate }}</p>
                 }
               </div>
             }
@@ -170,8 +192,8 @@
             </div>
           }
 
-          <!-- Step 4: Linked Services (Token Issuer only) -->
-          @if (isTokenIssuer() && currentStep() === 4) {
+          <!-- Step 4: Linked Services (Token Provider only) -->
+          @if (isTokenProvider() && currentStep() === 4) {
             <p class="text-sm text-gray-500 mb-2">{{ 'services.addModal.intro.linked' | translate }}</p>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.validatorOptional' | translate }}</label>
@@ -183,15 +205,23 @@
                 }
               </select>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.paymentProcessorOptional' | translate }}</label>
-              <select formControlName="paymentProcessor"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">{{ 'common.none' | translate }}</option>
-                @for (cs of paymentProcessors(); track cs.address) {
-                  <option [value]="cs.address">{{ cs.name || cs.address }}</option>
-                }
-              </select>
+            <!--
+              A payment provider is NOT a create-time argument and cannot become one. It attaches
+              per CURRENCY with a payRole that must match that currency's ELECTION (S6/S66), and
+              the election is declared by the service's REGULATOR — so at create time there is
+              nothing to validate a role against. Offering a picker here would collect a choice
+              the platform refuses.
+
+              The other three (validator / custodian / clearing house) are currency-less and are
+              attached by the API right after the create, which is why they stay on this step.
+            -->
+            <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+              <p class="text-xs font-medium text-gray-500 mb-0.5">{{ 'services.addModal.fields.paymentProcessorOptional' | translate }}</p>
+              <p class="text-xs text-gray-500">
+                Attached later, per currency, from the service's Service Providers tab &mdash; and only
+                once your regulator has declared this service's on-chain / off-chain election for that
+                currency, since the provider's role is derived from it.
+              </p>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.custodian' | translate }}</label>
@@ -232,8 +262,14 @@
                 </div>
                 @if (isServiceProvider()) {
                   <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.providerType' | translate }}</span>
-                    <span class="text-black font-medium">{{ getProviderTypeName() }} <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
+                    <span class="text-gray-500">{{ 'services.addModal.fields.partyClass' | translate }}</span>
+                    <span class="text-black font-medium">{{ getPartyClassName() }} <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
+                  </div>
+                }
+                @if (isTokenProvider()) {
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">{{ 'services.addModal.fields.marketClass' | translate }}</span>
+                    <span class="text-black font-medium">{{ getMarketClassName() }} <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
                   </div>
                 }
                 <div class="flex justify-between">
@@ -275,7 +311,7 @@
               </div>
             </div>
 
-            @if (isTokenIssuer()) {
+            @if (isTokenProvider()) {
               <div class="mb-4">
                 <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'services.addModal.sections.linkedServices' | translate }}</h4>
                 <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
@@ -283,10 +319,9 @@
                     <span class="text-gray-500">{{ 'services.addModal.fields.validator' | translate }}</span>
                     <span class="text-black font-medium">{{ getValidatorName() }}</span>
                   </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.paymentProcessor' | translate }}</span>
-                    <span class="text-black font-medium">{{ getPaymentProcessorName() }}</span>
-                  </div>
+                  <!-- No Payment Provider row: the wizard cannot set one (it attaches per currency
+                       under a role derived from the regulator-declared election), so the row could
+                       only ever read "None" — which reads as a choice the operator made. -->
                   <div class="flex justify-between">
                     <span class="text-gray-500">{{ 'services.addModal.fields.custodian' | translate }}</span>
                     <span class="text-black font-medium">{{ getCustodianDisplay() }}</span>

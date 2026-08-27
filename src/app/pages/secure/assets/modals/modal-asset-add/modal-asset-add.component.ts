@@ -32,10 +32,14 @@ export class ModalAssetAddComponent {
   // as immutable `_supplyMode`. Sourced from the 'Asset Supply Mode' global category
   // (distinct from 'Asset Token Type', which is the T20/T3643 standard).
   supplyModes = signal<{ id: number; name: string }[]>([]);
-  assetTypes = signal<{ id: number; name: string }[]>([]);
+  assetClasses = signal<{ id: number; name: string }[]>([]);
+  // ⚠️ V30 MEANING CHANGE, not a relabel. These were 'Single' (bid == ask) and 'Bid/Ask'
+  // (spread allowed) — the shape of a QUOTE, which left every book to guess how to trade the
+  // asset. They now say how the asset is PRICED. Both vocabularies use 1 and 2, so the old
+  // labels would have kept rendering plausibly over a different meaning.
   priceModes = signal<{ id: number; name: string }[]>([
-    { id: 1, name: 'Single' },
-    { id: 2, name: 'Bid/Ask' },
+    { id: 1, name: 'Fixed-priced' },
+    { id: 2, name: 'Market-priced' },
   ]);
 
   // Address resolution
@@ -45,13 +49,8 @@ export class ModalAssetAddComponent {
   issuerName = signal('');
   managerName = signal('');
 
-  // Standards — BYO model exposes both T20 (Fund / RWA) and T3643 (Security Token).
-  // tokenType is set at deploy time and immutable thereafter (the asset's `getStandard()`
-  // returns "T20" or "T3643"; the factory chooses which impl to wrap in ERC1967Proxy).
-  readonly tokenTypes: { id: number; name: string; subtitle: string }[] = [
-    { id: 1, name: 'Tarmiiz T20',   subtitle: 'Fund / Real-World Asset' },
-    { id: 2, name: 'Tarmiiz T3643', subtitle: 'Security Token (ERC-3643)' },
-  ];
+  // The token-STANDARD choice is gone: one standard remains, so there is no second
+  // factory to select and nothing for the user to decide.
 
   // Wizard state
   currentStep = signal(1);
@@ -75,14 +74,12 @@ export class ModalAssetAddComponent {
     manager: ['', Validators.required],
     name: ['', Validators.required],
     symbol: ['', Validators.required],
-    // tokenType: 1 = TarmiizT20, 2 = TarmiizT3643 (ERC-3643 security token). Default T20.
-    tokenType: ['1', Validators.required],
     // supplyMode: 1 = Fixed (initialSupply minted to contract at init), 2 = Dynamic (mint on subscribe).
-    // Replaces the old leaf-template-encoded `tokenType` choice.
     supplyMode: ['', Validators.required],
     priceMode: ['2', Validators.required],
-    // Asset Type (real-world category) applies to ALL assets regardless of supply mode.
-    assetType: ['', Validators.required],
+    // assetClass 1..11 — IMMUTABLE, and it FIXES the supply model, so the two are validated
+    // against each other at registration. Required for every asset.
+    assetClass: ['', Validators.required],
     initialSupply: [''],
     description: ['', Validators.required],
     service: ['', Validators.required],
@@ -148,6 +145,42 @@ export class ModalAssetAddComponent {
     return this.addForm.get('supplyMode')?.value === '1';
   }
 
+  // A5 — THE CLASS *IS* THE SUPPLY MODEL. Mirrored from the Assets Registry's
+  // AssetClassLib.supplyModeFor, which is the authority: `Assets.create` refuses a pair that
+  // does not match (`supplyModeMatches`), so a wrong guess here is a revert, not a preference.
+  // `0` means the issuer chooses, and only class 11 (Custom) is allowed that.
+  //
+  // This exists because the supply-mode PICKER was removed from step 1 when the class took over
+  // — but the control kept `Validators.required` and kept its place in `stepFields[1]`, so it
+  // could never be satisfied and **Next was dead for every asset**. Nothing rendered an error
+  // either: a disabled Next with all visible fields filled reads as a UI glitch, not a blocked
+  // form. The same omission also hid the Initial Supply input, which renders on `isFixedSupply`.
+  private static readonly SUPPLY_MODE_FOR_CLASS: Readonly<Record<number, number>> = {
+    1: 2,  // Fund Units      — mint on subscribe, burn on redeem
+    2: 1,  // Equity          — supply moves only by regulator-approved corporate action
+    3: 1,  // Debt / Sukuk    — burns at maturity/amortization
+    4: 1,  // Real Estate
+    5: 2,  // Project Finance — mints by tranche on certification
+    6: 2,  // Commodities     — mint on attested deposit
+    7: 2,  // Receivables     — mint per onboarded invoice
+    8: 1,  // Revenue Share
+    9: 2,  // Environmental   — registry-vintage issuance
+    10: 1, // Collectibles    — fractions of the item
+    11: 0, // Custom          — A24, composed within A4: the issuer picks
+  };
+
+  /** Class 11 (Custom) is the ONLY class that lets the issuer choose the supply model. */
+  get isCustomClass(): boolean {
+    return Number(this.addForm.get('assetClass')?.value) === 11;
+  }
+
+  /** Human label for the supply model the chosen class fixes — '' for Custom or no class. */
+  get derivedSupplyModeName(): string {
+    const mode = Number(this.addForm.get('supplyMode')?.value);
+    if (!mode || this.isCustomClass) return '';
+    return this.supplyModes().find(s => s.id === mode)?.name ?? '';
+  }
+
   get selectedServiceHasPaymentProcessor(): boolean {
     const serviceAddr = this.addForm.get('service')?.value;
     if (!serviceAddr) return false;
@@ -164,7 +197,6 @@ export class ModalAssetAddComponent {
         // and every new asset is a plain T20 — seed the (otherwise required) control so step 1
         // validates without user input.
         if (!this.features.menuEnabled('asset-t3643')) {
-          this.addForm.get('tokenType')!.setValue('1');
         }
         this.metadataRows.clear();
         this.addMetadataRow();
@@ -199,6 +231,19 @@ export class ModalAssetAddComponent {
       }
     });
 
+    // The class DERIVES the supply mode (A5). Setting it here rather than rendering a picker
+    // keeps a single source of truth — the contract validates the pair, so offering a choice
+    // for a class that fixes it would just be a way to build a reverting transaction. Custom
+    // (0) clears the value so `Validators.required` blocks Next until the issuer picks, which
+    // is the one case where the choice is genuinely theirs.
+    this.addForm.get('assetClass')!.valueChanges.subscribe(val => {
+      const derived = ModalAssetAddComponent.SUPPLY_MODE_FOR_CLASS[Number(val)];
+      const supplyCtrl = this.addForm.get('supplyMode')!;
+      // `undefined` = a class id this build does not know (the category is on-chain and
+      // extensible). Treat it like Custom — ask — rather than guessing a supply model.
+      supplyCtrl.setValue(derived ? String(derived) : '');
+    });
+
     // Conditional validators driven by supplyMode (Fixed vs Dynamic).
     // Note: assetType is required for ALL supply modes (it's the real-world category),
     // so it is NOT touched here — only initialSupply + the priceMode default are.
@@ -224,7 +269,7 @@ export class ModalAssetAddComponent {
   // --- Step navigation ---
 
   private readonly stepFields: Record<number, string[]> = {
-    1: ['tokenType', 'supplyMode', 'priceMode', 'assetType'],
+    1: ['supplyMode', 'priceMode', 'assetClass'],
     2: ['name', 'symbol', 'description'],
     3: [],
     4: ['service', 'currency'],
@@ -399,7 +444,7 @@ export class ModalAssetAddComponent {
   // --- Display name resolvers ---
 
   getTokenTypeName(): string {
-    return this.tokenTypes.find(t => t.id === Number(this.addForm.get('tokenType')?.value))?.name ?? '';
+    return 'Tarmiiz T20';   // the only standard
   }
 
   getSupplyModeName(): string {
@@ -407,7 +452,7 @@ export class ModalAssetAddComponent {
   }
 
   getAssetTypeName(): string {
-    return this.assetTypes().find(t => t.id === Number(this.addForm.get('assetType')?.value))?.name ?? '';
+    return this.assetClasses().find(t => t.id === Number(this.addForm.get('assetClass')?.value))?.name ?? '';
   }
 
   getPriceModeName(): string {
@@ -490,17 +535,17 @@ export class ModalAssetAddComponent {
 
   async loadSupplyModesAndAssetTypes() {
     // Supply Mode (1=Fixed / 2=Dynamic) comes from the 'Asset Supply Mode' global category.
-    // NB: do NOT read 'Asset Token Type' here — that category now holds the token *standard*
-    // (T20 / T3643), not the supply mode (relabeled 2026-06-06).
-    const [supplyModesRaw, assetTypesRaw] = await Promise.all([
+    // 'Asset Class' REPLACES 'Asset Type' (which overlapped this catalog and carried nothing),
+    // and 'Asset Token Type' is gone with the second standard.
+    const [supplyModesRaw, assetClassesRaw] = await Promise.all([
       this.apiService.vaultGetGlobalVariablesByCategory('Asset Supply Mode'),
-      this.apiService.vaultGetGlobalVariablesByCategory('Asset Type'),
+      this.apiService.vaultGetGlobalVariablesByCategory('Asset Class'),
     ]);
     if (supplyModesRaw) {
       this.supplyModes.set(supplyModesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
     }
-    if (assetTypesRaw) {
-      this.assetTypes.set(assetTypesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
+    if (assetClassesRaw) {
+      this.assetClasses.set(assetClassesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
     }
 
     // ISIN's numeric id is Global Variables insertion order, so resolve it by NAME. A chain
@@ -560,8 +605,6 @@ export class ModalAssetAddComponent {
     const formValue = this.addForm.getRawValue();
     const supplyMode = Number(formValue.supplyMode);
     const priceMode = Number(formValue.priceMode) || 2;
-    // tokenType: 1 = TarmiizT20, 2 = TarmiizT3643. The API routes to the matching factory.
-    const tokenType = Number(formValue.tokenType) || 1;
     const data: AddAssetData = {
       owner: formValue.owner ?? '',
       issuer: formValue.issuer ?? '',
@@ -572,11 +615,11 @@ export class ModalAssetAddComponent {
       service: formValue.service ?? '',
       currency: Number(formValue.currency),
       regulator: formValue.regulator ?? '',
-      tokenType,
       supplyMode,
       priceMode,
-      // Asset Type (real-world category) is collected for ALL supply modes.
-      assetType: Number(formValue.assetType),
+      // The A1 class. IMMUTABLE and it fixes the supply model, so the API validates 1..11
+      // rather than letting registerAsset refuse it with an opaque revert.
+      assetClass: Number(formValue.assetClass),
       creditSettlement: formValue.noCreditSettlement !== true,
       customMetadata,
       identifiers,

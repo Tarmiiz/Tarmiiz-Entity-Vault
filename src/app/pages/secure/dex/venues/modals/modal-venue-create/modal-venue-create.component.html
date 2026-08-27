@@ -12,11 +12,19 @@
             <select formControlName="serviceAddress"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
               <option value="">{{ 'dex.venues.createModal.selectService' | translate }}</option>
+              <!-- Only regulator-CONFIRMED Exchange services are selectable — the chain
+                   requires both (marketClass == Exchange AND marketClassConfirmed). A declared
+                   but unconfirmed one stays listed and disabled so the wait is visible. -->
               @for (s of services(); track s.address) {
-                <option [value]="s.address">{{ s.name || s.address }}</option>
+                <option [value]="s.address" [disabled]="!s.eligible">
+                  {{ s.name }}@if (!s.eligible) { — {{ 'dex.venues.createModal.pendingSuffix' | translate }}}
+                </option>
               }
             </select>
             <p class="text-xs text-gray-500 mt-1">{{ 'dex.venues.createModal.serviceHint' | translate }}</p>
+            @if (hasPending()) {
+              <p class="text-xs text-amber-700 mt-1">{{ 'dex.venues.createModal.pendingNotice' | translate }}</p>
+            }
           </div>
           <!-- No settlement-mode picker since 2026-08-09. Whether this venue runs a native
                P2P book is DERIVED on chain at venueCreate from whether the service has a

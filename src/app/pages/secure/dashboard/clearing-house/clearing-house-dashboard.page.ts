@@ -13,12 +13,26 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import {
-  ClearingCycle, ClearingDelivery, ClearingMember, ClearingPosition, CreditSettlement, User,
+  ClearingDelivery, ClearingMember, User,
 } from '../../../../shared/models/data.model';
 
-/** One pay-in row: the member's snapshot position plus the cycle it belongs to. */
-interface PayInRow { cycle: ClearingCycle; position: ClearingPosition; }
+
 interface OpStat { title: string; value: number; path: string; alert?: boolean; }
+
+/**
+ * ⚠️ THIS PAGE LOST ITS CENTRAL BOARD AND HAS NOT YET GAINED ITS REPLACEMENT.
+ *
+ * It was built around one question — WHICH MEMBERS OWE ME FIAT ON A CLOSED CYCLE, AND HAVE
+ * THEY WIRED IT — and that question no longer exists: cycles are gone, netting is continuous,
+ * and a member's demand is now its live MARGIN REQUIREMENT, tested per delivery against the
+ * same obligation ledger the delivery gate reads.
+ *
+ * What remains here (deliveries, members) is still true and still the operator's work. What is
+ * missing is the margin-coverage board that replaces the pay-in board: who is under-margined,
+ * by how much, and which deliveries that is currently blocking. That is a DESIGN decision about
+ * what a CCP operator should be shown, not a mechanical port of the old board, so it is left
+ * explicitly undone rather than approximated.
+ */
 
 /**
  * Clearing House home (entity mode 7).
@@ -66,10 +80,8 @@ export class ClearingHouseDashboardPage implements OnInit {
   loading = signal(true);
   lastUpdated = signal<Date | null>(null);
 
-  cycles = signal<ClearingCycle[]>([]);
   deliveries = signal<ClearingDelivery[]>([]);
   members = signal<ClearingMember[]>([]);
-  payIns = signal<PayInRow[]>([]);
 
   opsApprovals = signal<number | null>(null);
   opsUnread = signal(0);
@@ -83,17 +95,6 @@ export class ClearingHouseDashboardPage implements OnInit {
    * around the admin's own visibility control.
    */
   clearingVisible = computed(() => this.features.menuEnabled('clearing'));
-
-  // ── Cycle aggregates ──────────────────────────────────────────────────────
-  openCycles      = computed(() => this.cycles().filter(c => c.status === 1).length);
-  closedCycles    = computed(() => this.cycles().filter(c => c.status === 2).length);
-  finalizedCycles = computed(() => this.cycles().filter(c => c.status === 3).length);
-
-  // ── Pay-in aggregates ─────────────────────────────────────────────────────
-  outstandingPayIns = computed(() => this.payIns().filter(r => !r.position.paidIn).length);
-  /** Owed but with nothing in the credit ledger to show for it — the rows worth looking at first. */
-  unevidencedPayIns = computed(() =>
-    this.payIns().filter(r => !r.position.paidIn && !this.hasSentSettlement(r.position)).length);
 
   // ── Delivery aggregates ───────────────────────────────────────────────────
   // 1 Pending / 2 Ready / 3 Delivered / 4 Failed. Held blocks DELIVERY only, never the unwind.
@@ -110,24 +111,9 @@ export class ClearingHouseDashboardPage implements OnInit {
   pendingMembers   = computed(() => this.members().filter(m => m.state === 1).length);
   suspendedMembers = computed(() => this.members().filter(m => m.state === 3).length);
 
-  /**
-   * Unpaid first, then largest demand — the operator's actual reading order, matching the
-   * Clearing page's own board so the two never contradict each other.
-   */
-  topPayIns = computed(() => [...this.payIns()]
-    .sort((a, b) => Number(a.position.paidIn) - Number(b.position.paidIn) || a.position.net - b.position.net)
-    .slice(0, 8));
-
-  /** Cycles the operator can act on: Open (closeable) and Closed (finalizable). */
-  actionableCycles = computed(() => this.cycles()
-    .filter(c => c.status === 1 || c.status === 2)
-    .sort((a, b) => a.status - b.status || a.closesAt - b.closesAt)
-    .slice(0, 6));
-
   opStats = computed<OpStat[]>(() => {
     const out: OpStat[] = [];
     if (this.clearingVisible()) {
-      out.push({ title: 'clearing.dashboard.stats.awaitingPayIn', value: this.outstandingPayIns(), path: '/authorized/clearing', alert: this.outstandingPayIns() > 0 });
       out.push({ title: 'clearing.dashboard.stats.deliveriesReady', value: this.readyDeliveries(), path: '/authorized/clearing' });
       out.push({ title: 'clearing.dashboard.stats.deliveriesHeld', value: this.heldDeliveries(), path: '/authorized/clearing', alert: this.heldDeliveries() > 0 });
       out.push({ title: 'clearing.dashboard.stats.pastDeadline', value: this.overdueDeliveries(), path: '/authorized/clearing', alert: this.overdueDeliveries() > 0 });
@@ -160,35 +146,6 @@ export class ClearingHouseDashboardPage implements OnInit {
 
   // ── Settlement evidence ───────────────────────────────────────────────────
 
-  /** Newest first from the API, so the head is the latest activity on the pair. */
-  latestSettlement(p: ClearingPosition): CreditSettlement | null {
-    return p.settlements?.[0] ?? null;
-  }
-
-  /** 2 Sent Confirmed / 3 Settled — the member has actually asserted a wire. */
-  hasSentSettlement(p: ClearingPosition): boolean {
-    return (p.settlements ?? []).some(s => s.state === 2 || s.state === 3);
-  }
-
-  settlementLabelKey(s: CreditSettlement | null): string {
-    if (!s) return 'clearing.payIns.settlementNone';
-    switch (Number(s.state)) {
-      case 1: return 'settlements.states.pending';
-      case 2: return 'settlements.states.sentConfirmed';
-      case 3: return 'settlements.states.settled';
-      default: return 'clearing.payIns.settlementNone';
-    }
-  }
-
-  settlementClass(s: CreditSettlement | null): string {
-    switch (Number(s?.state)) {
-      case 1: return 'bg-amber-100 text-amber-800';
-      case 2: return 'bg-blue-100 text-blue-800';
-      case 3: return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  }
-
   // ── Labels ────────────────────────────────────────────────────────────────
 
   currencyLabel(code: number): string {
@@ -204,29 +161,6 @@ export class ClearingHouseDashboardPage implements OnInit {
     const k = String(key || '');
     return k.length > 14 ? k.slice(0, 8) + '…' + k.slice(-4) : k;
   }
-
-  cycleStatusKey(s: number): string {
-    switch (Number(s)) {
-      case 1: return 'clearing.cycleStates.open';
-      case 2: return 'clearing.cycleStates.closed';
-      case 3: return 'clearing.cycleStates.finalized';
-      case 4: return 'clearing.cycleStates.abandoned';
-      default: return 'clearing.cycleStates.open';
-    }
-  }
-
-  cycleStatusClass(s: number): string {
-    switch (Number(s)) {
-      case 1: return 'bg-blue-100 text-blue-800';
-      case 2: return 'bg-amber-100 text-amber-800';
-      case 3: return 'bg-green-100 text-green-800';
-      case 4: return 'bg-gray-200 text-gray-600';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  }
-
-  /** `closes_at` on this mirror is MILLISECONDS — formatTime, never formatDate. */
-  cycleCloses(c: ClearingCycle): string { return this.utils.formatTime(c.closesAt); }
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
@@ -255,36 +189,19 @@ export class ClearingHouseDashboardPage implements OnInit {
 
   private async loadClearing() {
     if (!this.clearingVisible()) {
-      this.cycles.set([]); this.deliveries.set([]); this.members.set([]); this.payIns.set([]);
+      this.deliveries.set([]); this.members.set([]);
       return;
     }
-    const [cycles, deliveries, members] = await Promise.all([
-      this.apiService.vaultClearingCycles({ start: 0, offset: 200 }).catch(() => []),
+    const [deliveries, members] = await Promise.all([
       this.apiService.vaultClearingDeliveries({ start: 0, offset: 200 }).catch(() => []),
       this.apiService.vaultClearingMembers().catch(() => []),
       this.loadCurrencies(),
     ]);
-    this.cycles.set(cycles ?? []);
     this.deliveries.set(deliveries ?? []);
     this.members.set(members ?? []);
-    await this.loadPayIns();
   }
 
-  /**
-   * Fans out over CLOSED cycles only (status 2). Finalized (3) is done by definition and an
-   * Open (1) cycle has no positions yet — they are snapshotted at close.
-   */
-  private async loadPayIns() {
-    const closed = this.cycles().filter(c => c.status === 2);
-    if (!closed.length) { this.payIns.set([]); return; }
-    const board: PayInRow[] = [];
-    await Promise.all(closed.map(async (cycle) => {
-      const rows = await this.apiService.vaultClearingCyclePayIns(cycle.cycleKey).catch(() => []);
-      for (const position of (rows ?? [])) board.push({ cycle, position });
-    }));
-    this.payIns.set(board);
-    await this.resolveEntityNames(board.map(b => b.position.entity));
-  }
+
 
   private async loadCurrencies() {
     const data = await this.apiService.vaultGetApprovedCurrencies().catch(() => null);

@@ -169,10 +169,8 @@ export interface ActivityLog {
 //     public issuer: string,
 //     public manager: string,
 //     public regulator: string,
-//     public tokenType: number,
-//     public tokenTypeName: string,
-//     public assetType: number,
-//     public assetTypeName: string,
+//     public assetClass: number,
+//     public assetClassName: string,
 //     public data: string,
 //     public totalSupply: number,
 //     public circulating: number,
@@ -244,7 +242,7 @@ export class Validator {
 export class EntityServiceProvider {
   constructor (
     public address: string,
-    public spType: number,        // Regulator Party Type: 1=Validator, 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse
+    public spType: number,        // Party Class id — see shared/constants/party-class.ts (ids renumbered; never restate them)
     public spTypeName: string,
     public name: string,
     public level: number,
@@ -326,10 +324,26 @@ export class Service {
     public visibility: number = 1,
     public custodian: string = '',
     public custodianActive: boolean = true,
-    // Entity-declared sub-type for service providers (serviceType 2): 1=Validator,
-    // 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse; 0 for token issuers.
-    public providerType: number = 0,
-    public providerTypeName: string = '',
+    // ── The two sub-type fields, and why they are two ────────────────────────────────────
+    // Exactly ONE is non-zero, always: `partyClass != 0 ⟺ serviceType == 2` and
+    // `marketClass != 0 ⟺ serviceType == 1`. A non-zero value therefore names its own
+    // vocabulary without a second read — which is the whole reason this is not one generic
+    // `subType` field. See shared/constants/{party-class,market-class}.ts.
+    //
+    // Entity-declared sub-type for SERVICE PROVIDERS (serviceType 2) — the `Party Class`
+    // catalog id (1=Validator, 2=Payment Gateway, 3=Bank, 4=Custodian, 5=Clearing House,
+    // 6=Escrow CH). 0 on a token provider.
+    public partyClass: number = 0,
+    public partyClassName: string = '',
+    // Entity-declared sub-type for TOKEN PROVIDERS (serviceType 1) — the `Market Class`
+    // catalog id (1=Issuer, 2=Exchange, 3=Brokerage). 0 on a service provider, and NEVER 0
+    // on a type-1 service.
+    public marketClass: number = 0,
+    public marketClassName: string = '',
+    // Has the REGULATOR confirmed the entity's declared `marketClass`? Born false — that is
+    // the NORMAL state of a freshly created service, not an error. The DEX gates read this,
+    // not the declaration, so an unconfirmed Exchange cannot yet open a venue.
+    public marketClassConfirmed: boolean = false,
     // Nested public contact info (2026-07-20) — derived from the service metadata's `contact`
     // key with fallback to the legacy flat email/mobile/website.
     public contact?: ContactInfo
@@ -917,11 +931,12 @@ export class Asset {
     public address: string,
     public name: string,
     public symbol: string,
-    // tokenType: leaf template kind. V1: 1 = T20. T3643 follow-up will add 2.
-    public tokenType: number,
-    public tokenTypeName: string,
-    public assetType: number,
-    public assetTypeName: string,
+    // assetClass: the A1 ladder, 1..11 (AssetClassLib). IMMUTABLE, and it FIXES the supply
+    // model — a dynamic-supply equity is refused at registration. Replaces the tokenType /
+    // assetType pair: one standard remains, and the old 5-value "asset type" overlapped this
+    // catalog with nothing deciding which governed.
+    public assetClass: number,
+    public assetClassName: string,
     public metadata: string,
     public totalSupply: number,
     public circulating: number,
@@ -946,8 +961,7 @@ export class Asset {
     public priceModeName?: string,
     // supplyMode: 1 = Fixed (initialSupply minted to asset at init; subscribe transfers).
     //             2 = Dynamic (subscribe mints, redeem burns).
-    // Immutable post-create. Set by the T20Template consolidation — replaces the old
-    // tokenType=1/2 distinction at this level (tokenType now records the leaf-template kind).
+    // Immutable post-create. Set by the T20Template consolidation.
     public supplyMode: number = 1,
     public supplyModeName?: string,
     // canManage: server-derived — true when the asset's on-chain `manager` is

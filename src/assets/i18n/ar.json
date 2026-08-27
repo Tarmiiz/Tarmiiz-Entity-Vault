@@ -452,9 +452,10 @@
       "noServicesFound": "لم يتم العثور على خدمات",
       "noServicesYet": "لا توجد خدمات بعد",
       "portfolioTitle": "محفظة الخدمات",
-      "providerTypeCol": "نوع مزود الخدمة",
-      "providerTypesLabel": "أنواع مزودي الخدمة",
+      "serviceClassCol": "الفئة",
+      "serviceClassesLabel": "فئات الخدمات",
       "suspendedLabel": "موقوفة",
+      "unclassified": "غير مصنفة",
       "verification": "التحقق"
     },
     "serviceSingular": "خدمة",
@@ -477,9 +478,15 @@
       "state": "الحالة",
       "type": "النوع",
       "typeAll": "الكل",
-      "type1": "مُصدر رموز",
-      "type2": "مُحقق / معالج",
+      "type1": "مزود رموز",
+      "type2": "مزود خدمة",
       "verificationLevel": "مستوى التحقق"
+    },
+    "marketClass": {
+      "confirmed": "مؤكدة",
+      "confirmedHint": "أكدت الجهة التنظيمية فئة السوق هذه.",
+      "awaitingConfirmation": "بانتظار التأكيد",
+      "awaitingConfirmationHint": "أقرّت هذه الجهة بفئة السوق، ولم تؤكدها الجهة التنظيمية بعد. التأكيد هو ما يفتح الصلاحيات السوقية التي تسمّيها."
     },
     "table": {
       "id": "#",
@@ -577,7 +584,8 @@
         "partyLabelValidator": "المُحقق",
         "partyLabelPaymentProcessor": "معالج الدفع",
         "partyLabelCustodian": "أمين الحفظ",
-        "partyLabelClearingHouse": "غرفة المقاصة"
+        "partyLabelClearingHouse": "غرفة المقاصة",
+        "partyLabelEscrowClearingHouse": "غرفة مقاصة الضمان"
       },
       "assets": {
         "editVenueFees": "تعديل رسوم السوق",
@@ -600,7 +608,8 @@
         "coverage": "التغطية",
         "errors": {
           "exceedsAvailable": "المبلغ يتجاوز الرصيد المتاح ({{available}}).",
-          "positiveAmount": "أدخل مبلغًا موجبًا."
+          "positiveAmount": "أدخل مبلغًا موجبًا.",
+          "refRequired": "المرجع مطلوب."
         },
         "helpText": "الالتزام هو ما ستدين به الخدمة إذا استرد جميع الحائزين بالأسعار الحالية. التغطية = الرصيد المتاح ÷ الالتزام؛ ويظهر العجز عندما يتجاوز الالتزام الرصيد المتاح.",
         "inject": "ضخ",
@@ -656,7 +665,13 @@
         "typeTransfer": "تحويل"
       },
       "visibilityPrivate": "خاص",
-      "visibilityPublic": "عام"
+      "visibilityPublic": "عام",
+      "election": {
+        "awaitingRegulator": "بانتظار جهتك الرقابية",
+        "declinedPill": "مرفوض",
+        "declinedHint": "رفضت جهتك الرقابية الطلب الأخير — ويمكنك طلبه مجدداً",
+        "withdrawnHint": "تم سحب الطلب الأخير من جانبك"
+      }
     },
     "add": "إضافة خدمة",
     "addModal": {
@@ -665,10 +680,11 @@
         "descriptionRequired": "الوصف مطلوب.",
         "emailInvalid": "أدخل بريدًا إلكترونيًا صالحًا.",
         "emailRequired": "البريد الإلكتروني مطلوب.",
+        "marketClassRequired": "فئة السوق مطلوبة.",
         "mobileInvalid": "أدخل رقم هاتف صالحًا.",
         "mobileRequired": "رقم الهاتف مطلوب.",
         "nameRequired": "اسم الخدمة مطلوب.",
-        "providerTypeRequired": "نوع مزود الخدمة مطلوب.",
+        "partyClassRequired": "فئة الطرف مطلوبة.",
         "regulatorRequired": "الجهة التنظيمية مطلوبة.",
         "serviceTypeRequired": "نوع الخدمة مطلوب.",
         "verificationLevelRequired": "مستوى التحقق مطلوب.",
@@ -678,9 +694,10 @@
       "fields": {
         "custodian": "أمين الحفظ",
         "description": "الوصف",
+        "marketClass": "فئة السوق",
+        "partyClass": "فئة الطرف",
         "paymentProcessor": "معالج الدفع",
         "paymentProcessorOptional": "معالج الدفع (اختياري)",
-        "providerType": "نوع مزود الخدمة",
         "regulator": "الجهة التنظيمية",
         "serviceName": "اسم الخدمة",
         "serviceType": "نوع الخدمة",
@@ -698,12 +715,14 @@
         "linked": "اربط المُحقق ومعالج الدفع وأمين الحفظ الذين ستستخدمهم هذه الخدمة.",
         "review": "راجع التفاصيل أدناه قبل إنشاء الخدمة."
       },
+      "marketClassNote": "حدّد ما تقوم به هذه الخدمة: المُصدر يُصدر أصوله الخاصة، والبورصة تُشغّل منصة تداول، والوساطة تتداول في منصات أخرى لصالح عملائها. تؤكد الجهة التنظيمية هذا الإقرار بشكل منفصل.",
       "pendingConfirmation": "(بانتظار تأكيد الجهة التنظيمية)",
       "placeholders": {
         "description": "صف هذه الخدمة...",
         "email": "مثال: service@company.com",
         "mobile": "مثال: +20 100 000 0000",
-        "selectProviderType": "اختر نوع مزود الخدمة...",
+        "selectMarketClass": "اختر فئة السوق...",
+        "selectPartyClass": "اختر فئة الطرف...",
         "selectRegulator": "اختر جهة تنظيمية...",
         "selectServiceType": "اختر نوع الخدمة...",
         "selectVerificationLevel": "اختر مستوى التحقق...",
@@ -726,7 +745,10 @@
       "visibilityPrivate": "خاص",
       "visibilityPublic": "عام",
       "noClearingHouse": "بدون — الائتمان نهائي هنا",
-      "clearingHouseNote": "اختياري. اربط طرفًا مقابلًا مركزيًا إذا كان يجب تسوية الصفقات بين الجهات ضمن دورة مقاصة. اتركه “بدون” عندما يكون ائتمان هذا السوق نهائيًا وتُسوَّى كل صفقة فورًا."
+      "clearingHouseNote": "اختياري. اربط طرفًا مقابلًا مركزيًا إذا كان يجب تسوية الصفقات بين الجهات ضمن دورة مقاصة. اتركه “بدون” عندما يكون ائتمان هذا السوق نهائيًا وتُسوَّى كل صفقة فورًا.",
+      "hints": {
+        "paymentProviderAfterCreate": "يُرفق بعد الإنشاء — يُرفق مزود الدفع لكل عملة بعد تحديد اختيار الخدمة لتلك العملة. استخدم تبويبي الاختيار ومزودي الخدمة."
+      }
     },
     "custodianModal": {
       "description": "اختر أمين حفظ لربطه بهذه الخدمة. يمكن للخدمة أن ترتبط بعدة أمناء حفظ — وتُحفظ أصولها لديهم جميعًا.",
@@ -899,7 +921,6 @@
         "symbol": "الرمز",
         "address": "عنوان الأصل",
         "tokenType": "نوع الرمز",
-        "assetType": "نوع الأصل",
         "manager": "المدير",
         "regulator": "الجهة التنظيمية",
         "country": "الدولة",
@@ -928,7 +949,8 @@
         "servicesAssignedCount": "{{count}} خدمة مخصصة",
         "supplyMode": "نمط العرض",
         "supplyModeDynamic": "ديناميكي",
-        "supplyModeFixed": "ثابت"
+        "supplyModeFixed": "ثابت",
+        "assetClass": "فئة الأصل"
       },
       "metadata": {
         "additionalFields": "حقول إضافية",
@@ -1030,6 +1052,66 @@
         "searchPlaceholder": "البحث بالعنوان...",
         "showingRecords": "عرض {{showing}} من {{total}} من الحائزين",
         "value": "القيمة"
+      },
+      "registration": {
+        "tab": "التسجيل",
+        "title": "التسجيل",
+        "intro": "لا يمكن تداول هذا الأصل حتى تعتمده جهته التنظيمية. أكمل الإقرار أدناه، وأرفق الأطراف التي تستلزمها متطلباتك، ثم انتظر القرار.",
+        "empty": "لا يوجد سجل تسجيل لهذا الأصل.",
+        "declared": "بانتظار الاعتماد",
+        "approved": "معتمد",
+        "rejected": "مرفوض",
+        "decisionReason": "سبب الجهة التنظيمية",
+        "readiness": "ما يتحقق منه الاعتماد",
+        "checkProfile": "تم إعلان ملف الامتثال",
+        "checkWrapper": "تم تثبيت مستند الغلاف القانوني",
+        "checkParties": "كل دور مطلوب يشغله طرف قَبِل الدور",
+        "declaration": "الإقرار",
+        "declarationHint": "ملف الامتثال والغلاف القانوني. كلاهما مطلوب قبل أن تتمكن الجهة التنظيمية من الاعتماد، ولا يمكن تغيير أي منهما بعده.",
+        "holderCap": "حد عدد الحائزين (0 = بلا حد)",
+        "minTicket": "الحد الأدنى للصفقة",
+        "maxTicket": "الحد الأقصى للصفقة (0 = لا شيء)",
+        "lockupUntil": "فترة الحظر حتى",
+        "legalWrapper": "معرّف مستند الغلاف القانوني",
+        "legalWrapperHint": "معرّف المستند المثبّت للنشرة أو الكيان ذي الغرض الخاص",
+        "saveDeclaration": "حفظ الإقرار",
+        "composition": "المتطلبات التي تضعها",
+        "compositionHint": "الأصل المخصص لا يتطلب شيئاً افتراضياً — أنت من يختار. التركيب لا يمكنه إلا الإضافة، ولا يزيل أبداً التزاماً يفرضه النموذج أو اختصاصك. ويُجمَّد فور اعتماد جهتك التنظيمية، فاحرص على ضبطه أولاً.",
+        "compositionFrozen": "مُجمَّد بالاعتماد",
+        "needsParty": "يستلزم طرفاً",
+        "evidenceOnly": "إثبات فقط",
+        "impliedRoles": "الأدوار التي يستلزمها",
+        "saveComposition": "حفظ التركيب",
+        "requirements": "المتطلبات السارية",
+        "requirementsHint": "تُحسم عبر أربع طبقات، الأكثر تحديداً أولاً: تجاوز جهتك التنظيمية، ثم تركيبك، ثم مصفوفة الاختصاص، ثم الافتراضي. تُعرض الصفوف السارية فقط.",
+        "requirement": "المتطلب",
+        "role": "الدور",
+        "state": "الحالة",
+        "source": "المصدر",
+        "composedByUs": "من تركيبنا",
+        "fromPolicy": "السياسة / الافتراضي",
+        "noRequirements": "لا يتطلب هذا الأصل شيئاً بخلاف الإقرار.",
+        "parties": "أطراف الفئة",
+        "partiesHint": "أنت ترشّح الطرف، والطرف يقبل بنفسه. الترشيح الذي لم يقبله أحد لا يفي بالدور.",
+        "partiesSatisfied": "كل الأدوار المطلوبة مقبولة",
+        "partiesUnsatisfied": "دور مطلوب غير مشغول أو غير مقبول",
+        "partiesEmpty": "لا توجد أطراف مرتبطة.",
+        "party": "الطرف",
+        "consent": "القبول",
+        "partyAddress": "عنوان خدمة المزوّد",
+        "pickRoleOption": "اختر دوراً…",
+        "attachParty": "إرفاق الطرف",
+        "attachPartyHint": "يجب أن تكون الجهة التنظيمية قد اعتمدت المزوّد لهذا الدور مسبقاً، والأدوار التي تستلزم الاستقلالية لا يمكن أن تشغلها إحدى خدماتك.",
+        "partyProposedMsg": "تم الترشيح. على الطرف الآن قبول الدور قبل أن يُحتسب للاعتماد.",
+        "removePartyTitle": "إزالة الطرف",
+        "removePartyConfirm": "إزالة هذا الطرف من الأصل؟ إذا كان الدور مطلوباً فلن يصبح الأصل قابلاً للاعتماد حتى يقبله طرف آخر.",
+        "savedTitle": "تم الحفظ",
+        "savedMsg": "تم تحديث التركيب.",
+        "declarationSavedMsg": "تم تحديث الإقرار.",
+        "failedTitle": "تعذّر الحفظ",
+        "nothingToSave": "املأ حقلاً واحداً على الأقل قبل الحفظ.",
+        "badPartyAddress": "أدخل عنوان 0x صالحاً لخدمة المزوّد.",
+        "pickRole": "اختر الدور الذي سيشغله هذا الطرف."
       },
       "holdersAt": {
         "account": "الحساب",
@@ -1228,9 +1310,6 @@
         "attachmentsReviewHint": "سيتم فهرسة {{count}} ملف(ات) عامة في البيانات الوصفية العامة للأصل.",
         "additionalMetadataLabel": "بيانات وصفية إضافية",
         "assetNameLabel": "اسم الأصل",
-        "assetStandardLabel": "معيار الأصل",
-        "assetTypeHint": "الفئة الواقعية التي يمثلها هذا الأصل.",
-        "assetTypeLabel": "نوع الأصل",
         "confirmReviewLabel": "لقد راجعت بعناية جميع تفاصيل الأصل وأؤكد صحتها.",
         "creditSettlementLabel": "تسوية الرصيد",
         "currencyLabel": "العملة",
@@ -1249,7 +1328,7 @@
         "noPaymentProcessorHint": "لا يوجد معالج دفع مُهيّأ للخدمة المختارة.",
         "ownerAddressLabel": "عنوان المالك",
         "ownerReviewLabel": "المالك",
-        "priceModeHint": "مفرد: سعر واحد (العرض = الطلب). عرض/طلب: تسعيرتان منفصلتان للعرض والطلب. غير قابل للتغيير بعد الإنشاء.",
+        "priceModeHint": "ثابت السعر: المُصدر ينشر السعر. مُسعّر بالسوق: يتحدد السعر من التداول. غير قابل للتغيير بعد الإنشاء.",
         "priceModeLabel": "نمط التسعير",
         "regulatorLabel": "الجهة التنظيمية",
         "rolesComplianceHeading": "الأدوار والامتثال",
@@ -1258,11 +1337,13 @@
         "selectRegulatorPlaceholder": "اختر جهة تنظيمية...",
         "selectServicePlaceholder": "اختر خدمة...",
         "selectSupplyModePlaceholder": "اختر نمط الإصدار...",
+        "supplyModeCustomHint": "الفئة المخصصة هي الوحيدة التي تتيح لك اختيار نمط الإصدار.",
+        "supplyModeDerivedHint": "محدد بواسطة فئة الأصل ولا يمكن تغييره.",
         "serviceCurrencyHeading": "الخدمة والعملة",
         "serviceLabel": "الخدمة",
         "standardHint": "T20 هو معيار Tarmiiz العام للصناديق/الأصول الواقعية. أما T3643 فيضيف واجهة رمز الأمان وفق معيار ERC-3643 (آليات الامتثال، الوكلاء، ربط الهوية). غير قابل للتغيير بعد الإنشاء.",
         "standardLabel": "المعيار",
-        "step1Intro": "اختر معيار الأصل ونمط الإصدار.",
+        "step1Intro": "اختر فئة الأصل ونمط التسعير.",
         "step2Intro": "حدّد اسم الأصل ورمزه ووصفه.",
         "isinLabel": "رقم ISIN (اختياري)",
         "isinHint": "اتركه فارغًا إذا لم يُخصَّص رقم ISIN بعد — يمكنك تسجيله من صفحة تفاصيل الأصل في أي وقت.",
@@ -1279,7 +1360,9 @@
         "tokenConfigHeading": "إعدادات الرمز",
         "tokensSuffix": "رمزًا",
         "useSelf": "استخدام حسابي",
-        "valuePlaceholder": "القيمة"
+        "valuePlaceholder": "القيمة",
+        "assetClassLabel": "فئة الأصل",
+        "assetClassHint": "فئة الأصل وفق تصنيف A1. غير قابلة للتغيير، وتحدد نموذج العرض."
       }
     },
     "registerExistingModal": {
@@ -3323,10 +3406,12 @@
         "description": "سجّل إحدى خدماتك كسوق تداول في البورصة.",
         "selectService": "اختر خدمة...",
         "service": "الخدمة",
-        "serviceHint": "يجب أن يكون لدى الخدمة معالج دفع مرتبط ليتم تسجيلها كسوق.",
+        "serviceHint": "يجب أن تكون الخدمة مزوّد رموز تمّ تأكيد فئة السوق الخاصة بها (بورصة) من قِبَل الجهة التنظيمية.",
         "suspendedNotice": "يجوز للجهة التنظيمية إيقاف السوق في أي وقت؛ ويتوقف التداول حتى يُرفع الإيقاف.",
         "title": "إنشاء سوق",
-        "surfaceNotice": "يُحدَّد تلقائيًا ما إذا كانت هذه المنصة تستطيع تشغيل دفتر أوامر مباشر بناءً على وجود مُعالج مدفوعات مسجّل لخدمتها، ويمكن للجهة التنظيمية تعديل الأسطح المرخّصة لاحقًا."
+        "surfaceNotice": "يُحدَّد تلقائيًا ما إذا كانت هذه المنصة تستطيع تشغيل دفتر أوامر مباشر بناءً على وجود مُعالج مدفوعات مسجّل لخدمتها، ويمكن للجهة التنظيمية تعديل الأسطح المرخّصة لاحقًا.",
+        "pendingSuffix": "في انتظار تأكيد الجهة التنظيمية",
+        "pendingNotice": "الخدمات المعطّلة أعلنت فئة السوق (بورصة) لكن الجهة التنظيمية لم تؤكّدها بعد. لا يمكن إنشاء منصة تداول قبل ذلك."
       },
       "details": {
         "assetsTable": {
@@ -3862,8 +3947,10 @@
       "title": "إضافة مزود خدمة",
       "typeCustodian": "أمين الحفظ",
       "typeClearingHouse": "غرفة المقاصة",
-      "typePaymentProcessor": "معالج الدفع",
-      "typeValidator": "المُحقق"
+      "typeValidator": "المُحقق",
+      "typePaymentGateway": "بوابة دفع",
+      "typeBank": "بنك",
+      "typeEscrowClearingHouse": "غرفة مقاصة ضامنة"
     },
     "alerts": {
       "addFailedTitle": "فشلت الإضافة",
@@ -3883,8 +3970,11 @@
     "filters": {
       "searchPlaceholder": "البحث بالاسم أو العنوان",
       "typeCustodian": "أمين الحفظ",
-      "typePaymentProcessor": "معالج الدفع",
-      "typeValidator": "المُحقق"
+      "typeValidator": "المُحقق",
+      "typePaymentGateway": "بوابة دفع",
+      "typeBank": "بنك",
+      "typeClearingHouse": "غرفة مقاصة",
+      "typeEscrowClearingHouse": "غرفة مقاصة ضامنة"
     },
     "footer": {
       "showing": "عرض {{shown}} من {{total}}"
@@ -3923,6 +4013,10 @@
     "assetRegisterExisting": "الأصول - تسجيل أصل قائم",
     "assetEditMetadata": "الأصل - تعديل البيانات الوصفية",
     "assetEditIdentifiers": "الأصل - تعديل المعرفات",
+    "assetDeclaration": "الأصل - تقديم إقرار التسجيل",
+    "assetCompose": "الأصل - تركيب المتطلبات",
+    "assetPartyAttach": "الأصل - إرفاق طرف الفئة",
+    "assetPartyAccept": "الأصل - قبول دور طرف الفئة",
     "assetMint": "الأصل - سك المعروض",
     "assetBurn": "الأصل - حرق المعروض",
     "assetSetPrice": "الأصل - إضافة سعر",
@@ -3971,7 +4065,8 @@
     "clearingCycleClose": "المقاصة - إغلاق الدورة",
     "clearingConfirmPayIn": "المقاصة - تأكيد الدفع",
     "clearingFundingService": "المقاصة - تحديد خدمة التمويل",
-    "entityEditIdentifiers": "الملف التعريفي - تعديل معرفات الكيان"
+    "entityEditIdentifiers": "الملف التعريفي - تعديل معرفات الكيان",
+    "serviceElectionSwitch": "الخدمة - طلب تغيير اختيار On-Chain / Off-Chain"
   },
   "custody": {
     "myServices": {

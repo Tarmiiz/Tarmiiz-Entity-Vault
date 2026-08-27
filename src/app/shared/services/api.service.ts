@@ -5,6 +5,7 @@ import { CapacitorHttp } from '@capacitor/core';
 import { EthersService } from './ethers.service';
 import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
+import { PARTY_CLASS, ServiceParties } from '../constants/party-class';
 
 import {
   FeeConfig, ExternalIntegration, UserGroup, AppConfigItem,
@@ -888,23 +889,8 @@ export class ApiService {
     return data ? { delivery: data.delivery as ClearingDelivery, holds: (data.holds ?? []) as ClearingHold[] } : null;
   }
 
-  async vaultClearingCycles(params: { clearingHouse?: string; status?: number; start?: number; offset?: number } = {}): Promise<ClearingCycle[]> {
-    const data = await this.vaultGet('/clearing/cycles', params);
-    return data?.cycles ?? [];
-  }
-
-  async vaultClearingCyclePositions(cycleKey: string): Promise<ClearingPosition[]> {
-    const data = await this.vaultGet('/clearing/cycles/' + cycleKey + '/positions');
-    return data?.positions ?? [];
-  }
-
-  // The PAY-IN BOARD. The API filters `net < 0`, NOT `paidIn === false` — close pre-satisfies
-  // every member that owes nothing, so filtering on paidIn here would show an empty board on a
-  // perfectly ordinary cycle. Do not "improve" this by re-filtering client-side.
-  async vaultClearingCyclePayIns(cycleKey: string): Promise<ClearingPosition[]> {
-    const data = await this.vaultGet('/clearing/cycles/' + cycleKey + '/pay-ins');
-    return data?.payIns ?? [];
-  }
+  // ⚠️ The three cycle reads are GONE — their routes were deleted with the cycle family.
+  // Netting is continuous; a member's demand is its live margin requirement.
 
   // Members of a clearing house WE operate.
   async vaultClearingMembers(clearingHouse?: string): Promise<ClearingMember[]> {
@@ -938,15 +924,12 @@ export class ApiService {
     return this.vaultPost('/clearing/currencies', payload);
   }
 
-  async vaultClearingCycleClose(cycleId: string, refNo?: string) {
-    return this.vaultPost('/clearing/cycles/close', { cycleId, refNo });
-  }
-
-  // THE single discretionary act in the whole flow — nothing on-chain can prove an off-chain wire
-  // arrived, and after novation the creditor of that leg is the CCP.
-  async vaultClearingConfirmPayIn(cycleId: string, entity: string, refNo?: string) {
-    return this.vaultPost('/clearing/cycles/pay-in', { cycleId, entity, refNo });
-  }
+  // ⚠️ `vaultClearingCycleClose` and `vaultClearingConfirmPayIn` are REMOVED — the `Cycles`
+  // module no longer exists on chain. Multilateral netting by cycle was replaced by the MARGIN
+  // model: a continuously maintained margin account tested per delivery, rather than a periodic
+  // settlement round. The two do not correspond, so these are deleted rather than re-pointed —
+  // closing a cycle has no margin equivalent, and the pay-in confirmation is answered by a
+  // margin top-up, which is a different act by a different party.
 
   // Member-side verbs. There is no `entity` argument on accept BY DESIGN: being made a
   // counterparty of a clearing house is not something a third party may do on your behalf.
@@ -959,9 +942,7 @@ export class ApiService {
   }
 
   // Permissionless triggers — no maker/checker, deliberately (see the block comment above).
-  async vaultClearingCycleFinalize(cycleId: string) {
-    return this.vaultPost('/clearing/cycles/finalize', { cycleId });
-  }
+  // `vaultClearingCycleFinalize` went with the rest of the cycle family.
 
   async vaultClearingDeliveryExecute(deliveryId: string) {
     return this.vaultPost('/clearing/deliveries/execute', { deliveryId });
@@ -1253,6 +1234,67 @@ export class ApiService {
     return this.authPost('/assets/register-existing', { address });
   }
 
+  // ─── A8 registration lifecycle + A2 parties + A24 composition (Phase 15) ──────
+  //
+  // The ISSUER's half of getting an asset APPROVED. Until this shipped none of it was
+  // reachable from any frontend: `registerAsset` lands an asset in approvalState 1 and
+  // `isAssetTradable` requires approval, so nothing created here could ever trade.
+  //
+  // Everything is a LIVE chain read through the API — there is no mirror for the resolved
+  // matrix, and the composition is editable right up until the regulator approves.
+
+  /** Class, resolved 15-row matrix, composition (+frozen), derived roles, parties, declaration. */
+  async assetClassInfo(address: string) {
+    return this.authGet('/assets/' + address + '/class');
+  }
+
+  /** The requirement + party-role vocabularies. Static; drives the composition editor. */
+  async assetClassCatalog() {
+    return this.authGet('/asset-class/catalog');
+  }
+
+  /** REPLACES the composition — send [] to clear. Class 11 only, refused once frozen. */
+  async assetSetComposition(address: string, requirementIds: number[]) {
+    return this.authPut('/assets/' + address + '/composition', { requirementIds });
+  }
+
+  /** The A8 declaration. Either half may be sent alone. */
+  async assetSetDeclaration(address: string, body: { complianceProfile?: any; legalWrapperDocumentId?: number }) {
+    return this.authPut('/assets/' + address + '/declaration', body);
+  }
+
+  /** Propose a class-required party. Lands PROPOSED — the party must accept for itself. */
+  async assetPartyAttach(address: string, party: string, role: number) {
+    return this.authPost('/assets/' + address + '/parties', { party, role });
+  }
+
+  /**
+   * Works from ANY state, so it doubles as withdrawing a proposal nobody accepted.
+   *
+   * No `reason` argument on purpose. The route accepts one (body or query) but the Vault does
+   * not collect it, and appending `?reason=…` by concatenation defeats `check-vault-paths.js` —
+   * which reads these URLs literally and cannot prove a conditional suffix resolves to a real
+   * route. A path that 404s at runtime is invisible to a production build, so keep these
+   * literal.
+   */
+  async assetPartyRemove(address: string, party: string) {
+    return this.authDelete('/assets/' + address + '/parties/' + party);
+  }
+
+  // ⚠️ The next two are deliberately NOT under `/assets/:address` — that prefix carries the
+  // API's `requireOwnAsset` guard, and here THIS tenant is the provider consenting to a role
+  // on someone else's asset, which is the normal case rather than the exception.
+
+  /** Class info for an asset this tenant does NOT own — what a proposed provider reads. */
+  async assetClassInfoForeign(asset: string) {
+    return this.authGet('/asset-class/' + asset);
+  }
+
+  /** Consent to serve a role. `party` must be one of THIS entity's services. */
+  async assetPartyAccept(asset: string, party: string) {
+    return this.authPut('/asset-class/' + asset + '/parties/' + party + '/accept', {});
+  }
+
   // ─── Vault — Transactions ─────────────────────────────────────────────────────
 
   async vaultGetTransactions(filters?: { asset?: string; service?: string; subscription?: string; startTime?: number; endTime?: number }, start = 0, offset = 50) {
@@ -1329,13 +1371,18 @@ export class ApiService {
     };
   }
 
-  async vaultServiceLiquidityInject(address: string, body: { currencyCode: number; amount: number; trxData?: string; refNo?: string }) {
+  // An injection is a DEPOSIT whose beneficiary is the pool (S37/S78), so it names the transfer
+  // that funded it and how well-evidenced that is. `evidence`: 2 = an independent supervised
+  // participant stands behind the figure, 1 = a self-declaration on a manual rail; absent grades
+  // DOWN to 1 server-side, because defaulting up asserts an attestation nobody made.
+  async vaultServiceLiquidityInject(address: string, body: { currencyCode: number; amount: number; providerTrxRefNo: string; evidence?: 1 | 2 }) {
     return this.vaultPost('/services/' + address + '/liquidity/inject', body);
   }
 
-  async vaultServiceLiquidityWithdraw(address: string, body: { currencyCode: number; amount: number; trxData?: string; refNo?: string }) {
-    return this.vaultPost('/services/' + address + '/liquidity/withdraw', body);
-  }
+  // ⚠️ `vaultServiceLiquidityWithdraw` is REMOVED, and there is nothing to point it at. The bare
+  // pool drain has no on-chain call left: money leaves a service's pool through the WITHDRAWAL
+  // LIFECYCLE (request → fulfil), which is queued, coverage-gated and evidenced. Calling the old
+  // path would 404 — the route is gone on the API too.
 
   // Off-chain credit-ledger history for a service (plugin-mirrored). `origin='3,4'` = liquidity only.
   async vaultGetServiceCreditTransactions(
@@ -1547,12 +1594,62 @@ export class ApiService {
   }
 
   // Service providers are 1:N. partyType is the SHARED platform numbering — the same ids as
-  // `spType` on the curated set and as ServicePartiesLib's on-chain roles:
-  // 1=Validator, 2=PaymentProcessor, 3=Custodian, 4=ClearingHouse.
+  // `spType` on the curated set and as ServicePartiesLib's on-chain roles. The ids live in
+  // PARTY_CLASS (shared/constants/party-class.ts); never restate them in a comment, which is
+  // how this one came to describe the pre-split 1..4 numbering long after Bank took id 3.
+  //
+  // `escrowClearingHouses` is its own bucket, NOT folded into `clearingHouses`: the venue's
+  // escrow CH is a separate appointment, and `_replaceServiceParty` detaches everything else
+  // in the bucket it reads.
 
-  async vaultGetServiceParties(address: string): Promise<{ validators: Array<{ address: string; active: boolean }>; paymentProcessors: Array<{ address: string; active: boolean }>; custodians: Array<{ address: string; active: boolean }>; clearingHouses: Array<{ address: string; active: boolean }> } | null> {
+  async vaultGetServiceParties(address: string): Promise<ServiceParties | null> {
     const data = await this.vaultGet('/services/' + address + '/parties');
-    return data ? { validators: data.validators ?? [], paymentProcessors: data.paymentProcessors ?? [], custodians: data.custodians ?? [], clearingHouses: data.clearingHouses ?? [] } : null;
+    return data ? {
+      validators:           data.validators           ?? [],
+      paymentProcessors:    data.paymentProcessors    ?? [],
+      custodians:           data.custodians           ?? [],
+      clearingHouses:       data.clearingHouses       ?? [],
+      escrowClearingHouses: data.escrowClearingHouses ?? [],
+    } : null;
+  }
+
+  // ── the onc/offc election (S5, S63-S68) ──────────────────────────────────────────────
+  // Per (service, currency): 1 = onc, 2 = offc, 3 = migrating(from -> to). The ENTITY declares
+  // the initial election and may WITHDRAW a pending request; only the REGULATOR approves a
+  // SWITCH, in both directions — which is why there is no approve method here.
+  async vaultServiceElection(address: string, currencyCode?: number) {
+    const q = currencyCode ? '?currencyCode=' + currencyCode : '';
+    return (await this.vaultGet('/services/' + address + '/election' + q)) ?? null;
+  }
+  // `vaultServiceElectionDeclare` was DELETED (2026-08-23). The ENTITY cannot declare an election:
+  // `P_ELECTION_DECLARE` is gated `K_REGULATOR_OF`, so the SERVICE'S REGULATOR declares it, per
+  // currency, from the Regulator Dashboard. The Entity API's route survives only to answer 410 with
+  // an explanation. The entity may still REQUEST a switch — that is the next method down.
+  async vaultServiceElectionRequestSwitch(address: string, currencyCode: number, target: number) {
+    return (await this.vaultPost('/services/' + address + '/election/switch', { currencyCode, target })) ?? null;
+  }
+  async vaultServiceElectionWithdraw(address: string, currencyCode: number) {
+    return (await this.vaultDelete('/services/' + address + '/election/switch?currencyCode=' + currencyCode)) ?? null;
+  }
+  // PERMISSIONLESS on chain (S68) — this only re-derives from authoritative state, so anyone may
+  // drive it. Paginated: call until `complete`.
+  async vaultServiceElectionMigrate(address: string, currencyCode: number, pageSize = 50) {
+    return (await this.vaultPost('/services/' + address + '/election/migrate', { currencyCode, pageSize })) ?? null;
+  }
+
+  // ── per-currency payment attachments (S66, S67, S6) ──────────────────────────────────────
+  // Distinct from /parties, which carries the currency-LESS roles. payRole: 1 = rail (offc),
+  // 2 = minter (onc). The role is an ATTACHMENT-level fact — the same institution may be an
+  // offc rail to one service and an onc minter to another — and it must equal the service's
+  // election for that currency.
+  async vaultServicePaymentProviders(address: string) {
+    return (await this.vaultGet('/services/' + address + '/payment-providers')) ?? null;
+  }
+  async vaultAttachPaymentProvider(address: string, provider: string, currencyCode: number, payRole: number) {
+    return (await this.vaultPost('/services/' + address + '/payment-providers', { provider, currencyCode, payRole })) ?? null;
+  }
+  async vaultDetachPaymentProvider(address: string, provider: string, currencyCode: number) {
+    return (await this.vaultDelete('/services/' + address + '/payment-providers?provider=' + provider + '&currencyCode=' + currencyCode)) ?? null;
   }
 
   async vaultAttachServiceParty(address: string, partyType: number, party: string) {
@@ -1571,12 +1668,23 @@ export class ApiService {
   // until the multi-attach service-detail UI lands.
   private async _replaceServiceParty(address: string, partyType: number, party: string) {
     const parties = await this.vaultGetServiceParties(address);
-    // Every role gets its own branch — the clearing-house case was missing, so a type-4
-    // replace read the CUSTODIANS bucket and detached those instead.
-    const current = partyType === 1 ? parties?.validators
-                  : partyType === 2 ? parties?.paymentProcessors
-                  : partyType === 4 ? parties?.clearingHouses
-                  : parties?.custodians;
+    // ⚠️ Every role gets its OWN branch and there is deliberately NO fallback bucket. The
+    // ids renumbered when the payment rail split into two TYPES (gateway 2 / bank 3), pushing
+    // custodian to 4 and clearing house to 5; this map still read 4 as clearing-house, and a
+    // `: parties?.custodians` default swallowed every unlisted id. So a clearing-house replace
+    // detached the CUSTODIANS, and a bank replace did too — this helper DETACHES everything
+    // else in the bucket it reads, so a wrong bucket is destructive, not merely empty.
+    const BUCKET: Record<number, keyof ServiceParties> = {
+      1: 'validators',
+      2: 'paymentProcessors',   // the rail bucket collects gateway (2) AND bank (3)
+      3: 'paymentProcessors',
+      4: 'custodians',
+      5: 'clearingHouses',
+      6: 'escrowClearingHouses',
+    };
+    const bucket = BUCKET[partyType];
+    if (!bucket) return { type: 'error', error: `unknown party class ${partyType}` };
+    const current = parties?.[bucket];
     if (party) {
       const res = await this.vaultAttachServiceParty(address, partyType, party);
       if (res?.error) return res;
@@ -1590,15 +1698,16 @@ export class ApiService {
   }
 
   async vaultSetServiceValidator(address: string, validator: string) {
-    return this._replaceServiceParty(address, 1, validator);
+    return this._replaceServiceParty(address, PARTY_CLASS.VALIDATOR, validator);
   }
 
   async vaultSetServicePaymentProcessor(address: string, paymentProcessor: string) {
-    return this._replaceServiceParty(address, 2, paymentProcessor);
+    return this._replaceServiceParty(address, PARTY_CLASS.PAYMENT_GATEWAY, paymentProcessor);
   }
 
+  // ⚠️ Was `3` — which is now BANK. This sent every custodian reassignment to the wrong class.
   async vaultSetServiceCustodian(address: string, custodian: string) {
-    return this._replaceServiceParty(address, 3, custodian);
+    return this._replaceServiceParty(address, PARTY_CLASS.CUSTODIAN, custodian);
   }
 
   // ─── Vault — Validators & Payment Processors ─────────────────────────────────
@@ -1799,9 +1908,10 @@ export class ApiService {
   // providerTrxRefNo (the SP's external transaction reference) is required; providerTrxTime
   // (unix seconds) optionally backdates the ledger row; `raw` is pinned as an encrypted IPFS
   // receipt document.
-  async bankTransfer(body: { service: string; from: string; to: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
-    return this._creditMutation('/credit/bank-transfer', body);
-  }
+  // ⚠️ The bank-transfer client method is REMOVED. `/credit/bank-transfer` folded into
+  // `/credit/route-transfer` — one same-identity primitive that names the destination SERVICE
+  // and resolves the subscription server-side, so the subscriber's DID never reaches a service
+  // that only needs to know the same person banks elsewhere. Calling the old path would 404.
 
   // Anonymous service-routed move — the entity's source `service` routes `fromSub`'s credit to the
   // SAME identity's subscription at `destinationService` (resolved on-chain; the sibling sub + DID are never exposed).

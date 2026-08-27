@@ -37,15 +37,15 @@
           </div>
 
           <div class="shrink-0 flex-1 md:border-l md:border-indigo-400/30 md:pl-4">
-            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'dashboard.serviceProvider.providerTypesLabel' | translate }}</p>
-            @if (providerTypeCounts().length === 0) {
+            <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'dashboard.serviceProvider.serviceClassesLabel' | translate }}</p>
+            @if (serviceClassCounts().length === 0) {
               <p class="text-sm text-indigo-200 italic">{{ 'dashboard.serviceProvider.noServicesYet' | translate }}</p>
             } @else {
               <div class="flex flex-wrap gap-2">
-                @for (pt of providerTypeCounts(); track pt.type) {
+                @for (sc of serviceClassCounts(); track sc.serviceType + ':' + sc.classId) {
                   <div class="rounded-lg bg-indigo-900/40 border border-indigo-400/30 px-3 py-2">
-                    <p class="text-lg font-bold leading-none">{{ pt.count }}</p>
-                    <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ pt.name }}</p>
+                    <p class="text-lg font-bold leading-none">{{ sc.count }}</p>
+                    <p class="text-[10px] text-indigo-300 uppercase tracking-wider mt-1">{{ sc.name || ('dashboard.serviceProvider.unclassified' | translate) }}</p>
                   </div>
                 }
               </div>
@@ -92,7 +92,7 @@
             <thead class="text-xs text-gray-700 uppercase bg-gray-100">
               <tr>
                 <th class="px-4 py-2">{{ 'common.name' | translate }}</th>
-                <th class="px-4 py-2">{{ 'dashboard.serviceProvider.providerTypeCol' | translate }}</th>
+                <th class="px-4 py-2">{{ 'dashboard.serviceProvider.serviceClassCol' | translate }}</th>
                 <th class="px-4 py-2">{{ 'dashboard.serviceProvider.verification' | translate }}</th>
                 <th class="px-4 py-2">{{ 'partyType.regulator' | translate }}</th>
                 <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
@@ -113,7 +113,17 @@
                 @for (s of services(); track s.address) {
                   <tr class="border-b hover:bg-gray-50 cursor-pointer" (click)="viewService(s)">
                     <td class="px-4 py-2 font-medium text-gray-800">{{ s.name }}</td>
-                    <td class="px-4 py-2">{{ providerTypeName(s) }}</td>
+                    <td class="px-4 py-2">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span>{{ serviceClassLabel(s) }}</span>
+                        @if (showMarketClassPill(s)) {
+                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                                [class]="s.marketClassConfirmed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+                            {{ (s.marketClassConfirmed ? 'services.marketClass.confirmed' : 'services.marketClass.awaitingConfirmation') | translate }}
+                          </span>
+                        }
+                      </div>
+                    </td>
                     <td class="px-4 py-2">{{ s.verificationLevelName }}</td>
                     <td class="px-4 py-2">{{ s.regulatorName }}</td>
                     <td class="px-4 py-2">

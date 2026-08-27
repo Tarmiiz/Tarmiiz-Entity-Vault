@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalServiceCustodianService, SELF_CUSTODY_SENTINEL } from './modal-service-custodian.service';
 import { ApiService } from '../../../../../shared/services/api.service';
+import { PARTY_CLASS } from '../../../../../shared/constants/party-class';
 
 @Component({
   selector: 'app-modal-service-custodian',
@@ -45,9 +46,12 @@ export class ModalServiceCustodianComponent {
       this.custodians.set([]);
       return;
     }
+    // ⚠️ spType 4 = Custodian. This passed the literal 3, the PRE-SPLIT id — 3 is now BANK, so the
+    // curated intersection was taken against the entity's BANK set and a genuinely curated
+    // custodian never appeared in the picker. Same defect as the clearing-house modal.
     const [data, curated] = await Promise.all([
       this.apiService.vaultGetEndorsedCustodians(regulator, 1, 50),
-      this.apiService.vaultGetServiceProviders(3, 'active'),
+      this.apiService.vaultGetServiceProviders(PARTY_CLASS.CUSTODIAN, 'active'),
     ]);
     if (data?.custodians) {
       const curatedSet = new Set((curated?.providers ?? []).map((p: any) => p.address.toLowerCase()));

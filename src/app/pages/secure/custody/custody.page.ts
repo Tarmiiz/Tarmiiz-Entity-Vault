@@ -151,7 +151,9 @@ export class CustodyPage implements OnInit {
   }
 
   private async loadMandates() {
-    const data = await this.apiService.vaultCustodyMandates(3);
+    // Party Class 4 = Custodian. This read 3 — now BANK — so a custodian tenant's own
+    // Custody page listed nothing, with no error to explain why.
+    const data = await this.apiService.vaultCustodyMandates(4);
     this.custodyMandates.set(Array.isArray(data?.mandates) ? data.mandates : []);
   }
 

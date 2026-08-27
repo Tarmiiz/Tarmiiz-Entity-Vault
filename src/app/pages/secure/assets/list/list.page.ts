@@ -156,10 +156,8 @@ export class ListPage implements OnInit {
       address: raw.address,
       name: raw.name,
       symbol: raw.symbol,
-      tokenType: raw.token_type ?? 0,
-      tokenTypeName: raw.token_type_name ?? String(raw.token_type ?? ''),
-      assetType: raw.asset_type ?? 0,
-      assetTypeName: raw.asset_type_name ?? String(raw.asset_type ?? ''),
+      assetClass: raw.asset_class ?? 0,
+      assetClassName: raw.asset_class_name ?? String(raw.asset_class ?? ''),
       metadata: typeof raw.metadata === 'object' ? JSON.stringify(raw.metadata ?? {}) : (raw.metadata ?? ''),
       totalSupply: raw.total_supply ?? 0,
       circulating: raw.circulating ?? 0,
@@ -252,14 +250,13 @@ export class ListPage implements OnInit {
         }),
         currency: data.currency,
         regulator: data.regulator,
-        tokenType: data.tokenType,
         supplyMode: data.supplyMode,
         priceMode: data.priceMode,
         creditSettlement: data.creditSettlement,
-        // assetType (real-world category) is part of the on-chain InitParams struct for BOTH supply
-        // modes and is now collected in the modal for every asset. `?? 0` guards against NaN, which
-        // ethers rejects when encoding the uint8 ("underflow value=NaN").
-        assetType: Number.isFinite(data.assetType) ? data.assetType : 0,
+        // ⚠️ NO `|| 0` fallback. `assetClass` 0 is not "unspecified", it is INVALID (valid is
+        // 1..11) — sending it would trade the API's clear 400 for an opaque revert inside
+        // registerAsset, on a value that can never be changed afterwards.
+        assetClass: data.assetClass,
         ...(data.supplyMode === 1 ? { initialSupply: data.initialSupply } : {}),
       });
       if (result?.type === 'success') {

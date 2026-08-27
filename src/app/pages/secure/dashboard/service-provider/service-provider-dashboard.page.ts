@@ -10,19 +10,24 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { Service, User } from '../../../../shared/models/data.model';
+import { partyClassName } from '../../../../shared/constants/party-class';
+import { marketClassName } from '../../../../shared/constants/market-class';
 
-// Provider sub-types for type-2 (service-provider) services — the REGULATOR party numbering
-// (`Regulator Party Type` in Global Variables). Keep in step with it: a missing id falls back to
-// 'Other' in the Provider Types chips while the table row below still reads the correct name from
-// the server's `provider_type_name`, so the two disagree silently rather than erroring.
-const PROVIDER_TYPE_NAMES: Record<number, string> = {
-  1: 'Validator', 2: 'Payment Processor', 3: 'Custodian', 4: 'Clearing House',
-  // 5/6 are catalog-only — no service can declare them today, but naming them keeps the chip
-  // readable if one is ever given a registration path.
-  5: 'Consultant', 6: 'Appraiser',
-};
+// Sub-type names for the tenant's services. They come from the ONE shared *_CLASS_NAME map per
+// catalog so the chip and the table row below (which read the server's `party_class_name` /
+// `market_class_name`) can never disagree.
+//
+// ⚠️ TWO CATALOGS, NOT ONE. A type-2 service's sub-type is a `Party Class`; a type-1 service's
+// is a `Market Class`. Both number from 1, so resolving the wrong one is a valid-looking wrong
+// answer — class 2 is "Payment Gateway" in one and "Exchange" in the other, and nothing errors.
+// Always branch on `serviceType` first.
+//
+// ⚠️ The local map this replaced was stale in BOTH directions: its ids were the pre-split
+// numbering (3=Custodian, 4=Clearing House — 3 is now Bank), and 5/6 were named
+// "Consultant"/"Appraiser", a vocabulary that no longer exists in the catalog at all. So a
+// custodian's chip read "Clearing House" while the row beside it read "Custodian".
 
-interface ProviderTypeCount { type: number; name: string; count: number; }
+interface ServiceClassCount { serviceType: number; classId: number; name: string; count: number; }
 interface OpStat { title: string; value: number; path: string; }
 
 @Component({
@@ -62,15 +67,20 @@ export class ServiceProviderDashboardPage implements OnInit {
   suspendedServices = computed(() => this.services().filter(s => s.suspended || Number(s.state) === 3).length);
   inactiveServices  = computed(() => this.services().filter(s => Number(s.state) === 4 || Number(s.state) === 0 || Number(s.state) === 1).length);
 
-  providerTypeCounts = computed<ProviderTypeCount[]>(() => {
-    const counts = new Map<number, number>();
+  // Grouped by (serviceType, class id) rather than by class id alone: the two catalogs both
+  // start at 1, so collapsing them would merge a Payment Gateway (party class 2) with an
+  // Exchange (market class 2) into one chip carrying whichever name won.
+  serviceClassCounts = computed<ServiceClassCount[]>(() => {
+    const counts = new Map<string, ServiceClassCount>();
     for (const s of this.services()) {
-      const t = Number(s.providerType) || 0;
-      counts.set(t, (counts.get(t) ?? 0) + 1);
+      const serviceType = Number(s.serviceType) || 0;
+      const classId = serviceType === 1 ? (Number(s.marketClass) || 0) : (Number(s.partyClass) || 0);
+      const key = `${serviceType}:${classId}`;
+      const existing = counts.get(key);
+      if (existing) { existing.count++; continue; }
+      counts.set(key, { serviceType, classId, name: this.classNameFor(serviceType, classId), count: 1 });
     }
-    return [...counts.entries()]
-      .map(([type, count]) => ({ type, name: PROVIDER_TYPE_NAMES[type] ?? 'Other', count }))
-      .sort((a, b) => a.type - b.type);
+    return [...counts.values()].sort((a, b) => a.serviceType - b.serviceType || a.classId - b.classId);
   });
 
   opStats = computed<OpStat[]>(() => {
@@ -112,8 +122,28 @@ export class ServiceProviderDashboardPage implements OnInit {
     }
   }
 
-  providerTypeName(s: Service): string {
-    return s.providerTypeName || PROVIDER_TYPE_NAMES[Number(s.providerType)] || '—';
+  // Named `classNameFor`, not `partyClassName` / `marketClassName` — those are the imported
+  // per-catalog resolvers this delegates to, and reusing either name here would read as though
+  // one catalog answered for both.
+  private classNameFor(serviceType: number, classId: number): string {
+    if (!classId) return '';
+    return serviceType === 1 ? marketClassName(classId) : partyClassName(classId);
+  }
+
+  // The server's label first (it joins the live Global Variables catalog, so a value added on
+  // chain shows up with no rebuild); the local map only backfills when the join found nothing.
+  serviceClassLabel(s: Service): string {
+    const serviceType = Number(s.serviceType) || 0;
+    if (serviceType === 1) {
+      return s.marketClassName || marketClassName(s.marketClass) || '—';
+    }
+    return s.partyClassName || partyClassName(s.partyClass) || '—';
+  }
+
+  // Only a type-1 service's declared class needs regulator confirmation; a type-2 service's
+  // party class is confirmed by party admission instead, which this column does not track.
+  showMarketClassPill(s: Service): boolean {
+    return Number(s.serviceType) === 1 && !!s.marketClass;
   }
 
   private readonly stateNames: Record<number, string> = {
@@ -149,8 +179,11 @@ export class ServiceProviderDashboardPage implements OnInit {
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
       serviceType: raw.service_type ?? 0,
       serviceTypeName: raw.service_type_name ?? '',
-      providerType: raw.provider_type ?? 0,
-      providerTypeName: raw.provider_type_name ?? '',
+      partyClass: raw.party_class ?? 0,
+      partyClassName: raw.party_class_name ?? '',
+      marketClass: raw.market_class ?? 0,
+      marketClassName: raw.market_class_name ?? '',
+      marketClassConfirmed: raw.market_class_confirmed === true || raw.market_class_confirmed === 1,
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
