@@ -32,6 +32,7 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'service-edit-metadata':         'systemFunctionLabels.serviceEditMetadata',
   'service-change-visibility':     'systemFunctionLabels.serviceChangeVisibility',
   'service-change-state':          'systemFunctionLabels.serviceChangeState',
+  'service-straight-through':      'systemFunctionLabels.serviceStraightThrough',
   'subscription-change-state':     'systemFunctionLabels.subscriptionChangeState',
   'asset-change-state':            'systemFunctionLabels.assetChangeState',
   'venue-change-state':            'systemFunctionLabels.venueChangeState',

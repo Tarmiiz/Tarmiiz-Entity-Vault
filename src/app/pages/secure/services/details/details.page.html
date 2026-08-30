@@ -327,6 +327,28 @@
                   }
                 </div>
                 @if (isTokenProvider()) {
+                  <!-- Straight-through transactions (Phase 21). Token-issuer services only —
+                       a provider service has nothing to buy, and the API rejects it there. -->
+                  <div class="border-t pt-4 md:col-span-2">
+                    <div class="flex items-center justify-between gap-4 flex-wrap">
+                      <div>
+                        <p class="text-sm font-medium text-gray-500">{{ 'services.details.straightThrough.title' | translate }}</p>
+                        <span class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full"
+                              [class]="v.straightThrough ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+                          {{ (v.straightThrough ? 'services.details.straightThrough.on' : 'services.details.straightThrough.off') | translate }}
+                        </span>
+                        <p class="text-xs text-gray-500 mt-1">
+                          {{ (v.straightThrough ? 'services.details.straightThrough.onHint' : 'services.details.straightThrough.offHint') | translate }}
+                        </p>
+                      </div>
+                      @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-straight-through')) {
+                        <button (click)="onToggleStraightThrough()" [disabled]="!entityActive"
+                          class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
+                          {{ (v.straightThrough ? 'services.details.straightThrough.disable' : 'services.details.straightThrough.enable') | translate }}
+                        </button>
+                      }
+                    </div>
+                  </div>
                   <!-- Attached service providers live on their own tab; keep a summary + jump-off here. -->
                   <div class="border-t pt-4 md:col-span-2">
                     <div class="flex items-center justify-between gap-4 flex-wrap">

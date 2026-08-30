@@ -90,6 +90,13 @@ export class MetadataEditModalComponent {
       if (key.toLowerCase() === 'identifiers' || key.toLowerCase() === 'isin') {
         return this.translate.instant('shared.metadataEditModal.errors.identifiersReserved');
       }
+      // `straightThrough` (Phase 21) is server-owned — the service detail page's toggle is its
+      // only writer, and the API carries the live value forward across this edit. A free-form
+      // row of that name would be discarded server-side; worse, a typed `true` here would be
+      // the STRING "true", which the API's strict `=== true` reads as OFF. Say so instead.
+      if (key.toLowerCase() === 'straightthrough') {
+        return this.translate.instant('shared.metadataEditModal.errors.straightThroughReserved');
+      }
       if (seen.has(key)) {
         return this.translate.instant('shared.metadataEditModal.errors.duplicateKey', { key });
       }

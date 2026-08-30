@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, effect, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, effect, signal, computed, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -7,6 +7,7 @@ import { ModalCreditDepositService } from './modal-credit-deposit.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
+import { MoneyPipe } from '../../../../../shared/pipes/money.pipe';
 
 interface ApprovedProcessor {
   service: string;
@@ -15,13 +16,22 @@ interface ApprovedProcessor {
   serviceLevel: number;
 }
 
+/** An asset this service distributes that a deposit in the chosen currency can actually buy. */
+interface EligibleAsset {
+  address: string;
+  name: string;
+  symbol: string;
+  currencyCode: number;
+  ask: number;
+}
+
 @Component({
   selector: 'app-modal-credit-deposit',
   templateUrl: './modal-credit-deposit.component.html',
   styleUrls: ['./modal-credit-deposit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, MoneyPipe],
 })
 export class ModalCreditDepositComponent {
   modalService = inject(ModalCreditDepositService);
@@ -32,6 +42,12 @@ export class ModalCreditDepositComponent {
   private translate = inject(TranslateService);
 
   processors = signal<ApprovedProcessor[]>([]);
+  /** Every credit-settled asset on this service, before the currency filter. */
+  private assets = signal<EligibleAsset[]>([]);
+  /** Mirrors the form so the computeds below re-run — a FormControl is not a signal. */
+  private assetChoice = signal<string>('');
+  private currencyChoice = signal<number | null>(null);
+  private amountChoice = signal<number>(0);
 
   form = this.fb.group({
     provider: ['', Validators.required],
@@ -40,19 +56,64 @@ export class ModalCreditDepositComponent {
     currencyCode: [null as number | null, Validators.required],
     amount: [null as number | null, [Validators.required, Validators.min(0.000001)]],
     note: [''],
+    // Straight-through (Phase 21). Opt-in per call even when the service allows it.
+    buyWithDeposit: [false],
+    asset: [''],
   });
 
   constructor() {
     effect(() => {
       if (this.modalService.isVisible()) {
-        const list = this.modalService.currencies();
-        const first = list[0]?.currencyCode ?? null;
-        const defaultPp = (this.modalService.paymentProcessor() || '').toLowerCase();
-        this.form.reset({ provider: defaultPp, providerTrxRefNo: '', providerTrxTime: '', currencyCode: first, amount: null, note: '' });
-        void this.loadProcessors(defaultPp);
+        // The reset writes signals this effect also reads; untracked() stops that from
+        // re-triggering it into a loop that hangs the modal (a standing platform gotcha).
+        untracked(() => {
+          const list = this.modalService.currencies();
+          const first = list[0]?.currencyCode ?? null;
+          const defaultPp = (this.modalService.paymentProcessor() || '').toLowerCase();
+          this.form.reset({ provider: defaultPp, providerTrxRefNo: '', providerTrxTime: '', currencyCode: first,
+                            amount: null, note: '', buyWithDeposit: false, asset: '' });
+          this.assets.set([]);
+          this.assetChoice.set('');
+          this.currencyChoice.set(first);
+          this.amountChoice.set(0);
+          void this.loadProcessors(defaultPp);
+          if (this.modalService.straightThrough()) void this.loadAssets();
+        });
       }
     });
+
+    this.form.controls.asset.valueChanges.subscribe(v => this.assetChoice.set(v ?? ''));
+    this.form.controls.currencyCode.valueChanges.subscribe(v => this.currencyChoice.set(v ?? null));
+    this.form.controls.amount.valueChanges.subscribe(v => this.amountChoice.set(Number(v) || 0));
   }
+
+  // Only assets settling in the currency being deposited: the combined verb requires the two to
+  // match (the API 400s otherwise), and offering a mismatched asset would be a picker whose every
+  // choice fails.
+  eligibleAssets = computed<EligibleAsset[]>(() => {
+    const code = this.currencyChoice();
+    return this.assets().filter(a => code == null || Number(a.currencyCode) === Number(code));
+  });
+
+  selectedAsset = computed<EligibleAsset | null>(() => {
+    const addr = (this.assetChoice() || '').toLowerCase();
+    return this.eligibleAssets().find(a => a.address.toLowerCase() === addr) ?? null;
+  });
+
+  // Preview only — the API re-resolves the price when the buy actually runs, so this can differ.
+  // Floor, matching the server's by-value rule.
+  estimatedTokens = computed<number>(() => {
+    const a = this.selectedAsset();
+    const amount = this.amountChoice();
+    if (!a || !(a.ask > 0) || !(amount > 0)) return 0;
+    return Math.floor(amount / a.ask);
+  });
+
+  residual = computed<number>(() => {
+    const a = this.selectedAsset();
+    if (!a || !(a.ask > 0)) return 0;
+    return Math.max(0, this.amountChoice() - this.estimatedTokens() * a.ask);
+  });
 
   // Restrict the picker to payment processors ATTACHED to this service (1:N). We still pull the
   // approved list for display names/levels, then intersect with the service's attached PP set.
@@ -75,6 +136,27 @@ export class ModalCreditDepositComponent {
     }
   }
 
+  // Assets this service distributes. Filtered to credit-settled ones: without credit settlement
+  // the mint would not consume the deposited cash, so "deposit and buy" would be two unrelated
+  // movements — and the API refuses it for exactly that reason.
+  private async loadAssets() {
+    const service = this.modalService.service();
+    if (!service) return;
+    const data = await this.apiService.vaultGetAssets(0, 200, service);
+    const rows = (data?.assets ?? []).filter((a: any) => a.credit_settlement === 1 || a.credit_settlement === true);
+    this.assets.set(rows.map((a: any) => ({
+      address: a.address,
+      name: a.name ?? '',
+      symbol: a.symbol ?? '',
+      currencyCode: Number(a.currency_code ?? 0),
+      // `assets_view` exposes the latest price as `price_ask`. It is a MONEY value and already
+      // lands in whole units off the mirror — never formatEther a DB row (platform off-chain
+      // storage rule). No price yet ⇒ 0, which suppresses the preview rather than showing a
+      // fabricated one.
+      ask: Number(a.price_ask ?? 0),
+    })));
+  }
+
   async onSubmit() {
     if (!this.form.valid) return;
     const v = this.form.value;
@@ -85,6 +167,12 @@ export class ModalCreditDepositComponent {
     }
     if (!v.provider) {
       await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorSelectProcessor'));
+      return;
+    }
+
+    const buying = this.modalService.straightThrough() && v.buyWithDeposit === true;
+    if (buying && !v.asset) {
+      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorSelectAsset'));
       return;
     }
 
@@ -103,15 +191,40 @@ export class ModalCreditDepositComponent {
       raw: v.note ? { note: v.note } : {},
     };
 
-    this.loadingService.show(this.translate.instant('subscriptions.creditDepositModal.depositing'));
-    const res = await this.apiService.creditDeposit(body);
-    this.loadingService.hide();
+    // The two branches are kept apart rather than folded into one ternary: their response
+    // shapes differ (only the combined verb carries `buyError`), and a union of the two loses
+    // that field — which is the one thing this handler must not drop.
+    this.loadingService.show(this.translate.instant(
+      buying ? 'subscriptions.creditDepositModal.depositingAndBuying' : 'subscriptions.creditDepositModal.depositing'));
 
+    if (!buying) {
+      const res = await this.apiService.creditDeposit(body);
+      this.loadingService.hide();
+      if (res.error) {
+        await this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        return;
+      }
+      this.modalService.confirm({ txHash: res.result?.transactionHash || '' });
+      return;
+    }
+
+    const res = await this.apiService.creditDepositBuy({ ...body, asset: String(v.asset) });
+    this.loadingService.hide();
     if (res.error) {
       await this.alertService.show(this.translate.instant('alerts.error'), res.error);
       return;
     }
-    this.modalService.confirm(res.result?.transactionHash || '');
+
+    // Combined verb: a 200 can still mean the deposit landed and the buy did not. Hand both
+    // halves back so the page reports what actually happened — treating this as a plain success
+    // would tell the operator units were bought when only cash moved.
+    const deposit = res.result?.deposit;
+    const buy = res.result?.buy;
+    this.modalService.confirm({
+      txHash: deposit?.transactionHash || '',
+      bought: buy ? { asset: String(v.asset), tokens: buy.tokens, price: buy.price, txHash: buy.transactionHash } : null,
+      buyError: res.buyError,
+    });
   }
 
   onCancel() {

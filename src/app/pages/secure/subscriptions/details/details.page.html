@@ -718,6 +718,20 @@
                       {{ 'subscriptions.details.credit.addCredit' | translate }}
                     </button>
                   }
+                  <!-- Straight-through cash-out (Phase 21). Rendered only when the SERVICE has
+                       declared straight-through mode; gated by the same two keys the combined
+                       verb chains server-side. It opens a withdrawal REQUEST, never a payout. -->
+                  @if (userInfo && userInfo.role !== 3 && straightThrough()
+                       && features.systemFunctionEnabled('credit-withdraw')
+                       && features.systemFunctionEnabled('transaction-create')) {
+                    <button (click)="openSellWithdraw()"
+                      class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 20V4m0 16l-6-6m6 6l6-6" />
+                      </svg>
+                      {{ 'subscriptions.details.credit.sellWithdraw' | translate }}
+                    </button>
+                  }
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportCreditExcel()"
                       class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
@@ -891,3 +905,4 @@
 <app-modal-transaction-info></app-modal-transaction-info>
 <app-modal-credit-trx-info></app-modal-credit-trx-info>
 <app-modal-credit-deposit></app-modal-credit-deposit>
+<app-modal-sell-withdraw></app-modal-sell-withdraw>

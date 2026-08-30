@@ -26,6 +26,8 @@ import { ModalCreditTrxInfoService } from '../../../../shared/components/modal-c
 import { ModalCreditTrxInfoComponent } from '../../../../shared/components/modal-credit-trx-info/modal-credit-trx-info.component';
 import { ModalCreditDepositService } from '../modals/modal-credit-deposit/modal-credit-deposit.service';
 import { ModalCreditDepositComponent } from '../modals/modal-credit-deposit/modal-credit-deposit.component';
+import { ModalSellWithdrawService } from '../modals/modal-sell-withdraw/modal-sell-withdraw.service';
+import { ModalSellWithdrawComponent } from '../modals/modal-sell-withdraw/modal-sell-withdraw.component';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
@@ -49,6 +51,7 @@ import { PaginatorComponent, pageSlice } from '../../../../shared/components/pag
     ModalTransactionInfoComponent,
     ModalCreditTrxInfoComponent,
     ModalCreditDepositComponent,
+    ModalSellWithdrawComponent,
     DocumentsTabComponent,
     LiveIndicatorComponent, TranslatePipe, MoneyPipe,
     PaginatorComponent,
@@ -62,6 +65,7 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private subscriptionStateService = inject(ModalSubscriptionStateService);
   private creditDepositService = inject(ModalCreditDepositService);
+  private sellWithdrawService = inject(ModalSellWithdrawService);
   trxInfoService = inject(ModalTransactionInfoService);
   creditTrxInfoService = inject(ModalCreditTrxInfoService);
   utils = inject(UtilsService);
@@ -94,6 +98,12 @@ export class DetailsPage implements OnInit {
 
   subscriptionAddress = '';
   subscription = signal<Subscription | undefined>(undefined);
+  /**
+   * Has the owning SERVICE declared straight-through transactions (Phase 21)? Drives the
+   * optional "Buy with deposit" section in the deposit modal and the Sell & Withdraw button.
+   * Read from the service row's projected boolean, never from metadata JSON.
+   */
+  straightThrough = signal(false);
   suspensionReason = signal<string>('');
   holdings = signal<SubscriptionHolding[]>([]);
   holdingPage = signal(1);
@@ -461,6 +471,15 @@ export class DetailsPage implements OnInit {
         }
       } else {
         this.suspensionReason.set('');
+      }
+      // Straight-through mode is a property of the SERVICE, not the subscription, so it has to
+      // be read here for the Sell & Withdraw button to render at all. Non-fatal: a failed read
+      // leaves the button hidden, which is the safe direction — the API would 409 the verb.
+      if (subscription.service) {
+        try {
+          const service = await this.apiService.vaultGetService(subscription.service);
+          this.straightThrough.set(service?.straight_through === true || service?.straightThrough === true);
+        } catch { this.straightThrough.set(false); }
       }
     }
     if (!silent) this.loadingService.hide();
@@ -944,16 +963,81 @@ export class DetailsPage implements OnInit {
       service: sub.service,
       paymentProcessor,
       currencies,
+      // Straight-through (Phase 21): drives the optional "Buy with deposit" section. Read the
+      // projected boolean, never metadata JSON — the API parses it once and a stale/unparseable
+      // blob would otherwise silently hide the section.
+      straightThrough: this.straightThrough(),
     });
     if (result) {
-      await this.alertService.show(
-        this.translate.instant('subscriptions.details.credit.depositedTitle'),
-        result.txHash
-          ? (this.translate.instant('subscriptions.details.credit.txPrefix') + result.txHash)
-          : this.translate.instant('subscriptions.details.credit.depositSuccessful')
-      );
+      // A combined deposit+buy can succeed on leg 1 and fail on leg 2. Report that as its own
+      // outcome: the cash IS on the claim, so this is neither a failure nor a plain success, and
+      // saying "deposited" alone would leave the operator believing units were bought.
+      if (result.buyError) {
+        await this.alertService.show(
+          this.translate.instant('subscriptions.details.credit.depositedBuyFailedTitle'),
+          this.translate.instant('subscriptions.details.credit.depositedBuyFailedMessage', { error: result.buyError })
+        );
+      } else if (result.bought) {
+        await this.alertService.show(
+          this.translate.instant('subscriptions.details.credit.depositedAndBoughtTitle'),
+          this.translate.instant('subscriptions.details.credit.depositedAndBoughtMessage', { tokens: result.bought.tokens })
+        );
+      } else {
+        await this.alertService.show(
+          this.translate.instant('subscriptions.details.credit.depositedTitle'),
+          result.txHash
+            ? (this.translate.instant('subscriptions.details.credit.txPrefix') + result.txHash)
+            : this.translate.instant('subscriptions.details.credit.depositSuccessful')
+        );
+      }
       await this.getCreditData();
     }
+  }
+
+  /*
+      Straight-through cash-out (Phase 21): redeem units, then OPEN a withdrawal request.
+
+      ⚠️ Nothing here pays anyone. The money moves on the separate fulfil leg, so the success
+      copy says "requested" and reports the requestId — never "withdrawn". Reporting a payout at
+      the moment a claim was held is precisely what the request/fulfil split exists to prevent.
+  */
+  async openSellWithdraw() {
+    const sub = this.subscription();
+    if (!sub) return;
+    if (!sub.service) {
+      await this.alertService.show(
+        this.translate.instant('subscriptions.details.credit.errorTitle'),
+        this.translate.instant('subscriptions.details.credit.noTokenIssuerService')
+      );
+      return;
+    }
+
+    const result = await this.sellWithdrawService.show({
+      subscriptionAddress: this.subscriptionAddress,
+      service: sub.service,
+      currencies: this.creditBalances(),
+    });
+    if (!result) return;
+
+    if (result.withdrawError) {
+      // The redeem landed and the request did not open — the proceeds are on the claim. This is
+      // its own outcome, not a failure and not a success.
+      await this.alertService.show(
+        this.translate.instant('subscriptions.details.credit.soldWithdrawFailedTitle'),
+        this.translate.instant('subscriptions.details.credit.soldWithdrawFailedMessage', { error: result.withdrawError })
+      );
+    } else {
+      await this.alertService.show(
+        this.translate.instant('subscriptions.details.credit.sellWithdrawRequestedTitle'),
+        this.translate.instant('subscriptions.details.credit.sellWithdrawRequestedMessage', {
+          tokens: result.tokens,
+          requestId: result.requestId ?? '—',
+        })
+      );
+    }
+    await this.getCreditData();
+    // Holdings too — a redeem changes the token balance, not just the claim.
+    await this.getHoldings(1, 500);
   }
 
   async getCreditData() {

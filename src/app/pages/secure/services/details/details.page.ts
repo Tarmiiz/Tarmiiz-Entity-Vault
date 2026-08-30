@@ -689,6 +689,10 @@ export class DetailsPage implements OnInit {
       custodian: raw.custodian ?? '',
       custodianActive: raw.custodian_active === false ? false : true,
       validatorActive: raw.validator_active === false ? false : true,
+      // Straight-through mode. Defaults FALSE on an absent field — unlike the two above, whose
+      // absence means "active until told otherwise". Here absence means the service never
+      // opted in, and defaulting true would show the toggle on for every existing service.
+      straightThrough: raw.straight_through === true || raw.straight_through === 1,
     } as Service;
   }
 
@@ -1087,6 +1091,33 @@ export class DetailsPage implements OnInit {
     }
   }
 
+  // Straight-through transactions (Phase 21). Confirmed rather than a bare toggle: it changes
+  // which money-moving verbs the service answers, and it is written to the service's ON-CHAIN
+  // metadata, so it costs a relayed transaction either way.
+  async onToggleStraightThrough() {
+    const currentService = this.service();
+    if (!currentService) return;
+    const next = !currentService.straightThrough;
+
+    const confirmed = await this.alertService.show(
+      this.translate.instant(next ? 'services.details.straightThrough.confirmEnableTitle' : 'services.details.straightThrough.confirmDisableTitle'),
+      this.translate.instant(next ? 'services.details.straightThrough.confirmEnableMessage' : 'services.details.straightThrough.confirmDisableMessage'),
+      this.translate.instant('alerts.ok'),
+    );
+    if (!confirmed) return;
+
+    this.loadingService.show(this.translate.instant('services.details.straightThrough.updating'));
+    try {
+      await this.apiService.vaultSetServiceStraightThrough(currentService.address, next);
+      await this.getServiceDetails();
+    } catch (error) {
+      console.error('Failed to change straight-through mode', error);
+      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.straightThrough.updateError'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
   async openEditMetadataModal() {
     const currentService = this.service();
     if (!currentService) return;
@@ -1101,7 +1132,14 @@ export class DetailsPage implements OnInit {
     // KV editor (which would rewrite the nested object as a JSON-string-in-a-string) and
     // re-attached verbatim on save — the modal's result is a FULL REPLACEMENT, so without the
     // re-attach an unrelated metadata edit would silently DELETE the discovery keys.
-    const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address', 'sp']);
+    // `straightThrough` (Phase 21) is reserved for a DIFFERENT reason than `sp`, and the
+    // difference decides whether it needs re-attaching below. `sp` is preserved by NOBODY
+    // server-side, so it must be carried across this modal by hand. `straightThrough` IS
+    // carried forward by the API's own `serviceUpdateMetadata` (which strips a client-supplied
+    // value and re-reads the live one), so it needs only to stay OUT of the flat KV editor —
+    // where it would render as a raw `true` row and be written back as the STRING "true",
+    // which the API's strict `=== true` check would then read as OFF.
+    const RESERVED = new Set(['description', 'media', 'contact', 'email', 'telephone', 'mobile', 'website', 'address', 'sp', 'straightThrough']);
     let preservedSp: unknown;
     try {
       const obj = JSON.parse(currentService.metadata || '{}');
