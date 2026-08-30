@@ -28,7 +28,6 @@ export class ModalPlaceOrderComponent {
   subscription = signal<string>('');
   dexService = signal<string>('');
   baseAsset = signal<string>('');
-  marketScope = signal<number>(1);
   side = signal<number>(1);
   priceText = signal<string>('');
   amountText = signal<string>('');
@@ -84,7 +83,7 @@ export class ModalPlaceOrderComponent {
     return s === 1 ? 'Tier 1 — Venue' : s === 2 ? 'Tier 2 — Country' : 'Tier 3 — Global';
   }
 
-  isStep1Valid = computed(() => !!(this.subscription() && this.dexService() && this.baseAsset() && this.availableScopes().includes(this.marketScope())));
+  isStep1Valid = computed(() => !!(this.subscription() && this.dexService() && this.baseAsset()));
   /**
    * Unix SECONDS for the chain, or 0 for GTC. `datetime-local` has no timezone, so
    * `new Date(value)` reads it as LOCAL time — which is what the operator typed — and
@@ -125,7 +124,6 @@ export class ModalPlaceOrderComponent {
   pickAssetByAddress(addr: string) {
     this.baseAsset.set(addr);
     const scopes = this.availableScopes();
-    if (!scopes.includes(this.marketScope())) this.marketScope.set(scopes[0] || 1);
   }
 
   setVenue(addr: string) { this.dexService.set(addr); }
@@ -164,7 +162,6 @@ export class ModalPlaceOrderComponent {
       dexService:   this.dexService(),
       baseAsset:    this.baseAsset(),
       side:         this.side(),
-      marketScope:  this.marketScope(),
       price:        priceWei,
       amount:       String(BigInt(Math.floor(Number(this.amountText())))),
       // Unix SECONDS; 0 = good-till-cancelled. Deliberately NOT milliseconds — the API and the
@@ -186,7 +183,6 @@ export class ModalPlaceOrderComponent {
     this.subscription.set('');
     this.dexService.set('');
     this.baseAsset.set('');
-    this.marketScope.set(1);
     this.side.set(1);
     this.priceText.set('');
     this.amountText.set('');

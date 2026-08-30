@@ -673,7 +673,7 @@ export class ApiService {
   }
   // `expiresAt` is time in force: unix SECONDS, 0 = good-till-cancelled. NOT milliseconds —
   // the order row reports its expiry back in ms, and the two units meet on this one feature.
-  async vaultDexPlaceOrder(body: { subscription: string; dexService: string; baseAsset: string; side: number; marketScope: number; price: string; amount: string; expiresAt?: number }) {
+  async vaultDexPlaceOrder(body: { subscription: string; dexService: string; baseAsset: string; side: number; price: string; amount: string; expiresAt?: number }) {
     return this.vaultPost('/dex/orders', body);
   }
   async vaultDexCancelOrder(orderId: number | string) {
@@ -1057,7 +1057,7 @@ export class ApiService {
 
   async vaultDexDealPropose(body: {
     subscription: string; dexService: string; counterparty: string; baseAsset: string;
-    side: number; funding: number; marketScope: number;
+    side: number; funding: number;
     price: number; amount: number; expiresAt: number;
   }) {
     return this.vaultPost('/dex/deals', body);
@@ -1139,7 +1139,7 @@ export class ApiService {
   /** `amount` is a plain token count; a request carries NO price. */
   async vaultDexRfqCreate(body: {
     subscription: string; dexService: string; baseAsset: string;
-    side: number; funding: number; marketScope: number;
+    side: number; funding: number;
     amount: number; expiresAt: number; openToAll?: boolean; invited?: string[];
   }) {
     return this.vaultPost('/dex/rfqs', body);
@@ -1593,6 +1593,15 @@ export class ApiService {
     return data ?? null;
   }
 
+  // Straight-through transactions: declares that on this service a cash-in IS a purchase of
+  // units and a cash-out IS a redemption, unlocking creditDepositBuy / creditSellWithdraw.
+  // The API writes it as a server-owned reserved key inside the service's ON-CHAIN metadata
+  // (no contract change), so it comes back on the service row as `straightThrough`.
+  async vaultSetServiceStraightThrough(address: string, enabled: boolean) {
+    const data = await this.vaultPut('/services/' + address + '/straight-through', { enabled });
+    return data ?? null;
+  }
+
   // Service providers are 1:N. partyType is the SHARED platform numbering — the same ids as
   // `spType` on the curated set and as ServicePartiesLib's on-chain roles. The ids live in
   // PARTY_CLASS (shared/constants/party-class.ts); never restate them in a comment, which is
@@ -1903,6 +1912,26 @@ export class ApiService {
     return this._creditMutation('/credit/withdraw', body);
   }
 
+  // ─── straight-through combined verbs (Phase 21) ───────────────────────────
+  //
+  // Available only on a service with `straightThrough` on (409 otherwise). Both are API
+  // orchestration over the two existing on-chain paths, so they answer 200 with a PARTIAL
+  // result when the second leg fails after the first has mined — the callers below MUST check
+  // `buyError` / `withdrawError` on a successful response rather than treating a 200 as "both
+  // legs done". Reporting a partial as a failure would be worse than useless: the money has
+  // already moved and a retry would move it twice.
+
+  // Cash in, units out. `amount` is the deposit AND, by default, the buy budget.
+  async creditDepositBuy(body: { service: string; provider: string; providerName?: string; subscriber: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any; asset: string; tokens?: number; value?: number; price?: number }): Promise<{ result?: any; buyError?: string; error?: string }> {
+    return this._creditMutation('/credit/deposit-buy', body);
+  }
+
+  // Units in, cash-out REQUEST opened. It does NOT pay out — fulfilment stays the existing
+  // async withdrawal-request lifecycle.
+  async creditSellWithdraw(body: { service: string; subscriber: string; asset: string; tokens?: number; value?: number; price?: number; instrument: string; minterOfRecord?: string; providerTrxRefNo: string; amount?: number }): Promise<{ result?: any; withdrawError?: string; error?: string }> {
+    return this._creditMutation('/credit/sell-withdraw', body);
+  }
+
   // Bank hub move — the entity's Bank-level PP `service` moves an identity's credit between its
   // bank-account hub and a spoke subscription (both same identity, enforced on-chain).
   // providerTrxRefNo (the SP's external transaction reference) is required; providerTrxTime
@@ -1919,7 +1948,7 @@ export class ApiService {
     return this._creditMutation('/credit/route-transfer', body);
   }
 
-  private async _creditMutation(path: string, body: Record<string, any>): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+  private async _creditMutation(path: string, body: Record<string, any>): Promise<{ result?: any; requestId?: string; approvalState?: number; buyError?: string; withdrawError?: string; error?: string }> {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
@@ -1936,7 +1965,11 @@ export class ApiService {
         return { error: response.data?.error || ('HTTP ' + response.status) };
       }
       // Maker/checker: when policy is on, the API returns { requestId, approvalState } instead of executing.
-      return { result: response.data?.result, requestId: response.data?.requestId, approvalState: response.data?.approvalState };
+      // `buyError` / `withdrawError` ride a 200 on the straight-through combined verbs: leg 1
+      // mined and leg 2 did not. They MUST be forwarded — dropping them here would turn a
+      // partial into a silent full success, which is the one outcome that misreports money.
+      return { result: response.data?.result, requestId: response.data?.requestId, approvalState: response.data?.approvalState,
+               buyError: response.data?.buyError, withdrawError: response.data?.withdrawError };
     } catch (e: any) {
       return { error: e?.message || 'Network error' };
     }

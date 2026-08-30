@@ -76,21 +76,14 @@
             }
           </div>
 
-          @if (availableScopes().length) {
-            <div>
-              <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.marketScope' | translate }}</label>
-              <div class="mt-1 flex flex-wrap gap-2">
-                @for (s of availableScopes(); track s) {
-                  <button type="button" (click)="marketScope.set(s)"
-                    class="text-xs px-3 py-1.5 rounded border transition-colors"
-                    [class.bg-indigo-700]="marketScope() === s" [class.text-white]="marketScope() === s" [class.border-indigo-700]="marketScope() === s"
-                    [class.border-gray-300]="marketScope() !== s" [class.text-gray-700]="marketScope() !== s">
-                    {{ scopeName(s) }}
-                  </button>
-                }
-              </div>
-            </div>
-          }
+          <!-- ⚠️ THE SCOPE PICKER IS GONE (V36). It was a LIVE control whose choice the API now
+               discards — a UI telling the user they decided something. There is ONE book per
+               (asset, venue) and the reach of an order IS its venue's tier on that listing, read
+               live at settlement; a per-ticket scope could only ever contradict it.
+
+               `availableScopes()` is KEPT: it is still the honest answer to "may this venue trade
+               this asset at all" (it runs the five gates), and step 1 still needs that. What it no
+               longer does is offer a choice. -->
         }
 
         @if (step() === 2) {
@@ -180,7 +173,6 @@
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.venue' | translate }}</p><p class="text-sm font-mono break-all">{{ dexService() }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.asset' | translate }}</p><p class="text-sm">{{ selectedListing()?.assetSymbol || '?' }} — {{ selectedListing()?.assetName || '' }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.currency' | translate }}</p><p class="text-sm">{{ selectedListingCurrency() }}</p></div>
-              <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.scope' | translate }}</p><p class="text-sm">{{ scopeName(marketScope()) }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.side' | translate }}</p><p class="text-sm font-semibold" [class.text-green-700]="side() === 1" [class.text-orange-700]="side() === 2">{{ (side() === 1 ? 'dex.orders.side.buy' : 'dex.orders.side.sell') | translate }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'dex.orders.placeModal.price' | translate }}</p><p class="text-sm">{{ priceText() }} {{ selectedListingCurrency() }}</p></div>
               <div><p class="text-xs text-gray-500">{{ 'common.amount' | translate }}</p><p class="text-sm">{{ amountText() }}</p></div>

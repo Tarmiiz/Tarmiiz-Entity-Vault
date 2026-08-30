@@ -76,7 +76,6 @@ export class ListPage implements OnInit, OnDestroy {
     const asset = this.filterAsset().toLowerCase();
     const venue = this.filterVenue().toLowerCase();
     return this.trades().filter(t =>
-      (!scope || String(t.marketScope) === scope) &&
       (!asset || (t.assetSymbol || '').toLowerCase().includes(asset) || (t.assetName || '').toLowerCase().includes(asset) || t.baseAsset.toLowerCase().includes(asset)) &&
       (!venue || (t.buyDexServiceName || '').toLowerCase().includes(venue) || (t.sellDexServiceName || '').toLowerCase().includes(venue) || t.buyDexService.toLowerCase().includes(venue) || t.sellDexService.toLowerCase().includes(venue)) &&
       (!term ||
@@ -120,7 +119,6 @@ export class ListPage implements OnInit, OnDestroy {
       'Sell Venue': t.sellDexServiceName || t.sellDexService,
       'Buyer': t.buyer,
       'Seller': t.seller,
-      'Scope': t.marketScopeName,
       'Executed': t.executedAt ? this.utils.formatDate(t.executedAt) : '—',
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -151,7 +149,6 @@ export class ListPage implements OnInit, OnDestroy {
         this.fmtPrice(t.creditAmount),
         t.buyDexServiceName || t.buyDexService.slice(0, 10),
         t.sellDexServiceName || t.sellDexService.slice(0, 10),
-        t.marketScopeName ?? '',
         t.executedAt ? this.utils.formatDate(t.executedAt) : '—',
       ]),
     });

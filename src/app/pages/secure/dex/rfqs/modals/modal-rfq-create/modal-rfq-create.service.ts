@@ -8,7 +8,6 @@ export interface RfqCreateResult {
   baseAsset: string;
   side: number;
   funding: number;
-  marketScope: number;
   amount: number;
   expiresAt: number;
   openToAll: boolean;

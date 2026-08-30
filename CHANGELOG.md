@@ -15,6 +15,52 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-08-30
+
+#### Removed
+
+- ⚠️ **THE MARKET-SCOPE PICKERS ARE GONE FROM THE DEX SURFACE (V36).** This was not dead code: the
+  place-order modal, the deal-terms modal and the RFQ-create modal each rendered a LIVE control the
+  user chose from, and the Entity API discards the value. A control that silently throws away a
+  choice is worse than no control — it tells the user they decided something.
+- The same field was read across ORDERS (list column, details, exports), TRADES (details badge,
+  exports, **and the scope FILTER**) and RFQ details. `market_scope` is a dropped column, so every
+  one of those reads was `undefined`: the filter matched nothing whichever scope was picked, the
+  badges rendered a blank tier, and the exports wrote an empty column. `marketScope` /
+  `marketScopeName` are removed from all four `data.model.ts` interfaces so the compiler enforces it.
+
+  There is ONE book per (asset, venue) and the reach of an order IS its venue’s tier on that
+  listing, read live at settlement; a per-ticket scope could only ever contradict it.
+  `availableScopes()` is KEPT in the place-order modal — it still answers "may this venue trade this
+  asset at all" by running the five gates. What it no longer does is offer a choice.
+
+#### Changed
+
+- **The deal-suspension explainer now describes what actually happens.** It said a suspension
+  "blocks acceptance and the venue’s approval only" — true of the RETIRED flag. A regulator now
+  HOLDS THE DEAL’S COMMITMENT LEGS, enforced one layer lower at settlement, so it covers every path
+  the trade could be crossed on. The old wording understated the intervention AND named an approval
+  step that no longer exists (settlement is permissionless once both sides have agreed and funded).
+  en + ar.
+### 2026-08-29
+
+#### Added
+- **Straight-through transactions (Phase 21)** — on a fund-style service a cash-in IS a purchase of units and a cash-out IS a redemption, and the Vault can now drive both as one step.
+  - **Service detail → a "Straight-Through Transactions" row** with an Enabled/Disabled pill and an Enable/Disable action (`systemFunctionEnabled('service-straight-through')` + `role !== 3` + `entityActive`, confirmed through the shared `AlertService`). Token-issuer services only. It writes the service's ON-CHAIN metadata, which is why it confirms rather than toggling silently.
+  - **Deposit modal → an optional "Buy with deposit" section**, rendered only when the service has declared the mode and opt-in per call even then. Asset picker filtered to credit-settled assets settling in the deposited currency (the API 400s a mismatch, so offering one would be a picker whose every choice fails), with a current-ask / estimated-tokens / residual-cash preview **labelled as an estimate** — the API re-resolves the price when the purchase actually runs.
+  - **New `modal-sell-withdraw`** on the subscription detail page (asset, tokens, payout instrument hash, reference, optional minter of record). Its copy says **requested**, never *withdrawn*, and it carries an explicit amber notice: this redeems the units and OPENS a withdrawal request; the money moves when the request is fulfilled. Reporting a payout at the moment a claim was held is exactly what the request/fulfil split exists to prevent.
+  - **Partial success is reported as its own outcome, not as success.** A combined verb can land leg 1 and fail leg 2, so the page distinguishes three endings per verb — both legs done, leg 1 done with the cash/proceeds safely on the claim plus the error, or a plain failure. `_creditMutation` forwards `buyError` / `withdrawError` for that reason; dropping them would turn a partial into a silent full success.
+  - `straightThrough` added to the service-detail metadata editor's RESERVED set and to the shared `metadata-edit-modal`'s key rejection. Unlike `sp` it needs no client-side re-attach (the API carries it forward) — it only has to stay out of the flat KV editor, where a typed `true` would be written back as the STRING `"true"` and read as OFF.
+  - `Service.straightThrough`, `vaultSetServiceStraightThrough` / `creditDepositBuy` / `creditSellWithdraw`, the `service-straight-through` System Function label, and 54 i18n leaves in **each** of en + ar (key sets verified identical — a missing `ar` leaf renders the raw key path, there is no English fallback).
+
+#### Changed
+- **[CLAUDE.md](CLAUDE.md)'s Mode-7 (Clearing House) dashboard bullet caught up with the cycles
+  retirement** — it still promised a pay-in board, cycle counts and the `net < 0` filter rule; the
+  shipped dashboard renders delivery/member/approval/unread counts, and the page's own comments
+  record why (netting is continuous, the cycle mirrors are dropped). The open gap is the
+  margin-coverage board that replaces the pay-in board. Found by the 2026-08-29 analytics-catalog
+  schema survey; tracked as Phase 24.5 in the platform code-fix plan. No code changes.
+
 ### 2026-08-27
 
 #### Changed

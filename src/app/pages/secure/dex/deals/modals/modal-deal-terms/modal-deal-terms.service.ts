@@ -9,7 +9,6 @@ export interface DealTermsResult {
   baseAsset?: string;
   side?: number;
   funding?: number;
-  marketScope?: number;
   expiresAt?: number;
   /** Both modes. */
   subscription: string;

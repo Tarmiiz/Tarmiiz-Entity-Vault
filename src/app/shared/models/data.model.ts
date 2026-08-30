@@ -346,7 +346,12 @@ export class Service {
     public marketClassConfirmed: boolean = false,
     // Nested public contact info (2026-07-20) — derived from the service metadata's `contact`
     // key with fallback to the legacy flat email/mobile/website.
-    public contact?: ContactInfo
+    public contact?: ContactInfo,
+    // Straight-through transactions (Phase 21): on this service a cash-in IS a purchase of
+    // units and a cash-out IS a redemption. Server-owned reserved key inside the on-chain
+    // metadata, projected by the API onto the row as a real boolean — read `straightThrough`,
+    // never `metadata.straightThrough` (metadata may be an unparseable string).
+    public straightThrough: boolean = false
   ) {}
 }
 
@@ -704,7 +709,11 @@ export interface DexDeal {
   assetSymbol: string;
   side: number;            // 1 = proposer BUYS, 2 = proposer SELLS
   funding: number;         // 1 = Firm, 2 = Indicative
-  marketScope: number;
+  // ⚠️ `marketScope` / `marketScopeName` REMOVED (V36, swept 2026-08-30). Not merely unused:
+  // the `market_scope` column is DROPPED, so every read was `undefined` — a trades scope FILTER
+  // matched nothing, order badges rendered a blank tier, and exports wrote an empty column.
+  // There is ONE book per (asset, venue) and the tier is a property of the VENUE, read live at
+  // settlement; a per-ticket scope could only ever contradict it.
   status: number;          // 1 Proposed 2 Accepted 3 Settled 4 Rejected 5 Withdrawn 6 VenueRejected 7 Expired
   lastMover: number;       // 1 = proposer, 2 = counterparty — whose quote is LIVE
   suspended: boolean;      // regulator intervention, ORTHOGONAL to status
@@ -789,7 +798,11 @@ export interface DexRfqRequest {
   assetName: string;
   assetSymbol: string;
   side: number;            // 1 = requester BUYS, 2 = requester SELLS
-  marketScope: number;
+  // ⚠️ `marketScope` / `marketScopeName` REMOVED (V36, swept 2026-08-30). Not merely unused:
+  // the `market_scope` column is DROPPED, so every read was `undefined` — a trades scope FILTER
+  // matched nothing, order badges rendered a blank tier, and exports wrote an empty column.
+  // There is ONE book per (asset, venue) and the tier is a property of the VENUE, read live at
+  // settlement; a per-ticket scope could only ever contradict it.
   status: number;          // 1 Open 2 Awarded 3 Cancelled 4 Expired
   funding: number;         // 1 = Firm, 2 = Indicative — imposed on every quote
   suspended: boolean;      // regulator intervention, ORTHOGONAL to status
@@ -1327,8 +1340,11 @@ export interface DexOrder {
   assetSymbol?: string;
   side: number;
   sideName?: string;
-  marketScope: number;
-  marketScopeName?: string;
+  // ⚠️ `marketScope` / `marketScopeName` REMOVED (V36, swept 2026-08-30). Not merely unused:
+  // the `market_scope` column is DROPPED, so every read was `undefined` — a trades scope FILTER
+  // matched nothing, order badges rendered a blank tier, and exports wrote an empty column.
+  // There is ONE book per (asset, venue) and the tier is a property of the VENUE, read live at
+  // settlement; a per-ticket scope could only ever contradict it.
   price: string;
   amount: string;
   filled: string;
@@ -1371,8 +1387,11 @@ export interface DexTrade {
   creditAmount: string;
   currencyCode: number;
   currencyName?: string;
-  marketScope: number;
-  marketScopeName?: string;
+  // ⚠️ `marketScope` / `marketScopeName` REMOVED (V36, swept 2026-08-30). Not merely unused:
+  // the `market_scope` column is DROPPED, so every read was `undefined` — a trades scope FILTER
+  // matched nothing, order badges rendered a blank tier, and exports wrote an empty column.
+  // There is ONE book per (asset, venue) and the tier is a property of the VENUE, read live at
+  // settlement; a per-ticket scope could only ever contradict it.
   countryCode: number;
   countryName?: string;
   executedAt: number;

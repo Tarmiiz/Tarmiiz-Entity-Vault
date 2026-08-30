@@ -74,16 +74,13 @@
               </select>
               <p class="mt-1 text-xs text-gray-500">{{ 'dex.deals.termsModal.sideHint' | translate }}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">{{ 'dex.deals.termsModal.marketScope' | translate }}</label>
-              <select [(ngModel)]="marketScope"
-                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-gray-800">
-                <option [ngValue]="1">{{ 'dex.common.tier1' | translate }}</option>
-                <option [ngValue]="2">{{ 'dex.common.tier2' | translate }}</option>
-                <option [ngValue]="3">{{ 'dex.common.tier3' | translate }}</option>
-              </select>
-              <p class="mt-1 text-xs text-gray-500">{{ 'dex.deals.termsModal.scopeHint' | translate }}</p>
-            </div>
+            <!-- ⚠️ THE MARKET-SCOPE PICKER IS GONE (V36). It was a live <select> the user chose from
+                 and it had stopped doing ANYTHING: marketScope was removed from the chain, and the
+                 Entity API now ignores the field. A control that silently discards the user's choice is
+                 worse than dead code — it tells them they decided something.
+            
+                 There is ONE book per (asset, venue) and the reach of a deal IS its venue's tier on that
+                 listing, read live at settlement. A per-ticket scope could only ever contradict it. -->
           </div>
 
           <!-- Funding is the single most consequential choice on this form and it is

@@ -671,6 +671,21 @@
         "declinedPill": "Declined",
         "declinedHint": "your regulator declined the last request — you may request it again",
         "withdrawnHint": "last request withdrawn by you"
+      },
+      "straightThrough": {
+        "title": "Straight-Through Transactions",
+        "on": "Enabled",
+        "off": "Disabled",
+        "onHint": "A cash deposit on this service buys units, and a redemption opens a cash-out request, in one step.",
+        "offHint": "Deposits and purchases are separate steps on this service.",
+        "enable": "Enable",
+        "disable": "Disable",
+        "updating": "Updating straight-through mode...",
+        "updateError": "Failed to update straight-through mode.",
+        "confirmEnableTitle": "Enable straight-through transactions?",
+        "confirmEnableMessage": "Operators will be able to deposit-and-buy and sell-and-withdraw in a single step on this service. This is written to the service's on-chain metadata.",
+        "confirmDisableTitle": "Disable straight-through transactions?",
+        "confirmDisableMessage": "The combined deposit+buy and sell+withdraw actions will stop being available on this service. Deposits, purchases and withdrawals remain available separately."
       }
     },
     "add": "Add Service",
@@ -1673,7 +1688,16 @@
         "txPrefix": "Tx: ",
         "withdrawOption": "Withdraw",
         "withheldAbbr": "Withheld",
-        "withholdOption": "Withhold"
+        "withholdOption": "Withhold",
+        "sellWithdraw": "Sell & Withdraw",
+        "depositedAndBoughtTitle": "Deposited and bought",
+        "depositedAndBoughtMessage": "The deposit landed and {{tokens}} token(s) were bought.",
+        "depositedBuyFailedTitle": "Deposited - purchase did not complete",
+        "depositedBuyFailedMessage": "The cash is safely on the subscription's claim, but the purchase failed: {{error}}. You can retry the purchase from the Transactions page.",
+        "sellWithdrawRequestedTitle": "Sold - withdrawal requested",
+        "sellWithdrawRequestedMessage": "{{tokens}} token(s) were redeemed and withdrawal request {{requestId}} is open. No money has moved yet - it moves when the request is fulfilled.",
+        "soldWithdrawFailedTitle": "Sold - withdrawal request not opened",
+        "soldWithdrawFailedMessage": "The units were redeemed and the proceeds are on the subscription's claim, but the withdrawal request failed: {{error}}."
       },
       "currency": "Currency",
       "date": "Date",
@@ -1775,7 +1799,18 @@
       "providerTrxTime": "Provider Trx Time",
       "submit": "Deposit",
       "title": "Credit Deposit",
-      "trxRefPlaceholder": "e.g. payment reference"
+      "trxRefPlaceholder": "e.g. payment reference",
+      "buyWithDeposit": "Buy with deposit",
+      "buyWithDepositHint": "Use the deposited cash to buy units of an asset in the same step.",
+      "asset": "Asset to buy",
+      "noAssets": "No eligible assets",
+      "noAssetsHint": "No credit-settled asset on this service settles in the selected currency.",
+      "currentAsk": "Current ask",
+      "estimatedTokens": "Estimated tokens",
+      "residualCash": "Residual cash on claim",
+      "estimateHint": "Estimate only - the price is resolved again when the purchase runs.",
+      "depositingAndBuying": "Depositing and buying...",
+      "errorSelectAsset": "Select an asset to buy."
     },
     "list": {
       "addSubscription": "Add Subscription",
@@ -1792,6 +1827,27 @@
       },
       "validatorInactive": "Validator Inactive",
       "validatorInactiveTooltip": "The subscription's validator service is inactive or no longer endorsed"
+    },
+    "sellWithdrawModal": {
+      "title": "Sell & Withdraw",
+      "subtitle": "Redeem units and open a cash-out request",
+      "asset": "Asset to sell",
+      "selectAsset": "Select an asset",
+      "noAssetsHint": "No credit-settled asset is available on this service.",
+      "tokens": "Tokens to redeem",
+      "currentBid": "Current bid",
+      "estimatedProceeds": "Estimated proceeds",
+      "estimateHint": "Estimate only - the amount requested is derived from the actual redemption and capped by the free claim.",
+      "instrument": "Payout instrument (hash)",
+      "instrumentPlaceholder": "0x...",
+      "instrumentHint": "The registered payout destination the money is going to, as its hash.",
+      "providerTrxRefNo": "Reference number",
+      "minterOfRecord": "Minter of record",
+      "minterHint": "Where this credit entered the system. Distinct from whoever settles the payout.",
+      "notAPayoutWarning": "This does not pay out. It redeems the units and opens a withdrawal request; the money moves when the request is fulfilled.",
+      "submit": "Sell & Request Withdrawal",
+      "submitting": "Selling and opening the request...",
+      "errorServiceMissing": "This subscription has no token-issuer service."
     }
   },
   "transactions": {
@@ -3701,7 +3757,7 @@
           "settlement": "Settlement"
         },
         "suspendedBanner": "Suspended by the regulator",
-        "suspendedExplain": "A suspension blocks acceptance and the venue’s approval only. Withdraw, decline and expiry still work, so escrow can always be recovered.",
+        "suspendedExplain": "A hold on this deal’s escrow blocks SETTLEMENT — it is enforced wherever the trade would be crossed, not just at acceptance. Withdraw, decline and expiry still work, so escrow can always be recovered.",
         "noReason": "No reason recorded.",
         "liveQuote": "Live quote by",
         "buyer": "Buyer",
@@ -4066,7 +4122,8 @@
     "clearingConfirmPayIn": "Clearing - Confirm pay-in",
     "clearingFundingService": "Clearing - Set funding service",
     "entityEditIdentifiers": "Profile - Edit Entity Identifiers",
-    "serviceElectionSwitch": "Service - Request On-Chain / Off-Chain Election Switch"
+    "serviceElectionSwitch": "Service - Request On-Chain / Off-Chain Election Switch",
+    "serviceStraightThrough": "Service: Straight-Through Transactions"
   },
   "custody": {
     "myServices": {
@@ -4219,7 +4276,8 @@
         "descriptionReserved": "\"description\" is a reserved key — use the Description field above.",
         "duplicateKey": "Duplicate key: {{key}}",
         "identifiersReserved": "\"identifiers\" and \"isin\" are reserved keys — use the Identifiers section on the asset details page.",
-        "mediaReserved": "\"media\" is a reserved key — it is managed automatically from the asset's public documents and images."
+        "mediaReserved": "\"media\" is a reserved key — it is managed automatically from the asset's public documents and images.",
+        "straightThroughReserved": "'straightThrough' is a reserved key managed from the service's Straight-Through Transactions setting."
       },
       "keyPlaceholder": "Key",
       "noFields": "No additional fields.",

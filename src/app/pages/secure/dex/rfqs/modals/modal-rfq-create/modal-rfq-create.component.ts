@@ -23,7 +23,6 @@ export class ModalRfqCreateComponent {
   baseAsset    = signal('');
   side         = signal(1);
   funding      = signal(1);
-  marketScope  = signal(2);   // NOT 1 — a third-party venue can only be paired at tier 2/3
   amount       = signal<number | null>(null);
   ttlHours     = signal(DEFAULT_TTL_HOURS);
   openToAll    = signal(false);
@@ -42,7 +41,6 @@ export class ModalRfqCreateComponent {
       this.baseAsset.set(c.assets[0]?.address ?? '');
       this.side.set(1);
       this.funding.set(1);
-      this.marketScope.set(2);
       this.amount.set(null);
       this.ttlHours.set(DEFAULT_TTL_HOURS);
       this.openToAll.set(false);
@@ -100,7 +98,6 @@ export class ModalRfqCreateComponent {
       baseAsset:    this.baseAsset(),
       side:         Number(this.side()),
       funding:      Number(this.funding()),
-      marketScope:  Number(this.marketScope()),
       amount,
       // Unix SECONDS — the contract's clock. The mirror's expires_at is milliseconds.
       expiresAt:    Math.floor(Date.now() / 1000) + Math.round(hours * 3600),

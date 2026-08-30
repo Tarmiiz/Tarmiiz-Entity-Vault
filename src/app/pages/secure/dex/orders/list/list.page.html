@@ -113,7 +113,7 @@
                 <td class="px-6 py-2">
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || ((o.side === 1 ? 'dex.orders.side.buy' : 'dex.orders.side.sell') | translate) }}</span>
                 </td>
-                <td class="px-6 py-2">{{ o.marketScopeName || ('dex.tierFallback' | translate: { n: o.marketScope }) }}</td>
+                <!-- marketScope RETIRED (V36) — this rendered a blank tier. -->
                 <td class="px-6 py-2">{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
                 <td class="px-6 py-2">{{ fmtAmount(o.amount) }}</td>
                 <td class="px-6 py-2">

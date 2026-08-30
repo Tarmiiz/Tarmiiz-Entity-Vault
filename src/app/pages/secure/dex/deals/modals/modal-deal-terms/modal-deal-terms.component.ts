@@ -26,7 +26,6 @@ export class ModalDealTermsComponent {
   baseAsset    = signal('');
   side         = signal(1);
   funding      = signal(1);
-  marketScope  = signal(2);   // NOT 1 — a third-party venue can only be paired at tier 2/3
   ttlHours     = signal(DEFAULT_TTL_HOURS);
   price        = signal<number | null>(null);
   amount       = signal<number | null>(null);
@@ -51,7 +50,6 @@ export class ModalDealTermsComponent {
         this.baseAsset.set(c.assets?.[0]?.address ?? '');
         this.side.set(1);
         this.funding.set(1);
-        this.marketScope.set(2);
         this.ttlHours.set(DEFAULT_TTL_HOURS);
         this.price.set(null);
         this.amount.set(null);
@@ -121,7 +119,6 @@ export class ModalDealTermsComponent {
       baseAsset:    this.baseAsset(),
       side:         Number(this.side()),
       funding:      Number(this.funding()),
-      marketScope:  Number(this.marketScope()),
       // Unix SECONDS — the contract's clock. The mirror's expires_at is milliseconds;
       // do not confuse the two.
       expiresAt:    Math.floor(Date.now() / 1000) + Math.round(hours * 3600),

@@ -247,7 +247,6 @@ export class ListPage implements OnInit, OnDestroy {
         baseAsset:    result.baseAsset!,
         side:         result.side!,
         funding:      result.funding!,
-        marketScope:  result.marketScope!,
         price:        result.price,
         amount:       result.amount,
         expiresAt:    result.expiresAt!,

@@ -29,7 +29,6 @@
                 <h2 class="text-1xl font-bold text-gray-800">{{ 'dex.trades.details.heading' | translate: { id: t.tradeId } }}</h2>
                 <p class="text-xs text-gray-500 mt-0.5">{{ t.assetName || t.assetSymbol }} <span class="font-mono">{{ t.baseAsset.slice(0,10) }}…</span></p>
               </div>
-              <span class="px-4 py-1.5 text-sm font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ t.marketScopeName || ('dex.tierFallback' | translate: { n: t.marketScope }) }}</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-gray-700 mt-6">

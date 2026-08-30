@@ -58,8 +58,7 @@
                   <p class="text-xs text-gray-500 font-mono break-all">{{ o.baseAsset }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.details.fields.marketScope' | translate }}</p>
-                  <p class="text-base text-gray-700">{{ o.marketScopeName || ('dex.tierFallback' | translate: { n: o.marketScope }) }}</p>
+                  <!-- marketScope RETIRED (V36) — the column is gone, so this rendered a blank tier. -->
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'dex.orders.table.price' | translate }}</p>

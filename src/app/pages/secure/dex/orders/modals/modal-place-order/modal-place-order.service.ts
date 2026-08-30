@@ -5,7 +5,6 @@ export interface PlaceOrderResult {
   dexService: string;
   baseAsset: string;
   side: number;
-  marketScope: number;
   price: string;   // wei string
   amount: string;  // plain integer string
   // Time in force. Unix SECONDS (the chain's + the API's unit), 0 = good-till-cancelled.
