@@ -179,7 +179,7 @@ export class EthersService {
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
         circuitInput,
         "assets/zk/Login.wasm",
-        "assets/zk/Login_final.zkey"
+        "assets/zk/Login_entities.zkey"
       );
 
       // Parse proof for contract
@@ -243,7 +243,7 @@ export class EthersService {
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
         circuitInput,
         'assets/zk/Login.wasm',
-        'assets/zk/Login_final.zkey'
+        'assets/zk/Login_identities.zkey'
       );
       const { a, b, c, input: proofInput } = await ParseProofUtils.parseProof({ proof, publicSignals });
 
