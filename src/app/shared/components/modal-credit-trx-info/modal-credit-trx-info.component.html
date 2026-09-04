@@ -26,7 +26,20 @@
 
           <div class="border-t pt-3">
             <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.dateTime' | translate }}</p>
-            <p>{{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+            <p>
+              {{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}
+              @if (trx.backdated) {
+                <span class="ml-2 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800 align-middle">{{ 'credit.backdated.pill' | translate }}</span>
+              }
+            </p>
+            <!-- ⚠️ VISIBLE TEXT, NOT A TOOLTIP. A regulator who exports or screenshots a list keeps
+                 the pill and loses the hover, so the detail surface has to carry the meaning where
+                 the reader is. It says what the flag DOES mean (a caller-supplied timestamp) and
+                 what it does NOT (that the backdating was authorised), and points at the audit
+                 trail, which is where authorisation actually lives. -->
+            @if (trx.backdated) {
+              <p class="mt-1 text-[11px] leading-snug text-amber-800">{{ 'credit.backdated.detail' | translate }}</p>
+            }
           </div>
           <div class="border-t pt-3">
             <p class="text-xs font-medium text-gray-500">{{ 'credit.trxInfoModal.lastUpdate' | translate }}</p>

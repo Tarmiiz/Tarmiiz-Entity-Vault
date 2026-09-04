@@ -776,7 +776,21 @@
                     } @else {
                       @for (trx of pagedCreditTransactions(); track trx.trxId; let isEven = $even) {
                         <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" [class.row-new]="newCreditTrxIds().has(trx.trxId)" (click)="creditTrxInfoService.show(trx, subscriptionAddress)">
-                          <td class="px-6 py-2">{{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                          <!-- ⚠️ THE BACKDATED PILL SITS WITH THE DATE, DELIBERATELY. It is a statement
+                               about THIS TIMESTAMP — that it was supplied by the caller rather than
+                               taken from block time — and nothing else. It must never be rendered
+                               adjacent to anything that reads as approval (no tick, no "verified",
+                               not in the state column group): the schema's own note warns that a
+                               reader will otherwise conclude the backdating was AUTHORISED, which
+                               this flag cannot tell them. Authorisation lives in the audit trail
+                               (`backdate_grant` / `backdate_revoke`). -->
+                          <td class="px-6 py-2">
+                            {{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}
+                            @if (trx.backdated) {
+                              <span class="ml-2 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800 align-middle"
+                                    [title]="'credit.backdated.tooltip' | translate">{{ 'credit.backdated.pill' | translate }}</span>
+                            }
+                          </td>
                           <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span></td>
                           <td class="px-6 py-2">
                             @if (getCreditTrxDirection(trx); as dir) {

@@ -2126,6 +2126,12 @@
     "backdating": {
       "granted": "Leave empty for a normal deposit dated now. Set a time only to record the payment processor's own transaction time — this service is permitted to backdate.",
       "notGranted": "Leave empty — the deposit is dated now. Recording a different time needs the backdating permission, which this service's regulator has not granted."
+    },
+    "backdated": {
+      "pill": "Backdated",
+      "tooltip": "This row's timestamp was supplied by the caller, not taken from the block. It does NOT indicate the backdating was authorised — see the audit trail.",
+      "detail": "The timestamp on this row was supplied by the caller rather than taken from block time. This does not indicate that the backdating was authorised: authorisation is recorded separately in the audit trail as backdate_grant / backdate_revoke entries.",
+      "exportHeader": "Backdated (caller-supplied timestamp; not an authorisation)"
     }
   },
   "analytics": {

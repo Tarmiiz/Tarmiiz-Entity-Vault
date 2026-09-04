@@ -243,6 +243,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     try {
       const res = await fn();
       if (res?.error) {
+        this.loadingService.hide();
         await this.alertService.show(
           this.translate.instant('alerts.error'), res.error,
           this.translate.instant('alerts.ok'), 'max-w-md', true);
@@ -252,6 +253,7 @@ export class DetailsPage implements OnInit, OnDestroy {
         return false;
       }
       if (res?.requestId) {
+        this.loadingService.hide();
         await this.alertService.show(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),

@@ -1158,6 +1158,10 @@ export class DetailsPage implements OnInit {
       head: [[
         { content: '#' },
         { content: 'Date' },
+        // ⚠️ A PDF has no tooltip either, and it is the artefact most likely to be filed or sent
+        // on. The column is narrow, so the meaning goes in a LEGEND beneath the table rather than
+        // a header that would wrap unreadably — see the note after autoTable.
+        { content: 'Backdated' },
         { content: 'Type' },
         { content: 'Currency' },
         { content: 'Amount', styles: { halign: 'right' } },
@@ -1166,6 +1170,7 @@ export class DetailsPage implements OnInit {
       body: txs.map((t, i) => [
         i + 1,
         this.utils.formatDate(t.startTime),
+        t.backdated ? 'Yes' : 'No',
         t.trxTypeName,
         t.currencySymbol,
         this.utils.formatPrice(t.amount),
@@ -1175,13 +1180,29 @@ export class DetailsPage implements OnInit {
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     applyPdfFooter(doc, { exportedBy: this.authService.userInfo?.name });
+    // The legend the narrow column cannot carry. Without it an exported "Backdated: Yes" reads as
+    // "approved backdating" — the exact misreading the schema comment guards against, in the one
+    // artefact that travels furthest from its context.
+    const afterY = (doc as any).lastAutoTable?.finalY ?? 0;
+    if (afterY) {
+      doc.setFontSize(7);
+      doc.text(
+        'Backdated = the timestamp was supplied by the caller, not taken from block time. It does '
+        + 'NOT indicate the backdating was authorised; authorisation is recorded in the audit trail.',
+        14, afterY + 6, { maxWidth: 180 });
+    }
     doc.save(`subscription_credit_transactions_${stamp}.pdf`);
     this.auditService.logExport('pdf', 'subscription_credit');
   }
 
   exportCreditExcel() {
+    // ⚠️ THE COLUMN HEADER CARRIES THE MEANING, because an export has no tooltip and no help text.
+    // "Backdated" alone in a spreadsheet is exactly the context-free artefact the schema's note
+    // warns about — a reader takes it as "approved backdating". The header states what the flag is
+    // (a caller-supplied timestamp) and what it is not (an authorisation).
     const rows = this.filteredCreditTransactions().map(t => ({
       'Date': this.utils.formatDate(t.startTime),
+      'Backdated (caller-supplied timestamp; not an authorisation)': t.backdated ? 'Yes' : 'No',
       'Type': t.trxTypeName,
       'Currency': t.currencySymbol,
       'Amount': this.utils.roundMoney(t.amount),

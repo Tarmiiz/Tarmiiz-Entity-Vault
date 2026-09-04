@@ -623,6 +623,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     try {
       const res = await call();
       if (res?.requestId) {
+        this.loadingService.hide();
         await this.alertService.show(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
@@ -631,6 +632,7 @@ export class DetailsPage implements OnInit, OnDestroy {
       await this.loadAssets();
     } catch (e) {
       console.error('Fee update failed', e);
+      this.loadingService.hide();
       await this.alertService.show(
         this.translate.instant('alerts.updateFailed'),
         this.translate.instant('dex.venues.details.assetsTable.feeError'));

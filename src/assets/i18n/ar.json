@@ -2126,6 +2126,12 @@
     "backdating": {
       "granted": "اتركه فارغًا للإيداع العادي بتاريخ الآن. حدّد وقتًا فقط لتسجيل وقت معاملة معالج الدفع نفسه — هذه الخدمة مصرّح لها بالتأريخ الرجعي.",
       "notGranted": "اتركه فارغًا — سيُسجَّل الإيداع بتاريخ الآن. تسجيل وقت مختلف يتطلب إذن التأريخ الرجعي، ولم تمنحه الجهة التنظيمية لهذه الخدمة."
+    },
+    "backdated": {
+      "pill": "Backdated",
+      "tooltip": "This row's timestamp was supplied by the caller, not taken from the block. It does NOT indicate the backdating was authorised — see the audit trail.",
+      "detail": "The timestamp on this row was supplied by the caller rather than taken from block time. This does not indicate that the backdating was authorised: authorisation is recorded separately in the audit trail as backdate_grant / backdate_revoke entries.",
+      "exportHeader": "Backdated (caller-supplied timestamp; not an authorisation)"
     }
   },
   "analytics": {

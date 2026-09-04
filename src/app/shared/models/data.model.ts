@@ -1100,7 +1100,17 @@ export class CreditTransaction {
     // External service-provider transaction reference (readable).
     public trxRefNo?: string,
     // IPFS CID of the SP-receipt document owned by the SERVICE template ('' when none).
-    public dataCid?: string
+    public dataCid?: string,
+    /*
+        D6 (Phase 3.10) — this row's `startTime` was SUPPLIED BY THE CALLER, not taken from block
+        time. Mirrored per-row from `CreditProxy.evidenceMarks`, immutable once written.
+
+        ⚠️ IT DOES NOT MEAN THE BACKDATING WAS AUTHORISED, and the schema comment on the column
+        warns explicitly that a reader will conclude otherwise. Authorisation is a separate,
+        time-varying fact recorded in the audit trail (`backdate_grant` / `backdate_revoke`) — so
+        never render this beside anything that reads as approval, and never pair it with a tick.
+    */
+    public backdated?: boolean
   ) {}
 }
 
