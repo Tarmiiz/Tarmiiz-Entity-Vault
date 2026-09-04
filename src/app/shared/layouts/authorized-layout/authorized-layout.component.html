@@ -417,6 +417,18 @@
             </ion-item>
           }
 
+          <!-- admin only: API endpoints for external systems (core page — never gated by a
+               toggle, and deliberately so: this is the page that governs the toggles, and
+               gating it behind one it can itself flip would be a lock whose key is in the box) -->
+          @if(userInfo && userInfo.role == 1) {
+            <ion-item button routerLink="/authorized/settings/api-endpoints" routerDirection="root" (click)="closeMenuOnMobile()">
+              <svg class="w-8 h-8 text-gray-800 dark:text-white mr-2 rtl:mr-0 rtl:ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-5m-6 0 8-8m0 0h-4m4 0v4"/>
+              </svg>
+              <ion-label>{{ 'sidebar.apiEndpoints' | translate }}</ion-label>
+            </ion-item>
+          }
+
           <!-- admin only: external API integrations (core page — never gated by a toggle) -->
           <!-- Temporarily hidden from the admin menu.
           @if(userInfo && userInfo.role == 1) {

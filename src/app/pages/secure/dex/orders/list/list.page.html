@@ -103,12 +103,12 @@
               <td class="px-6 py-2" colspan="12">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (o of pagedOrders(); track o.orderId; let i = $index; let isEven = $even) {
+            @for (o of pagedOrders(); track o.ref; let i = $index; let isEven = $even) {
               <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                   [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
                   (click)="view(o)">
                 <td class="px-6 py-2">{{ i + 1 }}</td>
-                <td class="px-6 py-2 font-mono">#{{ o.orderId }}</td>
+                <td class="px-6 py-2 font-mono" [title]="o.ref">{{ shortRef(o.ref) }}</td>
                 <td class="px-6 py-2">{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
                 <td class="px-6 py-2">
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || ((o.side === 1 ? 'dex.orders.side.buy' : 'dex.orders.side.sell') | translate) }}</span>

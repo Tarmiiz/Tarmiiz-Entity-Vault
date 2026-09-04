@@ -81,14 +81,14 @@
         <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dex.orderBook.bestBid' | translate }}</p>
         @if (bestBid()) {
           <p class="text-xl font-bold text-green-700">{{ fmtPrice(bestBid()!.price) }}</p>
-          <p class="text-xs text-gray-500 font-mono">{{ 'dex.orderBook.orderRef' | translate: { id: bestBid()!.orderId } }}</p>
+          <p class="text-xs text-gray-500 font-mono">{{ 'dex.orderBook.orderRef' | translate: { id: shortRef(bestBid()!.ref) } }}</p>
         } @else { <p class="text-xl font-bold text-gray-400">—</p> }
       </div>
       <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
         <p class="text-xs font-medium text-gray-500 mb-1">{{ 'dex.orderBook.bestAsk' | translate }}</p>
         @if (bestAsk()) {
           <p class="text-xl font-bold text-orange-700">{{ fmtPrice(bestAsk()!.price) }}</p>
-          <p class="text-xs text-gray-500 font-mono">{{ 'dex.orderBook.orderRef' | translate: { id: bestAsk()!.orderId } }}</p>
+          <p class="text-xs text-gray-500 font-mono">{{ 'dex.orderBook.orderRef' | translate: { id: shortRef(bestAsk()!.ref) } }}</p>
         } @else { <p class="text-xl font-bold text-gray-400">—</p> }
       </div>
       <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
@@ -116,16 +116,16 @@
               @if (bids().length === 0) {
                 <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">{{ 'dex.orderBook.noBids' | translate }}</td></tr>
               } @else {
-                @for (b of bids(); track b.orderId; let isEven = $even) {
+                @for (b of bids(); track b.ref; let isEven = $even) {
                   <tr class="border-b hover:bg-gray-100 cursor-pointer"
                       [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                      [class.ring-2]="selectedBuy() === b.orderId" [class.ring-blue-500]="selectedBuy() === b.orderId">
+                      [class.ring-2]="selectedBuy() === b.ref" [class.ring-blue-500]="selectedBuy() === b.ref">
                     <td class="px-3 py-2">
                       @if (isExec()) {
-                        <input type="checkbox" [checked]="selectedBuy() === b.orderId" (change)="selectBuy(b)" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [checked]="selectedBuy() === b.ref" (change)="selectBuy(b)" (click)="$event.stopPropagation()">
                       }
                     </td>
-                    <td class="px-3 py-2 font-mono" (click)="goOrder(b)">#{{ b.orderId }}</td>
+                    <td class="px-3 py-2 font-mono" (click)="goOrder(b)">{{ shortRef(b.ref) }}</td>
                     <td class="px-3 py-2 font-semibold text-green-700" (click)="goOrder(b)">{{ fmtPrice(b.price) }}</td>
                     <td class="px-3 py-2" (click)="goOrder(b)">{{ fmtAmount(b.remaining) }}</td>
                     <td class="px-3 py-2 font-mono" (click)="goOrder(b)">{{ b.subscription.slice(0,10) }}…</td>
@@ -154,16 +154,16 @@
               @if (asks().length === 0) {
                 <tr class="bg-white border-b"><td class="px-3 py-2" colspan="5">{{ 'dex.orderBook.noAsks' | translate }}</td></tr>
               } @else {
-                @for (a of asks(); track a.orderId; let isEven = $even) {
+                @for (a of asks(); track a.ref; let isEven = $even) {
                   <tr class="border-b hover:bg-gray-100 cursor-pointer"
                       [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                      [class.ring-2]="selectedSell() === a.orderId" [class.ring-blue-500]="selectedSell() === a.orderId">
+                      [class.ring-2]="selectedSell() === a.ref" [class.ring-blue-500]="selectedSell() === a.ref">
                     <td class="px-3 py-2">
                       @if (isExec()) {
-                        <input type="checkbox" [checked]="selectedSell() === a.orderId" (change)="selectSell(a)" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [checked]="selectedSell() === a.ref" (change)="selectSell(a)" (click)="$event.stopPropagation()">
                       }
                     </td>
-                    <td class="px-3 py-2 font-mono" (click)="goOrder(a)">#{{ a.orderId }}</td>
+                    <td class="px-3 py-2 font-mono" (click)="goOrder(a)">{{ shortRef(a.ref) }}</td>
                     <td class="px-3 py-2 font-semibold text-orange-700" (click)="goOrder(a)">{{ fmtPrice(a.price) }}</td>
                     <td class="px-3 py-2" (click)="goOrder(a)">{{ fmtAmount(a.remaining) }}</td>
                     <td class="px-3 py-2 font-mono" (click)="goOrder(a)">{{ a.subscription.slice(0,10) }}…</td>

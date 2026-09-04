@@ -41,7 +41,7 @@ export class ListPage implements OnInit, OnDestroy {
   searchParticipant = signal('');
   filterType     = signal<'all' | 'entity' | 'regulator' | 'subscription'>('all');
   filterState    = signal<'all' | '1' | '2' | '3'>('all');
-  unreadOnly     = signal(false);
+  unreadOnly     = signal(true);  // the unread set IS the working set; an inbox that opens on everything buries it
   loadingData    = false;
   refreshing     = signal(false);
   entityAddress  = signal('');
@@ -147,14 +147,18 @@ export class ListPage implements OnInit, OnDestroy {
     this.unreadOnly.set((event.target as HTMLInputElement).checked);
   }
 
+  // Clear returns to the OPENING state, which is Unread — not to "everything". Resetting this
+  // to false would leave Clear as the one control that switches you off the default, with
+  // nothing that gets you back. The imperative toggle write must track it or the switch and
+  // the list disagree.
   clearFilters() {
-    this.unreadOnly.set(false);
+    this.unreadOnly.set(true);
     this.searchTerm.set('');
     this.searchParticipant.set('');
     this.filterType.set('all');
     this.filterState.set('all');
     const toggle = document.getElementById('ToggleMessagesUnread') as HTMLInputElement | null;
-    if (toggle) toggle.checked = false;
+    if (toggle) toggle.checked = true;
     this.threadsPage.set(1);
   }
 

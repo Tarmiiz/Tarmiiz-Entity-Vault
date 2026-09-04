@@ -1,0 +1,94 @@
+<app-header [title]="'sidebar.apiEndpoints' | translate"></app-header>
+
+<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+
+  <!-- Intro card.
+       ⚠️ The copy says "external systems", never "disable endpoint". A disabled endpoint 403s
+       NON-HUMAN principals only — a logged-in Vault user is never affected. Integration routes
+       serve both populations, so wording that promised a hard off-switch would be a promise this
+       page does not keep, and would invite an admin to expect a Vault page to go dark. -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
+    <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'settings.apiEndpoints.title' | translate }}</h2>
+    <p class="text-xs text-gray-600">{{ 'settings.apiEndpoints.description' | translate }}</p>
+    <p class="text-xs text-gray-500 mt-2">
+      {{ 'settings.apiEndpoints.summaryCount' | translate: { total: totalCount(), disabled: disabledCount() } }}
+    </p>
+  </div>
+
+  <!-- Filter. 357 rows across 39 sections makes this mandatory rather than a convenience. -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <input
+      type="text"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+      [placeholder]="'settings.apiEndpoints.filterPlaceholder' | translate"
+      class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+  </div>
+
+  @if (loading()) {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 text-sm text-gray-500">
+      {{ 'common.loadingData' | translate }}
+    </div>
+  } @else if (!filteredSections().length) {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 text-sm text-gray-500">
+      {{ 'settings.apiEndpoints.noMatches' | translate }}
+    </div>
+  }
+
+  <!-- Card per section, in REGISTRY order — never re-sorted client-side. -->
+  @for (sec of filteredSections(); track sec.section) {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
+      <div class="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-700">
+          {{ sectionLabelKey(sec.section) | translate }}
+        </h3>
+      </div>
+
+      <ul class="divide-y divide-gray-200">
+        @for (item of sec.items; track item.key) {
+          <li class="flex flex-col md:flex-row md:items-center gap-2 px-4 py-3">
+            <div class="md:flex-1 min-w-0">
+              <div class="text-sm font-medium text-gray-800">{{ item.summary || item.key }}</div>
+              <div class="text-[11px] font-mono text-gray-500 break-all">
+                {{ item.method }} {{ item.path }}
+              </div>
+              <div class="text-[11px] font-mono text-gray-400 break-all">{{ item.key }}</div>
+            </div>
+
+            <div class="flex items-center gap-3 md:shrink-0">
+              <!-- Only an OVERRIDDEN row offers a reset, so a reader can see at a glance which
+                   switches an admin actually touched. Resetting removes the DECISION; it is not
+                   the same act as enabling. -->
+              @if (item.overridden) {
+                <button
+                  type="button"
+                  (click)="reset(item)"
+                  [disabled]="saving() === item.key"
+                  class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+                  {{ 'settings.apiEndpoints.reset' | translate }}
+                </button>
+              }
+
+              <!-- RTL-aware switch, copied from the app-config page (the menu page's variant is
+                   LTR-only and drifts the knob to the wrong side in Arabic). -->
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  [checked]="item.enabled"
+                  (change)="toggle(item, $any($event.target).checked)"
+                  [disabled]="saving() === item.key"
+                  class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-600 transition-colors relative">
+                  <div class="absolute top-0.5 left-0.5 rtl:left-auto rtl:right-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"
+                    [class.translate-x-5]="item.enabled"
+                    [class.rtl:-translate-x-5]="item.enabled"></div>
+                </div>
+              </label>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+</div>

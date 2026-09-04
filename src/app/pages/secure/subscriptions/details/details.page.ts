@@ -1051,7 +1051,12 @@ export class DetailsPage implements OnInit {
     if (Array.isArray(originVars)) {
       this.originMap = {};
       for (const v of originVars) {
-        if (v?.variableId != null && v?.name) this.originMap[Number(v.variableId)] = v.name;
+        // The API serves `variable_id`; reading only `variableId` left this map permanently
+        // EMPTY, so every row silently fell through to the hardcoded `creditOriginNames`
+        // fallback — which looks correct for the seeded origins and renders `Origin #N` for
+        // anything a chain adds later, defeating the point of reading the vocabulary at all.
+        const id = Number(v?.variableId ?? v?.variable_id);
+        if (Number.isFinite(id) && v?.name) this.originMap[id] = v.name;
       }
     }
 

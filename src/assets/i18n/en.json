@@ -233,7 +233,8 @@
     "dexMemberships": "Memberships",
     "dexDeals": "Negotiated Deals",
     "dexRfqs": "Requests for Quote",
-    "clearing": "Clearing"
+    "clearing": "Clearing",
+    "apiEndpoints": "API Endpoints"
   },
   "login": {
     "title": "Sign In",
@@ -260,6 +261,17 @@
       "proofFailed": "Could not generate the login proof. Please try again.",
       "unexpectedDuringLogin": "An unexpected error occurred during login.",
       "userNotFound": "User not found. Please check your email."
+    },
+    "mfa": {
+      "sent": "For your security, we've emailed a 6-digit code to the address on your account. Enter it below to finish signing in.",
+      "codeLabel": "6-digit code",
+      "verify": "Verify and sign in",
+      "back": "Back to sign-in",
+      "attemptsRemaining": "{{count}} attempt(s) remaining before you'll need to sign in again.",
+      "errors": {
+        "required": "Enter the 6-digit code from your email.",
+        "failed": "That code was not accepted."
+      }
     }
   },
   "claim": {
@@ -573,6 +585,7 @@
         "detachProviderError": "Failed to detach the provider.",
         "editMetadata": "Edit Metadata",
         "editMetadataModalTitle": "Edit Service Metadata",
+        "loadVenueFeeConfigError": "Could not read the current fee configuration, so the editor was not opened — saving from a blank form could have replaced a fee that is already set. Please retry.",
         "removeProviderTitle": "Remove Provider",
         "serviceType": "Service Type",
         "updateCustodianError": "Failed to update the custodian.",
@@ -585,7 +598,8 @@
         "partyLabelPaymentProcessor": "Payment Processor",
         "partyLabelCustodian": "Custodian",
         "partyLabelClearingHouse": "Clearing House",
-        "partyLabelEscrowClearingHouse": "Escrow Clearing House"
+        "partyLabelEscrowClearingHouse": "Escrow Clearing House",
+        "licenses": "Licences"
       },
       "assets": {
         "editVenueFees": "Edit Venue Fees",
@@ -720,7 +734,8 @@
         "validatorOptional": "Validator (optional)",
         "verificationLevel": "Verification Level",
         "visibility": "Visibility",
-        "clearingHouse": "Clearing House"
+        "clearingHouse": "Clearing House",
+        "requestLicenses": "Licence Applications"
       },
       "header": "Add Service",
       "intro": {
@@ -763,7 +778,8 @@
       "clearingHouseNote": "Optional. Attach a central counterparty if cross-entity trades on this service must settle in a netted cycle. Leave as None when this market’s credit is final and every fill should settle immediately.",
       "hints": {
         "paymentProviderAfterCreate": "Attached after creation — a payment provider is attached per currency, once this service has an election for that currency. Use the Election and Service Providers tabs."
-      }
+      },
+      "requestLicensesNote": "Select the licences this service applies for. Each application is submitted to the regulator and confers nothing until approved — a service may hold several, or none."
     },
     "custodianModal": {
       "description": "Select a custodian to attach to this service. A service may hold several — its assets are held by all of them.",
@@ -1068,11 +1084,11 @@
         "showingRecords": "Showing {{showing}} of {{total}} Holders",
         "value": "Value"
       },
-      "registration": {
-        "tab": "Registration",
-        "title": "Registration",
-        "intro": "This asset cannot trade until its regulator approves it. Complete the declaration below, attach any parties your requirements imply, then wait for the decision.",
-        "empty": "No registration record for this asset.",
+      "compliance": {
+        "tab": "Compliance",
+        "title": "Compliance",
+        "intro": "This asset cannot trade until its regulator approves it. Complete the declaration, pin the legal wrapper, attach any parties your requirements imply, then wait for the decision.",
+        "empty": "No compliance record for this asset.",
         "declared": "Awaiting approval",
         "approved": "Approved",
         "rejected": "Rejected",
@@ -1081,14 +1097,13 @@
         "checkProfile": "A compliance profile is declared",
         "checkWrapper": "A legal wrapper document is pinned",
         "checkParties": "Every required role has an accepted party",
-        "declaration": "Declaration",
-        "declarationHint": "The compliance profile and the legal wrapper. Both are required before the regulator can approve, and neither can be changed once it has.",
+        "declarationHint": "What this asset requires of a holder. All of it is optional — leaving a field at 0 or empty is a decision, not an omission, and means \"no restriction\". Nothing here can be changed once the regulator approves.",
         "holderCap": "Holder cap (0 = unlimited)",
         "minTicket": "Minimum ticket",
         "maxTicket": "Maximum ticket (0 = none)",
         "lockupUntil": "Lock-up until",
         "legalWrapper": "Legal wrapper document id",
-        "legalWrapperHint": "The document id of the pinned SPV / prospectus",
+        "legalWrapperHint": "The pinned SPV or prospectus. Pick one of this asset’s documents, or upload a new one without leaving this page.",
         "saveDeclaration": "Save Declaration",
         "composition": "Requirements you compose",
         "compositionHint": "A Custom asset requires nothing by default — you choose. Composing can only ever ADD an obligation, never remove one the model or your jurisdiction imposes. It is FROZEN the moment your regulator approves, so get it right first.",
@@ -1098,11 +1113,9 @@
         "impliedRoles": "Roles this implies",
         "saveComposition": "Save Composition",
         "requirements": "Requirements in force",
-        "requirementsHint": "Resolved through four layers, most specific first: your regulator's override, your composition, the jurisdiction matrix, then the model default. Only rows that apply are listed.",
+        "requirementsHint": "What this asset must satisfy, taken from the class definition your regulator published and resolved on chain through your own composition and any per-asset override. Obligation is what is asked of you; Status is how far you have got. Only rows that apply are listed.",
         "requirement": "Requirement",
         "role": "Role",
-        "state": "State",
-        "source": "Source",
         "composedByUs": "Composed by us",
         "fromPolicy": "Policy / class default",
         "noRequirements": "This asset requires nothing beyond the declaration.",
@@ -1113,8 +1126,6 @@
         "partiesEmpty": "No parties attached.",
         "party": "Party",
         "consent": "Consent",
-        "partyAddress": "Provider service address",
-        "pickRoleOption": "Select a role…",
         "attachParty": "Attach Party",
         "attachPartyHint": "The provider must already be admitted by a regulator for this role, and roles requiring independence cannot be one of your own services.",
         "partyProposedMsg": "Proposed. The party must now accept the role before it counts toward approval.",
@@ -1124,9 +1135,55 @@
         "savedMsg": "Composition updated.",
         "declarationSavedMsg": "Declaration updated.",
         "failedTitle": "Could not save",
-        "nothingToSave": "Fill at least one field before saving.",
-        "badPartyAddress": "Enter a valid 0x address for the provider service.",
-        "pickRole": "Select the role this party will fill."
+        "railInfo": "Info",
+        "railDeclaration": "Declaration",
+        "railDocuments": "Documents",
+        "railParties": "Class parties",
+        "profile": "Compliance profile",
+        "obligation": "Obligation",
+        "status": "Status",
+        "origin": "Origin",
+        "statusSatisfied": "Satisfied",
+        "statusMissing": "Missing",
+        "statusUntracked": "Held off-platform",
+        "fixHere": "Resolve",
+        "baselineOnly": "This asset’s class asks for nothing beyond the legal wrapper. One row here is the complete answer, not a partial one.",
+        "untrackedNote": "Approval checks three things: the profile is declared, the legal wrapper is pinned, and every required role has an accepted party. Rows marked \"Held off-platform\" have no record on this platform, so their evidence is kept and examined outside it.",
+        "claimTopic": "Required claim",
+        "claimTopicNone": "None",
+        "claimTopicHint": "Restricts holders to identities carrying this attestation at the level below. Leave at None to admit any verified holder.",
+        "claimTopicUnknown": "This asset requires a claim topic that is not in the catalogue. It is shown as stored and is preserved when you save — it is not editable here.",
+        "claimLevel": "Minimum claim level",
+        "claimLevelRequired": "A required claim needs a minimum level above 0.",
+        "jurisdictions": "Eligible jurisdictions",
+        "jurisdictionsHint": "Restricts holders to these countries. Leave empty to admit every jurisdiction.",
+        "jurisdictionsAll": "Every jurisdiction is eligible.",
+        "jurisdictionPick": "Select a country…",
+        "chooseDocument": "Choose Document",
+        "noWrapper": "No legal wrapper pinned yet",
+        "untitledDocument": "Untitled document",
+        "wrapperReplaceOnly": "A pinned wrapper can be replaced, but not removed — the platform requires one before approval.",
+        "documentsHint": "This asset’s documents. Upload the legal wrapper and any supporting evidence here, then pin the wrapper from the Declaration tab.",
+        "definition": "Class Definition",
+        "definitionName": "Product",
+        "definitionState": "State",
+        "definitionSupply": "Supply policy",
+        "definitionPriceMode": "Price mode policy",
+        "definitionStandards": "Permitted standards",
+        "definitionDocs": "Documents this definition asks for:",
+        "required": "Required",
+        "optional": "Optional",
+        "independenceWaived": "Independence waived",
+        "docRows": "Required documents",
+        "docRowsHint": "Each row below is a document the regulator requires for this asset. Attach one of the asset’s documents to satisfy it — approval is refused while a required row is unmet. Attaching again replaces the choice.",
+        "docRowsOutstanding": "{{n}} outstanding",
+        "docRowsComplete": "All required documents attached",
+        "docRowRequired": "Required",
+        "docRowOptional": "Optional",
+        "docRowNone": "No document attached",
+        "docRowDocId": "Document #{{id}}",
+        "docRowAttach": "Attach",
+        "docRowReplace": "Replace"
       },
       "holdersAt": {
         "account": "Account",
@@ -1352,19 +1409,27 @@
         "selectRegulatorPlaceholder": "Select a regulator...",
         "selectServicePlaceholder": "Select a service...",
         "selectSupplyModePlaceholder": "Select supply mode...",
-        "supplyModeCustomHint": "Custom is the only class that lets you choose the supply model.",
-        "supplyModeDerivedHint": "Fixed by the asset class — it cannot be changed.",
+        "supplyModeCustomHint": "This class definition leaves the supply model to you.",
+        "supplyModeDerivedHint": "Set by the class definition — it cannot be changed.",
+        "priceModeDerivedHint": "Set by the class definition — it cannot be changed.",
+        "formulaLabel": "Class Definition",
+        "formulaHint": "The product your regulator published. It sets the supply model, price mode, required documents and required parties for this asset.",
+        "selectFormulaPlaceholder": "Select a class definition...",
+        "formulaDerivedHint": "Both are set by the class definition and are permanent once the asset is created.",
+        "regulatorDerivedHint": "The regulator that published the class definition you selected.",
+        "noFormulas": "None of your country’s regulators ({{regulators}}) has published an active class definition yet.",
+        "noFormulasHint": "An asset can only be created under a class definition its regulator has authored and set Active. This is the platform working as intended — ask your regulator to publish one.",
         "serviceCurrencyHeading": "Service & Currency",
         "serviceLabel": "Service",
         "standardHint": "T20 is the general-purpose Tarmiiz fund/RWA standard. T3643 adds ERC-3643 security-token surface (compliance hooks, agents, identity binding). Immutable after creation.",
         "standardLabel": "Standard",
-        "step1Intro": "Select the asset class and price mode.",
+        "step1Intro": "Select the class definition your regulator published — it sets the supply and price model.",
         "step2Intro": "Define the asset's name, symbol, and description.",
         "isinLabel": "ISIN (optional)",
         "isinHint": "Leave blank if the ISIN has not been assigned yet — you can record it from the asset details page at any time.",
         "step3Intro": "Add free-form key/value pairs stored as JSON alongside the description (e.g. share class, inception date). All fields are optional.",
         "step4Intro": "Select which service will host this asset and its denomination currency.",
-        "step5Intro": "Set the governance addresses, regulator, and credit settlement option.",
+        "step5Intro": "Set the governance addresses and credit settlement option.",
         "step6Intro": "Review the details below before creating the asset.",
         "stepProgress": "Step {{current}} of {{total}} — {{label}}",
         "supplyModeLabel": "Supply Mode",
@@ -1377,7 +1442,9 @@
         "useSelf": "Use Self",
         "valuePlaceholder": "Value",
         "assetClassLabel": "Asset Class",
-        "assetClassHint": "The class this asset belongs to. Immutable, and it fixes the supply model."
+        "assetClassHint": "The class this asset belongs to. Immutable, and it fixes the supply model.",
+        "noRegulators": "Could not load your country’s regulators, so no class definitions could be looked up. This is a failure, not an empty result — retry, and report it if it persists.",
+        "formulasLoadFailed": "Could not load class definitions. This is a failure, not an empty result — retry, and report it if it persists."
       }
     },
     "registerExistingModal": {
@@ -1395,7 +1462,11 @@
       "regulatorLabel": "Regulator",
       "standardLabel": "Standard",
       "title": "Register Existing Asset",
-      "tokenTypeLabel": "Token Type"
+      "assetClassLabel": "Base Class",
+      "formulaLabel": "Class Definition",
+      "formulaHint": "Only your regulator’s Active definitions over this asset’s base class are listed.",
+      "selectFormulaPlaceholder": "Select a class definition...",
+      "noFormulas": "This asset’s regulator has published no Active class definition for its base class."
     },
     "addServiceModal": {
       "backToSearch": "Back to search",
@@ -1769,6 +1840,7 @@
       "postalCode": "Postal Code",
       "addressCountry": "Country (Address)",
       "acceptExpired": "Accept expired or missing ID expiry date (recorded for the regulator)",
+      "stillMissing": "Still required for this document type:",
       "organization": "Organization",
       "profession": "Profession",
       "provider": "eKYC Provider",
@@ -2050,7 +2122,11 @@
     "noBalances": "No credit balances",
     "totalCredit": "Total Credit",
     "txLabel": "Tx:",
-    "loadingOverview": "Loading credit overview…"
+    "loadingOverview": "Loading credit overview…",
+    "backdating": {
+      "granted": "Leave empty for a normal deposit dated now. Set a time only to record the payment processor's own transaction time — this service is permitted to backdate.",
+      "notGranted": "Leave empty — the deposit is dated now. Recording a different time needs the backdating permission, which this service's regulator has not granted."
+    }
   },
   "analytics": {
     "title": "Analytics",
@@ -3449,14 +3525,43 @@
       "loadingList": "Loading trades…"
     },
     "venues": {
-      "title": "Venues",
-      "table": {
-        "id": "#",
-        "name": "Name",
-        "service": "Service",
-        "state": "State",
-        "registered": "Registered",
-        "tiers": "Tiers"
+      "contract": {
+        "address": "Address",
+        "artifactHash": "Catalog Match",
+        "bindAction": "Bind",
+        "bindConfirm": "Bind {{address}} as this venue’s contract? The venue will be suspended pending regulator review.",
+        "bindSubtitle": "Verify first: the on-chain checks report a single reason, so this is the only place a wrong pin or a wrong link is named.",
+        "bindTitle": "Bind an Existing Contract",
+        "binding": "Binding…",
+        "book": "Order Book",
+        "capabilities": "Capabilities",
+        "currentSubtitle": "The contract that runs this venue’s book, negotiation and offering surfaces.",
+        "currentTitle": "Bound Contract",
+        "deals": "Negotiation",
+        "deployAction": "Deploy & Bind",
+        "deployConfirm": "Deploy this contract and bind it to the venue? The venue will be suspended pending regulator review.",
+        "deploySubtitle": "Paste LINKED creation code from the venue kit. Deployment runs through the platform deployer — your relay wallet cannot send a creation transaction.",
+        "deployTitle": "Deploy and Bind",
+        "deploying": "Deploying and binding…",
+        "doneTitle": "Contract Updated",
+        "haltFirst": "This venue is live. Pause it before changing its contract — its book must not be running while the contract changes.",
+        "kitSubtitle": "Link your template against these addresses. They become literals in the deployed bytecode and are how the platform recognises a conformant venue.",
+        "kitTitle": "Platform Kit Libraries",
+        "library": "Library",
+        "namePlaceholder": "Label for the permissioning registry (optional)",
+        "noneBound": "No contract is bound. This venue has no order book — best bid and best ask are unavailable, and negotiated actions are refused.",
+        "notPublished": "not published on this chain",
+        "offerings": "Offerings",
+        "template": "Template",
+        "unavailable": "unavailable — missing {{libs}}",
+        "unbindAction": "Unbind",
+        "unbindConfirm": "Unbind this venue’s contract? The venue keeps its central commitment rows but will have no order book — best bid and best ask will stop working.",
+        "unbindTitle": "Unbind Contract",
+        "unbinding": "Unbinding…",
+        "unrecognised": "template unrecognised (no catalog on this chain)",
+        "verifyAction": "Verify",
+        "wouldBind": "This contract would bind.",
+        "wouldNotBind": "This contract would be rejected."
       },
       "createModal": {
         "description": "Register one of your services as a DEX trading venue.",
@@ -3467,7 +3572,13 @@
         "title": "Create Venue",
         "surfaceNotice": "Whether this venue can run a native order book is set automatically from whether its service has a registered payment processor. Its regulator can adjust the licensed surfaces afterwards.",
         "pendingSuffix": "awaiting regulator confirmation",
-        "pendingNotice": "Greyed-out services have declared the Exchange market class, but their regulator has not confirmed it yet. A venue cannot be created until it does."
+        "pendingNotice": "Greyed-out services have declared the Exchange market class, but their regulator has not confirmed it yet. A venue cannot be created until it does.",
+        "settlementMode": "Settlement Mode",
+        "selectSettlementMode": "Select a settlement mode...",
+        "settlementModeSv": "Venue-settled — this venue performs the delivery-versus-payment itself",
+        "settlementModeMv": "Member-settled — books and matching only; escrow sits with a clearing house",
+        "settlementModeHint": "Venue-settled holds and settles its own subscribers' credit. Member-settled holds no client cash: every trader arrives through an approved member brokerage, and the venue must have an escrow clearing house attached before any order can be placed.",
+        "settlementModeWarning": "This cannot be changed after the venue is created. Correcting it means registering a different service."
       },
       "details": {
         "assetsTable": {
@@ -3509,6 +3620,7 @@
         "suspensionReason": "Suspension Reason",
         "tabs": {
           "assets": "Assets",
+          "contract": "Contract",
           "info": "Information",
           "members": "Members",
           "orders": "Orders",
@@ -3568,6 +3680,18 @@
         "submit": "Update",
         "title": "Change Venue State"
       },
+      "surface": {
+        "dex": "DEX (holds client cash)",
+        "exchange": "Exchange (member-routed)"
+      },
+      "table": {
+        "id": "#",
+        "name": "Name",
+        "service": "Service",
+        "state": "State",
+        "registered": "Registered",
+        "tiers": "Tiers"
+      },
       "tier": {
         "approvedTitle": "Tier {{n}} — Approved",
         "notRequested": "Not requested",
@@ -3584,10 +3708,7 @@
         "scopeVenue": "Venue",
         "withScope": "Tier {{n}} — {{scope}}"
       },
-      "surface": {
-        "dex": "DEX (holds client cash)",
-        "exchange": "Exchange (member-routed)"
-      }
+      "title": "Venues"
     },
     "members": {
       "title": "Venue Members",
@@ -4464,6 +4585,20 @@
         "branding": "Branding",
         "shield": "Shield"
       }
+    },
+    "apiEndpoints": {
+      "title": "API Endpoints",
+      "description": "Control what our external systems may drive. Turning an endpoint off blocks automation and integrations only — signed-in Vault users are never affected, so a page you use here will keep working.",
+      "summaryCount": "{{total}} endpoints · {{disabled}} turned off for external systems",
+      "filterPlaceholder": "Filter by name, path or key…",
+      "noMatches": "No endpoints match this filter.",
+      "reset": "Reset",
+      "confirmEnableTitle": "Allow external access?",
+      "confirmEnableMsg": "External systems will be able to call \"{{name}}\".",
+      "confirmDisableTitle": "Block external access?",
+      "confirmDisableMsg": "External systems will no longer be able to call \"{{name}}\". Vault users are not affected.",
+      "confirmResetTitle": "Reset to default?",
+      "confirmResetMsg": "This removes your decision for \"{{name}}\" and returns it to the platform default."
     }
   },
   "auth": {
@@ -4568,6 +4703,7 @@
     "feesBtn": "My Fees",
     "accepting": "Accepting distribution agreement...",
     "savingFees": "Saving fee configuration...",
+    "loadFeesError": "Could not read the current fee configuration, so the editor was not opened — saving from a blank form could have replaced a fee that is already set. Please retry.",
     "acceptTitle": "Accept Distribution",
     "acceptMessage": "Accept distributing {{asset}} through {{service}}? Your service will front redemption payouts from its own liquidity and be reimbursed by the issuer through the obligations ledger.",
     "states": {
@@ -4812,5 +4948,75 @@
       "suspended": "Suspended",
       "removed": "Removed"
     }
+  },
+  "documentPicker": {
+    "title": "Choose a Document",
+    "subtitle": "Pick one of this owner’s documents, or upload a new one.",
+    "filterPlaceholder": "Filter by title or id…",
+    "uploadNew": "Upload New",
+    "empty": "No documents yet.",
+    "emptyUploadHint": "Upload one and it will be selected for you.",
+    "noMatches": "No document matches that filter.",
+    "colTitle": "Title",
+    "colType": "Type",
+    "colCreated": "Created",
+    "colId": "Id",
+    "choose": "Choose"
+  },
+  "partyPicker": {
+    "title": "Choose a {{role}}",
+    "subtitle": "Only providers your regulator has admitted for this role are listed, so every one of them can be attached.",
+    "independenceNote": "This role must be independent, so your own services are not listed.",
+    "filterPlaceholder": "Filter by name or address…",
+    "empty": "Your regulator has admitted no {{role}} yet.",
+    "emptyHint": "A provider must be registered and admitted for this role before it can be attached.",
+    "noMatches": "No provider matches that filter.",
+    "colName": "Name",
+    "colAddress": "Address",
+    "colSource": "Source",
+    "sourceOwned": "Own regulator",
+    "sourceEndorsed": "Endorsed",
+    "choose": "Propose"
+  },
+  "apiEndpointSections": {
+    "analytics": "Analytics",
+    "appConfig": "App Config",
+    "approvals": "Approvals",
+    "assetDocuments": "Asset Documents",
+    "assets": "Assets",
+    "audit": "Audit",
+    "clearing": "Clearing",
+    "connect": "Connect",
+    "credit": "Credit",
+    "custody": "Custody",
+    "dex": "DEX",
+    "directory": "Directory",
+    "distribution": "Distribution",
+    "distributions": "Distributions",
+    "documents": "Documents",
+    "encryptionKeys": "Encryption Keys",
+    "fees": "Fees",
+    "global": "Global",
+    "integrations": "Integrations",
+    "ipfs": "IPFS",
+    "logs": "Logs",
+    "menuConfig": "Menu Config",
+    "onboarding": "Onboarding",
+    "regulatorSubmissions": "Regulator Submissions",
+    "serviceDocuments": "Service Documents",
+    "serviceProviders": "Service Providers",
+    "services": "Services",
+    "sessions": "Sessions",
+    "settingsBackup": "Settings Backup",
+    "settlements": "Settlements",
+    "signerKeys": "Signer Keys",
+    "stats": "Stats",
+    "subscriptionDocuments": "Subscription Documents",
+    "subscriptions": "Subscriptions",
+    "sync": "Sync",
+    "transactions": "Transactions",
+    "userGroups": "User Groups",
+    "vaultCore": "Vault Core",
+    "vaultUsers": "Vault Users"
   }
 }

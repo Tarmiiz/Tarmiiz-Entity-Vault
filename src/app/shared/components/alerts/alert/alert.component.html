@@ -12,7 +12,12 @@
             {{ alertService.title() }}
           </h3>
           <div class="mt-2">
-            <p class="text-sm text-gray-600 whitespace-pre-line break-all">
+            <!-- ⚠️ `break-words`, NOT `break-all`. `break-all` breaks MID-WORD, so ordinary prose
+       renders as "the venue is now SUSPENDED pending regulat / or review" — measured on the
+       Phase 16 bind notice 2026-09-01. `overflow-wrap: break-word` still breaks an
+       unbreakable token (an address, a hash, a bare CID) when it would otherwise overflow,
+       which is the case `break-all` was reached for, but leaves real words alone. -->
+  <p class="text-sm text-gray-600 whitespace-pre-line break-words">
               {{ alertService.message() }}
             </p>
           </div>

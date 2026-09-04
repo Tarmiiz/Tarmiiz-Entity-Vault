@@ -64,7 +64,15 @@ export class ModalAssetAddServiceComponent {
       const resp = await this.apiService.vaultGetServicesOwn(0, 200);
       const attached = new Set(this.addServiceModal.currentServices().map(a => a.toLowerCase()));
       const all = ((resp?.services || []) as any[])
-        .filter(s => Number(s.service_type ?? s.serviceType) === 1)
+        // ⚠️ WAS `service_type === 1` (Phase 28 step (e)). That column is GONE from
+        // `services_view`, so the old test would have read `Number(undefined) === 1` —
+        // NaN, always false — and emptied this picker SILENTLY. Token-issuer now means
+        // holding an ACTIVE Token Issuer licence (class 27).
+        //
+        // 🔴 EMPTY UNTIL THE LICENCE READ ROUTE LANDS (licensing lane): `licenses` is
+        // populated by nothing yet, so this picker is empty either way TODAY. The
+        // difference is that it now fails for a stated reason rather than by accident.
+        .filter((s: any) => ((s.licenses ?? []) as number[]).includes(27))
         .filter(s => !attached.has((s.address || '').toLowerCase()));
       const filtered = q
         ? all.filter(s =>

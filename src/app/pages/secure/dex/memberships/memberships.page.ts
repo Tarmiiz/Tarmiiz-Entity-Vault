@@ -117,7 +117,15 @@ export class MembershipsPage implements OnInit, OnDestroy {
       // out and an empty picker, which is indistinguishable from "you own no
       // eligible service". Same defensive form as modal-asset-add-service.
       this.ownServices.set(
-        (services?.services ?? []).filter((x: any) => Number(x.service_type ?? x.serviceType) === 1));
+        // ⚠️ WAS `service_type === 1` (Phase 28 step (e)). That column is GONE from
+        // `services_view`, so the old test would have read `Number(undefined) === 1` —
+        // NaN, always false — and emptied this picker SILENTLY. Token-issuer now means
+        // holding an ACTIVE Token Issuer licence (class 27).
+        //
+        // 🔴 EMPTY UNTIL THE LICENCE READ ROUTE LANDS (licensing lane): `licenses` is
+        // populated by nothing yet, so this picker is empty either way TODAY. The
+        // difference is that it now fails for a stated reason rather than by accident.
+        (services?.services ?? []).filter((x: any) => ((x.licenses ?? []) as number[]).includes(27)));
     } finally { this.loadingService.hide(); }
     this.requestModalOpen.set(true);
   }

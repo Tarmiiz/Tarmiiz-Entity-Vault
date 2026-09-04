@@ -233,7 +233,8 @@
     "dexMemberships": "العضويات",
     "dexDeals": "الصفقات التفاوضية",
     "dexRfqs": "طلبات التسعير",
-    "clearing": "المقاصة"
+    "clearing": "المقاصة",
+    "apiEndpoints": "API Endpoints"
   },
   "login": {
     "title": "تسجيل الدخول",
@@ -260,6 +261,17 @@
       "proofFailed": "تعذّر توليد إثبات تسجيل الدخول. حاول مرة أخرى.",
       "unexpectedDuringLogin": "حدث خطأ غير متوقع أثناء تسجيل الدخول.",
       "userNotFound": "المستخدم غير موجود. يرجى التحقق من البريد الإلكتروني."
+    },
+    "mfa": {
+      "sent": "For your security, we've emailed a 6-digit code to the address on your account. Enter it below to finish signing in.",
+      "codeLabel": "6-digit code",
+      "verify": "Verify and sign in",
+      "back": "Back to sign-in",
+      "attemptsRemaining": "{{count}} attempt(s) remaining before you'll need to sign in again.",
+      "errors": {
+        "required": "Enter the 6-digit code from your email.",
+        "failed": "That code was not accepted."
+      }
     }
   },
   "claim": {
@@ -573,6 +585,7 @@
         "detachProviderError": "فشل فصل مزود الخدمة.",
         "editMetadata": "تعديل البيانات الوصفية",
         "editMetadataModalTitle": "تعديل البيانات الوصفية للخدمة",
+        "loadVenueFeeConfigError": "تعذّرت قراءة إعدادات الرسوم الحالية، لذلك لم يُفتح المحرر — فالحفظ من نموذج فارغ قد يستبدل رسومًا مضبوطة بالفعل. يرجى المحاولة مرة أخرى.",
         "removeProviderTitle": "إزالة مزود الخدمة",
         "serviceType": "نوع الخدمة",
         "updateCustodianError": "فشل تحديث أمين الحفظ.",
@@ -585,7 +598,8 @@
         "partyLabelPaymentProcessor": "معالج الدفع",
         "partyLabelCustodian": "أمين الحفظ",
         "partyLabelClearingHouse": "غرفة المقاصة",
-        "partyLabelEscrowClearingHouse": "غرفة مقاصة الضمان"
+        "partyLabelEscrowClearingHouse": "غرفة مقاصة الضمان",
+        "licenses": "التراخيص"
       },
       "assets": {
         "editVenueFees": "تعديل رسوم السوق",
@@ -720,7 +734,8 @@
         "validatorOptional": "المُحقق (اختياري)",
         "verificationLevel": "مستوى التحقق",
         "visibility": "الظهور",
-        "clearingHouse": "غرفة المقاصة"
+        "clearingHouse": "غرفة المقاصة",
+        "requestLicenses": "طلبات الترخيص"
       },
       "header": "إضافة خدمة",
       "intro": {
@@ -763,7 +778,8 @@
       "clearingHouseNote": "اختياري. اربط طرفًا مقابلًا مركزيًا إذا كان يجب تسوية الصفقات بين الجهات ضمن دورة مقاصة. اتركه “بدون” عندما يكون ائتمان هذا السوق نهائيًا وتُسوَّى كل صفقة فورًا.",
       "hints": {
         "paymentProviderAfterCreate": "يُرفق بعد الإنشاء — يُرفق مزود الدفع لكل عملة بعد تحديد اختيار الخدمة لتلك العملة. استخدم تبويبي الاختيار ومزودي الخدمة."
-      }
+      },
+      "requestLicensesNote": "اختر التراخيص التي تتقدم بها هذه الخدمة. يُقدَّم كل طلب إلى الجهة الرقابية ولا يمنح أي صلاحية حتى تتم الموافقة عليه — وقد تحمل الخدمة عدة تراخيص أو لا تحمل أياً منها."
     },
     "custodianModal": {
       "description": "اختر أمين حفظ لربطه بهذه الخدمة. يمكن للخدمة أن ترتبط بعدة أمناء حفظ — وتُحفظ أصولها لديهم جميعًا.",
@@ -1068,11 +1084,11 @@
         "showingRecords": "عرض {{showing}} من {{total}} من الحائزين",
         "value": "القيمة"
       },
-      "registration": {
-        "tab": "التسجيل",
-        "title": "التسجيل",
-        "intro": "لا يمكن تداول هذا الأصل حتى تعتمده جهته التنظيمية. أكمل الإقرار أدناه، وأرفق الأطراف التي تستلزمها متطلباتك، ثم انتظر القرار.",
-        "empty": "لا يوجد سجل تسجيل لهذا الأصل.",
+      "compliance": {
+        "tab": "الامتثال",
+        "title": "الامتثال",
+        "intro": "لا يمكن تداول هذا الأصل حتى تعتمده جهته التنظيمية. أكمل الإقرار، وثبّت الغلاف القانوني، وأرفق الأطراف التي تستلزمها متطلباتك، ثم انتظر القرار.",
+        "empty": "لا يوجد سجل امتثال لهذا الأصل.",
         "declared": "بانتظار الاعتماد",
         "approved": "معتمد",
         "rejected": "مرفوض",
@@ -1081,14 +1097,13 @@
         "checkProfile": "تم إعلان ملف الامتثال",
         "checkWrapper": "تم تثبيت مستند الغلاف القانوني",
         "checkParties": "كل دور مطلوب يشغله طرف قَبِل الدور",
-        "declaration": "الإقرار",
-        "declarationHint": "ملف الامتثال والغلاف القانوني. كلاهما مطلوب قبل أن تتمكن الجهة التنظيمية من الاعتماد، ولا يمكن تغيير أي منهما بعده.",
+        "declarationHint": "ما يشترطه هذا الأصل على الحائز. جميعه اختياري — ترك الحقل عند 0 أو فارغاً قرار وليس إغفالاً، ومعناه «بلا قيد». ولا يمكن تغيير شيء منه بعد اعتماد الجهة التنظيمية.",
         "holderCap": "حد عدد الحائزين (0 = بلا حد)",
         "minTicket": "الحد الأدنى للصفقة",
         "maxTicket": "الحد الأقصى للصفقة (0 = لا شيء)",
         "lockupUntil": "فترة الحظر حتى",
         "legalWrapper": "معرّف مستند الغلاف القانوني",
-        "legalWrapperHint": "معرّف المستند المثبّت للنشرة أو الكيان ذي الغرض الخاص",
+        "legalWrapperHint": "النشرة أو الكيان ذو الغرض الخاص المثبّت. اختر أحد مستندات هذا الأصل، أو ارفع مستنداً جديداً دون مغادرة الصفحة.",
         "saveDeclaration": "حفظ الإقرار",
         "composition": "المتطلبات التي تضعها",
         "compositionHint": "الأصل المخصص لا يتطلب شيئاً افتراضياً — أنت من يختار. التركيب لا يمكنه إلا الإضافة، ولا يزيل أبداً التزاماً يفرضه النموذج أو اختصاصك. ويُجمَّد فور اعتماد جهتك التنظيمية، فاحرص على ضبطه أولاً.",
@@ -1098,11 +1113,9 @@
         "impliedRoles": "الأدوار التي يستلزمها",
         "saveComposition": "حفظ التركيب",
         "requirements": "المتطلبات السارية",
-        "requirementsHint": "تُحسم عبر أربع طبقات، الأكثر تحديداً أولاً: تجاوز جهتك التنظيمية، ثم تركيبك، ثم مصفوفة الاختصاص، ثم الافتراضي. تُعرض الصفوف السارية فقط.",
+        "requirementsHint": "ما يجب أن يستوفيه هذا الأصل، مأخوذًا من تعريف الفئة الذي نشرته جهتك التنظيمية ومُحتسبًا على السلسلة عبر تركيبتك وأي استثناء خاص بالأصل. \"الالتزام\" هو المطلوب منك، و\"الحالة\" هي مدى إنجازك. تُعرض فقط البنود المنطبقة.",
         "requirement": "المتطلب",
         "role": "الدور",
-        "state": "الحالة",
-        "source": "المصدر",
         "composedByUs": "من تركيبنا",
         "fromPolicy": "السياسة / الافتراضي",
         "noRequirements": "لا يتطلب هذا الأصل شيئاً بخلاف الإقرار.",
@@ -1113,8 +1126,6 @@
         "partiesEmpty": "لا توجد أطراف مرتبطة.",
         "party": "الطرف",
         "consent": "القبول",
-        "partyAddress": "عنوان خدمة المزوّد",
-        "pickRoleOption": "اختر دوراً…",
         "attachParty": "إرفاق الطرف",
         "attachPartyHint": "يجب أن تكون الجهة التنظيمية قد اعتمدت المزوّد لهذا الدور مسبقاً، والأدوار التي تستلزم الاستقلالية لا يمكن أن تشغلها إحدى خدماتك.",
         "partyProposedMsg": "تم الترشيح. على الطرف الآن قبول الدور قبل أن يُحتسب للاعتماد.",
@@ -1124,9 +1135,55 @@
         "savedMsg": "تم تحديث التركيب.",
         "declarationSavedMsg": "تم تحديث الإقرار.",
         "failedTitle": "تعذّر الحفظ",
-        "nothingToSave": "املأ حقلاً واحداً على الأقل قبل الحفظ.",
-        "badPartyAddress": "أدخل عنوان 0x صالحاً لخدمة المزوّد.",
-        "pickRole": "اختر الدور الذي سيشغله هذا الطرف."
+        "railInfo": "نظرة عامة",
+        "railDeclaration": "الإقرار",
+        "railDocuments": "المستندات",
+        "railParties": "أطراف الفئة",
+        "profile": "ملف الامتثال",
+        "obligation": "الإلزام",
+        "status": "الحالة",
+        "origin": "المصدر",
+        "statusSatisfied": "مستوفى",
+        "statusMissing": "ناقص",
+        "statusUntracked": "محفوظ خارج المنصة",
+        "fixHere": "معالجة",
+        "baselineOnly": "فئة هذا الأصل لا تطلب شيئاً بخلاف الغلاف القانوني. صف واحد هنا هو الجواب الكامل، وليس جواباً ناقصاً.",
+        "untrackedNote": "يتحقق الاعتماد من ثلاثة أمور: إعلان الملف، وتثبيت الغلاف القانوني، وأن يشغل كل دور مطلوب طرف قبِله. الصفوف الموسومة ب«محفوظ خارج المنصة» لا سجل لها على هذه المنصة، فتُحفظ أدلتها وتُفحص خارجها.",
+        "claimTopic": "الإقرار المطلوب",
+        "claimTopicNone": "لا شيء",
+        "claimTopicHint": "يقصر الحيازة على الهويات الحاملة لهذا الإقرار بالمستوى أدناه. اتركه «لا شيء» لقبول أي حائز موثّق.",
+        "claimTopicUnknown": "يشترط هذا الأصل إقراراً غير مدرج في القائمة. يُعرض كما هو مخزّن ويُحفظ عند الحفظ — ولا يمكن تعديله هنا.",
+        "claimLevel": "الحد الأدنى لمستوى الإقرار",
+        "claimLevelRequired": "الإقرار المطلوب يحتاج مستوى أدنى أكبر من 0.",
+        "jurisdictions": "الاختصاصات المؤهلة",
+        "jurisdictionsHint": "يقصر الحيازة على هذه الدول. اتركه فارغاً لقبول كل الاختصاصات.",
+        "jurisdictionsAll": "كل الاختصاصات مؤهلة.",
+        "jurisdictionPick": "اختر دولة…",
+        "chooseDocument": "اختر مستنداً",
+        "noWrapper": "لم يُثبّت غلاف قانوني بعد",
+        "untitledDocument": "مستند بلا عنوان",
+        "wrapperReplaceOnly": "يمكن استبدال الغلاف المثبّت ولكن لا يمكن إزالته — فالمنصة تشترط وجوده قبل الاعتماد.",
+        "documentsHint": "مستندات هذا الأصل. ارفع هنا الغلاف القانوني وأي أدلة داعمة، ثم ثبّت الغلاف من تبويب الإقرار.",
+        "definition": "تعريف الفئة",
+        "definitionName": "المنتج",
+        "definitionState": "الحالة",
+        "definitionSupply": "سياسة الإصدار",
+        "definitionPriceMode": "سياسة نمط التسعير",
+        "definitionStandards": "المعايير المسموح بها",
+        "definitionDocs": "المستندات التي يطلبها هذا التعريف:",
+        "required": "مطلوب",
+        "optional": "اختياري",
+        "independenceWaived": "تم التنازل عن الاستقلالية",
+        "docRows": "Required documents",
+        "docRowsHint": "Each row below is a document the regulator requires for this asset. Attach one of the asset’s documents to satisfy it — approval is refused while a required row is unmet. Attaching again replaces the choice.",
+        "docRowsOutstanding": "{{n}} outstanding",
+        "docRowsComplete": "All required documents attached",
+        "docRowRequired": "Required",
+        "docRowOptional": "Optional",
+        "docRowNone": "No document attached",
+        "docRowDocId": "Document #{{id}}",
+        "docRowAttach": "Attach",
+        "docRowReplace": "Replace"
       },
       "holdersAt": {
         "account": "الحساب",
@@ -1352,19 +1409,27 @@
         "selectRegulatorPlaceholder": "اختر جهة تنظيمية...",
         "selectServicePlaceholder": "اختر خدمة...",
         "selectSupplyModePlaceholder": "اختر نمط الإصدار...",
-        "supplyModeCustomHint": "الفئة المخصصة هي الوحيدة التي تتيح لك اختيار نمط الإصدار.",
-        "supplyModeDerivedHint": "محدد بواسطة فئة الأصل ولا يمكن تغييره.",
+        "supplyModeCustomHint": "يترك تعريف الفئة هذا نمط الإصدار لك.",
+        "supplyModeDerivedHint": "محدد بواسطة تعريف الفئة ولا يمكن تغييره.",
+        "priceModeDerivedHint": "محدد بواسطة تعريف الفئة ولا يمكن تغييره.",
+        "formulaLabel": "تعريف الفئة",
+        "formulaHint": "المنتج الذي نشرته جهتك التنظيمية. يحدد نمط الإصدار، ونمط التسعير، والمستندات والأطراف المطلوبة لهذا الأصل.",
+        "selectFormulaPlaceholder": "اختر تعريف فئة...",
+        "formulaDerivedHint": "كلاهما محدد بواسطة تعريف الفئة، وهما دائمان بعد إنشاء الأصل.",
+        "regulatorDerivedHint": "الجهة التنظيمية التي نشرت تعريف الفئة الذي اخترته.",
+        "noFormulas": "لم تنشر أي من الجهات التنظيمية في بلدك ({{regulators}}) تعريف فئة نشطًا بعد.",
+        "noFormulasHint": "لا يمكن إنشاء أصل إلا ضمن تعريف فئة أنشأته جهته التنظيمية وفعّلته. هذا هو السلوك المتوقع — اطلب من جهتك التنظيمية نشر تعريف.",
         "serviceCurrencyHeading": "الخدمة والعملة",
         "serviceLabel": "الخدمة",
         "standardHint": "T20 هو معيار Tarmiiz العام للصناديق/الأصول الواقعية. أما T3643 فيضيف واجهة رمز الأمان وفق معيار ERC-3643 (آليات الامتثال، الوكلاء، ربط الهوية). غير قابل للتغيير بعد الإنشاء.",
         "standardLabel": "المعيار",
-        "step1Intro": "اختر فئة الأصل ونمط التسعير.",
+        "step1Intro": "اختر تعريف الفئة الذي نشرته جهتك التنظيمية — فهو يحدد نمط الإصدار والتسعير.",
         "step2Intro": "حدّد اسم الأصل ورمزه ووصفه.",
         "isinLabel": "رقم ISIN (اختياري)",
         "isinHint": "اتركه فارغًا إذا لم يُخصَّص رقم ISIN بعد — يمكنك تسجيله من صفحة تفاصيل الأصل في أي وقت.",
         "step3Intro": "أضف أزواج مفتاح/قيمة حرة تُخزَّن بصيغة JSON إلى جانب الوصف (مثل فئة الحصة، تاريخ الإنشاء). جميع الحقول اختيارية.",
         "step4Intro": "اختر الخدمة التي ستستضيف هذا الأصل وعملة تسعيره.",
-        "step5Intro": "حدّد عناوين الحوكمة، والجهة التنظيمية، وخيار تسوية الرصيد.",
+        "step5Intro": "حدّد عناوين الحوكمة وخيار تسوية الرصيد.",
         "step6Intro": "راجع التفاصيل أدناه قبل إنشاء الأصل.",
         "stepProgress": "الخطوة {{current}} من {{total}} — {{label}}",
         "supplyModeLabel": "نمط الإصدار",
@@ -1377,7 +1442,9 @@
         "useSelf": "استخدام حسابي",
         "valuePlaceholder": "القيمة",
         "assetClassLabel": "فئة الأصل",
-        "assetClassHint": "فئة الأصل وفق تصنيف A1. غير قابلة للتغيير، وتحدد نموذج العرض."
+        "assetClassHint": "فئة الأصل وفق تصنيف A1. غير قابلة للتغيير، وتحدد نموذج العرض.",
+        "noRegulators": "تعذر تحميل الجهات التنظيمية في بلدك، لذلك لم يتم البحث عن تعريفات الفئات. هذا خطأ وليس نتيجة فارغة — أعد المحاولة، وأبلِغ إن استمر.",
+        "formulasLoadFailed": "تعذر تحميل تعريفات الفئات. هذا خطأ وليس نتيجة فارغة — أعد المحاولة، وأبلِغ إن استمر."
       }
     },
     "registerExistingModal": {
@@ -1395,7 +1462,11 @@
       "regulatorLabel": "الجهة التنظيمية",
       "standardLabel": "المعيار",
       "title": "تسجيل أصل موجود",
-      "tokenTypeLabel": "نوع الرمز"
+      "assetClassLabel": "الفئة الأساسية",
+      "formulaLabel": "تعريف الفئة",
+      "formulaHint": "تُعرض فقط التعريفات النشطة لجهتك التنظيمية على الفئة الأساسية لهذا الأصل.",
+      "selectFormulaPlaceholder": "اختر تعريف فئة...",
+      "noFormulas": "لم تنشر الجهة التنظيمية لهذا الأصل أي تعريف فئة نشط لفئته الأساسية."
     },
     "addServiceModal": {
       "backToSearch": "العودة إلى البحث",
@@ -1769,6 +1840,7 @@
       "postalCode": "الرمز البريدي",
       "addressCountry": "الدولة (العنوان)",
       "acceptExpired": "قبول وثيقة منتهية أو بدون تاريخ انتهاء (يُسجَّل للجهة الرقابية)",
+      "stillMissing": "لا يزال مطلوبًا لهذا النوع من الوثائق:",
       "organization": "مؤسسة",
       "profession": "المهنة",
       "provider": "مزود eKYC",
@@ -2050,7 +2122,11 @@
     "noBalances": "لا توجد أرصدة",
     "totalCredit": "إجمالي الرصيد",
     "txLabel": "المعاملة:",
-    "loadingOverview": "جارٍ تحميل نظرة عامة على الرصيد…"
+    "loadingOverview": "جارٍ تحميل نظرة عامة على الرصيد…",
+    "backdating": {
+      "granted": "اتركه فارغًا للإيداع العادي بتاريخ الآن. حدّد وقتًا فقط لتسجيل وقت معاملة معالج الدفع نفسه — هذه الخدمة مصرّح لها بالتأريخ الرجعي.",
+      "notGranted": "اتركه فارغًا — سيُسجَّل الإيداع بتاريخ الآن. تسجيل وقت مختلف يتطلب إذن التأريخ الرجعي، ولم تمنحه الجهة التنظيمية لهذه الخدمة."
+    }
   },
   "analytics": {
     "title": "التحليلات",
@@ -3449,14 +3525,43 @@
       "loadingList": "جارٍ تحميل الصفقات…"
     },
     "venues": {
-      "title": "الأسواق",
-      "table": {
-        "id": "#",
-        "name": "الاسم",
-        "service": "الخدمة",
-        "state": "الحالة",
-        "registered": "تاريخ التسجيل",
-        "tiers": "المستويات"
+      "contract": {
+        "address": "العنوان",
+        "artifactHash": "مطابقة الفهرس",
+        "bindAction": "ربط",
+        "bindConfirm": "ربط {{address}} كعقد لهذه المنصة؟ ستُعلق المنصة بانتظار مراجعة الجهة الرقابية.",
+        "bindSubtitle": "تحقق أولاً: الفحوصات على الشبكة تعيد سببًا واحدًا فقط.",
+        "bindTitle": "ربط عقد قائم",
+        "binding": "جارٍ الربط…",
+        "book": "دفتر الأوامر",
+        "capabilities": "الإمكانات",
+        "currentSubtitle": "العقد الذي يدير دفتر الأوامر والتفاوض والطروحات لهذه المنصة.",
+        "currentTitle": "العقد المرتبط",
+        "deals": "التفاوض",
+        "deployAction": "نشر وربط",
+        "deployConfirm": "نشر هذا العقد وربطه بالمنصة؟ ستُعلق المنصة بانتظار مراجعة الجهة الرقابية.",
+        "deploySubtitle": "الصق كود الإنشاء بعد ربطه بالمكتبات. يتم النشر عبر ناشر المنصة.",
+        "deployTitle": "نشر وربط",
+        "deploying": "جارٍ النشر والربط…",
+        "doneTitle": "تم تحديث العقد",
+        "haltFirst": "هذه المنصة نشطة. أوقفها مؤقتًا قبل تغيير عقدها.",
+        "kitSubtitle": "اربط قالبك بهذه العناوين. تصبح جزءًا من الكود المنشور وهي طريقة التعرف على المنصة المطابقة.",
+        "kitTitle": "مكتبات المنصة",
+        "library": "المكتبة",
+        "namePlaceholder": "اسم للسجل (اختياري)",
+        "noneBound": "لا يوجد عقد مرتبط. لا يوجد دفتر أوامر لهذه المنصة، وسيتم رفض إجراءات التفاوض.",
+        "notPublished": "غير منشورة على هذه الشبكة",
+        "offerings": "الطروحات",
+        "template": "القالب",
+        "unavailable": "غير متاح — ينقصه {{libs}}",
+        "unbindAction": "إلغاء الربط",
+        "unbindConfirm": "إلغاء ربط عقد هذه المنصة؟ لن يكون لها دفتر أوامر.",
+        "unbindTitle": "إلغاء ربط العقد",
+        "unbinding": "جارٍ إلغاء الربط…",
+        "unrecognised": "قالب غير معروف (لا يوجد فهرس على هذه الشبكة)",
+        "verifyAction": "تحقق",
+        "wouldBind": "سيتم قبول هذا العقد.",
+        "wouldNotBind": "سيتم رفض هذا العقد."
       },
       "createModal": {
         "description": "سجّل إحدى خدماتك كسوق تداول في البورصة.",
@@ -3467,7 +3572,13 @@
         "title": "إنشاء سوق",
         "surfaceNotice": "يُحدَّد تلقائيًا ما إذا كانت هذه المنصة تستطيع تشغيل دفتر أوامر مباشر بناءً على وجود مُعالج مدفوعات مسجّل لخدمتها، ويمكن للجهة التنظيمية تعديل الأسطح المرخّصة لاحقًا.",
         "pendingSuffix": "في انتظار تأكيد الجهة التنظيمية",
-        "pendingNotice": "الخدمات المعطّلة أعلنت فئة السوق (بورصة) لكن الجهة التنظيمية لم تؤكّدها بعد. لا يمكن إنشاء منصة تداول قبل ذلك."
+        "pendingNotice": "الخدمات المعطّلة أعلنت فئة السوق (بورصة) لكن الجهة التنظيمية لم تؤكّدها بعد. لا يمكن إنشاء منصة تداول قبل ذلك.",
+        "settlementMode": "نمط التسوية",
+        "selectSettlementMode": "اختر نمط التسوية...",
+        "settlementModeSv": "تسوية عبر السوق — تنفّذ هذه المنصة التسليم مقابل الدفع بنفسها",
+        "settlementModeMv": "تسوية عبر الأعضاء — دفاتر ومطابقة فقط؛ ويُحتفظ بالضمان لدى غرفة مقاصة",
+        "settlementModeHint": "في نمط التسوية عبر السوق تحتفظ المنصة برصيد مشتركيها وتسوّيه بنفسها. أما التسوية عبر الأعضاء فلا تحتفظ فيها المنصة بأي أموال للعملاء: يصل كل متداول عبر وسيط عضو معتمد، ويجب أن تكون غرفة مقاصة الضمان مرتبطة بالخدمة قبل إمكانية تقديم أي أمر.",
+        "settlementModeWarning": "لا يمكن تغيير هذا بعد إنشاء السوق. تصحيحه يستلزم تسجيل خدمة أخرى."
       },
       "details": {
         "assetsTable": {
@@ -3509,6 +3620,7 @@
         "suspensionReason": "سبب الإيقاف",
         "tabs": {
           "assets": "الأصول",
+          "contract": "العقد",
           "info": "المعلومات",
           "members": "الأعضاء",
           "orders": "الأوامر",
@@ -3568,6 +3680,18 @@
         "submit": "تحديث",
         "title": "تغيير حالة السوق"
       },
+      "surface": {
+        "dex": "منصة تداول (تحتفظ بأموال العملاء)",
+        "exchange": "بورصة (عبر الوسطاء الأعضاء)"
+      },
+      "table": {
+        "id": "#",
+        "name": "الاسم",
+        "service": "الخدمة",
+        "state": "الحالة",
+        "registered": "تاريخ التسجيل",
+        "tiers": "المستويات"
+      },
       "tier": {
         "approvedTitle": "المستوى {{n}} — موافق عليه",
         "notRequested": "لم يُطلب",
@@ -3584,10 +3708,7 @@
         "scopeVenue": "السوق",
         "withScope": "المستوى {{n}} — {{scope}}"
       },
-      "surface": {
-        "dex": "منصة تداول (تحتفظ بأموال العملاء)",
-        "exchange": "بورصة (عبر الوسطاء الأعضاء)"
-      }
+      "title": "الأسواق"
     },
     "members": {
       "title": "أعضاء السوق",
@@ -4464,6 +4585,20 @@
         "branding": "العلامة التجارية",
         "shield": "Shield"
       }
+    },
+    "apiEndpoints": {
+      "title": "API Endpoints",
+      "description": "Control what our external systems may drive. Turning an endpoint off blocks automation and integrations only — signed-in Vault users are never affected, so a page you use here will keep working.",
+      "summaryCount": "{{total}} endpoints · {{disabled}} turned off for external systems",
+      "filterPlaceholder": "Filter by name, path or key…",
+      "noMatches": "No endpoints match this filter.",
+      "reset": "Reset",
+      "confirmEnableTitle": "Allow external access?",
+      "confirmEnableMsg": "External systems will be able to call \"{{name}}\".",
+      "confirmDisableTitle": "Block external access?",
+      "confirmDisableMsg": "External systems will no longer be able to call \"{{name}}\". Vault users are not affected.",
+      "confirmResetTitle": "Reset to default?",
+      "confirmResetMsg": "This removes your decision for \"{{name}}\" and returns it to the platform default."
     }
   },
   "auth": {
@@ -4568,6 +4703,7 @@
     "feesBtn": "رسومي",
     "accepting": "جارٍ قبول اتفاقية التوزيع...",
     "savingFees": "جارٍ حفظ إعدادات الرسوم...",
+    "loadFeesError": "تعذّرت قراءة إعدادات الرسوم الحالية، لذلك لم يُفتح المحرر — فالحفظ من نموذج فارغ قد يستبدل رسومًا مضبوطة بالفعل. يرجى المحاولة مرة أخرى.",
     "acceptTitle": "قبول التوزيع",
     "acceptMessage": "قبول توزيع {{asset}} عبر {{service}}؟ ستدفع خدمتك مبالغ الاسترداد من سيولتها الخاصة ويعوضها المُصدر عبر سجل الالتزامات.",
     "states": {
@@ -4812,5 +4948,75 @@
       "suspended": "موقوف",
       "removed": "مُزال"
     }
+  },
+  "documentPicker": {
+    "title": "اختر مستنداً",
+    "subtitle": "اختر أحد مستندات هذا المالك، أو ارفع مستنداً جديداً.",
+    "filterPlaceholder": "تصفية بالعنوان أو المعرّف…",
+    "uploadNew": "رفع مستند جديد",
+    "empty": "لا توجد مستندات بعد.",
+    "emptyUploadHint": "ارفع مستنداً وسيُختار لك تلقائياً.",
+    "noMatches": "لا يوجد مستند مطابق للتصفية.",
+    "colTitle": "العنوان",
+    "colType": "النوع",
+    "colCreated": "تاريخ الإنشاء",
+    "colId": "المعرّف",
+    "choose": "اختيار"
+  },
+  "partyPicker": {
+    "title": "اختر {{role}}",
+    "subtitle": "تُعرض فقط الجهات التي اعتمدتها جهتك التنظيمية لهذا الدور، فيمكن إرفاق أي منها.",
+    "independenceNote": "يستلزم هذا الدور الاستقلالية، لذا لا تُدرج خدماتك الخاصة.",
+    "filterPlaceholder": "تصفية بالاسم أو العنوان…",
+    "empty": "لم تعتمد جهتك التنظيمية أي {{role}} بعد.",
+    "emptyHint": "يجب تسجيل المزوّد واعتماده لهذا الدور قبل إمكان إرفاقه.",
+    "noMatches": "لا يوجد مزوّد مطابق للتصفية.",
+    "colName": "الاسم",
+    "colAddress": "العنوان",
+    "colSource": "المصدر",
+    "sourceOwned": "جهتنا التنظيمية",
+    "sourceEndorsed": "مُعتمد",
+    "choose": "ترشيح"
+  },
+  "apiEndpointSections": {
+    "analytics": "Analytics",
+    "appConfig": "App Config",
+    "approvals": "Approvals",
+    "assetDocuments": "Asset Documents",
+    "assets": "Assets",
+    "audit": "Audit",
+    "clearing": "Clearing",
+    "connect": "Connect",
+    "credit": "Credit",
+    "custody": "Custody",
+    "dex": "DEX",
+    "directory": "Directory",
+    "distribution": "Distribution",
+    "distributions": "Distributions",
+    "documents": "Documents",
+    "encryptionKeys": "Encryption Keys",
+    "fees": "Fees",
+    "global": "Global",
+    "integrations": "Integrations",
+    "ipfs": "IPFS",
+    "logs": "Logs",
+    "menuConfig": "Menu Config",
+    "onboarding": "Onboarding",
+    "regulatorSubmissions": "Regulator Submissions",
+    "serviceDocuments": "Service Documents",
+    "serviceProviders": "Service Providers",
+    "services": "Services",
+    "sessions": "Sessions",
+    "settingsBackup": "Settings Backup",
+    "settlements": "Settlements",
+    "signerKeys": "Signer Keys",
+    "stats": "Stats",
+    "subscriptionDocuments": "Subscription Documents",
+    "subscriptions": "Subscriptions",
+    "sync": "Sync",
+    "transactions": "Transactions",
+    "userGroups": "User Groups",
+    "vaultCore": "Vault Core",
+    "vaultUsers": "Vault Users"
   }
 }

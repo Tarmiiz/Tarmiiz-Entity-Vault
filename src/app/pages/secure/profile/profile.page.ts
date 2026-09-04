@@ -10,7 +10,7 @@ import { AlertService } from '../../../shared/components/alerts/alert/alert.serv
 import { LoadingService } from '../../../shared/components/alerts/loading/loading.service';
 import { AuthService } from '../../../shared/services/auth.service';
 
-import { Entity, EntityIdentifier, GlobalVariable } from '../../../shared/models/data.model';
+import { Entity, EntityIdentifier, GlobalVariable, toGlobalVariables } from '../../../shared/models/data.model';
 
 import { ModalProfileMetadataEditService } from './modal-profile-metadata-edit/modal-profile-metadata-edit.service';
 import { ModalProfileMetadataEditComponent } from './modal-profile-metadata-edit/modal-profile-metadata-edit.component';
@@ -103,7 +103,10 @@ export class ProfilePage implements OnInit {
         this.idTypes().length ? Promise.resolve(this.idTypes()) : this.apiService.vaultGetGlobalVariablesByCategory('ID Type - Entity'),
       ]);
       this.identifiers.set(Array.isArray(rows) ? rows : []);
-      if (Array.isArray(types)) this.idTypes.set(types);
+      // toGlobalVariables, not a raw assign: the API serves `variable_id` and the shared
+      // identifier modal reads `variableId` — passing the rows through disabled Save outright.
+      // The cache branch above already holds mapped rows, so re-mapping them is a no-op.
+      if (Array.isArray(types)) this.idTypes.set(toGlobalVariables(types));
     } catch {
       this.identifiers.set([]);
     } finally {

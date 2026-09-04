@@ -26,7 +26,11 @@
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ 'subscriptions.creditDepositModal.providerTrxTime' | translate }} <span class="text-gray-400">({{ 'common.optional' | translate }})</span></label>
             <input type="datetime-local" formControlName="providerTrxTime"
+              [class.bg-gray-100]="!backdatingGranted()" [class.cursor-not-allowed]="!backdatingGranted()"
               class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm text-black" />
+            <p class="mt-1 text-xs" [class.text-gray-500]="backdatingGranted()" [class.text-amber-700]="!backdatingGranted()">
+              {{ (backdatingGranted() ? 'credit.backdating.granted' : 'credit.backdating.notGranted') | translate }}
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ 'credit.table.currency' | translate }}</label>

@@ -109,12 +109,6 @@
                           <td class="px-6 py-2">
                             <div class="flex items-center gap-2 flex-wrap">
                               <span>{{ typeDisplay(service) }}</span>
-                              @if (showMarketClassPill(service)) {
-                                <span class="px-3 py-1 text-xs font-semibold rounded-full"
-                                      [class]="service.marketClassConfirmed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                                  {{ (service.marketClassConfirmed ? 'services.marketClass.confirmed' : 'services.marketClass.awaitingConfirmation') | translate }}
-                                </span>
-                              }
                             </div>
                           </td>
                           @if(!isServiceProvider){

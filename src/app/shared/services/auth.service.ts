@@ -50,6 +50,111 @@ export class AuthService {
     return this._ready;
   }
   
+  /*
+      Everything a successful sign-in does AFTER the session token exists: user lookup, the
+      entity-state gate, storage, the per-user feature map, the socket.
+
+      ⚠️ EXTRACTED SO THE TWO-STEP PATH CANNOT DRIFT FROM THE ONE-STEP PATH. Both call this. The
+      entity-state gate in particular is a real authorization decision — Pending admits only the
+      admin, Suspended and Deactivated admit nobody — and a second copy behind the MFA branch is
+      exactly the kind of duplicate that stays correct for a month and then does not.
+
+      Returns `handOff` rather than touching the caller's spinner flag: the success path
+      deliberately leaves the overlay up for the dashboard to clear, and that decision belongs to
+      whoever owns the `finally`.
+  */
+  private async _hydrateSession(config: any, userId: number, keyJson: string):
+      Promise<{ result: any; handOff: boolean }> {
+    this.loadingService.show(this.translate.instant('auth.zk.fetchingProfile'));
+    const user = await this.apiService.vaultGetUser(String(userId));
+    if (!(user && user.state === 2)) {
+      return { result: { success: false, error: user ? 'User is not active' : 'Error fetching info' }, handOff: false };
+    }
+    this.userInfo = user;
+
+    // check entity state — Pending (1) admits ONLY the admin (role 1) so they can prepare the
+    // tenant while awaiting regulator approval; Active (2) admits everyone; Suspended (3) /
+    // Deactivated (4) admit nobody. The Entity API enforces the same rule on /vault/entity/login —
+    // this is UX, not the boundary.
+    const entityData = await this.apiService.vaultGetEntityInfo();
+    if (!entityData) return { result: { success: false, error: 'ENTITY_UNKNOWN' }, handOff: false };
+    if (entityData.state !== 2 && !(entityData.state === 1 && user.role === 1)) {
+      return {
+        result: { success: false, error: entityData.state === 1 ? 'ENTITY_PENDING' : 'ENTITY_INACTIVE' },
+        handOff: false,
+      };
+    }
+    this.entityInfo = entityData;
+    this.entityActive.set(entityData.state === 2);
+
+    // set storage variables
+    this.storageService.set('rpcNode', config.rpcNode);
+    this.storageService.set('variablesProxyContract', config.globalVariablesProxyContract);
+    this.storageService.set('contract', config.entityContract);
+    this.storageService.set('user', JSON.stringify(this.userInfo));
+    this.storageService.set('wallet', keyJson);
+
+    // Re-hydrate the menu feature map for THIS user — the eager pre-login fetch used the public
+    // tenant map; now pull /vault/features/me so per-user menu overrides take effect on the
+    // sidebar + route guards.
+    await this.featuresService.refresh();
+
+    // connect real-time socket
+    this.socketService.connect();
+
+    // keep loading spinner visible — the dashboard will hide it after loading
+    this.loadingService.show(this.translate.instant('auth.zk.loadingDashboard'));
+    return { result: { success: true, error: '' }, handOff: true };
+  }
+
+  /*
+      Carries step one's outcome across the round trip to the browser during a two-step sign-in.
+
+      ⚠️ IN MEMORY, NEVER PERSISTED. It holds the half-session and the ephemeral signing key; a
+      refresh loses it and the user signs in again, which is the correct trade — writing either to
+      storage would leave the key readable by anything with access to the device long after the
+      login it belonged to.
+  */
+  private pendingMfa: { mfaToken: string; key: any; config: any } | null = null;
+
+  /**
+   * Step two: verify the emailed code, then hydrate exactly as a single-step login would.
+   *
+   * ⚠️ Shares `_hydrateSession` with the normal path deliberately. The entity-state gate, the
+   * user-active check, the wallet, the feature map and the socket are not login DECORATION — they
+   * are the login. A second copy here would drift, and the first thing to drift would be the
+   * entity-state gate, which is the one nobody would notice was missing.
+   */
+  async completeMfa(code: string) {
+    const pending = this.pendingMfa;
+    if (!pending) return { success: false, error: 'Sign-in expired. Please sign in again.' };
+
+    let handOffSpinner = false;
+    try {
+      this.loadingService.show(this.translate.instant('auth.zk.verifying'));
+      const res = await this.apiService.entityLoginMfa(pending.mfaToken, code);
+      if (!res.success) {
+        // The challenge is destroyed after three wrong codes, so a failure that reports no
+        // remaining attempts means starting over — drop the pending state rather than leave a
+        // dead half-session that would fail confusingly on the next submit.
+        if (res.attemptsRemaining === 0 || /expired/i.test(String(res.error ?? ''))) this.pendingMfa = null;
+        return { success: false, error: res.error, attemptsRemaining: res.attemptsRemaining };
+      }
+
+      this.pendingMfa = null;
+      if (res.token && res.expiresAt && res.refreshExpiresAt) {
+        await this.sessionService.setSession(res.token, res.expiresAt, res.refreshExpiresAt);
+      }
+      const out = await this._hydrateSession(pending.config, Number(res.userId), JSON.stringify(pending.key));
+      handOffSpinner = out.handOff;
+      return out.result;
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Verification failed' };
+    } finally {
+      if (!handOffSpinner) this.loadingService.hide();
+    }
+  }
+
   async login(username: string, password: string) {
     // The overlay MUST clear on every exit path. The one exception is the success
     // return, which deliberately hands a still-visible spinner to the dashboard —
@@ -102,6 +207,23 @@ export class AuthService {
       if (!(loginResult.success && loginResult.userId) && transient.test(String(loginResult.error ?? ''))) {
         loginResult = await this.apiService.entityLogin(username, password, SESSION_DURATION);
       }
+      /*
+          TWO-STEP SIGN-IN (Phase 18 / H4). The password is proven; the session is withheld until
+          an emailed code is verified. Returned as `success: false` with `mfaRequired` so any
+          caller that checks only `success` treats it as "not signed in" rather than proceeding
+          with no token.
+
+          ⚠️ The transient-retry above must NOT re-fire here, and does not: this result carries no
+          `error`, so it cannot match that regex. It matters — a second `entityLogin` would send a
+          SECOND code and the 30-second cooldown would then reject it, leaving the user holding a
+          code the server had already replaced.
+      */
+      if ((loginResult as any).mfaRequired) {
+        this.loadingService.hide();
+        this.pendingMfa = { mfaToken: (loginResult as any).mfaToken, key: loginResult.key, config };
+        return { success: false, mfaRequired: true, error: '' } as any;
+      }
+
       if (loginResult.success && loginResult.userId && loginResult.key) {
 
         // Persist the JWT immediately so the authenticated calls below pick it up.
@@ -112,51 +234,9 @@ export class AuthService {
         // set temporary wallet
         const key = JSON.stringify(loginResult.key)
 
-        // get user info
-        this.loadingService.show(this.translate.instant('auth.zk.fetchingProfile'));
-        const userId = Number(loginResult.userId);
-        const user = await this.apiService.vaultGetUser(String(userId));
-        if (user && user.state === 2) {
-          this.userInfo = user;
-
-          // check entity state — Pending (1) admits ONLY the admin (role 1) so they can
-          // prepare the tenant while awaiting regulator approval; Active (2) admits
-          // everyone; Suspended (3) / Deactivated (4) admit nobody. The Entity API
-          // enforces the same rule on /vault/entity/login — this is UX, not the boundary.
-          const entityData = await this.apiService.vaultGetEntityInfo();
-          if (!entityData) {
-            return { success: false, error: 'ENTITY_UNKNOWN' };
-          }
-          if (entityData.state !== 2 && !(entityData.state === 1 && user.role === 1)) {
-            return { success: false, error: entityData.state === 1 ? 'ENTITY_PENDING' : 'ENTITY_INACTIVE' };
-          }
-          this.entityInfo = entityData;
-          this.entityActive.set(entityData.state === 2);
-
-          // set storage variables
-          this.storageService.set('rpcNode', config.rpcNode);
-          this.storageService.set('variablesProxyContract', config.globalVariablesProxyContract);
-          this.storageService.set('contract', config.entityContract);
-          this.storageService.set('user', JSON.stringify(this.userInfo));
-          this.storageService.set('wallet', key);
-
-          // Re-hydrate the menu feature map for THIS user — the eager pre-login fetch
-          // used the public tenant map; now pull /vault/features/me so per-user menu
-          // overrides take effect on the sidebar + route guards.
-          await this.featuresService.refresh();
-
-          // connect real-time socket
-          this.socketService.connect();
-
-          // keep loading spinner visible — the dashboard will hide it after loading
-          this.loadingService.show(this.translate.instant('auth.zk.loadingDashboard'));
-          handOffSpinner = true;
-          return { success: true, error: '' };
-
-        }
-        else {
-          return { success: false, error: user ? 'User is not active' : 'Error fetching info' };
-        }
+        const out = await this._hydrateSession(config, Number(loginResult.userId), key);
+        handOffSpinner = out.handOff;
+        return out.result;
       }
       else {
           return { success: false, error: loginResult.error };

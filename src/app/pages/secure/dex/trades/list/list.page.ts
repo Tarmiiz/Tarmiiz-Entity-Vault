@@ -77,7 +77,7 @@ export class ListPage implements OnInit, OnDestroy {
     const venue = this.filterVenue().toLowerCase();
     return this.trades().filter(t =>
       (!asset || (t.assetSymbol || '').toLowerCase().includes(asset) || (t.assetName || '').toLowerCase().includes(asset) || t.baseAsset.toLowerCase().includes(asset)) &&
-      (!venue || (t.buyDexServiceName || '').toLowerCase().includes(venue) || (t.sellDexServiceName || '').toLowerCase().includes(venue) || t.buyDexService.toLowerCase().includes(venue) || t.sellDexService.toLowerCase().includes(venue)) &&
+      (!venue || (t.dexServiceName || '').toLowerCase().includes(venue) || (t.dexService || '').toLowerCase().includes(venue)) &&
       (!term ||
         String(t.tradeId).includes(term) ||
         (t.assetName || '').toLowerCase().includes(term) ||
@@ -115,8 +115,7 @@ export class ListPage implements OnInit, OnDestroy {
       'Price': this.fmtPrice(t.price),
       'Credit': this.fmtPrice(t.creditAmount),
       'Currency': t.currencyName || t.currencyCode,
-      'Buy Venue': t.buyDexServiceName || t.buyDexService,
-      'Sell Venue': t.sellDexServiceName || t.sellDexService,
+      'Venue': t.dexServiceName || t.dexService,
       'Buyer': t.buyer,
       'Seller': t.seller,
       'Executed': t.executedAt ? this.utils.formatDate(t.executedAt) : '—',
@@ -139,7 +138,10 @@ export class ListPage implements OnInit, OnDestroy {
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
-      head: [['#', 'ID', 'Asset', 'Amount', 'Price', 'Credit', 'Buy Venue', 'Sell Venue', 'Scope', 'Executed']],
+      // V36 — ONE venue per trade. The head carried 'Buy Venue', 'Sell Venue' AND a 'Scope'
+      // column the body had already dropped, so every value after Credit sat one cell to the
+      // left and 'Executed' rendered under 'Scope'. Head and body must be counted together.
+      head: [['#', 'ID', 'Asset', 'Amount', 'Price', 'Credit', 'Venue', 'Executed']],
       body: trades.map((t, i) => [
         String(i + 1),
         String(t.tradeId),
@@ -147,8 +149,7 @@ export class ListPage implements OnInit, OnDestroy {
         this.fmtAmount(t.amount),
         this.fmtPrice(t.price),
         this.fmtPrice(t.creditAmount),
-        t.buyDexServiceName || t.buyDexService.slice(0, 10),
-        t.sellDexServiceName || t.sellDexService.slice(0, 10),
+        t.dexServiceName || (t.dexService || '').slice(0, 10),
         t.executedAt ? this.utils.formatDate(t.executedAt) : '—',
       ]),
     });

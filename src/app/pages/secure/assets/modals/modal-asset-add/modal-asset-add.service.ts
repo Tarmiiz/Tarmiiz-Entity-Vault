@@ -25,12 +25,24 @@ export interface AddAssetData {
   description: string;
   service: string;
   currency: number;
+  // DERIVED from `formula` since 4.9 — the regulator that authored the chosen class formula
+  // IS the asset's regulator, which is the pairing `registerAsset` enforces on chain.
   regulator: string;
-  // assetClass: the A1 ladder 1..11 — IMMUTABLE, and it fixes the supply model.
+  // 4.9 — the address of one of that regulator's ACTIVE class formula contracts ("Green
+  // Sukuk", "Conventional REIT"). REQUIRED, with no default: it carries the supply policy,
+  // price-mode policy, requirement rows, permitted standards and parameters, and
+  // `registerAsset` refuses without it. That refusal is the whole fail-closed argument now —
+  // `AssetClassLib`'s class → supply map, per-row defaults and independence rules are all
+  // DELETED, so an unset requirement row demands nothing.
+  formula: string;
   // supplyMode: 1 = Fixed (initialSupply minted to contract at init), 2 = Dynamic (mint on subscribe).
+  // ⚠️ Both of these are the FORMULA's policy unless it is 3 (Issuer chooses) — no longer a
+  // property of the class. Two products over the same base class may legitimately differ.
   supplyMode: number;
   priceMode: number;
-  // Real-world asset category (1=Precious Metals … 6=Commodities). Required for all supply modes.
+  // The A1 BASE class 1..11. IMMUTABLE on the token, but since 4.9 it is mechanics
+  // vocabulary that fixes NOTHING on its own — derived from the formula, sent so
+  // `registerAsset` can check the token's declaration against the formula's base class.
   assetClass: number;
   initialSupply?: number;
   creditSettlement: boolean;

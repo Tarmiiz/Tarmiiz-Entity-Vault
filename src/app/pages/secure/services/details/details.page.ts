@@ -237,28 +237,32 @@ export class DetailsPage implements OnInit {
   service = signal<Service | undefined>(undefined);
   withheldCredit  = signal<{ currencyCode: number; currencyName: string; currencySymbol: string; withheld: number }[]>([]);
   withheldAssets  = signal<{ asset: string; name: string; symbol: string; totalWithheld: number }[]>([]);
-  isTokenProvider = computed(() => this.service()?.serviceType === 1);
-  // Neither half of the `serviceType` axis says enough on its own: "Service Provider" doesn't
-  // say WHICH kind of provider, and "Token Provider" covers three different businesses
-  // (Issuer / Exchange / Brokerage). Each half carries its OWN sub-type field and exactly one
-  // is ever non-zero, so read the one that matches the type — never the wrong one, which would
-  // render a Payment Gateway as an "Exchange" (both are class 2 in their own catalogs).
+  // ── LICENCES replace the type/sub-type pair (Phase 28 step (e), 2026-09-03) ────────────────
+  //
+  // 🔴 `isTokenProvider` GATES UI SECTIONS — it is not a label — so its correctness matters more
+  // than the two displays below it. It now asks whether the service holds an ACTIVE Token Issuer
+  // LICENCE (class 27), which is strictly stronger than `serviceType === 1`: that was a byte the
+  // ENTITY set at creation, whereas a licence is Active only because a regulator approved it and
+  // stops being Active the moment one suspends it.
+  //
+  // ⚠️ IT IS FALSE ON EVERY ROW UNTIL THE LICENCE READ ROUTE LANDS, because `Service.licenses` is
+  // populated by nothing yet — the Entity API has the chain helpers (`serviceHasLicense`,
+  // `serviceLicensesOf`) but no route exposing them. That is a KNOWN, NAMED gap owned by the
+  // licensing lane, and it fails CLOSED: issuer sections stay hidden rather than being shown for
+  // a service whose licence nobody checked. Do NOT paper over it by defaulting to true, and do
+  // NOT infer it from another field — a wrongly-shown issuer surface is the failure this whole
+  // phase exists to make impossible.
+  private static readonly LICENSE_NAMES: Record<number, string> =
+    { 27: 'Token Issuer', 28: 'Exchange', 29: 'Brokerage' };
+  isTokenProvider = computed(() => (this.service()?.licenses ?? []).includes(27));
   serviceTypeDisplay = computed(() => {
-    const s = this.service();
-    if (!s) return '';
-    const base = s.serviceTypeName ?? '';
-    if (s.serviceType === 2 && s.partyClassName) return `${base} / ${s.partyClassName}`;
-    if (s.serviceType === 1 && s.marketClassName) return `${base} / ${s.marketClassName}`;
-    return base;
+    const ids = this.service()?.licenses ?? [];
+    if (!ids.length) return '—';
+    return ids.map((i) => DetailsPage.LICENSE_NAMES[i] ?? `Class ${i}`).join(', ');
   });
-  // A type-1 service's declared marketClass is not operative until its regulator confirms it —
-  // the DEX gates read the confirmation, not the declaration. Unconfirmed is the NORMAL state
-  // of a freshly created service, so it renders neutral (gray), never as an error.
-  showMarketClassPill = computed(() => {
-    const s = this.service();
-    return !!s && s.serviceType === 1 && !!s.marketClass;
-  });
-  marketClassConfirmed = computed(() => this.service()?.marketClassConfirmed === true);
+  // ⚠️ NO SUCCESSOR to the confirmed / awaiting-confirmation pill, deliberately. A licence has no
+  // separate confirmation to display: it is Active BECAUSE a regulator approved it. Rendering
+  // "awaiting confirmation" would invent a state the ledger does not have.
   suspensionReason = signal<string>('');
   validatorName = signal<string>('');
   paymentProcessorName = signal<string>('');
@@ -670,13 +674,11 @@ export class DetailsPage implements OnInit {
       countryName: raw.country_name ?? '',
       verificationLevel: raw.verification_level ?? 0,
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
-      serviceType: raw.service_type ?? 0,
-      serviceTypeName: raw.service_type_name ?? '',
-      partyClass: raw.party_class ?? 0,
-      partyClassName: raw.party_class_name ?? '',
-      marketClass: raw.market_class ?? 0,
-      marketClassName: raw.market_class_name ?? '',
-      marketClassConfirmed: raw.market_class_confirmed === true || raw.market_class_confirmed === 1,
+      // ⚠️ Phase 28 step (e): service_type / service_type_name / party_class(_name) /
+      // market_class(_name) / market_class_confirmed are GONE from `services_view`. The
+      // licence SET replaces them and is EMPTY until the licensing lane's read route lands —
+      // deliberately not defaulted to anything that would render as a type.
+      licenses: raw.licenses ?? [],
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
@@ -1457,13 +1459,29 @@ export class DetailsPage implements OnInit {
     const currentService = this.service();
     if (!currentService) return;
     const res = await this.apiService.vaultGetServiceFeeConfig(currentService.address, assetAddress);
-    const current = res?.feeConfig ?? null;
+    // A null `res` is a FAILED READ, not "no fee is configured" — `vaultGet` returns null for a
+    // transport failure and for any body that isn't the success envelope. Opening the modal on it
+    // would show None/None over a live override and let one Save replace it, so refuse instead.
+    if (!res) {
+      this.alertService.show(
+        this.translate.instant('alerts.error'),
+        this.translate.instant('services.details.info.loadVenueFeeConfigError'));
+      return;
+    }
     const result = await this.feeConfigModal.show({
       service: currentService.address,
       serviceName: currentService.name,
+      mode: 'asset',
       asset: assetAddress,
       assetSymbol,
-      feeConfig: current,
+      feeConfig: res.feeConfig,
+      // Both are load-bearing, not decoration: without `isSet` the modal's `inheriting` flag is
+      // false (`undefined === false`), which DEFEATS its "opening and saving an inherited row must
+      // not silently pin an override" guard — and an all-None override does not mean "inherit", it
+      // means "this asset is free" and outranks the service default. `inherited` is what lets the
+      // operator see what is actually being charged meanwhile.
+      inherited: res.default,
+      isSet: res.isSet,
     });
     if (!result) return;
     this.loadingService.show(this.translate.instant('services.details.loadingMsgs.savingVenueFeeConfig'));

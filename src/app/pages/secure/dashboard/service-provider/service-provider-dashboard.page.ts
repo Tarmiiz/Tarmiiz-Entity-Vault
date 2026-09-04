@@ -11,7 +11,6 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { Service, User } from '../../../../shared/models/data.model';
 import { partyClassName } from '../../../../shared/constants/party-class';
-import { marketClassName } from '../../../../shared/constants/market-class';
 
 // Sub-type names for the tenant's services. They come from the ONE shared *_CLASS_NAME map per
 // catalog so the chip and the table row below (which read the server's `party_class_name` /
@@ -67,20 +66,30 @@ export class ServiceProviderDashboardPage implements OnInit {
   suspendedServices = computed(() => this.services().filter(s => s.suspended || Number(s.state) === 3).length);
   inactiveServices  = computed(() => this.services().filter(s => Number(s.state) === 4 || Number(s.state) === 0 || Number(s.state) === 1).length);
 
-  // Grouped by (serviceType, class id) rather than by class id alone: the two catalogs both
-  // start at 1, so collapsing them would merge a Payment Gateway (party class 2) with an
-  // Exchange (market class 2) into one chip carrying whichever name won.
+  // ── Grouped by LICENCE CLASS (Phase 28 step (e), 2026-09-03) ──────────────────────────────
+  //
+  // The retired version keyed on `(serviceType, classId)` because the two sub-type catalogs both
+  // started at 1, so collapsing them merged a Payment Gateway (party class 2) with an Exchange
+  // (market class 2). Licence classes are 27/28/29 in ONE namespace, so the compound key is no
+  // longer needed — but note the hazard did not vanish, it moved: 1/2/3 are still live PARTY
+  // classes, so anything that mixes the two vocabularies has the same collision.
+  //
+  // ⚠️ A SERVICE CAN NOW APPEAR IN SEVERAL BUCKETS. It holds a SET, so one holding both a Token
+  // Issuer and an Exchange licence is counted under each — the counts are per LICENCE, not per
+  // service, and they deliberately do not sum to `totalServices`.
+  //
+  // 🔴 EMPTY UNTIL THE LICENCE READ ROUTE LANDS (licensing lane) — `Service.licenses` is
+  // populated by nothing yet, so this renders no chips rather than wrong ones.
   serviceClassCounts = computed<ServiceClassCount[]>(() => {
-    const counts = new Map<string, ServiceClassCount>();
+    const counts = new Map<number, ServiceClassCount>();
     for (const s of this.services()) {
-      const serviceType = Number(s.serviceType) || 0;
-      const classId = serviceType === 1 ? (Number(s.marketClass) || 0) : (Number(s.partyClass) || 0);
-      const key = `${serviceType}:${classId}`;
-      const existing = counts.get(key);
-      if (existing) { existing.count++; continue; }
-      counts.set(key, { serviceType, classId, name: this.classNameFor(serviceType, classId), count: 1 });
+      for (const classId of (s.licenses ?? [])) {
+        const existing = counts.get(classId);
+        if (existing) { existing.count++; continue; }
+        counts.set(classId, { serviceType: 0, classId, name: this.classNameFor(0, classId), count: 1 });
+      }
     }
-    return [...counts.values()].sort((a, b) => a.serviceType - b.serviceType || a.classId - b.classId);
+    return [...counts.values()].sort((a, b) => a.classId - b.classId);
   });
 
   opStats = computed<OpStat[]>(() => {
@@ -122,29 +131,33 @@ export class ServiceProviderDashboardPage implements OnInit {
     }
   }
 
-  // Named `classNameFor`, not `partyClassName` / `marketClassName` — those are the imported
-  // per-catalog resolvers this delegates to, and reusing either name here would read as though
-  // one catalog answered for both.
-  private classNameFor(serviceType: number, classId: number): string {
+  // ⚠️ ONE VOCABULARY NOW (Phase 28 step (e)) — licence classes, so the `serviceType` argument
+  // that used to pick between two catalogs is inert and kept only so callers need no edit.
+  //
+  // ⚠️ The two-catalog hazard has NOT gone away, it has moved: licence classes are 27/28/29 while
+  // 1/2/3 remain live PARTY classes, so anything resolving a bare small integer against the wrong
+  // one still renders a confident wrong name. That is why the fallback is `Class N` rather than a
+  // guess from `partyClassName`.
+  private static readonly LICENSE_NAMES: Record<number, string> =
+    { 27: 'Token Issuer', 28: 'Exchange', 29: 'Brokerage' };
+  private classNameFor(_serviceType: number, classId: number): string {
     if (!classId) return '';
-    return serviceType === 1 ? marketClassName(classId) : partyClassName(classId);
+    return ServiceProviderDashboardPage.LICENSE_NAMES[classId] ?? `Class ${classId}`;
   }
 
   // The server's label first (it joins the live Global Variables catalog, so a value added on
   // chain shows up with no rebuild); the local map only backfills when the join found nothing.
   serviceClassLabel(s: Service): string {
-    const serviceType = Number(s.serviceType) || 0;
-    if (serviceType === 1) {
-      return s.marketClassName || marketClassName(s.marketClass) || '—';
-    }
-    return s.partyClassName || partyClassName(s.partyClass) || '—';
+    const ids = s.licenses ?? [];
+    if (!ids.length) return '—';
+    return ids.map((i) => this.classNameFor(0, i)).join(', ');
   }
 
-  // Only a type-1 service's declared class needs regulator confirmation; a type-2 service's
-  // party class is confirmed by party admission instead, which this column does not track.
-  showMarketClassPill(s: Service): boolean {
-    return Number(s.serviceType) === 1 && !!s.marketClass;
-  }
+  // ⚠️ `showMarketClassPill` REMOVED (Phase 28 step (e)) — a licence carries no separate
+  // confirmation to display. It is Active BECAUSE a regulator approved it, so "awaiting
+  // confirmation" is not a state the ledger can be in. Deleted rather than left returning
+  // `false`: a predicate that is always false is a branch nobody can reach and everybody
+  // re-reads.
 
   private readonly stateNames: Record<number, string> = {
     0: 'Inactive', 1: 'Initiated', 2: 'Active', 3: 'Suspended', 4: 'Deactivated',
@@ -177,13 +190,11 @@ export class ServiceProviderDashboardPage implements OnInit {
       countryName: raw.country_name ?? '',
       verificationLevel: raw.verification_level ?? 0,
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
-      serviceType: raw.service_type ?? 0,
-      serviceTypeName: raw.service_type_name ?? '',
-      partyClass: raw.party_class ?? 0,
-      partyClassName: raw.party_class_name ?? '',
-      marketClass: raw.market_class ?? 0,
-      marketClassName: raw.market_class_name ?? '',
-      marketClassConfirmed: raw.market_class_confirmed === true || raw.market_class_confirmed === 1,
+      // ⚠️ Phase 28 step (e): service_type / service_type_name / party_class(_name) /
+      // market_class(_name) / market_class_confirmed are GONE from `services_view`. The
+      // licence SET replaces them and is EMPTY until the licensing lane's read route lands —
+      // deliberately not defaulted to anything that would render as a type.
+      licenses: raw.licenses ?? [],
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
@@ -222,7 +233,13 @@ export class ServiceProviderDashboardPage implements OnInit {
     const res = await this.apiService.vaultGetServicesOwn(0, 500);
     const list = (res?.services ?? [])
       .map((s: any) => this.mapVaultService(s))
-      .filter((s: Service) => Number(s.serviceType) === 2);
+      // ⚠️ The `serviceType === 2` filter is DROPPED (Phase 28 step (e)). This is the SERVICE
+      // PROVIDER dashboard and the old test meant "not a token provider" — a distinction the
+      // Service struct no longer draws. It is NOT translatable to a licence test: the three
+      // licence classes are the MARKET family, i.e. the type-1 half, so "holds none of them"
+      // would silently include a brand-new issuer whose licence is still Requested.
+      // Every own service is listed; the class column says what each one holds.
+      ;
     this.services.set(list);
   }
 

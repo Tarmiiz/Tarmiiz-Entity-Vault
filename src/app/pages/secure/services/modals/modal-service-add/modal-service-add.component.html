@@ -43,57 +43,29 @@
           <!-- Step 1: Configuration -->
           @if (currentStep() === 1) {
             <p class="text-sm text-gray-500 mb-2">{{ 'services.addModal.intro.config' | translate }}</p>
+            <!-- ⚠️ LICENCE APPLICATIONS replace the serviceType + partyClass/marketClass trio
+                 (Phase 28 step (e), 2026-09-03). The wizard no longer asks what the service IS;
+                 it asks what the service APPLIES TO DO. Multi-select, because a service may hold
+                 several licences.
+
+                 ⚠️ NOT REQUIRED, and that is deliberate rather than an oversight: an empty
+                 selection is the legal neutral case on chain, and a service that applied for
+                 nothing can simply do nothing until it applies later. Making it required here
+                 would invent a constraint the contract does not have. -->
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.serviceType' | translate }}</label>
-              <select formControlName="serviceType"
-                class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                [class.border-red-500]="addForm.get('serviceType')?.touched && addForm.get('serviceType')?.invalid"
-                [class.border-gray-300]="!(addForm.get('serviceType')?.touched && addForm.get('serviceType')?.invalid)">
-                <option value="" disabled selected hidden>{{ 'services.addModal.placeholders.selectServiceType' | translate }}</option>
-                @for (st of serviceTypes(); track st.variableId) {
-                  <option [value]="st.variableId">{{ st.name }}</option>
+              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.requestLicenses' | translate }}</label>
+              <div class="space-y-2 mt-1">
+                @for (lc of licenseClasses(); track lc.classId) {
+                  <label class="flex items-start gap-2 text-sm text-gray-700">
+                    <input type="checkbox" class="mt-0.5"
+                           [checked]="isLicenseSelected(lc.classId)"
+                           (change)="toggleLicense(lc.classId)" />
+                    <span>{{ lc.name }}</span>
+                  </label>
                 }
-              </select>
-              @if (addForm.get('serviceType')?.touched && addForm.get('serviceType')?.hasError('required')) {
-                <p class="mt-1 text-xs text-red-600">{{ 'services.addModal.errors.serviceTypeRequired' | translate }}</p>
-              }
+              </div>
+              <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.requestLicensesNote' | translate }}</p>
             </div>
-            @if (isServiceProvider()) {
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.partyClass' | translate }}</label>
-                <select formControlName="partyClass"
-                  class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  [class.border-red-500]="addForm.get('partyClass')?.touched && addForm.get('partyClass')?.invalid"
-                  [class.border-gray-300]="!(addForm.get('partyClass')?.touched && addForm.get('partyClass')?.invalid)">
-                  <option value="" disabled selected hidden>{{ 'services.addModal.placeholders.selectPartyClass' | translate }}</option>
-                  @for (pc of partyClasses(); track pc.variableId) {
-                    <option [value]="pc.variableId">{{ pc.name }}</option>
-                  }
-                </select>
-                <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.providerConfirmNote' | translate: { type: getPartyClassName() || ('services.addModal.providerFallback' | translate) } }}</p>
-                @if (addForm.get('partyClass')?.touched && addForm.get('partyClass')?.hasError('required')) {
-                  <p class="mt-1 text-xs text-red-600">{{ 'services.addModal.errors.partyClassRequired' | translate }}</p>
-                }
-              </div>
-            }
-            @if (isTokenProvider()) {
-              <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.marketClass' | translate }}</label>
-                <select formControlName="marketClass"
-                  class="block w-full pl-3 pr-10 py-2 text-base border rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  [class.border-red-500]="addForm.get('marketClass')?.touched && addForm.get('marketClass')?.invalid"
-                  [class.border-gray-300]="!(addForm.get('marketClass')?.touched && addForm.get('marketClass')?.invalid)">
-                  <option value="" disabled selected hidden>{{ 'services.addModal.placeholders.selectMarketClass' | translate }}</option>
-                  @for (mc of marketClasses(); track mc.variableId) {
-                    <option [value]="mc.variableId">{{ mc.name }}</option>
-                  }
-                </select>
-                <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.marketClassNote' | translate }}</p>
-                @if (addForm.get('marketClass')?.touched && addForm.get('marketClass')?.hasError('required')) {
-                  <p class="mt-1 text-xs text-red-600">{{ 'services.addModal.errors.marketClassRequired' | translate }}</p>
-                }
-              </div>
-            }
             <!-- Verification Level is hidden for now — token-issuer services default to level 2 (eKYC). -->
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.regulator' | translate }}</label>
@@ -257,21 +229,14 @@
               <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'services.addModal.sections.configuration' | translate }}</h4>
               <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-500">{{ 'services.addModal.fields.serviceType' | translate }}</span>
-                  <span class="text-black font-medium">{{ getServiceTypeName() }}</span>
+                  <span class="text-gray-500">{{ 'services.addModal.fields.requestLicenses' | translate }}</span>
+                  <!-- The amber "pending" note is KEPT and is now more accurate than it was: every
+                       entry lands LICENSE_REQUESTED and confers nothing until a regulator approves.
+                       Under the retired fields it described a confirmation flag; here it describes
+                       the licence's own lifecycle state. -->
+                  <span class="text-black font-medium">{{ getSelectedLicenseNames() }}
+                    <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
                 </div>
-                @if (isServiceProvider()) {
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.partyClass' | translate }}</span>
-                    <span class="text-black font-medium">{{ getPartyClassName() }} <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
-                  </div>
-                }
-                @if (isTokenProvider()) {
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.marketClass' | translate }}</span>
-                    <span class="text-black font-medium">{{ getMarketClassName() }} <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
-                  </div>
-                }
                 <div class="flex justify-between">
                   <span class="text-gray-500">{{ 'services.addModal.fields.regulator' | translate }}</span>
                   <span class="text-black font-medium">{{ getRegulatorDisplay() }}</span>

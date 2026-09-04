@@ -35,7 +35,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private translate = inject(TranslateService);
 
-  orderId = signal<number>(0);
+  orderRef = signal<string>('');
   order = signal<DexOrder | undefined>(undefined);
   linkedTrades = signal<DexTrade[]>([]);
   /** 1-based, per frontend Standard 1.5. */
@@ -48,8 +48,9 @@ export class DetailsPage implements OnInit, OnDestroy {
   private sub?: Subscription;
 
   constructor() {
-    const id = this.route.snapshot.paramMap.get('orderId');
-    if (id) this.orderId.set(Number(id));
+    // Phase 16 — a `bytes32` COMMITMENT REF, not a numeric id. `Number(ref)` is NaN.
+    const ref = this.route.snapshot.paramMap.get('ref');
+    if (ref) this.orderRef.set(ref);
   }
 
   ngOnInit() {}
@@ -67,12 +68,12 @@ export class DetailsPage implements OnInit, OnDestroy {
     if (silent) this.refreshing.set(true);
     if (!silent) this.loadingService.show(this.translate.instant('dex.orders.details.loadingOrder'));
     try {
-      const o = await this.apiService.vaultDexOrderInfo(this.orderId());
+      const o = await this.apiService.vaultDexOrderInfo(this.orderRef());
       if (o) {
         this.order.set(o);
         const t = await this.apiService.vaultDexTradesList({ asset: o.baseAsset, offset: 200 });
         if (t?.trades) {
-          const linked = (t.trades as DexTrade[]).filter(x => x.buyOrderId === o.orderId || x.sellOrderId === o.orderId);
+          const linked = (t.trades as DexTrade[]).filter(x => x.buyRef === o.ref || x.sellRef === o.ref);
           this.linkedTrades.set(linked);
         }
       }
@@ -119,16 +120,21 @@ export class DetailsPage implements OnInit, OnDestroy {
     if (!o) return;
     const ok = await this.alertService.show(
       this.translate.instant('dex.orders.cancelConfirm.title'),
-      this.translate.instant('dex.orders.cancelConfirm.message', { id: o.orderId }),
+      this.translate.instant('dex.orders.cancelConfirm.message', { id: this.shortRef(o.ref) }),
       this.translate.instant('dex.orders.cancelConfirm.confirm')
     );
     if (!ok) return;
     this.loadingService.show(this.translate.instant('dex.orders.cancelConfirm.loading'));
     try {
-      const r = await this.apiService.vaultDexCancelOrder(o.orderId);
+      const r = await this.apiService.vaultDexCancelOrder(o.ref);
       if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.load();
     } finally { this.loadingService.hide(); }
+  }
+
+  shortRef(r: string): string {
+    const s = String(r || '');
+    return s.length > 18 ? s.slice(0, 8) + '…' + s.slice(-6) : s;
   }
 
   goTrade(id: number) { this.router.navigate(['/authorized/dex/trades/details/' + id]); }

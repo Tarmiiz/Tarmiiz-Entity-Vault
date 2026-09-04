@@ -118,7 +118,11 @@ export class ListPage implements OnInit {
     if (!result) return;
     this.loadingService.show(this.translate.instant('assets.documents.list.adding'));
     try {
-      const response = await this.apiService.assetDocumentAdd(this.assetAddress(), result);
+      // MULTIPART, not the JSON `assetDocumentAdd`: `result.file` is a `File`, which serialises
+      // to `{}` under JSON.stringify — so no file part was ever sent, the API took its
+      // pre-pinned-CID branch, found no cid, and returned 400 on every single upload.
+      const { file, ...metadata } = result;
+      const response = await this.apiService.assetDocumentAddMultipart(this.assetAddress(), file, metadata);
       if (response?.error) this.alertService.show(this.translate.instant('alerts.error'), response.error);
       else await this.list();
     } finally { this.loadingService.hide(); }

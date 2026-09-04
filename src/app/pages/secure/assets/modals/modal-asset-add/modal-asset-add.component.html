@@ -40,22 +40,70 @@
             <!-- The token-STANDARD radio group is GONE. It chose between the T20 and T3643
                  factories; one standard remains, so there is no second factory and nothing
                  to decide. The `asset-t3643` menu key it hung off is dead with it. -->
+            <!-- 4.9 — THE CLASS FORMULA REPLACED THE BASE-CLASS PICKER.
+                 An issuer no longer selects "Debt / Sukuk"; it selects one of its
+                 regulator's named PRODUCTS built over that class — "Green Sukuk" or
+                 "Conventional Bond", which may impose opposite requirements over the same
+                 base class 3. The base class fixes nothing on its own any more. -->
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.assetClassLabel' | translate }}</label>
-              <select formControlName="assetClass"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="" disabled selected hidden>{{ 'assets.addModal.wizard.selectAssetTypePlaceholder' | translate }}</option>
-                @for (at of assetClasses(); track at.id) {
-                  <option [value]="at.id">{{ at.name }}</option>
+              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.formulaLabel' | translate }}</label>
+              @if (formulasLoaded() && formulas().length === 0) {
+                <!-- ⚠️ THREE DIFFERENT FACTS PRODUCE AN EMPTY DROPDOWN, and only one of them
+                     is correct behaviour. On a fresh chain zero formulas exist until a
+                     regulator authors one and asset creation is fail-closed until then — that
+                     is the platform working. The other two are failures. Rendering all three
+                     as one blank moves the confusion from a late revert to a silent hole,
+                     which is harder to diagnose because nothing appears to have gone wrong.
+                     So the empty state NAMES the regulators it asked about: "none of these
+                     has published one" is attributable, "nothing here" is not. -->
+                @if (formulasError() === 'regulators') {
+                  <div class="rounded-md bg-red-50 border border-red-200 px-3 py-2">
+                    <p class="text-sm text-red-800">{{ 'assets.addModal.wizard.noRegulators' | translate }}</p>
+                  </div>
+                } @else if (formulasError() === 'load') {
+                  <div class="rounded-md bg-red-50 border border-red-200 px-3 py-2">
+                    <p class="text-sm text-red-800">{{ 'assets.addModal.wizard.formulasLoadFailed' | translate }}</p>
+                  </div>
+                } @else {
+                  <div class="rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+                    <p class="text-sm text-amber-800">{{ 'assets.addModal.wizard.noFormulas' | translate:{ regulators: regulatorNames() } }}</p>
+                    <p class="text-xs text-amber-700 mt-1">{{ 'assets.addModal.wizard.noFormulasHint' | translate }}</p>
+                  </div>
                 }
-              </select>
-              <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.assetClassHint' | translate }}</p>
+              } @else {
+                <select formControlName="formula"
+                  class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                  <option value="" disabled selected hidden>{{ 'assets.addModal.wizard.selectFormulaPlaceholder' | translate }}</option>
+                  @for (f of formulas(); track f.formula) {
+                    <option [value]="f.formula">{{ formulaLabel(f) }}</option>
+                  }
+                </select>
+                <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.formulaHint' | translate }}</p>
+              }
             </div>
-            <!-- Supply model. For every class but Custom this is DERIVED (A5) and shown
-                 read-only — the contract refuses a mismatched pair, so a picker would only
-                 offer ways to build a reverting transaction. Custom (11) is the one class
-                 that genuinely lets the issuer choose, so it gets the select. -->
-            @if (isCustomClass) {
+            <!-- Base class + regulator, both DERIVED from the formula. Shown because they are
+                 permanent properties of the asset the issuer is about to create, and the
+                 regulator in particular used to be a free choice three steps later — a
+                 combination registerAsset refuses, discovered only after the token had been
+                 deployed. -->
+            @if (selectedFormula) {
+              <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.assetClassLabel' | translate }}</span>
+                  <span class="text-sm font-medium text-gray-800">{{ formulaBaseClassName }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.regulatorLabel' | translate }}</span>
+                  <span class="text-sm font-medium text-gray-800">{{ formulaRegulatorName }}</span>
+                </div>
+                <p class="text-xs text-gray-400">{{ 'assets.addModal.wizard.formulaDerivedHint' | translate }}</p>
+              </div>
+            }
+            <!-- Supply model. PINNED by the formula unless its policy is 3 (Issuer chooses) —
+                 the contract refuses a mismatched pair, so a picker where the regulator has
+                 decided would only offer ways to build a reverting transaction. This is no
+                 longer a class-11 special case: any product may leave the choice open. -->
+            @if (issuerChoosesSupply) {
               <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.supplyModeLabel' | translate }}</label>
                 <select formControlName="supplyMode"
@@ -86,18 +134,30 @@
                 }
               </div>
             }
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.priceModeLabel' | translate }}</label>
-              <select formControlName="priceMode"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                @for (pm of priceModes(); track pm.id) {
-                  <option [value]="pm.id">{{ pm.name }}</option>
-                }
-              </select>
-              <p class="text-xs text-gray-400 mt-1">
-                {{ 'assets.addModal.wizard.priceModeHint' | translate }}
-              </p>
-            </div>
+            <!-- Price mode — the same rule as supply (R12). PINNED where the regulator set a
+                 policy, a choice only where the formula says Issuer chooses. -->
+            @if (issuerChoosesPriceMode) {
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.priceModeLabel' | translate }}</label>
+                <select formControlName="priceMode"
+                  class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+                  @for (pm of priceModes(); track pm.id) {
+                    <option [value]="pm.id">{{ pm.name }}</option>
+                  }
+                </select>
+                <p class="text-xs text-gray-400 mt-1">
+                  {{ 'assets.addModal.wizard.priceModeHint' | translate }}
+                </p>
+              </div>
+            } @else if (derivedPriceModeName) {
+              <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.priceModeLabel' | translate }}</span>
+                  <span class="text-sm font-medium text-gray-800">{{ derivedPriceModeName }}</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.priceModeDerivedHint' | translate }}</p>
+              </div>
+            }
           }
 
           <!-- Step 2: Identity -->
@@ -246,15 +306,19 @@
                 <p class="text-xs text-indigo-600 mt-1">{{ managerName() }}</p>
               }
             </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.regulatorLabel' | translate }}</label>
-              <select formControlName="regulator"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="" disabled selected hidden>{{ 'assets.addModal.wizard.selectRegulatorPlaceholder' | translate }}</option>
-                @for (reg of regulators(); track reg.address) {
-                  <option [value]="reg.address">{{ reg.name }} ({{ reg.symbol }})</option>
-                }
-              </select>
+            <!-- ⚠️ 4.9 — THE REGULATOR PICKER IS GONE, deliberately. It used to be a free
+                 choice here, three steps after the class was chosen, so an issuer could pick
+                 "Green Sukuk" (authored by FRA) and then select a different regulator — a
+                 pairing registerAsset refuses, and the refusal arrived only AFTER the token
+                 had already been deployed and its name and symbol permanently taken. A
+                 formula belongs to exactly one regulator, so choosing the product settles
+                 the authority and the invalid pair is now unrepresentable. -->
+            <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.regulatorLabel' | translate }}</span>
+                <span class="text-sm font-medium text-gray-800">{{ formulaRegulatorName || '—' }}</span>
+              </div>
+              <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.regulatorDerivedHint' | translate }}</p>
             </div>
             <div class="pt-2">
               <div class="flex items-center gap-2">
@@ -382,6 +446,13 @@
                 <div class="flex justify-between">
                   <span class="text-gray-500">{{ 'assets.addModal.wizard.priceModeLabel' | translate }}</span>
                   <span class="text-black font-medium">{{ getPriceModeName() }}</span>
+                </div>
+                <!-- The FORMULA first: it is what the issuer actually chose, and everything
+                     below it is derived. Showing only the base class here would report the
+                     mechanics and hide the product the asset is being issued under. -->
+                <div class="flex justify-between">
+                  <span class="text-gray-500">{{ 'assets.addModal.wizard.formulaLabel' | translate }}</span>
+                  <span class="text-black font-medium">{{ selectedFormula?.name ?? '—' }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">{{ 'assets.addModal.wizard.assetClassLabel' | translate }}</span>

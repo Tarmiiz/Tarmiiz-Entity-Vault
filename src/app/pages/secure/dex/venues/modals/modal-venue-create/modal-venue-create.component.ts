@@ -4,7 +4,6 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ModalVenueCreateService } from './modal-venue-create.service';
 import { ApiService } from '../../../../../../shared/services/api.service';
-import { MARKET_CLASS } from '../../../../../../shared/constants/market-class';
 
 /** One row of the service picker. `eligible` decides selectable vs. shown-and-disabled. */
 interface VenueServiceOption {
@@ -29,8 +28,16 @@ export class ModalVenueCreateComponent {
   /** True while any Exchange service is still awaiting its regulator's confirmation. */
   hasPending = computed(() => this.services().some(s => !s.eligible));
 
+  // ⚠️ `settlementMode` starts EMPTY and is `required` — there is deliberately no default.
+  //
+  // It is IMMUTABLE at `venueCreate` (DEXVenueLib.venueCreate), and mode 2 additionally
+  // requires an escrow clearing house attached to the service at EVERY placement
+  // (DEXVenueLib.escrowAgent, reached from DEXOrderLib), so a wrong pick cannot be corrected
+  // — it can only be abandoned by creating another service. A pre-selected value would be a
+  // permanent decision made by a default.
   form = this.fb.group({
     serviceAddress: ['', Validators.required],
+    settlementMode: ['', Validators.required],
   });
 
   constructor() {
@@ -56,27 +63,41 @@ export class ModalVenueCreateComponent {
     const list = data?.services ?? [];
     this.services.set(
       list
-        .filter((s: any) => Number(s.market_class ?? s.marketClass ?? 0) === MARKET_CLASS.EXCHANGE)
+        // ⚠️ ONE LICENCE TEST REPLACES THE PAIR (Phase 28 step (e), 2026-09-03). The chain gate
+        // this mirrors was `marketClass == MC_EXCHANGE` AND `marketClassConfirmed`; it is now the
+        // single `hasLicense(service, 28)`, because a licence is Active precisely BECAUSE a
+        // regulator approved it — the confirmation flag has no successor and needs none.
+        //
+        // ⚠️ AND THE "LISTED BUT DISABLED" STATE GOES WITH IT. The old picker showed an
+        // unconfirmed Exchange greyed out so an entity waiting on its regulator saw an answer
+        // rather than an empty list. There is no equivalent here: a REQUESTED licence is not
+        // visible through `hasLicense`, and surfacing one would mean reading `licensesOf`, which
+        // returns Denied and Revoked too — publishing "pending" for a licence that was refused.
+        // An empty picker is the honest outcome; the licence request's own status page is where
+        // that question belongs.
+        .filter((s: any) => ((s.licenses ?? []) as number[]).includes(28))
         .map((s: any) => ({
           address:  s.address,
           name:     s.name || s.address,
-          // The API coerces this column to a real boolean on `/vault/services`, so `=== true`
-          // is safe here; the `== 1` leg covers a raw row reaching this picker some other way.
-          eligible: (s.market_class_confirmed ?? s.marketClassConfirmed) === true
-                 || Number(s.market_class_confirmed ?? s.marketClassConfirmed ?? 0) === 1,
+          // Every listed service is eligible now: holding the licence IS the eligibility, so
+          // there is no second condition to test. Kept as a field so the template needs no change.
+          eligible: true,
         })),
     );
   }
 
   onSave(): void {
     if (this.form.valid) {
-      this.modalService.confirm(this.form.get('serviceAddress')?.value || '');
-      this.form.reset({ serviceAddress: '' });
+      this.modalService.confirm(
+        this.form.get('serviceAddress')?.value || '',
+        Number(this.form.get('settlementMode')?.value),
+      );
+      this.form.reset({ serviceAddress: '', settlementMode: '' });
     }
   }
 
   onCancel(): void {
     this.modalService.cancel();
-    this.form.reset({ serviceAddress: '' });
+    this.form.reset({ serviceAddress: '', settlementMode: '' });
   }
 }

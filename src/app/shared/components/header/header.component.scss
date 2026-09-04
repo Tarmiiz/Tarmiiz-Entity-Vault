@@ -1,7 +1,21 @@
+/* Page header — a GREY-tone gradient (2026-09-01), the neutral sibling of the
+   dashboard panel headers' slate→indigo. Grey rather than brand colour on
+   purpose: this bar sits above every page in the app, so it must stay
+   background. The two stops straddle the flat #4a5568 it replaced (their
+   midpoint is ~#485264), so the bar reads as the same header, just not dead.
+   Both ends stay dark enough for the white title and the icon row. */
 ion-toolbar {
-    --background: #4a5568;
-    --border-color: #4a5568;
+    --background: linear-gradient(to right, #3b4453 0%, #566175 100%);
+    /* The bottom border was matched to the old flat fill to hide it; against a
+       gradient a solid line shows through wherever the two disagree. */
+    --border-color: transparent;
     height: 68px;
+}
+
+/* `to right` is physical, not logical — flip it so the gradient tracks the
+   reading direction in Arabic (LanguageService sets dir on <html>). */
+:host-context([dir='rtl']) ion-toolbar {
+    --background: linear-gradient(to left, #3b4453 0%, #566175 100%);
 }
 
 ion-title {

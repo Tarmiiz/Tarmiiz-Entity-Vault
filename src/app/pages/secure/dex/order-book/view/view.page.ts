@@ -42,14 +42,14 @@ export class ViewPage implements OnInit, OnDestroy {
   countryCode = signal<number | null>(null);
   currencyCode = signal<number | null>(null);
 
-  bestBid = signal<{ orderId: number; price: string } | null>(null);
-  bestAsk = signal<{ orderId: number; price: string } | null>(null);
+  bestBid = signal<{ ref: string; price: string } | null>(null);
+  bestAsk = signal<{ ref: string; price: string } | null>(null);
   bids = signal<DexOrder[]>([]);
   asks = signal<DexOrder[]>([]);
   asOf = signal<number>(0);
 
-  selectedBuy = signal<number | null>(null);
-  selectedSell = signal<number | null>(null);
+  selectedBuy = signal<string | null>(null);
+  selectedSell = signal<string | null>(null);
   refreshing = signal(false);
 
   private sub?: Subscription;
@@ -113,8 +113,13 @@ export class ViewPage implements OnInit, OnDestroy {
   fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
 
-  selectBuy(o: DexOrder) { this.selectedBuy.set(o.orderId === this.selectedBuy() ? null : o.orderId); }
-  selectSell(o: DexOrder) { this.selectedSell.set(o.orderId === this.selectedSell() ? null : o.orderId); }
+  selectBuy(o: DexOrder) { this.selectedBuy.set(o.ref === this.selectedBuy() ? null : o.ref); }
+  selectSell(o: DexOrder) { this.selectedSell.set(o.ref === this.selectedSell() ? null : o.ref); }
+
+  shortRef(r: string): string {
+    const s = String(r || '');
+    return s.length > 18 ? s.slice(0, 8) + '…' + s.slice(-6) : s;
+  }
 
   canMatch(): boolean {
     return this.isExec() && this.selectedBuy() !== null && this.selectedSell() !== null;
@@ -126,7 +131,7 @@ export class ViewPage implements OnInit, OnDestroy {
     if (buy === null || sell === null) return;
     const ok = await this.alertService.show(
       this.translate.instant('dex.orderBook.matchConfirm.title'),
-      this.translate.instant('dex.orderBook.matchConfirm.message', { buy, sell }),
+      this.translate.instant('dex.orderBook.matchConfirm.message', { buy: this.shortRef(buy), sell: this.shortRef(sell) }),
       this.translate.instant('dex.orderBook.matchConfirm.confirm')
     );
     if (!ok) return;
@@ -140,5 +145,5 @@ export class ViewPage implements OnInit, OnDestroy {
     } finally { this.loadingService.hide(); }
   }
 
-  goOrder(o: DexOrder) { this.router.navigate(['/authorized/dex/orders/details/' + o.orderId]); }
+  goOrder(o: DexOrder) { this.router.navigate(['/authorized/dex/orders/details/' + o.ref]); }
 }

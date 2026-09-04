@@ -15,6 +15,374 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-02
+
+#### Added — Phase 4.9: an issuer picks a regulator's PRODUCT, not a base class
+
+- **The Add Asset wizard's class picker is now a CLASS DEFINITION picker.** An issuer no longer
+  selects "Debt / Sukuk"; it selects one of its regulator's named products built over that base
+  class — "Green Sukuk" or "Conventional Bond", which may impose opposite requirements over the
+  same class 3. `registerAsset` requires a formula and has no default, so this is the wizard's
+  fail-closed gate.
+  - **`SUPPLY_MODE_FOR_CLASS` DELETED.** It was a verbatim mirror of `AssetClassLib.supplyModeFor`,
+    a function that no longer exists — the class → supply map, per-row defaults and per-role
+    independence rules were all removed from the library, because a base class fixes nothing now.
+    Supply model and price mode come from the formula's policies: pinned where the regulator
+    decided, a picker only where the policy says *Issuer chooses*.
+  - The class-11-is-special branch went with it. "Custom lets the issuer choose" stopped being a
+    class fact — any formula may leave the choice open, and a Custom-class formula may pin one.
+  - ⚠️ **The REGULATOR picker on step 5 is gone.** It was a free choice three steps after the class,
+    so an issuer could pick a product authored by FRA and then select a different regulator — a
+    pairing `registerAsset` refuses, discovered only **after** the token had been deployed and its
+    name and symbol permanently taken in that country. A formula belongs to exactly one regulator,
+    so choosing the product settles the authority and the invalid pair is now unrepresentable
+    rather than validated. Step 5 shows it read-only; `regulator` moved out of that step's
+    validated fields, which would otherwise have gated Next on a control nobody can edit.
+  - **A price mode the regulator pinned can no longer be silently overwritten.** The supply-mode
+    subscription used to reset `priceMode` unconditionally, which after 4.9 meant picking a
+    Market-priced product and watching the choice flip back — then reverting at registration
+    against its own formula's policy. The suggestion now applies only when the policy is *Issuer
+    chooses*.
+  - Empty is a real, expected state on a fresh chain (zero formulas exist until a regulator authors
+    one) and says so explicitly, rather than rendering as a broken picker.
+- **Register Existing gained the same picker, narrowed harder.** `assetRegisterExisting` now sends
+  a formula (the API 400s without one). Path B is better placed than the wizard to enforce the
+  on-chain rule, because the preview has already read the regulator and the declared class off the
+  contract — so the list is filtered by both halves and every option can succeed. Auto-selects when
+  there is exactly one.
+- **Asset detail → Compliance gained a Class Definition panel**: the product, its state (Retired is
+  amber — the asset keeps resolving against it, but no new asset may use it), both policies, the
+  permitted A23 standards and the R20 parameters, plus the regulator's own named document rows.
+  Before this there was nothing to name: the asset showed a bare class label, and the rules it was
+  actually held to were a model default written in Solidity in another country.
+  - The matrix's Role column now shows the **regulator's named role definition** with an
+    "Independence waived" pill where one applies — which answers the question the party list cannot:
+    *why was an issuer-owned party accepted here?*
+  - `reqStateName(0)` relabelled "Not set". It no longer falls through to anything, but Off (a
+    recorded refusal) and Unset (silence) are still different acts and only one leaves a record.
+  - The `requirementsHint` and `onlyBaselineRequirement` rationale both described the deleted model
+    default; corrected in en + ar.
+- `ApiService`: `assetClassFormulas()` + `assetClassFormula()`.
+
+#### Fixed
+
+- **The Register Existing preview labelled every contract `TarmiizT3643` — a standard the platform
+  no longer has.** `p.tokenType === 1 ? 'TarmiizT20' : 'TarmiizT3643'` read a field that is not in
+  `RegistrationPreview` (retired with the t3643 tree), so it was `undefined`, always took the false
+  branch, and never looked like an error. Now reports the base class, which is the fact the formula
+  is matched on. The orphaned `tokenTypeLabel` key was dropped from en + ar. See BUGS.md.
+
+#### Changed
+
+- **The Add Subscription modal is now driven by the generated canonical rules instead of a
+  hand-copy.** `isModeBValid()` re-implemented v3's required set inline (`BASE` + *"passports also
+  need nationality"*), which is exactly how it would have been stranded when the schema moved to
+  v4 — and the failure mode is the worst available: the operator completes the whole form and the
+  API rejects at submit. It now walks `ekycRequiredFieldsForLevel()` from the regenerated
+  [ekyc-canonical.ts](src/app/shared/constants/ekyc-canonical.ts) mirror, so the modal and the
+  server read the same table.
+  - `isPassport()` **removed** — it hard-coded a rule that was true under v3 and is wrong under v4,
+    where nationality is mandatory for every document type. Replaced by `isRequired(field)`, which
+    resolves the tier from `EKYC_FIELD_RULES` for the chosen `idType`.
+  - `nationality`, `issuingCountry` and `addressCountry` promoted into the main block (all
+    mandatory now); `addressStreet`, `addressCity`, `issuingAuthority`, `placeOfBirth`, `gender`,
+    `idReleaseDate` and `nationalIdSerial` surfaced there too with a `*` marker that appears only
+    for the document types that actually require them. The nine controls this duplicated were
+    removed from the "more fields" block — two inputs bound to one control is a latent editing bug.
+  - A **"Still required for this document type"** hint lists what is outstanding, so the operator
+    sees it before submitting rather than after. en + ar.
+- **`ekyc-canonical.ts` regenerated** for v4 — exports `EKYC_FIELD_RULES`, `EKYC_EVIDENCE_RULES`,
+  `ekycRuleApplies`, `ekycRequiredEvidenceForLevel`; the retired `EKYC_REQUIRED_BASE` /
+  `EKYC_PER_ID_TYPE_REQUIRED` are gone. Generated file — do not edit by hand.
+
+### 2026-09-01
+
+#### Added
+
+- **A Contract tab on DEX venue detail (Phase 16 A6)** — the venue's bound contract, the platform
+  kit-library addresses to link against, verify-then-bind for an address the operator deployed, a
+  deploy-and-bind path, and unbind.
+  [details.page.ts](src/app/pages/secure/dex/venues/details/details.page.ts) +
+  [details.page.html](src/app/pages/secure/dex/venues/details/details.page.html), gated on
+  `dex-venue-set-contract` and `role !== 3`; en + ar.
+  - **The Vault does NOT build creation code, deliberately.** Per the platform ruling the operator
+    brings fixed, reviewable code from the downloadable kit and the platform neither generates nor
+    holds an implementation. What the page adds is the two things genuinely missing: the published
+    kit-library addresses (they become bytecode literals and are the conformance fingerprint) and a
+    route to a `CREATE` the tenant relay wallet is not permitted to perform.
+  - **Capabilities are read from `hasBook` / `hasDeals` / `hasOfferings`, never inferred from
+    `templateKind`** — kind implies capability only for the stock templates, and kind 9 (Custom)
+    composes its own, so those flags come from the bound contract's own `info()`.
+  - **The halt-first requirement is shown, not discovered as a 409**, and the success alert always
+    surfaces the API's `notice`: binding AUTO-SUSPENDS the venue pending regulator review, and an
+    operator who is not told reads their own dark venue as a failure of the action.
+  - `DexVenue` in [data.model.ts](src/app/shared/models/data.model.ts) gained the eight contract
+    fields the API now returns. A null `venueContract` means **bookless**, not "centrally
+    operated"; a null `artifactHash` means **"template unrecognised"**, never "template mismatch".
+
+#### Fixed
+
+- 🔴 **The DEX orders/trades surface was never swept for Phase 16 / V36, so it read fields the API
+  stopped returning.** `Orders` became `Commitments` (`uint256 orderId` → `bytes32 ref`) and a
+  trade's venue PAIR collapsed to one `dexService`; both APIs and both sync plugins were swept
+  then, this frontend was not. Measured against live data:
+  - Orders list ID column rendered a bare `#`; the detail breadcrumb read `#NaN`, because
+    `Number(paramMap.get('orderId'))` on a hex ref is `NaN` and the page then fetched nothing.
+  - **Match Selected could never have worked** — `vaultDexMatchOrders` posted
+    `{buyOrderId, sellOrderId}`, which the API refuses by name rather than aliasing.
+  - **The trades list THREW on the first real trade** — `t.buyDexService.toLowerCase()` in the
+    filter and `.slice(0,10)` in the template, both on a field that is now `undefined`.
+  - The trades PDF head carried **10** columns to the body's **9**: `Scope` was dropped from the
+    body only (V36) and left in the head, so every cell after `Credit` sat one to the left and
+    `Executed` rendered under `Scope`.
+  - Swept: `DexOrder.orderId → ref: string`, `DexTrade.buyOrderId/sellOrderId → buyRef/sellRef`,
+    `DexTrade.buyDexService/sellDexService → dexService`, `DexDeal.buyOrderId/sellOrderId` retyped
+    `string` (those columns are `TEXT` refs — the names are historical), route param
+    `:orderId → :ref`, and the four API-client signatures. A `shortRef` helper renders head+tail
+    with the full value on `title`, since 64 hex characters is not a table cell.
+- 🔴 **Both Transactions exports dropped the counterparty on every Transfer row.** The screen falls
+  back to `to` when a row has no `subscription` — a Transfer names a counterparty, not a
+  subscription — while the Excel and PDF bodies read `t.subscription` directly, so the cell came
+  out EMPTY. A blank there reads as "no counterparty" rather than as a missing lookup, and only
+  shows up by holding an export next to the screen. The rule is now expressed once as
+  `partyAddress(t)` and the template and both exports share it.
+- 🔴 **Create Venue could never succeed — the modal sent no `settlementMode` and the API requires
+  it with no default, so every attempt returned 400.** With the DEX venue routes living in
+  `routes/vault.js` (which rejects the automation principal by design), a venue could not be
+  created on a running stack by ANY path. Found while standing up a native-P2P venue for
+  `TK MMF 1`.
+  - **A half-applied two-axis change.** On 2026-08-09 PARTICIPATION (`allowP2P`) became derived on
+    chain from whether the service has a registered payment processor; SETTLEMENT stayed
+    caller-supplied and immutable. The Vault was updated as though BOTH had gone — and its own
+    comment asserted it, which is what would talk a reviewer past the defect. The Entity API was
+    corrected (its handler comment: *"TWO AXES, and this handler used to ignore the one that is
+    still the caller's"*); this frontend never was.
+  - `modal-venue-create` gains a required **Settlement Mode** select — 1 = Venue-settled (performs
+    its own DvP) / 2 = Member-settled (books and matching only). `vaultDexVenueCreate` now takes
+    and posts it, and the venues list passes it through.
+  - **Deliberately no default and no pre-selection.** `settlementMode` is immutable at
+    `venueCreate`, and mode 2 additionally demands an escrow clearing house attached to the service
+    at EVERY placement — so a wrong pick is uncorrectable and can only be abandoned by registering
+    another service. The field carries an amber warning saying so. A default here would be a
+    permanent decision made by a form.
+- **Every alert message in the app broke MID-WORD** — the shared alert body carried `break-all`,
+  so prose rendered as *"pending regulat / or review"*. `break-all` is correct for a hash or an
+  address and wrong for sentences; `break-words` still breaks an unbreakable token when it would
+  overflow. **Present in five frontends** (Entity Vault, Regulator Dashboard, Directory Search,
+  Entity Registration Portal, Regulator Registration Portal) — all five fixed.
+- 🔴 **`AlertService.hideCancel` had never been used by a single caller.** Measured: **370
+  `alertService.show(` sites in this app, 0 passing the flag, 145 of them `alerts.error`** (the
+  Regulator Dashboard: 60 sites, 0). The flag exists and its own comment reserves it for
+  "informational/success messages where a Cancel makes no sense" — and nothing ever asked for it,
+  so **informational dialogs offer to cancel actions that have already completed**, including a
+  mined on-chain transaction. Fixed at this phase's four call sites via a local `notify()` helper;
+  the rest are logged in [Phase 16](../../../Docs/rules/phases/code-fix-phase-16.md), not swept —
+  ⚠️ **flipping the parameter's default would be harmful**, stripping Cancel from the ~200 genuine
+  confirmations and removing the ability to DECLINE a destructive action. It is a per-site
+  judgement: is this dialog a question or a statement?
+  - Same failure shape as Phase 16's headline defect and Phase 25.2 — **a capability whose producer
+    was built and whose consumers are zero.** Invisible to every drift checker, because a surface
+    that never had a caller has nothing to drift from.
+- **The Contract tab labelled the catalog-match field "Runtime Codehash"**, so an empty value read
+  as *"we cannot see what code is running"* — alarming and false: the runtime hash IS pinned on
+  chain at bind time and matches. What is absent is the per-chain creation-code catalog, so the
+  field is now "Catalog Match" and its empty state reads *"template unrecognised"*.
+- **The Credit Deposit modal offered a "Provider Trx Time" field that reverts 100% of the time on
+  any service without the backdating grant — which is the default — and only said so at submit, as
+  a raw contract string.** `CreditProxy.deposit` refuses a timestamp that is neither `0` nor exactly
+  `block.timestamp` unless the grant is held. The modal now pre-flights the new
+  `GET /services/:service/backdating` and **disables** the input with a line saying why, rather than
+  letting the operator fill the whole form and meet
+  `CreditProxy: backdating is not granted for this service`.
+  - ⚠️ **"Just enter the current time" was never an option either, which is why the field is
+    disabled rather than merely warned about.** The gate wants *exactly* `block.timestamp`; measured
+    on the live chain the same minute, head was `1788250359` against a wall clock of `1788250386` —
+    **27 s of drift** on ~4 s blocks — and `datetime-local` has a 60 s step, so its seconds are
+    always `00`. No browser value can satisfy it. Empty (⇒ `0` ⇒ block time) is the only working
+    input, and now the only reachable one.
+  - Even WITH the grant, entering "now" would mark an ordinary real-time deposit as backdated
+    evidence on chain, so the enabled-state copy says explicitly that the field is for the payment
+    processor's own transaction time and should otherwise stay empty.
+  - **Disabled through the FormControl**, not just visually: `form.value` omits a disabled control,
+    so the field cannot contribute a timestamp even if the class binding were bypassed. Starts
+    `false` and only opens on a measured `granted` — an unreachable API reads as not-granted.
+  - ⚠️ **The two sibling modals with the same-looking field were checked and deliberately left
+    alone.** `_mayBackdate` is read at exactly ONE site on chain — `deposit` — so
+    `modal-route-transfer`'s date is genuinely usable (`serviceRouteTransfer` carries no such gate),
+    and `modal-add-subscription`'s `providerTrxTime` is the eKYC provider's verification time on the
+    identity's Verification row, which never reaches CreditProxy at all. Disabling those would have
+    removed working capability.
+  - New `credit.backdating.{granted,notGranted}` in en + ar.
+
+- **"Edit Venue Fees" could silently WIPE a fee that was only inherited — the modal's own guard
+  against that was fed by only one of its three call sites.** `modal-service-fee-config` computes
+  `inheriting = input.mode !== 'default' && input.isSet === false` and keeps Save disabled until the
+  operator actually changes something, because "opening and saving an inherited row must NOT
+  silently pin an override" — an all-None override does not mean *inherit*, it means *this asset is
+  free* and outranks the service default. The DEX venue detail page passes `mode` / `inherited` /
+  `isSet`; the **service detail** and **distribution** pages passed none of them, so `isSet` was
+  `undefined`, `undefined === false` was **false**, and the guard never engaged on either. Both now
+  pass all three.
+  - They also showed **None / None** on an inheriting asset rather than the inherited value, since
+    `inherited` was absent too — so the operator could not see what was actually being charged.
+  - **Both call sites now REFUSE to open on a failed read.** `vaultGetServiceFeeConfig` returns
+    `null` for a transport failure and for any non-envelope body alike, and both pages did
+    `res?.feeConfig ?? null` — indistinguishable from "no fee configured". That is how the same
+    surface's API-side envelope bug (see the Entity API CHANGELOG for 2026-09-01) presented as a
+    blank editor over a live 1 bp override on `TK Onc Fund` / `TK MMF 1`. New
+    `services.details.info.loadVenueFeeConfigError` / `distribution.loadFeesError` in en + ar.
+
+- **Add Identifier could never be saved** — the Save button was permanently disabled with no error
+  shown, on both the asset detail and the entity profile. The API serves `variable_id` and the
+  shared identifier modal reads `variableId`, so the id was `undefined` at every use: the option
+  value was empty while the option TEXT still rendered "ISIN" (which is why the select *looked*
+  correctly filled), the ISIN validator was skipped entirely (hence no format error either), and
+  `canSave()` was `false` forever. New `toGlobalVariables()` normaliser in
+  [data.model.ts](src/app/shared/models/data.model.ts), applied at both loaders.
+  - ⚠️ **Deliberately NOT normalised inside `vaultGetGlobalVariablesByCategory`.** 12 call sites
+    already map `variable_id` themselves (`modal-asset-add`, `modal-service-add`, the four
+    `modal-*-state` modals, `system.page`, three document lists…), so a central change would have
+    broken every one of them to fix three. The helper's docstring records this.
+  - **A third instance the report missed:** the subscription detail's credit-origin map read only
+    `variableId`, so `originMap` stayed empty and every row fell through to a hardcoded fallback —
+    correct-looking for the seeded origins, `Origin #N` for anything a chain adds later, which
+    defeats the point of reading the vocabulary from Global Variables at all.
+- **Document upload from the standalone asset-documents page failed 100% of the time**, and the
+  **service twin had the identical defect** (not in the report — found by checking the siblings).
+  Both called the JSON `*DocumentAdd`; a `File` serialises to `{}` under `JSON.stringify`, so no
+  multipart part was ever sent and the API returned `400 cid required (or attach a file)`. Both now
+  use the `*AddMultipart` variant the documents *tab* already used. There is no subscription twin.
+- **Ten tabbed detail pages changed content width between tabs** — `max-w-6xl mx-auto` removed from
+  12 tab-content wrappers (services, subscriptions, documents, dex/venues, messages,
+  dex/asset-listings, dex/orders, logs, assets/documents, services/documents); the page's own
+  `container mx-auto` already bounds them. Re-measured rather than taken on trust:
+  `dex/trades/details` and `documents/shared-details` have **zero** tab blocks, so their constraint
+  is a uniform page-width choice and they were left alone, like `profile` and `users/details`.
+- **The Messages list now opens on Unread instead of All** — the unread set is the working set; an
+  inbox that opens on everything ever received buries what the user came for. `clearFilters()`
+  moved in the same edit (signal **and** the imperative toggle write), so Clear returns to the
+  opening state rather than becoming the one control that switches you off the default with no way
+  back.
+- **`MoneyPipe` imported but unused by `ClearingHouseDashboardPage`** (`NG8113`) — the only warning
+  the production build emitted, so it trained everyone to ignore a clean signal. Checked the realer
+  possibility first: every value on that page is a **count**, and the one numeric binding already
+  uses `| number` — no money was rendering raw. Import dropped; **the Vault build is now
+  warning-free.**
+
+#### Changed
+
+- **Dashboard section headers are a slate→indigo gradient instead of a flat `bg-gray-600`** — the
+  issuer dashboard's 6 card headers (Top Assets by AUM, Latest Transactions and the rest) plus the
+  service-provider dashboard's. Matches the Regulator Dashboard, which changed in the same pass.
+  The rationale is the same on both: a dashboard is a wall of these bars, and the flat neutral fill
+  read as dead space beside the indigo status banner at the top of the same screen. The gradient
+  lands on that banner's own `indigo-800` so the page reads as one system, while staying darker and
+  duller than the banner so it does not compete with it. The clearing-house dashboard has no such
+  headers and is untouched.
+- **Both indigo banners and every new gradient carry an `rtl:bg-linear-to-l` twin.** `to-r` is
+  physical, not logical, so without it the gradient runs backwards in Arabic and the section title
+  lands on the saturated end. Tailwind emits the `rtl:` variant after the base utility, so it wins
+  on source order (both are single-class specificity) — confirmed in the built `styles-*.css`.
+- **The page header bar carries a grey-tone gradient** —
+  `linear-gradient(to right, #3b4453, #566175)` on the shared `<app-header>`'s `ion-toolbar`,
+  replacing the flat `#4a5568`, with the `to left` twin under `[dir=rtl]`. Grey rather than the
+  dashboard's slate→indigo on purpose: this bar sits above every page, so it is chrome and must
+  stay background. The stops straddle the old value (midpoint ≈ `#485264`) so it reads as the same
+  header. `--border-color` went to `transparent` — it had been matched to the flat fill purely to
+  hide the bottom rule, and against a gradient a solid line shows through.
+- **The sidebar's typography now matches the Permissioning Admin's menu** — `ion-label` at
+  `0.875rem` / weight 400, plus greyscale font smoothing, scoped to `ion-menu`. The family was
+  never the difference (all three apps resolve to Inter); Ionic's `ion-label` default of `1rem`
+  under the platform's subpixel smoothing was. **`font-family` is deliberately NOT set here** — the
+  Arabic stack (`html.lang-ar` → Noto Kufi Arabic) reaches the menu by inheritance, and a direct
+  rule would beat it and drop the Arabic sidebar to a fallback face.
+- [docs/frontend-standards.md](../../../docs/frontend-standards.md) updated in the same pass:
+  Standard 4 codified the flat `bg-gray-600` card header, and the app shell (page header bar +
+  sidebar) had no standard at all — it is now **Standard 0**.
+
+### 2026-08-31
+
+#### Fixed
+
+- **Holders at Block showed every custodial holder as `0`, with a `Total balance 0` footer.** The
+  cause was entirely server-side and is fixed there — both APIs' `holders-at` / `balance-at` read
+  `balanceOfAt`, which checkpoints the ERC-20 holder of record; under custody that is the CUSTODIAN,
+  so every subscriber read zero. They now use `ownedAt`, the record-date entitlement read. **No page
+  change was needed** — reload and re-run the snapshot. Noted here because the symptom was
+  exclusively visible on this tab, and because the page's own comment named the old primitive
+  (*"Driven by ITarmiizAsset.balanceOfAt"*) and would have sent the next reader the wrong way. See
+  [Phase 25.4](../../../Docs/rules/phases/code-fix-phase-25.md).
+  - Worth knowing for the export feature built on this tab: every evidence pack produced from a
+    custodial asset before 2026-08-31 carries zeroes. Re-export.
+
+- **Asset detail tabs no longer change width when you switch between them.** Information,
+  Compliance and Metadata carried `max-w-6xl mx-auto` on their content card while Overview,
+  Holders, Transactions, Services, Price, Documents, Distributions and Holders-at-Block did not —
+  so the card visibly jumped narrower on three of eleven tabs. All eleven now share the page's own
+  `container mx-auto` and nothing else.
+  - ⚠️ **The same mixed pattern is still live on ten other tabbed detail pages** — services (2 of
+    10 tabs constrained), subscriptions (1 of 7), dex/venues (1 of 5), documents (1 of 6),
+    messages (2 of 3), dex asset-listings / orders, logs, and the three per-owner document detail
+    pages. Left alone deliberately: this pass fixed the page that was reported. `profile` and
+    `users/details` are NOT in that list — they constrain every tab, which is uniform and
+    therefore a choice, not this defect.
+
+#### Changed
+
+- **The asset detail's `Registration` tab is now `Compliance`, and is four left-rail sub-tabs
+  instead of one 280-line scroll** — Info / Declaration / Documents / Class parties, extracted from
+  [details.page.html](src/app/pages/secure/assets/details/details.page.html) into
+  [compliance-tab.component.ts](src/app/pages/secure/assets/details/compliance-tab/compliance-tab.component.ts)
+  on the `documents-tab` precedent. The approval pill, the rejection reason and the Refresh control
+  sit ABOVE the rail because the approval state governs every pane.
+  - Renamed for accuracy, not taste: by the time an operator reaches this tab the asset IS
+    registered (`registerAsset` ran and left it in `approvalState 1`); what is outstanding is the
+    declaration, the evidence and the parties. **Only display strings moved** — the `activeTab()`
+    key, the API routes (`/assets/:address/class`, `/declaration`, `/composition`, `/parties`) and
+    the contract functions all keep saying `registration` / `assetClass`. The Declaration pane
+    labels its first section "Compliance profile" so the narrower on-chain sense of that word stays
+    visible where it is the one that applies.
+  - i18n namespace `assets.details.registration.*` → `assets.details.compliance.*`, moved wholesale
+    in both locales (79 keys each, en/ar verified at parity).
+- **"Requirements in force" answers the question it is asked.** Its `State` column was
+  `Required` / `Optional` — *is this demanded of me* — and never said whether it had been done, so
+  the operator's actual question had no answer on screen. `State` → **Obligation**, plus a new
+  **Status** column derived client-side, mirroring `approveAsset`'s three checks exactly: the
+  wrapper's id is non-zero, and every role-implying row has an ACCEPTED party. A `Missing` row
+  carries a **Resolve** link that jumps to the pane that fixes it.
+  - The other evidence rows (Insurance evidence, SPV documentation, Concentration limits, Debtor
+    verification) report **"Held off-platform"**, deliberately not a tick: the legal wrapper is the
+    only evidence field with an on-chain slot, and `approveAsset` does not check the others.
+  - The four-layer provenance blurb is replaced. `Classes.assetRequirement` returns a bare `uint8`
+    with no source field and the regulator-override layer has no getter, so `Origin` is a two-value
+    inference (`Composed by us` / `Policy`) and now says only that.
+  - A lone baseline row is labelled as the complete answer — for a Fund or an Equity that is the
+    CORRECT rendering (`AssetClassLib.defaultRequirement` makes requirement 1 Required for every
+    class and Off for everything outside the class's own list), and unexplained it read as broken.
+
+#### Added
+
+- **Shared `modal-document-picker`** — pick one of an owner's documents, with **Upload New** inline
+  (it reuses the existing `ModalDocumentAddComponent` + multipart upload and auto-selects the
+  `documentId` off the 201). The legal-wrapper field was a bare `<input type="number">` and the
+  Documents tab never rendered an id anywhere, so the number was only learnable out of band; it is
+  now a read-only `{title} (#id)` row plus **Choose Document**. Keyed by `resourceType` +
+  `address`, so service and subscription surfaces can use it unchanged.
+- **Shared `modal-party-picker`** — Class parties took a free-text `0x` box, so both of
+  `Classes.attachParty`'s refusals (right party class; independence for every role but Servicer)
+  were discoverable only by trying. It lists `GET /asset-class/providers?role=`, where the server
+  has already applied both, so every row offered is attachable. One button per role replaces the
+  address box + role select.
+- **The two compliance-profile fields the Vault could never declare.** `saveDeclaration` hardcoded
+  `eligibleJurisdictions: []` and never sent `requiredClaimTopic` / `requiredClaimLevel`, though
+  `declareAssetCompliance` accepts all three and the **Regulator Dashboard already displayed
+  them** — so an issuer could not restrict a jurisdiction or require a claim at all, and the
+  regulator's view of both was permanently empty. Declaration now carries a jurisdiction chip
+  picker (empty = all) and a claim-topic dropdown over the `Claim Topic` Global Variables catalog
+  (`bytes32(uint256(id))`, matching `ITarmiizIdentity`'s `TOPIC_*`) with its level.
+  - A stored topic outside the catalogue is shown raw, locked, and **preserved on save** — mapping
+    it to "None" would silently clear a live restriction on the next unrelated edit.
+
 ### 2026-08-30
 
 #### Removed

@@ -349,6 +349,28 @@ export class ApiService {
     return this.vaultPut('/app-config/' + encodeURIComponent(key), { value });
   }
 
+  // ── Settings → API Endpoints (Phase 26.7) ────────────────────────────────────────────────
+  //
+  // ⚠️ ALL THREE ARE VAULT-TIER, including the LIST. A service token must not be able to
+  // enumerate — let alone flip — the switches that restrain it, so `vaultGet` is correct here
+  // and an integration-tier read would defeat the control.
+  //
+  // `encodeURIComponent` on the key, as `setAppConfig` does: registry keys are camelCase today
+  // but the path segment must survive whatever a future generated key contains.
+  async vaultApiEndpointsList(): Promise<{ endpoints: any[]; sections: { section: string; items: any[] }[] }> {
+    const data = await this.vaultGet('/api-endpoints');
+    // Registry order is the SERVER's — returned untouched. Do not sort or re-group here.
+    return { endpoints: data?.endpoints ?? [], sections: data?.sections ?? [] };
+  }
+
+  async vaultApiEndpointSet(key: string, enabled: boolean) {
+    return this.vaultPut('/api-endpoints/' + encodeURIComponent(key), { enabled });
+  }
+
+  async vaultApiEndpointReset(key: string) {
+    return this.vaultPost('/api-endpoints/' + encodeURIComponent(key) + '/reset', {});
+  }
+
   async resetAppConfig(key: string) {
     return this.vaultPost('/app-config/' + encodeURIComponent(key) + '/reset', {});
   }
@@ -557,10 +579,13 @@ export class ApiService {
     const data = await this.vaultGet('/dex/venues/' + address);
     return data?.venue ?? null;
   }
-  // No settlementMode since 2026-08-09 - the venue's trading surfaces are derived on
-  // chain from whether its service has a registered payment processor.
-  async vaultDexVenueCreate(serviceAddress: string) {
-    return this.vaultPost('/dex/venues', { serviceAddress });
+  // TWO AXES, and 2026-08-09 changed only one of them. PARTICIPATION (`allowP2P`) became
+  // chain-derived from whether the service has a registered payment processor; SETTLEMENT
+  // (`settlementMode`: 1 = venue settles its own DvP, 2 = books and matching only) stayed
+  // caller-supplied and IMMUTABLE. This method dropped BOTH, so the API - which requires
+  // settlementMode with no default - 400'd every create from the Vault.
+  async vaultDexVenueCreate(serviceAddress: string, settlementMode: number) {
+    return this.vaultPost('/dex/venues', { serviceAddress, settlementMode });
   }
   async vaultDexVenueSetState(address: string, newState: number) {
     return this.vaultPut('/dex/venues/' + address + '/state', { newState });
@@ -649,6 +674,33 @@ export class ApiService {
     return this.vaultPost(`/dex/venues/${address}/tier-request`, { tier });
   }
 
+  // ── The venue CONTRACT (Phase 16 A6) ──────────────────────────────────────
+  //
+  // Until these landed, `venueSetContract` had no caller anywhere in the product, so
+  // every venue on every chain answered `venueAct` with "venue has no contract bound".
+  //
+  // The catalog is an INTEGRATION route (a plain authenticated read — the kit-library
+  // addresses are public bytecode literals, and check-route-audience enforces that
+  // split); the other two are vault routes behind requireExecutive. `vaultGet` serves
+  // both — it is "authenticated GET", not a vault-only prefix.
+  async vaultDexVenueTemplates() {
+    const data = await this.vaultGet('/dex/venue-templates');
+    return data ? { templates: data.templates ?? [], libraries: data.libraries ?? {} } : null;
+  }
+  /** Read-only dry run of the on-chain conformance checks. POST only because it takes a body. */
+  async vaultDexVenueContractVerify(address: string, candidate: string) {
+    return this.vaultPost(`/dex/venues/${address}/contract/verify`, { candidate });
+  }
+  /**
+   * Deploy-and-bind, bind an existing address, or unbind.
+   *
+   * ⚠️ A successful bind AUTO-SUSPENDS the venue — a change to the reviewed thing resets
+   * the review — so the caller must surface `notice`, not just a success toast.
+   */
+  async vaultDexVenueContractSet(address: string, body: { creationCode?: string; name?: string; venueContract?: string | null }) {
+    return this.vaultPut(`/dex/venues/${address}/contract`, body);
+  }
+
   async vaultDexVenueAssets(address: string, tier?: number) {
     const params: any = {};
     if (tier) params.tier = tier;
@@ -667,8 +719,8 @@ export class ApiService {
     const data = await this.vaultGet('/dex/orders', params);
     return data ? { count: data.count, orders: data.orders } : null;
   }
-  async vaultDexOrderInfo(orderId: number | string) {
-    const data = await this.vaultGet('/dex/orders/' + orderId);
+  async vaultDexOrderInfo(ref: string) {
+    const data = await this.vaultGet("/dex/orders/" + ref);
     return data?.order ?? null;
   }
   // `expiresAt` is time in force: unix SECONDS, 0 = good-till-cancelled. NOT milliseconds —
@@ -676,15 +728,19 @@ export class ApiService {
   async vaultDexPlaceOrder(body: { subscription: string; dexService: string; baseAsset: string; side: number; price: string; amount: string; expiresAt?: number }) {
     return this.vaultPost('/dex/orders', body);
   }
-  async vaultDexCancelOrder(orderId: number | string) {
-    return this.vaultPut('/dex/orders/' + orderId + '/cancel', {});
+  async vaultDexCancelOrder(ref: string) {
+    return this.vaultPut('/dex/orders/' + ref + '/cancel', {});
   }
   /** Close a LAPSED order and return its escrow. Permissionless on chain — see the API route. */
-  async vaultDexExpireOrder(orderId: number | string) {
-    return this.vaultPut('/dex/orders/' + orderId + '/expire', {});
+  async vaultDexExpireOrder(ref: string) {
+    return this.vaultPut('/dex/orders/' + ref + '/expire', {});
   }
-  async vaultDexMatchOrders(buyOrderId: number, sellOrderId: number) {
-    return this.vaultPut('/dex/match', { buyOrderId, sellOrderId });
+  // Phase 16 — the body takes `bytes32` COMMITMENT REFS. It sent `buyOrderId`/`sellOrderId`
+  // until 2026-09-01, which the API rejects outright ("buyRef and sellRef are required"), so
+  // Match Selected could never have worked. The API's own handler notes it refuses the old
+  // names rather than aliasing them: a caller still sending a numeric id has nothing usable.
+  async vaultDexMatchOrders(buyRef: string, sellRef: string) {
+    return this.vaultPut('/dex/match', { buyRef, sellRef });
   }
   async vaultDexTradesList(filters: { asset?: string; venue?: string; party?: string; scope?: string | number; start?: number; offset?: number } = {}) {
     const params: any = { start: filters.start ?? 1, offset: filters.offset ?? 50 };
@@ -750,6 +806,24 @@ export class ApiService {
     } catch (e: any) {
       return { error: e?.message || 'Network error' };
     }
+  }
+
+  // May this service post a ledger row dated other than now? (D6 evidence marks.)
+  //
+  // Every credit form with an optional transaction-time field must ask BEFORE offering it:
+  // `CreditProxy.deposit` refuses a timestamp that is neither 0 nor exactly `block.timestamp`
+  // unless the regulator granted this service the capability, so on an ungranted service any
+  // value in that field is a guaranteed revert — and there is no browser value that equals
+  // `block.timestamp` in the first place (chain time lags wall clock, and `datetime-local` has a
+  // 60 s step), so it cannot even be satisfied by entering the current time.
+  //
+  // Fails CLOSED. A null response (transport failure, or a body that isn't the success envelope)
+  // means we could not measure it, and an unmeasured capability must read as absent — never as
+  // permission.
+  async vaultGetServiceBackdating(service: string): Promise<{ granted: boolean; available: boolean }> {
+    const data = await this.vaultGet('/services/' + service + '/backdating');
+    if (!data) return { granted: false, available: false };
+    return { granted: data.granted === true, available: data.available === true };
   }
 
   // Service-side fee config (uniform D7b engine, 2026-08-03) — keyed by (service, asset)
@@ -1230,8 +1304,14 @@ export class ApiService {
     return this.authGet('/assets/preview-register', { address });
   }
 
-  async assetRegisterExisting(address: string) {
-    return this.authPost('/assets/register-existing', { address });
+  /**
+   * ⚠️ `formula` ADDED AT 4.9 and it is REQUIRED — the API 400s without it. Path B admits a
+   * contract that already exists, so unlike the wizard there is no token to strand; but the
+   * asset is just as governed, and the registry has no way to guess which of the regulator's
+   * products it was issued under.
+   */
+  async assetRegisterExisting(address: string, formula: string) {
+    return this.authPost('/assets/register-existing', { address, formula });
   }
 
   // ─── A8 registration lifecycle + A2 parties + A24 composition (Phase 15) ──────
@@ -1253,9 +1333,72 @@ export class ApiService {
     return this.authGet('/asset-class/catalog');
   }
 
+  // ─── Phase 4.9 — the regulator's class FORMULAS ────────────────────────────
+  //
+  // A formula is a contract the REGULATOR deployed and authored ("Green Sukuk",
+  // "Conventional REIT") carrying the supply policy, price-mode policy, requirement rows,
+  // permitted standards and parameters for one product. Since 4.9 the eleven asset classes
+  // are BASE classes — mechanics vocabulary that decides nothing on its own — and asset
+  // creation REQUIRES a formula with no default.
+  //
+  // ⚠️ So this list is what makes the Add-Asset wizard answerable at all. Without it the
+  // only way to name a formula would be to paste a raw contract address, which an issuer
+  // has no way to discover: there is no on-chain enumeration of a regulator's formulas
+  // (the factory keeps no registry and the id IS the contract address).
+
+  /**
+   * Active class formulas an issuer may register under. `regulator` scopes to one
+   * authority — a formula is only usable under the regulator that authored it, which is
+   * the same rule `registerAsset` enforces on chain.
+   */
+  async assetClassFormulas(opts: { regulator?: string; baseClass?: number; state?: number | 'all' } = {}) {
+    const params: Record<string, string> = {};
+    if (opts.regulator) params['regulator'] = opts.regulator;
+    if (opts.baseClass != null) params['baseClass'] = String(opts.baseClass);
+    if (opts.state != null) params['state'] = String(opts.state);
+    const data = await this.authGet('/asset-class-formulas', params);
+    return data ? (data.formulas ?? []) : null;
+  }
+
+  /** One formula in full — header, the rows the regulator SET, named documents, standards, params. */
+  async assetClassFormula(formula: string) {
+    return this.authGet('/asset-class-formulas/' + formula);
+  }
+
+  /**
+   * Candidates that may fill ONE asset role — what the party picker binds to. The server
+   * has already applied both of `attachParty`'s refusals (right party class, and the
+   * independence rule for every role but Servicer), so every row here is attachable.
+   */
+  async assetClassProviders(role: number) {
+    return this.authGet('/asset-class/providers', { role: String(role) });
+  }
+
   /** REPLACES the composition — send [] to clear. Class 11 only, refused once frozen. */
   async assetSetComposition(address: string, requirementIds: number[]) {
     return this.authPut('/assets/' + address + '/composition', { requirementIds });
+  }
+
+  // R16 — the asset's document-requirement picture, and the write that discharges one.
+  //
+  // 🔴 `customRows` COMES BACK UNCONDITIONALLY and is the half that matters: the regulator's own
+  // named rows are born REQUIRED and reach the client through no other call, whereas catalog doc
+  // rows 1..10 are usually unset. A caller cannot ask about a key it has never seen.
+  //
+  // ⚠️ `rowKeys` goes through `authGet`'s PARAMS argument, never concatenated onto the path.
+  // Two reasons, and the second is the one that bit: CapacitorHttp encodes params properly, and
+  // `check-vault-paths` matches path SEGMENTS — a query welded onto the last segment makes it
+  // read as `requirement-documents<expr>`, which matches no route and is reported as a path
+  // that will 404. The checker is right to say so; the string still type-checks.
+  async assetRequirementDocuments(address: string, rowKeys: string[] = []) {
+    return this.authGet('/assets/' + address + '/requirement-documents',
+      rowKeys.length ? { rowKeys: rowKeys.join(',') } : undefined);
+  }
+
+  // ⚠️ Re-pointing a row WORKS (the contract does a plain assignment), so a wrong document is
+  // corrected by declaring again. Only clear-to-zero is unavailable — zero IS the absence.
+  async assetDeclareRequirementDocument(address: string, rowKey: string, documentId: number) {
+    return this.authPost('/assets/' + address + '/requirement-documents', { rowKey, documentId });
   }
 
   /** The A8 declaration. Either half may be sent alone. */
@@ -2063,6 +2206,24 @@ export class ApiService {
         headers: { 'Content-Type': 'application/json' },
         data: { ...rest, privateKey: key.privateKey },
       });
+      // ⚠️ TWO-STEP SIGN-IN FORK. With LOGIN_MFA_ENABLED the API answers `type: 'success'` with
+      // `mfaRequired: true` and **no token** — the password is proven, the session withheld until
+      // a code is verified.
+      //
+      // ⚠️ `success: false` IS DELIBERATE, and is the fail-safe choice. Tested BEFORE the success
+      // branch so an un-updated caller that checks only `success` treats this as a failed login,
+      // rather than proceeding with `token: undefined` — which is exactly what the previous shape
+      // would have produced: an apparently-successful sign-in whose every later request is
+      // unauthenticated. A caller that understands the flow checks `mfaRequired` first.
+      if (response.data?.mfaRequired) {
+        return {
+          success: false,
+          mfaRequired: true,
+          mfaToken: response.data.mfaToken,
+          expiresInMinutes: response.data.expiresInMinutes,
+          key,
+        };
+      }
       if (response.data?.type === 'success') {
         return {
           success: true,
@@ -2076,6 +2237,42 @@ export class ApiService {
       return { success: false, error: response.data?.error || 'Login API call failed', key };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Login API call failed', key };
+    }
+  }
+
+  /**
+   * Step two of a two-step sign-in: exchange the half-session + emailed code for a real session.
+   *
+   * ⚠️ The `key` from step one must be carried by the CALLER and passed to whatever consumes the
+   * session — this call does not regenerate it. Step one produced the ephemeral signer and proved
+   * the password; this only completes the exchange.
+   */
+  async entityLoginMfa(mfaToken: string, code: string) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'POST',
+        url: this.apiURL + '/entity/login/mfa',
+        headers: { 'Content-Type': 'application/json' },
+        data: { mfaToken, code },
+      });
+      if (response.data?.type === 'success') {
+        return {
+          success: true,
+          userId: response.data.userId,
+          token: response.data.token,
+          expiresAt: response.data.expiresAt,
+          refreshExpiresAt: response.data.refreshExpiresAt,
+        };
+      }
+      // `attemptsRemaining` is surfaced so the UI can tell the user a wrong code costs them
+      // something — after three the challenge is destroyed and they start again.
+      return {
+        success: false,
+        error: response.data?.error || 'Verification failed',
+        attemptsRemaining: response.data?.attemptsRemaining,
+      };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Verification failed' };
     }
   }
 

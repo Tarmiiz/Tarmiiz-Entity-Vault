@@ -48,13 +48,18 @@
           [class.text-white]="activeTab() === 'members'" [class.border-b-2]="activeTab() === 'members'" [class.border-blue-600]="activeTab() === 'members'" [class.bg-blue-600]="activeTab() === 'members'">
           {{ 'dex.venues.details.tabs.members' | translate }} ({{ venueMembers().length }})
         </button>
+        <button (click)="setTab('contract')"
+          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+          [class.text-white]="activeTab() === 'contract'" [class.border-b-2]="activeTab() === 'contract'" [class.border-blue-600]="activeTab() === 'contract'" [class.bg-blue-600]="activeTab() === 'contract'">
+          {{ 'dex.venues.details.tabs.contract' | translate }}
+        </button>
       </div>
     </div>
 
     <div class="bg-white rounded-b-lg shadow-md p-2">
       @if (venue(); as v) {
         @if (activeTab() === 'info') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
@@ -270,12 +275,12 @@
                   @if (venueOrders().length === 0) {
                     <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">{{ 'dex.venues.details.ordersTable.noOrders' | translate }}</td></tr>
                   } @else {
-                    @for (o of pagedVOrders(); track o.orderId; let i = $index; let isEven = $even) {
+                    @for (o of pagedVOrders(); track o.ref; let i = $index; let isEven = $even) {
                       <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
                           [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                          (click)="goOrder(o.orderId)">
+                          (click)="goOrder(o.ref)">
                         <td class="px-6 py-2">{{ i + 1 }}</td>
-                        <td class="px-6 py-2 font-mono">#{{ o.orderId }}</td>
+                        <td class="px-6 py-2 font-mono" [title]="o.ref">{{ shortRef(o.ref) }}</td>
                         <td class="px-6 py-2">{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
                         <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? ('dex.orders.side.buy' | translate) : ('dex.orders.side.sell' | translate)) }}</span></td>
                         <td class="px-6 py-2">{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
@@ -421,6 +426,189 @@
             <div class="flex items-center px-4 py-2 border-t">
               <p class="text-xs font-medium text-gray-800">{{ 'dex.members.table.footer' | translate: { shown: venueMembers().length } }}</p>
             </div>
+          </div>
+        }
+
+        <!-- ── The venue CONTRACT (Phase 16 A6) ───────────────────────────────
+             Until this shipped, no venue on any chain could have a contract bound, so
+             every negotiated verb reverted "venue has no contract bound".
+
+             The page does NOT build creation code: the operator brings fixed, reviewable
+             code from the downloadable kit. What was actually missing is here — the
+             published kit-library addresses to link against, and a route to a CREATE the
+             tenant relay wallet is not permitted to perform itself. -->
+        @if (activeTab() === 'contract') {
+          <div class="space-y-4">
+
+            <!-- What is bound now -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div class="px-4 py-3 border-b border-gray-200">
+                <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.currentTitle' | translate }}</h2>
+                <p class="text-xs text-gray-600">{{ 'dex.venues.contract.currentSubtitle' | translate }}</p>
+              </div>
+              <div class="p-4 text-xs">
+                @if (venue()?.venueContract) {
+                  <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <dt class="text-gray-500">{{ 'dex.venues.contract.address' | translate }}</dt>
+                      <dd class="font-mono text-gray-800 break-all">{{ venue()?.venueContract }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-gray-500">{{ 'dex.venues.contract.template' | translate }}</dt>
+                      <dd class="text-gray-800">{{ templateName(venue()?.templateKind) }}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-gray-500">{{ 'dex.venues.contract.capabilities' | translate }}</dt>
+                      <dd class="text-gray-800">
+                        <!-- Read from the BOUND CONTRACT's own info(), never inferred from
+                             kind: a custom template composes its own capabilities. -->
+                        @if (venue()?.hasBook) { <span class="px-2 py-0.5 me-1 rounded-full bg-blue-100 text-blue-800">{{ 'dex.venues.contract.book' | translate }}</span> }
+                        @if (venue()?.hasDeals) { <span class="px-2 py-0.5 me-1 rounded-full bg-purple-100 text-purple-800">{{ 'dex.venues.contract.deals' | translate }}</span> }
+                        @if (venue()?.hasOfferings) { <span class="px-2 py-0.5 me-1 rounded-full bg-teal-100 text-teal-800">{{ 'dex.venues.contract.offerings' | translate }}</span> }
+                        @if (!venue()?.hasBook && !venue()?.hasDeals && !venue()?.hasOfferings) { <span class="text-gray-400">—</span> }
+                      </dd>
+                    </div>
+                    <div>
+                      <!-- ⚠️ THIS IS THE CATALOG MATCH, NOT THE RUNTIME CODEHASH, and the two
+                           answer different questions (Phase 16 Finding 3). It was labelled
+                           "Runtime Codehash" until 2026-09-01, which made an empty value read
+                           as "we cannot see what code is running" — alarming, and false: the
+                           runtime hash IS pinned on chain by `venueCodehash` at bind time and
+                           matches. What is actually absent is the per-chain creation-code
+                           catalog, so the honest empty state is "template unrecognised". -->
+                      <dt class="text-gray-500">{{ 'dex.venues.contract.artifactHash' | translate }}</dt>
+                      <dd class="font-mono text-gray-800 break-all">
+                        {{ venue()?.artifactHash || ('dex.venues.contract.unrecognised' | translate) }}
+                      </dd>
+                    </div>
+                  </dl>
+                  @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-venue-set-contract')) {
+                    <button (click)="unbindContract()" [disabled]="contractChangeBlocked()"
+                      class="mt-4 text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      {{ 'dex.venues.contract.unbindAction' | translate }}
+                    </button>
+                  }
+                } @else {
+                  <p class="text-gray-500">{{ 'dex.venues.contract.noneBound' | translate }}</p>
+                }
+              </div>
+            </div>
+
+            <!-- The halt-first requirement, stated rather than discovered as a 409 -->
+            @if (contractChangeBlocked()) {
+              <div class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                {{ 'dex.venues.contract.haltFirst' | translate }}
+              </div>
+            }
+
+            <!-- The published kit — the addresses an operator must LINK against -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div class="px-4 py-3 border-b border-gray-200">
+                <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.kitTitle' | translate }}</h2>
+                <p class="text-xs text-gray-600">{{ 'dex.venues.contract.kitSubtitle' | translate }}</p>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left text-gray-700">
+                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                    <tr>
+                      <th class="px-6 py-2">{{ 'dex.venues.contract.library' | translate }}</th>
+                      <th class="px-6 py-2">{{ 'dex.venues.contract.address' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (l of kitLibraryList(); track l.name; let isEven = $even) {
+                      <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                        <td class="px-6 py-2 font-medium">{{ l.name }}</td>
+                        <td class="px-6 py-2 font-mono break-all">
+                          @if (l.address) { {{ l.address }} }
+                          @else { <span class="text-red-600">{{ 'dex.venues.contract.notPublished' | translate }}</span> }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-4 py-3 border-t text-xs text-gray-600">
+                @for (t of venueTemplates(); track t.kind) {
+                  <div class="mb-1">
+                    <span class="font-medium text-gray-800">{{ t.label }}</span>
+                    <span class="text-gray-500"> — {{ t.description }}</span>
+                    @if (!t.available) {
+                      <span class="ms-1 px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                        {{ 'dex.venues.contract.unavailable' | translate: { libs: t.missingLibraries.join(', ') } }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-venue-set-contract')) {
+              <!-- Bind an address the operator deployed themselves. Verify first: the
+                   on-chain reverts are single-reason, so this is the only place a wrong
+                   pin or a wrong link can be NAMED. -->
+              <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200">
+                  <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.bindTitle' | translate }}</h2>
+                  <p class="text-xs text-gray-600">{{ 'dex.venues.contract.bindSubtitle' | translate }}</p>
+                </div>
+                <div class="p-4 space-y-3">
+                  <input [(ngModel)]="contractCandidate" type="text" placeholder="0x…"
+                    class="w-full text-xs font-mono border border-gray-300 rounded px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <div class="flex gap-2">
+                    <button (click)="verifyCandidate()" [disabled]="contractBusy() || !contractCandidate"
+                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      {{ 'dex.venues.contract.verifyAction' | translate }}
+                    </button>
+                    <button (click)="bindExisting()" [disabled]="contractBusy() || !contractCandidate || contractChangeBlocked()"
+                      class="text-xs px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      {{ 'dex.venues.contract.bindAction' | translate }}
+                    </button>
+                  </div>
+
+                  @if (verifyReport(); as vr) {
+                    <div class="mt-2 rounded-lg border p-3"
+                      [class.border-green-300]="vr.wouldBind" [class.bg-green-50]="vr.wouldBind"
+                      [class.border-red-300]="!vr.wouldBind" [class.bg-red-50]="!vr.wouldBind">
+                      <p class="text-xs font-semibold mb-2" [class.text-green-800]="vr.wouldBind" [class.text-red-800]="!vr.wouldBind">
+                        {{ (vr.wouldBind ? 'dex.venues.contract.wouldBind' : 'dex.venues.contract.wouldNotBind') | translate }}
+                      </p>
+                      <ul class="text-xs space-y-1">
+                        @for (c of vr.checks; track c.name) {
+                          <li [class.text-green-800]="c.pass" [class.text-red-800]="!c.pass">
+                            <span class="font-mono me-1">{{ c.pass ? '✓' : '✗' }}</span>
+                            <span class="font-medium">{{ c.name }}</span>
+                            <span class="text-gray-600"> — {{ c.detail }}</span>
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Deploy through the platform deployer.
+                   ⚠️ The tenant's relay wallet is not on the Besu deployer allow-list and
+                   never will be, so this is the ONLY route to a CREATE. The code must
+                   already be LINKED — unlinked artifact bytecode carries __$…$__
+                   placeholders and is rejected with an explanation. -->
+              <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200">
+                  <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.deployTitle' | translate }}</h2>
+                  <p class="text-xs text-gray-600">{{ 'dex.venues.contract.deploySubtitle' | translate }}</p>
+                </div>
+                <div class="p-4 space-y-3">
+                  <input [(ngModel)]="contractName" type="text" [placeholder]="'dex.venues.contract.namePlaceholder' | translate"
+                    class="w-full text-xs border border-gray-300 rounded px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <textarea [(ngModel)]="contractCreationCode" rows="5" placeholder="0x60806040…"
+                    class="w-full text-xs font-mono border border-gray-300 rounded px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                  <button (click)="deployAndBind()" [disabled]="contractBusy() || !contractCreationCode || contractChangeBlocked()"
+                    class="text-xs px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    {{ 'dex.venues.contract.deployAction' | translate }}
+                  </button>
+                </div>
+              </div>
+            }
           </div>
         }
       }

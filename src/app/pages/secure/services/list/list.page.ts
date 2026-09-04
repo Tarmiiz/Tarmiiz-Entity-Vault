@@ -111,29 +111,28 @@ export class ListPage implements OnInit {
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listServices(true));
   }
 
-  ionViewWillLeave() {
-    this._socketSub?.unsubscribe();
-    this._socketSub = null;
-  }
-  
-  // Neither half of the `serviceType` axis says enough on its own: "Service Provider" doesn't
-  // say WHICH kind of provider, and "Token Provider" covers three different businesses
-  // (Issuer / Exchange / Brokerage). Each half carries its OWN sub-type field and exactly one
-  // is ever non-zero, so read the one that matches the type — never both, and never the wrong
-  // one, which would render a Payment Gateway as an "Exchange" (both are class 2 in their own
-  // catalogs). A missing name falls back to the bare service-type name.
+  // ── LICENCES replace the type/sub-type pair (Phase 28 step (e), 2026-09-03) ──────────────
+  //
+  // The retired `typeDisplay` joined `serviceTypeName` to whichever sub-type matched the type,
+  // and its comment warned never to read the wrong one — both catalogs numbered from 1, so a
+  // Payment Gateway rendered as an "Exchange". That hazard is gone with the fields; the new one
+  // is different and worth naming: a service holds a SET, so there is no single value to show.
+  //
+  // ⚠️ `showMarketClassPill` / the confirmed-vs-awaiting pill are GONE WITH NO SUCCESSOR. A
+  // licence has no separate confirmation to display — it is Active precisely BECAUSE a regulator
+  // approved it, and a suspended one simply stops being listed. Rendering "awaiting confirmation"
+  // for a licence would invent a state the ledger does not have.
+  //
+  // 🔴 RENDERS "—" UNTIL THE LICENCE READ ROUTE EXISTS. `Service.licenses` is empty on every row
+  // today: the Entity API has the chain helpers but no route exposing them, and that read belongs
+  // to the licensing lane. A dash is the honest placeholder — do NOT substitute a guess from
+  // another field to make the column look populated.
+  private static readonly LICENSE_NAMES: Record<number, string> =
+    { 27: 'Token Issuer', 28: 'Exchange', 29: 'Brokerage' };
   typeDisplay(s: Service): string {
-    const base = s.serviceTypeName ?? '';
-    if (s.serviceType === 2 && s.partyClassName) return `${base} / ${s.partyClassName}`;
-    if (s.serviceType === 1 && s.marketClassName) return `${base} / ${s.marketClassName}`;
-    return base;
-  }
-
-  // A type-1 service's declared marketClass is not operative until its regulator confirms it —
-  // the DEX gates read the confirmation, not the declaration. Unconfirmed is the NORMAL state
-  // of a freshly created service, so it renders neutral (gray), never as an error.
-  showMarketClassPill(s: Service): boolean {
-    return s.serviceType === 1 && !!s.marketClass;
+    const ids = s.licenses ?? [];
+    if (!ids.length) return '—';
+    return ids.map((i) => ListPage.LICENSE_NAMES[i] ?? `Class ${i}`).join(', ');
   }
 
   getStateClass(stateId: number | undefined): string {
@@ -187,13 +186,11 @@ export class ListPage implements OnInit {
       countryName: raw.country_name ?? '',
       verificationLevel: raw.verification_level ?? 0,
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
-      serviceType: raw.service_type ?? 0,
-      serviceTypeName: raw.service_type_name ?? '',
-      partyClass: raw.party_class ?? 0,
-      partyClassName: raw.party_class_name ?? '',
-      marketClass: raw.market_class ?? 0,
-      marketClassName: raw.market_class_name ?? '',
-      marketClassConfirmed: raw.market_class_confirmed === true || raw.market_class_confirmed === 1,
+      // ⚠️ Phase 28 step (e): service_type / service_type_name / party_class(_name) /
+      // market_class(_name) / market_class_confirmed are GONE from `services_view`. The
+      // licence SET replaces them and is EMPTY until the licensing lane's read route lands —
+      // deliberately not defaulted to anything that would render as a type.
+      licenses: raw.licenses ?? [],
       regulator: raw.regulator ?? '',
       regulatorName: raw.regulator_name ?? '',
       regulatorSymbol: '',
@@ -240,9 +237,10 @@ export class ListPage implements OnInit {
         name: data.name,
         metadata: JSON.stringify({ description: data.description, website: data.website, email: data.email, mobile: data.mobile }),
         verification_level: data.verificationLevel,
-        service_type: data.serviceType,
-        partyClass: data.partyClass || 0,
-        marketClass: data.marketClass || 0,
+        // ⚠️ `service_type` is GONE (Phase 28 step (e)) — the endpoint's selector changed and
+        // three arguments were removed from the MIDDLE, so sending the old shape would not be
+        // ignored, it would mis-bind. What the operator applied for travels here instead.
+        request_licenses: data.requestLicenses,
         country_code: (entityInfo as any)?.country_code ?? 0,
         regulator: data.regulator,
         validator: data.validator || '',

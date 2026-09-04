@@ -178,14 +178,8 @@
                 </div>
               }
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs text-gray-500 mb-1">{{ 'services.details.info.serviceType' | translate }}</p>
+                <p class="text-xs text-gray-500 mb-1">{{ 'services.details.info.licenses' | translate }}</p>
                 <p class="text-base font-semibold text-gray-800">{{ serviceTypeDisplay() }}</p>
-                @if (showMarketClassPill()) {
-                  <span class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full"
-                        [class]="marketClassConfirmed() ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                    {{ (marketClassConfirmed() ? 'services.marketClass.confirmed' : 'services.marketClass.awaitingConfirmation') | translate }}
-                  </span>
-                }
               </div>
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
                 <p class="text-xs text-gray-500 mb-1">{{ 'common.country' | translate }}</p>
@@ -260,7 +254,7 @@
 
         <!-- info tab -->
         @if (activeTab() === 'info') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
@@ -299,17 +293,8 @@
                   <p class="text-base">{{ v.countryName }}</p>
                 </div>
                 <div class="border-t pt-4">
-                  <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.serviceType' | translate }}</p>
+                  <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.licenses' | translate }}</p>
                   <p class="text-base">{{ serviceTypeDisplay() }}</p>
-                  @if (showMarketClassPill()) {
-                    <span class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full"
-                          [class]="marketClassConfirmed() ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                      {{ (marketClassConfirmed() ? 'services.marketClass.confirmed' : 'services.marketClass.awaitingConfirmation') | translate }}
-                    </span>
-                    <p class="text-xs text-gray-500 mt-1">
-                      {{ (marketClassConfirmed() ? 'services.marketClass.confirmedHint' : 'services.marketClass.awaitingConfirmationHint') | translate }}
-                    </p>
-                  }
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.verificationLevel' | translate }}</p>
@@ -709,7 +694,7 @@
 
         <!-- metadata tab -->
         @if (activeTab() === 'metadata') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto p-4 space-y-6">
+          <div class="bg-white rounded-lg shadow-md overflow-hidden p-4 space-y-6">
 
             @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-edit-metadata')) {
               <div class="flex justify-end">

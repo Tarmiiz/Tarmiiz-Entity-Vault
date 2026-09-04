@@ -11,7 +11,6 @@ import { AuthService } from '../../../../shared/services/auth.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import {
   ClearingDelivery, ClearingMember, User,
 } from '../../../../shared/models/data.model';
@@ -58,7 +57,10 @@ interface OpStat { title: string; value: number; path: string; alert?: boolean; 
   templateUrl: './clearing-house-dashboard.page.html',
   styleUrls: ['./clearing-house-dashboard.page.scss'],
   standalone: true,
-  imports: [CommonModule, HeaderComponent, TranslatePipe, MoneyPipe],
+  // No MoneyPipe: every value on this page is a COUNT (deliveries, members, stat tiles),
+  // not money — re-add it with the margin-coverage board, which is the first thing here
+  // that will render a currency amount.
+  imports: [CommonModule, HeaderComponent, TranslatePipe],
 })
 export class ClearingHouseDashboardPage implements OnInit {
   private apiService = inject(ApiService);

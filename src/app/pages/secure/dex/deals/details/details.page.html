@@ -280,11 +280,11 @@
                 </div>
                 <div class="flex justify-between border-b border-gray-100 pb-1.5">
                   <span class="text-gray-500">{{ 'dex.deals.details.buyOrderId' | translate }}</span>
-                  <button (click)="goOrder(d.buyOrderId)" class="font-medium text-indigo-600 hover:underline">#{{ d.buyOrderId }}</button>
+                  <button (click)="goOrder(d.buyOrderId)" [title]="d.buyOrderId" class="font-medium text-indigo-600 hover:underline">{{ shortRef(d.buyOrderId) }}</button>
                 </div>
                 <div class="flex justify-between border-b border-gray-100 pb-1.5">
                   <span class="text-gray-500">{{ 'dex.deals.details.sellOrderId' | translate }}</span>
-                  <button (click)="goOrder(d.sellOrderId)" class="font-medium text-indigo-600 hover:underline">#{{ d.sellOrderId }}</button>
+                  <button (click)="goOrder(d.sellOrderId)" [title]="d.sellOrderId" class="font-medium text-indigo-600 hover:underline">{{ shortRef(d.sellOrderId) }}</button>
                 </div>
               </div>
               <!-- The two order rows are real but OFF-BOOK: they exist so settlement could

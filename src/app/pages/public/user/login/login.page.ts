@@ -61,6 +61,38 @@ export class LoginPage implements OnInit {
     await this.storageService.remove('user');
   }
 
+  // Two-step sign-in state. `mfaRequired` swaps the form; the half-session itself lives in
+  // AuthService and is never held here — this page only collects six digits.
+  mfaRequired = false;
+  mfaCode = '';
+  mfaError = '';
+  mfaAttemptsRemaining: number | null = null;
+
+  async submitMfa() {
+    const code = String(this.mfaCode || '').trim();
+    if (!code) { this.mfaError = this.translate.instant('login.mfa.errors.required'); return; }
+
+    this.isLoading = true;
+    this.mfaError = '';
+    try {
+      const res: any = await this.authService.completeMfa(code);
+      if (res.success) {
+        await this.router.navigate(['/authorized']);
+        return;
+      }
+      this.mfaAttemptsRemaining = typeof res.attemptsRemaining === 'number' ? res.attemptsRemaining : null;
+      this.mfaError = res.error || this.translate.instant('login.mfa.errors.failed');
+      // The challenge is gone after three wrong codes — send the user back to the password form
+      // rather than leaving them typing into a dead one.
+      if (res.attemptsRemaining === 0 || /expired/i.test(String(res.error ?? ''))) {
+        this.mfaRequired = false;
+        this.mfaAttemptsRemaining = null;
+      }
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
  async login() {
     if (!this.formLogin.valid) {
       await this.alertService.show(this.translate.instant('login.errors.invalidFormTitle'), this.translate.instant('login.errors.invalidFormMessage'));
@@ -75,6 +107,16 @@ export class LoginPage implements OnInit {
 
       // Attempt login with 1 hour session duration
       const loginResult = await this.authService.login(email, password);
+
+      // Two-step sign-in: the password is proven and a code has been emailed. Swap the form for
+      // the code entry rather than routing — no session exists yet.
+      if ((loginResult as any).mfaRequired) {
+        this.mfaRequired = true;
+        this.mfaCode = '';
+        this.mfaError = '';
+        return;
+      }
+
       if (loginResult.success) {
           // route to authorized pages — spinner stays up until the dashboard hides it
           await this.router.navigate(['/authorized']);

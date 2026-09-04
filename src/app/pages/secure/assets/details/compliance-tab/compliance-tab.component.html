@@ -1,0 +1,565 @@
+@if (!registration()) {
+  <div class="p-6 text-sm text-gray-500">
+    {{ (registrationLoading() ? 'common.loading' : 'assets.details.compliance.empty') | translate }}
+  </div>
+} @else {
+  <div class="p-4 space-y-4">
+
+    <!--
+      SHARED HEADER — approval state governs every sub-tab (it is what disables the
+      declaration form and the attach control alike), so it lives above the rail rather
+      than inside Info.
+    -->
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h4 class="text-sm font-semibold text-gray-700">{{ 'assets.details.compliance.title' | translate }}</h4>
+        <p class="text-xs text-gray-500 mt-1 max-w-3xl">{{ 'assets.details.compliance.intro' | translate }}</p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        @if (registration().declaration?.approvalState === 2) {
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">{{ 'assets.details.compliance.approved' | translate }}</span>
+        } @else if (registration().declaration?.approvalState === 3) {
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">{{ 'assets.details.compliance.rejected' | translate }}</span>
+        } @else {
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">{{ 'assets.details.compliance.declared' | translate }}</span>
+        }
+        <app-refresh-button [loading]="registrationLoading()" (click)="load()"></app-refresh-button>
+      </div>
+    </div>
+
+    @if (registration().declaration?.decisionReason) {
+      <div class="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-800">
+        <span class="font-semibold">{{ 'assets.details.compliance.decisionReason' | translate }}:</span>
+        {{ registration().declaration.decisionReason }}
+      </div>
+    }
+
+    <div class="flex flex-col md:flex-row gap-4">
+
+      <!-- SUB-TAB RAIL — vertical from md up, a horizontal scroller below it. -->
+      <nav class="md:w-52 shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
+        @for (item of RAIL; track item.key) {
+          <button type="button" (click)="goTo(item.key)"
+            class="shrink-0 md:w-full ltr:text-left rtl:text-right px-4 py-2.5 rounded-md text-sm font-semibold transition-colors"
+            [class]="rail() === item.key
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-600 hover:bg-gray-100'">
+            {{ item.label | translate }}
+          </button>
+        }
+      </nav>
+
+      <div class="grow min-w-0 space-y-6">
+
+        <!-- ═══════════════ INFO ═══════════════ -->
+        @if (rail() === 'info') {
+
+          <!-- Readiness — the same three gates `approveAsset` enforces, in its order. -->
+          <div>
+            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.details.compliance.readiness' | translate }}</h4>
+            <ul class="space-y-1 text-sm text-gray-700">
+              <li class="flex items-center gap-2">
+                <span [class]="registration().complianceProfile?.set ? 'text-green-600' : 'text-red-600'">{{ registration().complianceProfile?.set ? '✓' : '✗' }}</span>
+                {{ 'assets.details.compliance.checkProfile' | translate }}
+              </li>
+              <li class="flex items-center gap-2">
+                <span [class]="registration().declaration?.legalWrapperDocumentId ? 'text-green-600' : 'text-red-600'">{{ registration().declaration?.legalWrapperDocumentId ? '✓' : '✗' }}</span>
+                {{ 'assets.details.compliance.checkWrapper' | translate }}
+              </li>
+              <li class="flex items-center gap-2">
+                <span [class]="registration().partiesSatisfied ? 'text-green-600' : 'text-red-600'">{{ registration().partiesSatisfied ? '✓' : '✗' }}</span>
+                {{ 'assets.details.compliance.checkParties' | translate }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- ── Phase 4.9 — THE CLASS DEFINITION ──────────────────────────────────────
+               Everything in the matrix below comes from this one contract. Before 4.9 there
+               was nothing to name here: the asset showed a bare class label, and the rules
+               it was actually held to were a model default written in Solidity in another
+               country. Naming the product, its author and its state is what makes the rest
+               of this tab attributable. -->
+          @if (formula(); as f) {
+            <div class="border-t border-gray-200 pt-4">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.details.compliance.definition' | translate }}</h4>
+              <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">{{ 'assets.details.compliance.definitionName' | translate }}</span>
+                  <span class="text-black font-medium">{{ f.name }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">{{ 'assets.details.compliance.definitionState' | translate }}</span>
+                  <!-- Retired is worth a colour: the asset keeps resolving against it, but no
+                       NEW asset can use it. That is a fact about the product line, not a fault
+                       in this asset. -->
+                  <span class="font-medium" [class.text-amber-700]="f.state === 3" [class.text-gray-800]="f.state !== 3">{{ formulaStateName() }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">{{ 'assets.details.compliance.definitionSupply' | translate }}</span>
+                  <span class="text-gray-800">{{ supplyPolicyName() }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">{{ 'assets.details.compliance.definitionPriceMode' | translate }}</span>
+                  <span class="text-gray-800">{{ priceModePolicyName() }}</span>
+                </div>
+                @if (formulaStandards().length) {
+                  <div class="flex justify-between items-start">
+                    <span class="text-gray-500 shrink-0">{{ 'assets.details.compliance.definitionStandards' | translate }}</span>
+                    <span class="text-gray-800 ltr:text-right rtl:text-left ltr:ml-4 rtl:mr-4">{{ formulaStandards().join(', ') }}</span>
+                  </div>
+                }
+                @for (p of formulaParams(); track p.param_key) {
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">{{ p.param_key }}</span>
+                    <span class="text-gray-800">{{ p.param_value }}</span>
+                  </div>
+                }
+              </div>
+              @if (formulaDocuments().length) {
+                <p class="text-xs text-gray-500 mt-2">{{ 'assets.details.compliance.definitionDocs' | translate }}</p>
+                <ul class="text-xs text-gray-700 mt-1 ltr:pl-4 rtl:pr-4 list-disc">
+                  @for (d of formulaDocuments(); track d.row_id) {
+                    <li>{{ d.name }} <span class="text-gray-400">({{ d.state === 1 ? ('assets.details.compliance.required' | translate) : ('assets.details.compliance.optional' | translate) }})</span></li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+
+          <!-- RESOLVED MATRIX -->
+          <div class="border-t border-gray-200 pt-4">
+            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ 'assets.details.compliance.requirements' | translate }}</h4>
+            <p class="text-xs text-gray-500 mb-2 max-w-3xl">{{ 'assets.details.compliance.requirementsHint' | translate }}</p>
+            @if (activeRequirements().length) {
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead style="background-color:#4a5568" class="text-white">
+                    <tr>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.requirement' | translate }}</th>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.role' | translate }}</th>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.obligation' | translate }}</th>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.status' | translate }}</th>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.origin' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of activeRequirements(); track r.requirementId; let even = $even) {
+                      <tr [class.bg-gray-50]="!even">
+                        <td class="px-3 py-2 text-gray-800">{{ r.name }}</td>
+                        <!-- The REGULATOR'S named role definition, not the platform's base
+                             role. Two rows may name different definitions over the same base
+                             role, so printing the base name would make two distinct
+                             obligations look like one. The independence marker answers the
+                             question the party list cannot: "why was an issuer-owned party
+                             accepted here?" — because the regulator waived it (S46). -->
+                        <td class="px-3 py-2 text-gray-600">
+                          {{ requirementRoleName(r) || '—' }}
+                          @if (r.roleDefinition && independenceWaived(r)) {
+                            <span class="ltr:ml-1 rtl:mr-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-semibold">{{ 'assets.details.compliance.independenceWaived' | translate }}</span>
+                          }
+                        </td>
+                        <td class="px-3 py-2">
+                          <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                                [class]="r.state === 1 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">{{ r.stateName }}</span>
+                        </td>
+                        <td class="px-3 py-2">
+                          <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="statusClass(requirementStatus(r))">
+                            @switch (requirementStatus(r)) {
+                              @case ('satisfied') { {{ 'assets.details.compliance.statusSatisfied' | translate }} }
+                              @case ('missing')   { {{ 'assets.details.compliance.statusMissing' | translate }} }
+                              @default            { {{ 'assets.details.compliance.statusUntracked' | translate }} }
+                            }
+                          </span>
+                          @if (requirementFix(r); as target) {
+                            <button type="button" (click)="goTo(target)"
+                              class="ltr:ml-2 rtl:mr-2 text-xs text-blue-700 hover:text-blue-900 underline">
+                              {{ 'assets.details.compliance.fixHere' | translate }}
+                            </button>
+                          }
+                        </td>
+                        <td class="px-3 py-2 text-xs text-gray-600">
+                          {{ (r.composed ? 'assets.details.compliance.composedByUs' : 'assets.details.compliance.fromPolicy') | translate }}
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!--
+                A lone baseline row is the CORRECT answer for most classes, not an empty
+                table. Saying so is the difference between "this class asks for nothing more"
+                and "something failed to load".
+              -->
+              @if (onlyBaselineRequirement()) {
+                <p class="text-xs text-gray-500 mt-2 max-w-3xl">{{ 'assets.details.compliance.baselineOnly' | translate }}</p>
+              }
+              <p class="text-xs text-gray-400 mt-2 max-w-3xl">{{ 'assets.details.compliance.untrackedNote' | translate }}</p>
+            } @else {
+              <p class="text-sm text-gray-500">{{ 'assets.details.compliance.noRequirements' | translate }}</p>
+            }
+          </div>
+        }
+
+        <!-- ═══════════════ DECLARATION ═══════════════ -->
+        @if (rail() === 'declaration') {
+
+          <div>
+            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ 'assets.details.compliance.profile' | translate }}</h4>
+            <p class="text-xs text-gray-500 mb-3 max-w-3xl">{{ 'assets.details.compliance.declarationHint' | translate }}</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <label class="text-sm">
+                <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.holderCap' | translate }}</span>
+                <input type="number" min="0" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                  [disabled]="!canWrite()"
+                  [ngModel]="declarationForm().holderCap"
+                  (ngModelChange)="declarationForm.set({ ...declarationForm(), holderCap: $event })" />
+              </label>
+              <label class="text-sm">
+                <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.minTicket' | translate }}</span>
+                <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                  [disabled]="!canWrite()"
+                  [ngModel]="declarationForm().minTicket"
+                  (ngModelChange)="declarationForm.set({ ...declarationForm(), minTicket: $event })" />
+              </label>
+              <label class="text-sm">
+                <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.maxTicket' | translate }}</span>
+                <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                  [disabled]="!canWrite()"
+                  [ngModel]="declarationForm().maxTicket"
+                  (ngModelChange)="declarationForm.set({ ...declarationForm(), maxTicket: $event })" />
+              </label>
+              <label class="text-sm">
+                <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.lockupUntil' | translate }}</span>
+                <input type="date" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                  [disabled]="!canWrite()"
+                  [ngModel]="declarationForm().lockupUntil"
+                  (ngModelChange)="declarationForm.set({ ...declarationForm(), lockupUntil: $event })" />
+              </label>
+              <label class="text-sm">
+                <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.claimTopic' | translate }}</span>
+                @if (unknownClaimTopic()) {
+                  <input type="text" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono text-gray-800 bg-gray-100"
+                    [value]="unknownClaimTopic()" disabled />
+                } @else {
+                  <select class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                    [disabled]="!canWrite()"
+                    [ngModel]="declarationForm().requiredClaimTopic"
+                    (ngModelChange)="declarationForm.set({ ...declarationForm(), requiredClaimTopic: $event })">
+                    <option value="">{{ 'assets.details.compliance.claimTopicNone' | translate }}</option>
+                    @for (t of claimTopics(); track t.id) {
+                      <option [value]="t.id">{{ t.name }}</option>
+                    }
+                  </select>
+                }
+              </label>
+              <label class="text-sm">
+                <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.claimLevel' | translate }}</span>
+                <input type="number" min="0" max="255" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                  [disabled]="!canWrite()"
+                  [ngModel]="declarationForm().requiredClaimLevel"
+                  (ngModelChange)="declarationForm.set({ ...declarationForm(), requiredClaimLevel: $event })" />
+              </label>
+            </div>
+
+            @if (unknownClaimTopic()) {
+              <p class="text-xs text-amber-700 mt-2 max-w-3xl">{{ 'assets.details.compliance.claimTopicUnknown' | translate }}</p>
+            } @else {
+              <p class="text-xs text-gray-400 mt-2 max-w-3xl">{{ 'assets.details.compliance.claimTopicHint' | translate }}</p>
+            }
+
+            <!-- Eligible jurisdictions -->
+            <div class="mt-4">
+              <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.jurisdictions' | translate }}</span>
+              <p class="text-xs text-gray-400 mb-2 max-w-3xl">{{ 'assets.details.compliance.jurisdictionsHint' | translate }}</p>
+              @if (jurisdictions().length) {
+                <div class="flex flex-wrap gap-1 mb-2">
+                  @for (c of jurisdictions(); track c) {
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-gray-300 bg-gray-50 text-xs text-gray-700">
+                      {{ countryName(c) }}
+                      @if (canWrite()) {
+                        <button type="button" (click)="removeJurisdiction(c)" class="text-gray-400 hover:text-red-700" [attr.aria-label]="'common.remove' | translate">✕</button>
+                      }
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="text-xs text-gray-500 mb-2">{{ 'assets.details.compliance.jurisdictionsAll' | translate }}</p>
+              }
+              @if (canWrite()) {
+                <div class="flex flex-wrap items-end gap-2">
+                  <select class="border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 min-w-56"
+                    [ngModel]="jurisdictionToAdd()" (ngModelChange)="jurisdictionToAdd.set($event)">
+                    <option value="">{{ 'assets.details.compliance.jurisdictionPick' | translate }}</option>
+                    @for (c of countries(); track c.countryCode) {
+                      <option [value]="c.countryCode">{{ c.name }}</option>
+                    }
+                  </select>
+                  <button type="button" (click)="addJurisdiction()" [disabled]="!jurisdictionToAdd()"
+                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    {{ 'common.add' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Legal wrapper -->
+          <div class="border-t border-gray-200 pt-4">
+            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ 'assets.details.compliance.legalWrapper' | translate }}</h4>
+            <p class="text-xs text-gray-500 mb-3 max-w-3xl">{{ 'assets.details.compliance.legalWrapperHint' | translate }}</p>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="grow min-w-64 border border-gray-300 rounded px-3 py-2 bg-gray-50 text-sm">
+                @if (declarationForm().legalWrapperDocumentId) {
+                  <span class="text-gray-800">{{ legalWrapperTitle() || ('assets.details.compliance.untitledDocument' | translate) }}</span>
+                  <span class="text-xs text-gray-500 font-mono ltr:ml-2 rtl:mr-2">#{{ declarationForm().legalWrapperDocumentId }}</span>
+                } @else {
+                  <span class="text-gray-400">{{ 'assets.details.compliance.noWrapper' | translate }}</span>
+                }
+              </div>
+              @if (canWrite()) {
+                <button type="button" (click)="chooseWrapper()"
+                  class="text-xs px-3 py-2 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                  {{ 'assets.details.compliance.chooseDocument' | translate }}
+                </button>
+              }
+            </div>
+            @if (declarationForm().legalWrapperDocumentId) {
+              <p class="text-xs text-gray-400 mt-2 max-w-3xl">{{ 'assets.details.compliance.wrapperReplaceOnly' | translate }}</p>
+            }
+          </div>
+
+          <!--
+            COMPOSITION — CUSTOM (class 11) only. Every other class states its requirements
+            through the model or the jurisdiction; a "compose" control there would imply a
+            choice nobody makes. It lives under Declaration because it IS the issuer
+            declaring what the asset needs.
+          -->
+          @if (isCustomAsset()) {
+            <div class="border-t border-gray-200 pt-4">
+              <div class="flex items-center gap-2 mb-1">
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'assets.details.compliance.composition' | translate }}</h4>
+                @if (isFrozen()) {
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">{{ 'assets.details.compliance.compositionFrozen' | translate }}</span>
+                }
+              </div>
+              <p class="text-xs text-gray-500 mb-3 max-w-3xl">{{ 'assets.details.compliance.compositionHint' | translate }}</p>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p class="text-xs font-semibold text-gray-600 mb-1">{{ 'assets.details.compliance.needsParty' | translate }}</p>
+                  <div class="space-y-1">
+                    @for (r of partyRequirements(); track r.id) {
+                      <label class="flex items-start gap-2 text-sm text-gray-800">
+                        <input type="checkbox" class="mt-0.5" [disabled]="isFrozen() || !canWrite()"
+                          [checked]="isComposed(r.id)" (change)="toggleComposed(r.id)" />
+                        <span>{{ r.name }} <span class="text-xs text-gray-400">— {{ r.roleName }}</span></span>
+                      </label>
+                    }
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-600 mb-1">{{ 'assets.details.compliance.evidenceOnly' | translate }}</p>
+                  <div class="space-y-1">
+                    @for (r of evidenceRequirements(); track r.id) {
+                      <label class="flex items-start gap-2 text-sm text-gray-800">
+                        <input type="checkbox" class="mt-0.5" [disabled]="isFrozen() || !canWrite()"
+                          [checked]="isComposed(r.id)" (change)="toggleComposed(r.id)" />
+                        <span>{{ r.name }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              @if (draftRoles().length) {
+                <div class="mt-3 text-xs text-gray-600">
+                  <span class="text-gray-400">{{ 'assets.details.compliance.impliedRoles' | translate }}:</span>
+                  @for (role of draftRoles(); track role) {
+                    <span class="inline-block ltr:ml-1 rtl:mr-1 px-2 py-0.5 rounded border"
+                          [class]="roleSatisfied(role) ? 'bg-green-50 text-green-800 border-green-200' : 'bg-amber-50 text-amber-800 border-amber-200'">
+                      {{ roleName(role) }}
+                    </span>
+                  }
+                </div>
+              }
+
+              @if (!isFrozen() && canWrite() && features.systemFunctionEnabled('asset-compose')) {
+                <button type="button" (click)="saveComposition()" [disabled]="!compositionDirty() || compositionSaving()"
+                  class="mt-3 text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                  {{ 'assets.details.compliance.saveComposition' | translate }}
+                </button>
+              }
+            </div>
+          }
+
+          @if (canWrite() && features.systemFunctionEnabled('asset-declaration')) {
+            <div class="border-t border-gray-200 pt-4 flex justify-end">
+              <button type="button" (click)="saveDeclaration()"
+                class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                {{ 'assets.details.compliance.saveDeclaration' | translate }}
+              </button>
+            </div>
+          }
+        }
+
+        <!-- ═══════════════ DOCUMENTS ═══════════════ -->
+        @if (rail() === 'documents') {
+          <div>
+            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ 'assets.details.compliance.railDocuments' | translate }}</h4>
+            <p class="text-xs text-gray-500 mb-3 max-w-3xl">{{ 'assets.details.compliance.documentsHint' | translate }}</p>
+
+            <!-- ═══ REQUIRED DOCUMENT ROWS (R16) ═══
+                 🔴 THE SURFACE THAT MAKES DOCUMENT REQUIREMENTS DISCHARGEABLE. `approveAsset`
+                 refuses while any REQUIRED row here has no document, and until this rail existed
+                 nothing could satisfy one — the regulator could create the obligation and the
+                 issuer had no way to meet it.
+                 Two sources: the catalog rows the regulator SET, and the regulator's own named
+                 rows, which are born Required and appear nowhere else. -->
+            @if (docRows().length) {
+              <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-4">
+                <div class="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center gap-2 flex-wrap">
+                  <h5 class="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    {{ 'assets.details.compliance.docRows' | translate }}
+                  </h5>
+                  @if (docRowsOutstanding().length) {
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                      {{ 'assets.details.compliance.docRowsOutstanding' | translate: { n: docRowsOutstanding().length } }}
+                    </span>
+                  } @else {
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                      {{ 'assets.details.compliance.docRowsComplete' | translate }}
+                    </span>
+                  }
+                </div>
+                <p class="px-3 pt-2 text-xs text-gray-500">{{ 'assets.details.compliance.docRowsHint' | translate }}</p>
+
+                <ul class="divide-y divide-gray-200 mt-1">
+                  @for (row of docRows(); track row.rowKey) {
+                    <li class="flex flex-col md:flex-row md:items-center gap-2 px-3 py-2.5">
+                      <div class="md:flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-800 flex items-center gap-2 flex-wrap">
+                          <span>{{ row.label }}</span>
+                          @if (row.required) {
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-800">
+                              {{ 'assets.details.compliance.docRowRequired' | translate }}
+                            </span>
+                          } @else {
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-700">
+                              {{ 'assets.details.compliance.docRowOptional' | translate }}
+                            </span>
+                          }
+                        </div>
+                        @if (row.description) {
+                          <div class="text-xs text-gray-500">{{ row.description }}</div>
+                        }
+                        <div class="text-xs mt-0.5">
+                          @if (row.documentId) {
+                            <span class="text-gray-700">{{ row.title || ('assets.details.compliance.docRowDocId' | translate: { id: row.documentId }) }}</span>
+                          } @else {
+                            <span class="text-amber-700">{{ 'assets.details.compliance.docRowNone' | translate }}</span>
+                          }
+                        </div>
+                      </div>
+                      @if (canWrite()) {
+                        <button
+                          type="button"
+                          (click)="attachRowDocument(row)"
+                          [disabled]="docRowSaving() === row.rowKey"
+                          class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 md:shrink-0">
+                          {{ (row.documentId ? 'assets.details.compliance.docRowReplace' : 'assets.details.compliance.docRowAttach') | translate }}
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- The asset's own documents surface, in place — the same component the
+                 Documents tab renders, so upload/share/sign behave identically here. -->
+            <app-documents-tab
+              resourceType="asset"
+              [address]="address"
+              [entityActive]="entityActive">
+            </app-documents-tab>
+          </div>
+        }
+
+        <!-- ═══════════════ CLASS PARTIES ═══════════════ -->
+        @if (rail() === 'parties') {
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'assets.details.compliance.parties' | translate }}</h4>
+              @if (registration().partiesSatisfied) {
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">{{ 'assets.details.compliance.partiesSatisfied' | translate }}</span>
+              } @else {
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">{{ 'assets.details.compliance.partiesUnsatisfied' | translate }}</span>
+              }
+            </div>
+            <p class="text-xs text-gray-500 mb-3 max-w-3xl">{{ 'assets.details.compliance.partiesHint' | translate }}</p>
+
+            @if (registration().parties?.length) {
+              <div class="overflow-x-auto mb-4">
+                <table class="min-w-full text-sm">
+                  <thead style="background-color:#4a5568" class="text-white">
+                    <tr>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.role' | translate }}</th>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.party' | translate }}</th>
+                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.consent' | translate }}</th>
+                      <th class="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of registration().parties; track p.party; let even = $even) {
+                      <tr [class.bg-gray-50]="!even">
+                        <td class="px-3 py-2 text-gray-800">{{ p.roleName }}</td>
+                        <td class="px-3 py-2 font-mono text-xs text-gray-600">{{ p.party }}</td>
+                        <td class="px-3 py-2">
+                          <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                                [class]="p.state === 2 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">{{ p.stateName }}</span>
+                        </td>
+                        <td class="px-3 py-2 ltr:text-right rtl:text-left">
+                          @if (canWrite()) {
+                            <button type="button" (click)="removeParty(p.party)"
+                              class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                              {{ 'common.remove' | translate }}
+                            </button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="text-sm text-gray-500 mb-4">{{ 'assets.details.compliance.partiesEmpty' | translate }}</p>
+            }
+
+            @if (canWrite() && features.systemFunctionEnabled('asset-party-attach')) {
+              <div class="border-t border-gray-200 pt-4">
+                <p class="text-xs font-semibold text-gray-600 mb-2">{{ 'assets.details.compliance.attachParty' | translate }}</p>
+                <div class="flex flex-wrap gap-2">
+                  @for (r of attachableRoles(); track r.role) {
+                    <button type="button" (click)="attachParty(r.role)"
+                      class="text-xs px-3 py-1.5 rounded border border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors">
+                      + {{ r.name }}
+                    </button>
+                  }
+                </div>
+                <p class="text-xs text-gray-400 mt-2 max-w-3xl">{{ 'assets.details.compliance.attachPartyHint' | translate }}</p>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Pickers live at the component root so neither is clipped by the rail's flex row. -->
+  <app-modal-document-picker></app-modal-document-picker>
+  <app-modal-party-picker></app-modal-party-picker>
+}

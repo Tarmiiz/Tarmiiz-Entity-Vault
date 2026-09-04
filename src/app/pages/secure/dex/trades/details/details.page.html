@@ -59,21 +59,16 @@
               </div>
               <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.buyOrder' | translate }}</p>
-                <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.buyOrderId)">#{{ t.buyOrderId }}</a>
+                <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.buyRef)" [title]="t.buyRef">{{ shortRef(t.buyRef) }}</a>
               </div>
               <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.sellOrder' | translate }}</p>
-                <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.sellOrderId)">#{{ t.sellOrderId }}</a>
+                <a class="text-base text-indigo-600 hover:underline cursor-pointer" (click)="goOrder(t.sellRef)" [title]="t.sellRef">{{ shortRef(t.sellRef) }}</a>
               </div>
               <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.buyVenue' | translate }}</p>
-                <p class="text-base text-gray-700">{{ t.buyDexServiceName || '—' }}</p>
-                <p class="text-xs text-gray-500 font-mono break-all">{{ t.buyDexService }}</p>
-              </div>
-              <div class="border-t pt-4">
-                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.sellVenue' | translate }}</p>
-                <p class="text-base text-gray-700">{{ t.sellDexServiceName || '—' }}</p>
-                <p class="text-xs text-gray-500 font-mono break-all">{{ t.sellDexService }}</p>
+                <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.table.venue' | translate }}</p>
+                <p class="text-base text-gray-700">{{ t.dexServiceName || '—' }}</p>
+                <p class="text-xs text-gray-500 font-mono break-all">{{ t.dexService }}</p>
               </div>
               <div class="border-t pt-4">
                 <p class="text-sm font-medium text-gray-500">{{ 'dex.trades.details.fields.buyerSubscription' | translate }}</p>

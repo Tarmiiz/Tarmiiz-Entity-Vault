@@ -219,7 +219,7 @@ export const routes: Routes = [
             path: 'orders',
             children: [
               { path: 'list',             loadComponent: () => import('./pages/secure/dex/orders/list/list.page').then( m => m.ListPage), canActivate: [AuthGuard] },
-              { path: 'details/:orderId', loadComponent: () => import('./pages/secure/dex/orders/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
+              { path: 'details/:ref', loadComponent: () => import('./pages/secure/dex/orders/details/details.page').then( m => m.DetailsPage), canActivate: [AuthGuard] },
               { path: '', redirectTo: 'list', pathMatch: 'full' },
             ],
           },
@@ -589,6 +589,19 @@ export const routes: Routes = [
           {
             path: 'app-config',
             loadComponent: () => import('./pages/secure/settings/app-config/app-config.page').then(m => m.AppConfigPage),
+            canActivate: [AuthGuard, RoleGuard],
+            data: { allowedRoles: [1] },
+          },
+          {
+            // ⚠️ NO `menuFeatureGuard` — every `settings` child deliberately omits it, so an
+            // admin cannot toggle away their own way back. That matters more here than on its
+            // siblings: this is the page that governs the endpoints, and gating it behind a
+            // switch it can itself flip would be a lock whose key is inside the box.
+            //
+            // ⚠️ Folder is `pages/secure/…`, URL is `/authorized/settings/…`. The two prefixes
+            // differ across the whole app and the mismatch catches people.
+            path: 'api-endpoints',
+            loadComponent: () => import('./pages/secure/settings/api-endpoints/api-endpoints.page').then(m => m.ApiEndpointsPage),
             canActivate: [AuthGuard, RoleGuard],
             data: { allowedRoles: [1] },
           },

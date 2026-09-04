@@ -30,6 +30,7 @@ import { ModalAssetServiceStateComponent } from '../modals/modal-asset-service-s
 import { AuditService } from '../../../../shared/services/audit.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
+import { ComplianceTabComponent } from './compliance-tab/compliance-tab.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ModalListingCreateService } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.service';
 import { ModalListingCreateComponent } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.component';
@@ -43,7 +44,7 @@ import { MetadataEditModalService } from '../../../../shared/components/metadata
 import { MetadataEditModalComponent } from '../../../../shared/components/metadata-edit-modal/metadata-edit-modal.component';
 import { ModalIdentifierService } from '../../../../shared/components/modal-identifier/modal-identifier.service';
 import { ModalIdentifierComponent } from '../../../../shared/components/modal-identifier/modal-identifier.component';
-import { GlobalVariable } from '../../../../shared/models/data.model';
+import { GlobalVariable, toGlobalVariables } from '../../../../shared/models/data.model';
 import { ModalAssetImageAddService } from '../modals/modal-asset-image-add/modal-asset-image-add.service';
 import { ModalAssetImageAddComponent } from '../modals/modal-asset-image-add/modal-asset-image-add.component';
 import { ModalAssetPublicViewService } from '../modals/modal-asset-public-view/modal-asset-public-view.service';
@@ -82,6 +83,7 @@ export interface AssetMedia {
     ModalTransactionInfoComponent,
     ModalAssetServiceStateComponent,
     DocumentsTabComponent,
+    ComplianceTabComponent,
     LiveIndicatorComponent,
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
@@ -162,8 +164,10 @@ export class DetailsPage implements OnInit {
   distributionsLoading = signal(false);
 
   // Holders-at state — historical-balance reconstruction at a chosen block.
-  // Driven by ITarmiizAsset.balanceOfAt (ERC20Votes checkpointed balances) +
-  // the API's transaction-delta reconstruction of the holder set.
+  // Driven by ITarmiizAsset.ownedAt (the A6 record-date entitlement read, which
+  // answers the same for a direct and a custodial holder — NOT balanceOfAt, whose
+  // ERC20Votes checkpoints belong to the custodian) + the API's membership-ledger
+  // reconstruction of the holder set.
   holdersAtMode       = signal<'block' | 'date'>('block');
   holdersAtBlockInput = signal<string>('');
   holdersAtDateInput  = signal<string>('');   // yyyy-mm-dd from <input type="date">
@@ -546,7 +550,9 @@ export class DetailsPage implements OnInit {
   setTab(tab: 'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
-    if (tab === 'registration') this.loadRegistration();
+    // 'registration' needs no fetch here — the @if creates <app-asset-compliance-tab>, whose
+    // ngOnChanges loads on the address binding, and destroys it on leave, so re-opening the
+    // tab is itself the refresh.
     if (tab === 'metadata') this.loadMediaImages();
     if (tab === 'services') this.getAssetDetails();
     if (tab === 'price') this.getPriceHistory(1, 500);
@@ -560,225 +566,10 @@ export class DetailsPage implements OnInit {
   }
 
   // Latest block height, so the operator can't ask for a block that doesn't exist yet.
-  // ── A8 REGISTRATION (Phase 15) — the ISSUER's half ────────────────────────────
-  //
-  // An asset lands in approvalState 1 (Declared) at registration, and every capability reads
-  // `isAssetApproved` — `isAssetTradable` requires it. So until the regulator decides, the
-  // asset exists in the registry and can do nothing. Three steps, in A8's order:
-  //   1. DECLARE  — compliance profile (A9) + the pinned legal wrapper document.
-  //   2. COMPOSE + ATTACH — a Custom asset says WHAT it needs (A24), then WHO provides it (A2).
-  //   3. APPROVE  — the regulator's, on the Regulator Dashboard.
-  //
-  // Everything here is pre-approval by construction: the API refuses a declaration once the
-  // state leaves 1 and refuses a composition once frozen. We surface those refusals rather
-  // than re-implementing them.
-  registration = signal<any | null>(null);
-  registrationLoading = signal(false);
-  classCatalog = signal<{ requirements: any[]; roles: any[] } | null>(null);
 
-  /** Working set for the composition editor — mirrors the on-chain set until Save. */
-  compositionDraft = signal<number[]>([]);
-  compositionSaving = signal(false);
-
-  partyForm = signal<{ party: string; role: number }>({ party: '', role: 0 });
-
-  declarationForm = signal<{
-    holderCap: string; minTicket: string; maxTicket: string; lockupUntil: string; legalWrapperDocumentId: string;
-  }>({ holderCap: '', minTicket: '', maxTicket: '', lockupUntil: '', legalWrapperDocumentId: '' });
-
-  requirementName(id: number) {
-    const c = this.classCatalog();
-    return c?.requirements?.find((r) => Number(r.id) === Number(id))?.name || `Requirement ${id}`;
-  }
-  roleName(role: number) {
-    const c = this.classCatalog();
-    return c?.roles?.find((r) => Number(r.role) === Number(role))?.name || `Role ${role}`;
-  }
-  reqStateName(state: number) {
-    // 0 is UNSET and falls THROUGH to the next layer — it never means "off".
-    return ({ 0: 'Unset', 1: 'Required', 2: 'Optional', 3: 'Off' } as Record<number, string>)[Number(state)] ?? String(state);
-  }
-  partyStateName(state: number) {
-    return ({ 1: 'Proposed', 2: 'Accepted', 3: 'Removed' } as Record<number, string>)[Number(state)] ?? String(state);
-  }
-  approvalStateName(state: number) {
-    return ({ 1: 'Declared', 2: 'Approved', 3: 'Rejected' } as Record<number, string>)[Number(state)] ?? '—';
-  }
-
-  isCustomAsset() { return Number(this.registration()?.assetClass) === 11; }
-  isFrozen()      { return this.registration()?.compositionFrozen === true; }
-  isDeclared()    { return Number(this.registration()?.declaration?.approvalState ?? 0) === 1; }
-
-  /** Only rows that apply — 15 rows of mostly "Off" is noise, not information. */
-  activeRequirements() {
-    return (this.registration()?.requirements || []).filter((r: any) => Number(r.state) === 1 || Number(r.state) === 2);
-  }
-
-  /** Rows that IMPLY a party — the only ones the composition editor turns into a picker. */
-  partyRequirements() { return (this.classCatalog()?.requirements || []).filter((r: any) => r.impliesParty); }
-  /** Evidence-only rows (insurance, SPV, concentration limits, debtor verification). */
-  evidenceRequirements() { return (this.classCatalog()?.requirements || []).filter((r: any) => !r.impliesParty); }
-
-  isComposed(id: number) { return this.compositionDraft().includes(Number(id)); }
-  toggleComposed(id: number) {
-    if (this.isFrozen()) return;
-    const n = Number(id);
-    const cur = this.compositionDraft();
-    this.compositionDraft.set(cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n].sort((a, b) => a - b));
-  }
-  compositionDirty() {
-    const a = [...this.compositionDraft()].sort((x, y) => x - y).join(',');
-    const b = [...(this.registration()?.composition || [])].map(Number).sort((x, y) => x - y).join(',');
-    return a !== b;
-  }
-
-  /** Roles the DRAFT implies, deduplicated — mirrors `assetRequiredRoles` rather than re-deriving. */
-  draftRoles(): number[] {
-    const cat = this.classCatalog()?.requirements || [];
-    const seen = new Set<number>();
-    for (const id of this.compositionDraft()) {
-      const r = cat.find((x: any) => Number(x.id) === Number(id));
-      if (r?.role) seen.add(Number(r.role));
-    }
-    return [...seen].sort((a, b) => a - b);
-  }
-
-  /** A role is satisfied when at least one ACCEPTED party fills it. */
-  roleSatisfied(role: number) {
-    return (this.registration()?.parties || []).some((p: any) => Number(p.role) === Number(role) && Number(p.state) === 2);
-  }
-
-  async loadRegistration() {
-    if (!this.assetAddress) return;
-    this.registrationLoading.set(true);
-    try {
-      // The catalog is static, so fetch it once and keep it.
-      if (!this.classCatalog()) {
-        try { this.classCatalog.set(await this.apiService.assetClassCatalog()); } catch { /* labels degrade to ids */ }
-      }
-      const res = await this.apiService.assetClassInfo(this.assetAddress);
-      this.registration.set(res || null);
-      this.compositionDraft.set(((res?.composition || []) as any[]).map(Number));
-      const p = res?.complianceProfile;
-      const d = res?.declaration;
-      this.declarationForm.set({
-        holderCap: p?.holderCap ? String(p.holderCap) : '',
-        minTicket: p?.minTicket && Number(p.minTicket) ? String(p.minTicket) : '',
-        maxTicket: p?.maxTicket && Number(p.maxTicket) ? String(p.maxTicket) : '',
-        lockupUntil: p?.lockupUntil ? new Date(Number(p.lockupUntil)).toISOString().slice(0, 10) : '',
-        legalWrapperDocumentId: d?.legalWrapperDocumentId ? String(d.legalWrapperDocumentId) : '',
-      });
-    } catch {
-      this.registration.set(null);
-    } finally {
-      this.registrationLoading.set(false);
-    }
-  }
-
-  private _regAlert(titleKey: string, msg: string) {
-    this.alertService.show(this.translate.instant(titleKey), msg, this.translate.instant('common.close'), 'max-w-md', true);
-  }
-
-  async saveComposition() {
-    const asset = this.assetAddress;
-    if (!asset || this.isFrozen()) return;
-    this.compositionSaving.set(true);
-    try {
-      const res: any = await this.apiService.assetSetComposition(asset, this.compositionDraft());
-      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
-      await this.loadRegistration();
-      this._regAlert('assets.details.registration.savedTitle', this.translate.instant('assets.details.registration.savedMsg'));
-    } catch (e: any) {
-      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
-    } finally {
-      this.compositionSaving.set(false);
-    }
-  }
-
-  async saveDeclaration() {
-    const asset = this.assetAddress;
-    if (!asset) return;
-    const f = this.declarationForm();
-    const body: any = {};
-
-    // Send the profile whenever any of its fields is filled. `set: true` is forced server-side.
-    if (f.holderCap || f.minTicket || f.maxTicket || f.lockupUntil) {
-      body.complianceProfile = {
-        holderCap: Number(f.holderCap || 0),
-        minTicket: f.minTicket || '0',
-        maxTicket: f.maxTicket || '0',
-        // MILLISECONDS out — the API divides to seconds for the chain.
-        lockupUntil: f.lockupUntil ? new Date(f.lockupUntil + 'T00:00:00Z').getTime() : 0,
-        eligibleJurisdictions: [],
-      };
-    }
-    if (f.legalWrapperDocumentId) body.legalWrapperDocumentId = Number(f.legalWrapperDocumentId);
-
-    if (!Object.keys(body).length) {
-      this._regAlert('assets.details.registration.failedTitle', this.translate.instant('assets.details.registration.nothingToSave'));
-      return;
-    }
-
-    this.loadingService.show(this.translate.instant('common.processing'));
-    try {
-      const res: any = await this.apiService.assetSetDeclaration(asset, body);
-      this.loadingService.hide();
-      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
-      await this.loadRegistration();
-      this._regAlert('assets.details.registration.savedTitle', this.translate.instant('assets.details.registration.declarationSavedMsg'));
-    } catch (e: any) {
-      this.loadingService.hide();
-      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
-    }
-  }
-
-  async attachParty() {
-    const asset = this.assetAddress;
-    const f = this.partyForm();
-    if (!asset) return;
-    if (!/^0x[0-9a-fA-F]{40}$/.test(f.party)) {
-      this._regAlert('assets.details.registration.failedTitle', this.translate.instant('assets.details.registration.badPartyAddress'));
-      return;
-    }
-    if (!f.role) {
-      this._regAlert('assets.details.registration.failedTitle', this.translate.instant('assets.details.registration.pickRole'));
-      return;
-    }
-    this.loadingService.show(this.translate.instant('common.processing'));
-    try {
-      const res: any = await this.apiService.assetPartyAttach(asset, f.party, Number(f.role));
-      this.loadingService.hide();
-      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
-      this.partyForm.set({ party: '', role: 0 });
-      await this.loadRegistration();
-      // The party must now ACCEPT for itself — say so, or the issuer waits for nothing.
-      this._regAlert('assets.details.registration.savedTitle', this.translate.instant('assets.details.registration.partyProposedMsg'));
-    } catch (e: any) {
-      this.loadingService.hide();
-      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
-    }
-  }
-
-  async removeParty(party: string) {
-    const asset = this.assetAddress;
-    if (!asset) return;
-    const ok = await this.alertService.show(
-      this.translate.instant('assets.details.registration.removePartyTitle'),
-      this.translate.instant('assets.details.registration.removePartyConfirm'),
-      this.translate.instant('common.remove'),
-    );
-    if (!ok) return;
-    this.loadingService.show(this.translate.instant('common.processing'));
-    try {
-      const res: any = await this.apiService.assetPartyRemove(asset, party);
-      this.loadingService.hide();
-      if (res?.error) { this._regAlert('assets.details.registration.failedTitle', res.error); return; }
-      await this.loadRegistration();
-    } catch (e: any) {
-      this.loadingService.hide();
-      this._regAlert('assets.details.registration.failedTitle', e?.error?.error || e?.message || '');
-    }
-  }
+  // The A8 COMPLIANCE surface (declaration / composition / documents / class parties) moved
+  // to <app-asset-compliance-tab> — it owns its own load, forms and writes. The tab KEY here
+  // stays 'registration' because that is the chain's lifecycle noun; only the label is Compliance.
 
   async loadChainHead() {
     try {
@@ -1255,8 +1046,10 @@ export class DetailsPage implements OnInit {
   private async ensureAssetIdTypes(): Promise<GlobalVariable[]> {
     if (this.assetIdTypes().length) return this.assetIdTypes();
     try {
+      // toGlobalVariables, not a raw assign: the API serves `variable_id` and the modal reads
+      // `variableId`, so passing the rows through left every id undefined and disabled Save.
       const types = await this.apiService.vaultGetGlobalVariablesByCategory('ID Type - Asset');
-      this.assetIdTypes.set(types ?? []);
+      this.assetIdTypes.set(toGlobalVariables(types));
     } catch {
       this.assetIdTypes.set([]);
     }

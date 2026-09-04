@@ -138,12 +138,24 @@ export class DistributionPage implements OnInit {
   // The distributor's OWN per-asset fee config (D7b), on its own ServiceTemplate.
   async openFeeConfig(a: DistributionAgreement) {
     const res = await this.apiService.vaultGetServiceFeeConfig(a.service, a.asset);
+    // null is a FAILED READ, not "no fee configured" — see the twin on the service detail page.
+    if (!res) {
+      this.alertService.show(
+        this.translate.instant('alerts.error'),
+        this.translate.instant('distribution.loadFeesError'));
+      return;
+    }
     const result = await this.feeConfigModal.show({
       service: a.service,
       serviceName: a.serviceName || a.service,
+      mode: 'asset',
       asset: a.asset,
       assetSymbol: a.assetSymbol || a.asset,
-      feeConfig: res?.feeConfig ?? null,
+      feeConfig: res.feeConfig,
+      // Omitting `isSet` leaves the modal's `inheriting` flag false and defeats its guard against
+      // silently pinning an override on an asset that was only inheriting the service default.
+      inherited: res.default,
+      isSet: res.isSet,
     });
     if (!result) return;
     this.loadingService.show(this.translate.instant('distribution.savingFees'));

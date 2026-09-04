@@ -110,7 +110,7 @@ export class ListPage implements OnInit {
     if (!result) return;
     this.loadingService.show(this.translate.instant('dex.venues.list.creatingVenue'));
     try {
-      const r = await this.apiService.vaultDexVenueCreate(result.serviceAddress);
+      const r = await this.apiService.vaultDexVenueCreate(result.serviceAddress, result.settlementMode);
       if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       else await this.listVenues();
     } finally { this.loadingService.hide(); }

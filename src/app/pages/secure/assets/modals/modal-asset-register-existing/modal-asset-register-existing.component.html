@@ -44,7 +44,14 @@
             </div>
             @if (p.ok) {
               <div class="flex justify-between"><span class="text-gray-500">{{ 'assets.registerExistingModal.standardLabel' | translate }}</span><span class="text-black">{{ p.standard }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">{{ 'assets.registerExistingModal.tokenTypeLabel' | translate }}</span><span class="text-black">{{ p.tokenType === 1 ? 'TarmiizT20' : 'TarmiizT3643' }}</span></div>
+              <!-- ⚠️ WAS `p.tokenType === 1 ? 'TarmiizT20' : 'TarmiizT3643'`, and it was WRONG
+                   in the worst way: `tokenType` is not a field of `RegistrationPreview` (it
+                   was retired with the T3643 tree), so it read `undefined`, took the false
+                   branch, and labelled EVERY previewed contract as a standard the platform
+                   no longer has. A wrong answer that never looks like an error. The tuple's
+                   own `standard` field is on the line above and is the real answer; this line
+                   now reports the BASE CLASS, which is the fact the formula is matched on. -->
+              <div class="flex justify-between"><span class="text-gray-500">{{ 'assets.registerExistingModal.assetClassLabel' | translate }}</span><span class="text-black">{{ p.assetClass }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">{{ 'common.name' | translate }}</span><span class="text-black">{{ p.name }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">{{ 'common.symbol' | translate }}</span><span class="text-black">{{ p.symbol }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">{{ 'assets.registerExistingModal.currencyCodeLabel' | translate }}</span><span class="text-black">{{ p.currencyCode }}</span></div>
@@ -53,6 +60,30 @@
               <div class="flex justify-between"><span class="text-gray-500">{{ 'assets.registerExistingModal.regulatorLabel' | translate }}</span><span class="text-black" [title]="p.regulator">{{ shortAddr(p.regulator) }}</span></div>
             }
           </div>
+
+          <!-- Phase 4.9 — the class definition. Narrowed by BOTH halves of the on-chain
+               rule using what the preview read off the token: this regulator, this base
+               class. So every option here can succeed, and an empty list is a real answer
+               (no Active product over this class) rather than a filter that missed. -->
+          @if (p.ok) {
+            <div class="mt-3">
+              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.registerExistingModal.formulaLabel' | translate }}</label>
+              @if (formulasLoaded() && formulas().length === 0) {
+                <div class="rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+                  <p class="text-sm text-amber-800">{{ 'assets.registerExistingModal.noFormulas' | translate }}</p>
+                </div>
+              } @else {
+                <select [ngModel]="selectedFormula()" (ngModelChange)="selectedFormula.set($event)"
+                  class="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md text-black">
+                  <option value="" disabled selected hidden>{{ 'assets.registerExistingModal.selectFormulaPlaceholder' | translate }}</option>
+                  @for (f of formulas(); track f.formula) {
+                    <option [value]="f.formula">{{ f.name }}</option>
+                  }
+                </select>
+                <p class="text-xs text-gray-400 mt-1">{{ 'assets.registerExistingModal.formulaHint' | translate }}</p>
+              }
+            </div>
+          }
         }
       </div>
 
@@ -60,7 +91,7 @@
         <button class="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200" (click)="cancel()">{{ 'common.cancel' | translate }}</button>
         <button class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50"
                 (click)="confirmRegister()"
-                [disabled]="loading() || !preview()?.ok">
+                [disabled]="loading() || !preview()?.ok || !selectedFormula()">
           {{ (loading() && preview()?.ok ? 'assets.registerExistingModal.registering' : 'assets.registerExistingModal.register') | translate }}
         </button>
       </div>

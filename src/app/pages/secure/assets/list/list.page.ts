@@ -257,6 +257,11 @@ export class ListPage implements OnInit {
         // 1..11) — sending it would trade the API's clear 400 for an opaque revert inside
         // registerAsset, on a value that can never be changed afterwards.
         assetClass: data.assetClass,
+        // 4.9 — the regulator's class formula. ⚠️ NO fallback either, and for a sharper
+        // reason than assetClass: the API refuses a missing formula BEFORE it deploys the
+        // token, precisely because a refusal after the deploy would strand a real contract
+        // holding this name and symbol in this country forever.
+        formula: data.formula,
         ...(data.supplyMode === 1 ? { initialSupply: data.initialSupply } : {}),
       });
       if (result?.type === 'success') {

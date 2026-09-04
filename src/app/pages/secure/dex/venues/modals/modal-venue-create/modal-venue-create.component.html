@@ -26,10 +26,23 @@
               <p class="text-xs text-amber-700 mt-1">{{ 'dex.venues.createModal.pendingNotice' | translate }}</p>
             }
           </div>
-          <!-- No settlement-mode picker since 2026-08-09. Whether this venue runs a native
-               P2P book is DERIVED on chain at venueCreate from whether the service has a
-               registered payment processor, so there is nothing to choose here and the flag
-               can never contradict the configuration. -->
+          <!-- TWO AXES, and only one of them is derived. PARTICIPATION (allowP2P — "does this
+               venue take direct subscribers") became chain-derived on 2026-08-09 from whether
+               the service has a registered payment processor, which is why there is no picker
+               for it. SETTLEMENT is still the caller's and is IMMUTABLE once set, so it must be
+               chosen here. This field was dropped with the other one in 2026-08-09 and the API
+               kept requiring it, which 400'd every create from this modal. -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">{{ 'dex.venues.createModal.settlementMode' | translate }}</label>
+            <select formControlName="settlementMode"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
+              <option value="">{{ 'dex.venues.createModal.selectSettlementMode' | translate }}</option>
+              <option value="1">{{ 'dex.venues.createModal.settlementModeSv' | translate }}</option>
+              <option value="2">{{ 'dex.venues.createModal.settlementModeMv' | translate }}</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">{{ 'dex.venues.createModal.settlementModeHint' | translate }}</p>
+            <p class="text-xs text-amber-700 mt-1">{{ 'dex.venues.createModal.settlementModeWarning' | translate }}</p>
+          </div>
           <p class="text-xs text-gray-500">{{ 'dex.venues.createModal.surfaceNotice' | translate }}</p>
           <p class="text-xs text-gray-500">{{ 'dex.venues.createModal.suspendedNotice' | translate }}</p>
         </div>

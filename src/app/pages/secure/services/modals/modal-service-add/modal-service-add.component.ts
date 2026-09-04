@@ -23,9 +23,7 @@ export class ModalServiceAddComponent {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
 
-  serviceTypes = signal<{ variableId: number; name: string }[]>([]);
   partyClasses = signal<{ variableId: number; name: string }[]>([]);
-  marketClasses = signal<{ variableId: number; name: string }[]>([]);
   verificationLevels = signal<{ variableId: number; name: string }[]>([]);
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
   allValidators = signal<{ address: string; name: string; validationLevel: number; state: number }[]>([]);
@@ -33,7 +31,6 @@ export class ModalServiceAddComponent {
   clearingHouses = signal<{ address: string; name: string; state: number }[]>([]);
   readonly SELF_CUSTODY = SELF_CUSTODY_SENTINEL;
   selectedVerificationLevel = signal<number>(Number(DEFAULT_VERIFICATION_LEVEL));
-  selectedServiceType = signal<number>(0);
 
   currentStep = signal<number>(1);
   // Back to 5 for a token provider: the 'Currency & Payments' step is GONE. An entity cannot
@@ -51,19 +48,43 @@ export class ModalServiceAddComponent {
     return this.allValidators().filter(v => !level || v.validationLevel >= level);
   });
 
-  // serviceType 1 = Token Provider (renamed from "Token Issuer" — two of its three market
-  // classes issue nothing). The entity DECLARES its `marketClass` here; the regulator confirms
-  // it separately, and the DEX gates read the CONFIRMATION, never the declaration.
-  isTokenProvider = computed(() => this.selectedServiceType() === 1);
-  // serviceType 2 = Service Provider. The entity DECLARES its sub-type (partyClass) here;
-  // the regulator confirms it later, after which it appears under that regulator's
-  // validators / payment processors / custodians / clearing houses list.
-  isServiceProvider = computed(() => this.selectedServiceType() === 2);
+  // ── LICENCE APPLICATIONS replace the type/sub-type trio (Phase 28 step (e), 2026-09-03) ────
+  //
+  // The wizard no longer asks what the service IS; it asks what it APPLIES TO DO. Every entry
+  // lands `LICENSE_REQUESTED` and confers nothing until a regulator approves — so this form can
+  // never grant, which is precisely the hole `marketClassConfirmed` was bolted on to patch.
+  //
+  // ⚠️ THE IDS ARE 27/28/29 (Party Class catalog), NOT 1/2/3. The phase record notes 20/21/22
+  // were proposed first and `definePartyClasses.js` had already taken them for other classes;
+  // 1/2/3 are live party classes too (Validator / Payment Gateway / Bank). A wrong id here does
+  // not error — it applies for the wrong licence.
+  readonly licenseClasses = signal<{ classId: number; name: string }[]>([
+    { classId: 27, name: 'Token Issuer' },
+    { classId: 28, name: 'Exchange' },
+    { classId: 29, name: 'Brokerage' },
+  ]);
+  selectedLicenses = signal<number[]>([]);
+  isLicenseSelected(classId: number): boolean { return this.selectedLicenses().includes(classId); }
+  toggleLicense(classId: number): void {
+    const cur = this.selectedLicenses();
+    this.selectedLicenses.set(cur.includes(classId) ? cur.filter(c => c !== classId) : [...cur, classId]);
+  }
+  getSelectedLicenseNames(): string {
+    const ids = this.selectedLicenses();
+    if (!ids.length) return 'None';
+    const map = new Map(this.licenseClasses().map(l => [l.classId, l.name]));
+    return ids.map(i => map.get(i) ?? `Class ${i}`).join(', ');
+  }
+
+  // Drives the step-4 "Linked Services" section, which only makes sense for a would-be token
+  // issuer. Reads the APPLICATION, not a granted licence — at creation nothing is granted yet,
+  // and the alternative (hide the step until a regulator approves) would mean an issuer could
+  // never attach a validator during onboarding.
+  isTokenProvider = computed(() => this.selectedLicenses().includes(27));
+  isServiceProvider = computed(() => false);
 
   addForm = this.fb.group({
-    serviceType: ['', Validators.required],
-    partyClass: [''],
-    marketClass: [''],
+
     name: ['', Validators.required],
     description: ['', Validators.required],
     website: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+\..+/)]],
@@ -84,13 +105,11 @@ export class ModalServiceAddComponent {
         this.currentStep.set(1);
         this.reviewConfirmed.set(false);
         this.addForm.reset({
-          serviceType: '', partyClass: '', marketClass: '', name: '', description: '', website: '',
+          name: '', description: '', website: '',
           email: '', mobile: '', verificationLevel: DEFAULT_VERIFICATION_LEVEL, regulator: '',
           validator: '', paymentProcessor: '', custodian: SELF_CUSTODY_SENTINEL, clearingHouse: '', visibility: 1,
         });
-        this.loadServiceTypes();
-        this.loadPartyClasses();
-        this.loadMarketClasses();
+        this.selectedLicenses.set([]);
         this.loadVerificationLevels();
         this.loadRegulators();
         this.loadValidators();
@@ -106,51 +125,30 @@ export class ModalServiceAddComponent {
       }
     });
 
-    this.addForm.get('serviceType')!.valueChanges.subscribe(val => {
-      this.selectedServiceType.set(Number(val) || 0);
+    // ⚠️ The `serviceType` valueChanges subscriber is GONE with the field (Phase 28 step (e)).
+    // What it did — reset the linked-service pickers and toggle the verification-level
+    // requirement — now keys on the Token Issuer APPLICATION instead, via `toggleLicense`.
+    //
+    // ⚠️ ONE BEHAVIOUR IS DELIBERATELY NOT CARRIED OVER: it also cleared validator / PP /
+    // custodian / clearingHouse whenever the type changed away from 1. Deselecting the Token
+    // Issuer licence no longer wipes them, because a selection here is an APPLICATION and an
+    // operator toggling a checkbox to re-read it should not silently lose four other choices.
+    // The submit path is what guards this: `custodian` and `clearingHouse` are sent only when
+    // `isTokenProvider()`, so an unapplied licence cannot smuggle them through.
+    effect(() => {
+      const wantsIssuer = this.isTokenProvider();
       const verificationLevel = this.addForm.get('verificationLevel')!;
-      const partyClass = this.addForm.get('partyClass')!;
-      const marketClass = this.addForm.get('marketClass')!;
-      if (Number(val) !== 1) {
-        this.addForm.get('validator')!.setValue('');
-        this.addForm.get('paymentProcessor')!.setValue('');
-        this.addForm.get('custodian')!.setValue('');
-        this.addForm.get('clearingHouse')!.setValue('');
-        // Verification level only applies to token-issuer services — drop the requirement for others.
-        verificationLevel.setValue('');
-        verificationLevel.clearValidators();
-        verificationLevel.updateValueAndValidity();
-      } else {
-        // The picker is hidden, so re-apply the fixed default whenever we come back to token issuer.
+      if (wantsIssuer) {
         verificationLevel.setValue(DEFAULT_VERIFICATION_LEVEL);
         verificationLevel.setValidators(Validators.required);
-        verificationLevel.updateValueAndValidity();
-        // Default type-1 services to self-custody and refresh endorsed custodian list.
         if (!this.addForm.get('custodian')!.value) {
           this.addForm.get('custodian')!.setValue(SELF_CUSTODY_SENTINEL);
         }
-      }
-      // Each half of the axis carries its OWN sub-type, and exactly one is ever set.
-      // partyClass is required ONLY for service providers (serviceType 2)…
-      if (Number(val) === 2) {
-        partyClass.setValidators(Validators.required);
       } else {
-        partyClass.setValue('');
-        partyClass.clearValidators();
+        verificationLevel.setValue('');
+        verificationLevel.clearValidators();
       }
-      partyClass.updateValueAndValidity();
-      // …and marketClass ONLY for token providers (serviceType 1), where it is MANDATORY:
-      // 0 is not a legal marketClass on a type-1 service, so there is no "unset" to fall back
-      // to. Deliberately NOT pre-selected from `features.vaultMode` — Entity Mode is a
-      // per-tenant menu choice and may legitimately disagree with a per-service declaration
-      // (a mode-1 tenant running one Issuer and one Exchange service is normal).
-      if (Number(val) === 1) {
-        marketClass.setValidators(Validators.required);
-      } else {
-        marketClass.setValue('');
-        marketClass.clearValidators();
-      }
-      marketClass.updateValueAndValidity();
+      verificationLevel.updateValueAndValidity();
     });
 
     // Refresh endorsed custodians whenever the regulator changes (since the picker is regulator-scoped).
@@ -160,18 +158,12 @@ export class ModalServiceAddComponent {
     });
   }
 
-  async loadServiceTypes() {
-    const data = await this.apiService.vaultGetGlobalVariables();
-    if (data) {
-      this.serviceTypes.set(
-        data
-          .filter((item: any) => item.category === 'Service Type')
-          .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
-      );
-    }
-  }
+  // ⚠️ `loadServiceTypes` REMOVED (Phase 28 step (e)). It filtered Global Variables on the
+  // `'Service Type'` category, which is RETIRED and no longer seeded — so this had already
+  // become the failure its neighbour's comment warns about: a filter matching nothing, an empty
+  // dropdown, no error and no clue.
 
-  // The 'Party Class' catalog (18 entries) is far broader than what a service may DECLARE
+  // The 'License Class' catalog (18 entries) is far broader than what a service may DECLARE
   // itself as: only the ATTACH BAND — ids 1..6, Validator / Payment Gateway / Bank / Custodian
   // / Clearing House / Escrow Clearing House — attaches to a service. Everything above is
   // either an asset-level role or an operator class that is held by a contract, with no
@@ -195,42 +187,47 @@ export class ModalServiceAddComponent {
   // class 9 and attaches to an asset — it must appear here and must never appear in a service's
   // party picker.
 
-  // ⚠️ The category was RENAMED from 'Regulator Party Type' to 'Party Class'. The old name no
-  // longer exists on chain, so this filter matched nothing and the dropdown came up EMPTY —
-  // no error, no clue, just a wizard that could not be completed. Read the name from the live
-  // catalog; never reintroduce the retired one.
-  private static readonly PARTY_CLASS_CATEGORY = 'Party Class';
-  private static readonly MARKET_CLASS_CATEGORY = 'Market Class';
+  // ⚠️ THIS CATEGORY HAS BEEN RENAMED TWICE, AND THE FIRST TIME IT BROKE THIS EXACT FILTER.
+  //   'Regulator Party Type' → 'Party Class'  — the old name stopped existing on chain, this
+  //     filter matched nothing, and the dropdown came up EMPTY: no error, no clue, just a wizard
+  //     that could not be completed.
+  //   'Party Class' → 'License Class'         — Phase 28.1, 2026-09-03. Done ATOMICALLY with all
+  //     35 sites (28 GV seeds, 5 API reads, 1 SQL join, this constant) precisely because of the
+  //     incident above.
+  //
+  // 🔴 The constant is named for what it HOLDS, not for what it once held — it read
+  // `PARTY_CLASS_CATEGORY` while containing 'License Class', which is the stale-name shape this
+  // platform keeps finding in mirrors. Read the name from the live catalog; never reintroduce a
+  // retired one.
+  //
+  // ⚠️ AND DO NOT RENAME THE `'Audit Category'` VALUE 'Party Class' TO MATCH — it is a DIFFERENT
+  // namespace naming a class-DEFINITION event, and it deliberately did not follow. Both notes are
+  // in `Global Variables/scripts/2.initiate.js`.
+  private static readonly LICENSE_CLASS_CATEGORY = 'License Class';
 
   async loadPartyClasses() {
     const data = await this.apiService.vaultGetGlobalVariables();
     if (data) {
       this.partyClasses.set(
         data
-          .filter((item: any) => item.category === ModalServiceAddComponent.PARTY_CLASS_CATEGORY
+          .filter((item: any) => item.category === ModalServiceAddComponent.LICENSE_CLASS_CATEGORY
             && DECLARABLE_CLASSES.includes(Number(item.variable_id)))
           .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
       );
     }
   }
 
-  // ⚠️ NO `MAX_REGISTRABLE_*` BOUND HERE, AND THAT IS DELIBERATE — do not copy the bounded
-  // filter from `loadPartyClasses` above. The `Party Class` catalog is far broader than what a
-  // service may declare itself as (ids 7+ are asset-level roles and operator classes held by a
-  // contract), so that method filters to the 1..6 ATTACH BAND. `Market Class` has no such
-  // split: the WHOLE catalog is a legal `marketClass` for a type-1 service, and it is
-  // append-only on chain — so reading it live means a future value ships with no rebuild,
-  // while a bound copied from the neighbour would silently hide it.
-  async loadMarketClasses() {
-    const data = await this.apiService.vaultGetGlobalVariables();
-    if (data) {
-      this.marketClasses.set(
-        data
-          .filter((item: any) => item.category === ModalServiceAddComponent.MARKET_CLASS_CATEGORY)
-          .map((item: any) => ({ variableId: item.variable_id, name: item.name }))
-      );
-    }
-  }
+  // ⚠️ `loadMarketClasses` REMOVED (Phase 28 step (e), 2026-09-03) with the `Market Class`
+  // catalog it read. The licence classes are a fixed platform triple (27/28/29) declared on this
+  // component, deliberately NOT read from Global Variables like the party classes above:
+  // `licenseRequest` validates the class id on chain, and the three MARKET_FAMILY members are a
+  // CLOSED SET by design — `MARKET_FAMILY()` in `ILicenses.sol` says so outright, because adding
+  // a member silently widens every gate that asks "may this hold or move positions".
+  //
+  // ⚠️ So if a fourth market licence is ever added, this list must be updated DELIBERATELY, in
+  // the same pass as that decision. That is the opposite of the reasoning for `loadPartyClasses`
+  // above, and the difference is the point: an append-only catalog should be read live; a closed
+  // set should not, or it stops being closed.
 
   async loadVerificationLevels() {
     const data = await this.apiService.vaultGetGlobalVariables();
@@ -326,9 +323,11 @@ export class ModalServiceAddComponent {
   private stepFields(): string[] {
     const step = this.currentStep();
     if (step === 1) {
-      if (this.isTokenProvider()) return ['serviceType', 'marketClass', 'verificationLevel', 'regulator'];
-      if (this.isServiceProvider()) return ['serviceType', 'partyClass', 'regulator'];
-      return ['serviceType', 'regulator'];
+      // ⚠️ No licence field is listed: the selection is OPTIONAL (an empty array is the legal
+      // neutral case on chain), so requiring it here would invent a constraint the contract
+      // does not have.
+      if (this.isTokenProvider()) return ['verificationLevel', 'regulator'];
+      return ['regulator'];
     }
     if (step === 2) return ['name', 'description'];
     if (step === 3) return ['website', 'email', 'mobile'];
@@ -356,17 +355,6 @@ export class ModalServiceAddComponent {
     }
   }
 
-  getServiceTypeName(): string {
-    return this.serviceTypes().find(s => s.variableId === Number(this.addForm.get('serviceType')?.value))?.name ?? '';
-  }
-
-  getPartyClassName(): string {
-    return this.partyClasses().find(p => p.variableId === Number(this.addForm.get('partyClass')?.value))?.name ?? '';
-  }
-
-  getMarketClassName(): string {
-    return this.marketClasses().find(m => m.variableId === Number(this.addForm.get('marketClass')?.value))?.name ?? '';
-  }
 
   getVerificationLevelName(): string {
     return this.verificationLevels().find(l => l.variableId === Number(this.addForm.get('verificationLevel')?.value))?.name ?? '';
@@ -413,22 +401,25 @@ export class ModalServiceAddComponent {
       email: formValue.email ?? '',
       mobile: formValue.mobile ?? '',
       verificationLevel: Number(formValue.verificationLevel),
-      serviceType: Number(formValue.serviceType),
-      // The two declared sub-types — exactly one is ever non-zero, matching the on-chain
-      // invariant (`partyClass != 0 ⟺ type 2`, `marketClass != 0 ⟺ type 1`). Sending both
-      // would be rejected by the creation matrix rather than merged.
-      partyClass: Number(formValue.serviceType) === 2 ? Number(formValue.partyClass) : 0,
-      marketClass: Number(formValue.serviceType) === 1 ? Number(formValue.marketClass) : 0,
+      // ⚠️ The licence APPLICATIONS (Phase 28 step (e)). `countryCode: 0` means the service's own
+      // country — the sentinel the contract resolves, so the wizard never restates a fact the
+      // registry already holds. An empty array is legal and is what an operator who selected
+      // nothing gets.
+      requestLicenses: this.selectedLicenses().map(classId => ({ classId, countryCode: 0 })),
       regulator: formValue.regulator ?? '',
       validator: formValue.validator ?? '',
       // Always '' — the wizard has no picker for it (see AddServiceData). Kept so the shape
       // stays stable for a future attach-after-declaration flow.
       paymentProcessor: formValue.paymentProcessor ?? '',
       // Custodian is only meaningful for type-1 services. Non-type-1 send empty (treated as unset by the API).
-      custodian: Number(formValue.serviceType) === 1 ? (formValue.custodian || SELF_CUSTODY_SENTINEL) : '',
+      // ⚠️ Keyed on the Token Issuer APPLICATION now, not `serviceType === 1`. Nothing is granted
+      // at creation, so the wizard reads what the operator applied for — the same reasoning as
+      // `isTokenProvider`, and the alternative would leave an issuer unable to nominate a
+      // custodian during onboarding.
+      custodian: this.isTokenProvider() ? (formValue.custodian || SELF_CUSTODY_SENTINEL) : '',
       // Type-1 only, and deliberately NO default: an empty clearing set is the meaningful
       // "this market's credit is final", not an omission to be filled in.
-      clearingHouse: Number(formValue.serviceType) === 1 ? (formValue.clearingHouse || '') : '',
+      clearingHouse: this.isTokenProvider() ? (formValue.clearingHouse || '') : '',
       visibility: Number(formValue.visibility) || 1,
     };
     this.addServiceService.confirm(data);

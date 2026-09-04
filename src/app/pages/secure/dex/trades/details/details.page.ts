@@ -65,5 +65,10 @@ export class DetailsPage implements OnInit, OnDestroy {
   fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
   fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
 
-  goOrder(id: number) { this.router.navigate(['/authorized/dex/orders/details/' + id]); }
+  shortRef(r: string): string {
+    const s = String(r || '');
+    return s.length > 18 ? s.slice(0, 8) + '…' + s.slice(-6) : s;
+  }
+
+  goOrder(ref: string) { this.router.navigate(['/authorized/dex/orders/details/' + ref]); }
 }

@@ -346,5 +346,11 @@ export class DetailsPage implements OnInit, OnDestroy {
   goAsset(address: string) { this.router.navigate(['/authorized/assets/details/' + address]); }
   goVenue(address: string) { this.router.navigate(['/authorized/dex/venues/details/' + address]); }
   goTrade(tradeId: number) { this.router.navigate(['/authorized/dex/trades/details/' + tradeId]); }
-  goOrder(orderId: number) { this.router.navigate(['/authorized/dex/orders/details/' + orderId]); }
+  shortRef(r: string): string {
+    const s = String(r || '');
+    return s.length > 18 ? s.slice(0, 8) + '…' + s.slice(-6) : s;
+  }
+
+  /** A settled deal leg is a `bytes32` COMMITMENT REF (the column name is historical). */
+  goOrder(ref: string) { this.router.navigate(['/authorized/dex/orders/details/' + ref]); }
 }

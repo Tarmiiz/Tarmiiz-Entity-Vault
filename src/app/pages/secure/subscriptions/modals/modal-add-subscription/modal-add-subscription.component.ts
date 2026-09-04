@@ -7,7 +7,10 @@ import { ModalAddSubscriptionService } from './modal-add-subscription.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 import { AlertService } from '../../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../../shared/components/alerts/loading/loading.service';
-import { EKYC_ID_TYPES } from '../../../../../shared/constants/ekyc-canonical';
+import {
+  EKYC_ID_TYPES, EKYC_FIELD_RULES, EKYC_FIELD_LABELS,
+  ekycRuleApplies, ekycRequiredFieldsForLevel,
+} from '../../../../../shared/constants/ekyc-canonical';
 
 // The optional canonical identity-data fields (beyond the base required set handled
 // explicitly) — driven by the GENERATED mirror of the platform canonical schema v3
@@ -179,21 +182,46 @@ export class ModalAddSubscriptionComponent {
     return !!(this.form.value.service && this.form.value.didHash);
   }
 
-  // Passport (idType 2) additionally requires nationality — mirror of the server's
-  // PER_ID_TYPE_REQUIRED. Exposed for the template's conditional required marker.
-  isPassport(): boolean {
-    return Number(this.form.value.idType) === 2;
+  /**
+   * Is this canonical field mandatory for the currently-chosen document type?
+   * Driven by the GENERATED `EKYC_FIELD_RULES` table, so the marker follows the
+   * schema instead of being re-derived here. Replaces the old `isPassport()`, which
+   * hard-coded "passports also need nationality" — true under v3 and wrong under v4,
+   * where nationality is mandatory for every document type.
+   */
+  isRequired(field: string): boolean {
+    return ekycRuleApplies(EKYC_FIELD_RULES[field], Number(this.form.value.idType) || 1);
+  }
+
+  /**
+   * Canonical fields the API will reject for the chosen document type, resolved from
+   * the same generated table the server walks. A hand-copy of the rules is exactly how
+   * v3's set got stranded in this modal when v4 raised it — and the failure mode is the
+   * worst available: the operator completes the whole form and the API rejects at submit.
+   */
+  private missingCanonicalFields(): string[] {
+    const v = this.form.value as Record<string, any>;
+    const idType = Number(v['idType']) || 1;
+    return ekycRequiredFieldsForLevel(Number(v['level']) || 2, idType).filter(f => {
+      if (f === 'idType') { return false; }                                  // its own control, checked below
+      if (f === 'idNumber') { return !v['uniqueId']; }                       // auto-filled from uniqueId
+      if (f === 'idExpiryDate') { return !(v['idExpiryDate'] || v['acceptExpired']); }
+      return !v[f];
+    });
+  }
+
+  /** Field labels for the "still missing" hint — same generated source as the rules. */
+  missingFieldLabels(): string {
+    return this.missingCanonicalFields().map(f => EKYC_FIELD_LABELS[f] ?? f).join(', ');
   }
 
   private isModeBValid(): boolean {
     const v = this.form.value;
-    // BASE set (canonical v3, level >= 2): document number + name pair + dateOfBirth +
-    // idExpiryDate (unless the operator explicitly accepts an expired/missing expiry).
+    // The name requirement is the PAIR RULE, which no table can express — the server
+    // derives the missing form, so either shape is acceptable here too.
     const nameOk = !!(v.nameFull || (v.nameFirst && v.nameLast));
-    const expiryOk = !!(v.idExpiryDate || v.acceptExpired);
-    const passportOk = !this.isPassport() || !!v.nationality;
     return !!(v.service && v.provider && v.providerTrxRefNo && v.idType && v.uniqueId
-      && nameOk && v.dateOfBirth && expiryOk && passportOk
+      && nameOk && this.missingCanonicalFields().length === 0
       && v.email && v.mobile && v.didType && v.countryCode && Number(v.level) >= 2);
   }
 

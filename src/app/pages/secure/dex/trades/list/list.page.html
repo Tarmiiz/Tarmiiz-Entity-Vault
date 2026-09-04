@@ -64,8 +64,7 @@
             <th class="px-6 py-2">{{ 'dex.trades.table.executed' | translate }}</th>
             <th class="px-6 py-2">{{ 'dex.trades.table.asset' | translate }}</th>
             <th class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.trades.table.buyVenue' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.trades.table.sellVenue' | translate }}</th>
+            <th class="px-6 py-2">{{ 'dex.trades.table.venue' | translate }}</th>
             <th class="px-6 py-2 text-center">{{ 'dex.trades.table.currency' | translate }}</th>
             <th class="px-6 py-2 text-right">{{ 'dex.trades.table.amount' | translate }}</th>
             <th class="px-6 py-2 text-right">{{ 'dex.trades.table.price' | translate }}</th>
@@ -85,8 +84,7 @@
                 <td class="px-6 py-2">{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</td>
                 <td class="px-6 py-2">{{ t.assetName || '—' }}</td>
                 <td class="px-6 py-2"><span class="badge-symbol">{{ t.assetSymbol || '—' }}</span></td>
-                <td class="px-6 py-2">{{ t.buyDexServiceName || (t.buyDexService.slice(0,10) + '…') }}</td>
-                <td class="px-6 py-2">{{ t.sellDexServiceName || (t.sellDexService.slice(0,10) + '…') }}</td>
+                <td class="px-6 py-2">{{ t.dexServiceName || ((t.dexService || '').slice(0,10) + '…') }}</td>
                 <td class="px-6 py-2 text-center"><span class="badge-currency">{{ t.currencyCode || '—' }}</span></td>
                 <td class="px-6 py-2 text-right">{{ fmtAmount(t.amount) }}</td>
                 <td class="px-6 py-2 text-right">{{ fmtPrice(t.price) }}</td>

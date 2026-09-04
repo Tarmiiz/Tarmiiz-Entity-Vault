@@ -47,7 +47,26 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   serviceAddress = signal<string>('');
   venue = signal<DexVenue | undefined>(undefined);
-  activeTab = signal<'info' | 'assets' | 'orders' | 'trades' | 'members'>('info');
+  activeTab = signal<'info' | 'assets' | 'orders' | 'trades' | 'members' | 'contract'>('info');
+
+  // ── The venue CONTRACT (Phase 16 A6) ───────────────────────────────────────
+  //
+  // Until this shipped there was no way to bind a venue contract from anywhere in the
+  // product, so every venue answered `venueAct` with "venue has no contract bound".
+  //
+  // ⚠️ THE VAULT DOES NOT BUILD THE CREATION CODE, deliberately. Per the platform ruling
+  // the operator brings fixed, reviewable code from the downloadable kit; the platform
+  // neither generates nor holds an implementation. What this page adds is the two things
+  // that were genuinely missing: the published kit-library addresses to link against, and
+  // a route to a CREATE that the tenant relay wallet cannot perform itself.
+  venueTemplates = signal<any[]>([]);
+  kitLibraries = signal<Record<string, string | null>>({});
+  kitLibraryList = computed(() => Object.entries(this.kitLibraries()).map(([name, address]) => ({ name, address })));
+  contractCandidate = '';
+  contractCreationCode = '';
+  contractName = '';
+  verifyReport = signal<any | null>(null);
+  contractBusy = signal(false);
   venueOrders = signal<DexOrder[]>([]);
   /** 1-based, per frontend Standard 1.5. */
   vOrdersPage = signal(1);
@@ -136,7 +155,122 @@ export class DetailsPage implements OnInit, OnDestroy {
     this.venueMembers.set(r?.members || []);
   }
 
-  setTab(tab: 'info' | 'assets' | 'orders' | 'trades' | 'members') { this.activeTab.set(tab); }
+  setTab(tab: 'info' | 'assets' | 'orders' | 'trades' | 'members' | 'contract') {
+    this.activeTab.set(tab);
+    if (tab === 'contract' && this.venueTemplates().length === 0) void this.loadTemplates();
+  }
+
+  // ── The venue CONTRACT ─────────────────────────────────────────────────────
+
+  async loadTemplates() {
+    const r = await this.apiService.vaultDexVenueTemplates();
+    this.venueTemplates.set(r?.templates ?? []);
+    this.kitLibraries.set(r?.libraries ?? {});
+  }
+
+  /**
+   * The venue must be halted before its contract can change, and this is the check an
+   * operator otherwise discovers as a 409 mid-flow. Mirrors the contract's own
+   * `state != 2 || suspended`.
+   */
+  contractChangeBlocked = computed(() => {
+    const v = this.venue();
+    return !!v && Number(v.state) === 2 && !v.suspended;
+  });
+
+  /**
+   * ⚠️ EVERY ALERT BELOW IS INFORMATIONAL AND SO PASSES `hideCancel = true` (the 5th arg).
+   *
+   * These report on something that has ALREADY happened — an on-chain bind, a failed read.
+   * A "Cancel" button on them is not merely redundant, it says the action can still be
+   * undone, which for a mined transaction is false. `AlertService.show`'s own comment
+   * reserves the flag for exactly this. Only the three CONFIRMATION prompts
+   * (deploy / bind / unbind) legitimately offer Cancel, because there the answer still
+   * decides whether anything happens.
+   */
+  private notify(titleKey: string, message: string) {
+    return this.alertService.show(
+      this.translate.instant(titleKey), message,
+      this.translate.instant('alerts.ok'), 'max-w-md', true,
+    );
+  }
+
+  async verifyCandidate() {
+    const addr = this.contractCandidate.trim();
+    if (!addr) return;
+    this.contractBusy.set(true);
+    this.verifyReport.set(null);
+    try {
+      const r = await this.apiService.vaultDexVenueContractVerify(this.serviceAddress(), addr);
+      if (r?.error) { this.notify('alerts.error', r.error); return; }
+      // A failing report is a RESULT, not an error — it is rendered, not thrown away.
+      this.verifyReport.set(r);
+    } finally { this.contractBusy.set(false); }
+  }
+
+  /** Shared tail for the three write paths — they differ only in payload and prompt. */
+  private async _setContract(body: { creationCode?: string; name?: string; venueContract?: string | null }, loadingKey: string) {
+    this.loadingService.show(this.translate.instant(loadingKey));
+    try {
+      const r = await this.apiService.vaultDexVenueContractSet(this.serviceAddress(), body);
+      if (r?.error) { this.notify('alerts.error', r.error); return; }
+      if (r?.requestId) {
+        this.notify('approvals.submittedTitle', this.translate.instant('approvals.submittedMessage'));
+        return;
+      }
+      // ⚠️ SURFACE THE NOTICE, always. A successful bind AUTO-SUSPENDS the venue by
+      // design; an operator who is not told reads their own dark venue as a failure of
+      // this action and goes looking for a bug.
+      if (r?.notice) {
+        this.notify('dex.venues.contract.doneTitle', r.notice);
+      }
+      this.contractCreationCode = '';
+      this.contractCandidate = '';
+      this.verifyReport.set(null);
+      await this.loadVenue();
+    } finally { this.loadingService.hide(); }
+  }
+
+  async deployAndBind() {
+    const code = this.contractCreationCode.trim();
+    if (!code) return;
+    const ok = await this.alertService.show(
+      this.translate.instant('dex.venues.contract.deployTitle'),
+      this.translate.instant('dex.venues.contract.deployConfirm'),
+      this.translate.instant('dex.venues.contract.deployAction'),
+    );
+    if (!ok) return;
+    await this._setContract({ creationCode: code, name: this.contractName.trim() || undefined }, 'dex.venues.contract.deploying');
+  }
+
+  async bindExisting() {
+    const addr = this.contractCandidate.trim();
+    if (!addr) return;
+    const ok = await this.alertService.show(
+      this.translate.instant('dex.venues.contract.bindTitle'),
+      this.translate.instant('dex.venues.contract.bindConfirm', { address: addr }),
+      this.translate.instant('dex.venues.contract.bindAction'),
+    );
+    if (!ok) return;
+    await this._setContract({ venueContract: addr }, 'dex.venues.contract.binding');
+  }
+
+  async unbindContract() {
+    // Since `Orders` was deleted, unbinding leaves the venue BOOKLESS rather than
+    // reverting it to a platform-run book — the confirmation says so.
+    const ok = await this.alertService.show(
+      this.translate.instant('dex.venues.contract.unbindTitle'),
+      this.translate.instant('dex.venues.contract.unbindConfirm'),
+      this.translate.instant('dex.venues.contract.unbindAction'),
+    );
+    if (!ok) return;
+    await this._setContract({ venueContract: null }, 'dex.venues.contract.unbinding');
+  }
+
+  templateName(kind: number | undefined | null): string {
+    const t = this.venueTemplates().find(x => x.kind === Number(kind));
+    return t?.label || (kind == null ? '—' : String(kind));
+  }
 
   tierLabelShort(tier: number): string {
     if (tier !== 1 && tier !== 2 && tier !== 3) return '—';
@@ -160,7 +294,12 @@ export class DetailsPage implements OnInit, OnDestroy {
     return Number(s) === 1 ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
   }
 
-  goOrder(id: number) { this.router.navigate(['/authorized/dex/orders/details/' + id]); }
+  shortRef(r: string): string {
+    const s = String(r || '');
+    return s.length > 18 ? s.slice(0, 8) + '…' + s.slice(-6) : s;
+  }
+
+  goOrder(ref: string) { this.router.navigate(['/authorized/dex/orders/details/' + ref]); }
   goTrade(id: number) { this.router.navigate(['/authorized/dex/trades/details/' + id]); }
 
   formatMs(ms: number): string {

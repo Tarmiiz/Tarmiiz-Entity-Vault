@@ -42,6 +42,17 @@ export class ModalCreditDepositComponent {
   private translate = inject(TranslateService);
 
   processors = signal<ApprovedProcessor[]>([]);
+  /**
+   * Whether this service may post a ledger row dated other than now (D6 evidence marks).
+   *
+   * Starts FALSE and stays false unless the chain says otherwise: `CreditProxy.deposit` refuses a
+   * timestamp that is neither 0 nor exactly `block.timestamp` without the grant, so offering the
+   * field on an ungranted service is offering a guaranteed revert at submit. Note the field is
+   * unusable there even for a real-time deposit — chain time lags wall clock and `datetime-local`
+   * has a 60 s step, so no browser value can equal `block.timestamp`; empty (⇒ 0 ⇒ block time) is
+   * the only input that works.
+   */
+  backdatingGranted = signal(false);
   /** Every credit-settled asset on this service, before the currency filter. */
   private assets = signal<EligibleAsset[]>([]);
   /** Mirrors the form so the computeds below re-run — a FormControl is not a signal. */
@@ -76,7 +87,9 @@ export class ModalCreditDepositComponent {
           this.assetChoice.set('');
           this.currencyChoice.set(first);
           this.amountChoice.set(0);
+          this.backdatingGranted.set(false);
           void this.loadProcessors(defaultPp);
+          void this.loadBackdating();
           if (this.modalService.straightThrough()) void this.loadAssets();
         });
       }
@@ -114,6 +127,20 @@ export class ModalCreditDepositComponent {
     if (!a || !(a.ask > 0)) return 0;
     return Math.max(0, this.amountChoice() - this.estimatedTokens() * a.ask);
   });
+
+  // Disables the transaction-time input rather than hiding it: the field is a real capability the
+  // regulator can grant, so an operator who expects it should see WHY it is unavailable instead of
+  // finding it missing. The control is disabled through the form (not just `[disabled]` in the
+  // template) so a disabled control is also excluded from the submitted value.
+  private async loadBackdating() {
+    const service = this.modalService.service();
+    if (!service) return;
+    const { granted } = await this.apiService.vaultGetServiceBackdating(service);
+    this.backdatingGranted.set(granted);
+    const ctrl = this.form.controls.providerTrxTime;
+    if (granted) { ctrl.enable({ emitEvent: false }); }
+    else { ctrl.setValue('', { emitEvent: false }); ctrl.disable({ emitEvent: false }); }
+  }
 
   // Restrict the picker to payment processors ATTACHED to this service (1:N). We still pull the
   // approved list for display names/levels, then intersect with the service's attached PP set.

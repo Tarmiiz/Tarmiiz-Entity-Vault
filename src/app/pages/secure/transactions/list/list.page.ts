@@ -286,7 +286,7 @@ export class ListPage implements OnInit {
         t.trxType,
         `${t.assetName} (${t.assetSymbol})`,
         t.serviceName,
-        t.subscription,
+        this.partyAddress(t),
         t.currencyCode,
         this.utils.formatTokens(t.tokens),
         this.utils.formatPrice(t.price),
@@ -306,7 +306,7 @@ export class ListPage implements OnInit {
       'Type': t.trxType,
       'Asset': `${t.assetName} (${t.assetSymbol})`,
       'Service': t.serviceName,
-      'Subscription': t.subscription,
+      'Subscription': this.partyAddress(t),
       'Tokens': t.tokens,
       'Currency': t.currencyCode,
       'Price': this.utils.roundMoney(t.price),
@@ -336,6 +336,24 @@ export class ListPage implements OnInit {
   shortAddr(addr: string): string {
     if (!addr || addr.length < 14) return addr || '';
     return `${addr.slice(0, 8)}…${addr.slice(-6)}`;
+  }
+
+  /**
+   * The "Subscription / To" column, expressed ONCE.
+   *
+   * A TRANSFER (a DEX fill, say) has no `subscription` — it names a counterparty — so the
+   * value falls back to `to`, excluding the asset's own address, since a redemption returns
+   * tokens to the asset and the asset is not a party.
+   *
+   * ⚠️ Both exports read `t.subscription` DIRECTLY until 2026-09-01, while the template
+   * carried this expression inline. They therefore left the cell EMPTY on every Transfer row
+   * — a blank that reads as "no counterparty" rather than as a missing lookup, and only
+   * visible by comparing an export against the screen. Keep all three on this helper.
+   */
+  partyAddress(t: AssetTransaction): string {
+    return t.to && t.to.toLowerCase() !== (t.asset || '').toLowerCase()
+      ? t.to
+      : (t.subscription || '');
   }
 
   trxParty(t: AssetTransaction): string {

@@ -21,7 +21,7 @@
       }
 
       <!-- Service portfolio banner -->
-      <div class="rounded-xl shadow-md border border-indigo-200 bg-linear-to-r from-indigo-600 to-indigo-800 text-white p-5 mb-6 badges">
+      <div class="rounded-xl shadow-md border border-indigo-200 bg-linear-to-r rtl:bg-linear-to-l from-indigo-600 to-indigo-800 text-white p-5 mb-6 badges">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div class="min-w-0">
             <p class="text-sm font-medium text-indigo-200 uppercase tracking-wider mb-2">{{ 'dashboard.serviceProvider.portfolioTitle' | translate }}</p>
@@ -83,7 +83,7 @@
 
       <!-- My Services table -->
       <div [class]="loading() ? 'bg-blue-50 animate-pulse' : 'bg-white'" class="rounded-xl shadow-md border border-gray-200 overflow-hidden mb-12 badges">
-        <div class="px-6 py-4 bg-gray-600 flex justify-between items-center">
+        <div class="px-6 py-4 bg-linear-to-r rtl:bg-linear-to-l from-slate-700 to-indigo-800 flex justify-between items-center">
           <h2 class="text-xl font-semibold text-white">{{ 'dashboard.serviceProvider.myServicesTitle' | translate }}</h2>
           <button class="text-sm text-gray-300 hover:text-white" (click)="goTo('/authorized/services/list')">{{ 'common.viewAll' | translate }}</button>
         </div>
@@ -116,12 +116,6 @@
                     <td class="px-4 py-2">
                       <div class="flex items-center gap-2 flex-wrap">
                         <span>{{ serviceClassLabel(s) }}</span>
-                        @if (showMarketClassPill(s)) {
-                          <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
-                                [class]="s.marketClassConfirmed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                            {{ (s.marketClassConfirmed ? 'services.marketClass.confirmed' : 'services.marketClass.awaitingConfirmation') | translate }}
-                          </span>
-                        }
                       </div>
                     </td>
                     <td class="px-4 py-2">{{ s.verificationLevelName }}</td>

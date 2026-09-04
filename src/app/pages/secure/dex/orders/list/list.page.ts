@@ -93,7 +93,7 @@ export class ListPage implements OnInit, OnDestroy {
       (!asset || (o.assetSymbol || '').toLowerCase().includes(asset) || (o.assetName || '').toLowerCase().includes(asset) || o.baseAsset.toLowerCase().includes(asset)) &&
       (!venue || (o.dexServiceName || '').toLowerCase().includes(venue) || o.dexService.toLowerCase().includes(venue)) &&
       (!term ||
-        String(o.orderId).includes(term) ||
+        o.ref.toLowerCase().includes(term) ||
         (o.assetName || '').toLowerCase().includes(term) ||
         (o.assetSymbol || '').toLowerCase().includes(term) ||
         (o.dexServiceName || '').toLowerCase().includes(term) ||
@@ -133,19 +133,29 @@ export class ListPage implements OnInit, OnDestroy {
     return a > 0 ? Math.min(100, Math.round((f / a) * 100)) : 0;
   }
 
-  view(o: DexOrder) { this.router.navigate(['/authorized/dex/orders/details/' + o.orderId]); }
+  /**
+   * A commitment ref is 64 hex characters — unreadable in a table cell and useless in a
+   * confirmation dialog. Show head+tail; the full value goes in the row's `title` and the
+   * export, so nothing is lost where it is actually needed.
+   */
+  shortRef(r: string): string {
+    const s = String(r || '');
+    return s.length > 18 ? s.slice(0, 8) + '…' + s.slice(-6) : s;
+  }
+
+  view(o: DexOrder) { this.router.navigate(['/authorized/dex/orders/details/' + o.ref]); }
 
   async cancel(o: DexOrder, ev: Event) {
     ev.stopPropagation();
     const ok = await this.alertService.show(
       this.translate.instant('dex.orders.cancelConfirm.title'),
-      this.translate.instant('dex.orders.cancelConfirm.message', { id: o.orderId }),
+      this.translate.instant('dex.orders.cancelConfirm.message', { id: this.shortRef(o.ref) }),
       this.translate.instant('dex.orders.cancelConfirm.confirm')
     );
     if (!ok) return;
     this.loadingService.show(this.translate.instant('dex.orders.cancelConfirm.loading'));
     try {
-      const r = await this.apiService.vaultDexCancelOrder(o.orderId);
+      const r = await this.apiService.vaultDexCancelOrder(o.ref);
       if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.refresh();
     } finally { this.loadingService.hide(); }
@@ -175,13 +185,13 @@ export class ListPage implements OnInit, OnDestroy {
     ev.stopPropagation();
     const ok = await this.alertService.show(
       this.translate.instant('dex.orders.expireConfirm.title'),
-      this.translate.instant('dex.orders.expireConfirm.message', { id: o.orderId }),
+      this.translate.instant('dex.orders.expireConfirm.message', { id: this.shortRef(o.ref) }),
       this.translate.instant('dex.orders.expireConfirm.confirm')
     );
     if (!ok) return;
     this.loadingService.show(this.translate.instant('dex.orders.expireConfirm.loading'));
     try {
-      const r = await this.apiService.vaultDexExpireOrder(o.orderId);
+      const r = await this.apiService.vaultDexExpireOrder(o.ref);
       if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
       await this.refresh();
     } finally { this.loadingService.hide(); }
@@ -200,7 +210,7 @@ export class ListPage implements OnInit, OnDestroy {
 
   exportExcel() {
     const rows = this.filtered().map(o => ({
-      'ID': o.orderId,
+      'ID': o.ref,
       'Asset': o.assetSymbol || o.baseAsset,
       'Side': o.sideName,
       'Price': this.fmtPrice(o.price),
@@ -233,7 +243,7 @@ export class ListPage implements OnInit, OnDestroy {
       head: [['#', 'ID', 'Asset', 'Side', 'Scope', 'Price', 'Amount', 'Filled', 'Status', 'Venue', 'Created']],
       body: orders.map((o, i) => [
         String(i + 1),
-        String(o.orderId),
+        String(o.ref),
         o.assetSymbol || o.baseAsset.slice(0, 10),
         o.sideName ?? '',
         this.fmtPrice(o.price),

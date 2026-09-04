@@ -68,6 +68,29 @@ export class GlobalVariable {
   ){}
 }
 
+/**
+ * Normalise raw `/global/variables` rows onto the model.
+ *
+ * The API serves **snake_case** (`variable_id`) and `vaultGetGlobalVariablesByCategory` returns
+ * `any[]`, so assigning the rows straight to a `GlobalVariable[]` signal type-checks and then
+ * reads `undefined` at every `variableId` — silently. That produced a permanently-disabled Save
+ * on the shared identifier modal (asset + entity) and an origin-label map that never populated on
+ * the subscription Credit tab, all with no error anywhere.
+ *
+ * ⚠️ Deliberately NOT done inside `vaultGetGlobalVariablesByCategory`: ~12 call sites already map
+ * `variable_id` themselves, so normalising centrally would break every one of them. Use this at any
+ * NEW call site; migrating the existing self-mappers is a separate sweep.
+ */
+export function toGlobalVariables(rows: any): GlobalVariable[] {
+  if (!Array.isArray(rows)) return [];
+  return rows.map(v => new GlobalVariable(
+    v?.category,
+    Number(v?.variableId ?? v?.variable_id),
+    v?.name,
+    !!v?.visible
+  )).filter(v => Number.isFinite(v.variableId));
+}
+
 export class LogEvent {
   constructor (
     public eventName: string,       // ABI event name: 'ControlEvent', 'UserCreated', etc.
@@ -310,8 +333,6 @@ export class Service {
     public countryName: string,
     public verificationLevel: number,
     public verificationLevelName: string,
-    public serviceType: number,
-    public serviceTypeName: string,
     public regulator: string,
     public regulatorName: string,
     public regulatorSymbol: string,
@@ -324,26 +345,26 @@ export class Service {
     public visibility: number = 1,
     public custodian: string = '',
     public custodianActive: boolean = true,
-    // ── The two sub-type fields, and why they are two ────────────────────────────────────
-    // Exactly ONE is non-zero, always: `partyClass != 0 ⟺ serviceType == 2` and
-    // `marketClass != 0 ⟺ serviceType == 1`. A non-zero value therefore names its own
-    // vocabulary without a second read — which is the whole reason this is not one generic
-    // `subType` field. See shared/constants/{party-class,market-class}.ts.
+    // ── LICENCES — the successor to the four classification fields (Phase 28 step (e)) ───
     //
-    // Entity-declared sub-type for SERVICE PROVIDERS (serviceType 2) — the `Party Class`
-    // catalog id (1=Validator, 2=Payment Gateway, 3=Bank, 4=Custodian, 5=Clearing House,
-    // 6=Escrow CH). 0 on a token provider.
-    public partyClass: number = 0,
-    public partyClassName: string = '',
-    // Entity-declared sub-type for TOKEN PROVIDERS (serviceType 1) — the `Market Class`
-    // catalog id (1=Issuer, 2=Exchange, 3=Brokerage). 0 on a service provider, and NEVER 0
-    // on a type-1 service.
-    public marketClass: number = 0,
-    public marketClassName: string = '',
-    // Has the REGULATOR confirmed the entity's declared `marketClass`? Born false — that is
-    // the NORMAL state of a freshly created service, not an error. The DEX gates read this,
-    // not the declaration, so an unconfirmed Exchange cannot yet open a venue.
-    public marketClassConfirmed: boolean = false,
+    // ⚠️ `serviceType` / `serviceTypeName` / `partyClass` / `partyClassName` / `marketClass` /
+    // `marketClassName` / `marketClassConfirmed` are ALL GONE. A service no longer HAS a type
+    // or a class: it HOLDS LICENCES, each with its own request → approve → suspend → revoke
+    // lifecycle, and `LicensesProxy.hasLicense` — true ONLY while Active — is the authority.
+    //
+    // A SET rather than a repointed scalar, deliberately: repointing would have let a
+    // one-value assumption survive in the type, and there is no single honest answer for a
+    // service holding both a Token Issuer and an Exchange licence.
+    //
+    // ⚠️ THERE IS NO `licensesConfirmed` AND THERE MUST NOT BE. `marketClassConfirmed` existed
+    // because a DECLARATION is not an AUTHORISATION; a licence needs no such flag, because it
+    // is Active precisely BECAUSE a regulator approved it.
+    //
+    // 🔴 EMPTY TODAY ON EVERY ROW — the Entity API has the chain helpers (`serviceHasLicense`,
+    // `serviceLicensesOf` in blockchain.js) but NO ROUTE exposing them, so nothing populates
+    // this yet. That read belongs to the licensing lane, not to the field deletion. Until it
+    // lands, every surface must render "—", never a fabricated type.
+    public licenses: number[] = [],
     // Nested public contact info (2026-07-20) — derived from the service metadata's `contact`
     // key with fallback to the legacy flat email/mobile/website.
     public contact?: ContactInfo,
@@ -735,8 +756,11 @@ export interface DexDeal {
   assetWithheld: number;
   expiresAt: number;       // ONE clock: quote validity AND the venue-approval deadline
   requestKey: string;      // RFQ parent, '' when standalone
-  buyOrderId: number;
-  sellOrderId: number;
+  // ⚠️ STRINGS, not numbers (Phase 16, corrected 2026-09-01). `dex_deals.buy_order_id` /
+  // `sell_order_id` are `TEXT` holding `bytes32` COMMITMENT REFS — the settled legs — and the
+  // column names are historical. Typing them `number` made every consumer treat a ref as an id.
+  buyOrderId: string;
+  sellOrderId: string;
   tradeId: number;
   createdAt: number;
   updatedAt: number;
@@ -869,6 +893,21 @@ export interface ExternalIntegration {
 export interface AppConfigOption {
   value: string;
   label: string;
+}
+
+// One row of the API-endpoint registry (Phase 26.7). `enabled` is what enforcement uses;
+// `overridden` distinguishes "on because an admin decided" from "on because nobody has touched
+// it" — only the first is a decision on the record, and only overridden rows offer a reset.
+export interface ApiEndpointItem {
+  key: string;
+  method: string;
+  path: string;
+  section: string;
+  summary: string;
+  enabled: boolean;
+  overridden: boolean;
+  updatedAt: number | null;
+  updatedBy: string | null;
 }
 
 export interface AppConfigItem {
@@ -1245,6 +1284,27 @@ export class DexVenue {
     public allowP2P: boolean = true,
     public allowBrokerage: boolean = true,
     public allowDeals: boolean = true,
+    // ── The bound venue CONTRACT (Phase 16) ─────────────────────────────────
+    //
+    // `venueContract` null = BOOKLESS: the venue still places, matches, cancels and
+    // expires off central commitment rows, but `bestBid`/`bestAsk` revert because
+    // nothing maintains a price-ordered index. It does NOT mean "centrally operated" —
+    // the `Orders` module that did that was deleted.
+    //
+    // ⚠️ READ CAPABILITY FROM `hasBook`/`hasDeals`/`hasOfferings`, NEVER FROM
+    // `templateKind`. Kind implies capability only for the stock templates; kind 9 is
+    // CUSTOM and composes its own, so these flags come from the bound contract's own
+    // `info()` and are the only honest answer.
+    //
+    // `artifactHash` null = "template unrecognised", never "template mismatch".
+    public venueContract: string | null = null,
+    public templateKind: number | null = null,
+    public templateId: string | null = null,
+    public hasBook: boolean | null = null,
+    public hasDeals: boolean | null = null,
+    public hasOfferings: boolean | null = null,
+    public artifactHash: string | null = null,
+    public venueContractSetAt: number = 0,
   ) {}
 }
 
@@ -1330,7 +1390,13 @@ export class DexAssetListing {
 }
 
 export interface DexOrder {
-  orderId: number;
+  // ⚠️ `orderId: number` REMOVED (Phase 16, swept 2026-09-01). The `Orders` module became
+  // `Commitments` and the key went from a `uint256` order id to a `bytes32` COMMITMENT REF.
+  // Both APIs and both sync plugins were swept then; this frontend was not, so every read was
+  // `undefined` — the orders list rendered a bare `#`, and the detail page's
+  // `Number(paramMap.get('orderId'))` produced `#NaN` and fetched nothing.
+  // The API returns it UNPREFIXED (no leading `0x`); do not assume one when displaying.
+  ref: string;
   dexService: string;
   dexServiceName?: string;
   subscription: string;
@@ -1369,12 +1435,16 @@ export interface DexOrder {
 
 export interface DexTrade {
   tradeId: number;
-  buyOrderId: number;
-  sellOrderId: number;
-  buyDexService: string;
-  buyDexServiceName?: string;
-  sellDexService: string;
-  sellDexServiceName?: string;
+  // Phase 16 — the consumed COMMITMENT refs, replacing `buyOrderId` / `sellOrderId`.
+  buyRef: string;
+  sellRef: string;
+  // ⚠️ `buyDexService` / `sellDexService` (+ their Names) REMOVED (V36, swept 2026-09-01).
+  // There is ONE book per (asset, venue), so a trade has exactly ONE venue and the API returns
+  // a single `dexService`. The pair was worse than unused: the trades list called
+  // `t.buyDexService.toLowerCase()` in its filter and `.slice(0,10)` in its template, both of
+  // which THROW on `undefined` — so the page broke as soon as a real trade existed.
+  dexService: string;
+  dexServiceName?: string;
   baseAsset: string;
   assetName?: string;
   assetSymbol?: string;

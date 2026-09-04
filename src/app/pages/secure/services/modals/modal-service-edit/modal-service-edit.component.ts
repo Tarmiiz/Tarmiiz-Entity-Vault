@@ -22,7 +22,10 @@ export class ModalServiceEditComponent {
 
   validators = signal<{ address: string; name: string; validationLevel: number; state: number }[]>([]);
   paymentProcessors = signal<{ address: string; name: string; serviceLevel: number; state: number }[]>([]);
-  isTokenIssuer = computed(() => this.editServiceService.service()?.serviceType === 1);
+  // ⚠️ Licence-based since Phase 28 step (e) — holds an ACTIVE Token Issuer licence (class 27),
+  // not `serviceType === 1`. Empty until the licence read route lands (licensing lane), so this
+  // is false meanwhile and the validator/PP pickers stay hidden. Fails CLOSED by design.
+  isTokenIssuer = computed(() => (this.editServiceService.service()?.licenses ?? []).includes(27));
 
   editForm = this.fb.group({
     name: ['', Validators.required],
@@ -42,7 +45,7 @@ export class ModalServiceEditComponent {
           validator: validatorValue,
           paymentProcessor: paymentProcessorValue,
         });
-        if (service.serviceType === 1) {
+        if ((service.licenses ?? []).includes(27)) {
           this.loadValidators();
           this.loadPaymentProcessors();
         }

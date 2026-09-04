@@ -1,0 +1,101 @@
+@if (pickerService.isVisible()) {
+  <!-- No (click) on the backdrop — Standard 3: a modal closes only on ✕ / Cancel / a completed action. -->
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl m-4 transform transition-all duration-300 ease-in-out scale-100">
+
+      <!-- Header -->
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'documentPicker.title' | translate }}</h3>
+          <p class="text-xs text-gray-300 mt-1">{{ 'documentPicker.subtitle' | translate }}</p>
+        </div>
+        <button type="button" (click)="onCancel()" class="text-gray-200 hover:text-white" [attr.aria-label]="'common.close' | translate">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+
+        <!-- Filter + upload -->
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="text" [value]="filter()" (input)="filter.set($any($event.target).value)"
+            [placeholder]="'documentPicker.filterPlaceholder' | translate"
+            class="grow min-w-48 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-800">
+          @if (canUpload()) {
+            <button type="button" (click)="uploadNew()"
+              class="text-xs px-3 py-2 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+              {{ 'documentPicker.uploadNew' | translate }}
+            </button>
+          }
+        </div>
+
+        <!-- List -->
+        @if (isLoading()) {
+          <p class="text-sm text-gray-500 py-6 text-center">{{ 'common.loading' | translate }}</p>
+        } @else if (!documents().length) {
+          <div class="py-6 text-center">
+            <p class="text-sm text-gray-500">{{ 'documentPicker.empty' | translate }}</p>
+            @if (canUpload()) {
+              <p class="text-xs text-gray-400 mt-1">{{ 'documentPicker.emptyUploadHint' | translate }}</p>
+            }
+          </div>
+        } @else if (!filtered().length) {
+          <p class="text-sm text-gray-500 py-6 text-center">{{ 'documentPicker.noMatches' | translate }}</p>
+        } @else {
+          <div class="overflow-y-auto max-h-80 border border-gray-200 rounded-md">
+            <table class="min-w-full text-sm">
+              <thead style="background-color:#4a5568" class="text-white sticky top-0">
+                <tr>
+                  <th class="px-3 py-2 w-8"></th>
+                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colTitle' | translate }}</th>
+                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colType' | translate }}</th>
+                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colCreated' | translate }}</th>
+                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colId' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of filtered(); track d.documentId; let even = $even) {
+                  <tr (click)="select(d.documentId)"
+                      class="cursor-pointer hover:bg-blue-50"
+                      [class.bg-gray-50]="!even && selectedId() !== d.documentId"
+                      [class.bg-blue-100]="selectedId() === d.documentId">
+                    <td class="px-3 py-2">
+                      <input type="radio" [checked]="selectedId() === d.documentId" (change)="select(d.documentId)">
+                    </td>
+                    <td class="px-3 py-2 text-gray-800">{{ d.title || '—' }}</td>
+                    <td class="px-3 py-2 text-gray-600 text-xs">{{ docTypeName(d.documentType) }}</td>
+                    <td class="px-3 py-2 text-gray-600 text-xs">{{ utils.formatDate(d.createdAt) }}</td>
+                    <td class="px-3 py-2 text-gray-500 text-xs font-mono">#{{ d.documentId }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+        <button type="button" (click)="onCancel()"
+          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button type="button" (click)="onConfirm()" [disabled]="!selectedRow()"
+          class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ 'documentPicker.choose' | translate }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!--
+  Rendered AFTER the picker so the upload form paints on top of it — both overlays use z-40,
+  so DOM order is what decides, and reversing these two hides the upload dialog behind the
+  list that opened it.
+-->
+<app-modal-document-add></app-modal-document-add>

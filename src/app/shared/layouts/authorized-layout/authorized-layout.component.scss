@@ -9,6 +9,24 @@ ion-split-pane {
 ion-menu {
     width: 250px;
 
+    /* Sidebar typography — matched to the Permissioning Admin's menu (2026-09-01).
+       Its links are plain `text-sm` on a body that opts into greyscale
+       antialiasing; Ionic's ion-label defaults to 1rem and renders with the
+       platform's subpixel smoothing, and those two differences are the whole of
+       what read as heavier and denser here.
+
+       Deliberately NOT setting font-family: both apps already resolve to Inter
+       through --ion-font-family, and a direct rule here would beat the INHERITED
+       `html.lang-ar` stack (Noto Kufi Arabic) and drop the Arabic sidebar to a
+       fallback face. Scoped to ion-menu so page content keeps its existing scale. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    ion-label {
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+
     ion-toolbar {
         width: 250px;
 
