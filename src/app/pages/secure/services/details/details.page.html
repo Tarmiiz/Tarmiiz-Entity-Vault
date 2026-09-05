@@ -294,6 +294,9 @@
                 </div>
                 <div class="border-t pt-4">
                   <p class="text-sm font-medium text-gray-500">{{ 'services.details.info.licenses' | translate }}</p>
+                  <!-- The ACTIVE set only. A Requested, Suspended, Revoked or Denied license
+                       permits nothing, so listing it here would overstate what this service may
+                       do — the full record, in every state, is the section below. -->
                   <p class="text-base">{{ serviceTypeDisplay() }}</p>
                 </div>
                 <div class="border-t pt-4">
@@ -353,6 +356,75 @@
                     </div>
                   </div>
                 }
+              </div>
+
+              <!-- ── LICENSES (Phase 28) ─────────────────────────────────────────────────────
+                   🔴 EVERY STATE, not just the ones in force. An entity that applied must be able
+                   to see that it was REFUSED, and one whose license was SUSPENDED must find out
+                   here rather than by hitting a revert. A grant is good news that can wait for a
+                   page refresh; a suspension is a capability disappearing underneath a running
+                   tenant.
+
+                   ⚠️ `active` comes from `hasLicense` — the chain's own predicate — and it is what
+                   decides capability. `state` only says what happened. -->
+              <div class="mt-8 border-t pt-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 class="text-sm font-semibold text-gray-700">Licenses</h3>
+                    <p class="text-xs text-gray-500">
+                      What your regulator permits this service to do. Only a license
+                      <span class="font-medium">in force</span> confers anything.
+                    </p>
+                  </div>
+                  <app-refresh-button (refresh)="loadLicenses()" />
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                  <div class="overflow-x-auto rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-700">
+                      <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                        <tr>
+                          <th scope="col" class="px-6 py-2">License</th>
+                          <th scope="col" class="px-6 py-2">State</th>
+                          <th scope="col" class="px-6 py-2">Origin</th>
+                          <th scope="col" class="px-6 py-2">Decided</th>
+                        </tr>
+                      </thead>
+                      <tbody class="text-xs">
+                        @if (licensesLoading()) {
+                          <tr class="bg-white border-b"><td class="px-6 py-2" colspan="4">Loading…</td></tr>
+                        } @else if (licenses().length === 0) {
+                          <tr class="bg-white border-b">
+                            <td class="px-6 py-2" colspan="4">
+                              This service holds no licenses and has applied for none. It cannot act
+                              as a token issuer, exchange or brokerage until your regulator grants one.
+                            </td>
+                          </tr>
+                        } @else {
+                          @for (l of licenses(); track l.classId; let isEven = $even) {
+                            <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                              <td class="px-6 py-2">
+                                <div class="font-medium text-gray-800">{{ licenseClassName(l.classId) }}</div>
+                                <div class="text-gray-500">#{{ l.classId }}</div>
+                              </td>
+                              <td class="px-6 py-2">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="licenseStateClass(l.state)">
+                                  {{ licenseStateName(l.state) }}
+                                </span>
+                                <!-- Said in words, because an entity decides nothing here: the only
+                                     useful thing this surface can do is explain what the state
+                                     means for it. -->
+                                <div class="text-gray-600 mt-1">{{ licenseMeaning(l.state, l.active) }}</div>
+                              </td>
+                              <td class="px-6 py-2">{{ l.directGrant ? 'Granted by your regulator' : 'You applied' }}</td>
+                              <td class="px-6 py-2">{{ l.decidedAt ? utils.formatTime(l.decidedAt) : '—' }}</td>
+                            </tr>
+                          }
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
 
               @if(userInfo && userInfo.role !== 3) {

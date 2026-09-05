@@ -51,6 +51,7 @@ import { ModalImageAddComponent } from '../../../../shared/components/modal-imag
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
+import { ServiceLicense, licenseMeaning, licenseStateClass, licenseStateName } from '../../../../shared/utils/license.utils';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
 export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
@@ -252,13 +253,38 @@ export class DetailsPage implements OnInit {
   // a service whose license nobody checked. Do NOT paper over it by defaulting to true, and do
   // NOT infer it from another field — a wrongly-shown issuer surface is the failure this whole
   // phase exists to make impossible.
-  private static readonly LICENSE_NAMES: Record<number, string> =
-    { 27: 'Token Issuer', 28: 'Exchange', 29: 'Brokerage' };
-  isTokenProvider = computed(() => (this.service()?.licenses ?? []).includes(27));
+  /*
+      🔴 THE PRIVATE 3-ENTRY NAME MAP IS GONE, AND THE FIELD IT READ WAS NEVER POPULATED.
+
+      `service.licenses` had no producer — the Vault's ApiService carried no licence method at all —
+      so it was permanently `[]`, `isTokenProvider()` was permanently FALSE (8 template branches),
+      and the Licences box rendered "—" in two places. That is exactly what the user reported as
+      "on the entity side, the granted license is not reflected". Identical defect to the Regulator
+      Dashboard's, in the same shape, in the second app; and the API to fix it existed all along.
+
+      Names now come from the on-chain `License Class` catalog (29 values) at runtime, so a class
+      appended on a live chain needs no rebuild — and nothing outside the market family renders as
+      `Class 14` any more.
+  */
+  licenses          = signal<ServiceLicense[]>([]);
+  licensesLoading   = signal(false);
+  licenseClassNames = signal<Record<number, string>>({});
+
+  licenseClassName  = (id: number) => this.licenseClassNames()[Number(id)] || `Class ${id}`;
+  licenseStateName  = licenseStateName;
+  licenseStateClass = licenseStateClass;
+  licenseMeaning    = licenseMeaning;
+
+  // 27 = Token Issuer, named once. `service.licenses` holds the ACTIVE set only (see `loadLicenses`)
+  // because a Suspended licence permits nothing — so a service holding a suspended token-issuer
+  // licence is correctly NOT a token provider for the purposes of this page.
+  private static readonly CLASS_TOKEN_ISSUER = 27;
+  isTokenProvider = computed(() =>
+    (this.service()?.licenses ?? []).includes(DetailsPage.CLASS_TOKEN_ISSUER));
   serviceTypeDisplay = computed(() => {
     const ids = this.service()?.licenses ?? [];
     if (!ids.length) return '—';
-    return ids.map((i) => DetailsPage.LICENSE_NAMES[i] ?? `Class ${i}`).join(', ');
+    return ids.map((i: number) => this.licenseClassName(i)).join(', ');
   });
   // ⚠️ NO SUCCESSOR to the confirmed / awaiting-confirmation pill, deliberately. A license has no
   // separate confirmation to display: it is Active BECAUSE a regulator approved it. Rendering
@@ -410,8 +436,10 @@ export class DetailsPage implements OnInit {
     }    
   }
 
-  async ngOnInit() {}
-  
+  // The license CATALOG is jurisdiction-wide vocabulary, not per-service data — fetched once here
+  // rather than inside `getServiceDetails`, which runs again on every tab switch and refresh.
+  async ngOnInit() { await this.loadLicenseClasses(); }
+
   async ionViewWillEnter() {
     this.userInfo = this.authService.userInfo;
     // ⚠️ 'election' belongs in BOTH the cast and the allow-list. A tab missing from either is
@@ -777,6 +805,44 @@ export class DetailsPage implements OnInit {
     } as AssetTransaction;
   }
 
+  /*
+      Every license this service has ever touched — Requested, Denied, Suspended and Revoked
+      included, because an entity that applied must be able to see that it was refused.
+
+      🔴 `service.licenses` GETS THE ACTIVE SET ONLY. `active` comes from `hasLicense`, the chain's
+      own predicate, and it is what decides capability; `state` only says what happened. Feeding
+      the full set into `licenses` would let a REVOKED class light up `isTokenProvider()` and open
+      an issuer surface this service may not use — which the route's own comment records as having
+      nearly happened twice already, in two other apps.
+  */
+  async loadLicenses() {
+    this.licensesLoading.set(true);
+    try {
+      const res: any = await this.apiService.vaultGetServiceLicenses(this.serviceAddress);
+      const rows: ServiceLicense[] = Array.isArray(res?.licenses) ? res.licenses : [];
+      this.licenses.set(rows);
+      const active = rows.filter((r) => r.active).map((r) => Number(r.classId));
+      const svc = this.service();
+      if (svc) this.service.set({ ...svc, licenses: active } as any);
+    } catch {
+      // Left alone rather than emptied: an empty list is indistinguishable from "holds none", and
+      // this is the read whose silent emptiness WAS the reported defect.
+      this.licenses.set([]);
+    } finally {
+      this.licensesLoading.set(false);
+    }
+  }
+
+  /** Class id -> name, from the on-chain catalog. Never a local map — see the note above. */
+  async loadLicenseClasses() {
+    try {
+      const vars: any = await this.apiService.vaultGetGlobalVariablesByCategory('License Class');
+      const map: Record<number, string> = {};
+      for (const v of (vars || [])) map[Number(v.variableId ?? v.variable_id)] = v.name;
+      this.licenseClassNames.set(map);
+    } catch { this.licenseClassNames.set({}); }
+  }
+
   async getServiceDetails(silent = false) {
     if (!silent) this.loadingService.show(this.translate.instant('common.loadingData'));
     const [raw, summary] = await Promise.all([
@@ -790,6 +856,12 @@ export class DetailsPage implements OnInit {
     if (raw) {
       const service = this.mapVaultService(raw);
       this.service.set(service);
+      /*
+          ⚠️ AWAITED, AND BEFORE ANYTHING READS `isTokenProvider()`. That computed gates eight
+          branches of this template, and it derives from `service.licenses` — which this call is
+          the only producer of. Firing it late reproduces the very blankness being fixed.
+      */
+      await this.loadLicenses();
       this.resolveLinkedNames(raw.validator, raw.payment_processor, raw.custodian, raw.address);
       this.apiService.vaultGetServiceParties(this.serviceAddress)
         // Each bucket is defaulted individually, not just the whole object: an API that predates

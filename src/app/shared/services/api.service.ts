@@ -2175,6 +2175,28 @@ export class ApiService {
     return (await this.vaultGetGlobalVariablesList(category))?.variables ?? null;
   }
 
+  /*
+      SERVICE LICENSES (Phase 28) — the entity's view of what its own services are permitted to do.
+
+      🔴 THESE ROUTES HAVE EXISTED ALL ALONG AND HAD NO CALLER. `service.licenses` on the model was
+      therefore permanently `[]`, and the Licences box on the service detail rendered "—" in two
+      places — which is precisely what the user reported as *"on the entity side, the granted
+      license is not reflected"*. It was never missing plumbing: it was an unpopulated field, the
+      same defect the Regulator Dashboard carried, in the same shape, in the second app.
+
+      ⚠️ Each row carries `active`, taken from `hasLicense` — the chain's own predicate — and that
+      is what decides capability. `state` says what HAPPENED; `active` says what the service MAY DO.
+      `licensesOf` deliberately returns Denied and Revoked rows too, so a consumer that reads
+      `state` alone can publish a revoked licence as though it were held.
+  */
+  async vaultGetServiceLicenses(address: string) {
+    return this.vaultGet('/services/' + address + '/licenses');
+  }
+  /** Apply for a license. It confers NOTHING until the regulator approves — it lands Requested. */
+  async vaultRequestServiceLicense(address: string, classId: number, countryCode: number) {
+    return this.vaultPost('/services/' + address + '/licenses', { classId, countryCode });
+  }
+
   async vaultGetRegulatorsByCountry(countryCode: string, start = 0, offset = 100) {
     const data = await this.vaultGet('/regulators/' + countryCode, { start, offset });
     return data?.regulators ?? null;

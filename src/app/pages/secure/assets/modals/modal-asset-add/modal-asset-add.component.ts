@@ -252,10 +252,28 @@ export class ModalAssetAddComponent {
   }
 
   /** One picker line: "Green Sukuk — FRA · Debt / Sukuk". */
+  /*
+      🔴 THE ADDRESS IS PART OF THE LABEL BECAUSE THE NAME IS NOT UNIQUE.
+
+      Nothing on chain enforces a unique formula name — a formula is selected by ADDRESS
+      (`registerAsset(asset, formula)`), so duplicates are not ambiguous to the CODE and the
+      contract has no reason to refuse them. The ambiguity is entirely here, at the human
+      selection surface: a regulator with three products called "Money Market Fund" produced
+      three IDENTICAL option strings, because name + regulator + base class are all shared.
+      The issuer picked one at random and had no way to tell which.
+
+      ⚠️ Truncated, and LAST, so it disambiguates without competing with the name. It stays
+      useful after per-regulator uniqueness lands on chain — an operator still wants to know
+      which contract they are binding an asset to.
+  */
   formulaLabel(f: ClassFormula): string {
     const reg = this.regulators().find(x => x.address.toLowerCase() === f.regulator.toLowerCase());
     const cls = this.assetClasses().find(c => c.id === f.base_class)?.name ?? ('Class ' + f.base_class);
-    return `${f.name} — ${reg ? reg.symbol : f.regulator.slice(0, 8)} · ${cls}`;
+    // Inlined rather than adding a fourth local truncation helper — this app already carries three
+    // with two different lengths. `0,6…-4` is the dominant one; a shared helper is worth doing, but
+    // as its own tidy, not smuggled into a picker fix.
+    const short = f.formula ? `${f.formula.slice(0, 6)}…${f.formula.slice(-4)}` : '';
+    return `${f.name} — ${reg ? reg.symbol : f.regulator.slice(0, 8)} · ${cls} · ${short}`;
   }
 
   get selectedServiceHasPaymentProcessor(): boolean {
