@@ -19,7 +19,7 @@
  * checks. The defect lives in the RELATIONSHIP between two files that the type system does not
  * model. Measured on this dashboard 2026-09-05: the Service Details page declared
  * `ModalLicenseGrantComponent`, rendered it zero times, and `npm run build` **exited 0** while
- * every "Grant Licence" click would have hung.
+ * every "Grant License" click would have hung.
  *
  * That is why this is a script and not a lint rule of the compiler's: no amount of running the
  * compiler more carefully, or scoping it better, surfaces a dimension it does not model. When a
