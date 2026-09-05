@@ -4439,6 +4439,8 @@
       "title": "On-Chain Settings Backup",
       "settingLabels": {
         "menuConfig": "Menu Settings",
+        "appConfig": "System Configuration",
+        "apiEndpointConfig": "API Endpoint Access",
         "userMenuConfig": "Per-User Menu Access",
         "approvalPolicy": "Approval Policy",
         "approvalUserRoles": "Approval User Roles",

@@ -4439,6 +4439,8 @@
       "title": "النسخ الاحتياطي للإعدادات على السلسلة",
       "settingLabels": {
         "menuConfig": "إعدادات القائمة",
+        "appConfig": "System Configuration",
+        "apiEndpointConfig": "API Endpoint Access",
         "userMenuConfig": "وصول القائمة لكل مستخدم",
         "approvalPolicy": "سياسة الموافقات",
         "approvalUserRoles": "أدوار الموافقة للمستخدمين",

@@ -15,8 +15,21 @@ interface BackupStatusRow {
   chainUpdatedAt: number | null;
 }
 
+/*
+    ⚠️ ONE ENTRY PER `SETTINGS_BACKUP_TABLES` ROW ON THE ENTITY API — `labelFor()` falls back to the
+    RAW TABLE NAME, so a missing entry does not fail, it shows an admin `api_endpoint_config` in a
+    list of prose labels. Same hazard the platform names for MENU_LABELS / SYSTEM_FUNCTION_LABELS.
+
+    Two were missing when this was measured on 2026-09-04 (12 tables, 10 labels): `app_config`,
+    unlabelled since the table shipped 2026-07-20, and `api_endpoint_config` from Phase 26.3. Nobody
+    noticed because the page still renders — the row is present and readable, just not translated,
+    which is precisely why a fallback that "works" hides its own gaps. **When a table joins
+    SETTINGS_BACKUP_TABLES, add its label here in the same pass.**
+*/
 const SETTING_LABEL_KEYS: Record<string, string> = {
   menu_config:         'settings.backup.settingLabels.menuConfig',
+  app_config:          'settings.backup.settingLabels.appConfig',
+  api_endpoint_config: 'settings.backup.settingLabels.apiEndpointConfig',
   user_menu_config:    'settings.backup.settingLabels.userMenuConfig',
   approval_policy:     'settings.backup.settingLabels.approvalPolicy',
   approval_user_roles: 'settings.backup.settingLabels.approvalUserRoles',
