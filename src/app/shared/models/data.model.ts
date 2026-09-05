@@ -345,19 +345,19 @@ export class Service {
     public visibility: number = 1,
     public custodian: string = '',
     public custodianActive: boolean = true,
-    // ── LICENCES — the successor to the four classification fields (Phase 28 step (e)) ───
+    // ── LICENSES — the successor to the four classification fields (Phase 28 step (e)) ───
     //
     // ⚠️ `serviceType` / `serviceTypeName` / `partyClass` / `partyClassName` / `marketClass` /
     // `marketClassName` / `marketClassConfirmed` are ALL GONE. A service no longer HAS a type
-    // or a class: it HOLDS LICENCES, each with its own request → approve → suspend → revoke
+    // or a class: it HOLDS LICENSES, each with its own request → approve → suspend → revoke
     // lifecycle, and `LicensesProxy.hasLicense` — true ONLY while Active — is the authority.
     //
     // A SET rather than a repointed scalar, deliberately: repointing would have let a
     // one-value assumption survive in the type, and there is no single honest answer for a
-    // service holding both a Token Issuer and an Exchange licence.
+    // service holding both a Token Issuer and an Exchange license.
     //
     // ⚠️ THERE IS NO `licensesConfirmed` AND THERE MUST NOT BE. `marketClassConfirmed` existed
-    // because a DECLARATION is not an AUTHORISATION; a licence needs no such flag, because it
+    // because a DECLARATION is not an AUTHORISATION; a license needs no such flag, because it
     // is Active precisely BECAUSE a regulator approved it.
     //
     // 🔴 EMPTY TODAY ON EVERY ROW — the Entity API has the chain helpers (`serviceHasLicense`,

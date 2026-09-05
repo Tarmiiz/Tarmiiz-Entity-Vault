@@ -43,10 +43,10 @@
           <!-- Step 1: Configuration -->
           @if (currentStep() === 1) {
             <p class="text-sm text-gray-500 mb-2">{{ 'services.addModal.intro.config' | translate }}</p>
-            <!-- ⚠️ LICENCE APPLICATIONS replace the serviceType + partyClass/marketClass trio
+            <!-- ⚠️ LICENSE APPLICATIONS replace the serviceType + partyClass/marketClass trio
                  (Phase 28 step (e), 2026-09-03). The wizard no longer asks what the service IS;
                  it asks what the service APPLIES TO DO. Multi-select, because a service may hold
-                 several licences.
+                 several licenses.
 
                  ⚠️ NOT REQUIRED, and that is deliberate rather than an oversight: an empty
                  selection is the legal neutral case on chain, and a service that applied for
@@ -233,7 +233,7 @@
                   <!-- The amber "pending" note is KEPT and is now more accurate than it was: every
                        entry lands LICENSE_REQUESTED and confers nothing until a regulator approves.
                        Under the retired fields it described a confirmation flag; here it describes
-                       the licence's own lifecycle state. -->
+                       the license's own lifecycle state. -->
                   <span class="text-black font-medium">{{ getSelectedLicenseNames() }}
                     <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
                 </div>

@@ -139,7 +139,7 @@ export class CustodyPage implements OnInit {
       name: raw.name,
       // ⚠️ Phase 28 step (e): service_type / service_type_name / party_class(_name) /
       // market_class(_name) / market_class_confirmed are GONE from `services_view`. The
-      // licence SET replaces them and is EMPTY until the licensing lane's read route lands —
+      // license SET replaces them and is EMPTY until the licensing lane's read route lands —
       // deliberately not defaulted to anything that would render as a type.
       licenses: raw.licenses ?? [],
       state: raw.state ?? 0,
@@ -152,14 +152,14 @@ export class CustodyPage implements OnInit {
     const list = await this.apiService.vaultGetServicesOwn(0, 500);
     const all: Service[] = Array.isArray(list?.services) ? list!.services.map((s: any) => this.mapService(s)) : [];
     // ⚠️ WAS `Number(s.serviceType) === 2` (Phase 28 step (e)). There is no "service provider"
-    // type any more, and — importantly — there is no single licence that means it either: the
-    // three licence classes (27/28/29) are the MARKET family, i.e. the old type-1 half. A
+    // type any more, and — importantly — there is no single license that means it either: the
+    // three license classes (27/28/29) are the MARKET family, i.e. the old type-1 half. A
     // custodian is a PARTY, admitted through the Regulators Registry's party machinery, which
     // this page already resolves separately via `custody_mandates`.
     //
     // So the filter is dropped rather than translated: every own service is a candidate, and the
     // MANDATE list below is what actually establishes custodianship. Translating it into a
-    // licence test would have invented a licence that does not exist for this role.
+    // license test would have invented a license that does not exist for this role.
     this.myCustodianServices.set(all);
   }
 

@@ -63,23 +63,23 @@ export class ModalVenueCreateComponent {
     const list = data?.services ?? [];
     this.services.set(
       list
-        // ⚠️ ONE LICENCE TEST REPLACES THE PAIR (Phase 28 step (e), 2026-09-03). The chain gate
+        // ⚠️ ONE LICENSE TEST REPLACES THE PAIR (Phase 28 step (e), 2026-09-03). The chain gate
         // this mirrors was `marketClass == MC_EXCHANGE` AND `marketClassConfirmed`; it is now the
-        // single `hasLicense(service, 28)`, because a licence is Active precisely BECAUSE a
+        // single `hasLicense(service, 28)`, because a license is Active precisely BECAUSE a
         // regulator approved it — the confirmation flag has no successor and needs none.
         //
         // ⚠️ AND THE "LISTED BUT DISABLED" STATE GOES WITH IT. The old picker showed an
         // unconfirmed Exchange greyed out so an entity waiting on its regulator saw an answer
-        // rather than an empty list. There is no equivalent here: a REQUESTED licence is not
+        // rather than an empty list. There is no equivalent here: a REQUESTED license is not
         // visible through `hasLicense`, and surfacing one would mean reading `licensesOf`, which
-        // returns Denied and Revoked too — publishing "pending" for a licence that was refused.
-        // An empty picker is the honest outcome; the licence request's own status page is where
+        // returns Denied and Revoked too — publishing "pending" for a license that was refused.
+        // An empty picker is the honest outcome; the license request's own status page is where
         // that question belongs.
         .filter((s: any) => ((s.licenses ?? []) as number[]).includes(28))
         .map((s: any) => ({
           address:  s.address,
           name:     s.name || s.address,
-          // Every listed service is eligible now: holding the licence IS the eligibility, so
+          // Every listed service is eligible now: holding the license IS the eligibility, so
           // there is no second condition to test. Kept as a field so the template needs no change.
           eligible: true,
         })),

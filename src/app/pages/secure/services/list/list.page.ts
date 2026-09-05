@@ -111,7 +111,7 @@ export class ListPage implements OnInit {
     this._socketSub = this.socketService.vaultUpdated$.subscribe(() => this.listServices(true));
   }
 
-  // ── LICENCES replace the type/sub-type pair (Phase 28 step (e), 2026-09-03) ──────────────
+  // ── LICENSES replace the type/sub-type pair (Phase 28 step (e), 2026-09-03) ──────────────
   //
   // The retired `typeDisplay` joined `serviceTypeName` to whichever sub-type matched the type,
   // and its comment warned never to read the wrong one — both catalogs numbered from 1, so a
@@ -119,11 +119,11 @@ export class ListPage implements OnInit {
   // is different and worth naming: a service holds a SET, so there is no single value to show.
   //
   // ⚠️ `showMarketClassPill` / the confirmed-vs-awaiting pill are GONE WITH NO SUCCESSOR. A
-  // licence has no separate confirmation to display — it is Active precisely BECAUSE a regulator
+  // license has no separate confirmation to display — it is Active precisely BECAUSE a regulator
   // approved it, and a suspended one simply stops being listed. Rendering "awaiting confirmation"
-  // for a licence would invent a state the ledger does not have.
+  // for a license would invent a state the ledger does not have.
   //
-  // 🔴 RENDERS "—" UNTIL THE LICENCE READ ROUTE EXISTS. `Service.licenses` is empty on every row
+  // 🔴 RENDERS "—" UNTIL THE LICENSE READ ROUTE EXISTS. `Service.licenses` is empty on every row
   // today: the Entity API has the chain helpers but no route exposing them, and that read belongs
   // to the licensing lane. A dash is the honest placeholder — do NOT substitute a guess from
   // another field to make the column look populated.
@@ -188,7 +188,7 @@ export class ListPage implements OnInit {
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
       // ⚠️ Phase 28 step (e): service_type / service_type_name / party_class(_name) /
       // market_class(_name) / market_class_confirmed are GONE from `services_view`. The
-      // licence SET replaces them and is EMPTY until the licensing lane's read route lands —
+      // license SET replaces them and is EMPTY until the licensing lane's read route lands —
       // deliberately not defaulted to anything that would render as a type.
       licenses: raw.licenses ?? [],
       regulator: raw.regulator ?? '',

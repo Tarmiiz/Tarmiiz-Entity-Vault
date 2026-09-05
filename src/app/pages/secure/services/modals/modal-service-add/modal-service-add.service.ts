@@ -7,14 +7,14 @@ export interface AddServiceData {
   email: string;
   mobile: string;
   verificationLevel: number;
-  // ⚠️ LICENCE APPLICATIONS replace `serviceType` / `partyClass` / `marketClass` (Phase 28
+  // ⚠️ LICENSE APPLICATIONS replace `serviceType` / `partyClass` / `marketClass` (Phase 28
   // step (e), 2026-09-03). The wizard no longer says what the service IS, it says what it
   // APPLIES TO DO — every entry lands `LICENSE_REQUESTED` and confers nothing until a
   // regulator approves, so this payload can never grant.
   //
   // `countryCode: 0` is the sentinel for "the service's own country", resolved on chain, so a
   // caller never restates a fact the registry already holds. An EMPTY ARRAY is legal and is the
-  // neutral case — do not default it to a licence to make a demo work.
+  // neutral case — do not default it to a license to make a demo work.
   requestLicenses: { classId: number; countryCode: number }[];
   regulator: string;
   validator: string;

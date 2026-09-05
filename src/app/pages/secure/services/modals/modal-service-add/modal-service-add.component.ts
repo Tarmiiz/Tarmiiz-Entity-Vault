@@ -48,7 +48,7 @@ export class ModalServiceAddComponent {
     return this.allValidators().filter(v => !level || v.validationLevel >= level);
   });
 
-  // ── LICENCE APPLICATIONS replace the type/sub-type trio (Phase 28 step (e), 2026-09-03) ────
+  // ── LICENSE APPLICATIONS replace the type/sub-type trio (Phase 28 step (e), 2026-09-03) ────
   //
   // The wizard no longer asks what the service IS; it asks what it APPLIES TO DO. Every entry
   // lands `LICENSE_REQUESTED` and confers nothing until a regulator approves — so this form can
@@ -57,7 +57,7 @@ export class ModalServiceAddComponent {
   // ⚠️ THE IDS ARE 27/28/29 (Party Class catalog), NOT 1/2/3. The phase record notes 20/21/22
   // were proposed first and `definePartyClasses.js` had already taken them for other classes;
   // 1/2/3 are live party classes too (Validator / Payment Gateway / Bank). A wrong id here does
-  // not error — it applies for the wrong licence.
+  // not error — it applies for the wrong license.
   readonly licenseClasses = signal<{ classId: number; name: string }[]>([
     { classId: 27, name: 'Token Issuer' },
     { classId: 28, name: 'Exchange' },
@@ -77,7 +77,7 @@ export class ModalServiceAddComponent {
   }
 
   // Drives the step-4 "Linked Services" section, which only makes sense for a would-be token
-  // issuer. Reads the APPLICATION, not a granted licence — at creation nothing is granted yet,
+  // issuer. Reads the APPLICATION, not a granted license — at creation nothing is granted yet,
   // and the alternative (hide the step until a regulator approves) would mean an issuer could
   // never attach a validator during onboarding.
   isTokenProvider = computed(() => this.selectedLicenses().includes(27));
@@ -131,10 +131,10 @@ export class ModalServiceAddComponent {
     //
     // ⚠️ ONE BEHAVIOUR IS DELIBERATELY NOT CARRIED OVER: it also cleared validator / PP /
     // custodian / clearingHouse whenever the type changed away from 1. Deselecting the Token
-    // Issuer licence no longer wipes them, because a selection here is an APPLICATION and an
+    // Issuer license no longer wipes them, because a selection here is an APPLICATION and an
     // operator toggling a checkbox to re-read it should not silently lose four other choices.
     // The submit path is what guards this: `custodian` and `clearingHouse` are sent only when
-    // `isTokenProvider()`, so an unapplied licence cannot smuggle them through.
+    // `isTokenProvider()`, so an unapplied license cannot smuggle them through.
     effect(() => {
       const wantsIssuer = this.isTokenProvider();
       const verificationLevel = this.addForm.get('verificationLevel')!;
@@ -218,13 +218,13 @@ export class ModalServiceAddComponent {
   }
 
   // ⚠️ `loadMarketClasses` REMOVED (Phase 28 step (e), 2026-09-03) with the `Market Class`
-  // catalog it read. The licence classes are a fixed platform triple (27/28/29) declared on this
+  // catalog it read. The license classes are a fixed platform triple (27/28/29) declared on this
   // component, deliberately NOT read from Global Variables like the party classes above:
   // `licenseRequest` validates the class id on chain, and the three MARKET_FAMILY members are a
   // CLOSED SET by design — `MARKET_FAMILY()` in `ILicenses.sol` says so outright, because adding
   // a member silently widens every gate that asks "may this hold or move positions".
   //
-  // ⚠️ So if a fourth market licence is ever added, this list must be updated DELIBERATELY, in
+  // ⚠️ So if a fourth market license is ever added, this list must be updated DELIBERATELY, in
   // the same pass as that decision. That is the opposite of the reasoning for `loadPartyClasses`
   // above, and the difference is the point: an append-only catalog should be read live; a closed
   // set should not, or it stops being closed.
@@ -323,7 +323,7 @@ export class ModalServiceAddComponent {
   private stepFields(): string[] {
     const step = this.currentStep();
     if (step === 1) {
-      // ⚠️ No licence field is listed: the selection is OPTIONAL (an empty array is the legal
+      // ⚠️ No license field is listed: the selection is OPTIONAL (an empty array is the legal
       // neutral case on chain), so requiring it here would invent a constraint the contract
       // does not have.
       if (this.isTokenProvider()) return ['verificationLevel', 'regulator'];
@@ -401,7 +401,7 @@ export class ModalServiceAddComponent {
       email: formValue.email ?? '',
       mobile: formValue.mobile ?? '',
       verificationLevel: Number(formValue.verificationLevel),
-      // ⚠️ The licence APPLICATIONS (Phase 28 step (e)). `countryCode: 0` means the service's own
+      // ⚠️ The license APPLICATIONS (Phase 28 step (e)). `countryCode: 0` means the service's own
       // country — the sentinel the contract resolves, so the wizard never restates a fact the
       // registry already holds. An empty array is legal and is what an operator who selected
       // nothing gets.

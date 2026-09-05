@@ -31,7 +31,7 @@
 // CLEARING, ESCROW_CH) and it compares only those. The six it checked did agree. Everything above
 // 6 was never compared, so the message overstated its own scope: "matches the chain" reads as
 // "this file is correct" and meant "the six names I know about agree". §10 of that checker now
-// covers the asset band; the operator and licence bands are still name-checked nowhere.
+// covers the asset band; the operator and license bands are still name-checked nowhere.
 export const PARTY_CLASS = {
   // 1..8 — ATTACH_SERVICE: what attaches to a SERVICE. CONTIGUOUS since 4.9 inserted 7 and 8
   // into this band deliberately, so the range check is a plain `<= 8` rather than a disjunct.
@@ -66,7 +66,7 @@ export const PARTY_CLASS = {
   SETTLEMENT_OPERATOR:24,
   COMMS_OPERATOR:     25,
   IDENTITY_ISSUER:    26,   // verified against IdentitiesProxy.CLASS_IDENTITY_ISSUER = 26
-  // 27..29 — LICENCE classes (Phase 28). Not a party a service declares: a licence its
+  // 27..29 — LICENSE classes (Phase 28). Not a party a service declares: a license its
   // regulator grants, read through `LicensesProxy.hasLicense`.
   TOKEN_ISSUER:       27,
   EXCHANGE:           28,
@@ -98,16 +98,16 @@ export const OPERATOR_CLASSES: readonly number[] = [
   PARTY_CLASS.MARKET_OPERATOR, PARTY_CLASS.SETTLEMENT_OPERATOR,
   PARTY_CLASS.COMMS_OPERATOR, PARTY_CLASS.IDENTITY_ISSUER,
 ];
-/** Licence classes (Phase 28) — granted by a regulator, never declared by a service. */
+/** License classes (Phase 28) — granted by a regulator, never declared by a service. */
 export const LICENSE_CLASSES: readonly number[] = [
   PARTY_CLASS.TOKEN_ISSUER, PARTY_CLASS.EXCHANGE, PARTY_CLASS.BROKERAGE,
 ];
 /**
- * What a type-2 service may DECLARE — everything but the operator AND licence classes.
+ * What a type-2 service may DECLARE — everything but the operator AND license classes.
  *
- * ⚠️ THE LICENCE EXCLUSION IS NEW AND LOAD-BEARING. This derives by subtraction from every value
+ * ⚠️ THE LICENSE EXCLUSION IS NEW AND LOAD-BEARING. This derives by subtraction from every value
  * in `PARTY_CLASS`, so 27/28/29 became declarable the moment they were added — and a service
- * declaring itself "Token Issuer" as a party class would be asserting a licence its regulator
+ * declaring itself "Token Issuer" as a party class would be asserting a license its regulator
  * grants. Deriving by subtraction is convenient and fails OPEN: every future id is declarable
  * until someone remembers to exclude it.
  */

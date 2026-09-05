@@ -237,19 +237,19 @@ export class DetailsPage implements OnInit {
   service = signal<Service | undefined>(undefined);
   withheldCredit  = signal<{ currencyCode: number; currencyName: string; currencySymbol: string; withheld: number }[]>([]);
   withheldAssets  = signal<{ asset: string; name: string; symbol: string; totalWithheld: number }[]>([]);
-  // ── LICENCES replace the type/sub-type pair (Phase 28 step (e), 2026-09-03) ────────────────
+  // ── LICENSES replace the type/sub-type pair (Phase 28 step (e), 2026-09-03) ────────────────
   //
   // 🔴 `isTokenProvider` GATES UI SECTIONS — it is not a label — so its correctness matters more
   // than the two displays below it. It now asks whether the service holds an ACTIVE Token Issuer
-  // LICENCE (class 27), which is strictly stronger than `serviceType === 1`: that was a byte the
-  // ENTITY set at creation, whereas a licence is Active only because a regulator approved it and
+  // LICENSE (class 27), which is strictly stronger than `serviceType === 1`: that was a byte the
+  // ENTITY set at creation, whereas a license is Active only because a regulator approved it and
   // stops being Active the moment one suspends it.
   //
-  // ⚠️ IT IS FALSE ON EVERY ROW UNTIL THE LICENCE READ ROUTE LANDS, because `Service.licenses` is
+  // ⚠️ IT IS FALSE ON EVERY ROW UNTIL THE LICENSE READ ROUTE LANDS, because `Service.licenses` is
   // populated by nothing yet — the Entity API has the chain helpers (`serviceHasLicense`,
   // `serviceLicensesOf`) but no route exposing them. That is a KNOWN, NAMED gap owned by the
   // licensing lane, and it fails CLOSED: issuer sections stay hidden rather than being shown for
-  // a service whose licence nobody checked. Do NOT paper over it by defaulting to true, and do
+  // a service whose license nobody checked. Do NOT paper over it by defaulting to true, and do
   // NOT infer it from another field — a wrongly-shown issuer surface is the failure this whole
   // phase exists to make impossible.
   private static readonly LICENSE_NAMES: Record<number, string> =
@@ -260,7 +260,7 @@ export class DetailsPage implements OnInit {
     if (!ids.length) return '—';
     return ids.map((i) => DetailsPage.LICENSE_NAMES[i] ?? `Class ${i}`).join(', ');
   });
-  // ⚠️ NO SUCCESSOR to the confirmed / awaiting-confirmation pill, deliberately. A licence has no
+  // ⚠️ NO SUCCESSOR to the confirmed / awaiting-confirmation pill, deliberately. A license has no
   // separate confirmation to display: it is Active BECAUSE a regulator approved it. Rendering
   // "awaiting confirmation" would invent a state the ledger does not have.
   suspensionReason = signal<string>('');
@@ -676,7 +676,7 @@ export class DetailsPage implements OnInit {
       verificationLevelName: raw.verification_level_name ?? String(raw.verification_level ?? ''),
       // ⚠️ Phase 28 step (e): service_type / service_type_name / party_class(_name) /
       // market_class(_name) / market_class_confirmed are GONE from `services_view`. The
-      // licence SET replaces them and is EMPTY until the licensing lane's read route lands —
+      // license SET replaces them and is EMPTY until the licensing lane's read route lands —
       // deliberately not defaulted to anything that would render as a type.
       licenses: raw.licenses ?? [],
       regulator: raw.regulator ?? '',

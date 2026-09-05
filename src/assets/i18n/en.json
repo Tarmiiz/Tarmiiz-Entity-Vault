@@ -599,7 +599,7 @@
         "partyLabelCustodian": "Custodian",
         "partyLabelClearingHouse": "Clearing House",
         "partyLabelEscrowClearingHouse": "Escrow Clearing House",
-        "licenses": "Licences"
+        "licenses": "Licenses"
       },
       "assets": {
         "editVenueFees": "Edit Venue Fees",
@@ -735,7 +735,7 @@
         "verificationLevel": "Verification Level",
         "visibility": "Visibility",
         "clearingHouse": "Clearing House",
-        "requestLicenses": "Licence Applications"
+        "requestLicenses": "License Applications"
       },
       "header": "Add Service",
       "intro": {
@@ -779,7 +779,7 @@
       "hints": {
         "paymentProviderAfterCreate": "Attached after creation — a payment provider is attached per currency, once this service has an election for that currency. Use the Election and Service Providers tabs."
       },
-      "requestLicensesNote": "Select the licences this service applies for. Each application is submitted to the regulator and confers nothing until approved — a service may hold several, or none."
+      "requestLicensesNote": "Select the licenses this service applies for. Each application is submitted to the regulator and confers nothing until approved — a service may hold several, or none."
     },
     "custodianModal": {
       "description": "Select a custodian to attach to this service. A service may hold several — its assets are held by all of them.",
