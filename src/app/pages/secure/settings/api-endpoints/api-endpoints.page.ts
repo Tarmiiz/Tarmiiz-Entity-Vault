@@ -8,6 +8,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { ApiEndpointItem } from '../../../../shared/models/data.model';
 import { sectionLabelKey } from '../../../../shared/constants/api-endpoint-labels';
+import { LicensePillComponent, LicenseStatus } from '../../../../shared/components/license-pill/license-pill.component';
 
 /**
  * Settings → API Endpoints (Phase 26.7).
@@ -34,14 +35,14 @@ import { sectionLabelKey } from '../../../../shared/constants/api-endpoint-label
   selector: 'app-settings-api-endpoints',
   templateUrl: './api-endpoints.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, LicensePillComponent],
 })
 export class ApiEndpointsPage implements OnInit {
   private apiService     = inject(ApiService);
   private alertService   = inject(AlertService);
   private translate      = inject(TranslateService);
 
-  sections = signal<{ section: string; items: ApiEndpointItem[] }[]>([]);
+  sections = signal<{ section: string; items: ApiEndpointItem[]; license?: LicenseStatus | null }[]>([]);
   loading  = signal(false);
   saving   = signal<string | null>(null);   // endpoint key currently saving
   filter   = signal('');                    // free-text over label + raw key
@@ -66,6 +67,7 @@ export class ApiEndpointsPage implements OnInit {
     return all
       .map(s => ({
         section: s.section,
+        license: s.license,
         items: s.items.filter(i =>
           (i.summary || '').toLowerCase().includes(q) ||
           i.path.toLowerCase().includes(q) ||

@@ -32,6 +32,7 @@ import { SocketService } from '../../../../shared/services/socket.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { menuLabelFor } from '../../../../shared/constants/menu-labels';
 import { systemFunctionLabelFor } from '../../../../shared/constants/system-function-labels';
+import { LicensePillComponent, LicenseStatus } from '../../../../shared/components/license-pill/license-pill.component';
 
 interface UserMenuRow {
   menuKey: string;
@@ -39,6 +40,9 @@ interface UserMenuRow {
   userEnabled: boolean | null;  // null ⇒ inherit (group setting, else role default)
   groupEnabled: boolean | null; // null ⇒ no group row / group inert
   effective: boolean;
+  // Surfaced by the Entity API (licenseSurfacing.js). OPTIONAL because an older API response
+  // simply omits it, and the pill renders nothing for an absent value.
+  license?: LicenseStatus | null;
 }
 
 interface UserSystemFunctionRow {
@@ -47,6 +51,9 @@ interface UserSystemFunctionRow {
   userEnabled: boolean | null;  // null ⇒ inherit (group setting, else role default)
   groupEnabled: boolean | null; // null ⇒ no group row / group inert
   effective: boolean;
+  // Surfaced by the Entity API (licenseSurfacing.js). OPTIONAL because an older API response
+  // simply omits it, and the pill renders nothing for an absent value.
+  license?: LicenseStatus | null;
 }
 
 
@@ -65,8 +72,7 @@ interface UserSystemFunctionRow {
     ModalUserEditCredentialsComponent,
     ModalUserRoleComponent,
     ModalUserApprovalRoleComponent,
-    ModalUserGroupComponent, TranslatePipe,
-]
+    ModalUserGroupComponent, TranslatePipe, LicensePillComponent]
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);

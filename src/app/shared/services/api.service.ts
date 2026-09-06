@@ -131,13 +131,17 @@ export class ApiService {
   }
 
   // Menu config (admin Menu Settings page) — JWT-gated under /vault/...
-  async vaultMenuConfigList(): Promise<{ menuKey: string; enabled: boolean; updatedAt: number | null; updatedByUserId: string | null }[]> {
+  async vaultMenuConfigList(): Promise<{ menuKey: string; enabled: boolean; updatedAt: number | null; updatedByUserId: string | null; license: any }[]> {
     const data = await this.vaultGet('/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
       menuKey: r.menu_key,
       enabled: !!r.enabled,
       updatedAt: r.updated_at != null ? Number(r.updated_at) : null,
       updatedByUserId: r.updated_by_user_id ?? null,
+      // ⚠️ This mapper builds an EXPLICIT object, so a field the API adds is DROPPED unless it is
+      // named here — and a dropped `license` renders as "unknown", the reassuring answer, on every
+      // row. Any future field the licence surface adds must be added here too.
+      license: r.license ?? null,
     }));
   }
 
@@ -167,7 +171,7 @@ export class ApiService {
   // three layers: userEnabled (explicit override), groupEnabled (assigned User Group's
   // setting — null when no group row / group inert), and the folded effective value.
   async vaultUserMenuConfigList(userId: string | number): Promise<
-    { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean }[]
+    { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean; license: any }[]
   > {
     const data = await this.vaultGet('/staff/' + userId + '/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
@@ -176,6 +180,8 @@ export class ApiService {
       userEnabled: r.userEnabled === null || r.userEnabled === undefined ? null : !!r.userEnabled,
       groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
       effective: !!r.effective,
+      // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
+      license: r.license ?? null,
     }));
   }
 
@@ -191,7 +197,7 @@ export class ApiService {
   // Per-user System Functions (admin System Functions tab on User Details). Returns only the
   // functions applicable to the target user's role (empty ⇒ tab hidden).
   async vaultUserSystemFunctionConfigList(userId: string | number): Promise<
-    { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean }[]
+    { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean; license: any }[]
   > {
     const data = await this.vaultGet('/staff/' + userId + '/system-functions');
     return (data?.functions ?? []).map((r: any) => ({
@@ -200,6 +206,8 @@ export class ApiService {
       userEnabled: r.userEnabled === null || r.userEnabled === undefined ? null : !!r.userEnabled,
       groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
       effective: !!r.effective,
+      // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
+      license: r.license ?? null,
     }));
   }
 
@@ -235,7 +243,7 @@ export class ApiService {
   }
 
   async vaultUserGroupMenuConfigList(groupId: string): Promise<
-    { menuKey: string; tenantEnabled: boolean; groupEnabled: boolean | null; effective: boolean }[]
+    { menuKey: string; tenantEnabled: boolean; groupEnabled: boolean | null; effective: boolean; license: any }[]
   > {
     const data = await this.vaultGet('/staff-groups/' + groupId + '/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
@@ -243,6 +251,8 @@ export class ApiService {
       tenantEnabled: !!r.tenantEnabled,
       groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
       effective: !!r.effective,
+      // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
+      license: r.license ?? null,
     }));
   }
 
@@ -251,7 +261,7 @@ export class ApiService {
   }
 
   async vaultUserGroupSystemFunctionConfigList(groupId: string): Promise<
-    { functionKey: string; defaultEnabled: boolean; groupEnabled: boolean | null; effective: boolean }[]
+    { functionKey: string; defaultEnabled: boolean; groupEnabled: boolean | null; effective: boolean; license: any }[]
   > {
     const data = await this.vaultGet('/staff-groups/' + groupId + '/system-functions');
     return (data?.functions ?? []).map((r: any) => ({
@@ -259,6 +269,8 @@ export class ApiService {
       defaultEnabled: !!r.defaultEnabled,
       groupEnabled: r.groupEnabled === null || r.groupEnabled === undefined ? null : !!r.groupEnabled,
       effective: !!r.effective,
+      // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
+      license: r.license ?? null,
     }));
   }
 

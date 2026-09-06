@@ -39,8 +39,13 @@
   @for (sec of filteredSections(); track sec.section) {
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
       <div class="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-700">
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-700 flex items-center gap-2">
           {{ sectionLabelKey(sec.section) | translate }}
+          <!-- On the SECTION, not each row: every endpoint in a section shares one license
+               status, so a per-row pill would be the same fact repeated hundreds of times.
+               ⚠️ This is a SECOND, independent axis — the toggle below is the admin's switch for
+               external systems; this is the regulator's ceiling, and it runs first. -->
+          <app-license-pill [license]="sec.license" />
         </h3>
       </div>
 

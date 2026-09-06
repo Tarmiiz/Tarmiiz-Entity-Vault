@@ -15,6 +15,47 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-06
+
+#### Added — what this tenant's LICENSES mean, on every admin screen
+
+Five admin surfaces now show, per row, whether the tenant's licenses actually cover the thing being
+configured: **Menu Settings**, **API Endpoints**, **Approval Settings**, **User Details** (Menu
+Access + System Functions) and **User Group Details** (both tabs). One shared
+[`<app-license-pill>`](src/app/shared/components/license-pill/license-pill.component.ts) — the
+`<app-refresh-button>` precedent, for the same reason: the same fact rendered five ways is five
+things to keep in step.
+
+🔴 **The rule the component exists to get right: the license ceiling gates ROUTES, not KEYS.** A
+system function spanning six sections has its routes spread across them, and a route in an unlocked
+section still works. So a key is "not licensed" only when EVERY section it touches is closed;
+partial coverage is available and shows the split (`Licensed 3/6`).
+
+⚠️ Rendering the partial case as blocked — or as "requires any of X, Y, Z" — would tell an admin
+that one threshold decides the key, when each route decides itself. **An admin who believes a live
+key is already dead will disable it, taking the surfaces it still governs with it: a wrong answer
+that ACTS rather than one that merely misinforms.**
+
+⚠️ **Four absences, four different sentences**, because each sends an admin somewhere different and
+collapsing them into one em-dash is the failure mode:
+
+| state | means | renders |
+|---|---|---|
+| core | deliberately outside licensing | nothing at all — a pill on every core row trains admins to ignore the pill |
+| retired | the route is GONE | *No longer in use* — says nothing about licenses, because none will bring it back |
+| undetermined | the license set could not be READ | *Licenses unread* — chase the chain or the sync, **not** the regulator |
+| unknown | no mapping exists | *Unmapped* — never rendered as "unrestricted", which is unearned |
+
+- **Fixed in the same pass — five explicit row mappers silently DROPPED the new field.**
+  [api.service.ts](src/app/shared/services/api.service.ts) and
+  [data.model.ts](src/app/shared/models/data.model.ts) build result objects field by field, so an
+  unnamed field never reaches the page. The rows would have rendered *Unmapped* — the reassuring
+  answer — on every screen. Each mapper now names `license` and says in-source why it must.
+- Wording is *"your licenses do not cover this"*, never *"blocked"*: the enforcing ceiling is not
+  deployed, so a row claiming to be blocked would describe something that is not happening.
+- Amber, not red, for *Not licensed* — the tenant is not misconfigured; a license it does not hold
+  is a normal state to obtain from its regulator, not an error to fix on this page.
+
 ### 2026-09-02
 
 #### Added — Phase 4.9: an issuer picks a regulator's PRODUCT, not a base class

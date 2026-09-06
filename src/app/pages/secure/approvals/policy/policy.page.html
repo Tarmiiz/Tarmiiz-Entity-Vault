@@ -20,6 +20,7 @@
             <th class="px-4 py-2">{{ 'approvals.policy.table.actionCategory' | translate }}</th>
             <th class="px-4 py-2">{{ 'common.description' | translate }}</th>
             <th class="px-4 py-2">{{ 'approvals.policy.table.requiresApproval' | translate }}</th>
+            <th class="px-4 py-2">{{ 'settings.menu.table.license' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -44,10 +45,14 @@
                   </span>
                 </label>
               </td>
+              <!-- A policy on a category this tenant is not licensed for is not WRONG — it is
+                   inert, because no request in that category can be raised. Saying so stops an
+                   admin debugging an approval queue that is empty for a reason nothing states. -->
+              <td class="px-4 py-2"><app-license-pill [license]="row.license" /></td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
                 @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'approvals.policy.empty' | translate }} }
               </td>
             </tr>

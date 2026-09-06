@@ -263,7 +263,14 @@
                       @for (row of menuRows(); track row.menuKey) {
                         <tr>
                           <td class="px-4 py-3 text-sm text-gray-800">{{ labelFor(row.menuKey) }}</td>
-                          <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ row.menuKey }}</td>
+                          <td class="px-4 py-3 text-xs text-gray-400 font-mono">
+                            <span class="inline-flex items-center gap-2">
+                              {{ row.menuKey }}
+                              <!-- Granting a module the tenant is not licensed for is legal and
+                                   inert: the page appears and its data routes still refuse. -->
+                              <app-license-pill [license]="row.license" />
+                            </span>
+                          </td>
                           <td class="px-4 py-3">
                             @switch (rowSource(row)) {
                               @case ('override') {
@@ -366,7 +373,14 @@
                       @for (row of filteredSysFnRows(); track row.functionKey) {
                         <tr>
                           <td class="px-4 py-3 text-sm text-gray-800">{{ fnLabelFor(row.functionKey) }}</td>
-                          <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ row.functionKey }}</td>
+                          <td class="px-4 py-3 text-xs text-gray-400 font-mono">
+                            <span class="inline-flex items-center gap-2">
+                              {{ row.functionKey }}
+                              <!-- A separate axis from Effective: a key can be granted and still
+                                   reach nothing, and the two must not be read as one answer. -->
+                              <app-license-pill [license]="row.license" />
+                            </span>
+                          </td>
                           <td class="px-4 py-3">
                             @switch (rowSource(row)) {
                               @case ('override') {

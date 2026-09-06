@@ -10,6 +10,7 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 
 import { ApprovalPolicyRow, approvalPolicyFromApi } from '../../../../shared/models/data.model';
+import { LicensePillComponent } from '../../../../shared/components/license-pill/license-pill.component';
 
 // Entity-side action categories. Narrower than the Regulator API set —
 // no validator / PP / entity-self / service-suspended / asset-suspended,
@@ -28,7 +29,7 @@ const CATEGORY_LABEL_KEYS: Record<string, string> = {
   templateUrl: './policy.page.html',
   styleUrls: ['./policy.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, LicensePillComponent],
 })
 export class PolicyPage implements OnInit {
   private apiService     = inject(ApiService);

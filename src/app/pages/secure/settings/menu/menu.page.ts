@@ -9,10 +9,13 @@ import { FeaturesService } from '../../../../shared/services/features.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { menuLabelFor } from '../../../../shared/constants/menu-labels';
+import { LicensePillComponent, LicenseStatus } from '../../../../shared/components/license-pill/license-pill.component';
 
 interface MenuConfigRow {
   menuKey: string;
   enabled: boolean;
+  /** What the tenant's licences mean for this module. Surfacing only — never gates the toggle. */
+  license?: LicenseStatus | null;
   updatedAt: number | null;
   updatedByUserId: string | null;
 }
@@ -22,7 +25,7 @@ interface MenuConfigRow {
   templateUrl: './menu.page.html',
   styleUrls: ['./menu.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, LicensePillComponent],
 })
 export class MenuSettingsPage implements OnInit {
   private apiService     = inject(ApiService);

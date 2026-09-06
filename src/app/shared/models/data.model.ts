@@ -1557,6 +1557,8 @@ export interface ApprovalPolicyRow {
   requiresApproval: boolean;
   updatedAt: number;
   updatedByUserId: string | null;
+  /** What this tenant's licenses mean for the category. Surfacing only — never gates the toggle. */
+  license: any;
 }
 
 export function approvalPolicyFromApi(r: any): ApprovalPolicyRow {
@@ -1565,5 +1567,8 @@ export function approvalPolicyFromApi(r: any): ApprovalPolicyRow {
     requiresApproval: r.requires_approval === true || r.requires_approval === 1 || r.requires_approval === '1' || r.requires_approval === 't',
     updatedAt:        Number(r.updated_at),
     updatedByUserId:  r.updated_by_user_id ?? null,
+    // ⚠️ Explicit mapper — a field the API adds is DROPPED unless named here, and a dropped
+    // license renders as "unknown", which reads as "no restriction". Keep this in step.
+    license:          r.license ?? null,
   };
 }

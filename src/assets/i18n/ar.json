@@ -4558,7 +4558,8 @@
       "noItems": "لا توجد عناصر قائمة.",
       "table": {
         "key": "المفتاح",
-        "menuItem": "عنصر القائمة"
+        "menuItem": "عنصر القائمة",
+        "license": "License"
       },
       "title": "إعدادات القائمة",
       "disabledState": "مُعطّل",
@@ -5025,5 +5026,13 @@
     "userGroups": "User Groups",
     "vaultCore": "Vault Core",
     "vaultUsers": "Vault Users"
+  },
+  "license": {
+    "covered": "Licensed",
+    "notCovered": "Not licensed",
+    "undetermined": "Licenses unread",
+    "retired": "No longer in use",
+    "frontendOnly": "No endpoint",
+    "unknown": "Unmapped"
   }
 }

@@ -88,7 +88,12 @@
               @for (row of menuRows(); track row.menuKey; let i = $index) {
                 <tr [class.bg-gray-50]="i % 2 === 1">
                   <td class="px-4 py-2">{{ labelFor(row.menuKey) }}</td>
-                  <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ row.menuKey }}</td>
+                  <td class="px-4 py-2 font-mono text-xs text-gray-400">
+                    <span class="inline-flex items-center gap-2">
+                      {{ row.menuKey }}
+                      <app-license-pill [license]="row.license" />
+                    </span>
+                  </td>
                   <td class="px-4 py-2 text-right">
                     <label class="inline-flex items-center cursor-pointer">
                       <span class="mr-3 text-xs font-medium" [class.text-green-700]="row.effective" [class.text-gray-400]="!row.effective">
@@ -134,7 +139,12 @@
                 @for (row of sysFnRows(); track row.functionKey; let i = $index) {
                   <tr [class.bg-gray-50]="i % 2 === 1">
                     <td class="px-4 py-2">{{ fnLabelFor(row.functionKey) }}</td>
-                    <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ row.functionKey }}</td>
+                    <td class="px-4 py-2 font-mono text-xs text-gray-400">
+                      <span class="inline-flex items-center gap-2">
+                        {{ row.functionKey }}
+                        <app-license-pill [license]="row.license" />
+                      </span>
+                    </td>
                     <td class="px-4 py-2 text-right">
                       <label class="inline-flex items-center cursor-pointer">
                         <span class="mr-3 text-xs font-medium" [class.text-green-700]="row.effective" [class.text-gray-400]="!row.effective">

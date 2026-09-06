@@ -13,12 +13,16 @@ import { UserGroup } from '../../../../../shared/models/data.model';
 import { menuLabelFor } from '../../../../../shared/constants/menu-labels';
 import { systemFunctionLabelFor } from '../../../../../shared/constants/system-function-labels';
 import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
+import { LicensePillComponent, LicenseStatus } from '../../../../../shared/components/license-pill/license-pill.component';
 
 interface GroupMenuRow {
   menuKey: string;
   tenantEnabled: boolean;
   groupEnabled: boolean | null; // null ⇒ inherit role default
   effective: boolean;
+  // Surfaced by the Entity API (licenseSurfacing.js). OPTIONAL because an older API response
+  // simply omits it, and the pill renders nothing for an absent value.
+  license?: LicenseStatus | null;
 }
 
 interface GroupSystemFunctionRow {
@@ -26,6 +30,9 @@ interface GroupSystemFunctionRow {
   defaultEnabled: boolean;
   groupEnabled: boolean | null; // null ⇒ inherit role default
   effective: boolean;
+  // Surfaced by the Entity API (licenseSurfacing.js). OPTIONAL because an older API response
+  // simply omits it, and the pill renders nothing for an absent value.
+  license?: LicenseStatus | null;
 }
 
 @Component({
@@ -33,7 +40,7 @@ interface GroupSystemFunctionRow {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, RouterLink, PaginatorComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent, RouterLink, PaginatorComponent, LicensePillComponent],
 })
 export class UserGroupDetailsPage implements OnInit {
   private route          = inject(ActivatedRoute);

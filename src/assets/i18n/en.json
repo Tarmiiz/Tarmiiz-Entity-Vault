@@ -4558,7 +4558,8 @@
       "noItems": "No menu items found.",
       "table": {
         "key": "Key",
-        "menuItem": "Menu Item"
+        "menuItem": "Menu Item",
+        "license": "License"
       },
       "title": "Menu Settings",
       "disabledState": "Disabled",
@@ -5025,5 +5026,13 @@
     "userGroups": "User Groups",
     "vaultCore": "Vault Core",
     "vaultUsers": "Vault Users"
+  },
+  "license": {
+    "covered": "Licensed",
+    "notCovered": "Not licensed",
+    "undetermined": "Licenses unread",
+    "retired": "No longer in use",
+    "frontendOnly": "No endpoint",
+    "unknown": "Unmapped"
   }
 }
