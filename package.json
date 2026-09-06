@@ -10,7 +10,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "check": "node scripts/check-loader-deadlock.js && node scripts/check-modal-render.js --self-test"
+    "check": "node scripts/check-loader-deadlock.js && node scripts/check-modal-render.js --self-test && node \"../../Services/Entity API/scripts/check-retired-fields.js\" --self-test"
   },
   "private": true,
   "dependencies": {
