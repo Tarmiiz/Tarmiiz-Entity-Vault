@@ -585,19 +585,19 @@ export class DetailsPage implements OnInit {
     let tsSec = 0;
     if (dateMode) {
       const ds = this.holdersAtDateInput();
-      if (!ds) { this.alertService.show(this.translate.instant('assets.details.holdersAt.invalidDateTitle'), this.translate.instant('assets.details.holdersAt.pickDate')); return; }
+      if (!ds) { this.alertService.info(this.translate.instant('assets.details.holdersAt.invalidDateTitle'), this.translate.instant('assets.details.holdersAt.pickDate')); return; }
       // Interpret the picked day as END of that local day → holders "as of" that date.
       tsSec = Math.floor(new Date(ds + 'T23:59:59').getTime() / 1000);
-      if (!tsSec || tsSec <= 0) { this.alertService.show(this.translate.instant('assets.details.holdersAt.invalidDateTitle'), this.translate.instant('assets.details.holdersAt.pickValidDate')); return; }
+      if (!tsSec || tsSec <= 0) { this.alertService.info(this.translate.instant('assets.details.holdersAt.invalidDateTitle'), this.translate.instant('assets.details.holdersAt.pickValidDate')); return; }
     } else {
       blk = Math.floor(Number(this.holdersAtBlockInput()));
-      if (!blk || blk <= 0) { this.alertService.show(this.translate.instant('assets.details.holdersAt.invalidBlockTitle'), this.translate.instant('assets.details.holdersAt.enterPositiveBlock')); return; }
+      if (!blk || blk <= 0) { this.alertService.info(this.translate.instant('assets.details.holdersAt.invalidBlockTitle'), this.translate.instant('assets.details.holdersAt.enterPositiveBlock')); return; }
       // Refresh the head first — it advances while the tab is open, so a cached value
       // would reject a block that has since been mined.
       await this.loadChainHead();
       const head = this.chainHead();
       if (head !== null && blk > head) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('assets.details.holdersAt.invalidBlockTitle'),
           this.translate.instant('assets.details.holdersAt.blockAheadOfHead', { block: blk, head }),
         );
@@ -657,13 +657,13 @@ export class DetailsPage implements OnInit {
         sweepResidual: data.sweepResidual,
       });
       if (!r || r.error) {
-        this.alertService.show(this.translate.instant('assets.details.distributions.declareFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.declareFailedDefault'));
+        this.alertService.info(this.translate.instant('assets.details.distributions.declareFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.declareFailedDefault'));
       } else {
-        this.alertService.show(this.translate.instant('assets.details.distributions.declaredAlertTitle'), this.translate.instant('assets.details.distributions.declaredMessage', { id: r.distribution?.distributionId }));
+        this.alertService.info(this.translate.instant('assets.details.distributions.declaredAlertTitle'), this.translate.instant('assets.details.distributions.declaredMessage', { id: r.distribution?.distributionId }));
         await this.loadDistributions();
       }
     } catch (e: any) {
-      this.alertService.show(this.translate.instant('alerts.error'), e?.message || String(e));
+      this.alertService.info(this.translate.instant('alerts.error'), e?.message || String(e));
     } finally {
       this.loadingService.hide();
     }
@@ -675,13 +675,13 @@ export class DetailsPage implements OnInit {
     try {
       const r = await this.apiService.distributionExecute(this.assetAddress, distributionId);
       if (!r || r.error) {
-        this.alertService.show(this.translate.instant('assets.details.distributions.executeFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.executeFailedDefault'));
+        this.alertService.info(this.translate.instant('assets.details.distributions.executeFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.executeFailedDefault'));
       } else {
-        this.alertService.show(this.translate.instant('assets.details.distributions.executedTitle'), this.translate.instant('assets.details.distributions.executedMessage', { sent: r.result?.sent ?? 0, failed: r.result?.failed ?? 0 }));
+        this.alertService.info(this.translate.instant('assets.details.distributions.executedTitle'), this.translate.instant('assets.details.distributions.executedMessage', { sent: r.result?.sent ?? 0, failed: r.result?.failed ?? 0 }));
         await this.loadDistributions();
       }
     } catch (e: any) {
-      this.alertService.show(this.translate.instant('alerts.error'), e?.message || String(e));
+      this.alertService.info(this.translate.instant('alerts.error'), e?.message || String(e));
     } finally {
       this.loadingService.hide();
     }
@@ -693,13 +693,13 @@ export class DetailsPage implements OnInit {
     try {
       const r = await this.apiService.distributionFinalize(this.assetAddress, distributionId);
       if (!r || r.error) {
-        this.alertService.show(this.translate.instant('assets.details.distributions.finalizeFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.finalizeFailedDefault'));
+        this.alertService.info(this.translate.instant('assets.details.distributions.finalizeFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.finalizeFailedDefault'));
       } else {
-        this.alertService.show(this.translate.instant('assets.details.distributions.finalizedTitle'), this.translate.instant('assets.details.distributions.finalizedMessage', { state: this.distStateName(r.result?.state) }));
+        this.alertService.info(this.translate.instant('assets.details.distributions.finalizedTitle'), this.translate.instant('assets.details.distributions.finalizedMessage', { state: this.distStateName(r.result?.state) }));
         await this.loadDistributions();
       }
     } catch (e: any) {
-      this.alertService.show(this.translate.instant('alerts.error'), e?.message || String(e));
+      this.alertService.info(this.translate.instant('alerts.error'), e?.message || String(e));
     } finally {
       this.loadingService.hide();
     }
@@ -734,7 +734,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('assets.details.dex.listingOnDex'));
     try {
       const r = await this.apiService.vaultDexAssetListingCreate(result.baseAsset, result.venue, result.country, result.global);
-      if ((r as any)?.error) { this.alertService.show(this.translate.instant('alerts.error'), (r as any).error); return; }
+      if ((r as any)?.error) { this.alertService.info(this.translate.instant('alerts.error'), (r as any).error); return; }
       await this.loadDexListing();
     } finally { this.loadingService.hide(); }
   }
@@ -888,7 +888,7 @@ export class DetailsPage implements OnInit {
       // out rather than rendering an empty shell with live action buttons.
       if (!silent) {
         this.loadingService.hide();
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('assets.details.notFoundTitle'),
           this.translate.instant('assets.details.notFoundMessage'),
         );
@@ -951,7 +951,7 @@ export class DetailsPage implements OnInit {
       const res = await this.apiService.vaultSetAssetServiceState(this.assetAddress, serviceAddress, result.state, result.reason);
       await this.getAssetDetails();
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('assets.details.submittedForApprovalTitle'), this.translate.instant('assets.details.submittedForApprovalMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('assets.details.submittedForApprovalTitle'), this.translate.instant('assets.details.submittedForApprovalMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to change service state', error);
@@ -990,7 +990,7 @@ export class DetailsPage implements OnInit {
         const res = await this.apiService.vaultUpdateAssetState(currentAsset.address, result.state, result.reason);
         await this.getAssetDetails();
         if (res?.requestId) {
-          this.alertService.show(this.translate.instant('assets.details.submittedForApprovalTitle'), this.translate.instant('assets.details.submittedForApprovalMessage'), this.translate.instant('alerts.ok'));
+          this.alertService.info(this.translate.instant('assets.details.submittedForApprovalTitle'), this.translate.instant('assets.details.submittedForApprovalMessage'), this.translate.instant('alerts.ok'));
         }
       } catch (error) {
         console.error('Failed to change state', error);
@@ -1015,13 +1015,13 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUpdateAssetMetadata(asset.address, result);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error || this.translate.instant('assets.details.metadata.updateFailedDefault'));
+        this.alertService.info(this.translate.instant('alerts.error'), res.error || this.translate.instant('assets.details.metadata.updateFailedDefault'));
       } else {
         await this.getAssetDetails();
       }
     } catch (error) {
       console.error('Failed to update metadata', error);
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1062,7 +1062,7 @@ export class DetailsPage implements OnInit {
 
     const all = await this.ensureAssetIdTypes();
     if (!all.length) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('alerts.error'),
         this.translate.instant('assets.details.identifiers.noTypes'),
       );
@@ -1077,7 +1077,7 @@ export class DetailsPage implements OnInit {
       ? all.filter(t => t.variableId === existing.idType)
       : all.filter(t => !held.has(t.variableId));
     if (!idTypes.length) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('alerts.error'),
         this.translate.instant('assets.details.identifiers.allHeld'),
       );
@@ -1100,13 +1100,13 @@ export class DetailsPage implements OnInit {
         value:  result.value,
       });
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.getAssetDetails();
       }
     } catch (error) {
       console.error('Failed to save asset identifier', error);
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1127,13 +1127,13 @@ export class DetailsPage implements OnInit {
     try {
       const res: any = await this.apiService.vaultRemoveAssetIdentifier(asset.address, row.idType);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.getAssetDetails();
       }
     } catch (error) {
       console.error('Failed to remove asset identifier', error);
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1219,12 +1219,12 @@ export class DetailsPage implements OnInit {
         ...(data.role !== 'gallery' ? { imageRole: data.role } : {}),
       });
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.refreshMediaImages();
       }
     } catch (error) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1235,12 +1235,12 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultSetAssetMediaRole(this.assetAddress, documentId, role);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.refreshMediaImages();
       }
     } catch (error) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1257,12 +1257,12 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.assetDocumentRemove(this.assetAddress, row.entry.documentId);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.refreshMediaImages();
       }
     } catch (error) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1289,7 +1289,7 @@ export class DetailsPage implements OnInit {
         timestamp: result.timestamp,
       });
       if ((r as any)?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), (r as any).error);
+        this.alertService.info(this.translate.instant('alerts.error'), (r as any).error);
         return;
       }
       await this.getPriceHistory(1, 500);
@@ -1309,7 +1309,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('assets.details.info.mintingSupply'));
     try {
       const r = await this.apiService.vaultMintAsset(this.assetAddress, result.tokens);
-      if ((r as any)?.error) { this.alertService.show(this.translate.instant('assets.details.info.mintFailedTitle'), (r as any).error); return; }
+      if ((r as any)?.error) { this.alertService.info(this.translate.instant('assets.details.info.mintFailedTitle'), (r as any).error); return; }
       await this.getAssetDetails();
     } finally {
       this.loadingService.hide();
@@ -1326,7 +1326,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('assets.details.info.burningSupply'));
     try {
       const r = await this.apiService.vaultBurnAsset(this.assetAddress, result.tokens);
-      if ((r as any)?.error) { this.alertService.show(this.translate.instant('assets.details.info.burnFailedTitle'), (r as any).error); return; }
+      if ((r as any)?.error) { this.alertService.info(this.translate.instant('assets.details.info.burnFailedTitle'), (r as any).error); return; }
       await this.getAssetDetails();
     } finally {
       this.loadingService.hide();

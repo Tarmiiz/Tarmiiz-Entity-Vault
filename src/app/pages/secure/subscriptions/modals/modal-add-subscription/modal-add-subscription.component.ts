@@ -272,7 +272,7 @@ export class ModalAddSubscriptionComponent {
     this.loadingService.hide();
 
     if (res.error || !res.subscriptionAddress) {
-      await this.alertService.show(this.translate.instant('alerts.error'), res.error || this.translate.instant('subscriptions.addModal.errorFailed'));
+      await this.alertService.info(this.translate.instant('alerts.error'), res.error || this.translate.instant('subscriptions.addModal.errorFailed'));
       return;
     }
     this.modalService.confirm(res.subscriptionAddress);

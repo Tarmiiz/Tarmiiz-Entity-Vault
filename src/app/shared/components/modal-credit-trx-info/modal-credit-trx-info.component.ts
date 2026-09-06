@@ -94,14 +94,14 @@ export class ModalCreditTrxInfoComponent {
       if (!doc) {
         if (win) win.close();
         this.loadingService.hide();
-        await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('credit.trxInfoModal.receiptNotFound'));
+        await this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('credit.trxInfoModal.receiptNotFound'));
         return;
       }
       const fetched = await this.apiService.serviceDocumentFetchFile(trx.service, doc.id ?? doc.documentId);
       if (!fetched) {
         if (win) win.close();
         this.loadingService.hide();
-        await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('credit.trxInfoModal.receiptFetchFailed'));
+        await this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('credit.trxInfoModal.receiptFetchFailed'));
         return;
       }
       if (win) {

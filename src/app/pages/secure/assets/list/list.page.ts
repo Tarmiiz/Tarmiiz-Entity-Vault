@@ -222,7 +222,7 @@ export class ListPage implements OnInit {
     const r = await this.assetRegisterExistingService.show();
     if (!r?.registered) return;
     await this.listAssets();
-    this.alertService.show(
+    this.alertService.info(
       this.translate.instant('assets.list.registeredTitle'),
       this.translate.instant('assets.list.registeredMessage', { address: `${r.address.slice(0, 6)}…${r.address.slice(-4)}` })
     );
@@ -272,10 +272,10 @@ export class ListPage implements OnInit {
         }
         await this.listAssets();
       } else {
-        this.alertService.show(this.translate.instant('alerts.error'), result?.error || this.translate.instant('assets.list.createFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), result?.error || this.translate.instant('assets.list.createFailed'));
       }
     } catch (error) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -305,7 +305,7 @@ export class ListPage implements OnInit {
       if (res?.error) failures.push(`${label}: ${res.error}`);
     }
     if (failures.length) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('assets.addModal.attachmentFailuresTitle'),
         this.translate.instant('assets.addModal.attachmentFailuresMessage', { failed: failures.length, total: queue.length }) + '\n' + failures.join('\n')
       );

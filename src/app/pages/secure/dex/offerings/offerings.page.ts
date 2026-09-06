@@ -187,10 +187,10 @@ export class OfferingsPage implements OnInit {
         refNo: '',
       });
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.loadOfferings();
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('dexOfferings.createdTitle'),
           this.translate.instant('dexOfferings.createdMessage'),
           this.translate.instant('alerts.ok'),
@@ -288,11 +288,11 @@ export class OfferingsPage implements OnInit {
         amount: String(Math.floor(Number(this.buyAmount))),
       });
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       await this.loadOfferings();
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('dexOfferings.buyModal.doneTitle'),
         this.translate.instant('dexOfferings.buyModal.doneMessage', { amount: res?.amount ?? '', gross: res?.gross ?? '' }),
         this.translate.instant('alerts.ok'),
@@ -313,7 +313,7 @@ export class OfferingsPage implements OnInit {
     try {
       const res = await this.apiService.vaultDexOfferingCancel(o.offeringKey, '');
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.loadOfferings();
       }

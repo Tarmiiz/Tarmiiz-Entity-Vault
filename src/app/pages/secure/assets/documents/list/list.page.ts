@@ -123,7 +123,7 @@ export class ListPage implements OnInit {
       // pre-pinned-CID branch, found no cid, and returned 400 on every single upload.
       const { file, ...metadata } = result;
       const response = await this.apiService.assetDocumentAddMultipart(this.assetAddress(), file, metadata);
-      if (response?.error) this.alertService.show(this.translate.instant('alerts.error'), response.error);
+      if (response?.error) this.alertService.info(this.translate.instant('alerts.error'), response.error);
       else await this.list();
     } finally { this.loadingService.hide(); }
   }

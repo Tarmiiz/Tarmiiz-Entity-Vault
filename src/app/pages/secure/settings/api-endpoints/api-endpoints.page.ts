@@ -125,7 +125,7 @@ export class ApiEndpointsPage implements OnInit {
       if (res?.error) {
         // ⚠️ `show`, not `info` — the Vault's AlertService exposes only `show`. (The Regulator
         // Dashboard has `info`; the two apps' alert services are NOT the same surface.)
-        await this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        await this.alertService.info(this.translate.instant('alerts.error'), res.error);
         this.sections.set([...this.sections()]);
         return;
       }
@@ -155,7 +155,7 @@ export class ApiEndpointsPage implements OnInit {
     try {
       const res = await this.apiService.vaultApiEndpointReset(item.key);
       if (res?.error) {
-        await this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        await this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       // Re-load rather than guessing the default: the registry default is the server's to state,

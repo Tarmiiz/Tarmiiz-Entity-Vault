@@ -255,7 +255,7 @@ export class ListPage implements OnInit {
       if (!result || result.error) {
         // 401 already triggers a global session-clear + redirect, no duplicate alert.
         if (result?.status !== 401) {
-          this.alertService.show(this.translate.instant('alerts.error'), result?.error || this.translate.instant('documents.list.addDocumentFailed'));
+          this.alertService.info(this.translate.instant('alerts.error'), result?.error || this.translate.instant('documents.list.addDocumentFailed'));
         }
       } else {
         await this.list();

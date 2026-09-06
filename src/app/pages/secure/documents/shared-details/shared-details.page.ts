@@ -193,7 +193,7 @@ export class SharedDetailsPage implements OnInit {
         } as Document);
       }
       if (r?.signatureCount !== undefined) this.signatureCount.set(Number(r.signatureCount));
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
     } finally {
       this.loadingService.hide();
     }
@@ -225,7 +225,7 @@ export class SharedDetailsPage implements OnInit {
     try {
       const r = await this.apiService.documentFetchSharedFile(this.ownerAddress(), this.id());
       if (!r?.blobUrl) {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.sharedDetails.errors.fetchFile'));
+        this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documents.sharedDetails.errors.fetchFile'));
         return;
       }
       window.open(r.blobUrl, '_blank');
@@ -239,7 +239,7 @@ export class SharedDetailsPage implements OnInit {
   private async _fetchSharedFileBytes(): Promise<ArrayBuffer | null> {
     const fetched = await this.apiService.documentFetchSharedFile(this.ownerAddress(), this.id());
     if (!fetched?.blobUrl) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.sharedDetails.errors.fetchFile'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documents.sharedDetails.errors.fetchFile'));
       return null;
     }
     try {
@@ -277,7 +277,7 @@ export class SharedDetailsPage implements OnInit {
         hashMatches ? this.translate.instant('documents.details.verify.hashMatches') : this.translate.instant('documents.details.verify.hashMismatch'),
         signerMatches ? this.translate.instant('documents.details.verify.signerMatches') : this.translate.instant('documents.details.verify.signerMismatch'),
       ];
-      this.alertService.show(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
+      this.alertService.info(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
     } finally { this.loadingService.hide(); }
   }
 
@@ -299,10 +299,10 @@ export class SharedDetailsPage implements OnInit {
       // authPost returns null on any non-2xx (e.g. 403) — treat null OR an error body as failure
       // so we never show a false "signed" confirmation.
       if (!r || r.error) {
-        this.alertService.show(this.translate.instant('documents.sharedDetails.signFailedTitle'), r?.error || this.translate.instant('documents.sharedDetails.signFailedMessage'), this.translate.instant('alerts.ok'), 'max-w-md', true);
+        this.alertService.info(this.translate.instant('documents.sharedDetails.signFailedTitle'), r?.error || this.translate.instant('documents.sharedDetails.signFailedMessage'), this.translate.instant('alerts.ok'), 'max-w-md');
         return;
       }
-      this.alertService.show(this.translate.instant('documents.sharedDetails.signedTitle'), this.translate.instant('documents.sharedDetails.signedMessage'), this.translate.instant('alerts.ok'), 'max-w-md', true);
+      this.alertService.info(this.translate.instant('documents.sharedDetails.signedTitle'), this.translate.instant('documents.sharedDetails.signedMessage'), this.translate.instant('alerts.ok'), 'max-w-md');
       // Reflect the new signature (hides the Sign button + shows the "Signed by you" indicator).
       await Promise.all([this.loadMySubmission(), this.loadSignatures()]);
     } finally {

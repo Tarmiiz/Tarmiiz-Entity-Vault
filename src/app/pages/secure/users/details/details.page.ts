@@ -201,7 +201,7 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUserMenuConfigSet(u.userId, 'messages', enabled);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.loadMessagesAccess();
       }
@@ -263,7 +263,7 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUserSystemFunctionConfigSet(u.userId, row.functionKey, enabled);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.loadSystemFunctionsConfig();
       }
@@ -305,7 +305,7 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUserMenuConfigSet(u.userId, row.menuKey, enabled);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.loadMenuConfig();
       }
@@ -373,7 +373,7 @@ export class DetailsPage implements OnInit {
         ? await this.apiService.vaultUserGroupMembershipClear(u.userId)
         : await this.apiService.vaultUserGroupMembershipSet(u.userId, picked);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       await this.loadUserGroup();
@@ -401,7 +401,7 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUserGroupMembershipClear(u.userId);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       await this.loadUserGroup();
@@ -421,7 +421,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.saving'));
     try {
       const res = await this.apiService.vaultUserMenuConfigClear(this.userId(), row.menuKey);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.loadMenuConfig();
     } finally {
       this.loadingService.hide();
@@ -435,7 +435,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.saving'));
     try {
       const res = await this.apiService.vaultUserSystemFunctionConfigClear(this.userId(), row.functionKey);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.loadSystemFunctionsConfig();
     } finally {
       this.loadingService.hide();
@@ -465,14 +465,14 @@ export class DetailsPage implements OnInit {
     const h = this.handleInput().trim().toLowerCase();
     if (!h || this.handleSaving()) return;
     if (!/^[a-z0-9][a-z0-9._-]{1,30}[a-z0-9]$/.test(h)) {
-      this.alertService.show(this.translate.instant('users.details.handle.invalidTitle'), this.translate.instant('users.details.handle.invalidMsg'));
+      this.alertService.info(this.translate.instant('users.details.handle.invalidTitle'), this.translate.instant('users.details.handle.invalidMsg'));
       return;
     }
     this.handleSaving.set(true);
     this.loadingService.show(this.translate.instant('users.details.handle.saving'));
     try {
       const res = await this.apiService.vaultUserHandleSet(this.userId(), h);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.loadHandle();
     } finally {
       this.loadingService.hide();
@@ -492,7 +492,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('users.details.handle.clearing'));
     try {
       const res = await this.apiService.vaultUserHandleClear(this.userId());
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.loadHandle();
     } finally {
       this.loadingService.hide();
@@ -508,7 +508,7 @@ export class DetailsPage implements OnInit {
     const u = this.user();
     if (!u) return;
     if (!this.isExecutive(u.role)) {
-      this.alertService.show(this.translate.instant('users.details.approvalRole.cannotAssignTitle'), this.translate.instant('users.details.approvalRole.cannotAssignMsg'));
+      this.alertService.info(this.translate.instant('users.details.approvalRole.cannotAssignTitle'), this.translate.instant('users.details.approvalRole.cannotAssignMsg'));
       return;
     }
 
@@ -520,7 +520,7 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUserApprovalRoleSet(u.userId, newRole);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       this.approvalRole.set(newRole);
@@ -590,7 +590,7 @@ export class DetailsPage implements OnInit {
       });
     } catch (error) {
       console.error('Failed to update user', error);
-      this.alertService.show(this.translate.instant('users.details.updateFailedTitle'), this.translate.instant('users.details.updateFailedMsg'));
+      this.alertService.info(this.translate.instant('users.details.updateFailedTitle'), this.translate.instant('users.details.updateFailedMsg'));
     } finally {
       this._isBusy = false;
       this.loadingService.hide();
@@ -680,7 +680,7 @@ export class DetailsPage implements OnInit {
       }
     } catch (error) {
       console.error('Failed to update user', error);
-      this.alertService.show(this.translate.instant('users.details.updateFailedTitle'), this.translate.instant('users.details.updateFailedCredentialsMsg'));
+      this.alertService.info(this.translate.instant('users.details.updateFailedTitle'), this.translate.instant('users.details.updateFailedCredentialsMsg'));
     } finally {
       this._isBusy = false;
       this.loadingService.hide();

@@ -108,7 +108,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('dex.listings.details.loading'));
     try {
       const r = await this.apiService.vaultDexAssetListingCreate(this.baseAsset(), tier === 1, tier === 2, tier === 3);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       await this.loadListing();
     } finally { this.loadingService.hide(); }
   }
@@ -182,7 +182,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('dex.listings.details.venues.removing'));
     try {
       const r = await this.apiService.vaultDexAssetListingVenueRemove(this.baseAsset(), v.dexService);
-      if (r?.error) this.alertService.show(this.translate.instant('dex.listings.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('dex.listings.error'), r.error);
       await this.loadEnabledVenues();
     } finally { this.loadingService.hide(); }
   }

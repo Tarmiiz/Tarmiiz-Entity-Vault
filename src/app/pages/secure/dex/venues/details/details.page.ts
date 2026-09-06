@@ -356,7 +356,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     this.loadingService.show(this.translate.instant('dex.venues.details.requestingTier'));
     try {
       const r = await this.apiService.vaultDexVenueRequestTier(v.serviceAddress, tier);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       await this.loadVenue();
     } finally { this.loadingService.hide(); }
   }
@@ -390,9 +390,9 @@ export class DetailsPage implements OnInit, OnDestroy {
     try {
       const r = await this.apiService.vaultDexVenueMemberAccept(this.serviceAddress(), m.memberService);
       if (r?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+        this.alertService.info(this.translate.instant('alerts.error'), r.error);
       } else if (r?.requestId) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
           this.translate.instant('alerts.ok'),
@@ -414,9 +414,9 @@ export class DetailsPage implements OnInit, OnDestroy {
     try {
       const r = await this.apiService.vaultDexVenueMemberRemove(this.serviceAddress(), m.memberService);
       if (r?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+        this.alertService.info(this.translate.instant('alerts.error'), r.error);
       } else if (r?.requestId) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
           this.translate.instant('alerts.ok'),
@@ -496,9 +496,9 @@ export class DetailsPage implements OnInit, OnDestroy {
     try {
       const r = await call();
       if (r?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+        this.alertService.info(this.translate.instant('alerts.error'), r.error);
       } else if (r?.requestId) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
           this.translate.instant('alerts.ok'),
@@ -513,7 +513,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     const v = this.venue();
     if (!v) return;
     if (v.state === 4) {
-      this.alertService.show(this.translate.instant('dex.venues.details.notAllowedTitle'), this.translate.instant('dex.venues.details.terminalStateMessage'));
+      this.alertService.info(this.translate.instant('dex.venues.details.notAllowedTitle'), this.translate.instant('dex.venues.details.terminalStateMessage'));
       return;
     }
     const result = await this.stateModal.show(v.state);
@@ -529,7 +529,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     this.loadingService.show(this.translate.instant('dex.venues.details.updatingState'));
     try {
       const r = await this.apiService.vaultDexVenueSetState(v.serviceAddress, result.newState);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       await this.loadVenue();
     } finally { this.loadingService.hide(); }
   }
@@ -624,7 +624,7 @@ export class DetailsPage implements OnInit, OnDestroy {
       const res = await call();
       if (res?.requestId) {
         this.loadingService.hide();
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
           this.translate.instant('alerts.ok'));
@@ -633,7 +633,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     } catch (e) {
       console.error('Fee update failed', e);
       this.loadingService.hide();
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('alerts.updateFailed'),
         this.translate.instant('dex.venues.details.assetsTable.feeError'));
     } finally {

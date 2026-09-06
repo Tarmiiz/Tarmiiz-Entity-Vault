@@ -95,7 +95,7 @@ export class ModalListingVenueAddComponent {
     let listed = false;
     try {
       const r = await this.apiService.vaultDexAssetListingVenueAdd(inp.asset, v.serviceAddress, inp.tier);
-      if (r?.error) { this.alertService.show(this.translate.instant('alerts.error'), r.error); return; }
+      if (r?.error) { this.alertService.info(this.translate.instant('alerts.error'), r.error); return; }
       listed = true;
     } finally {
       this.loadingService.hide();
@@ -116,7 +116,7 @@ export class ModalListingVenueAddComponent {
         await this.apiService.vaultSetAssetServiceCanQuote(inp.asset, v.serviceAddress, true);
       } catch (err) {
         console.error('Failed to grant canQuote', err);
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('dex.listings.addVenueModal.quotingNotGrantedTitle'),
           this.translate.instant('dex.listings.addVenueModal.quotingNotGrantedMessage')
         );
@@ -124,7 +124,7 @@ export class ModalListingVenueAddComponent {
         this.loadingService.hide();
       }
     } else {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('dex.listings.addVenueModal.headsUpTitle'),
         this.translate.instant('dex.listings.addVenueModal.headsUpMessage')
       );

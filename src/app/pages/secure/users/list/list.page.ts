@@ -143,7 +143,7 @@ export class ListPage implements OnInit {
         // Surface a create failure (e.g. the entity is not active — user creation is
         // blocked server-side by the entityActive gate) instead of silently no-op'ing.
         if (createRes?.error) {
-          this.alertService.show(this.translate.instant('users.addModal.errorTitle'), createRes.error);
+          this.alertService.info(this.translate.instant('users.addModal.errorTitle'), createRes.error);
           return;
         }
         await this.listUsers();
@@ -183,7 +183,7 @@ export class ListPage implements OnInit {
             await this.apiService.vaultUserHandleSet(created.userId, result.handle);
           } catch (e) {
             console.error('Failed to set default handle', e);
-            this.alertService.show(
+            this.alertService.info(
               this.translate.instant('users.list.handleDefaultFailedTitle'),
               this.translate.instant('users.list.handleDefaultFailedMessage'),
             );

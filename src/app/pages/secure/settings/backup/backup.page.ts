@@ -93,7 +93,7 @@ export class SettingsBackupPage implements OnInit {
       const res = await this.apiService.vaultSettingsBackupRun();
       const failed = (res?.results ?? []).filter((r: any) => r.error);
       if (res?.error || failed.length) {
-        this.alertService.show(this.translate.instant('alerts.error'), res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
+        this.alertService.info(this.translate.instant('alerts.error'), res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
       }
       await this.load();
     } finally {
@@ -105,7 +105,7 @@ export class SettingsBackupPage implements OnInit {
   async restore(row: BackupStatusRow) {
     if (this.busy()) return;
     if (row.chainUpdatedAt == null) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('settings.backup.noBackupTitle'),
         this.translate.instant('settings.backup.noBackupMessage', { name: this.labelFor(row.name) }),
       );
@@ -126,7 +126,7 @@ export class SettingsBackupPage implements OnInit {
       const res = await this.apiService.vaultSettingsBackupRestore(row.name);
       const failed = (res?.results ?? []).filter((r: any) => r.error);
       if (res?.error || failed.length) {
-        this.alertService.show(this.translate.instant('alerts.error'), res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
+        this.alertService.info(this.translate.instant('alerts.error'), res?.error || failed.map((r: any) => `${r.table}: ${r.error}`).join('\n'));
       }
       await this.load();
     } finally {

@@ -257,9 +257,9 @@ export class CustodyPage implements OnInit {
         reason: this.holdReason.trim(),
       });
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       } else if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), typeof res.error === 'string' ? res.error : this.translate.instant('custody.holds.placeFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), typeof res.error === 'string' ? res.error : this.translate.instant('custody.holds.placeFailed'));
       } else {
         // Refresh the expanded holds table (the mirror lands via the plugin within a block).
         if (this.expandedAsset() === asset) {
@@ -294,9 +294,9 @@ export class CustodyPage implements OnInit {
         reason: this.releaseReason.trim(),
       });
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       } else if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), typeof res.error === 'string' ? res.error : this.translate.instant('custody.holds.releaseFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), typeof res.error === 'string' ? res.error : this.translate.instant('custody.holds.releaseFailed'));
       } else {
         const asset = this.expandedAsset();
         if (asset) {

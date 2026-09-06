@@ -70,7 +70,7 @@ export class MyProfilePage {
     const { currentPassword, password, password2 } = this.credentialsForm.value;
 
     if (password !== password2) {
-      this.alertService.show(this.translate.instant('users.myProfile.passwordsMismatchTitle'), this.translate.instant('users.myProfile.passwordsMismatchMsg'));
+      this.alertService.info(this.translate.instant('users.myProfile.passwordsMismatchTitle'), this.translate.instant('users.myProfile.passwordsMismatchMsg'));
       return;
     }
 
@@ -86,14 +86,14 @@ export class MyProfilePage {
 
       // ApiService returns { error } rather than throwing (e.g. wrong current password).
       if (res?.error) {
-        this.alertService.show(this.translate.instant('users.myProfile.updateFailedTitle'), res.error);
+        this.alertService.info(this.translate.instant('users.myProfile.updateFailedTitle'), res.error);
         return;
       }
 
       this.showCredentialsForm.set(false);
-      this.alertService.show(this.translate.instant('alerts.success'), this.translate.instant('users.myProfile.passwordUpdatedMsg'));
+      this.alertService.info(this.translate.instant('alerts.success'), this.translate.instant('users.myProfile.passwordUpdatedMsg'));
     } catch (error) {
-      this.alertService.show(this.translate.instant('users.myProfile.updateFailedTitle'), this.translate.instant('users.myProfile.updateFailedMsg'));
+      this.alertService.info(this.translate.instant('users.myProfile.updateFailedTitle'), this.translate.instant('users.myProfile.updateFailedMsg'));
     } finally {
       this.loadingService.hide();
     }

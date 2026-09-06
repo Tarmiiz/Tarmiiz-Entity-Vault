@@ -74,7 +74,7 @@ export class MenuSettingsPage implements OnInit {
     try {
       const res = await this.apiService.vaultMenuConfigSet(row.menuKey, enabled);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         // Refresh the live feature map so the sidebar reflects the change without a reload.
         await this.features.refresh();

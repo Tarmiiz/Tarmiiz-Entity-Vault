@@ -155,14 +155,14 @@ export class ExternalIntegrationsPage implements OnInit {
       const name = this.editName().trim().toLowerCase();
       const category = this.editCategory().trim().toLowerCase();
       if (!SLUG.test(name)) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('settings.externalIntegrations.invalidNameTitle'),
           this.translate.instant('settings.externalIntegrations.invalidSlugMessage', { field: this.translate.instant('settings.externalIntegrations.nameLabel') }),
         );
         return;
       }
       if (!SLUG.test(category)) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('settings.externalIntegrations.invalidCategoryTitle'),
           this.translate.instant('settings.externalIntegrations.invalidSlugMessage', { field: this.translate.instant('settings.externalIntegrations.categoryLabel') }),
         );
@@ -179,7 +179,7 @@ export class ExternalIntegrationsPage implements OnInit {
           isDefault: this.editDefault(),
           ...(Object.keys(params).length ? { params } : {}),
         });
-        if (res?.error) { this.alertService.show(this.translate.instant('settings.externalIntegrations.createFailedTitle'), res.error); return; }
+        if (res?.error) { this.alertService.info(this.translate.instant('settings.externalIntegrations.createFailedTitle'), res.error); return; }
         this.closeEdit();
         await this.load();
       } finally {
@@ -200,7 +200,7 @@ export class ExternalIntegrationsPage implements OnInit {
         isDefault:   this.editDefault(),
         ...(Object.keys(params).length ? { params } : {}),
       });
-      if (res?.error) { this.alertService.show(this.translate.instant('settings.externalIntegrations.saveFailedTitle'), res.error); return; }
+      if (res?.error) { this.alertService.info(this.translate.instant('settings.externalIntegrations.saveFailedTitle'), res.error); return; }
       this.closeEdit();
       await this.load();
     } finally {
@@ -223,7 +223,7 @@ export class ExternalIntegrationsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const res = await this.apiService.vaultIntegrationUpdate(p.name, { isDefault: true });
-      if (res?.error) this.alertService.show(this.translate.instant('settings.externalIntegrations.updateFailedTitle'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('settings.externalIntegrations.updateFailedTitle'), res.error);
       await this.load();
     } finally {
       this.loadingService.hide();
@@ -247,7 +247,7 @@ export class ExternalIntegrationsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const res = await this.apiService.vaultIntegrationUpdate(p.name, { enabled: !p.enabled });
-      if (res?.error) this.alertService.show(this.translate.instant('settings.externalIntegrations.updateFailedTitle'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('settings.externalIntegrations.updateFailedTitle'), res.error);
       await this.load();
     } finally {
       this.loadingService.hide();
@@ -267,7 +267,7 @@ export class ExternalIntegrationsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.deleting'));
     try {
       const res = await this.apiService.vaultIntegrationDelete(p.name);
-      if (res?.error) { this.alertService.show(this.translate.instant('settings.externalIntegrations.deleteFailedTitle'), res.error); return; }
+      if (res?.error) { this.alertService.info(this.translate.instant('settings.externalIntegrations.deleteFailedTitle'), res.error); return; }
       await this.load();
     } finally {
       this.loadingService.hide();

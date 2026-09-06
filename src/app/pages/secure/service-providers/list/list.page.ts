@@ -118,11 +118,11 @@ export class ListPage implements OnInit {
       const res: any = await this.apiService.vaultAddServiceProvider(result.provider, result.spType);
       this.loadingService.hide();
       if (res?.error) {
-        await this.alertService.show(this.translate.instant('serviceProviders.alerts.addFailedTitle'), res.error);
+        await this.alertService.info(this.translate.instant('serviceProviders.alerts.addFailedTitle'), res.error);
         return;
       }
       if (res?.requestId) {
-        await this.alertService.show(this.translate.instant('serviceProviders.alerts.submittedTitle'), this.translate.instant('serviceProviders.alerts.addSubmittedMessage'));
+        await this.alertService.info(this.translate.instant('serviceProviders.alerts.submittedTitle'), this.translate.instant('serviceProviders.alerts.addSubmittedMessage'));
         return;
       }
       await this.listProviders();
@@ -138,7 +138,7 @@ export class ListPage implements OnInit {
     this.loadingService.hide();
     if (usage?.inUse) {
       const list = usage.services.map((s: any) => `• ${s.name || s.address}`).join('\n');
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('serviceProviders.alerts.cannotSuspendTitle'),
         `${this.translate.instant('serviceProviders.alerts.cannotSuspendMessage')}\n\n${list}`,
       );
@@ -169,11 +169,11 @@ export class ListPage implements OnInit {
       const res: any = await this.apiService.vaultSetServiceProviderState(p.address, state);
       this.loadingService.hide();
       if (res?.error) {
-        await this.alertService.show(this.translate.instant('serviceProviders.alerts.updateFailedTitle'), res.error);
+        await this.alertService.info(this.translate.instant('serviceProviders.alerts.updateFailedTitle'), res.error);
         return;
       }
       if (res?.requestId) {
-        await this.alertService.show(this.translate.instant('serviceProviders.alerts.submittedTitle'), this.translate.instant('serviceProviders.alerts.updateSubmittedMessage'));
+        await this.alertService.info(this.translate.instant('serviceProviders.alerts.submittedTitle'), this.translate.instant('serviceProviders.alerts.updateSubmittedMessage'));
         return;
       }
       await this.listProviders();

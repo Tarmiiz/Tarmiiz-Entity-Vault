@@ -136,7 +136,7 @@ export class DetailsPage implements OnInit {
         this.id(), file, { fileType: file.type }, p => this.replaceProgress.set(p)
       );
       if (r?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+        this.alertService.info(this.translate.instant('alerts.error'), r.error);
         return;
       }
       await Promise.all([this.loadDocument(), this.loadVersions(), this.loadShared()]);
@@ -269,7 +269,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.documentSetState(this.id(), 2);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
@@ -278,7 +278,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.documentSetState(this.id(), 1);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
@@ -289,7 +289,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('documents.shareModal.sharing'));
     try {
       const r = await this.apiService.documentShare(this.id(), account);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
@@ -299,7 +299,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.documentUnshare(this.id(), account);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
@@ -310,7 +310,7 @@ export class DetailsPage implements OnInit {
   private async _fetchFileBytes(): Promise<ArrayBuffer | null> {
     const fetched = await this.apiService.documentFetchFile(this.id());
     if (!fetched) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile'));
       return null;
     }
     try {
@@ -337,7 +337,7 @@ export class DetailsPage implements OnInit {
       // authPost returns null on any non-2xx (e.g. a 403 from requireExecutive) — null is a failure,
       // not a silent success.
       if (!signRes || signRes.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), signRes?.error || this.translate.instant('documents.details.errors.signFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), signRes?.error || this.translate.instant('documents.details.errors.signFailed'));
       } else {
         await this.loadSignatures();
         this.activeTab.set('signatures');
@@ -374,7 +374,7 @@ export class DetailsPage implements OnInit {
         hashMatches ? this.translate.instant('documents.details.verify.hashMatches') : this.translate.instant('documents.details.verify.hashMismatch'),
         signerMatches ? this.translate.instant('documents.details.verify.signerMatches') : this.translate.instant('documents.details.verify.signerMismatch'),
       ];
-      this.alertService.show(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
+      this.alertService.info(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
     } finally { this.loadingService.hide(); }
   }
 
@@ -385,7 +385,7 @@ export class DetailsPage implements OnInit {
     try {
       const fetched = await this.apiService.documentFetchFile(this.id());
       if (!fetched) {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile'));
+        this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile'));
         return;
       }
       window.open(fetched.blobUrl, '_blank');
@@ -404,7 +404,7 @@ export class DetailsPage implements OnInit {
     const doc = this.document();
     if (!doc) return;
     if (doc.documentType !== 2 && doc.documentType !== 3) {
-      this.alertService.show(this.translate.instant('documents.details.publish.notApplicableTitle'), this.translate.instant('documents.details.publish.notApplicableMessage'));
+      this.alertService.info(this.translate.instant('documents.details.publish.notApplicableTitle'), this.translate.instant('documents.details.publish.notApplicableMessage'));
       return;
     }
     const ok = await this.alertService.show(
@@ -416,7 +416,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('documents.details.publish.publishing'));
     try {
       const r = await this.apiService.documentPublish(this.id());
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadAll();
     } finally {
       this.loadingService.hide();

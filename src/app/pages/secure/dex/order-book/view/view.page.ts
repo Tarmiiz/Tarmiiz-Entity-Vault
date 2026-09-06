@@ -138,7 +138,7 @@ export class ViewPage implements OnInit, OnDestroy {
     this.loadingService.show(this.translate.instant('dex.orderBook.matchingOrders'));
     try {
       const r = await this.apiService.vaultDexMatchOrders(buy, sell);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       this.selectedBuy.set(null);
       this.selectedSell.set(null);
       await this.refresh();

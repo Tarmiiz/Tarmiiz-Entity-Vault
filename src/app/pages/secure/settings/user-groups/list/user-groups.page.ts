@@ -75,7 +75,7 @@ export class UserGroupsPage implements OnInit {
         role: result.role,
       });
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       await this.load();

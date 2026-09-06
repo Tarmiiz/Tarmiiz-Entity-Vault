@@ -141,18 +141,18 @@ export class ProfilePage implements OnInit {
     try {
       const res: any = await this.apiService.vaultUpdateEntityIdentifier(result);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else if (res?.metadataError) {
         // The hash landed but the readable value did not — say so plainly rather than
         // reporting success over a half-written state. Re-saving the same value heals it.
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('profile.identifiers.partialTitle'),
           this.translate.instant('profile.identifiers.partialMessage'),
         );
       }
       await this.loadIdentifiers();
     } catch {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -221,10 +221,10 @@ export class ProfilePage implements OnInit {
         documentState: 1,
         ...(data.role !== 'gallery' ? { imageRole: data.role } : {}),
       });
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.refreshMediaImages();
     } catch {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -234,10 +234,10 @@ export class ProfilePage implements OnInit {
     this.loadingService.show(this.translate.instant('media.updatingRole'));
     try {
       const res = await this.apiService.vaultSetEntityMediaRole(documentId, role);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.refreshMediaImages();
     } catch {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -253,10 +253,10 @@ export class ProfilePage implements OnInit {
     this.loadingService.show(this.translate.instant('media.removing'));
     try {
       const res = await this.apiService.documentRemove(row.entry.documentId);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.refreshMediaImages();
     } catch {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -294,7 +294,7 @@ export class ProfilePage implements OnInit {
       await this.getInfo();
     } catch (error) {
       console.error('Failed to update details', error);
-      this.alertService.show(this.translate.instant('profile.updateFailedTitle'), this.translate.instant('profile.info.updateFailedMessage'));
+      this.alertService.info(this.translate.instant('profile.updateFailedTitle'), this.translate.instant('profile.info.updateFailedMessage'));
     } finally {
       this.loadingService.hide();
     }

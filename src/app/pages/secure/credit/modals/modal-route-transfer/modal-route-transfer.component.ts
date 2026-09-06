@@ -68,7 +68,7 @@ export class ModalRouteTransferComponent {
     if (!this.form.valid) return;
     const v = this.form.value;
     if ((v.service || '').toLowerCase() === (v.destinationService || '').toLowerCase()) {
-      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('credit.routeTransferModal.mismatchError'));
+      await this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('credit.routeTransferModal.mismatchError'));
       return;
     }
 
@@ -86,11 +86,11 @@ export class ModalRouteTransferComponent {
     });
     this.loadingService.hide();
 
-    if (res.error) { await this.alertService.show(this.translate.instant('alerts.error'), res.error); return; }
+    if (res.error) { await this.alertService.info(this.translate.instant('alerts.error'), res.error); return; }
     if (res.requestId) {
-      await this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+      await this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
     } else {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('alerts.success'),
         this.translate.instant('credit.routeTransferModal.successMsg') + (res.result?.transactionHash ? ' ' + this.translate.instant('credit.txLabel') + ' ' + res.result.transactionHash : ''),
         this.translate.instant('alerts.ok')

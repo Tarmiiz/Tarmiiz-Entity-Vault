@@ -219,10 +219,10 @@ export class ListPage implements OnInit, OnDestroy {
     // A deal is placed BY one of our subscriptions — without one there is nothing to
     // trade from, and the failure would otherwise surface as an opaque revert.
     if (!subs.length) {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('alerts.error'),
         this.translate.instant('dex.deals.actions.noSubscriptions'),
-        this.translate.instant('alerts.ok'), 'max-w-md', true);
+        this.translate.instant('alerts.ok'), 'max-w-md');
       return;
     }
 
@@ -252,9 +252,9 @@ export class ListPage implements OnInit, OnDestroy {
         expiresAt:    result.expiresAt!,
       });
       if (res?.error) {
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('alerts.error'), res.error,
-          this.translate.instant('alerts.ok'), 'max-w-md', true);
+          this.translate.instant('alerts.ok'), 'max-w-md');
         return;
       }
       await this.refresh(true);

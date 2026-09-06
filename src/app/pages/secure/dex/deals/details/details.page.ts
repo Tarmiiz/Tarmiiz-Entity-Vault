@@ -243,9 +243,9 @@ export class DetailsPage implements OnInit, OnDestroy {
       if (res?.error) {
         // hideCancel — these are informational, so a Cancel button would be noise.
         this.loadingService.hide();
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('alerts.error'), res.error,
-          this.translate.instant('alerts.ok'), 'max-w-md', true);
+          this.translate.instant('alerts.ok'), 'max-w-md');
         // A 409 means our view was stale, so pull the current one immediately rather
         // than leaving the user staring at terms that no longer exist.
         await this.load(true);
@@ -253,10 +253,10 @@ export class DetailsPage implements OnInit, OnDestroy {
       }
       if (res?.requestId) {
         this.loadingService.hide();
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
-          this.translate.instant('alerts.ok'), 'max-w-md', true);
+          this.translate.instant('alerts.ok'), 'max-w-md');
         return true;
       }
       // dex_deals is plugin-written, so the mirror trails the receipt by a block.

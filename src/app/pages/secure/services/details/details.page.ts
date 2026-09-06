@@ -614,13 +614,13 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultServiceElectionMigrate(address, Number(row.currencyCode), 50);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.updateFailed'), res.error);
+        this.alertService.info(this.translate.instant('alerts.updateFailed'), res.error);
         return;
       }
       await this.getElections();
     } catch (error) {
       console.error('Failed to drive migration', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.migratingCcy.set(null);
     }
@@ -665,17 +665,17 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultServiceElectionRequestSwitch(address, currencyCode, chosen.election);
       if ((res as any)?.error) {
-        this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error);
+        this.alertService.info(this.translate.instant('alerts.updateFailed'), (res as any).error);
         return;
       }
       await this.getElections();
       if ((res as any)?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'),
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to request election switch', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -694,7 +694,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const res = await this.apiService.vaultServiceElectionWithdraw(address, Number(row.currencyCode));
-      if (res?.error) { this.alertService.show(this.translate.instant('alerts.updateFailed'), res.error); return; }
+      if (res?.error) { this.alertService.info(this.translate.instant('alerts.updateFailed'), res.error); return; }
       await this.getElections();
     } catch (error) {
       console.error('Failed to withdraw switch request', error);
@@ -1083,10 +1083,10 @@ export class DetailsPage implements OnInit {
         documentState: 1,
         ...(data.role !== 'gallery' ? { imageRole: data.role } : {}),
       });
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.refreshMediaImages();
     } catch {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1096,10 +1096,10 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('media.updatingRole'));
     try {
       const res = await this.apiService.vaultSetServiceMediaRole(this.serviceAddress, documentId, role);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.refreshMediaImages();
     } catch {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1115,10 +1115,10 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('media.removing'));
     try {
       const res = await this.apiService.serviceDocumentRemove(this.serviceAddress, row.entry.documentId);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.refreshMediaImages();
     } catch {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1263,7 +1263,7 @@ export class DetailsPage implements OnInit {
 
       } catch (error) {
         console.error('Failed to update service', error);
-        this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateServiceError'));
+        this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateServiceError'));
       } finally {
         this.loadingService.hide();
       }
@@ -1279,11 +1279,11 @@ export class DetailsPage implements OnInit {
       const res = await this.apiService.vaultSetServiceVisibility(currentService.address, next);
       await this.getServiceDetails();
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to change visibility', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateVisibilityError'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateVisibilityError'));
     } finally {
       this.loadingService.hide();
     }
@@ -1310,7 +1310,7 @@ export class DetailsPage implements OnInit {
       await this.getServiceDetails();
     } catch (error) {
       console.error('Failed to change straight-through mode', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.straightThrough.updateError'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.straightThrough.updateError'));
     } finally {
       this.loadingService.hide();
     }
@@ -1365,13 +1365,13 @@ export class DetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUpdateServiceMetadata(currentService.address, result);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error || this.translate.instant('services.details.info.updateMetadataError'));
+        this.alertService.info(this.translate.instant('alerts.error'), res.error || this.translate.instant('services.details.info.updateMetadataError'));
       } else {
         await this.getServiceDetails();
       }
     } catch (error) {
       console.error('Failed to update metadata', error);
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1388,7 +1388,7 @@ export class DetailsPage implements OnInit {
             const res = await this.apiService.vaultUpdateServiceState(currentService.address, result.state, result.reason);
             await this.getServiceDetails();
             if (res?.requestId) {
-              this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+              this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
             }
         } catch (error) {
             console.error('Failed to change state', error);
@@ -1413,12 +1413,12 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('services.details.loadingMsgs.attachingProvider'));
     try {
       const res = await this.apiService.vaultAttachServiceParty(currentService.address, partyType, party);
-      if ((res as any)?.error) { this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error); return; }
+      if ((res as any)?.error) { this.alertService.info(this.translate.instant('alerts.updateFailed'), (res as any).error); return; }
       await this.getServiceDetails();
-      if ((res as any)?.requestId) this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+      if ((res as any)?.requestId) this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
     } catch (error) {
       console.error('Failed to attach provider', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.attachProviderError'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.attachProviderError'));
     } finally {
       this.loadingService.hide();
     }
@@ -1466,12 +1466,12 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('services.details.loadingMsgs.detachingProvider'));
     try {
       const res = await this.apiService.vaultDetachServiceParty(currentService.address, partyType, party);
-      if ((res as any)?.error) { this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error); return; }
+      if ((res as any)?.error) { this.alertService.info(this.translate.instant('alerts.updateFailed'), (res as any).error); return; }
       await this.getServiceDetails();
-      if ((res as any)?.requestId) this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+      if ((res as any)?.requestId) this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
     } catch (error) {
       console.error('Failed to detach provider', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.detachProviderError'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.detachProviderError'));
     } finally {
       this.loadingService.hide();
     }
@@ -1539,18 +1539,18 @@ export class DetailsPage implements OnInit {
       const res = await this.apiService.vaultAttachPaymentProvider(
         address, chosen.provider, chosen.currencyCode, chosen.payRole);
       if ((res as any)?.error) {
-        this.alertService.show(this.translate.instant('alerts.updateFailed'), (res as any).error);
+        this.alertService.info(this.translate.instant('alerts.updateFailed'), (res as any).error);
         return;
       }
       await this.getServiceDetails();
       await this.getElections();
       if ((res as any)?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'),
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to attach payment provider', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }
@@ -1603,7 +1603,7 @@ export class DetailsPage implements OnInit {
       await this.getServiceDetails();
     } catch (error) {
       console.error('Failed to change validator', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateValidatorError'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateValidatorError'));
     } finally {
       this.loadingService.hide();
     }
@@ -1639,11 +1639,11 @@ export class DetailsPage implements OnInit {
       const res = await this.apiService.vaultSetServiceCustodian(currentService.address, newCustodian);
       await this.getServiceDetails();
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       }
     } catch (error) {
       console.error('Failed to change custodian', error);
-      this.alertService.show(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateCustodianError'));
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateCustodianError'));
     } finally {
       this.loadingService.hide();
     }
@@ -1659,7 +1659,7 @@ export class DetailsPage implements OnInit {
     // transport failure and for any body that isn't the success envelope. Opening the modal on it
     // would show None/None over a live override and let one Save replace it, so refuse instead.
     if (!res) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('alerts.error'),
         this.translate.instant('services.details.info.loadVenueFeeConfigError'));
       return;
@@ -1684,7 +1684,7 @@ export class DetailsPage implements OnInit {
     try {
       const r = await this.apiService.vaultSetServiceFeeConfig(currentService.address, assetAddress, result.feeConfig);
       if ((r as any)?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), (r as any).error);
+        this.alertService.info(this.translate.instant('alerts.error'), (r as any).error);
         return;
       }
       await this.getServiceDetails();

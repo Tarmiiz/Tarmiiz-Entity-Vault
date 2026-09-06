@@ -84,7 +84,7 @@ export class ListPage implements OnInit {
     this.loadingService.show(this.translate.instant('dex.listings.list.submitting'));
     try {
       const r = await this.apiService.vaultDexAssetListingCreate(result.baseAsset, result.venue, result.country, result.global);
-      if (r?.error) this.alertService.show(this.translate.instant('dex.listings.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('dex.listings.error'), r.error);
       else await this.listListings();
   this.listingsPage.set(1);
     } finally { this.loadingService.hide(); }

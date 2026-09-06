@@ -153,7 +153,7 @@ export class ListPage implements OnInit {
   async openAddSubscription() {
     const result = await this.addSubscriptionService.show();
     if (result?.subscriptionAddress) {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('subscriptions.list.createdTitle'),
         this.translate.instant('subscriptions.list.createdMessage', { address: result.subscriptionAddress })
       );

@@ -126,7 +126,7 @@ export class ListPage implements OnInit, OnDestroy {
     this.loadingService.show(this.translate.instant('approvals.list.approving'));
     try {
       const res = await this.apiService.vaultApprovalApprove(a.requestId);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else            await this.load();
     } finally {
       this.loadingService.hide();
@@ -143,7 +143,7 @@ export class ListPage implements OnInit, OnDestroy {
     this.loadingService.show(this.translate.instant('approvals.list.rejecting'));
     try {
       const res = await this.apiService.vaultApprovalReject(a.requestId, reason.trim());
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else            await this.load();
     } finally {
       this.loadingService.hide();
@@ -158,7 +158,7 @@ export class ListPage implements OnInit, OnDestroy {
     this.loadingService.show(this.translate.instant('approvals.list.cancelling'));
     try {
       const res = await this.apiService.vaultApprovalCancel(a.requestId);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else            await this.load();
     } finally {
       this.loadingService.hide();

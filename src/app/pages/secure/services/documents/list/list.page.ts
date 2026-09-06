@@ -123,7 +123,7 @@ export class ListPage implements OnInit {
       // with `cid required (or attach a file)` on every upload from this page.
       const { file, ...metadata } = result;
       const response = await this.apiService.serviceDocumentAddMultipart(this.serviceAddress(), file, metadata);
-      if (response?.error) this.alertService.show(this.translate.instant('alerts.error'), response.error);
+      if (response?.error) this.alertService.info(this.translate.instant('alerts.error'), response.error);
       else await this.list();
     } finally { this.loadingService.hide(); }
   }

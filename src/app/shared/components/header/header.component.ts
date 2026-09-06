@@ -78,7 +78,7 @@ export class HeaderComponent  implements OnInit, OnDestroy {
   }
 
   showReasonAlert() {
-    this.alertService.show(
+    this.alertService.info(
       this.translate.instant('header.stateReasonAlert.title'),
       this.entityStateReason || this.translate.instant('header.stateReasonAlert.noReason'),
       this.translate.instant('alerts.ok'),

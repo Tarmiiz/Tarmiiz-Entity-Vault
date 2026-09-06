@@ -109,7 +109,7 @@ export class ModalSellWithdrawComponent {
     const v = this.form.value;
     const service = this.modalService.service();
     if (!service) {
-      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.sellWithdrawModal.errorServiceMissing'));
+      await this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.sellWithdrawModal.errorServiceMissing'));
       return;
     }
 
@@ -126,7 +126,7 @@ export class ModalSellWithdrawComponent {
     this.loadingService.hide();
 
     if (res.error) {
-      await this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      await this.alertService.info(this.translate.instant('alerts.error'), res.error);
       return;
     }
 

@@ -95,7 +95,7 @@ export class LoginPage implements OnInit {
 
  async login() {
     if (!this.formLogin.valid) {
-      await this.alertService.show(this.translate.instant('login.errors.invalidFormTitle'), this.translate.instant('login.errors.invalidFormMessage'));
+      await this.alertService.info(this.translate.instant('login.errors.invalidFormTitle'), this.translate.instant('login.errors.invalidFormMessage'));
       return;
     }
 
@@ -148,7 +148,7 @@ export class LoginPage implements OnInit {
             errorMessage = this.translate.instant('login.errors.credentialsInvalid');
           }
         }
-        await this.alertService.show(this.translate.instant('login.errors.loginFailedTitle'), errorMessage);
+        await this.alertService.info(this.translate.instant('login.errors.loginFailedTitle'), errorMessage);
       }
 
     }
@@ -170,7 +170,7 @@ export class LoginPage implements OnInit {
         }
       }
 
-      await this.alertService.show(this.translate.instant('login.errors.loginErrorTitle'), errorMessage);
+      await this.alertService.info(this.translate.instant('login.errors.loginErrorTitle'), errorMessage);
     }
     finally {
       this.isLoading = false;

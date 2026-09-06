@@ -137,9 +137,9 @@ export class MembershipsPage implements OnInit, OnDestroy {
     try {
       const res = await this.apiService.vaultDexMembershipRequest(this.requestVenue, this.requestService);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else if (res?.requestId) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
           this.translate.instant('alerts.ok'),
@@ -163,9 +163,9 @@ export class MembershipsPage implements OnInit, OnDestroy {
     try {
       const res = await this.apiService.vaultDexMembershipRemove(m.dexService, m.memberService);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else if (res?.requestId) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
           this.translate.instant('alerts.ok'),

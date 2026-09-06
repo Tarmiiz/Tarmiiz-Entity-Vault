@@ -74,7 +74,7 @@ export class ClaimPage implements OnInit {
 
   async submitActivation() {
     if (!this.formActivation.valid) {
-      await this.alertService.show(this.translate.instant('claim.errors.invalidFormTitle'), this.translate.instant('claim.errors.activationFormMessage'));
+      await this.alertService.info(this.translate.instant('claim.errors.invalidFormTitle'), this.translate.instant('claim.errors.activationFormMessage'));
       return;
     }
     const { email, otp } = this.formActivation.value;
@@ -121,18 +121,18 @@ export class ClaimPage implements OnInit {
     } finally {
       this.loadingService.hide();
       this.isSubmitting.set(false);
-      if (alertTitle) await this.alertService.show(alertTitle, alertMessage);
+      if (alertTitle) await this.alertService.info(alertTitle, alertMessage);
     }
   }
 
   async submitPassword() {
     if (!this.formPassword.valid) {
-      await this.alertService.show(this.translate.instant('claim.errors.invalidFormTitle'), this.translate.instant('claim.errors.passwordFormMessage'));
+      await this.alertService.info(this.translate.instant('claim.errors.invalidFormTitle'), this.translate.instant('claim.errors.passwordFormMessage'));
       return;
     }
     const { name, username, password, confirm } = this.formPassword.value;
     if (password !== confirm) {
-      await this.alertService.show(this.translate.instant('claim.errors.passwordMismatchTitle'), this.translate.instant('claim.errors.passwordMismatchMessage'));
+      await this.alertService.info(this.translate.instant('claim.errors.passwordMismatchTitle'), this.translate.instant('claim.errors.passwordMismatchMessage'));
       return;
     }
     this.isSubmitting.set(true);
@@ -200,7 +200,7 @@ export class ClaimPage implements OnInit {
     } finally {
       this.loadingService.hide();
       this.isSubmitting.set(false);
-      if (alertTitle) await this.alertService.show(alertTitle, alertMessage);
+      if (alertTitle) await this.alertService.info(alertTitle, alertMessage);
     }
   }
 

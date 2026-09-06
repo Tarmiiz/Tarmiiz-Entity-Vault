@@ -127,7 +127,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     this.loadingService.show(this.translate.instant('dex.orders.cancelConfirm.loading'));
     try {
       const r = await this.apiService.vaultDexCancelOrder(o.ref);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       await this.load();
     } finally { this.loadingService.hide(); }
   }

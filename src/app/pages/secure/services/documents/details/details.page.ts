@@ -130,7 +130,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.serviceDocumentSetState(this.serviceAddress(), this.id(), 2);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
@@ -139,7 +139,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.serviceDocumentSetState(this.serviceAddress(), this.id(), 1);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadDocument();
     } finally { this.loadingService.hide(); }
   }
@@ -150,7 +150,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('documents.shareModal.sharing'));
     try {
       const r = await this.apiService.serviceDocumentShare(this.serviceAddress(), this.id(), account);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
@@ -160,7 +160,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.serviceDocumentUnshare(this.serviceAddress(), this.id(), account);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.loadShared();
     } finally { this.loadingService.hide(); }
   }
@@ -190,7 +190,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('documents.details.loading.hashingSigning'));
     try {
       const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) { this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchForHashing')); return; }
+      if (!r?.success || !r?.data) { this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchForHashing')); return; }
       const base64 = typeof r.data === 'string' ? r.data : '';
       const byteString = atob(base64);
       const bytes = new Uint8Array(byteString.length);
@@ -200,7 +200,7 @@ export class DetailsPage implements OnInit {
       const docHash = '0x' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 
       const signRes = await this.apiService.serviceDocumentSign(this.serviceAddress(), this.id(), keyId, docHash);
-      if (signRes?.error) this.alertService.show(this.translate.instant('alerts.error'), signRes.error);
+      if (signRes?.error) this.alertService.info(this.translate.instant('alerts.error'), signRes.error);
       else { await this.loadSignatures(); this.activeTab.set('signatures'); }
     } finally { this.loadingService.hide(); }
   }
@@ -211,7 +211,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('documents.details.loading.verifyingSignature'));
     try {
       const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) { this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile')); return; }
+      if (!r?.success || !r?.data) { this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile')); return; }
       const byteString = atob(typeof r.data === 'string' ? r.data : '');
       const bytes = new Uint8Array(byteString.length);
       for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
@@ -234,7 +234,7 @@ export class DetailsPage implements OnInit {
         hashMatches ? this.translate.instant('documents.details.verify.hashMatches') : this.translate.instant('documents.details.verify.hashMismatch'),
         signerMatches ? this.translate.instant('documents.details.verify.signerMatches') : this.translate.instant('documents.details.verify.signerMismatch'),
       ];
-      this.alertService.show(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
+      this.alertService.info(ok ? this.translate.instant('documents.details.verify.validTitle') : this.translate.instant('documents.details.verify.invalidTitle'), lines.join('\n'));
     } finally { this.loadingService.hide(); }
   }
 
@@ -244,7 +244,7 @@ export class DetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('documents.details.loading.fetchingFile'));
     try {
       const r = await this.apiService.ipfsFetchData(doc.cid);
-      if (!r?.success || !r?.data) { this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile')); return; }
+      if (!r?.success || !r?.data) { this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documents.details.errors.fetchFile')); return; }
       const base64 = typeof r.data === 'string' ? r.data : '';
       const byteString = atob(base64);
       const bytes = new Uint8Array(byteString.length);

@@ -73,7 +73,7 @@ export class ModalListingVenueTierChangeComponent {
     this.loadingService.show(this.translate.instant('dex.listings.changeTierModal.changingVenueTier'));
     try {
       const r = await this.apiService.vaultDexAssetListingVenueSetTier(inp.asset, inp.venue.dexService, t);
-      if (r?.error) { this.alertService.show(this.translate.instant('alerts.error'), r.error); return; }
+      if (r?.error) { this.alertService.info(this.translate.instant('alerts.error'), r.error); return; }
       this.modalService.hide(true);
     } finally {
       this.loadingService.hide();

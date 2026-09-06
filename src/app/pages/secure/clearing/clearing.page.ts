@@ -226,9 +226,9 @@ export class ClearingPage implements OnInit {
 
   canAct(): boolean { return !!this.userInfo && this.userInfo.role !== 3; }
 
-  /** `hideCancel = true` makes AlertService.show an info alert rather than a confirm. */
+  /** Delegates to the shared `AlertService.info` — one button, no Cancel. */
   private info(title: string, message: string) {
-    return this.alertService.show(title, message, this.translate.instant('alerts.ok'), 'max-w-md', true);
+    return this.alertService.info(title, message, this.translate.instant('alerts.ok'), 'max-w-md');
   }
 
   private confirm(title: string, message: string) {

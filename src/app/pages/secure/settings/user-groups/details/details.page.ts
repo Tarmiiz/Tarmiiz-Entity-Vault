@@ -120,7 +120,7 @@ export class UserGroupDetailsPage implements OnInit {
         name,
         description: this.editDescription().trim(),
       });
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.loadGroup();
     } finally {
       this.loadingService.hide();
@@ -149,7 +149,7 @@ export class UserGroupDetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.saving'));
     try {
       const res = await this.apiService.vaultUserGroupMenuConfigSet(this.groupId(), row.menuKey, enabled);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.loadMenuConfig();
     } finally {
       this.loadingService.hide();
@@ -176,7 +176,7 @@ export class UserGroupDetailsPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.saving'));
     try {
       const res = await this.apiService.vaultUserGroupSystemFunctionConfigSet(this.groupId(), row.functionKey, enabled);
-      if (res?.error) this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.error'), res.error);
       else await this.loadSystemFunctionsConfig();
     } finally {
       this.loadingService.hide();
@@ -199,7 +199,7 @@ export class UserGroupDetailsPage implements OnInit {
     const g = this.group();
     if (!g) return;
     if (this.members().length > 0) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('settings.userGroups.details.deleteBlockedTitle'),
         this.translate.instant('settings.userGroups.details.deleteBlockedMsg', { count: this.members().length }),
       );
@@ -215,7 +215,7 @@ export class UserGroupDetailsPage implements OnInit {
     try {
       const res = await this.apiService.vaultUserGroupDelete(g.groupId);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       this.router.navigate(['/authorized/settings/user-groups']);

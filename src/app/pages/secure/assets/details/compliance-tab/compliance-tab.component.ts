@@ -550,7 +550,7 @@ export class ComplianceTabComponent implements OnChanges {
   }
 
   private _alert(titleKey: string, msg: string) {
-    this.alertService.show(this.translate.instant(titleKey), msg, this.translate.instant('common.close'), 'max-w-md', true);
+    this.alertService.info(this.translate.instant(titleKey), msg, this.translate.instant('common.close'), 'max-w-md');
   }
 
   // ── writes ────────────────────────────────────────────────────────────────────

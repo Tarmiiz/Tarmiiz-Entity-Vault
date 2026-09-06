@@ -46,7 +46,7 @@ export class ModalUserEditCredentialsComponent {
 
   onSave(): void {
     if (this.editForm.value.password !== this.editForm.value.password2) {
-      this.alertService.show(this.translate.instant('users.editCredentialsModal.passwordsMismatchTitle'), this.translate.instant('users.editCredentialsModal.passwordsMismatchMessage'));
+      this.alertService.info(this.translate.instant('users.editCredentialsModal.passwordsMismatchTitle'), this.translate.instant('users.editCredentialsModal.passwordsMismatchMessage'));
       return;
     }
 
@@ -54,11 +54,11 @@ export class ModalUserEditCredentialsComponent {
       const currentUsername = this.editUserCredentialsService.user()?.username ?? '';
       const newUsername = this.editForm.value.username ?? '';
       if (!newUsername) {
-        this.alertService.show(this.translate.instant('users.editCredentialsModal.invalidUsernameTitle'), this.translate.instant('users.editCredentialsModal.invalidUsernameRequiredMessage'));
+        this.alertService.info(this.translate.instant('users.editCredentialsModal.invalidUsernameTitle'), this.translate.instant('users.editCredentialsModal.invalidUsernameRequiredMessage'));
         return;
       }
       if (newUsername === currentUsername) {
-        this.alertService.show(this.translate.instant('users.editCredentialsModal.invalidUsernameTitle'), this.translate.instant('users.editCredentialsModal.invalidUsernameSameMessage'));
+        this.alertService.info(this.translate.instant('users.editCredentialsModal.invalidUsernameTitle'), this.translate.instant('users.editCredentialsModal.invalidUsernameSameMessage'));
         return;
       }
     }

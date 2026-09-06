@@ -249,7 +249,7 @@ export class DetailsPage implements OnInit, OnDestroy {
         a.click();
         setTimeout(() => URL.revokeObjectURL(res.blobUrl), 30000);
       } else {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('messages.details.alerts.attachmentTitle'),
           this.translate.instant('messages.details.alerts.attachmentFailed'),
           this.translate.instant('messages.details.alerts.ok'));
@@ -386,7 +386,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     }
     this.loadingService.hide();
     if (resp?.error) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('messages.details.alerts.sendFailedTitle'),
         resp.error,
         this.translate.instant('messages.details.alerts.ok'));
@@ -423,7 +423,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     const resp = await this.apiService.connectThreadLeave(this.threadId);
     this.loadingService.hide();
     if (resp?.error) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('messages.details.alerts.leaveFailed'),
         resp.error,
         this.translate.instant('messages.details.alerts.ok'));
@@ -444,7 +444,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     const resp = await this.apiService.connectThreadRemoveParticipant(this.threadId, address, '');
     this.loadingService.hide();
     if (resp?.error) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('messages.details.alerts.removeFailed'),
         resp.error,
         this.translate.instant('messages.details.alerts.ok'));
@@ -511,7 +511,7 @@ export class DetailsPage implements OnInit, OnDestroy {
     try {
       const resp = await this.apiService.connectThreadAddParticipants(this.threadId, targets);
       if (resp?.error) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('messages.details.alerts.addFailedTitle'),
           resp.error,
           this.translate.instant('messages.details.alerts.ok'));

@@ -126,7 +126,7 @@ export class DistributionPage implements OnInit {
     try {
       const res = await this.apiService.vaultDistributionAccept(a.asset, a.service);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.loadAgreements();
       }
@@ -140,7 +140,7 @@ export class DistributionPage implements OnInit {
     const res = await this.apiService.vaultGetServiceFeeConfig(a.service, a.asset);
     // null is a FAILED READ, not "no fee configured" — see the twin on the service detail page.
     if (!res) {
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('alerts.error'),
         this.translate.instant('distribution.loadFeesError'));
       return;
@@ -162,7 +162,7 @@ export class DistributionPage implements OnInit {
     try {
       const r = await this.apiService.vaultSetServiceFeeConfig(a.service, a.asset, result.feeConfig);
       if ((r as any)?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), (r as any).error);
+        this.alertService.info(this.translate.instant('alerts.error'), (r as any).error);
       }
     } finally {
       this.loadingService.hide();

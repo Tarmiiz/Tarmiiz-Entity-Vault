@@ -283,9 +283,9 @@ export class SettlementsPage implements OnInit {
         memo: this.createMemo.trim(),
       });
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       } else if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await Promise.all([this.loadSettlements(), this.loadPositions()]);
         this.activeTab.set('settlements');
@@ -325,9 +325,9 @@ export class SettlementsPage implements OnInit {
         memo: this.sentMemo.trim(),
       }, this.sentReceiptFile);
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       } else if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await this.loadSettlements();
       }
@@ -356,9 +356,9 @@ export class SettlementsPage implements OnInit {
         note: this.receivedNote.trim(),
       });
       if (res?.requestId) {
-        this.alertService.show(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
+        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
       } else if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await Promise.all([this.loadSettlements(), this.loadPositions()]);
       }
@@ -386,7 +386,7 @@ export class SettlementsPage implements OnInit {
       this.loadingService.hide();
     }
     if (!file) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('settlements.receiptError'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('settlements.receiptError'));
       return;
     }
     window.open(file.blobUrl, '_blank');
@@ -404,7 +404,7 @@ export class SettlementsPage implements OnInit {
     try {
       const res = await this.apiService.vaultSettlementCancel(s.debtorEntity, s.creditorEntity, s.settlementId);
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
       } else {
         await Promise.all([this.loadSettlements(), this.loadPositions()]);
       }

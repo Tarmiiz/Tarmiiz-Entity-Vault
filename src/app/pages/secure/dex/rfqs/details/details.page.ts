@@ -244,9 +244,9 @@ export class DetailsPage implements OnInit, OnDestroy {
       const res = await fn();
       if (res?.error) {
         this.loadingService.hide();
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('alerts.error'), res.error,
-          this.translate.instant('alerts.ok'), 'max-w-md', true);
+          this.translate.instant('alerts.ok'), 'max-w-md');
         // A 409 means our view was stale — pull the current one rather than leaving the
         // user looking at a board that no longer exists.
         await this.load(true);
@@ -254,10 +254,10 @@ export class DetailsPage implements OnInit, OnDestroy {
       }
       if (res?.requestId) {
         this.loadingService.hide();
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('approvals.submittedTitle'),
           this.translate.instant('approvals.submittedMessage'),
-          this.translate.instant('alerts.ok'), 'max-w-md', true);
+          this.translate.instant('alerts.ok'), 'max-w-md');
         return true;
       }
       // The mirror is plugin-written and trails the receipt by a block, so reload
@@ -280,10 +280,10 @@ export class DetailsPage implements OnInit, OnDestroy {
       .filter((s: any) => q.openToAll ? s.address.toLowerCase() !== q.requester.toLowerCase()
                                       : s.address.toLowerCase() === String(row?.dealer || '').toLowerCase());
     if (!eligible.length) {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('alerts.error'),
         this.translate.instant('dex.rfqs.actions.noEligibleSubscription'),
-        this.translate.instant('alerts.ok'), 'max-w-md', true);
+        this.translate.instant('alerts.ok'), 'max-w-md');
       return;
     }
 

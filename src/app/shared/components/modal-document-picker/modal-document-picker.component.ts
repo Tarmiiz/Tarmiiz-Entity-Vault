@@ -134,8 +134,8 @@ export class ModalDocumentPickerComponent {
       const res: any = await this.uploadFor(req.resourceType, req.address, result.file, metadata);
       this.loadingService.hide();
       if (res?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), res.error,
-          this.translate.instant('common.close'), 'max-w-md', true);
+        this.alertService.info(this.translate.instant('alerts.error'), res.error,
+          this.translate.instant('common.close'), 'max-w-md');
         return;
       }
       await this.load();
@@ -145,8 +145,8 @@ export class ModalDocumentPickerComponent {
       if (id > 0) this.selectedId.set(id);
     } catch (e: any) {
       this.loadingService.hide();
-      this.alertService.show(this.translate.instant('alerts.error'), e?.error?.error || e?.message || '',
-        this.translate.instant('common.close'), 'max-w-md', true);
+      this.alertService.info(this.translate.instant('alerts.error'), e?.error?.error || e?.message || '',
+        this.translate.instant('common.close'), 'max-w-md');
     }
   }
 

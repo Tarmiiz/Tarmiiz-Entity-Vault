@@ -264,10 +264,10 @@ export class ListPage implements OnInit {
         // under until the regulator has acted.
         await this.listServices();
       } else {
-        this.alertService.show(this.translate.instant('alerts.error'), result?.error || this.translate.instant('services.list.createFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), result?.error || this.translate.instant('services.list.createFailed'));
       }
     } catch (error) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
     } finally {
       this.loadingService.hide();
     }

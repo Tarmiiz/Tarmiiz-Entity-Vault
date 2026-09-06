@@ -73,7 +73,7 @@ export class ListPage implements OnInit {
     try {
       const r = await this.apiService.signerKeyGenerate(description);
       if (r?.error) {
-        this.alertService.show(this.translate.instant('alerts.error'), r.error);
+        this.alertService.info(this.translate.instant('alerts.error'), r.error);
       } else {
         await this.list();
       }
@@ -93,7 +93,7 @@ export class ListPage implements OnInit {
     this.loadingService.show(this.translate.instant('common.updating'));
     try {
       const r = await this.apiService.signerKeyChangeState(String(k.keyId), newState);
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.list();
     } finally { this.loadingService.hide(); }
   }
@@ -108,7 +108,7 @@ export class ListPage implements OnInit {
     this.loadingService.show(this.translate.instant('signerKeys.removing'));
     try {
       const r = await this.apiService.signerKeyRemove(String(k.keyId));
-      if (r?.error) this.alertService.show(this.translate.instant('alerts.error'), r.error);
+      if (r?.error) this.alertService.info(this.translate.instant('alerts.error'), r.error);
       else await this.list();
     } finally { this.loadingService.hide(); }
   }

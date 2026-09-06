@@ -121,13 +121,13 @@ export class ModalUserAddComponent {
 
     if (this.addForm.invalid) {
       this.loadingService.hide();
-      this.alertService.show(this.translate.instant('users.addModal.invalidFormTitle'), this.translate.instant('users.addModal.invalidFormMessage'));
+      this.alertService.info(this.translate.instant('users.addModal.invalidFormTitle'), this.translate.instant('users.addModal.invalidFormMessage'));
       return;
     }
 
     if (this.addForm.value.password !== this.addForm.value.password2) {
       this.loadingService.hide();
-      this.alertService.show(this.translate.instant('users.addModal.passwordMismatchTitle'), this.translate.instant('users.addModal.passwordMismatchMessage'));
+      this.alertService.info(this.translate.instant('users.addModal.passwordMismatchTitle'), this.translate.instant('users.addModal.passwordMismatchMessage'));
       return;
     }
 
@@ -151,7 +151,7 @@ export class ModalUserAddComponent {
     }
     catch (error) {
       this.loadingService.hide();
-      this.alertService.show(this.translate.instant('users.addModal.errorTitle'), this.translate.instant('users.addModal.errorMessage'));
+      this.alertService.info(this.translate.instant('users.addModal.errorTitle'), this.translate.instant('users.addModal.errorMessage'));
     }
 
   }

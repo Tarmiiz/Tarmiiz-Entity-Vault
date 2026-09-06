@@ -506,7 +506,7 @@ export class DetailsPage implements OnInit {
         try {
             const result = await this.apiService.vaultUpdateSubscriptionState(currentService.subscription, modalResult.state, modalResult.reason);
             if (result?.requestId) {
-                this.alertService.show(
+                this.alertService.info(
                   this.translate.instant('subscriptions.details.info.approvalSubmittedTitle'),
                   this.translate.instant('subscriptions.details.info.approvalSubmittedMessage'),
                   this.translate.instant('subscriptions.details.info.ok')
@@ -942,7 +942,7 @@ export class DetailsPage implements OnInit {
     const sub = this.subscription();
     if (!sub) return;
     if (!sub.service) {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('subscriptions.details.credit.errorTitle'),
         this.translate.instant('subscriptions.details.credit.noTokenIssuerService')
       );
@@ -952,7 +952,7 @@ export class DetailsPage implements OnInit {
     const paymentProcessor = service?.payment_processor || service?.paymentProcessor || '';
     const currencies = this.creditBalances();
     if (currencies.length === 0) {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('subscriptions.details.credit.errorTitle'),
         this.translate.instant('subscriptions.details.credit.noCurrenciesAvailable')
       );
@@ -973,17 +973,17 @@ export class DetailsPage implements OnInit {
       // outcome: the cash IS on the claim, so this is neither a failure nor a plain success, and
       // saying "deposited" alone would leave the operator believing units were bought.
       if (result.buyError) {
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('subscriptions.details.credit.depositedBuyFailedTitle'),
           this.translate.instant('subscriptions.details.credit.depositedBuyFailedMessage', { error: result.buyError })
         );
       } else if (result.bought) {
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('subscriptions.details.credit.depositedAndBoughtTitle'),
           this.translate.instant('subscriptions.details.credit.depositedAndBoughtMessage', { tokens: result.bought.tokens })
         );
       } else {
-        await this.alertService.show(
+        await this.alertService.info(
           this.translate.instant('subscriptions.details.credit.depositedTitle'),
           result.txHash
             ? (this.translate.instant('subscriptions.details.credit.txPrefix') + result.txHash)
@@ -1005,7 +1005,7 @@ export class DetailsPage implements OnInit {
     const sub = this.subscription();
     if (!sub) return;
     if (!sub.service) {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('subscriptions.details.credit.errorTitle'),
         this.translate.instant('subscriptions.details.credit.noTokenIssuerService')
       );
@@ -1022,12 +1022,12 @@ export class DetailsPage implements OnInit {
     if (result.withdrawError) {
       // The redeem landed and the request did not open — the proceeds are on the claim. This is
       // its own outcome, not a failure and not a success.
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('subscriptions.details.credit.soldWithdrawFailedTitle'),
         this.translate.instant('subscriptions.details.credit.soldWithdrawFailedMessage', { error: result.withdrawError })
       );
     } else {
-      await this.alertService.show(
+      await this.alertService.info(
         this.translate.instant('subscriptions.details.credit.sellWithdrawRequestedTitle'),
         this.translate.instant('subscriptions.details.credit.sellWithdrawRequestedMessage', {
           tokens: result.tokens,

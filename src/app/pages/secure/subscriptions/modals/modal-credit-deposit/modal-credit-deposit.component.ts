@@ -189,17 +189,17 @@ export class ModalCreditDepositComponent {
     const v = this.form.value;
     const service = this.modalService.service();
     if (!service) {
-      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorServiceMissing'));
+      await this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorServiceMissing'));
       return;
     }
     if (!v.provider) {
-      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorSelectProcessor'));
+      await this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorSelectProcessor'));
       return;
     }
 
     const buying = this.modalService.straightThrough() && v.buyWithDeposit === true;
     if (buying && !v.asset) {
-      await this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorSelectAsset'));
+      await this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('subscriptions.creditDepositModal.errorSelectAsset'));
       return;
     }
 
@@ -234,7 +234,7 @@ export class ModalCreditDepositComponent {
       const res = await this.apiService.creditDeposit(body);
       this.loadingService.hide();
       if (res.error) {
-        await this.alertService.show(this.translate.instant('alerts.error'), res.error);
+        await this.alertService.info(this.translate.instant('alerts.error'), res.error);
         return;
       }
       this.modalService.confirm({ txHash: res.result?.transactionHash || '' });
@@ -244,7 +244,7 @@ export class ModalCreditDepositComponent {
     const res = await this.apiService.creditDepositBuy({ ...body, asset: String(v.asset) });
     this.loadingService.hide();
     if (res.error) {
-      await this.alertService.show(this.translate.instant('alerts.error'), res.error);
+      await this.alertService.info(this.translate.instant('alerts.error'), res.error);
       return;
     }
 

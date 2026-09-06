@@ -346,7 +346,7 @@ export class DocumentsTabComponent implements OnChanges {
     try {
       const fetched = await this.apiService.inboundDocumentFetchFile(this.address, doc.owner, doc.documentId);
       if (!this._revealInTab(win, fetched)) {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchSharedFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchSharedFailed'));
       }
     } finally {
       this.loadingService.hide();
@@ -400,7 +400,7 @@ export class DocumentsTabComponent implements OnChanges {
     try {
       const fetched = await this.apiService.inboundDocumentFetchFile(this.address, doc.owner, doc.documentId);
       if (!fetched) {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchSharedFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchSharedFailed'));
         return;
       }
       let buf: ArrayBuffer;
@@ -412,17 +412,17 @@ export class DocumentsTabComponent implements OnChanges {
       const r = await this.apiService.regulatorDocumentSign(String(doc.documentId), doc.owner, String(keyId), docHash, doc.title || '');
       // authPost returns null on any non-2xx (e.g. 403) — treat null OR an error body as failure.
       if (!r || r.error) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('documentsTab.errors.signingFailedTitle'),
           r?.error || this.translate.instant('documentsTab.errors.signingFailedMsg'),
-          this.translate.instant('alerts.ok'), 'max-w-md', true,
+          this.translate.instant('alerts.ok'), 'max-w-md',
         );
         return;
       }
-      this.alertService.show(
+      this.alertService.info(
         this.translate.instant('documentsTab.success.docSignedTitle'),
         this.translate.instant('documentsTab.success.docSignedMsg'),
-        this.translate.instant('alerts.ok'), 'max-w-md', true,
+        this.translate.instant('alerts.ok'), 'max-w-md',
       );
       await this.loadInbound();
     } finally {
@@ -589,7 +589,7 @@ export class DocumentsTabComponent implements OnChanges {
   // on-chain encryptionPublicKey; failure usually means the target hasn't published a key yet.
   async shareDocument(doc: Document) {
     if (doc.documentType !== DOC_TYPE_PRIVATE) {
-      this.alertService.show(this.translate.instant('documentsTab.errors.notApplicable'), this.translate.instant('documentsTab.errors.onlyPrivateShareable'));
+      this.alertService.info(this.translate.instant('documentsTab.errors.notApplicable'), this.translate.instant('documentsTab.errors.onlyPrivateShareable'));
       return;
     }
     const account = await this.shareModal.show();
@@ -605,7 +605,7 @@ export class DocumentsTabComponent implements OnChanges {
         res = await this.apiService.subscriptionDocumentShare(this.address, doc.id, account);
       }
       if (!res) {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.shareFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.shareFailed'));
       } else {
         await this.loadSharedWith(doc);
       }
@@ -687,7 +687,7 @@ export class DocumentsTabComponent implements OnChanges {
         // 401 is already handled globally (clears session + redirects to login),
         // so don't surface a duplicate alert in that case.
         if (res?.status !== 401) {
-          this.alertService.show(this.translate.instant('alerts.error'), res?.error || this.translate.instant('documentsTab.errors.addFailed'));
+          this.alertService.info(this.translate.instant('alerts.error'), res?.error || this.translate.instant('documentsTab.errors.addFailed'));
         }
         return;
       }
@@ -762,7 +762,7 @@ export class DocumentsTabComponent implements OnChanges {
         fetched = await this.apiService.subscriptionDocumentFetchFile(this.address, doc.id);
       }
       if (!this._revealInTab(win, fetched)) {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchFileFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchFileFailed'));
       }
     } finally {
       this.loadingService.hide();
@@ -779,7 +779,7 @@ export class DocumentsTabComponent implements OnChanges {
       fetched = await this.apiService.subscriptionDocumentFetchFile(this.address, doc.id);
     }
     if (!fetched) {
-      this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchFileFailed'));
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.fetchFileFailed'));
       return null;
     }
     try {
@@ -818,14 +818,14 @@ export class DocumentsTabComponent implements OnChanges {
       // authPost returns null on any non-2xx (e.g. a 403 from requireExecutive) — treat null OR an
       // error body as failure, or the UI reports success for a sign that never landed on-chain.
       if (!signRes || signRes.error) {
-        this.alertService.show(
+        this.alertService.info(
           this.translate.instant('documentsTab.errors.signingFailedTitle'),
           signRes?.error || this.translate.instant('documentsTab.errors.signingFailedMsg'),
         );
         return;
       }
       await this.refreshSignedCount(doc);
-      this.alertService.show(this.translate.instant('documentsTab.success.signedTitle'), this.translate.instant('documentsTab.success.signedMsg'));
+      this.alertService.info(this.translate.instant('documentsTab.success.signedTitle'), this.translate.instant('documentsTab.success.signedMsg'));
     } finally {
       this.loadingService.hide();
     }
@@ -833,7 +833,7 @@ export class DocumentsTabComponent implements OnChanges {
 
   async publishDocument(doc: Document) {
     if (doc.documentType !== DOC_TYPE_PRIVATE && doc.documentType !== DOC_TYPE_INTERNAL) {
-      this.alertService.show(this.translate.instant('documentsTab.errors.notApplicable'), this.translate.instant('documentsTab.errors.onlyPrivatePublishable'));
+      this.alertService.info(this.translate.instant('documentsTab.errors.notApplicable'), this.translate.instant('documentsTab.errors.onlyPrivatePublishable'));
       return;
     }
     const ok = await this.alertService.show(
@@ -853,7 +853,7 @@ export class DocumentsTabComponent implements OnChanges {
         res = await this.apiService.subscriptionDocumentPublish(this.address, doc.id);
       }
       if (!res) {
-        this.alertService.show(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.publishFailed'));
+        this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('documentsTab.errors.publishFailed'));
       } else {
         this.closeModal();
         await this.loadDocuments();
