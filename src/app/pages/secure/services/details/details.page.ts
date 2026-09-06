@@ -118,7 +118,7 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'licenses' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
 
   // ── the onc/offc election (S5, S63-S68) ─────────────────────────────────────────────
   // A LIST, not a field: the election is per CURRENCY, so a service may be onc in one and
@@ -661,10 +661,15 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
+  setTab(tab: 'overview' | 'info' | 'licenses' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
     if (tab === 'election') this.getElections();
     this.activeTab.set(tab);
     if (tab === 'info' || tab === 'metadata' || tab === 'providers') this.getServiceDetails();
+    // Re-fetch on entry. `getServiceDetails` already produces the set on load — and MUST, since
+    // `isTokenProvider()` gates eight template branches off it — so this is a refresh, not the
+    // only producer. It matters because a license is the one thing on this page that changes
+    // WITHOUT the tenant acting: the regulator grants or suspends it elsewhere.
+    if (tab === 'licenses') this.loadLicenses();
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
     if (tab === 'trxs') this.getTransactions(1, 500);
