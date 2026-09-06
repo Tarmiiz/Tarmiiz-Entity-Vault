@@ -89,9 +89,35 @@ export class ModalAssetAddComponent {
 
   // Wizard state
   currentStep = signal(1);
+
+  /*
+      HIDDEN STEPS — hidden, deliberately NOT removed.
+
+      Step 5 (Roles) is skipped because every value on it is already correct by default: owner,
+      issuer and manager all default to this entity, and the regulator is fixed by the class
+      definition chosen in step 4. Asking three times for an answer the form already holds is a
+      question with one acceptable reply.
+
+      ⚠️ THE STEP NUMBERING IS UNCHANGED — 1..8, with 5 simply never visited. Renumbering would
+      have been the tempting simplification and it is a trap: the template gates every panel on
+      `currentStep() === N`, `stepFields` is keyed by the same N, and `isCurrentStepValid` special-
+      cases step 8. Shifting them means editing four parallel lists in lockstep, and re-showing the
+      step later means doing it again in reverse. Skipping costs one Set.
+
+      To bring it back: empty this Set. Nothing else changes — the panel, its controls, its
+      validators and its defaults are all still here and still wired.
+  */
+  private static readonly HIDDEN_STEPS = new Set<number>([5]);
+  private isHidden = (n: number) => ModalAssetAddComponent.HIDDEN_STEPS.has(n);
+
   readonly totalSteps = 8;
   readonly stepLabels = ['Standard & Supply', 'Identity', 'Metadata', 'Service', 'Roles', 'Documents', 'Images', 'Review'];
-  readonly stepNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
+  /** The dots actually drawn, and the source of the "Step X of Y" counter. */
+  readonly stepNumbers = [1, 2, 3, 4, 5, 6, 7, 8].filter((n) => !ModalAssetAddComponent.HIDDEN_STEPS.has(n));
+  /** Visible count, so the header does not promise a step the user will never see. */
+  get visibleTotal(): number { return this.stepNumbers.length; }
+  /** 1-based position of the current step AMONG THE VISIBLE ones. */
+  get visibleIndex(): number { return this.stepNumbers.indexOf(this.currentStep()) + 1; }
   reviewConfirmed = signal(false);
 
   // Optional attachments (steps 6 + 7) — collected here, uploaded by the list page
@@ -415,6 +441,13 @@ export class ModalAssetAddComponent {
     return fieldsValid;
   }
 
+  /** Next VISIBLE step. Walks past hidden ones rather than renumbering them away. */
+  private step(from: number, dir: 1 | -1): number {
+    let n = from + dir;
+    while (n >= 1 && n <= this.totalSteps && this.isHidden(n)) n += dir;
+    return n;
+  }
+
   nextStep(): void {
     if (!this.isCurrentStepValid() || this.currentStep() >= this.totalSteps) return;
     if (this.currentStep() === 2) {
@@ -423,12 +456,12 @@ export class ModalAssetAddComponent {
     if (this.currentStep() === 4 && this.symbolCheckPending()) {
       this.checkSymbolAvailability();
     }
-    this.currentStep.update(s => s + 1);
+    this.currentStep.update(s => this.step(s, 1));
   }
 
   prevStep(): void {
     if (this.currentStep() > 1) {
-      this.currentStep.update(s => s - 1);
+      this.currentStep.update(s => this.step(s, -1));
     }
   }
 

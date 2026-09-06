@@ -5,7 +5,7 @@
       <!-- Header -->
       <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
         <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'assets.addModal.wizard.title' | translate }}</h3>
-        <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.stepProgress' | translate: { current: currentStep(), total: totalSteps, label: stepLabels[currentStep() - 1] } }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.stepProgress' | translate: { current: visibleIndex, total: visibleTotal, label: stepLabels[currentStep() - 1] } }}</p>
       </div>
 
       <!-- Step Indicator -->
@@ -24,7 +24,7 @@
                 {{ step }}
               }
             </div>
-            @if (step < totalSteps) {
+            @if (step !== stepNumbers[stepNumbers.length - 1]) {
               <div class="w-4 h-0.5 mx-0.5" [class]="step < currentStep() ? 'bg-green-500' : 'bg-gray-200'"></div>
             }
           </div>
