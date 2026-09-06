@@ -632,6 +632,91 @@
                 </div>
               </div>
             </div>
+
+            <!-- ── FUNCTION GRANTS (Phase 17) ───────────────────────────────────────────────
+                 UNDER the licences table, deliberately. A licence says which MARKET this service
+                 may operate in; a grant says which individual FUNCTIONS its regulator permits.
+                 Same question at two granularities, so one screen, licence first.
+
+                 🔴 READ ONLY — NO Grant / Deny / Clear. A grant is the REGULATOR's act, and the
+                 Entity API has no setter to call. A control the entity cannot use would imply a
+                 power it does not have, which is worse than showing nothing. -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-700">Function permissions</h3>
+                  <p class="text-xs text-gray-500">
+                    What your regulator permits this service to <span class="font-medium">do</span>.
+                    Anything not permitted here is refused, whatever licences the service holds.
+                  </p>
+                </div>
+                <app-refresh-button [loading]="grantsLoading()" (refresh)="loadGrants()" />
+              </div>
+
+              @if (grantsLoading() && !grants().length) {
+                <p class="text-xs text-gray-500 px-1 py-2">Loading…</p>
+              } @else if (!grantsLoaded()) {
+                <!-- ⚠️ NOT "no permissions". A failed read and a genuine default-deny produce the
+                     same empty list, and an operator would act on the wrong one. -->
+                <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Your permissions could not be read just now. This is not a decision about what
+                  this service may do — try Refresh.
+                </div>
+              } @else {
+                @if (grantsMirrored() === 0) {
+                  <!-- 🔴 A live service with ZERO mirrored cells is a SYNC failure, not a
+                       default-deny. Forty rows of "not granted" is indistinguishable from a
+                       genuinely ungranted service, so it is named rather than rendered. -->
+                  <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 mb-3 text-xs text-amber-800">
+                    No permission records have reached this dashboard for this service yet. The rows
+                    below therefore show defaults, not your regulator's decisions. If this service is
+                    already operating, tell your administrator the permissions mirror is behind.
+                  </div>
+                }
+
+                @for (grp of grantGroups(); track grp) {
+                  <div class="mb-3 last:mb-0">
+                    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1 px-1">
+                      {{ grantGroupLabel(grp) }}
+                    </h4>
+                    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                      <div class="overflow-x-auto rounded-lg">
+                        <table class="w-full text-sm text-left text-gray-700">
+                          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                            <tr>
+                              <th scope="col" class="px-6 py-2">Function</th>
+                              <th scope="col" class="px-6 py-2">Status</th>
+                              <th scope="col" class="px-6 py-2">What this means</th>
+                            </tr>
+                          </thead>
+                          <tbody class="text-xs">
+                            @for (g of grantsIn(grp); track g.key; let isEven = $even) {
+                              <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                                <td class="px-6 py-2">
+                                  <div class="font-medium text-gray-800">{{ grantLabel(g.key) }}</div>
+                                  <div class="text-gray-400 font-mono text-[11px]">{{ g.key }}</div>
+                                </td>
+                                <td class="px-6 py-2 whitespace-nowrap">
+                                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="grantPillClass(g)">
+                                    {{ grantPillLabel(g) }}
+                                  </span>
+                                </td>
+                                <!-- Said in words, because the entity decides nothing here: the
+                                     only useful thing this surface can do is explain the state.
+                                     ⚠️ `stale` gets its OWN sentence — a regulator did decide and
+                                     a later action voided it, so "no decision recorded" would be
+                                     a false statement about a real event. -->
+                                <td class="px-6 py-2 text-gray-600">{{ grantMeaning(g) }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
           </div>
         }
 

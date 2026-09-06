@@ -54,6 +54,27 @@ import { PaginatorComponent, pageSlice } from '../../../../shared/components/pag
 import { ServiceLicense, licenseMeaning, licenseStateClass, licenseStateName } from '../../../../shared/utils/license.utils';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
+/**
+ * One Phase 17 FUNCTION GRANT row, as `GET /services/:address/grants` returns it.
+ *
+ * ⚠️ `source` carries THREE refusals that look identical in a boolean and are not:
+ *   `explicit` a regulator set this cell · `default` nobody has decided, so default-deny refuses
+ *   · `stale` a regulator DID decide and a later `grantInvalidateAll()` voided it.
+ * `granted` is the only thing that decides capability; `source` is why.
+ */
+export interface ServiceGrant {
+  key: string;
+  group: string;
+  subject: string;
+  maxLevel: number;
+  /** EPOCH-CHECKED and already unwrapped by the sync plugin. Never re-decode it. */
+  level: number;
+  granted: boolean;
+  source: 'explicit' | 'default' | 'stale';
+  setBy: string;
+  updatedAt: number;
+}
+
 export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
 export interface MediaIndex {
   avatar?: MediaEntry;
@@ -268,6 +289,27 @@ export class DetailsPage implements OnInit {
   */
   licenses          = signal<ServiceLicense[]>([]);
   licensesLoading   = signal(false);
+
+  /*
+      ── PHASE 17 FUNCTION GRANTS (read only) ────────────────────────────────────────────────
+      A licence says what MARKET this service may operate in; a grant says which individual
+      FUNCTIONS its regulator permits. Same question at two granularities, which is why they share
+      a tab.
+
+      🔴 NO WRITE PATH, EVER. A grant is the regulator's act. There is no setter on the Entity API
+      and there must be no control here — a button the entity cannot use implies a power it does
+      not have, which is worse than showing nothing.
+  */
+  grants          = signal<ServiceGrant[]>([]);
+  grantsLoading   = signal(false);
+  /* Cells the MIRROR holds. Zero on a live service is a SYNC failure, not a default-deny, and
+     the two are indistinguishable from the rows alone — so it is rendered as its own message. */
+  grantsMirrored  = signal<number | null>(null);
+  grantsLoaded    = signal(false);
+
+  /** The catalog groups present, in catalog order, so the card renders one block per family. */
+  grantGroups = computed(() => [...new Set(this.grants().map((g) => g.group))]);
+  grantsIn = (group: string) => this.grants().filter((g) => g.group === group);
   licenseClassNames = signal<Record<number, string>>({});
 
   licenseClassName  = (id: number) => this.licenseClassNames()[Number(id)] || `Class ${id}`;
@@ -669,7 +711,10 @@ export class DetailsPage implements OnInit {
     // `isTokenProvider()` gates eight template branches off it — so this is a refresh, not the
     // only producer. It matters because a license is the one thing on this page that changes
     // WITHOUT the tenant acting: the regulator grants or suspends it elsewhere.
-    if (tab === 'licenses') this.loadLicenses();
+    // Grants ride the same tab and the same reasoning: a grant, like a licence, changes without
+    // the tenant acting — the regulator sets or voids it elsewhere. Loaded in parallel; a grants
+    // failure must not stop the licences rendering, which is why they are separate awaits.
+    if (tab === 'licenses') { this.loadLicenses(); this.loadGrants(); }
     if (tab === 'assets') this.getAssets();
     if (tab === 'subscriptions') this.getSubscriptions();
     if (tab === 'trxs') this.getTransactions(1, 500);
@@ -836,6 +881,80 @@ export class DetailsPage implements OnInit {
     } finally {
       this.licensesLoading.set(false);
     }
+  }
+
+  /**
+   * Phase 17 grants for this service. Read only.
+   *
+   * ⚠️ On failure the rows are CLEARED and `grantsMirrored` is set to null, which the template
+   * renders as "could not be read" — never as an empty grant set. A permissions surface that
+   * silently shows nothing is indistinguishable from one showing a correct default-deny, and the
+   * operator would act on the wrong one.
+   */
+  async loadGrants() {
+    this.grantsLoading.set(true);
+    try {
+      const res: any = await this.apiService.vaultGetServiceGrants(this.serviceAddress);
+      this.grants.set(Array.isArray(res?.rows) ? res.rows : []);
+      this.grantsMirrored.set(typeof res?.mirrored === 'number' ? res.mirrored : null);
+      this.grantsLoaded.set(true);
+    } catch {
+      this.grants.set([]);
+      this.grantsMirrored.set(null);
+      this.grantsLoaded.set(false);
+    } finally {
+      this.grantsLoading.set(false);
+    }
+  }
+
+  /**
+   * The sentence a row's `source` + `level` actually means, in the entity's own terms.
+   *
+   * 🔴 THREE REFUSALS THAT LOOK ALIKE AND ARE NOT. `stale` must never borrow `default`'s wording:
+   * a regulator DID decide, and a later supervisory action (`grantInvalidateAll`) voided it.
+   * Calling that "no decision recorded" would be a false statement about a real event, and it
+   * points the operator at the wrong conversation with their regulator.
+   */
+  grantMeaning(g: ServiceGrant): string {
+    if (g.granted) {
+      return g.maxLevel > 1
+        ? `Permitted, at level ${g.level} of ${g.maxLevel}.`
+        : 'Permitted by your regulator.';
+    }
+    if (g.source === 'stale') {
+      return 'Withdrawn. Your regulator granted this and a later supervisory action voided it.';
+    }
+    if (g.source === 'explicit') {
+      return 'Refused. Your regulator considered this and declined it.';
+    }
+    return 'No decision recorded — refused by default.';
+  }
+
+  /** Pill class per row. Only a granted row is green; every refusal is visibly a refusal. */
+  grantPillClass(g: ServiceGrant): string {
+    if (g.granted) return 'bg-emerald-100 text-emerald-800';
+    // Amber for a DECIDED refusal (explicit or withdrawn): a regulator acted, and the entity has
+    // someone to ask. Gray for the default: nobody has looked at it yet.
+    if (g.source === 'explicit' || g.source === 'stale') return 'bg-amber-100 text-amber-800';
+    return 'bg-gray-100 text-gray-600';
+  }
+
+  grantPillLabel(g: ServiceGrant): string {
+    if (g.granted) return 'Permitted';
+    if (g.source === 'stale') return 'Withdrawn';
+    if (g.source === 'explicit') return 'Refused';
+    return 'Not granted';
+  }
+
+  /** `grant.assets.mint` -> `Mint`. The key is the identifier; this is the reading. */
+  grantLabel(key: string): string {
+    const tail = String(key || '').split('.').slice(2).join(' ');
+    if (!tail) return key;
+    return tail.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  }
+
+  grantGroupLabel(group: string): string {
+    return String(group || '').replace(/^./, (c) => c.toUpperCase());
   }
 
   /** Class id -> name, from the on-chain catalog. Never a local map — see the note above. */

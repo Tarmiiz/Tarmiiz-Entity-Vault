@@ -17,6 +17,39 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-06
 
+#### Added — Function permissions, under Licenses on the service detail page
+
+An entity could see which markets it was licensed for and had **no way to see which individual
+functions its regulator permits** — so a service refused by a Phase 17 grant gate had nothing in its
+own dashboard able to say which grant. A second table now sits under the Licenses table on the same
+tab: a licence says which MARKET this service may operate in, a grant says which FUNCTIONS, and
+that is one question at two granularities.
+
+🔴 **READ ONLY — no Grant / Deny / Clear.** A grant is the regulator's act, the Entity API has no
+setter to call, and a control the entity cannot use would imply a power it does not have. Verified
+by assertion, not by intent: the card contains **zero** `(click)` handlers, `<button>` tags,
+`<input>`s and `<select>`s — the only control is the shared `<app-refresh-button>`, a read action.
+
+⚠️ **Three refusals that look identical and are not**, each with its own sentence, because the
+entity decides nothing here and explaining the state is the only useful thing this surface can do:
+
+| status | what it says |
+|---|---|
+| Permitted | *Permitted by your regulator* (with the level, where the row is graded) |
+| Refused | *Your regulator considered this and declined it* |
+| Withdrawn | *Your regulator granted this and a later supervisory action voided it* |
+| Not granted | *No decision recorded — refused by default* |
+
+🔴 **Withdrawn must never borrow "no decision recorded".** A regulator *did* decide and an epoch
+bump voided it; calling that "no decision" is a false statement about a real event and points the
+operator at the wrong conversation. Amber for either DECIDED refusal (someone acted, so there is
+someone to ask), gray for the default (nobody has looked yet).
+
+⚠️ **An empty list is never rendered as "no permissions".** A failed read shows *"Your permissions
+could not be read just now — this is not a decision about what this service may do"*, and a service
+whose mirror holds zero cells says the records have not reached the dashboard rather than showing
+forty rows of "not granted", which is indistinguishable from a genuine default-deny.
+
 #### Added — what this tenant's LICENSES mean, on every admin screen
 
 Five admin surfaces now show, per row, whether the tenant's licenses actually cover the thing being

@@ -2204,6 +2204,19 @@ export class ApiService {
   async vaultGetServiceLicenses(address: string) {
     return this.vaultGet('/services/' + address + '/licenses');
   }
+  /**
+   * Phase 17 FUNCTION GRANTS for one service — READ ONLY.
+   *
+   * ⚠️ There is deliberately no companion setter. A grant is the REGULATOR's act; an entity that
+   * could widen its own grants would make the model decorative. Do not add one here.
+   *
+   * Returns EVERY catalog row addressed to a service, not only the granted ones — Phase 17 is
+   * default-deny, so the rows a service does NOT hold are the more informative half.
+   */
+  async vaultGetServiceGrants(address: string) {
+    return this.vaultGet('/services/' + address + '/grants');
+  }
+
   /** Apply for a license. It confers NOTHING until the regulator approves — it lands Requested. */
   async vaultRequestServiceLicense(address: string, classId: number, countryCode: number) {
     return this.vaultPost('/services/' + address + '/licenses', { classId, countryCode });
