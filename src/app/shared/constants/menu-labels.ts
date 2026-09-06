@@ -22,7 +22,6 @@ export const MENU_LABELS: Record<string, string> = {
   variables:      'menuLabels.variables',
   approvals:      'menuLabels.approvals',
   logs:           'menuLabels.logs',
-  'asset-t3643':  'menuLabels.assetT3643',
 };
 
 // Translation key for a toggleable menu key (pipe through `| translate` /

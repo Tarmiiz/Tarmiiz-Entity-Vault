@@ -288,11 +288,6 @@ export class ModalAssetAddComponent {
     effect(() => {
       if (this.addAssetService.isVisible()) {
         this.addForm.reset({ noCreditSettlement: false });
-        // When the T3643 standard picker is disabled by admin, the step-1 selector is hidden
-        // and every new asset is a plain T20 — seed the (otherwise required) control so step 1
-        // validates without user input.
-        if (!this.features.menuEnabled('asset-t3643')) {
-        }
         this.metadataRows.clear();
         this.addMetadataRow();
         this.metadataError.set('');
