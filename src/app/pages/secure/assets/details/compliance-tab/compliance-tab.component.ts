@@ -523,15 +523,28 @@ export class ComplianceTabComponent implements OnChanges {
     if (!picked) return;
 
     this.docRowSaving.set(row.rowKey);
+    // ⚠️ HIDE BEFORE EVERY ALERT, not only in the finally. The overlay mounts ON TOP of the
+    // dialog, so an alert raised while it is up cannot be dismissed and the awaited promise
+    // never settles — the app freezes with no error. `hide()` is an idempotent signal set, so
+    // the finally stays as the backstop rather than being replaced by it. Matches
+    // `saveDeclaration` below, and `scripts/check-loader-deadlock.js` enforces it.
+    this.loadingService.show(this.translate.instant('common.processing'));
     try {
       const res: any = await this.apiService.assetDeclareRequirementDocument(
         this.address, row.rowKey, Number(picked.documentId));
-      if (res?.error) { this._alert('assets.details.compliance.failedTitle', res.error); return; }
+      if (res?.error) {
+        this.loadingService.hide();
+        this._alert('assets.details.compliance.failedTitle', res.error);
+        return;
+      }
       await this.loadDocRows();
       await this.load();          // classDocsSatisfied may have flipped — refresh the readiness panel
+      this.loadingService.hide();
     } catch (e: any) {
+      this.loadingService.hide();
       this._alert('assets.details.compliance.failedTitle', e?.error?.error || e?.message || '');
     } finally {
+      this.loadingService.hide();
       this.docRowSaving.set(null);
     }
   }
@@ -559,14 +572,18 @@ export class ComplianceTabComponent implements OnChanges {
   async saveComposition() {
     if (!this.address || this.isFrozen()) return;
     this.compositionSaving.set(true);
+    this.loadingService.show(this.translate.instant('common.processing'));
     try {
       const res: any = await this.apiService.assetSetComposition(this.address, this.compositionDraft());
+      this.loadingService.hide();
       if (res?.error) { this._alert('assets.details.compliance.failedTitle', res.error); return; }
       await this.load();
       this._alert('assets.details.compliance.savedTitle', this.translate.instant('assets.details.compliance.savedMsg'));
     } catch (e: any) {
+      this.loadingService.hide();
       this._alert('assets.details.compliance.failedTitle', e?.error?.error || e?.message || '');
     } finally {
+      this.loadingService.hide();
       this.compositionSaving.set(false);
     }
   }
