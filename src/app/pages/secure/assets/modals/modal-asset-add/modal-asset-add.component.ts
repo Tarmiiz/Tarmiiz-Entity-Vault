@@ -28,6 +28,10 @@ interface ClassFormula {
   state: number;              // 1 Draft | 2 Active | 3 Retired
 }
 
+// 27 = Token Issuer on the on-chain `License Class` catalog. Named here for the same reason the
+// service-details page names it: a bare 27 in a filter is indistinguishable from a typo.
+const CLASS_TOKEN_ISSUER = 27;
+
 @Component({
   selector: 'app-modal-asset-add',
   templateUrl: './modal-asset-add.component.html',
@@ -601,7 +605,15 @@ export class ModalAssetAddComponent {
     if (data?.services) {
       this.services.set(
         data.services
-          .filter((s: any) => s.service_type === 1)
+          // 🔴 THE LICENCE, NOT `service_type`. Phase 28 dropped that field, so this read
+          // `undefined === 1` — false for EVERY service — and the Service dropdown was empty on a
+          // tenant whose service held an ACTIVE Token Issuer licence. Nothing errored: an empty
+          // <select> looks exactly like "you have no services yet".
+          //
+          // `license_class_ids` is the ACTIVE set only (Entity API `getServices`), so a suspended
+          // token-issuer licence correctly does NOT offer the service here — it could not host an
+          // asset anyway, and offering it would move the failure to the on-chain submit.
+          .filter((s: any) => (s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER))
           .map((s: any) => ({
             address: s.address,
             name: s.name,
