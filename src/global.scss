@@ -36,7 +36,44 @@
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css' layer(ionic-reset);
+/* 🔴 THE OS DARK PALETTE IS DELIBERATELY NOT IMPORTED. Removed 2026-09-06.
+   The line that stood here was:
+       palettes/dark.system.css  (imported with layer(ionic-reset))
+   — written WITHOUT the @import keyword on purpose: quoting it verbatim makes every
+     grep for a live dark-palette import match this comment instead.
+
+   IT MADE THE APP HALF DARK-MODE, AND THE HALF THAT FLIPPED WAS THE INVISIBLE ONE.
+   Measured chain, every link read from shipped code:
+     1. `dark.system.css` sets, under `@media(prefers-color-scheme: dark)`,
+        `:root.ios{--ion-text-color:#ffffff}` and `:root.md{...}`.
+        ⚠️ NOT under plain `:root` — a reader grepping `:root{--ion-text-color` finds
+        nothing and wrongly concludes this theory is dead. It needs Ionic's runtime mode
+        class, which `@ionic/core` adds: `documentElement.classList.add(mode)`.
+     2. `core.css` carries it on BODY, not on ion-content:
+        `body{background:var(--ion-background-color);color:var(--ion-text-color)}`.
+        That is why it reached every surface in the app, and why no single-file template
+        analysis could ever see the offending ancestor.
+     3. So on a dark-mode OS the body text became WHITE while every Tailwind `bg-white`
+        card, and every explicit `text-gray-*`, stayed light-mode. Anything that set no
+        colour of its own inherited white ON WHITE.
+
+   IT WAS NEVER CHOSEN. `git blame`: the two commented sibling palettes are untouched
+   `ionic start` scaffold from the root commit, and this line was last touched by
+   `827ea9e "css updates"`, which mechanically added `layer(ionic-reset)` to EVERY Ionic
+   import for a stated Tailwind-priority reason. A cascade-layer sweep, not a decision
+   about dark mode. Directory Search and Permissioning Admin have a global.scss and
+   import no palette at all — the affected apps kept the scaffold, they did not opt in.
+
+   ⚠️ REMOVING IT TAKES AWAY NO WORKING DARK MODE, because there was no dark mode: the
+   app was already light everywhere a colour was stated. Only the INHERITED layer flipped.
+   Ionic chrome (toolbars, menus, action sheets) now stays light for dark-OS users, which
+   is the design these apps are actually built to — white cards, `text-gray-*` bodies, and
+   a light Design Components reference throughout.
+
+   Symptom this caused four times: a table rendered its header and not its rows, reading
+   as "there is no data" — on the KYB beneficial-owners table, that is a confident wrong
+   answer on a compliance page. Do not re-add this import to get dark chrome; it would
+   restore the class, not a feature. */
 
 
 /* Global font + brand colors
