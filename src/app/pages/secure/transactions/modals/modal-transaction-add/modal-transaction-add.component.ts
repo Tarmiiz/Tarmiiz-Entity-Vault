@@ -6,6 +6,11 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ModalTransactionAddService, AddTransactionData } from './modal-transaction-add.service';
 import { ApiService } from '../../../../../shared/services/api.service';
 
+// A token issuer is a service HOLDING licence class 27 — Phase 28 retired `serviceType`, so
+// there is no byte that says so. Named once here, matching `modal-asset-add.component.ts`
+// rather than inventing a second spelling of the same fact.
+const CLASS_TOKEN_ISSUER = 27;
+
 @Component({
   selector: 'app-modal-transaction-add',
   templateUrl: './modal-transaction-add.component.html',
@@ -69,7 +74,16 @@ export class ModalTransactionAddComponent {
     if (data?.services) {
       this.services.set(
         data.services
-          .filter((s: any) => s.service_type === 1 && (s.state === 2 || s.state === '2'))
+          // ⚠️ WAS `s.service_type === 1` — RETIRED BY PHASE 28, so this read `undefined === 1`,
+          // was permanently false, and the service list came back EMPTY. The user reported it as
+          // "Add Transaction shows no assets", because the asset list only loads once a service
+          // is picked: the visible symptom was two steps downstream of the dead field, and it
+          // looked like missing DATA rather than a broken filter. Nothing threw, at any point.
+          //
+          // `license_class_ids` is the ACTIVE licence set from the Entity API's `getServices`,
+          // so a suspended licence correctly drops the service out of the list.
+          .filter((s: any) => (s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER)
+                           && (s.state === 2 || s.state === '2'))
           .map((s: any) => ({ address: s.address, name: s.name }))
       );
     }

@@ -218,9 +218,15 @@ export class ModalCreditDepositComponent {
       raw: v.note ? { note: v.note } : {},
     };
 
-    // The two branches are kept apart rather than folded into one ternary: their response
-    // shapes differ (only the combined verb carries `buyError`), and a union of the two loses
-    // that field — which is the one thing this handler must not drop.
+    // The two branches are kept apart rather than folded into one ternary: a union of their
+    // response shapes loses `buyError`, which is the one thing this handler must not drop.
+    //
+    // ⚠️ CORRECTED 2026-09-06: this used to say "only the combined verb carries `buyError`".
+    // That is no longer true. On a STRAIGHT-THROUGH service the plain `/credit/deposit` now
+    // PERFORMS a deposit-buy, so the `!buying` branch can carry `buyError` too — the deposit
+    // mined and the purchase did not. This code was already correct, because it forwards the
+    // field unconditionally; only the reasoning was stale, and a reader who trusted it would
+    // have concluded the plain branch could safely ignore it.
     this.loadingService.show(this.translate.instant(
       buying ? 'subscriptions.creditDepositModal.depositingAndBuying' : 'subscriptions.creditDepositModal.depositing'));
 
