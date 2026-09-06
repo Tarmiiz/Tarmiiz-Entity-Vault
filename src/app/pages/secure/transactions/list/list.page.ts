@@ -393,12 +393,22 @@ export class ListPage implements OnInit {
     }
 
     if (result.error) {
-      await this.alertService.show(this.translate.instant('transactions.alerts.failedTitle'), result.error);
+      // ⚠️ `hideCancel: true` (the 5th arg). This is INFORMATIONAL — the submission already
+      // happened, so there is nothing to cancel. The result of this dialog is not read, so
+      // Cancel resolved `false` into a value nobody looked at and execution continued
+      // identically: the button was INERT, but it advertised a choice that did not exist.
+      await this.alertService.show(this.translate.instant('transactions.alerts.failedTitle'),
+        result.error, 'OK', 'max-w-md', true);
       return;
     }
+    // ⚠️ Same: the transaction IS submitted by the time this renders. Cancel here was inert
+    // AND misleading — on a SUCCESS dialog it reads as "undo", which is the one thing it could
+    // never do. The tx hash below is why the container fix matters: it is the only actionable
+    // thing in the dialog and it must stay wrapped and fully selectable, never truncated.
     await this.alertService.show(
       this.translate.instant('transactions.alerts.submittedTitle', { type: typeLabel }),
-      this.translate.instant('transactions.alerts.submittedMessage') + (result.result?.transactionHash ? '\n\n' + this.translate.instant('transactions.alerts.txPrefix') + ' ' + result.result.transactionHash : '')
+      this.translate.instant('transactions.alerts.submittedMessage') + (result.result?.transactionHash ? '\n\n' + this.translate.instant('transactions.alerts.txPrefix') + ' ' + result.result.transactionHash : ''),
+      'OK', 'max-w-md', true
     );
     this.auditService.logView('transaction-add', { trxType: data.trxType, asset: data.asset, service: data.service, subscription: data.subscription, tokens: data.tokens });
     await this.load(true);

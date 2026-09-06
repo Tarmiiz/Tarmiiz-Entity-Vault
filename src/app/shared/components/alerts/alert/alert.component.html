@@ -7,11 +7,21 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+        <!-- 🔴 `min-w-0` IS THE OVERFLOW FIX, NOT `break-words` — which was already on the <p>
+             below and could not help. A flex item defaults to `min-width: auto`, so it refuses to
+             shrink below its content's intrinsic minimum. A 66-character transaction hash has no
+             break opportunity, so this column stayed as wide as the hash and pushed the text OUT
+             of the dialog. `overflow-wrap` never got the chance to apply, because the container
+             never narrowed enough to need it.
+             `flex-1` lets the column take the remaining width now that it is allowed to shrink. -->
+        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left min-w-0 flex-1">
           <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
             {{ alertService.title() }}
           </h3>
-          <div class="mt-2">
+          <!-- Scroll rather than clip, and rather than growing past the viewport. A reverted
+               chain call returns a long string whose TAIL is the informative part, so a fixed
+               height that cuts it off would hide the reason while looking like it showed it. -->
+          <div class="mt-2 max-h-[60vh] overflow-y-auto">
             <!-- ⚠️ `break-words`, NOT `break-all`. `break-all` breaks MID-WORD, so ordinary prose
        renders as "the venue is now SUSPENDED pending regulat / or review" — measured on the
        Phase 16 bind notice 2026-09-01. `overflow-wrap: break-word` still breaks an
