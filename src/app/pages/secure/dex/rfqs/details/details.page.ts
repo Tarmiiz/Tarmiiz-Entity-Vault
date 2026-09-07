@@ -143,7 +143,7 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   fmtAmount(n: number | null) {
     if (n === null || n === undefined) return '—';
-    return Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    return Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
   }
 
   expiresIn(): string {

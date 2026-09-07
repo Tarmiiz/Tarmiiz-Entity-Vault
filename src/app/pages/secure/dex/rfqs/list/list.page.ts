@@ -156,7 +156,7 @@ export class ListPage implements OnInit, OnDestroy {
     return q.requesterEntityName || (q.requester.slice(0, 10) + '…');
   }
 
-  fmtAmount(n: number) { return Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  fmtAmount(n: number) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
 
   /** Time left on the ONE clock every child quote inherits. */
   expiresIn(q: DexRfqRequest): string {

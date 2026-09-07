@@ -96,12 +96,12 @@ export class ListPage implements OnInit, OnDestroy {
   }
 
   fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString('en-US', { maximumFractionDigits: 0 }); }
   fmtTotal(amount: string, priceWei: string) {
     try {
       const p = Number(priceWei ?? 0);
       const a = Number(amount || '0');
-      return (a * p).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+      return (a * p).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
     } catch { return '0.00'; }
   }
 

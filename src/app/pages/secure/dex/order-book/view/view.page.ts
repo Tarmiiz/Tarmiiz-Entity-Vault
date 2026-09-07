@@ -111,7 +111,7 @@ export class ViewPage implements OnInit, OnDestroy {
   }
 
   fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString('en-US', { maximumFractionDigits: 0 }); }
 
   selectBuy(o: DexOrder) { this.selectedBuy.set(o.ref === this.selectedBuy() ? null : o.ref); }
   selectSell(o: DexOrder) { this.selectedSell.set(o.ref === this.selectedSell() ? null : o.ref); }

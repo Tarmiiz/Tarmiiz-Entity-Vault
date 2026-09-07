@@ -241,7 +241,7 @@ export class DetailsPage implements OnInit {
   // plugin write boundary) — dividing again here would render every amount as 0.
   formatCreditAmount(v: any): string {
     const n = Number(v ?? 0);
-    return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : '0';
+    return Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: 6 }) : '0';
   }
   liquidityModalOpen = signal(false);
   liquidityModalAction = signal<'inject' | 'withdraw'>('inject');

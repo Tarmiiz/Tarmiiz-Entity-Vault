@@ -147,7 +147,7 @@ export class ModalPlaceOrderComponent {
     const p = Number(this.priceText());
     const a = Number(this.amountText());
     if (!p || !a) return '—';
-    return (p * a).toLocaleString(undefined, { maximumFractionDigits: 6 });
+    return (p * a).toLocaleString('en-US', { maximumFractionDigits: 6 });
   });
 
   selectedListingCurrency = computed(() => this.selectedListing()?.assetCurrencyName || '');

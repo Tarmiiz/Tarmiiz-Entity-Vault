@@ -10,7 +10,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "check": "node scripts/check-loader-deadlock.js && node scripts/check-modal-render.js --self-test && node \"../../Services/Entity API/scripts/check-retired-fields.js\" --self-test && npm run check:alerts",
+    "check": "node scripts/check-loader-deadlock.js && node scripts/check-modal-render.js --self-test && node \"../../Services/Entity API/scripts/check-retired-fields.js\" --self-test && npm run check:alerts && node scripts/check-locale-pinning.js --self-test && node scripts/check-locale-pinning.js",
     "check:alerts": "node scripts/check-alert-cancel.js --self-test && node scripts/check-alert-cancel.js"
   },
   "private": true,

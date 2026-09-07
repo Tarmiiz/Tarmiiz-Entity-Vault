@@ -86,7 +86,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   setTab(t: 'info' | 'trades') { this.activeTab.set(t); }
 
   fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString('en-US', { maximumFractionDigits: 0 }); }
   fillPct(o: DexOrder | undefined): number {
     if (!o) return 0;
     const a = Number(o.amount || '0');

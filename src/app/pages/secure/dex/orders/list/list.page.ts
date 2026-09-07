@@ -126,7 +126,7 @@ export class ListPage implements OnInit, OnDestroy {
   }
 
   fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString('en-US', { maximumFractionDigits: 0 }); }
   fillPct(o: DexOrder): number {
     const a = Number(o.amount || '0');
     const f = Number(o.filled || '0');

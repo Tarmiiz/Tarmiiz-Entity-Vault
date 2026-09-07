@@ -198,7 +198,7 @@ export class ModalCreditTrxInfoComponent {
     doc.text('Amount', pad, y + 5);
     doc.setFontSize(11);
     doc.setTextColor(30, 30, 30);
-    doc.text(`${trx.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${trx.currencySymbol}`, valX, y + 5, { align: 'right' });
+    doc.text(`${trx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${trx.currencySymbol}`, valX, y + 5, { align: 'right' });
     y += 18;
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');

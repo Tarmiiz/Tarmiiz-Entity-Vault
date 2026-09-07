@@ -279,7 +279,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   goAsset(baseAsset: string) { this.router.navigate(['/authorized/dex/asset-listings/details/' + baseAsset]); }
 
   fmtPrice(v: string | number) { const n = Number(v ?? 0); return this.utils.formatPrice(Number.isFinite(n) ? n : 0); }
-  fmtAmount(n: string) { return Number(n || '0').toLocaleString(); }
+  fmtAmount(n: string) { return Number(n || '0').toLocaleString('en-US', { maximumFractionDigits: 0 }); }
 
   getStatusClass(s: number | undefined): string {
     switch (Number(s)) {
@@ -543,11 +543,33 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   feeLabel(a: any): string {
     const fc = a?.effective ?? a?.feeConfig ?? null;
-    // Bps is a raw integer; Fixed is a MONEY amount and must render at the tenant's
-    // configured precision, hence formatPrice rather than a bare interpolation.
+    /*
+        `buyFeeValue` is a DUAL-UNIT field: basis points under mode 1, **wei** under mode 2
+        (`blockchain.js:4684` — "Bps: 1-2000 (20% cap); Fixed: wei; None: 0"), and the API returns
+        it verbatim because a live-chain read carries the chain's units and the consumer converts.
+
+        🔴 THIS RENDERED THE WEI INTEGER — a 2.00 fee displayed as `2,000,000,000,000,000,000.00`.
+        The bug was not a missing helper but the WRONG one: `formatPrice` sets the tenant's decimal
+        precision and performs no unit conversion, so it formatted the wei beautifully and wrongly.
+        The comment here used to say "must render at the tenant's configured precision, hence
+        formatPrice" — correct about the intent and silent about the 1e18, which is what would have
+        talked a reviewer past it.
+
+        ⚠️ THE DIVISION MUST NOT REACH THE BPS BRANCH. The `mode === 1` fork is load-bearing: a
+        blanket `formatEther` turns `50 bps` into `0.00000000000000005 bps`.
+
+        ⓘ `Number()` on the formatted string is acceptable HERE and would not be on a value path.
+        `formatPrice` takes a number and rounds to `CURRENCY_DECIMALS` (default 6), so any digits a
+        double loses sit far below what is displayed. That is the opposite of `sellWithdraw`, where
+        the same conversion opened a withdrawal request for 367,000 wei more than the redeem
+        produced. **Display may round; a value that moves money may not.**
+    */
     const side = (mode: number, value: string) => {
       if (!mode) return '—';
-      return mode === 1 ? `${value} bps` : this.utils.formatPrice(Number(value));
+      // Matches `modal-service-fee-config.fromOnChain` — the modal that EDITS this same fee,
+      // in this same app. Without this they disagreed one screen apart: the table said 2e18
+      // while Edit fees said 2.
+      return mode === 1 ? `${value} bps` : this.utils.formatPrice(Number(ethers.formatEther(value)));
     };
     if (!fc) return '—';
     const buy  = side(Number(fc.buyFeeMode),  fc.buyFeeValue);

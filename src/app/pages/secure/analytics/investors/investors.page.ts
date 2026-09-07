@@ -85,7 +85,7 @@ export class InvestorsPage implements OnInit, OnDestroy {
               return [
                 this.translate.instant('analytics.investors.chart.tooltipSupply', { pct: ctx.parsed.x.toFixed(2) }),
                 this.translate.instant('analytics.investors.chart.tooltipHolders', { count: r.holderCount }),
-                this.translate.instant('analytics.investors.chart.tooltipTop10Balance', { balance: r.top10Balance.toLocaleString() }),
+                this.translate.instant('analytics.investors.chart.tooltipTop10Balance', { balance: r.top10Balance.toLocaleString('en-US', { maximumFractionDigits: 0 }) }),
               ];
             },
           },
