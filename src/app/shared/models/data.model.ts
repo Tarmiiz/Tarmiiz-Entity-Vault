@@ -1572,3 +1572,100 @@ export function approvalPolicyFromApi(r: any): ApprovalPolicyRow {
     license:          r.license ?? null,
   };
 }
+
+// ─── Liquidity coverage — the class-aware (λ) shortfall rows (Phase 31, 2026-09-08) ──────────
+//
+// Obligation = Σ over the ISSUER service's assets of λ × units outstanding × bid, where λ is the
+// redemption-coverage coefficient the asset's regulator set on its class formula (bps on chain,
+// 0..1 here). An asset whose λ is UNSET contributes nothing and marks the row `not-assessed` —
+// never assessed at λ = 1 by default, which would be a platform default by another name.
+
+export type CoverageStatus = 'shortfall' | 'not-assessed' | 'covered' | 'idle';
+
+/** One asset's line in a service's redemption-obligation decomposition. */
+export interface CoverageAssetRow {
+  asset: string;
+  name: string;
+  symbol: string;
+  assetClass: number;
+  formula: string | null;
+  formulaName: string | null;
+  /** No class formula mirrored for this asset — λ cannot be resolved at all. */
+  formulaMissing: boolean;
+  /** 0..1, or null when unset / invalid. */
+  lambda: number | null;
+  lambdaSet: boolean;
+  /** A stored value outside 0..10000 bps — treated as unset and flagged. */
+  lambdaInvalid: boolean;
+  /** TOKENS — plain integer (never `| money`). */
+  outstanding: number;
+  /** MONEY. */
+  bid: number;
+  priceTs: number | null;
+  /** MONEY — outstanding × bid, before λ. */
+  gross: number;
+  /** MONEY — λ × gross; null when λ is unset (NOT zero). */
+  contribution: number | null;
+}
+
+/** The per-(service, currency) coverage row shared by every Vault coverage surface. */
+export interface ServiceCoverageRow {
+  service: string;
+  serviceName: string;
+  currencyCode: number;
+  currencyAlpha: string;
+  currencyName: string;
+  /** Legacy alias of `currencyAlpha`, kept by the API so older templates compile. */
+  currency?: string;
+  liquidity: number;
+  obligation: number;
+  grossTotal: number;
+  shortfall: number;
+  /** null when the obligation is 0 (λ = 0 everywhere, or nothing assessed). */
+  coverageRatio: number | null;
+  inShortfall: boolean;
+  status: CoverageStatus;
+  tolerance: number | null;
+  toleranceIsSet: boolean;
+  assessedCount: number;
+  unsetCount: number;
+  invalidCount: number;
+  formulaMissingCount: number;
+  /** The row has an obligation but no live pool read landed for it. */
+  liquidityUnavailable?: boolean;
+  /** Reserved for the next window's on-chain decomposition. */
+  onChain: null;
+  assets: CoverageAssetRow[];
+}
+
+/** An asset with no `issuer_service` — reported, never folded into any pool. */
+export interface UnattributedAsset {
+  address: string;
+  name: string;
+  symbol: string;
+  currency_code: number | null;
+}
+
+/** `GET /services/:addr/liquidity` `balances[]` — a coverage row plus the live pool figures. */
+export interface ServiceLiquidityRow extends ServiceCoverageRow {
+  currencySymbol: string;
+  balance: number;
+  withheld: number;
+  available: number;
+}
+
+/**
+ * `GET /services/coverage` — one aggregate per service over its currency `breakdown[]`.
+ * `minRatio` / `worstCurrency` / `totalShortfall` pre-date λ; the counts are additive
+ * (Phase 31) and, when absent at the service level, are summed from the breakdown.
+ */
+export interface ServiceCoverageAggregate {
+  service: string;
+  minRatio: number | null;
+  worstCurrency: string | null;
+  totalShortfall: number;
+  status?: CoverageStatus;
+  assessedCount?: number;
+  unsetCount?: number;
+  breakdown: ServiceCoverageRow[];
+}

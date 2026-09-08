@@ -30,11 +30,37 @@ export class SocketService {
   /** Reactive connection state — true when socket is connected */
   readonly connected = signal(false);
 
-  async connect() {
-    if (this.socket?.connected) return;
+  /**
+   * 🔴 CONCURRENCY-SAFE. `connect()` is called un-awaited from TWO places that both run at
+   * login — `AuthService.login` and `AuthorizedLayoutComponent`'s constructor — and the old
+   * guard was `if (this.socket?.connected) return;` placed BEFORE an `await`. During that await
+   * `this.socket` was still null, so both callers passed the guard and TWO `io()` connections
+   * were created. The first was orphaned but stayed connected with its own `vault:updated`
+   * handler still pushing into the same Subject, and `disconnect()` only cleared the current
+   * reference — so every server broadcast was delivered TWICE, forever, and every listener did
+   * its work twice. Measured on the Granite tenant 2026-09-08: 14 CONNECT against 9 DISCONNECT.
+   *
+   * Two changes close it: the in-flight promise below, and testing `this.socket` rather than
+   * `this.socket?.connected` — socket.io reconnects on its own (`reconnection: true`), so an
+   * existing-but-disconnected socket must NOT be replaced with a second one.
+   */
+  private connecting: Promise<void> | null = null;
 
+  async connect(): Promise<void> {
+    if (this.socket) return;
+    if (this.connecting) return this.connecting;
+
+    this.connecting = this._connect().finally(() => { this.connecting = null; });
+    return this.connecting;
+  }
+
+  private async _connect(): Promise<void> {
     const token = await this.sessionService.getActiveToken();
     if (!token) return;
+
+    // Re-check after the await: `disconnect()` may have run while we were suspended, and a
+    // second caller may have been admitted before `connecting` was assigned on the first tick.
+    if (this.socket) return;
 
     this.socket = io(this.configService.get('socketURL'), {
       auth: { token },

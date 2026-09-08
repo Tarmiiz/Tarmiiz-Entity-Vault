@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from "../../../shared/components/header/header.component";
 import { SocketService } from '../../../shared/services/socket.service';
 
-import { AssetTransaction, CreditBalance, PendingApproval, Subscription, User } from '../../../shared/models/data.model';
+import { AssetTransaction, CoverageAssetRow, CoverageStatus, CreditBalance, PendingApproval, Subscription, UnattributedAsset, User } from '../../../shared/models/data.model';
 
 import { Subscription as RxSubscription } from 'rxjs';
 
@@ -21,6 +21,7 @@ import { ModalTransactionInfoComponent } from '../../../shared/components/modal-
 import { AuditService } from '../../../shared/services/audit.service';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { FeaturesService } from '../../../shared/services/features.service';
+import { CoverageAssetsTableComponent } from '../../../shared/components/coverage-assets-table/coverage-assets-table.component';
 
 interface StatCard {
   title: string;
@@ -62,24 +63,47 @@ interface TopAsset {
   currency: string;
 }
 
+// Phase 31 (λ): the per-currency tile is a ROLLUP of the service rows — obligation Σ, liquidity Σ,
+// shortfall = Σ row shortfall (pools are per service and not fungible, so `max(0, Σobl − Σliq)`
+// would hide a real gap), `unsetCount` Σ. Tile and table can no longer disagree. The API names
+// the alpha code `currencyAlpha`; `currency` is derived from it below for the tile bindings.
 interface LiquidityCoverageRow {
   currency: string;
+  currencyCode?: number;
+  currencyAlpha?: string;
   currencyName: string;
   obligation: number;
   liquidity: number;
   shortfall: number;
+  /** null when the obligation is 0 — every assessed λ is 0, or nothing is assessed yet. */
   coverageRatio: number | null;
+  assessedCount: number;
+  unsetCount: number;
+  services?: number;
+  servicesInShortfall?: number;
+  status?: CoverageStatus;
 }
 
 interface LiquidityCoverageByServiceRow {
   service: string;
   serviceName: string;
   currency: string;
+  currencyAlpha?: string;
   currencyName: string;
   obligation: number;
   liquidity: number;
   shortfall: number;
   coverageRatio: number | null;
+  status?: CoverageStatus;
+  assessedCount: number;
+  unsetCount: number;
+  invalidCount?: number;
+  formulaMissingCount?: number;
+  grossTotal?: number;
+  /** The row has an obligation but no live pool read landed for it. */
+  liquidityUnavailable?: boolean;
+  /** The per-asset decomposition rendered by the row expander. */
+  assets: CoverageAssetRow[];
 }
 
 interface DashboardSummary {
@@ -91,6 +115,8 @@ interface DashboardSummary {
   topAssets: TopAsset[];
   liquidityCoverage?: LiquidityCoverageRow[];
   liquidityCoverageByService?: LiquidityCoverageByServiceRow[];
+  /** Assets with no issuer service — shown as a warning, never folded into any pool. */
+  unattributedAssets?: UnattributedAsset[];
   shortfallTolerance?: number | null;
   shortfallToleranceIsSet?: boolean;
   /** OTC queues waiting on this tenant. Absent on an API that predates them. */
@@ -136,7 +162,8 @@ const ACTIVITY_INTERVALS: { value: string; label: string }[] = [
   imports: [
     CommonModule, FormsModule,
     HeaderComponent,
-    ModalTransactionInfoComponent, TranslatePipe, MoneyPipe]
+    ModalTransactionInfoComponent, TranslatePipe, MoneyPipe,
+    CoverageAssetsTableComponent]
 })
 export class DashboardPage implements OnInit {
   private apiService = inject(ApiService);
@@ -217,9 +244,62 @@ export class DashboardPage implements OnInit {
   otcRfqsToQuote           = computed(() => this.dashboardSummary()?.otc?.rfqsToQuote ?? 0);
   hasOtcWork = computed(() =>
     this.otcDealsAwaitingUs() > 0 || this.otcDealsAwaitingOurVenue() > 0 || this.otcRfqsToQuote() > 0);
-  liquidityCoverage = computed(() => (this.dashboardSummary()?.liquidityCoverage ?? []).filter(r => r.shortfall > 0));
-  liquidityCoverageByService = computed(() => (this.dashboardSummary()?.liquidityCoverageByService ?? []).filter(r => r.shortfall > 0));
-  hasLiquidityWarnings = computed(() => this.liquidityCoverage().length > 0 || this.liquidityCoverageByService().length > 0);
+  // Phase 31 (λ): a row surfaces when it has a shortfall OR an asset whose λ is UNSET — a total
+  // that silently omits an unassessed asset must never read healthy by omission. The λ counts
+  // are coerced so an older API that lacks them cannot hide a row behind `undefined > 0`.
+  liquidityCoverage = computed(() => (this.dashboardSummary()?.liquidityCoverage ?? [])
+    .map(r => ({
+      ...r,
+      currency:      r.currency ?? r.currencyAlpha ?? String(r.currencyCode ?? ''),
+      unsetCount:    Number(r.unsetCount ?? 0),
+      assessedCount: Number(r.assessedCount ?? 0),
+    }))
+    .filter(r => r.shortfall > 0 || r.unsetCount > 0));
+  liquidityCoverageByService = computed(() => (this.dashboardSummary()?.liquidityCoverageByService ?? [])
+    .map(r => ({
+      ...r,
+      currency:      r.currency ?? r.currencyAlpha ?? '',
+      unsetCount:    Number(r.unsetCount ?? 0),
+      assessedCount: Number(r.assessedCount ?? 0),
+      assets:        r.assets ?? [],
+    }))
+    .filter(r => r.shortfall > 0 || r.unsetCount > 0));
+  // Assets with a NULL issuer service — reported on the card, never folded into any pool.
+  unattributedAssets = computed(() => this.dashboardSummary()?.unattributedAssets ?? []);
+  hasLiquidityWarnings = computed(() =>
+    this.liquidityCoverage().length > 0 || this.liquidityCoverageByService().length > 0 || this.unattributedAssets().length > 0);
+
+  // Row expanders for the per-asset decomposition on the per-service table, keyed service|currency.
+  expandedCoverageRows = signal<Set<string>>(new Set());
+  coverageRowKey(row: { service: string; currency: string }): string {
+    return (row.service ?? '').toLowerCase() + '|' + row.currency;
+  }
+  isCoverageRowExpanded(row: { service: string; currency: string }): boolean {
+    return this.expandedCoverageRows().has(this.coverageRowKey(row));
+  }
+  toggleCoverageRow(row: { service: string; currency: string }, ev: Event) {
+    ev.stopPropagation();   // the row itself navigates to the service's Liquidity tab
+    const key = this.coverageRowKey(row);
+    this.expandedCoverageRows.update(s => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
+  }
+
+  /**
+   * THE one rule for a coverage cell (Phase 31), in precedence order:
+   *   `unsetCount > 0`                          ⇒ the "Not assessed" pill — the figure omits an
+   *                                               asset, so no percentage (and no "n/a") may
+   *                                               stand for the row; this outranks "n/a" because
+   *                                               "n/a" reads as "nothing owed", which is exactly
+   *                                               what an unassessed asset cannot vouch for;
+   *   `coverageRatio === null && assessedCount > 0` ⇒ "n/a" — every assessed λ is 0, the issuer
+   *                                               owes nothing on redemption (the API's `idle`);
+   *   a ratio                                   ⇒ the FLOORED percentage;
+   *   nothing assessed, nothing unset           ⇒ "—".
+   */
+  coverageCell(row: { coverageRatio: number | null; assessedCount?: number; unsetCount?: number }): 'na' | 'not-assessed' | 'pct' | 'none' {
+    if ((row.unsetCount ?? 0) > 0) return 'not-assessed';
+    if (row.coverageRatio === null) return (row.assessedCount ?? 0) > 0 ? 'na' : 'none';
+    return 'pct';
+  }
 
   // Regulator-set minimum shortfall that raises an alert (currency units); isSet=false ⇒ the
   // platform default floor. Shown on the card so a residual gap below it doesn't read as an
@@ -241,18 +321,23 @@ export class DashboardPage implements OnInit {
 
   // Coverage must never ROUND UP to 100% while the obligation is not actually covered —
   // 99.9766% displayed as "100.0%" is exactly what made a real 1.08 shortfall look like none.
-  // Floor to the one decimal we render, so only a true ratio >= 1 shows 100.0%.
+  // Floor to the one decimal we render, so only a true ratio >= 1 shows 100.0%. The FLOOR stays;
+  // the former CAP at 100 is gone (Phase 31) — a pool covering its obligation 1.9× is 191.2%,
+  // matching the Regulator Dashboard and this page's own hint, not a flat "100.0%".
   coveragePercent(ratio: number | null | undefined): number | null {
     if (ratio === null || ratio === undefined) return null;
-    const pct = ratio * 100;
-    return pct >= 100 ? 100 : Math.floor(pct * 10) / 10;
+    return Math.floor(ratio * 100 * 10) / 10;
   }
-  coverageTone(row: { obligation: number; coverageRatio: number | null }): 'good' | 'warn' | 'bad' | 'idle' {
-    if (row.obligation === 0) return 'idle';
-    const r = row.coverageRatio ?? 0;
-    if (r >= 1) return 'good';
-    if (r >= 0.5) return 'warn';
-    return 'bad';
+  // A shortfall's severity wins; otherwise an UNSET λ makes the row amber — the total omits that
+  // asset, so green would vouch for a figure nobody has. Unchanged for fully assessed rows.
+  coverageTone(row: { obligation: number; coverageRatio: number | null; unsetCount?: number }): 'good' | 'warn' | 'bad' | 'idle' {
+    if (row.obligation > 0) {
+      const r = row.coverageRatio ?? 0;
+      if (r < 0.5) return 'bad';
+      if (r < 1) return 'warn';
+    }
+    if ((row.unsetCount ?? 0) > 0) return 'warn';
+    return row.obligation === 0 ? 'idle' : 'good';
   }
   aumByAsset      = computed(() => {
     const code = this.selectedCurrency();

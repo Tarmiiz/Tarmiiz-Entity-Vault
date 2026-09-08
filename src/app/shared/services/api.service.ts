@@ -13,6 +13,7 @@ import {
   ClearingDelivery, ClearingHold, ClearingCycle, ClearingPosition, ClearingMember, ClearingAccount,
   DistributionAgreement, PrimaryTrade, DexOffering,
   DexDeal, DexDealRound, DexDealCounterparty, DexRfqRequest, DexRfqDealer,
+  ServiceCoverageAggregate, ServiceLiquidityRow,
 } from '../models/data.model';
 
 /**
@@ -1510,17 +1511,26 @@ export class ApiService {
     return data?.service ?? null;
   }
 
-  async vaultGetServicesCoverage() {
+  // Per-service coverage aggregate: `{ service, minRatio, worstCurrency, totalShortfall,
+  // breakdown: ServiceCoverageRow[] }` plus (Phase 31) the λ counts — `unsetCount` /
+  // `assessedCount` / `status` on the service and on every breakdown row, each of which
+  // carries its per-asset `assets[]` decomposition. Passed through; nothing is renamed.
+  async vaultGetServicesCoverage(): Promise<ServiceCoverageAggregate[]> {
     const data = await this.vaultGet('/services/coverage');
-    return data?.services ?? [];
+    return (data?.services ?? []) as ServiceCoverageAggregate[];
   }
 
   // Returns the whole payload — the caller needs the regulator's shortfall alert tolerance
-  // alongside the balances, not just the rows.
-  async vaultGetServiceLiquidity(address: string) {
+  // alongside the balances, not just the rows. Each balance row is a `ServiceCoverageRow`
+  // (+ `balance` / `withheld` / `available` / `currencySymbol`) — see data.model.ts.
+  async vaultGetServiceLiquidity(address: string): Promise<{
+    balances: ServiceLiquidityRow[];
+    shortfallTolerance: number | null;
+    shortfallToleranceIsSet: boolean;
+  }> {
     const data = await this.vaultGet('/services/' + address + '/liquidity');
     return {
-      balances:  data?.balances ?? [],
+      balances:  (data?.balances ?? []) as ServiceLiquidityRow[],
       shortfallTolerance:      data?.shortfallTolerance ?? null,
       shortfallToleranceIsSet: data?.shortfallToleranceIsSet ?? false,
     };

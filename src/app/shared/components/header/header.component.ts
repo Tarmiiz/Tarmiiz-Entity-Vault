@@ -1,11 +1,10 @@
-import { Component, Input, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 import {
   IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonButton, IonLabel } from '@ionic/angular/standalone';
 import { RouterLink, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
-import { SocketService } from '../../services/socket.service';
+import { UnreadMessagesService } from '../../services/unread-messages.service';
 import { AlertService } from '../alerts/alert/alert.service';
 import { MenuController } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
@@ -19,15 +18,23 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
     IonHeader, IonToolbar, IonButtons, IonTitle, IonMenuButton, IonButton, RouterLink, TranslatePipe
   ]
 })
-export class HeaderComponent  implements OnInit, OnDestroy {
+export class HeaderComponent  implements OnInit {
   @Input() title!: string;
   private authService = inject(AuthService);
   private apiService = inject(ApiService);
-  private socketService = inject(SocketService);
+  private unreadMessages = inject(UnreadMessagesService);
   private router = inject(Router);
-  private vaultSub?: Subscription;
 
-  unreadCount = signal(0);
+  /*
+      🔴 READ-ONLY VIEW OF THE SHARED COUNT — do NOT give this component its own
+      `vaultUpdated$` subscription or its own `connectInboxInfo()` call again.
+
+      It had both until 2026-09-08, and so did the sidebar badge, so every socket event cost two
+      identical fetches of the same endpoint. `app-header` is in 59 page templates and Ionic's
+      router outlet RETAINS visited pages, so those subscriptions accumulated across navigation
+      — one event fanned out to one request per retained page. See UnreadMessagesService.
+  */
+  unreadCount = this.unreadMessages.count;
 
   get userInfo() {
     return this.authService.userInfo;
@@ -57,20 +64,9 @@ export class HeaderComponent  implements OnInit, OnDestroy {
   constructor() {}
 
   ngOnInit() {
-    this.vaultSub = this.socketService.vaultUpdated$.subscribe((payload: any) => {
-      if (payload?.type === 'connect' || payload?.type === 'all') this.refreshUnread();
-    });
-    this.refreshUnread();
-  }
-
-  ngOnDestroy() { this.vaultSub?.unsubscribe(); }
-
-  async refreshUnread() {
-    try {
-      const res: any = await this.apiService.connectInboxInfo();
-      const n = Number(res?.inbox?.unread ?? 0);
-      this.unreadCount.set(isNaN(n) ? 0 : n);
-    } catch { /* ignore */ }
+    // Ask the shared service for a value; it debounces and de-duplicates, so N retained
+    // headers asking at once still produce exactly one request.
+    this.unreadMessages.refresh();
   }
 
   gotoMessages() {

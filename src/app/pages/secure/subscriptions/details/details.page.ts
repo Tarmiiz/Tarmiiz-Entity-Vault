@@ -316,7 +316,28 @@ export class DetailsPage implements OnInit {
     const trxData = await this.apiService.vaultGetSubscriptionCreditTransactions(this.subscriptionAddress, 1, 50);
     if (trxData?.transactions) {
       const mapped = trxData.transactions.map((t: any) => this.mapCreditTransaction(t));
-      mapped.sort((a: CreditTransaction, b: CreditTransaction) => b.startTime - a.startTime);
+      /*
+          ⚠️ THE `trxId` TIE-BREAK IS LOAD-BEARING — WITHOUT IT THE ROWS READ BACKWARDS.
+
+          `startTime` is SECOND resolution, and one buy writes THREE rows in a single
+          transaction: the service's Withhold, then the Transfer to the issuer, then the fee
+          leg. All three carry the same second, so sorting on `startTime` alone leaves them
+          tied — and `Array.prototype.sort` is STABLE, so a tie preserves the order they
+          ARRIVED in. This endpoint reads live chain (`creditEntityAccountTransactions`) and
+          returns ASCENDING trx_id, so the group rendered oldest-first inside a newest-first
+          list: the Withhold appeared ABOVE the transfers it funded, reading as though the
+          money was held AFTER it had already moved.
+
+          🔴 Sorting "correctly" by the visible field is exactly what hides this — the dates
+          are right, the arithmetic is right, and only the ORDER is wrong. Reported by a
+          reader of the Credit tab, not by any test.
+
+          ⚠️ Do not "simplify" this back to a single-key sort, and do not rely on the API:
+          the mirror query orders `start_time DESC, trx_id DESC`, but this tab does not use
+          the mirror.
+      */
+      mapped.sort((a: CreditTransaction, b: CreditTransaction) =>
+        (b.startTime - a.startTime) || (Number(b.trxId) - Number(a.trxId)));
       if (silent) {
         const prevIds = new Set(this.creditTransactions().map(t => t.trxId));
         this.flashCreditTrxIds(mapped.filter((t: CreditTransaction) => !prevIds.has(t.trxId)).map((t: CreditTransaction) => t.trxId));
@@ -1062,7 +1083,11 @@ export class DetailsPage implements OnInit {
 
     if (trxData?.transactions) {
       const mapped = trxData.transactions.map((t: any) => this.mapCreditTransaction(t));
-      mapped.sort((a: CreditTransaction, b: CreditTransaction) => b.startTime - a.startTime);
+      // Same tie-break as refreshCreditTransactions — see the note there. This is the INITIAL
+      // load, so omitting it here means the tab renders the withhold/transfer/fee triplet
+      // backwards until the first silent refresh happens to reorder it.
+      mapped.sort((a: CreditTransaction, b: CreditTransaction) =>
+        (b.startTime - a.startTime) || (Number(b.trxId) - Number(a.trxId)));
       this.creditTransactions.set(mapped);
     }
     this.creditTrxPage.set(1);

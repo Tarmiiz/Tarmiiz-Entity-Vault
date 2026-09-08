@@ -1,6 +1,8 @@
 import { Component, ChangeDetectionStrategy, Input, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { ethers } from 'ethers';
 
 import { ApiService } from '../../../../../shared/services/api.service';
 import { AuthService } from '../../../../../shared/services/auth.service';
@@ -48,6 +50,16 @@ const REQ_LEGAL_WRAPPER = 1;
 /** `AssetClassLib.CLASS_CUSTOM` — the only class whose issuer composes its own requirements. */
 const CLASS_CUSTOM = 11;
 
+/**
+ * Phase 31 — λ, the redemption-coverage coefficient, lives on the 4.9 class formula as the
+ * parameter `redemptionCoverage`. The key is a Solidity SHORT STRING (`bytes32("redemptionCoverage")`),
+ * so `ethers.encodeBytes32String` agrees with it byte for byte; the mirror stores the key as
+ * lowercased 0x hex and the value as a uint256 string in BASIS POINTS (0..10000).
+ */
+const LAMBDA_PARAM_KEY = 'redemptionCoverage';
+const LAMBDA_KEY_HEX = ethers.encodeBytes32String(LAMBDA_PARAM_KEY).toLowerCase();
+const LAMBDA_MAX_BPS = 10000;
+
 type StatusKind = 'satisfied' | 'missing' | 'untracked';
 
 @Component({
@@ -56,7 +68,7 @@ type StatusKind = 'satisfied' | 'missing' | 'untracked';
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    FormsModule, TranslatePipe,
+    FormsModule, DecimalPipe, TranslatePipe,
     RefreshButtonComponent, DocumentsTabComponent,
     ModalDocumentPickerComponent, ModalPartyPickerComponent,
   ],
@@ -184,7 +196,40 @@ export class ComplianceTabComponent implements OnChanges {
   /** The permitted A23 standards — the regulator half of A23, which had no display before. */
   formulaStandards() { return this.formula()?.standards ?? []; }
   /** R20 parameters — cadences, caps, thresholds the row model could never express. */
-  formulaParams() { return this.formula()?.params ?? []; }
+  formulaParams(): any[] { return this.formula()?.params ?? []; }
+
+  // ── Phase 31 — formula parameters, decoded ───────────────────────────────────
+  //
+  // The mirror row carries `param_key` as raw bytes32 hex and `param_value` as a uint256 string.
+  // Rendered raw, λ would appear as `0x7265…` the day it is set. A row exists ONLY after a
+  // `ParamSet` event, so "no row" IS "not set" — never print 0 for an absent parameter.
+
+  private isLambdaParam(p: any): boolean {
+    return String(p?.param_key ?? '').toLowerCase() === LAMBDA_KEY_HEX;
+  }
+  /** The decoded short-string name of a parameter key, or the raw hex when it is not one. */
+  paramKeyName(p: any): string {
+    const raw = String(p?.param_key ?? '');
+    try { return ethers.decodeBytes32String(raw) || raw; } catch { return raw; }
+  }
+  /** Every parameter EXCEPT λ, which has its own labelled line. */
+  otherParams(): any[] { return this.formulaParams().filter((p) => !this.isLambdaParam(p)); }
+
+  /** The λ row, if the regulator has set one. */
+  lambdaParam(): any | null { return this.formulaParams().find((p) => this.isLambdaParam(p)) ?? null; }
+  /** A stored value outside 0..10000 bps — shown as invalid, treated as not set. */
+  lambdaInvalid(): boolean {
+    const p = this.lambdaParam();
+    if (!p) return false;
+    const n = Number(p.param_value);
+    return !Number.isFinite(n) || n < 0 || n > LAMBDA_MAX_BPS;
+  }
+  /** λ as a PERCENT (bps ÷ 100), or null when unset / invalid. */
+  lambdaPercent(): number | null {
+    const p = this.lambdaParam();
+    if (!p || this.lambdaInvalid()) return null;
+    return Number(p.param_value) / 100;
+  }
 
   isCustomAsset() { return Number(this.registration()?.assetClass) === CLASS_CUSTOM; }
   isFrozen()      { return this.registration()?.compositionFrozen === true; }

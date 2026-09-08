@@ -15,6 +15,96 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-08
+
+#### Changed — liquidity shortfall surfaces restored, class-aware and issuer-keyed (Phase 31)
+
+Earlier today every shortfall / coverage surface in this app was wrapped in a disabled block
+("HIDDEN 2026-09-08 — pending revision"). That hide was **interim and lasted hours**: this is the
+revision, and every wrapper is gone — `rg "HIDDEN 2026-09-08|showShortfallUi"` returns nothing. The
+three details the hide had to touch beyond wrappers are reverted: the Liquidity tab's loading /
+empty rows span **9** again (the original 8 plus the new expander column), the `tinted` row binding
+is back (a shortfall — or now an unassessed λ — replaces the zebra striping with red / amber), and
+the services list calls `vaultGetServicesCoverage()` again alongside the services fetch.
+
+**What changed underneath (Entity API, same pass):** the obligation is no longer "every holder
+balance × bid grouped by the distributor". It is **Σ over the ISSUER service's assets of
+λ × units outstanding × bid**, where **λ is the redemption-coverage coefficient the asset's
+regulator sets on its 4.9 class formula** (`redemptionCoverage`, basis points). An equity or an
+environmental certificate is never redeemed for money, a money-market fund meets redemptions from
+its portfolio — the class-blind rule was raising alarms those issuers could never clear.
+
+- **Per-asset decomposition** — new shared
+  [coverage-assets-table](src/app/shared/components/coverage-assets-table/coverage-assets-table.component.ts)
+  (Asset · Symbol · Class · Formula · λ · Outstanding · Bid · Gross · Contribution), opened by a row
+  expander on the Home card's per-service table and on the service details Liquidity tab. Class
+  names come from the on-chain `Asset Class` catalog (one memoised fetch), not a local map.
+- **λ is shown per asset, and "Not set" when the regulator has not decided.** An unset λ
+  **contributes nothing** (contribution `—`, never 0) and marks the row **`not-assessed`** — an amber
+  pill in the Coverage cell and a footer line "not assessed — N asset(s) without a redemption
+  coefficient". It is deliberately NOT assessed at λ = 1: that would be a platform default by another
+  name. A stored value outside 0..10000 bps reads "invalid — treated as not set".
+- **Coverage "n/a" at λ = 0** — every assessed λ is 0, the issuer owes nothing on redemption
+  (the API's `idle`). One cell rule everywhere: unset λ ⇒ "Not assessed" (it outranks "n/a", since
+  "n/a" reads as *nothing owed*, which an unassessed asset cannot vouch for); no ratio with assessed
+  assets ⇒ "n/a"; otherwise the floored percentage.
+- **The per-currency tile is now a ROLLUP of the per-service table** — obligation Σ, liquidity Σ,
+  shortfall = Σ row shortfall (pools are per service and not fungible), `unsetCount` Σ. The two
+  halves of one card can no longer disagree; a tile gains the "not assessed — N asset(s)" line.
+- **Assets with no issuer service** are listed under the card as a warning ("N asset(s) with no
+  issuer service — not attributed to any pool"), never folded into any pool.
+- **The 100% cap is dropped, the FLOOR stays** — `coveragePercent` on Home, the services list and
+  the service details now all floor to one decimal and never cap, so a pool covering its obligation
+  1.9× reads **191.2%**, matching the Regulator Dashboard and this tab's own hint. Resolves the
+  Vault-vs-Dashboard entry in [BUGS.md](../../../BUGS.md#L632). The services list previously
+  ROUNDED (`minRatio * 100 | number:'1.1-1'`), so 99.97% read "100.0%" there too — now floored.
+- **Compliance tab decodes formula parameter keys** — `param_key` was rendered as raw bytes32 hex,
+  so λ would have appeared as `0x7265…` the day it was set. Keys decode via
+  `ethers.decodeBytes32String` (hex fallback); λ has its own always-present line, "Redemption
+  coverage (λ)" as a percent or an amber "Not set" — an absent row is *not set*, never 0.
+- **Models / API service**: `CoverageAssetRow`, `ServiceCoverageRow`, `ServiceLiquidityRow`,
+  `ServiceCoverageAggregate`, `UnattributedAsset` in `data.model.ts`; `vaultGetServicesCoverage` /
+  `vaultGetServiceLiquidity` typed, no path changes. The λ counts are coerced to numbers client-side
+  so an API that omits them cannot hide a row.
+- **i18n (en + ar)** — `dashboard.liquidity.{notAssessed, notAssessedPill, na, showAssets,
+  hideAssets, lambdaNotSet, lambdaInvalid, formulaMissing, unattributed, breakdown.*}`,
+  `services.table.notAssessed`, `assets.details.compliance.{paramRedemptionCoverage, paramNotSet,
+  paramInvalid}`; `services.details.liquidity.helpText` rewritten to the λ formula.
+
+Not changed here: `dashboard.liquidity.subtitle` still reads "if all holders redeemed now", which
+under λ is only true at λ = 1 — flagged for a copy decision rather than reworded unasked.
+
+#### Fixed — an idle screen issued 451 requests per second and exhausted the API's rate limit
+
+Reported as "the Entity API broke" while attaching documents to an asset. The uploads had all
+succeeded; what failed was everything after them, with a 429 the API never logged. Measured on the
+Granite tenant: **451 requests in one second**, 140 of them to `/connect/inbox`, 2,344 in twenty
+minutes, **with no user interaction** — enough to burn the 10,000-per-15-minutes ceiling in about
+22 seconds. Peak after the fix: **20/s**.
+
+⚠️ **The endpoint was never polled.** There is no timer and never was — every call came from a
+`vault:updated` socket handler. The bug was fan-out, so "poll less" would have fixed nothing.
+
+- **New [shared/services/unread-messages.service.ts](src/app/shared/services/unread-messages.service.ts)** — the
+  one owner of the unread badge count: a single socket subscription, an in-flight guard, and a
+  400 ms trailing debounce. The header badge and the sidebar badge each held their own
+  subscription and each called `connectInboxInfo()` on every event, so one broadcast always cost
+  two identical fetches of the same endpoint. Both now read its `count` signal; neither fetches.
+  Templates are unchanged.
+- **[authorized-layout.component.ts](src/app/shared/layouts/authorized-layout/authorized-layout.component.ts)
+  gained `ngOnDestroy`.** It made three subscriptions and tore down none. `SocketService` is
+  `providedIn: 'root'` and the login page lives outside this layout, so every logout→login in one
+  tab stacked a new layout's subscriptions on the previous one's — after k cycles a single event
+  fired k badge refreshes.
+- **[socket.service.ts](src/app/shared/services/socket.service.ts) — the duplicate-socket race.**
+  `connect()` guarded on `this.socket?.connected` *before* an `await`, and is called un-awaited
+  from both `AuthService.login` and the layout constructor. Both passed the guard while
+  `this.socket` was still null, creating two connections; the orphan stayed connected with its own
+  handler pushing into the same Subject, so **every broadcast was delivered twice**. Evidence: 14
+  `CONNECT` against 9 `DISCONNECT`. Now an in-flight promise plus a `this.socket` (not
+  `.connected`) test — socket.io reconnects on its own, so an existing-but-disconnected socket
+  must not be replaced.
+
 ### 2026-09-06
 
 #### Added — Function permissions, under Licenses on the service detail page

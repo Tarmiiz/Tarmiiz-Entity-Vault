@@ -21,7 +21,7 @@ import { UtilsService } from '../../../../shared/services/utils.service';
 import { ModalServiceAddService } from '../modals/modal-service-add/modal-service-add.service';
 import { ModalServiceAddComponent } from '../modals/modal-service-add/modal-service-add.component';
 
-import { Service, User } from '../../../../shared/models/data.model';
+import { Service, ServiceCoverageAggregate, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
@@ -67,7 +67,10 @@ export class ListPage implements OnInit {
   servicesCount = 0
   services = signal<Service[]>([]);
   servicesSearchTerm = signal('');
-  coverageByService = signal<Record<string, { minRatio: number | null; worstCurrency: string | null; totalShortfall: number; breakdown: { currency: string; obligation: number; liquidity: number; shortfall: number; coverageRatio: number | null }[] }>>({});
+  // Per-service coverage aggregate (Phase 31 — λ). `unsetCount` / `assessedCount` are always
+  // NUMBERS here: `listServices` sums them from the currency breakdown when the API omits the
+  // service-level totals, so the "Not assessed" pill can never be hidden by a missing field.
+  coverageByService = signal<Record<string, ServiceCoverageAggregate & { unsetCount: number; assessedCount: number }>>({});
 
   coverageFor(addr: string) {
     return this.coverageByService()[addr?.toLowerCase()] ?? null;
@@ -77,6 +80,23 @@ export class ListPage implements OnInit {
     if (ratio >= 1) return 'good';
     if (ratio >= 0.5) return 'warn';
     return 'bad';
+  }
+  // Floored to the one decimal rendered, never capped — 99.97% must not read "100.0%" while a
+  // shortfall exists, and 191.2% is a real figure (matches the dashboard + service detail).
+  coveragePercent(ratio: number | null | undefined): number | null {
+    if (ratio === null || ratio === undefined) return null;
+    return Math.floor(ratio * 100 * 10) / 10;
+  }
+  /**
+   * The one coverage-cell rule, over the service aggregate's WORST currency (`minRatio`):
+   * any unset λ ⇒ "Not assessed" (outranks "n/a" — the total omits an asset, so nothing may
+   * vouch for it); no ratio with assessed assets ⇒ "n/a" (every λ is 0); a ratio ⇒ the floored
+   * percentage; otherwise "—".
+   */
+  coverageCell(cov: { minRatio: number | null; assessedCount: number; unsetCount: number }): 'na' | 'not-assessed' | 'pct' | 'none' {
+    if (cov.unsetCount > 0) return 'not-assessed';
+    if (cov.minRatio === null) return cov.assessedCount > 0 ? 'na' : 'none';
+    return 'pct';
   }
 
   filterState = signal<string>('');
@@ -211,14 +231,21 @@ export class ListPage implements OnInit {
     try {
       const [result, coverage] = await Promise.all([
         this.apiService.vaultGetServices(0, 500),
-        this.apiService.vaultGetServicesCoverage().catch(() => []),
+        this.apiService.vaultGetServicesCoverage().catch(() => [] as ServiceCoverageAggregate[]),
       ]);
       if (result) {
         this.servicesCount = result.count;
         this.services.set(result.services.map((s: any) => this.mapVaultService(s)));
       }
-      const cov: Record<string, any> = {};
-      for (const c of (coverage || [])) cov[(c.service || '').toLowerCase()] = c;
+      const cov: Record<string, ServiceCoverageAggregate & { unsetCount: number; assessedCount: number }> = {};
+      for (const c of (coverage || [])) {
+        const rows = c.breakdown ?? [];
+        cov[(c.service || '').toLowerCase()] = {
+          ...c,
+          unsetCount:    Number(c.unsetCount    ?? rows.reduce((s, b) => s + Number(b.unsetCount    ?? 0), 0)),
+          assessedCount: Number(c.assessedCount ?? rows.reduce((s, b) => s + Number(b.assessedCount ?? 0), 0)),
+        };
+      }
       this.coverageByService.set(cov);
     } finally {
       if (!silent) this.loadingService.hide();

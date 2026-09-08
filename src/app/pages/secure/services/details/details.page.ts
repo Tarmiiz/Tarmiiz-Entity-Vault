@@ -16,7 +16,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
-import { Asset, AssetTransaction, ContactInfo, Service, Subscription, User } from '../../../../shared/models/data.model';
+import { Asset, AssetTransaction, ContactInfo, Service, ServiceLiquidityRow, Subscription, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
@@ -50,6 +50,7 @@ import { ModalImageAddService } from '../../../../shared/components/modal-image-
 import { ModalImageAddComponent } from '../../../../shared/components/modal-image-add/modal-image-add.component';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
+import { CoverageAssetsTableComponent } from '../../../../shared/components/coverage-assets-table/coverage-assets-table.component';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 import { ServiceLicense, licenseMeaning, licenseStateClass, licenseStateName } from '../../../../shared/utils/license.utils';
 
@@ -89,7 +90,7 @@ export interface MediaIndex {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [RefreshButtonComponent, 
+  imports: [RefreshButtonComponent, CoverageAssetsTableComponent,
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
@@ -185,7 +186,33 @@ export class DetailsPage implements OnInit {
     return !!(c.email || c.phone || c.website || c.address);
   });
 
-  liquidityBalances = signal<{ currencyCode: number; currencyName: string; currencySymbol: string; currencyAlpha?: string; balance: number; withheld: number; available: number; obligation: number; shortfall: number; coverageRatio: number | null }[]>([]);
+  // One row per currency: the live pool (balance / withheld / available) plus the Phase 31
+  // coverage row — obligation = Σ λ × outstanding × bid over this service's issued assets,
+  // `assets[]` being that decomposition, and `unsetCount` / `assessedCount` / `status` the λ
+  // bookkeeping the Coverage cell is rendered from.
+  liquidityBalances = signal<ServiceLiquidityRow[]>([]);
+
+  // Row expanders for the per-asset decomposition, keyed by currency code.
+  expandedLiquidityRows = signal<Set<number>>(new Set());
+  isLiquidityRowExpanded(row: { currencyCode: number }): boolean {
+    return this.expandedLiquidityRows().has(Number(row.currencyCode));
+  }
+  toggleLiquidityRow(row: { currencyCode: number }) {
+    const key = Number(row.currencyCode);
+    this.expandedLiquidityRows.update(s => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
+  }
+
+  /**
+   * The one coverage-cell rule (Phase 31), in precedence order: any unset λ ⇒ "Not assessed"
+   * (it outranks "n/a" — the figure omits an asset, so nothing may vouch for the row); no ratio
+   * with assessed assets ⇒ "n/a" (every λ is 0 — no issuer redemption liability); a ratio ⇒ the
+   * floored percentage; nothing assessed and nothing unset ⇒ "—".
+   */
+  coverageCell(row: { coverageRatio: number | null; assessedCount?: number; unsetCount?: number }): 'na' | 'not-assessed' | 'pct' | 'none' {
+    if ((row.unsetCount ?? 0) > 0) return 'not-assessed';
+    if (row.coverageRatio === null) return (row.assessedCount ?? 0) > 0 ? 'na' : 'none';
+    return 'pct';
+  }
 
   // Regulator-set minimum shortfall that raises an alert (currency units). isSet=false ⇒ the
   // platform default floor applies. A shortfall at or below it is real but not alertable, so the
@@ -208,18 +235,23 @@ export class DetailsPage implements OnInit {
 
   // Coverage must never ROUND UP to 100% while the obligation is not actually covered —
   // 99.9766% displayed as "100.0%" is what made a real 1.08 shortfall look like none.
-  // Floor to the one decimal we render, so only a true ratio >= 1 shows 100.0%.
+  // Floor to the one decimal we render, so only a true ratio >= 1 shows 100.0%. The FLOOR stays;
+  // the former CAP at 100 is gone (Phase 31) — a pool covering its obligation 1.9× reads 191.2%,
+  // matching the Regulator Dashboard and this tab's own hint, not a flat "100.0%".
   coveragePercent(ratio: number | null | undefined): number | null {
     if (ratio === null || ratio === undefined) return null;
-    const pct = ratio * 100;
-    return pct >= 100 ? 100 : Math.floor(pct * 10) / 10;
+    return Math.floor(ratio * 100 * 10) / 10;
   }
 
-  liquidityCoverageTone(ratio: number | null | undefined): 'good' | 'warn' | 'bad' | 'idle' {
-    if (ratio === null || ratio === undefined) return 'idle';
-    if (ratio >= 1) return 'good';
-    if (ratio >= 0.5) return 'warn';
-    return 'bad';
+  // A shortfall's severity wins; otherwise an UNSET λ makes the row amber — the total omits that
+  // asset, so green would vouch for a figure nobody has. Unchanged for fully assessed rows.
+  liquidityCoverageTone(ratio: number | null | undefined, unsetCount = 0): 'good' | 'warn' | 'bad' | 'idle' {
+    if (ratio !== null && ratio !== undefined) {
+      if (ratio < 0.5) return 'bad';
+      if (ratio < 1) return 'warn';
+    }
+    if (unsetCount > 0) return 'warn';
+    return (ratio === null || ratio === undefined) ? 'idle' : 'good';
   }
   liquidityLoading = signal(false);
   // Liquidity change history (plugin-mirrored credit ledger, origin 3=inject / 4=withdraw).

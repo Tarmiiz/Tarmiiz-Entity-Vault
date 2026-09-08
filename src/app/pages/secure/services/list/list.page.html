@@ -120,19 +120,32 @@
                           @if(!isServiceProvider){
                             <td class="px-6 py-2">
                               @let cov = coverageFor(service.address);
-                              @if (cov && cov.minRatio !== null) {
-                                @let tone = coverageTone(cov.minRatio);
-                                <div class="flex items-center gap-1.5">
-                                  <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
-                                    [class.bg-green-100]="tone === 'good'"   [class.text-green-800]="tone === 'good'"
-                                    [class.bg-amber-100]="tone === 'warn'"  [class.text-amber-800]="tone === 'warn'"
-                                    [class.bg-red-100]="tone === 'bad'"     [class.text-red-800]="tone === 'bad'">
-                                    {{ (cov.minRatio * 100) | number:'1.1-1' }}%
-                                  </span>
-                                  @if (cov.worstCurrency) { <span class="text-[10px] text-gray-500">{{ cov.worstCurrency }}</span> }
-                                </div>
-                              } @else {
+                              @if (!cov) {
                                 <span class="text-gray-300">—</span>
+                              } @else {
+                                @switch (coverageCell(cov)) {
+                                  @case ('not-assessed') {
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">{{ 'services.table.notAssessed' | translate }}</span>
+                                  }
+                                  @case ('na') {
+                                    <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.na' | translate }}</span>
+                                  }
+                                  @case ('pct') {
+                                    @let tone = coverageTone(cov.minRatio);
+                                    <div class="flex items-center gap-1.5">
+                                      <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                                        [class.bg-green-100]="tone === 'good'"   [class.text-green-800]="tone === 'good'"
+                                        [class.bg-amber-100]="tone === 'warn'"  [class.text-amber-800]="tone === 'warn'"
+                                        [class.bg-red-100]="tone === 'bad'"     [class.text-red-800]="tone === 'bad'">
+                                        {{ coveragePercent(cov.minRatio) | number:'1.1-1' }}%
+                                      </span>
+                                      @if (cov.worstCurrency) { <span class="text-[10px] text-gray-500">{{ cov.worstCurrency }}</span> }
+                                    </div>
+                                  }
+                                  @default {
+                                    <span class="text-gray-300">—</span>
+                                  }
+                                }
                               }
                             </td>
                             <td class="px-6 py-2 text-right font-mono">

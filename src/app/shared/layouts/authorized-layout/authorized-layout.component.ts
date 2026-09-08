@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Subscription } from 'rxjs';
 import {
   IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonFooter, IonToolbar,
   IonContent, IonList, IonItem, IonLabel,
@@ -11,6 +12,7 @@ import { LanguageService } from '../../services/language.service';
 import { SocketService } from '../../services/socket.service';
 import { FeaturesService } from '../../services/features.service';
 import { ApiService } from '../../services/api.service';
+import { UnreadMessagesService } from '../../services/unread-messages.service';
 import { Entity, User } from '../../models/data.model';
 import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/modal-new-thread/modal-new-thread.component";
 
@@ -37,10 +39,11 @@ import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/m
     ModalNewThreadComponent,
   ],
 })
-export class AuthorizedLayoutComponent {
+export class AuthorizedLayoutComponent implements OnDestroy {
   private authService = inject(AuthService);
   private socketService = inject(SocketService);
   private apiService = inject(ApiService);
+  private unreadMessages = inject(UnreadMessagesService);
   private menuController = inject(MenuController);
   private languageService = inject(LanguageService);
   features = inject(FeaturesService);
@@ -75,22 +78,42 @@ export class AuthorizedLayoutComponent {
   toggleUserManagement() { this.userManagementExpanded.update(v => !v); }
 
   pendingApprovalsCount = signal(0);
-  unreadMessagesCount = signal(0);
+
+  /*
+      Read-only view of the shared count — the inbox subscription and fetch that used to live
+      here are gone. They duplicated the header badge's identical request on every socket event.
+  */
+  unreadMessagesCount = this.unreadMessages.count;
+
+  /*
+      🔴 EVERY SUBSCRIPTION MADE HERE MUST BE TORN DOWN IN `ngOnDestroy`.
+
+      This component had THREE subscriptions and no `ngOnDestroy` at all until 2026-09-08.
+      `SocketService` is `providedIn: 'root'`, so its Subjects outlive the component, and the
+      login page lives OUTSIDE this layout — so every logout→login in the same tab built a new
+      layout whose subscriptions stacked on top of the previous one's. After k login cycles a
+      single `vault:updated` fired k badge refreshes. That is half of the measured 451 req/s.
+  */
+  private subs: Subscription[] = [];
 
   constructor() {
-    this.socketService.connect();
-    this.socketService.approvalsCreated$.subscribe(() => this.refreshPendingCount());
-    this.socketService.approvalsDecided$.subscribe(() => this.refreshPendingCount());
-    // Refresh the unread-messages badge on any Connect update (new inbound
-    // message, or a message marked read elsewhere) — mirrors the messages list page.
-    this.socketService.vaultUpdated$.subscribe(p => {
-      if (p.type === 'connect' || p.type === 'all') this.refreshUnreadMessages();
-    });
+    // Not awaited by design (a constructor cannot await) — SocketService itself guards against
+    // the concurrent-call race that this and AuthService.login used to create between them.
+    void this.socketService.connect();
+    this.subs.push(
+      this.socketService.approvalsCreated$.subscribe(() => this.refreshPendingCount()),
+      this.socketService.approvalsDecided$.subscribe(() => this.refreshPendingCount()),
+    );
+  }
+
+  ngOnDestroy() {
+    for (const s of this.subs) s.unsubscribe();
+    this.subs = [];
   }
 
   ionViewWillEnter() {
     this.refreshPendingCount();
-    this.refreshUnreadMessages();
+    this.unreadMessages.refresh();
   }
 
   private async refreshPendingCount() {
@@ -104,18 +127,6 @@ export class AuthorizedLayoutComponent {
     } catch { /* swallow */ }
   }
 
-  private async refreshUnreadMessages() {
-    const u = this.userInfo;
-    if (!u) return;
-    // Only poll when the Messages module is actually visible to this user — a
-    // Security officer without the per-user grant would otherwise 403 (swallowed).
-    if (!this.features.menuEnabled('messages')) { this.unreadMessagesCount.set(0); return; }
-    try {
-      const res: any = await this.apiService.connectInboxInfo();
-      this.unreadMessagesCount.set(Number(res?.inbox?.unread ?? 0));
-    } catch { /* swallow */ }
-  }
-  
   async closeMenuOnMobile() {
     const splitPane = document.querySelector('ion-split-pane');
     const isDesktop = splitPane?.classList.contains('split-pane-visible');

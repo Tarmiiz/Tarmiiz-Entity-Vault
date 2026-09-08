@@ -85,7 +85,9 @@
         </div>
       </div>
 
-      <!-- Liquidity vs Redemption Obligation (only shown when there's a shortfall) -->
+      <!-- Liquidity vs Redemption Obligation — shown when a row has a shortfall, an asset whose λ
+           is not set, or an asset with no issuer service (Phase 31: obligation = Σ λ × outstanding
+           × bid keyed to the ISSUER service; the tile is a rollup of the table). -->
       @if (hasLiquidityWarnings()) {
         <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-6 badges">
           <div class="flex items-baseline justify-between mb-3">
@@ -118,15 +120,24 @@
                 [class.bg-gray-50]="tone === 'idle'">
                 <div class="flex items-baseline justify-between mb-2">
                   <span class="badge-currency">{{ row.currency }}</span>
-                  @if (row.coverageRatio !== null) {
-                    <span class="text-xs font-semibold"
-                      [class.text-green-700]="tone === 'good'"
-                      [class.text-amber-700]="tone === 'warn'"
-                      [class.text-red-700]="tone === 'bad'">
-                      {{ coveragePercent(row.coverageRatio) | number:'1.1-1' }}% {{ 'dashboard.liquidity.covered' | translate }}
-                    </span>
-                  } @else {
-                    <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.noObligation' | translate }}</span>
+                  @switch (coverageCell(row)) {
+                    @case ('not-assessed') {
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800">{{ 'dashboard.liquidity.notAssessedPill' | translate }}</span>
+                    }
+                    @case ('na') {
+                      <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.na' | translate }}</span>
+                    }
+                    @case ('pct') {
+                      <span class="text-xs font-semibold"
+                        [class.text-green-700]="tone === 'good'"
+                        [class.text-amber-700]="tone === 'warn'"
+                        [class.text-red-700]="tone === 'bad'">
+                        {{ coveragePercent(row.coverageRatio) | number:'1.1-1' }}% {{ 'dashboard.liquidity.covered' | translate }}
+                      </span>
+                    }
+                    @default {
+                      <span class="text-xs text-gray-400">{{ 'dashboard.liquidity.noObligation' | translate }}</span>
+                    }
                   }
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-xs">
@@ -151,6 +162,9 @@
                     }
                   </p>
                 }
+                @if (row.unsetCount > 0) {
+                  <p class="mt-1 text-xs font-medium text-amber-700">{{ 'dashboard.liquidity.notAssessed' | translate:{ count: row.unsetCount } }}</p>
+                }
                 <div class="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden">
                   <div class="h-full rounded-full"
                     [class.bg-green-500]="tone === 'good'"
@@ -169,6 +183,7 @@
               <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                   <tr>
+                    <th class="px-3 py-2 w-8"></th>
                     <th class="px-3 py-2">{{ 'dashboard.table.service' | translate }}</th>
                     <th class="px-3 py-2">{{ 'dashboard.currencyLabel' | translate }}</th>
                     <th class="px-3 py-2 text-right">{{ 'dashboard.liquidity.obligation' | translate }}</th>
@@ -180,10 +195,23 @@
                 <tbody>
                   @for (row of liquidityCoverageByService(); track row.service + '|' + row.currency) {
                     @let tone = coverageTone(row);
+                    @let expanded = isCoverageRowExpanded(row);
                     <tr class="border-b hover:bg-gray-50 cursor-pointer"
                       [class.bg-red-50]="tone === 'bad'"
                       [class.bg-amber-50]="tone === 'warn'"
                       (click)="goToServiceLiquidity(row.service)">
+                      <!-- Expander — the per-asset decomposition. Stops propagation: the row navigates. -->
+                      <td class="px-3 py-2">
+                        <button type="button" (click)="toggleCoverageRow(row, $event)"
+                          class="p-0.5 rounded text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                          [attr.aria-expanded]="expanded"
+                          [title]="(expanded ? 'dashboard.liquidity.hideAssets' : 'dashboard.liquidity.showAssets') | translate">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform rtl:-scale-x-100" [class.rotate-90]="expanded"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                          </svg>
+                        </button>
+                      </td>
                       <td class="px-3 py-2 font-medium text-gray-800">{{ row.serviceName }}</td>
                       <td class="px-3 py-2"><span class="badge-currency">{{ row.currency }}</span></td>
                       <td class="px-3 py-2 text-right font-mono">{{ row.obligation | money }}</td>
@@ -206,13 +234,39 @@
                         [class.text-amber-700]="tone === 'warn'"
                         [class.text-red-700]="tone === 'bad'"
                         [class.text-gray-400]="tone === 'idle'">
-                        @if (row.coverageRatio !== null) { {{ coveragePercent(row.coverageRatio) | number:'1.1-1' }}% } @else { {{ 'common.notSet' | translate }} }
+                        @switch (coverageCell(row)) {
+                          @case ('not-assessed') {
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800 font-sans">{{ 'dashboard.liquidity.notAssessedPill' | translate }}</span>
+                          }
+                          @case ('na') { <span class="text-gray-400 font-normal">{{ 'dashboard.liquidity.na' | translate }}</span> }
+                          @case ('pct') { {{ coveragePercent(row.coverageRatio) | number:'1.1-1' }}% }
+                          @default { {{ 'common.notSet' | translate }} }
+                        }
                       </td>
                     </tr>
+                    @if (expanded) {
+                      <tr class="bg-gray-50 border-b">
+                        <td colspan="7" class="px-3 py-2">
+                          <app-coverage-assets-table [assets]="row.assets" [unsetCount]="row.unsetCount" />
+                        </td>
+                      </tr>
+                    }
                   }
                 </tbody>
               </table>
             </div>
+          }
+
+          <!-- Assets with no issuer service: reported, never folded into any pool. -->
+          @if (unattributedAssets().length > 0) {
+            <p class="mt-3 text-xs font-medium text-amber-700">
+              {{ 'dashboard.liquidity.unattributed' | translate:{ count: unattributedAssets().length } }}
+              <span class="font-normal text-gray-500">
+                @for (a of unattributedAssets(); track a.address; let last = $last) {
+                  {{ a.name || a.address }}@if (a.symbol) { <span class="badge-symbol ltr:ml-1 rtl:mr-1">{{ a.symbol }}</span> }@if (!last) {, }
+                }
+              </span>
+            </p>
           }
         </div>
       }

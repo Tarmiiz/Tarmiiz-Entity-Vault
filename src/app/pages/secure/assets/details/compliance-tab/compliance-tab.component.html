@@ -108,10 +108,23 @@
                     <span class="text-gray-800 ltr:text-right rtl:text-left ltr:ml-4 rtl:mr-4">{{ formulaStandards().join(', ') }}</span>
                   </div>
                 }
-                @for (p of formulaParams(); track p.param_key) {
+                <!-- λ — the redemption-coverage coefficient (Phase 31). Always shown: an absent
+                     row is "Not set" (a row exists only after a ParamSet event), never 0. It is
+                     what the Liquidity Shortfall card weighs this asset's outstanding units by. -->
+                <div class="flex justify-between">
+                  <span class="text-gray-500">{{ 'assets.details.compliance.paramRedemptionCoverage' | translate }}</span>
+                  @if (lambdaInvalid()) {
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">{{ 'assets.details.compliance.paramInvalid' | translate }}</span>
+                  } @else if (lambdaPercent() === null) {
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">{{ 'assets.details.compliance.paramNotSet' | translate }}</span>
+                  } @else {
+                    <span class="text-gray-800 font-mono">{{ lambdaPercent() | number:'1.2-2' }}%</span>
+                  }
+                </div>
+                @for (p of otherParams(); track p.param_key) {
                   <div class="flex justify-between">
-                    <span class="text-gray-500">{{ p.param_key }}</span>
-                    <span class="text-gray-800">{{ p.param_value }}</span>
+                    <span class="text-gray-500">{{ paramKeyName(p) }}</span>
+                    <span class="text-gray-800 font-mono">{{ p.param_value }}</span>
                   </div>
                 }
               </div>
