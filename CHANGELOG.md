@@ -35,6 +35,12 @@ to avail this service is now the tab's first section, read from the Entity API's
 - **404 and 502 are kept apart.** `disclosureRead` deliberately bypasses `authGet`, which collapses
   every non-2xx to null: "nothing has been availed" (grey empty state) and "something was availed
   and will not open" (red) send an operator to different places.
+- **Read by SUBSCRIPTION, not by DID hash, and not behind the identity-hash call** (same day, found
+  on the first live delivery: the section stayed empty although the projection was mirrored). The
+  identity-hash read reverts on chain for entities by design, so `loadIdentityData()` had never
+  reached the disclosure call. The disclosure now loads in parallel with it, keyed by the
+  subscription address the page already has. The own-verifications list below it is still empty on
+  every tenant for the same reason — recorded in BUGS.md, not fixed here.
 - Same `view-identity-data` gate and the same short-circuit as the eKYC reads. The tab's hint copy
   no longer claims only own-originated verifications are visible. `IdentityDisclosure` model;
   `subscriptions.details.identity.disclosure.*` i18n in en + ar.

@@ -399,24 +399,23 @@ export class DetailsPage implements OnInit {
     if (this.ekycLoaded()) return;
     this.ekycLoading.set(true);
     try {
+      // The regulator's disclosure is keyed by the SUBSCRIPTION and must not wait on the
+      // identity-hash read below: that read is refused on chain for entities (the
+      // subscription→DID resolver is regulator-only by design), so gating on it would hide the
+      // disclosure behind a call that never succeeds.
+      const disclosedP = this.apiService.disclosureRead(this.subscriptionAddress);
       let hash = this.identityHash();
       if (!hash) {
         hash = await this.apiService.vaultGetSubscriptionIdentityHash(this.subscriptionAddress);
         this.identityHash.set(hash);
       }
       if (hash) {
-        const service = this.subscription()?.service;
-        const [verifications, disclosed] = await Promise.all([
-          this.apiService.ekycVerifications(hash),
-          service ? this.apiService.disclosureRead(hash, service) : Promise.resolve(null),
-        ]);
-        this.ekycVerifications.set(verifications);
-        if (disclosed) {
-          if (disclosed.status === 200 && disclosed.data) { this.disclosure.set(disclosed.data); this.disclosureState.set('ok'); }
-          else if (disclosed.status === 404)              { this.disclosure.set(null); this.disclosureState.set('none'); }
-          else                                            { this.disclosure.set(null); this.disclosureState.set('unreadable'); }
-        }
+        this.ekycVerifications.set(await this.apiService.ekycVerifications(hash));
       }
+      const disclosed = await disclosedP;
+      if (disclosed.status === 200 && disclosed.data) { this.disclosure.set(disclosed.data); this.disclosureState.set('ok'); }
+      else if (disclosed.status === 404)              { this.disclosure.set(null); this.disclosureState.set('none'); }
+      else                                            { this.disclosure.set(null); this.disclosureState.set('unreadable'); }
       this.ekycLoaded.set(true);
     } finally {
       this.ekycLoading.set(false);

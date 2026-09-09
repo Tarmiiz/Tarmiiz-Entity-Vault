@@ -2009,13 +2009,15 @@ export class ApiService {
       404 and 502 are DIFFERENT FACTS the page must show differently — "nothing has been availed"
       versus "something was availed and will not open" send an operator to different places.
   */
-  async disclosureRead(didHash: string, service: string): Promise<{ status: number; data: IdentityDisclosure | null; error?: string }> {
+  async disclosureRead(subscription: string): Promise<{ status: number; data: IdentityDisclosure | null; error?: string }> {
     try {
+      // Keyed by the SUBSCRIPTION: an entity cannot resolve a subscription to a DID hash (the
+      // chain gate is regulator-only by design), so the projection is addressed by the one key
+      // this tenant holds. The API derives the service from its own subscriptions mirror.
       const response = await CapacitorHttp.request({
         method: 'GET',
-        url: this.apiURL + '/disclosures/' + didHash,
+        url: this.apiURL + '/disclosures/' + subscription,
         headers: { 'Content-Type': 'application/json', ...(await this.authHeader()), ...this.getAuditHeaders() },
-        params: { service },
       });
       if (response.status === 401) { this._handleAuthFailure(); return { status: 401, data: null }; }
       if (response.status >= 300) return { status: response.status, data: null, error: response.data?.error };
