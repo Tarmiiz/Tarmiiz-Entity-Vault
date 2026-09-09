@@ -13,7 +13,7 @@
              the venue consents and the VENUE's regulator approves. -->
         @if (canAct() && features.systemFunctionEnabled('dex-member-add')) {
           <button (click)="openRequestModal()"
-            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
             {{ 'dex.memberships.requestButton' | translate }}
           </button>
         }
@@ -67,7 +67,7 @@
                 <div class="flex gap-2">
                   @if (canAct() && features.systemFunctionEnabled('dex-member-remove')) {
                     <button (click)="exitMembership(m)"
-                      class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                      class="text-xs font-medium px-4 py-2 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
                       {{ 'dex.memberships.exitButton' | translate }}
                     </button>
                   }
@@ -131,9 +131,9 @@
       </div>
       <div class="px-5 py-4 border-t border-gray-200 flex justify-end gap-2">
         <button (click)="requestModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitRequest()" [disabled]="!requestVenue || !requestService"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50">{{ 'dex.memberships.requestModal.submit' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50">{{ 'dex.memberships.requestModal.submit' | translate }}</button>
       </div>
     </div>
   </div>

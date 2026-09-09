@@ -10,7 +10,7 @@
           <!-- Mode toggle -->
           <div class="flex gap-2">
             <button type="button" (click)="setMode('A')"
-              class="flex-1 text-xs px-3 py-2 rounded border transition-colors"
+              class="flex-1 text-xs px-3 py-2 rounded-xl border transition-colors"
               [class.bg-indigo-600]="mode() === 'A'"
               [class.text-white]="mode() === 'A'"
               [class.border-indigo-600]="mode() === 'A'"
@@ -20,7 +20,7 @@
               {{ 'subscriptions.addModal.modeExisting' | translate }}
             </button>
             <button type="button" (click)="setMode('B')"
-              class="flex-1 text-xs px-3 py-2 rounded border transition-colors"
+              class="flex-1 text-xs px-3 py-2 rounded-xl border transition-colors"
               [class.bg-indigo-600]="mode() === 'B'"
               [class.text-white]="mode() === 'B'"
               [class.border-indigo-600]="mode() === 'B'"
@@ -291,10 +291,10 @@
           }
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-          <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          <button type="button" (click)="onCancel()" class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             {{ 'common.cancel' | translate }}
           </button>
-          <button type="submit" [disabled]="!canSubmit()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="submit" [disabled]="!canSubmit()" class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {{ 'subscriptions.addModal.submit' | translate }}
           </button>
         </div>

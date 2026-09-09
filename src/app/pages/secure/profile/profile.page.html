@@ -93,7 +93,7 @@
 
             <div class="flex justify-end">
               @if (features.systemFunctionEnabled('entity-edit-metadata')) {
-                <button (click)="openEditMetadataModal()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                <button (click)="openEditMetadataModal()" class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                   {{ 'profile.info.editDetails' | translate }}
                 </button>
               }
@@ -132,7 +132,7 @@
             <div class="flex items-start justify-between gap-4">
               <p class="text-sm text-gray-500">{{ 'profile.identifiers.intro' | translate }}</p>
               @if (canEditIdentifiers() && availableIdTypes().length) {
-                <button (click)="openIdentifierModal()" class="shrink-0 text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                <button (click)="openIdentifierModal()" class="shrink-0 text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                   {{ 'profile.identifiers.add' | translate }}
                 </button>
               }
@@ -182,7 +182,7 @@
                         </td>
                         <td class="text-right">
                           @if (canEditIdentifiers()) {
-                            <button (click)="openIdentifierModal(row)" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                            <button (click)="openIdentifierModal(row)" class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                               {{ 'common.edit' | translate }}
                             </button>
                           }
@@ -205,7 +205,7 @@
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-3xl font-bold text-gray-800">{{ 'media.heading' | translate }}</h2>
               <button (click)="openAddImageModal()" [disabled]="!entityActive"
-                class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                 {{ 'media.uploadButton' | translate }}
               </button>
             </div>

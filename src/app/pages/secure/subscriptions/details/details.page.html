@@ -286,7 +286,7 @@
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
                   @if (features.systemFunctionEnabled('subscription-change-state')) {
                     <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                       {{ 'subscriptions.details.info.changeState' | translate }}
                     </button>
                   }
@@ -339,14 +339,14 @@
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearHoldingFilters()"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportHoldingsExcel()"
-                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -355,7 +355,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportHoldingsPdf()"
-                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -428,7 +428,7 @@
                         <td class="text-center whitespace-nowrap">
                           @if ((h.regulatorActiveHolds ?? 0) > 0 || (h.regulatorHeld ?? 0) > 0) {
                             <button (click)="toggleHoldsRow(h, $event)"
-                              class="text-[11px] px-2 py-1 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors"
+                              class="text-[11px] px-2 py-1 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors"
                               [title]="'subscriptions.details.holdings.viewHoldsTooltip' | translate">
                               {{ (expandedHoldsAsset() === h.asset ? 'subscriptions.details.holdings.hide' : 'common.view') | translate }}
                             </button>
@@ -556,14 +556,14 @@
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearFilters()"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportExcel()"
-                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -572,7 +572,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportPdf()"
-                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -702,14 +702,14 @@
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearCreditFilters()"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('credit-deposit')) {
                     <button (click)="openCreditDeposit()"
-                      class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
@@ -723,7 +723,7 @@
                        && features.systemFunctionEnabled('credit-withdraw')
                        && features.systemFunctionEnabled('transaction-create')) {
                     <button (click)="openSellWithdraw()"
-                      class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 20V4m0 16l-6-6m6 6l6-6" />
                       </svg>
@@ -732,7 +732,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportCreditExcel()"
-                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -741,7 +741,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportCreditPdf()"
-                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -919,7 +919,7 @@
                     @if (disclosureRawJson(); as raw) {
                       <div class="text-sm">
                         <button (click)="showDisclosureRaw.set(!showDisclosureRaw())"
-                          class="text-xs px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                          class="text-xs px-3 py-1 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                           {{ (showDisclosureRaw() ? 'subscriptions.details.identity.disclosure.hideRaw' : 'subscriptions.details.identity.disclosure.showRaw') | translate }}
                         </button>
                         @if (showDisclosureRaw()) {
@@ -961,7 +961,7 @@
                       <td class="pr-4 text-gray-600">{{ v.sharedAt ? utils.formatTime(v.sharedAt) : '—' }}</td>
                       <td class="text-right">
                         <button (click)="openEkycVerification(v.transactionId)"
-                          class="text-xs px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                          class="text-xs px-3 py-1 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                           {{ (ekycSelected() === v.transactionId ? 'subscriptions.details.identity.hide' : 'subscriptions.details.identity.view') | translate }}
                         </button>
                       </td>

@@ -10,7 +10,7 @@
       </div>
       @if (canAct() && features.systemFunctionEnabled('dex-offering-create')) {
         <button (click)="openCreateModal()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
           {{ 'dexOfferings.createBtn' | translate }}
         </button>
       }
@@ -71,13 +71,13 @@
                 <div class="flex gap-2">
                   @if (canBuy(o)) {
                     <button (click)="openBuyModal(o)"
-                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                       {{ 'dexOfferings.buyBtn' | translate }}
                     </button>
                   }
                   @if ((o.status === 1 || o.status === 2) && canAct() && features.systemFunctionEnabled('dex-offering-cancel')) {
                     <button (click)="cancelOffering(o)"
-                      class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                      class="text-xs font-medium px-4 py-2 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
                       {{ 'common.cancel' | translate }}
                     </button>
                   }
@@ -155,9 +155,9 @@
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="createModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitCreate()" [disabled]="!createAsset || !createVenue || !createPrice || !createAmount"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'dexOfferings.createBtn' | translate }}
         </button>
       </div>
@@ -234,9 +234,9 @@
 
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="buyModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitBuy()" [disabled]="buyDisabled()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'dexOfferings.buyBtn' | translate }}
         </button>
       </div>

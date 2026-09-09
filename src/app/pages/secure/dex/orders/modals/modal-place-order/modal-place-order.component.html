@@ -91,13 +91,13 @@
             <label class="block text-sm font-medium text-gray-700">{{ 'dex.orders.placeModal.side' | translate }}</label>
             <div class="mt-1 flex gap-2">
               <button type="button" (click)="side.set(1)"
-                class="flex-1 text-sm px-3 py-2 rounded border transition-colors"
+                class="flex-1 text-sm px-3 py-2 rounded-xl border transition-colors"
                 [class.bg-green-700]="side() === 1" [class.text-white]="side() === 1" [class.border-green-700]="side() === 1"
                 [class.border-gray-300]="side() !== 1" [class.text-gray-700]="side() !== 1">
                 {{ 'dex.orders.side.buy' | translate }}
               </button>
               <button type="button" (click)="side.set(2)"
-                class="flex-1 text-sm px-3 py-2 rounded border transition-colors"
+                class="flex-1 text-sm px-3 py-2 rounded-xl border transition-colors"
                 [class.bg-orange-700]="side() === 2" [class.text-white]="side() === 2" [class.border-orange-700]="side() === 2"
                 [class.border-gray-300]="side() !== 2" [class.text-gray-700]="side() !== 2">
                 {{ 'dex.orders.side.sell' | translate }}
@@ -202,18 +202,18 @@
         <div>
           @if (step() > 1) {
             <button type="button" (click)="prev()"
-              class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.back' | translate }}</button>
+              class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.back' | translate }}</button>
           }
         </div>
         <div class="flex space-x-3">
           <button type="button" (click)="onCancel()"
-            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+            class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
           @if (step() < totalSteps) {
             <button type="button" (click)="next()" [disabled]="(step() === 1 && !isStep1Valid()) || (step() === 2 && !isStep2Valid())"
-              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.next' | translate }}</button>
+              class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.next' | translate }}</button>
           } @else {
             <button type="button" (click)="onSave()" [disabled]="!reviewConfirmed()"
-              class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.submit' | translate }}</button>
+              class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.submit' | translate }}</button>
           }
         </div>
       </div>

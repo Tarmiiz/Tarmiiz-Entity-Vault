@@ -41,14 +41,14 @@
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ 'common.clear' | translate }}
         </button>
       </div>
       @if (userInfo && userInfo.role === 1 && entityActive) {
       <div class="flex ml-auto items-end">
         <button (click)="openAddModal()"
-          class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
           + {{ 'serviceProviders.addButton' | translate }}
         </button>
       </div>
@@ -94,12 +94,12 @@
                     @if (userInfo && userInfo.role === 1 && entityActive) {
                       @if (p.state === 1) {
                         <button (click)="suspend(p)"
-                          class="text-xs px-3 py-1.5 rounded border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors">
+                          class="text-xs font-medium px-4 py-2 rounded-xl border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors">
                           {{ 'serviceProviders.actions.suspend' | translate }}
                         </button>
                       } @else {
                         <button (click)="reactivate(p)"
-                          class="text-xs px-3 py-1.5 rounded border border-green-300 text-green-700 hover:bg-green-50 transition-colors">
+                          class="text-xs font-medium px-4 py-2 rounded-xl border border-green-300 text-green-700 hover:bg-green-50 transition-colors">
                           {{ 'serviceProviders.actions.reactivate' | translate }}
                         </button>
                       }

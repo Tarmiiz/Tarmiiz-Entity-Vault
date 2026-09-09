@@ -343,7 +343,7 @@
                       </div>
                       @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-straight-through')) {
                         <button (click)="onToggleStraightThrough()" [disabled]="!entityActive"
-                          class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
+                          class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
                           {{ (v.straightThrough ? 'services.details.straightThrough.disable' : 'services.details.straightThrough.enable') | translate }}
                         </button>
                       }
@@ -362,7 +362,7 @@
                           } }}
                         </p>
                       </div>
-                      <button (click)="setTab('providers')" class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                      <button (click)="setTab('providers')" class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
                         {{ 'services.details.providers.manage' | translate }}
                       </button>
                     </div>
@@ -375,13 +375,13 @@
                 <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
                   @if (features.systemFunctionEnabled('service-change-visibility')) {
                     <button (click)="onChangeVisibility()" [disabled]="!entityActive"
-                      class="text-xs px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
                       {{ 'services.details.info.changeVisibility' | translate }}
                     </button>
                   }
                   @if (features.systemFunctionEnabled('service-change-state')) {
                     <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                       {{ 'services.details.info.changeState' | translate }}
                     </button>
                   }
@@ -518,14 +518,14 @@
                             @if (e.election === 3) {
                               <button (click)="migrateElection(e)"
                                 [disabled]="migratingCcy() === e.currencyCode"
-                                class="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:opacity-50">
+                                class="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:opacity-50">
                                 {{ migratingCcy() === e.currencyCode ? 'Converting…' : 'Convert next page' }}
                               </button>
                             } @else if (e.requestedTo && features.systemFunctionEnabled('service-election-switch')) {
                               <!-- Same key as the request: withdrawing IS the request surface, and the
                                    Entity API gates POST and DELETE on that one key. -->
                               <button (click)="withdrawElectionSwitch(e)"
-                                class="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50">
+                                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50">
                                 Withdraw request
                               </button>
                             } @else if (canRequestSwitch(e)) {
@@ -534,7 +534,7 @@
                                    there is no switch from undeclared, and the entity cannot
                                    create the starting position either. -->
                               <button (click)="requestElectionSwitch(e)"
-                                class="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50">
+                                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50">
                                 Request switch
                               </button>
                             } @else {
@@ -748,7 +748,7 @@
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearPartyFilters()"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
@@ -756,7 +756,7 @@
                   <div class="flex gap-2 ml-auto">
                     @if (features.systemFunctionEnabled('service-add-validator')) {
                       <button (click)="attachValidator()"
-                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
@@ -765,7 +765,7 @@
                     }
                     @if (features.systemFunctionEnabled('service-add-payment-processor')) {
                       <button (click)="attachPaymentProcessor()"
-                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
@@ -788,7 +788,7 @@
                            ("this market's credit is final"), so unlike custody there is nothing
                            to keep and nothing to limit. -->
                       <button (click)="attachClearingHouse()"
-                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
@@ -850,7 +850,7 @@
                           <td class="text-right">
                             @if (canEditParty && p.removable) {
                               <button type="button" (click)="detachParty(p.partyType, p.address)"
-                                class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition-colors">
+                                class="text-xs font-medium px-4 py-2 rounded-xl border border-red-300 text-red-700 hover:bg-red-50 transition-colors">
                                 {{ 'common.remove' | translate }}
                               </button>
                             } @else if (canEditParty) {
@@ -876,7 +876,7 @@
             @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-edit-metadata')) {
               <div class="flex justify-end">
                 <button (click)="openEditMetadataModal()" [disabled]="!entityActive"
-                  class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                  class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                   {{ 'services.details.info.editMetadata' | translate }}
                 </button>
               </div>
@@ -954,7 +954,7 @@
                   <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'media.heading' | translate }}</h4>
                   @if (userInfo && userInfo.role !== 3) {
                     <button (click)="openAddImageModal()" [disabled]="!entityActive"
-                      class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                       {{ 'media.uploadButton' | translate }}
                     </button>
                   }
@@ -1036,14 +1036,14 @@
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearAssetFilters()"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportAssetsExcel()"
-                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -1052,7 +1052,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportAssetsPdf()"
-                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -1108,7 +1108,7 @@
                               <button type="button"
                                       (click)="openVenueFeeConfigModal(data.address, data.symbol)"
                                       [disabled]="!entityActive"
-                                      class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                                      class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                                 {{ 'services.details.assets.editVenueFees' | translate }}
                               </button>
                             }
@@ -1149,14 +1149,14 @@
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearSubFilters()"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportSubsExcel()"
-                      class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -1165,7 +1165,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportSubsPdf()"
-                      class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -1293,14 +1293,14 @@
               </div>
               <div class="flex flex-col justify-end">
                 <button (click)="clearTrxFilters()"
-                  class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                  class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                   {{ 'common.clear' | translate }}
                 </button>
               </div>
               <div class="flex gap-2 ml-auto">
                 @if (features.systemFunctionEnabled('export-excel')) {
                   <button (click)="exportTrxExcel()"
-                    class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                    class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                     </svg>
@@ -1309,7 +1309,7 @@
                 }
                 @if (features.systemFunctionEnabled('export-pdf')) {
                   <button (click)="exportTrxPdf()"
-                    class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                    class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                     </svg>
@@ -1416,7 +1416,7 @@
                           <!-- Expander — the per-asset decomposition of the obligation. -->
                           <td>
                             <button type="button" (click)="toggleLiquidityRow(row)"
-                              class="p-0.5 rounded text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                              class="p-0.5 rounded-xl text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
                               [attr.aria-expanded]="expanded"
                               [title]="(expanded ? 'dashboard.liquidity.hideAssets' : 'dashboard.liquidity.showAssets') | translate">
                               <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform rtl:-scale-x-100" [class.rotate-90]="expanded"
@@ -1476,7 +1476,7 @@
                           <td class="text-right">
                             @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-liquidity-inject')) {
                               <button (click)="openLiquidityModal('inject', row)" [disabled]="!entityActive"
-                                class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
+                                class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
                                 {{ 'services.details.liquidity.inject' | translate }}
                               </button>
                             }
@@ -1595,11 +1595,11 @@
                 <!-- Footer -->
                 <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
                   <button type="button" (click)="closeLiquidityModal()" [disabled]="liquidityModalSubmitting()"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ 'common.cancel' | translate }}
                   </button>
                   <button type="button" (click)="submitLiquidity()" [disabled]="liquidityModalSubmitting()"
-                    class="text-xs px-3 py-1.5 rounded text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="text-xs font-medium px-4 py-2 rounded-xl text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     [class.bg-blue-700]="liquidityModalAction() === 'inject'"
                     [class.hover:bg-blue-800]="liquidityModalAction() === 'inject'"
                     [class.bg-red-700]="liquidityModalAction() === 'withdraw'"

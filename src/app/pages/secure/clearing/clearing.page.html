@@ -48,7 +48,7 @@
           </select>
         </div>
         <button (click)="loadAccount()"
-          class="text-xs px-3 py-2 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+          class="text-xs px-3 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
           {{ 'clearing.account.load' | translate }}
         </button>
       </div>
@@ -146,12 +146,12 @@
                     {{ (expandedDelivery() === d.deliveryKey ? 'common.hide' : 'common.view') | translate }}
                   </button>
                   @if (canDeliver(d)) {
-                    <button (click)="executeDelivery(d)" class="text-xs ms-2 px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">
+                    <button (click)="executeDelivery(d)" class="text-xs ms-2 px-2 py-1 rounded-xl bg-green-700 text-white hover:bg-green-800">
                       {{ 'clearing.deliveries.deliver' | translate }}
                     </button>
                   }
                   @if (canFail(d)) {
-                    <button (click)="failDelivery(d)" class="text-xs ms-2 px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800">
+                    <button (click)="failDelivery(d)" class="text-xs ms-2 px-2 py-1 rounded-xl bg-red-700 text-white hover:bg-red-800">
                       {{ 'clearing.deliveries.fail' | translate }}
                     </button>
                   }
@@ -305,7 +305,7 @@
                 <td>
                   @if (needsAccept(m) && features.systemFunctionEnabled('clearing-member-accept')) {
                     <button (click)="acceptMembership(m)"
-                      class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">
+                      class="text-xs px-2 py-1 rounded-xl bg-green-700 text-white hover:bg-green-800">
                       {{ 'clearing.memberships.accept' | translate }}
                     </button>
                   }

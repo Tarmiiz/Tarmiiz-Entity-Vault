@@ -168,11 +168,11 @@
         </div>
         <div class="flex space-x-3 shrink-0">
           <button type="button" (click)="cancel()" [disabled]="working()"
-                  class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
             {{ 'common.cancel' | translate }}
           </button>
           <button type="button" (click)="create()" [disabled]="working() || selected().length === 0"
-                  class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
             {{ 'messages.newThreadModal.createThread' | translate }}
           </button>
         </div>

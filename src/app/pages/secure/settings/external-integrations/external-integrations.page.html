@@ -10,7 +10,7 @@
       </p>
     </div>
     <button (click)="openCreate()" [disabled]="busy()"
-      class="shrink-0 text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50">
+      class="shrink-0 text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50">
       <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
       </svg>
@@ -73,22 +73,22 @@
                 <td>
                   <div class="flex gap-2">
                     <button (click)="edit(p)" [disabled]="busy()"
-                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50">
                       {{ 'common.edit' | translate }}
                     </button>
                     @if (!p.isDefault) {
                       <button (click)="makeDefault(p)" [disabled]="busy() || !p.enabled"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                        class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
                         {{ 'settings.externalIntegrations.setDefault' | translate }}
                       </button>
                     }
                     <button (click)="toggleEnabled(p)" [disabled]="busy()"
-                      class="text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+                      class="text-xs font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
                       [class]="p.enabled ? 'bg-red-700 text-white hover:bg-red-800' : 'bg-green-700 text-white hover:bg-green-800'">
                       {{ (p.enabled ? 'settings.externalIntegrations.disableAction' : 'settings.externalIntegrations.enableAction') | translate }}
                     </button>
                     <button (click)="remove(p)" [disabled]="busy()"
-                      class="text-xs px-3 py-1.5 rounded border border-red-300 text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50">
+                      class="text-xs font-medium px-4 py-2 rounded-xl border border-red-300 text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50">
                       {{ 'common.delete' | translate }}
                     </button>
                   </div>
@@ -181,7 +181,7 @@
                 }
                 @if (f.set) {
                   <button type="button" (click)="toggleRemoved(f.key)"
-                    class="ml-auto text-[10px] px-2 py-0.5 rounded border transition-colors"
+                    class="ml-auto text-[10px] px-2 py-0.5 rounded-xl border transition-colors"
                     [class]="isRemoved(f.key) ? 'border-gray-300 text-gray-600 hover:bg-gray-100' : 'border-red-300 text-red-700 hover:bg-red-50'">
                     {{ (isRemoved(f.key) ? 'settings.externalIntegrations.restoreParam' : 'common.remove') | translate }}
                   </button>
@@ -217,14 +217,14 @@
                 {{ 'settings.externalIntegrations.secret' | translate }}
               </label>
               <button type="button" (click)="removeNewParamRow(idx)"
-                class="text-xs px-2 py-2 rounded border border-gray-300 text-gray-500 hover:bg-gray-100 transition-colors mb-0.5">
+                class="text-xs px-2 py-2 rounded-xl border border-gray-300 text-gray-500 hover:bg-gray-100 transition-colors mb-0.5">
                 ✕
               </button>
             </div>
           }
 
           <button type="button" (click)="addNewParamRow()"
-            class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
+            class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1">
             <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
             </svg>
@@ -235,11 +235,11 @@
 
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="closeEdit()"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ 'common.cancel' | translate }}
         </button>
         <button type="button" (click)="saveEdit()" [disabled]="busy()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
           {{ (createMode() ? 'common.create' : 'common.save') | translate }}
         </button>
       </div>

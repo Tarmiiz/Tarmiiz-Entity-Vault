@@ -203,7 +203,7 @@
                       <!-- Expander — the per-asset decomposition. Stops propagation: the row navigates. -->
                       <td class="px-3 py-2">
                         <button type="button" (click)="toggleCoverageRow(row, $event)"
-                          class="p-0.5 rounded text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                          class="p-0.5 rounded-xl text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
                           [attr.aria-expanded]="expanded"
                           [title]="(expanded ? 'dashboard.liquidity.hideAssets' : 'dashboard.liquidity.showAssets') | translate">
                           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform rtl:-scale-x-100" [class.rotate-90]="expanded"
@@ -638,7 +638,7 @@
             <p class="text-xs text-amber-700 mt-1">{{ 'dashboard.bootstrapAdminBody' | translate }}</p>
           </div>
           <button (click)="goTo('/authorized/users/list')"
-            class="text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1 shrink-0">
+            class="text-xs font-medium px-4 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1 shrink-0">
             {{ 'dashboard.bootstrapAdminCta' | translate }}
           </button>
         </div>

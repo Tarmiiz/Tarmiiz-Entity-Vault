@@ -22,14 +22,14 @@
     -->
     @if (canQuote()) {
       <button (click)="submitQuote()"
-        class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
+        class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
         {{ 'dex.rfqs.actions.quote' | translate }}
       </button>
     }
     @if (canCancel()) {
       <button (click)="cancelRequest()"
-        class="text-xs px-3 py-1.5 rounded border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
+        class="text-xs font-medium px-4 py-2 rounded-xl border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
         {{ 'dex.rfqs.actions.cancel' | translate }}
       </button>
     }
@@ -177,13 +177,13 @@
                         <td class="text-right whitespace-nowrap">
                           @if (d.dealKey) {
                             <button (click)="goDeal(d.dealKey)"
-                              class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                              class="text-xs px-2 py-1 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                               {{ 'dex.rfqs.details.viewQuote' | translate }}
                             </button>
                           }
                           @if (isAwardable(d)) {
                             <button (click)="award(d)"
-                              class="ml-1 text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
+                              class="ml-1 text-xs px-2 py-1 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
                               {{ 'dex.rfqs.actions.award' | translate }}
                             </button>
                           }
@@ -204,7 +204,7 @@
                 <p class="text-sm font-semibold text-emerald-800">{{ 'dex.rfqs.details.awardedBanner' | translate }}</p>
                 <p class="text-xs text-emerald-700 mt-1">{{ 'dex.rfqs.details.awardedExplain' | translate }}</p>
                 <button (click)="goDeal(q.awardedDeal)"
-                  class="mt-2 text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
+                  class="mt-2 text-xs font-medium px-4 py-2 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
                   {{ 'dex.rfqs.details.openAwardedDeal' | translate }}
                 </button>
               </div>

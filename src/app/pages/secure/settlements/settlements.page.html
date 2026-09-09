@@ -25,7 +25,7 @@
         </div>
         @if (canAct() && features.systemFunctionEnabled('settlement-create')) {
           <button (click)="openCreateModal()"
-            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
             {{ 'settlements.createBtn' | translate }}
           </button>
         }
@@ -63,7 +63,7 @@
                 <td>
                   @if (p.netOwedBySelf > 0 && canAct() && features.systemFunctionEnabled('settlement-create')) {
                     <button (click)="openCreateModal(p)"
-                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                       {{ 'settlements.settleBtn' | translate }}
                     </button>
                   }
@@ -155,7 +155,7 @@
         </div>
         @if (canAct() && features.systemFunctionEnabled('settlement-create')) {
           <button (click)="openCreateModal()"
-            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
             {{ 'settlements.createBtn' | translate }}
           </button>
         }
@@ -220,19 +220,19 @@
                   <div class="flex gap-2">
                     @if (isDebtor(s) && s.state === 1 && canAct() && features.systemFunctionEnabled('settlement-confirm-sent')) {
                       <button (click)="openSentModal(s)"
-                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                        class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                         {{ 'settlements.confirmSentBtn' | translate }}
                       </button>
                     }
                     @if (isDebtor(s) && s.state === 1 && canAct() && features.systemFunctionEnabled('settlement-cancel')) {
                       <button (click)="cancelSettlement(s)"
-                        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                        class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                         {{ 'common.cancel' | translate }}
                       </button>
                     }
                     @if (!isDebtor(s) && s.state === 2 && canAct() && features.systemFunctionEnabled('settlement-confirm-received')) {
                       <button (click)="openReceivedModal(s)"
-                        class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                        class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
                         {{ 'settlements.confirmReceivedBtn' | translate }}
                       </button>
                     }
@@ -301,9 +301,9 @@
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="createModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitCreate()" [disabled]="!createCounterparty || !createCurrencyCode || !createAmount"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'settlements.createBtn' | translate }}
         </button>
       </div>
@@ -339,9 +339,9 @@
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="sentModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitConfirmSent()" [disabled]="!sentWireRef"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'settlements.confirmSentBtn' | translate }}
         </button>
       </div>
@@ -368,9 +368,9 @@
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="receivedModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitConfirmReceived()"
-          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
           {{ 'settlements.confirmReceivedBtn' | translate }}
         </button>
       </div>

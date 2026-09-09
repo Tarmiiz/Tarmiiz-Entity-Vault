@@ -132,12 +132,12 @@
                     }
                     <div class="mt-2 flex items-center gap-2">
                       <button (click)="openChangeGroupModal()" [disabled]="groupSaving()"
-                              class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                              class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         {{ (userGroup() ? 'users.details.group.change' : 'users.details.group.assign') | translate }}
                       </button>
                       @if (userGroup()) {
                         <button (click)="clearGroup()" [disabled]="groupSaving()"
-                                class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                class="text-xs font-medium px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                           {{ 'common.clear' | translate }}
                         </button>
                       }
@@ -160,12 +160,12 @@
                            class="border border-gray-300 rounded-md py-1.5 px-3 text-sm text-black w-56 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                            [placeholder]="'users.details.handle.placeholder' | translate">
                     <button (click)="saveHandle()" [disabled]="handleSaving() || !handleInput()"
-                            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                       {{ (handle() ? 'users.details.handle.rename' : 'users.details.handle.setHandle') | translate }}
                     </button>
                     @if (handle()) {
                       <button (click)="clearHandle()" [disabled]="handleSaving()"
-                              class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                              class="text-xs font-medium px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         {{ 'common.clear' | translate }}
                       </button>
                     }
@@ -184,12 +184,12 @@
                       }
                       @if (messagesAccess()) {
                         <button (click)="toggleMessagesAccess(false)" [disabled]="messagesAccessSaving()"
-                                class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                class="text-xs font-medium px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                           {{ 'users.details.messagesAccess.revoke' | translate }}
                         </button>
                       } @else {
                         <button (click)="toggleMessagesAccess(true)" [disabled]="messagesAccessSaving()"
-                                class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                           {{ 'users.details.messagesAccess.grant' | translate }}
                         </button>
                       }
@@ -199,24 +199,24 @@
               </div>
 
               <div class="mt-8 pt-6 border-t flex flex-wrap items-center justify-end gap-3">
-                <button (click)="openEditModal()" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                <button (click)="openEditModal()" class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                   {{ 'users.details.actions.editUser' | translate }}
                 </button>
-                <button (click)="openCredentialsModal()" class="text-xs px-3 py-1.5 rounded bg-violet-600 text-white hover:bg-violet-700 transition-colors">
+                <button (click)="openCredentialsModal()" class="text-xs font-medium px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-colors">
                   {{ 'users.details.actions.changeCredentials' | translate }}
                 </button>
                 <!-- Never on your own record: the API 403s a self-targeted role change. -->
                 @if (!isSelf()) {
-                  <button (click)="openChangeRoleModal()" class="text-xs px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+                  <button (click)="openChangeRoleModal()" class="text-xs font-medium px-4 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition-colors">
                     {{ 'users.details.actions.changeRole' | translate }}
                   </button>
                 }
                 @if (isExecutive(v.role)) {
-                  <button (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()" class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()" class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ 'users.details.actions.changeApprovalRole' | translate }}
                   </button>
                 }
-                <button (click)="openChangeStateModal()" class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors">
+                <button (click)="openChangeStateModal()" class="text-xs font-medium px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors">
                   {{ 'users.details.actions.changeState' | translate }}
                 </button>
               </div>

@@ -67,11 +67,11 @@
               <td>
                 <div class="flex gap-1">
                   @if (canDecide(a)) {
-                    <button (click)="approve(a)" class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">{{ 'approvals.list.approve' | translate }}</button>
-                    <button (click)="reject(a)"  class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800">{{ 'approvals.list.reject' | translate }}</button>
+                    <button (click)="approve(a)" class="text-xs px-2 py-1 rounded-xl bg-green-700 text-white hover:bg-green-800">{{ 'approvals.list.approve' | translate }}</button>
+                    <button (click)="reject(a)"  class="text-xs px-2 py-1 rounded-xl bg-red-700 text-white hover:bg-red-800">{{ 'approvals.list.reject' | translate }}</button>
                   }
                   @if (canCancel(a)) {
-                    <button (click)="cancel(a)" class="text-xs px-2 py-1 rounded bg-gray-600 text-white hover:bg-gray-700">{{ 'approvals.list.withdraw' | translate }}</button>
+                    <button (click)="cancel(a)" class="text-xs px-2 py-1 rounded-xl bg-gray-600 text-white hover:bg-gray-700">{{ 'approvals.list.withdraw' | translate }}</button>
                   }
                 </div>
               </td>

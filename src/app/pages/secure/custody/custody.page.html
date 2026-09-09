@@ -119,12 +119,12 @@
               <td>
                 <div class="flex gap-2">
                   <button (click)="toggleAssetHolds(a.address)"
-                    class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ (expandedAsset() === a.address ? 'custody.holds.hide' : 'custody.holds.view') | translate }}
                   </button>
                   @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('custody-hold-place')) {
                     <button (click)="openHoldModal(a.address)"
-                      class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                       {{ 'custody.holds.place' | translate }}
                     </button>
                   }
@@ -167,7 +167,7 @@
                           <td>
                             @if (h.state !== 3 && isOwnHold(h) && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('custody-hold-release')) {
                               <button (click)="openReleaseModal(h)"
-                                class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                                class="text-xs px-2 py-1 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
                                 {{ 'custody.holds.release' | translate }}
                               </button>
                             }
@@ -230,9 +230,9 @@
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="holdModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitHold()" [disabled]="!holdCustodianService || !holdAccount || !holdAmount"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'custody.holds.place' | translate }}
         </button>
       </div>
@@ -260,9 +260,9 @@
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="releaseModalOpen.set(false)"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitRelease()" [disabled]="!releaseAmount"
-          class="text-xs px-3 py-1.5 rounded bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'custody.holds.release' | translate }}
         </button>
       </div>

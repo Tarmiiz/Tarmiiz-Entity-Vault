@@ -101,7 +101,7 @@
                       @if (tierStatus($any(tier)).code === 'none' && canManage() && features.systemFunctionEnabled('dex-listing-create')) {
                         <div class="mt-3">
                           <button (click)="requestTier($any(tier))"
-                            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                            class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                             {{ 'dex.venues.tier.requestApproval' | translate }}
                           </button>
                         </div>
@@ -109,7 +109,7 @@
                       @if (tier === 1 && tierStatus(1).code !== 'none') {
                         <div class="mt-3">
                           <button (click)="setTab('venues')"
-                            class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                            class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                             {{ 'dex.listings.details.tiers.manageVenues' | translate }}
                           </button>
                         </div>
@@ -134,7 +134,7 @@
                 <span class="text-xs text-gray-500 mr-2">{{ 'dex.listings.details.venues.initialTierLabel' | translate }}</span>
                 @for (t of [1, 2, 3]; track t) {
                   <button (click)="setAddInitialTier($any(t))"
-                    class="text-xs px-3 py-1.5 rounded transition-colors"
+                    class="text-xs font-medium px-4 py-2 rounded-xl transition-colors"
                     [class]="addInitialTier() === t
                       ? 'bg-[var(--brand-primary)] text-white'
                       : 'border border-gray-300 text-gray-600 hover:bg-gray-100'">
@@ -143,7 +143,7 @@
                 }
                 @if (features.systemFunctionEnabled('dex-listing-venue-manage')) {
                 <button (click)="openAdd()"
-                  class="ml-auto text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                  class="ml-auto text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                   {{ 'dex.listings.details.addVenue' | translate }}
                 </button>
@@ -211,11 +211,11 @@
                           <td class="text-right whitespace-nowrap">
                             @if (canManage() && features.systemFunctionEnabled('dex-listing-venue-manage')) {
                               <button (click)="openTierChange(v)"
-                                class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">
+                                class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">
                                 {{ 'dex.listings.details.changeTier' | translate }}
                               </button>
                               <button (click)="removeVenue(v)"
-                                class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                                class="text-xs font-medium px-4 py-2 rounded-xl bg-red-700 text-white hover:bg-red-800 transition-colors">
                                 {{ 'common.remove' | translate }}
                               </button>
                             }

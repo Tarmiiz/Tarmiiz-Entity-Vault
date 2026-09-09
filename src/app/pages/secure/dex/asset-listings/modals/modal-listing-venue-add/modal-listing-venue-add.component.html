@@ -54,7 +54,7 @@
                       <td class="font-mono break-all">{{ v.serviceAddress }}</td>
                       <td class="text-right">
                         <button (click)="add(v)"
-                          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                           {{ 'dex.listings.addVenueModal.enableButton' | translate }}
                         </button>
                       </td>
@@ -72,7 +72,7 @@
 
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="cancel()"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ 'common.close' | translate }}
         </button>
       </div>

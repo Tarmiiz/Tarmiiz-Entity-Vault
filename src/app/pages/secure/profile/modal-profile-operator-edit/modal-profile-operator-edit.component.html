@@ -15,10 +15,10 @@
             </div>
           </div>
           <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-            <button type="button" (click)="onCancel()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            <button type="button" (click)="onCancel()" class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
               {{ 'common.cancel' | translate }}
             </button>
-            <button type="submit" [disabled]="!editForm.valid" class="text-xs px-3 py-1.5 rounded bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="submit" [disabled]="!editForm.valid" class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {{ 'common.next' | translate }}
             </button>
           </div>
@@ -34,10 +34,10 @@
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-          <button type="button" (click)="onBack()" class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          <button type="button" (click)="onBack()" class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             {{ 'common.back' | translate }}
           </button>
-          <button type="button" (click)="onConfirm()" class="text-xs px-3 py-1.5 rounded bg-rose-600 text-white hover:bg-rose-700 transition-colors">
+          <button type="button" (click)="onConfirm()" class="text-xs font-medium px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors">
             {{ 'profile.operatorModal.confirmChange' | translate }}
           </button>
         </div>

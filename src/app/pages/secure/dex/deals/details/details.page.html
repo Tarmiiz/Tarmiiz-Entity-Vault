@@ -23,40 +23,40 @@
     -->
     @if (canCounter()) {
       <button (click)="counterDeal()"
-        class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
+        class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
         {{ 'dex.deals.actions.counter' | translate }}
       </button>
     }
     @if (canAccept()) {
       <button (click)="acceptDeal()"
-        class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+        class="text-xs font-medium px-4 py-2 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
         {{ 'dex.deals.actions.accept' | translate }}
       </button>
     }
     @if (canDecline()) {
       <button (click)="declineDeal()"
-        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+        class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
         {{ 'dex.deals.actions.decline' | translate }}
       </button>
     }
     @if (canWithdraw()) {
       <button (click)="withdrawDeal()"
-        class="text-xs px-3 py-1.5 rounded border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
+        class="text-xs font-medium px-4 py-2 rounded-xl border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
         {{ 'dex.deals.actions.withdraw' | translate }}
       </button>
     }
     @if (canApprove()) {
       <button (click)="approveCross()"
-        class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+        class="text-xs font-medium px-4 py-2 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         {{ 'dex.deals.actions.approve' | translate }}
       </button>
     }
     @if (canDecide()) {
       <button (click)="rejectCross()"
-        class="text-xs px-3 py-1.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+        class="text-xs font-medium px-4 py-2 rounded-xl bg-red-700 text-white hover:bg-red-800 transition-colors">
         {{ 'dex.deals.actions.reject' | translate }}
       </button>
     }

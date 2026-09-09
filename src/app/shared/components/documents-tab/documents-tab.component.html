@@ -24,7 +24,7 @@
 
     <div class="flex flex-col justify-end">
       <button (click)="clearFilters()"
-        class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+        class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
         {{ 'common.clear' | translate }}
       </button>
     </div>
@@ -32,7 +32,7 @@
     <div class="flex ml-auto items-end gap-2">
       @if (entityActive && !isViewer()) {
         <button (click)="openAdd()"
-          class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
@@ -92,36 +92,36 @@
               <td class="text-right" (click)="$event.stopPropagation()">
                 <div class="flex gap-1 justify-end">
                   <button (click)="viewFile(doc)"
-                    class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                    class="text-xs px-2 py-1 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                     {{ 'common.view' | translate }}
                   </button>
                   @if (entityActive && !isViewer()) {
                     <button (click)="openEdit(doc)"
-                      class="text-xs px-2 py-1 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
+                      class="text-xs px-2 py-1 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors">
                       {{ 'common.edit' | translate }}
                     </button>
                     @if (canSign(doc)) {
                       <button (click)="signDocument(doc)"
                         [title]="'documentsTab.actions.signDocument' | translate"
-                        class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                        class="text-xs px-2 py-1 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
                         {{ 'documentsTab.actions.sign' | translate }}
                       </button>
                     }
                     @if (doc.documentType === 2) {
                       <button (click)="shareDocument(doc)"
-                        class="text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
+                        class="text-xs px-2 py-1 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
                         {{ 'documentsTab.actions.share' | translate }}
                       </button>
                     }
                     @if (doc.documentType === 2 || doc.documentType === 3) {
                       <button (click)="publishDocument(doc)"
                         [title]="'documentsTab.actions.publishTitle' | translate"
-                        class="text-xs px-2 py-1 rounded bg-amber-700 text-white hover:bg-amber-800 transition-colors">
+                        class="text-xs px-2 py-1 rounded-xl bg-amber-700 text-white hover:bg-amber-800 transition-colors">
                         {{ 'documentsTab.actions.publish' | translate }}
                       </button>
                     }
                     <button (click)="removeDocument(doc)"
-                      class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">
+                      class="text-xs px-2 py-1 rounded-xl bg-red-700 text-white hover:bg-red-800 transition-colors">
                       {{ 'common.remove' | translate }}
                     </button>
                   }
@@ -186,12 +186,12 @@
               <td class="text-right">
                 <div class="flex gap-1 justify-end">
                   <button (click)="viewInbound(doc)"
-                    class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                    class="text-xs px-2 py-1 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                     {{ 'common.view' | translate }}
                   </button>
                   @if (canSignInbound(doc)) {
                     <button (click)="signInbound(doc)"
-                      class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
+                      class="text-xs px-2 py-1 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
                       {{ 'documentsTab.actions.sign' | translate }}
                     </button>
                   }
@@ -253,7 +253,7 @@
                 <p class="text-sm font-medium text-gray-500">{{ 'documentsTab.modal.sharedWithCount' | translate: { count: sharedWith().length } }}</p>
                 @if (entityActive && !isViewer()) {
                   <button (click)="shareDocument(formState().doc!)"
-                    class="text-xs px-3 py-1.5 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+                    class="text-xs font-medium px-4 py-2 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -282,7 +282,7 @@
                         <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">{{ 'documentsTab.modal.ownerBadge' | translate }}</span>
                       } @else if (entityActive && !isViewer()) {
                         <button (click)="unshareAccount(formState().doc!, acc)"
-                          class="text-xs px-2 py-0.5 rounded bg-red-700 text-white hover:bg-red-800 transition-colors shrink-0">
+                          class="text-xs px-2 py-0.5 rounded-xl bg-red-700 text-white hover:bg-red-800 transition-colors shrink-0">
                           {{ 'documentsTab.modal.revoke' | translate }}
                         </button>
                       }
@@ -448,12 +448,12 @@
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <!-- Sign lives in the row actions (next to View / Edit), not here. -->
         <button type="button" (click)="closeModal()"
-          class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ (isViewMode ? 'common.close' : 'common.cancel') | translate }}
         </button>
         @if (!isViewMode) {
           <button type="button" (click)="onSave()" [disabled]="!isFormValid()"
-            class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
+            class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
             {{ (isAddMode ? 'documentsTab.addDocument' : 'documentsTab.modal.saveChanges') | translate }}
           </button>
         }
