@@ -29,6 +29,13 @@ or pool is non-zero, so the EGP column appears with 0.00 per row. Amounts render
 `money` pipe. The overview itself is ~10× faster (see the Entity API changelog). i18n
 `credit.subscriberClaims` / `servicePool` / `claimsOnPool` in en + ar.
 
+Follow-up the same day: the first cut showed all four platform currencies as columns of zeros.
+Two causes — the row mapping dropped `withheld`, so `undefined !== 0` marked every currency
+live; and "any non-zero" is the wrong rule for the columns anyway. The columns are now the
+entity's regulator-**approved** currencies (`vaultGetApprovedCurrencies`, every state) plus any
+currency that carries a non-zero claim, hold or pool — money is never hidden, but an unapproved
+currency with nothing in it earns no column.
+
 #### Fixed — the asset Price chart and exports follow the asset's price mode
 
 On [assets/details](src/app/pages/secure/assets/details/) the Price chart always drew Bid and
