@@ -74,33 +74,32 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
-            <th class="px-6 py-2">{{ 'documents.table.title' | translate }}</th>
-            <th class="px-6 py-2">{{ 'documents.table.fileType' | translate }}</th>
-            <th class="px-6 py-2">{{ 'documents.table.cid' | translate }}</th>
-            <th class="px-6 py-2">{{ 'common.type' | translate }}</th>
-            <th class="px-6 py-2">{{ 'common.createdAt' | translate }}</th>
-            <th class="px-6 py-2">{{ 'common.state' | translate }}</th>
+            <th>{{ 'common.id' | translate }}</th>
+            <th>{{ 'documents.table.title' | translate }}</th>
+            <th>{{ 'documents.table.fileType' | translate }}</th>
+            <th>{{ 'documents.table.cid' | translate }}</th>
+            <th>{{ 'common.type' | translate }}</th>
+            <th>{{ 'common.createdAt' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (!loading) {
             @if (filtered().length == 0) {
-              <tr class="bg-white border-b"><td class="px-6 py-2" colspan="7">{{ 'common.noData' | translate }}</td></tr>
+              <tr class="bg-white"><td colspan="7">{{ 'common.noData' | translate }}</td></tr>
             } @else {
-              @for (doc of pagedDocs(); track doc.id; let i = $index; let isEven = $even) {
-                <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                    [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="view(doc)">
-                  <td class="px-6 py-2">{{ i + 1 }}</td>
-                  <td class="px-6 py-2" [title]="doc.description">{{ doc.title || ('#' + doc.id) }}</td>
-                  <td class="px-6 py-2 text-gray-500">{{ doc.fileType || '—' }}</td>
-                  <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="doc.cid">{{ doc.cid }}</td>
-                  <td class="px-6 py-2">{{ typeLabel(doc.documentType) }}</td>
-                  <td class="px-6 py-2">{{ utils.formatDate(doc.createdAt) }}</td>
-                  <td class="px-6 py-2">
+              @for (doc of pagedDocs(); track doc.id; let i = $index) {
+                <tr class="cursor-pointer transition-colors" (click)="view(doc)">
+                  <td>{{ i + 1 }}</td>
+                  <td [title]="doc.description">{{ doc.title || ('#' + doc.id) }}</td>
+                  <td class="text-gray-500">{{ doc.fileType || '—' }}</td>
+                  <td class="font-mono truncate max-w-[220px]" [title]="doc.cid">{{ doc.cid }}</td>
+                  <td>{{ typeLabel(doc.documentType) }}</td>
+                  <td>{{ utils.formatDate(doc.createdAt) }}</td>
+                  <td>
                     <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="stateClass(doc.documentState)">
                       {{ stateLabel(doc.documentState) }}
                     </span>

@@ -1,6 +1,6 @@
 <app-header [title]="'sidebar.custody' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- My custodian services (type-2) -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-4">
@@ -9,20 +9,20 @@
       <p class="text-xs text-gray-600">{{ 'custody.myServices.description' | translate }}</p>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">{{ 'common.name' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.address' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
+            <th>{{ 'common.name' | translate }}</th>
+            <th>{{ 'common.address' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
           </tr>
         </thead>
         <tbody>
-          @for (s of pagedMyServices(); track s.address; let i = $index; let isEven = $even) {
-            <tr class="border-b cursor-pointer hover:bg-blue-50 hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="gotoService(s.address)">
-              <td class="px-4 py-2 font-medium text-gray-900">{{ s.name }}</td>
-              <td class="px-4 py-2 font-mono text-xs">{{ s.address }}</td>
-              <td class="px-4 py-2">
+          @for (s of pagedMyServices(); track s.address; let i = $index) {
+            <tr class="cursor-pointer hover:bg-blue-50 transition-colors" (click)="gotoService(s.address)">
+              <td class="font-medium text-gray-900">{{ s.name }}</td>
+              <td class="font-mono text-xs">{{ s.address }}</td>
+              <td>
                 <span class="text-xs px-2 py-0.5 rounded-full" [class]="getStateClass(s.state)">
                   {{ s.stateName }}{{ s.suspended ? (' (' + ('state.suspended' | translate) + ')') : '' }}
                 </span>
@@ -30,7 +30,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="3" class="py-6 text-center text-gray-500 text-sm">
                 @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.myServices.empty' | translate }} }
               </td>
             </tr>
@@ -49,32 +49,32 @@
       <p class="text-xs text-gray-600">{{ 'custody.underCustody.description' | translate }}</p>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">{{ 'custody.underCustody.service' | translate }}</th>
-            <th class="px-4 py-2">{{ 'custody.underCustody.myService' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
-            <th class="px-4 py-2">{{ 'custody.underCustody.updated' | translate }}</th>
+            <th>{{ 'custody.underCustody.service' | translate }}</th>
+            <th>{{ 'custody.underCustody.myService' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
+            <th>{{ 'custody.underCustody.updated' | translate }}</th>
           </tr>
         </thead>
         <tbody>
-          @for (m of pagedMandates(); track (m.service + m.party); let i = $index; let isEven = $even) {
-            <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-              <td class="px-4 py-2 font-mono text-xs">{{ m.service }}</td>
-              <td class="px-4 py-2 font-medium text-gray-900">{{ m.partyName || m.party }}</td>
-              <td class="px-4 py-2">
+          @for (m of pagedMandates(); track (m.service + m.party); let i = $index) {
+            <tr class="transition-colors">
+              <td class="font-mono text-xs">{{ m.service }}</td>
+              <td class="font-medium text-gray-900">{{ m.partyName || m.party }}</td>
+              <td>
                 @if (m.active) {
                   <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'custody.underCustody.active' | translate }}</span>
                 } @else {
                   <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'custody.underCustody.detached' | translate }}</span>
                 }
               </td>
-              <td class="px-4 py-2 text-xs">{{ m.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td class="text-xs">{{ m.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="4" class="py-6 text-center text-gray-500 text-sm">
                 @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.underCustody.empty' | translate }} }
               </td>
             </tr>
@@ -93,30 +93,30 @@
       <p class="text-xs text-gray-600">{{ 'custody.assets.description' | translate }}</p>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">{{ 'common.name' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.symbol' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.address' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            <th>{{ 'common.name' | translate }}</th>
+            <th>{{ 'common.symbol' | translate }}</th>
+            <th>{{ 'common.address' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
+            <th>{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @for (a of pagedCustodied(); track a.address; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
-              <td class="px-4 py-2 font-medium text-gray-900">{{ a.name }}</td>
-              <td class="px-4 py-2">
+              <td class="font-medium text-gray-900">{{ a.name }}</td>
+              <td>
                 @if (a.symbol) {
                   <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 text-indigo-700">{{ a.symbol }}</span>
                 }
               </td>
-              <td class="px-4 py-2 font-mono text-xs">{{ a.address }}</td>
-              <td class="px-4 py-2">
+              <td class="font-mono text-xs">{{ a.address }}</td>
+              <td>
                 <span class="text-xs px-2 py-0.5 rounded-full" [class]="getStateClass(a.state)">{{ a.stateName }}</span>
               </td>
-              <td class="px-4 py-2">
+              <td>
                 <div class="flex gap-2">
                   <button (click)="toggleAssetHolds(a.address)"
                     class="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
@@ -133,38 +133,38 @@
             </tr>
             @if (expandedAsset() === a.address) {
               <tr>
-                <td colspan="5" class="px-4 py-3 bg-gray-50">
-                  <table class="w-full text-xs text-left text-gray-700 border border-gray-200 rounded">
-                    <thead class="text-xs text-gray-600 uppercase bg-gray-100">
+                <td colspan="5" class="bg-gray-50">
+                  <table class="table-v4 w-full text-xs text-left border border-gray-200 rounded">
+                    <thead>
                       <tr>
-                        <th class="px-3 py-1.5">#</th>
-                        <th class="px-3 py-1.5">{{ 'custody.holds.account' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'common.amount' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'custody.holds.remaining' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'common.state' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'custody.holds.placedBy' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'common.reason' | translate }}</th>
-                        <th class="px-3 py-1.5">{{ 'common.actions' | translate }}</th>
+                        <th>#</th>
+                        <th>{{ 'custody.holds.account' | translate }}</th>
+                        <th>{{ 'common.amount' | translate }}</th>
+                        <th>{{ 'custody.holds.remaining' | translate }}</th>
+                        <th>{{ 'common.state' | translate }}</th>
+                        <th>{{ 'custody.holds.placedBy' | translate }}</th>
+                        <th>{{ 'common.reason' | translate }}</th>
+                        <th>{{ 'common.actions' | translate }}</th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (h of assetHolds(); track h.holdId) {
-                        <tr class="border-t border-gray-200">
-                          <td class="px-3 py-1.5">{{ h.holdId }}</td>
-                          <td class="px-3 py-1.5 font-mono">{{ h.accountAddress }}</td>
-                          <td class="px-3 py-1.5">{{ h.amount }}</td>
-                          <td class="px-3 py-1.5">{{ h.remaining }}</td>
-                          <td class="px-3 py-1.5">
+                        <tr class="border-t">
+                          <td>{{ h.holdId }}</td>
+                          <td class="font-mono">{{ h.accountAddress }}</td>
+                          <td>{{ h.amount }}</td>
+                          <td>{{ h.remaining }}</td>
+                          <td>
                             <span class="text-xs px-2 py-0.5 rounded-full" [class]="holdStateClass(h.state)">{{ h.stateName }}</span>
                           </td>
-                          <td class="px-3 py-1.5">
+                          <td>
                             <span class="text-xs px-2 py-0.5 rounded-full"
                               [class]="isOwnHold(h) ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-700'">
                               {{ placedByLabel(h) }}
                             </span>
                           </td>
-                          <td class="px-3 py-1.5">{{ h.reason || '—' }}</td>
-                          <td class="px-3 py-1.5">
+                          <td>{{ h.reason || '—' }}</td>
+                          <td>
                             @if (h.state !== 3 && isOwnHold(h) && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('custody-hold-release')) {
                               <button (click)="openReleaseModal(h)"
                                 class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800 transition-colors">
@@ -174,7 +174,7 @@
                           </td>
                         </tr>
                       } @empty {
-                        <tr><td colspan="8" class="px-3 py-3 text-center text-gray-500">{{ 'custody.holds.empty' | translate }}</td></tr>
+                        <tr><td colspan="8" class="text-center text-gray-500">{{ 'custody.holds.empty' | translate }}</td></tr>
                       }
                     </tbody>
                   </table>
@@ -183,7 +183,7 @@
             }
           } @empty {
             <tr>
-              <td colspan="5" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="5" class="py-6 text-center text-gray-500 text-sm">
                 @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.assets.empty' | translate }} }
               </td>
             </tr>

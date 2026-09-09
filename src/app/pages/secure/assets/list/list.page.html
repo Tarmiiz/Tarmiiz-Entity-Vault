@@ -101,17 +101,17 @@
     <!-- Assets Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
       <div class="overflow-x-auto rounded-lg">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
               <tr>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.id' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.name' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.symbol' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.currency' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.type' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.priceMode' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.circulating' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'assets.table.state' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.id' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.name' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.symbol' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.currency' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.type' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.priceMode' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.circulating' | translate }}</th>
+                  <th scope="col">{{ 'assets.table.state' | translate }}</th>
               </tr>
           </thead>
           <tbody class="text-xs">
@@ -121,26 +121,26 @@
             @else {
               <!-- no data -->
               @if(filteredAssets().length == 0) {
-                  <tr class="bg-white border-b hover:bg-gray-50">
-                      <td class="px-6 py-2">{{ 'common.noData' | translate }}</td>
+                  <tr class="bg-white">
+                      <td>{{ 'common.noData' | translate }}</td>
                   </tr>
               }
               @else {
-                @for(data of pagedAssets(); track data.address; let i = $index; let isEven = $even;) {
-                    <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(data)">
-                        <td class="px-6 py-2">{{ i + 1 }}</td>
-                        <td class="px-6 py-2">{{ data.name }}</td>
-                        <td class="px-6 py-2"><span class="badge-symbol">{{ data.symbol }}</span></td>
-                        <td class="px-6 py-2"><span class="badge-currency">{{ data.currencyCode }}</span></td>
-                        <td class="px-6 py-2">{{ data.supplyModeName || ((data.supplyMode === 2 ? 'assets.enums.supplyMode.dynamic' : 'assets.enums.supplyMode.fixed') | translate) }}</td>
-                        <td class="px-6 py-2">
+                @for(data of pagedAssets(); track data.address; let i = $index;) {
+                    <tr class="cursor-pointer transition-colors" (click)="viewDetails(data)">
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ data.name }}</td>
+                        <td><span class="badge-symbol">{{ data.symbol }}</span></td>
+                        <td><span class="badge-currency">{{ data.currencyCode }}</span></td>
+                        <td>{{ data.supplyModeName || ((data.supplyMode === 2 ? 'assets.enums.supplyMode.dynamic' : 'assets.enums.supplyMode.fixed') | translate) }}</td>
+                        <td>
                           <span class="px-2 py-0.5 text-xs font-semibold rounded-full"
                             [class]="data.priceMode === 1 ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'">
                             {{ data.priceModeName || ((data.priceMode === 1 ? 'assets.enums.priceMode.single' : 'assets.enums.priceMode.bidAsk') | translate) }}
                           </span>
                         </td>
-                        <td class="px-6 py-2">{{ data.circulating | number:'1.0-0' }}</td>
-                        <td class="px-6 py-2">
+                        <td>{{ data.circulating | number:'1.0-0' }}</td>
+                        <td>
                           <div class="flex items-center gap-1.5">
                             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(data.state)">
                               {{ data.stateName }}

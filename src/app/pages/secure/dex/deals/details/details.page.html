@@ -228,34 +228,34 @@
 
         @if (tab() === 'rounds') {
           <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <table class="table-v4 w-full text-sm text-left">
+              <thead>
                 <tr>
-                  <th class="px-6 py-2">{{ 'dex.deals.rounds.when' | translate }}</th>
-                  <th class="px-6 py-2 text-center">{{ 'dex.deals.table.round' | translate }}</th>
-                  <th class="px-6 py-2">{{ 'dex.deals.rounds.action' | translate }}</th>
-                  <th class="px-6 py-2">{{ 'dex.deals.rounds.actor' | translate }}</th>
-                  <th class="px-6 py-2 text-right">{{ 'dex.deals.table.amount' | translate }}</th>
-                  <th class="px-6 py-2 text-right">{{ 'dex.deals.table.price' | translate }}</th>
-                  <th class="px-6 py-2">{{ 'dex.deals.rounds.reason' | translate }}</th>
+                  <th>{{ 'dex.deals.rounds.when' | translate }}</th>
+                  <th class="text-center">{{ 'dex.deals.table.round' | translate }}</th>
+                  <th>{{ 'dex.deals.rounds.action' | translate }}</th>
+                  <th>{{ 'dex.deals.rounds.actor' | translate }}</th>
+                  <th class="text-right">{{ 'dex.deals.table.amount' | translate }}</th>
+                  <th class="text-right">{{ 'dex.deals.table.price' | translate }}</th>
+                  <th>{{ 'dex.deals.rounds.reason' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="text-xs">
                 @if (rounds().length === 0) {
-                  <tr class="bg-white border-b"><td class="px-6 py-2" colspan="7">{{ 'common.noData' | translate }}</td></tr>
+                  <tr class="bg-white"><td colspan="7">{{ 'common.noData' | translate }}</td></tr>
                 } @else {
-                  @for (r of pagedRounds(); track r.txHash + '-' + r.logIndex; let isEven = $even) {
-                    <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                      <td class="px-6 py-2">{{ r.createdAt ? utils.formatTime(r.createdAt) : '—' }}</td>
-                      <td class="px-6 py-2 text-center">{{ r.roundNo }}</td>
-                      <td class="px-6 py-2">
+                  @for (r of pagedRounds(); track r.txHash + '-' + r.logIndex) {
+                    <tr>
+                      <td>{{ r.createdAt ? utils.formatTime(r.createdAt) : '—' }}</td>
+                      <td class="text-center">{{ r.roundNo }}</td>
+                      <td>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="actionClass(r)">{{ actionLabel(r) }}</span>
                       </td>
-                      <td class="px-6 py-2 font-mono">{{ r.actor ? (r.actor.slice(0,10) + '…') : '—' }}</td>
+                      <td class="font-mono">{{ r.actor ? (r.actor.slice(0,10) + '…') : '—' }}</td>
                       <!-- null ≠ 0 here: the action simply set no terms. -->
-                      <td class="px-6 py-2 text-right">{{ r.amount === null ? '—' : fmtAmount(r.amount) }}</td>
-                      <td class="px-6 py-2 text-right">{{ r.price === null ? '—' : (r.price | money) }}</td>
-                      <td class="px-6 py-2">{{ r.reason || '—' }}</td>
+                      <td class="text-right">{{ r.amount === null ? '—' : fmtAmount(r.amount) }}</td>
+                      <td class="text-right">{{ r.price === null ? '—' : (r.price | money) }}</td>
+                      <td>{{ r.reason || '—' }}</td>
                     </tr>
                   }
                 }

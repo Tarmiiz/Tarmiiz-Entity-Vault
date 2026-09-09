@@ -1,6 +1,6 @@
 <app-header [title]="'sidebar.dexMemberships' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
@@ -21,40 +21,40 @@
       </div>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">{{ 'common.id' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dex.memberships.table.venue' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dex.memberships.table.venueEntity' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dex.memberships.table.myService' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dex.members.table.consent' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dex.members.table.approval' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dex.members.table.added' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            <th>{{ 'common.id' | translate }}</th>
+            <th>{{ 'dex.memberships.table.venue' | translate }}</th>
+            <th>{{ 'dex.memberships.table.venueEntity' | translate }}</th>
+            <th>{{ 'dex.memberships.table.myService' | translate }}</th>
+            <th>{{ 'dex.members.table.consent' | translate }}</th>
+            <th>{{ 'dex.members.table.approval' | translate }}</th>
+            <th>{{ 'dex.members.table.added' | translate }}</th>
+            <th>{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
-          @for (m of pagedMemberships(); track m.dexService + '-' + m.memberService; let i = $index; let isEven = $even) {
-            <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-              <td class="px-4 py-2">{{ i + 1 }}</td>
-              <td class="px-4 py-2">
+          @for (m of pagedMemberships(); track m.dexService + '-' + m.memberService; let i = $index) {
+            <tr class="transition-colors">
+              <td>{{ i + 1 }}</td>
+              <td>
                 <div>{{ m.venueName || '—' }}</div>
                 <div class="font-mono text-gray-500 break-all">{{ m.dexService }}</div>
               </td>
-              <td class="px-4 py-2">{{ m.venueEntityName || '—' }}</td>
-              <td class="px-4 py-2">
+              <td>{{ m.venueEntityName || '—' }}</td>
+              <td>
                 <div>{{ m.memberName || '—' }}</div>
                 <div class="font-mono text-gray-500 break-all">{{ m.memberService }}</div>
               </td>
-              <td class="px-4 py-2">
+              <td>
                 @if (m.accepted) {
                   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'dex.members.consent.venueAccepted' | translate }}</span>
                 } @else {
                   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'dex.members.consent.awaitingVenue' | translate }}</span>
                 }
               </td>
-              <td class="px-4 py-2">
+              <td>
                 @if (m.state === 2) {
                   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'state.approved' | translate }}</span>
                 } @else {
@@ -62,8 +62,8 @@
                 }
               </td>
               <!-- addedAt is in MILLISECONDS — formatMs, never utils.formatDate directly. -->
-              <td class="px-4 py-2">{{ formatMs(m.addedAt) }}</td>
-              <td class="px-4 py-2">
+              <td>{{ formatMs(m.addedAt) }}</td>
+              <td>
                 <div class="flex gap-2">
                   @if (canAct() && features.systemFunctionEnabled('dex-member-remove')) {
                     <button (click)="exitMembership(m)"
@@ -76,7 +76,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="8" class="py-6 text-center text-gray-500 text-sm">
                 @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'dex.memberships.empty' | translate }} }
               </td>
             </tr>

@@ -71,23 +71,23 @@
     <!-- Services Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
       <div class="overflow-x-auto rounded-lg">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
               <tr>
-                  <th scope="col" class="px-6 py-2">{{ 'services.table.id' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'services.table.name' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'services.table.type' | translate }}</th>
+                  <th scope="col">{{ 'services.table.id' | translate }}</th>
+                  <th scope="col">{{ 'services.table.name' | translate }}</th>
+                  <th scope="col">{{ 'services.table.type' | translate }}</th>
                   @if(!isServiceProvider){
-                    <th scope="col" class="px-6 py-2">{{ 'services.table.verificationLevel' | translate }}</th>
+                    <th scope="col">{{ 'services.table.verificationLevel' | translate }}</th>
                   }
                   @if(showAllServices()){
-                    <th scope="col" class="px-6 py-2">{{ 'services.table.regulator' | translate }}</th>
+                    <th scope="col">{{ 'services.table.regulator' | translate }}</th>
                   }
                   @if(!isServiceProvider){
-                    <th scope="col" class="px-6 py-2">{{ 'services.table.coverage' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'services.table.shortfall' | translate }}</th>
+                    <th scope="col">{{ 'services.table.coverage' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'services.table.shortfall' | translate }}</th>
                   }
-                  <th scope="col" class="px-6 py-2">{{ 'services.table.state' | translate }}</th>
+                  <th scope="col">{{ 'services.table.state' | translate }}</th>
               </tr>
           </thead>
           <tbody class="text-xs">
@@ -97,28 +97,28 @@
             @else {
               <!-- no data -->
               @if(filteredServices().length == 0) {
-                  <tr class="bg-white border-b hover:bg-gray-50">
-                      <td class="px-6 py-2">{{ 'common.noData' | translate }}</td>
+                  <tr class="bg-white">
+                      <td>{{ 'common.noData' | translate }}</td>
                   </tr>
               }
               @else {
-                  @for(service of pagedServices(); track service.address; let i = $index; let isEven = $even;) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(service)">
-                          <td class="px-6 py-2">{{ i + 1 }}</td>
-                          <td class="px-6 py-2">{{ service.name }}</td>
-                          <td class="px-6 py-2">
+                  @for(service of pagedServices(); track service.address; let i = $index;) {
+                      <tr class="cursor-pointer transition-colors" (click)="viewDetails(service)">
+                          <td>{{ i + 1 }}</td>
+                          <td>{{ service.name }}</td>
+                          <td>
                             <div class="flex items-center gap-2 flex-wrap">
                               <span>{{ typeDisplay(service) }}</span>
                             </div>
                           </td>
                           @if(!isServiceProvider){
-                            <td class="px-6 py-2">{{ service.verificationLevelName }}</td>
+                            <td>{{ service.verificationLevelName }}</td>
                           }
                           @if(showAllServices()){
-                            <td class="px-6 py-2">{{ service.regulatorSymbol }}</td>
+                            <td>{{ service.regulatorSymbol }}</td>
                           }
                           @if(!isServiceProvider){
-                            <td class="px-6 py-2">
+                            <td>
                               @let cov = coverageFor(service.address);
                               @if (!cov) {
                                 <span class="text-gray-300">—</span>
@@ -148,7 +148,7 @@
                                 }
                               }
                             </td>
-                            <td class="px-6 py-2 text-right font-mono">
+                            <td class="text-right font-mono">
                               @let covSf = coverageFor(service.address);
                               @if (covSf && covSf.totalShortfall > 0) {
                                 <span class="text-red-700 font-semibold">{{ covSf.totalShortfall | money }}</span>
@@ -158,7 +158,7 @@
                               }
                             </td>
                           }
-                          <td class="px-6 py-2">
+                          <td>
                             <div class="flex items-center gap-1.5">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(service.state)">
                                 {{ service.stateName }}

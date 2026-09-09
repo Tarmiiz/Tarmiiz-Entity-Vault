@@ -1,65 +1,21 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title class="pt-2">
-      {{ title || ('header.title' | translate) }}
-    </ion-title>
-    <ion-buttons slot="end" class="pt-2">
-      @if (userInfo) {
-        <ion-label class="text-indigo-300">
-          {{ 'header.welcome' | translate: { name: userInfo.name || userInfo.username || 'Admin' } }}
-        </ion-label>
+<!-- The page title is NOT rendered here any more — it is reported to
+     PageTitleService and drawn in the global top bar, beside the logo (v4 shell).
+     All 59 pages keep <app-header [title]="…"> unchanged; that input is now how
+     the bar learns the title, so do not remove the tag from a page.
+
+     What remains is the entity-restricted banner, which is page-level content:
+     it explains why the tenant is read-only and belongs above the page body, not
+     in the chrome. -->
+@if (!entityActive) {
+  <div class="entity-restricted-banner bg-red-600 text-white text-xs font-semibold py-1.5 px-4">
+    <div class="flex items-center justify-center gap-2">
+      <span>{{ 'header.entityRestricted' | translate: { state: entityStateName || ('state.unknown' | translate) } }}</span>
+      @if (entityStateReason) {
+        <button (click)="showReasonAlert()"
+          class="underline text-red-100 hover:text-white text-xs font-medium">
+          {{ 'common.reason' | translate }}
+        </button>
       }
-      <ion-button (click)="gotoMessages()" fill="clear" class="p-0 relative" [title]="'header.messages' | translate">
-        <!-- 🔴 THESE ICONS DELIBERATELY SET NO TEXT COLOUR. Do not "fix" that by adding one.
-             They carried a gray-800 base plus a white dark-mode variant (written without the exact
-             class tokens on purpose: quoting them makes every grep for live usage match this
-             comment), which OVERRODE the toolbar's own content
-             colour with a failing one and then hid the failure from half the users:
-                 #1f2937 (gray-800) on the #24488e toolbar = 1.67:1   — WCAG wants 3.0:1 for icons
-                 #ffffff (the dark: variant)               = 8.78:1
-             So they were near-invisible in LIGHT mode and fine in dark — the exact inverse of the
-             palette bug fixed the same day, and invisible to anyone testing on a dark-mode machine.
-             Removing both classes lets them take `ion-header ion-toolbar { color: #d2d2d7 }` from
-             global.scss: 5.83:1, passes, and matches the ion-title and buttons beside them.
-             ⚠️ This is inheritance, which is what caused the invisible-row bug — but not the same
-             shape: there the value came from `body` via an OS media query nobody chose, three
-             component boundaries away. Here it comes from the toolbar's OWN rule, whose entire job is
-             to colour its content, and every sibling on the bar already uses it. -->
-        <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
-        </svg>
-        @if (unreadCount() > 0) {
-          <span class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-semibold flex items-center justify-center">
-            {{ unreadCount() > 99 ? '99+' : unreadCount() }}
-          </span>
-        }
-      </ion-button>
-      <ion-button [routerLink]="profileRoute" routerDirection="root" fill="clear" class="p-0" [title]="'header.profile' | translate">
-        <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.948 8.948 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-        </svg>
-      </ion-button>
-      <ion-button (click)="logout()" fill="clear" class="p-0" [title]="'header.logout' | translate">
-          <svg class="w-6 h-6 mr-2 rtl:mr-0 rtl:ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
-          </svg>
-      </ion-button>
-  </ion-buttons>
-  </ion-toolbar>
-  @if (!entityActive) {
-    <div class="bg-red-600 text-white text-xs font-semibold py-1.5 px-4">
-      <div class="flex items-center justify-center gap-2">
-        <span>{{ 'header.entityRestricted' | translate: { state: entityStateName || ('state.unknown' | translate) } }}</span>
-        @if (entityStateReason) {
-          <button (click)="showReasonAlert()"
-            class="underline text-red-100 hover:text-white text-xs font-medium">
-            {{ 'common.reason' | translate }}
-          </button>
-        }
-      </div>
     </div>
-  }
-</ion-header>
+  </div>
+}

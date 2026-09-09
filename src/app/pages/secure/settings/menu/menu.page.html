@@ -1,6 +1,6 @@
 <app-header [title]="'sidebar.menuSettings' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
     <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'settings.menu.title' | translate }}</h2>
@@ -11,21 +11,21 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">{{ 'settings.menu.table.menuItem' | translate }}</th>
-            <th class="px-4 py-2">{{ 'settings.menu.table.key' | translate }}</th>
-            <th class="px-4 py-2">{{ 'settings.menu.enabledState' | translate }}</th>
-            <th class="px-4 py-2">{{ 'settings.menu.table.license' | translate }}</th>
+            <th>{{ 'settings.menu.table.menuItem' | translate }}</th>
+            <th>{{ 'settings.menu.table.key' | translate }}</th>
+            <th>{{ 'settings.menu.enabledState' | translate }}</th>
+            <th>{{ 'settings.menu.table.license' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @for (row of rows(); track row.menuKey; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
-              <td class="px-4 py-2">{{ labelFor(row.menuKey) }}</td>
-              <td class="px-4 py-2 font-mono text-xs">{{ row.menuKey }}</td>
-              <td class="px-4 py-2">
+              <td>{{ labelFor(row.menuKey) }}</td>
+              <td class="font-mono text-xs">{{ row.menuKey }}</td>
+              <td>
                 <label class="inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -44,11 +44,11 @@
               </td>
               <!-- Licence is a SEPARATE axis from the toggle: a module can be enabled here and
                    still not open, because the regulator's licences gate the routes behind it. -->
-              <td class="px-4 py-2"><app-license-pill [license]="row.license" /></td>
+              <td><app-license-pill [license]="row.license" /></td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="4" class="py-6 text-center text-gray-500 text-sm">
                 @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'settings.menu.noItems' | translate }} }
               </td>
             </tr>

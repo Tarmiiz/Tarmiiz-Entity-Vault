@@ -1,6 +1,6 @@
 <app-header [title]="'sidebar.approvalSettings' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
     <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'approvals.policy.heading' | translate }}</h2>
@@ -14,21 +14,21 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">{{ 'approvals.policy.table.actionCategory' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.description' | translate }}</th>
-            <th class="px-4 py-2">{{ 'approvals.policy.table.requiresApproval' | translate }}</th>
-            <th class="px-4 py-2">{{ 'settings.menu.table.license' | translate }}</th>
+            <th>{{ 'approvals.policy.table.actionCategory' | translate }}</th>
+            <th>{{ 'common.description' | translate }}</th>
+            <th>{{ 'approvals.policy.table.requiresApproval' | translate }}</th>
+            <th>{{ 'settings.menu.table.license' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @for (row of rows(); track row.actionCategory; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
-              <td class="px-4 py-2 font-mono text-xs">{{ row.actionCategory }}</td>
-              <td class="px-4 py-2">{{ labelFor(row.actionCategory) }}</td>
-              <td class="px-4 py-2">
+              <td class="font-mono text-xs">{{ row.actionCategory }}</td>
+              <td>{{ labelFor(row.actionCategory) }}</td>
+              <td>
                 <label class="inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -48,11 +48,11 @@
               <!-- A policy on a category this tenant is not licensed for is not WRONG — it is
                    inert, because no request in that category can be raised. Saying so stops an
                    admin debugging an approval queue that is empty for a reason nothing states. -->
-              <td class="px-4 py-2"><app-license-pill [license]="row.license" /></td>
+              <td><app-license-pill [license]="row.license" /></td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="4" class="py-6 text-center text-gray-500 text-sm">
                 @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'approvals.policy.empty' | translate }} }
               </td>
             </tr>

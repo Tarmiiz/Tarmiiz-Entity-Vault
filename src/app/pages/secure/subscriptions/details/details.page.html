@@ -369,37 +369,37 @@
             <!-- Table -->
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.holdings.asset' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.currency' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.holdings.balance' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.withheld' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.holdings.held' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.available' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.holdings.cost' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.value' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.pl' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.plPercent' | translate }}</th>
-                    <th scope="col" class="px-6 py-2 text-center"></th>
+                    <th scope="col">{{ 'subscriptions.details.holdings.asset' | translate }}</th>
+                    <th scope="col">{{ 'common.symbol' | translate }}</th>
+                    <th scope="col">{{ 'subscriptions.details.currency' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.holdings.balance' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.withheld' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.holdings.held' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.available' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.holdings.cost' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.value' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.pl' | translate }}</th>
+                    <th scope="col" class="text-right">{{ 'subscriptions.details.plPercent' | translate }}</th>
+                    <th scope="col" class="text-center"></th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (filteredHoldings().length === 0) {
-                    <tr class="bg-white border-b hover:bg-gray-50">
-                      <td colspan="12" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
+                    <tr class="bg-white">
+                      <td colspan="12">{{ 'common.noData' | translate }}</td>
                     </tr>
                   } @else {
-                    @for (h of pagedHoldings(); track h.asset; let isEven = $even) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" [class.row-new]="newHoldingKeys().has(h.asset)" (click)="gotoAsset(h.asset)">
-                        <td class="px-6 py-2">{{ h.assetName }}</td>
-                        <td class="px-6 py-2">@if(h.assetSymbol){<span class="badge-symbol">{{ h.assetSymbol }}</span>}</td>
-                        <td class="px-6 py-2"><span class="badge-currency">{{ h.currencyCode }}</span></td>
-                        <td class="px-6 py-2 text-right">{{ h.balance | number: '1.0-2' }}</td>
-                        <td class="px-6 py-2 text-right text-amber-700">{{ h.withheld | number: '1.0-2' }}</td>
-                        <td class="px-6 py-2 text-right">
+                    @for (h of pagedHoldings(); track h.asset) {
+                      <tr class="cursor-pointer transition-colors" [class.row-new]="newHoldingKeys().has(h.asset)" (click)="gotoAsset(h.asset)">
+                        <td>{{ h.assetName }}</td>
+                        <td>@if(h.assetSymbol){<span class="badge-symbol">{{ h.assetSymbol }}</span>}</td>
+                        <td><span class="badge-currency">{{ h.currencyCode }}</span></td>
+                        <td class="text-right">{{ h.balance | number: '1.0-2' }}</td>
+                        <td class="text-right text-amber-700">{{ h.withheld | number: '1.0-2' }}</td>
+                        <td class="text-right">
                           @if ((h.regulatorHeld ?? 0) > 0) {
                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">
                               {{ (h.regulatorHeld ?? 0) | number: '1.0-2' }}
@@ -407,18 +407,16 @@
                             </span>
                           } @else { 0 }
                         </td>
-                        <td class="px-6 py-2 text-right text-green-700 font-semibold">{{ h.available | number: '1.0-2' }}</td>
-                        <td class="px-6 py-2 text-right">{{ h.cost | money }}</td>
-                        <td class="px-6 py-2 text-right">{{ h.balance * h.currentBid | money }}</td>
+                        <td class="text-right text-green-700 font-semibold">{{ h.available | number: '1.0-2' }}</td>
+                        <td class="text-right">{{ h.cost | money }}</td>
+                        <td class="text-right">{{ h.balance * h.currentBid | money }}</td>
                         @let pl = utils.round6(h.balance * h.currentBid - h.cost);
-                        <td class="px-6 py-2 text-right font-semibold"
-                            [class.text-green-600]="pl > 0"
+                        <td class="text-right font-semibold" [class.text-green-600]="pl> 0"
                             [class.text-red-600]="pl < 0"
                             [class.text-gray-500]="pl === 0">
                           {{ pl | money }}
                         </td>
-                        <td class="px-6 py-2 text-right font-semibold"
-                            [class.text-green-600]="pl > 0"
+                        <td class="text-right font-semibold" [class.text-green-600]="pl> 0"
                             [class.text-red-600]="pl < 0"
                             [class.text-gray-500]="pl === 0">
                           @if (h.cost > 0) {
@@ -427,7 +425,7 @@
                             —
                           }
                         </td>
-                        <td class="px-6 py-2 text-center whitespace-nowrap">
+                        <td class="text-center whitespace-nowrap">
                           @if ((h.regulatorActiveHolds ?? 0) > 0 || (h.regulatorHeld ?? 0) > 0) {
                             <button (click)="toggleHoldsRow(h, $event)"
                               class="text-[11px] px-2 py-1 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors"
@@ -438,33 +436,33 @@
                         </td>
                       </tr>
                       @if (expandedHoldsAsset() === h.asset) {
-                        <tr class="bg-amber-50 border-b">
-                          <td colspan="12" class="px-6 py-3">
+                        <tr class="bg-amber-50">
+                          <td colspan="12">
                             <div class="text-xs font-semibold text-amber-900 mb-2">{{ 'subscriptions.details.holdings.regulatorHoldsOn' | translate }} {{ h.assetSymbol || h.assetName }}</div>
                             @if ((holdsByAsset()[h.asset]?.length ?? 0) === 0) {
                               <div class="text-xs text-gray-500">{{ 'subscriptions.details.holdings.noHoldsRecorded' | translate }}</div>
                             } @else {
-                              <table class="w-full text-xs">
-                                <thead class="text-[11px] uppercase text-gray-600">
+                              <table class="table-v4 w-full text-xs">
+                                <thead>
                                   <tr>
-                                    <th class="px-2 py-1 text-left">{{ 'common.id' | translate }}</th>
-                                    <th class="px-2 py-1 text-right">{{ 'common.amount' | translate }}</th>
-                                    <th class="px-2 py-1 text-right">{{ 'subscriptions.details.holdings.released' | translate }}</th>
-                                    <th class="px-2 py-1 text-right">{{ 'subscriptions.details.holdings.remaining' | translate }}</th>
-                                    <th class="px-2 py-1 text-left">{{ 'common.state' | translate }}</th>
-                                    <th class="px-2 py-1 text-left">{{ 'custody.holds.placedBy' | translate }}</th>
-                                    <th class="px-2 py-1 text-left">{{ 'common.reason' | translate }}</th>
-                                    <th class="px-2 py-1 text-left">{{ 'common.createdAt' | translate }}</th>
+                                    <th class="text-left">{{ 'common.id' | translate }}</th>
+                                    <th class="text-right">{{ 'common.amount' | translate }}</th>
+                                    <th class="text-right">{{ 'subscriptions.details.holdings.released' | translate }}</th>
+                                    <th class="text-right">{{ 'subscriptions.details.holdings.remaining' | translate }}</th>
+                                    <th class="text-left">{{ 'common.state' | translate }}</th>
+                                    <th class="text-left">{{ 'custody.holds.placedBy' | translate }}</th>
+                                    <th class="text-left">{{ 'common.reason' | translate }}</th>
+                                    <th class="text-left">{{ 'common.createdAt' | translate }}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   @for (hold of holdsByAsset()[h.asset]; track hold.holdId) {
-                                    <tr class="border-b border-amber-100">
-                                      <td class="px-2 py-1">#{{ hold.holdId }}</td>
-                                      <td class="px-2 py-1 text-right">{{ hold.amount }}</td>
-                                      <td class="px-2 py-1 text-right">{{ hold.released }}</td>
-                                      <td class="px-2 py-1 text-right font-semibold">{{ hold.remaining }}</td>
-                                      <td class="px-2 py-1">
+                                    <tr class="border-amber-100">
+                                      <td>#{{ hold.holdId }}</td>
+                                      <td class="text-right">{{ hold.amount }}</td>
+                                      <td class="text-right">{{ hold.released }}</td>
+                                      <td class="text-right font-semibold">{{ hold.remaining }}</td>
+                                      <td>
                                         <span class="px-1.5 py-0.5 rounded text-[10px]"
                                           [class.bg-amber-200]="hold.state === 1"
                                           [class.text-amber-900]="hold.state === 1"
@@ -475,9 +473,9 @@
                                           {{ hold.stateName }}
                                         </span>
                                       </td>
-                                      <td class="px-2 py-1 font-mono text-[10px] text-gray-600" [title]="hold.placedBy">{{ hold.placedBy ? (hold.placedBy | slice:0:10) + '…' : '—' }}</td>
-                                      <td class="px-2 py-1 text-gray-700">{{ hold.reason }}</td>
-                                      <td class="px-2 py-1 text-gray-500">{{ hold.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                                      <td class="font-mono text-[10px] text-gray-600" [title]="hold.placedBy">{{ hold.placedBy ? (hold.placedBy | slice:0:10) + '…' : '—' }}</td>
+                                      <td class="text-gray-700">{{ hold.reason }}</td>
+                                      <td class="text-gray-500">{{ hold.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                                     </tr>
                                   }
                                 </tbody>
@@ -588,36 +586,36 @@
             <!-- Table -->
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div class="overflow-x-auto rounded-lg">
-                <table class="w-full text-sm text-left text-gray-700">
-                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <table class="table-v4 w-full text-sm text-left">
+                  <thead>
                     <tr>
-                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.date' | translate }}</th>
-                      <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
-                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.holdings.asset' | translate }}</th>
-                      <th scope="col" class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
-                      <th scope="col" class="px-6 py-2 text-center">{{ 'subscriptions.details.currency' | translate }}</th>
-                      <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.transactions.tokens' | translate }}</th>
-                      <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.transactions.price' | translate }}</th>
-                      <th scope="col" class="px-6 py-2 text-right">{{ 'subscriptions.details.total' | translate }}</th>
+                      <th scope="col">{{ 'subscriptions.details.date' | translate }}</th>
+                      <th scope="col">{{ 'common.type' | translate }}</th>
+                      <th scope="col">{{ 'subscriptions.details.holdings.asset' | translate }}</th>
+                      <th scope="col">{{ 'common.symbol' | translate }}</th>
+                      <th scope="col" class="text-center">{{ 'subscriptions.details.currency' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'subscriptions.details.transactions.tokens' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'subscriptions.details.transactions.price' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'subscriptions.details.total' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if(filteredTransactions().length === 0) {
-                      <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="8" class="px-6 py-2 text-center text-gray-400">{{ 'subscriptions.details.transactions.empty' | translate }}</td>
+                      <tr class="bg-white">
+                        <td colspan="8" class="text-center text-gray-400">{{ 'subscriptions.details.transactions.empty' | translate }}</td>
                       </tr>
                     }
                     @else {
-                      @for(trx of pagedTransactions(); track trx.trxId; let isEven = $even) {
-                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" [class.row-new]="newTrxIds().has(trx.trxId)" (click)="viewTransactionDetails(trx)">
-                          <td class="px-6 py-2">{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
-                          <td class="px-6 py-2">{{ trx.assetName }}</td>
-                          <td class="px-6 py-2">@if(trx.assetSymbol){<span class="badge-symbol">{{ trx.assetSymbol }}</span>}</td>
-                          <td class="px-6 py-2 text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
-                          <td class="px-6 py-2 text-right">{{ trx.tokens | number: '1.0-2' }}</td>
-                          <td class="px-6 py-2 text-right">{{ trx.price | money }}</td>
-                          <td class="px-6 py-2 text-right">{{ trx.totalPrice | money }}</td>
+                      @for(trx of pagedTransactions(); track trx.trxId) {
+                        <tr class="cursor-pointer transition-colors" [class.row-new]="newTrxIds().has(trx.trxId)" (click)="viewTransactionDetails(trx)">
+                          <td>{{ trx.time * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                          <td><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getTrxTypeClass(trx.trxType)">{{ trx.trxType }}</span></td>
+                          <td>{{ trx.assetName }}</td>
+                          <td>@if(trx.assetSymbol){<span class="badge-symbol">{{ trx.assetSymbol }}</span>}</td>
+                          <td class="text-center"><span class="badge-currency">{{ trx.currencyCode }}</span></td>
+                          <td class="text-right">{{ trx.tokens | number: '1.0-2' }}</td>
+                          <td class="text-right">{{ trx.price | money }}</td>
+                          <td class="text-right">{{ trx.totalPrice | money }}</td>
                         </tr>
                       }
                     }
@@ -757,25 +755,25 @@
             <!-- Table -->
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div class="overflow-x-auto rounded-lg">
-                <table class="w-full text-sm text-left text-gray-700">
-                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <table class="table-v4 w-full text-sm text-left">
+                  <thead>
                     <tr>
-                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.date' | translate }}</th>
-                      <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
-                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.credit.direction' | translate }}</th>
-                      <th scope="col" class="px-6 py-2">{{ 'subscriptions.details.currency' | translate }}</th>
-                      <th scope="col" class="px-6 py-2 text-right">{{ 'common.amount' | translate }}</th>
-                      <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+                      <th scope="col">{{ 'subscriptions.details.date' | translate }}</th>
+                      <th scope="col">{{ 'common.type' | translate }}</th>
+                      <th scope="col">{{ 'subscriptions.details.credit.direction' | translate }}</th>
+                      <th scope="col">{{ 'subscriptions.details.currency' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'common.amount' | translate }}</th>
+                      <th scope="col">{{ 'common.state' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if (filteredCreditTransactions().length === 0) {
-                      <tr class="bg-white border-b hover:bg-gray-50">
-                        <td colspan="6" class="px-6 py-2 text-center text-gray-400">{{ 'subscriptions.details.credit.empty' | translate }}</td>
+                      <tr class="bg-white">
+                        <td colspan="6" class="text-center text-gray-400">{{ 'subscriptions.details.credit.empty' | translate }}</td>
                       </tr>
                     } @else {
-                      @for (trx of pagedCreditTransactions(); track trx.trxId; let isEven = $even) {
-                        <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" [class.row-new]="newCreditTrxIds().has(trx.trxId)" (click)="creditTrxInfoService.show(trx, subscriptionAddress)">
+                      @for (trx of pagedCreditTransactions(); track trx.trxId) {
+                        <tr class="cursor-pointer transition-colors" [class.row-new]="newCreditTrxIds().has(trx.trxId)" (click)="creditTrxInfoService.show(trx, subscriptionAddress)">
                           <!-- ⚠️ THE BACKDATED PILL SITS WITH THE DATE, DELIBERATELY. It is a statement
                                about THIS TIMESTAMP — that it was supplied by the caller rather than
                                taken from block time — and nothing else. It must never be rendered
@@ -784,15 +782,15 @@
                                reader will otherwise conclude the backdating was AUTHORISED, which
                                this flag cannot tell them. Authorisation lives in the audit trail
                                (`backdate_grant` / `backdate_revoke`). -->
-                          <td class="px-6 py-2">
+                          <td>
                             {{ trx.startTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}
                             @if (trx.backdated) {
                               <span class="ml-2 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800 align-middle"
                                     [title]="'credit.backdated.tooltip' | translate">{{ 'credit.backdated.pill' | translate }}</span>
                             }
                           </td>
-                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span></td>
-                          <td class="px-6 py-2">
+                          <td><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxTypeClass(trx.trxType)">{{ trx.trxTypeName }}</span></td>
+                          <td>
                             @if (getCreditTrxDirection(trx); as dir) {
                               <span class="px-3 py-1 text-xs font-semibold rounded-full"
                                 [class]="dir === 'In' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'">{{ dir }}</span>
@@ -800,9 +798,9 @@
                               <span class="text-gray-400">—</span>
                             }
                           </td>
-                          <td class="px-6 py-2"><span class="badge-currency">{{ trx.currencySymbol }}</span></td>
-                          <td class="px-6 py-2 text-right">{{ trx.amount | money }}</td>
-                          <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span></td>
+                          <td><span class="badge-currency">{{ trx.currencySymbol }}</span></td>
+                          <td class="text-right">{{ trx.amount | money }}</td>
+                          <td><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getCreditTrxStateClass(trx.trxState)">{{ trx.trxStateName }}</span></td>
                         </tr>
                       }
                     }
@@ -948,20 +946,20 @@
             } @else if (!ekycVerifications().length) {
               <p class="text-sm text-gray-500">{{ 'subscriptions.details.identity.empty' | translate }}</p>
             } @else {
-              <table class="min-w-full text-sm">
+              <table class="table-v4 min-w-full text-sm">
                 <thead>
-                  <tr class="text-left text-gray-500 border-b">
-                    <th class="py-2 pr-4">{{ 'subscriptions.details.identity.transactionId' | translate }}</th>
-                    <th class="py-2 pr-4">{{ 'subscriptions.details.identity.sharedAt' | translate }}</th>
-                    <th class="py-2"></th>
+                  <tr class="text-left text-gray-500">
+                    <th class="pr-4">{{ 'subscriptions.details.identity.transactionId' | translate }}</th>
+                    <th class="pr-4">{{ 'subscriptions.details.identity.sharedAt' | translate }}</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (v of ekycVerifications(); track v.transactionId) {
-                    <tr class="border-b last:border-0">
-                      <td class="py-2 pr-4 font-mono text-gray-800">{{ v.transactionId }}</td>
-                      <td class="py-2 pr-4 text-gray-600">{{ v.sharedAt ? utils.formatTime(v.sharedAt) : '—' }}</td>
-                      <td class="py-2 text-right">
+                    <tr class="last:border-0">
+                      <td class="pr-4 font-mono text-gray-800">{{ v.transactionId }}</td>
+                      <td class="pr-4 text-gray-600">{{ v.sharedAt ? utils.formatTime(v.sharedAt) : '—' }}</td>
+                      <td class="text-right">
                         <button (click)="openEkycVerification(v.transactionId)"
                           class="text-xs px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                           {{ (ekycSelected() === v.transactionId ? 'subscriptions.details.identity.hide' : 'subscriptions.details.identity.view') | translate }}
@@ -970,7 +968,7 @@
                     </tr>
                     @if (ekycSelected() === v.transactionId) {
                       <tr>
-                        <td colspan="3" class="py-3 bg-gray-50 rounded">
+                        <td colspan="3" class="bg-gray-50 rounded">
                           @if (ekycLoading()) {
                             <p class="text-sm text-gray-500 px-3">{{ 'common.loading' | translate }}</p>
                           } @else if (ekycDetail(); as d) {

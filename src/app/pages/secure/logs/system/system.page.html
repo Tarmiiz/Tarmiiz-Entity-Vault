@@ -1,6 +1,6 @@
 <app-header [title]="title"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- Tamper-evidence status -->
   @if (!verifyState().loading) {
@@ -77,41 +77,39 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-4 py-2">#</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.time' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.category' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.action' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.function' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.actor' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.user' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.clientIp' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.contract' | translate }}</th>
-            <th scope="col" class="px-4 py-2">{{ 'logs.table.refNo' | translate }}</th>
+            <th scope="col">#</th>
+            <th scope="col">{{ 'logs.table.time' | translate }}</th>
+            <th scope="col">{{ 'logs.table.category' | translate }}</th>
+            <th scope="col">{{ 'logs.table.action' | translate }}</th>
+            <th scope="col">{{ 'logs.table.function' | translate }}</th>
+            <th scope="col">{{ 'logs.table.actor' | translate }}</th>
+            <th scope="col">{{ 'logs.table.user' | translate }}</th>
+            <th scope="col">{{ 'logs.table.clientIp' | translate }}</th>
+            <th scope="col">{{ 'logs.table.contract' | translate }}</th>
+            <th scope="col">{{ 'logs.table.refNo' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (rows().length === 0) {
-            <tr class="bg-white border-b"><td colspan="10" class="px-4 py-8 text-center text-gray-400">{{ 'common.noData' | translate }}</td></tr>
+            <tr class="bg-white"><td colspan="10" class="py-8 text-center text-gray-400">{{ 'common.noData' | translate }}</td></tr>
           }
-          @for (r of rows(); track r.id; let i = $index; let isEven = $even) {
-            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                (click)="openDetails(r)">
-              <td class="px-4 py-2">{{ i + 1 }}</td>
-              <td class="px-4 py-2 whitespace-nowrap">{{ utils.formatTime(r.time) }}</td>
-              <td class="px-4 py-2">
+          @for (r of rows(); track r.id; let i = $index) {
+            <tr class="cursor-pointer transition-colors" (click)="openDetails(r)">
+              <td>{{ i + 1 }}</td>
+              <td class="whitespace-nowrap">{{ utils.formatTime(r.time) }}</td>
+              <td>
                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">{{ r.category }}</span>
               </td>
-              <td class="px-4 py-2 font-semibold whitespace-nowrap">{{ actionLabel(r) }}</td>
-              <td class="px-4 py-2 font-mono" [title]="r.function_signature || r.function_selector">{{ functionLabel(r) }}</td>
-              <td class="px-4 py-2 font-mono" [title]="r.actor_address">{{ actorLabel(r) }}</td>
-              <td class="px-4 py-2 whitespace-nowrap" [title]="r.actor_user_id || ''">{{ userLabel(r) }}</td>
-              <td class="px-4 py-2 font-mono whitespace-nowrap">{{ r.client_ip || '' }}</td>
-              <td class="px-4 py-2 font-mono" [title]="r.contract">{{ contractLabel(r) }}</td>
-              <td class="px-4 py-2 font-mono text-xs">
+              <td class="font-semibold whitespace-nowrap">{{ actionLabel(r) }}</td>
+              <td class="font-mono" [title]="r.function_signature || r.function_selector">{{ functionLabel(r) }}</td>
+              <td class="font-mono" [title]="r.actor_address">{{ actorLabel(r) }}</td>
+              <td class="whitespace-nowrap" [title]="r.actor_user_id || ''">{{ userLabel(r) }}</td>
+              <td class="font-mono whitespace-nowrap">{{ r.client_ip || '' }}</td>
+              <td class="font-mono" [title]="r.contract">{{ contractLabel(r) }}</td>
+              <td class="font-mono text-xs">
                 @if (isZeroRef(r.ref_no)) {
                   <span class="text-gray-400">-</span>
                 } @else {

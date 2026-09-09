@@ -1,6 +1,6 @@
 ﻿<app-header [title]="'users.title' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- Filters -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
@@ -59,34 +59,32 @@
   <!-- Users Table -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'users.table.id' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'users.table.name' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'users.table.username' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'users.table.role' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'users.table.state' | translate }}</th>
+            <th scope="col">{{ 'users.table.id' | translate }}</th>
+            <th scope="col">{{ 'users.table.name' | translate }}</th>
+            <th scope="col">{{ 'users.table.username' | translate }}</th>
+            <th scope="col">{{ 'users.table.role' | translate }}</th>
+            <th scope="col">{{ 'users.table.state' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (loadingData) {}
           @else {
             @if (filteredUsers().length === 0) {
-              <tr class="bg-white border-b hover:bg-gray-50">
-                <td class="px-6 py-2">{{ 'common.noData' | translate }}</td>
+              <tr class="bg-white">
+                <td>{{ 'common.noData' | translate }}</td>
               </tr>
             }
             @else {
-              @for (user of pagedUsers(); track user.userId; let i = $index; let isEven = $even) {
-                <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                    [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                    (click)="viewDetails(user)">
-                  <td class="px-6 py-2">{{ i + 1 }}</td>
-                  <td class="px-6 py-2">{{ user.name }}</td>
-                  <td class="px-6 py-2">{{ user.username }}</td>
-                  <td class="px-6 py-2">{{ user.roleName }}</td>
-                  <td class="px-6 py-2">
+              @for (user of pagedUsers(); track user.userId; let i = $index) {
+                <tr class="cursor-pointer transition-colors" (click)="viewDetails(user)">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ user.name }}</td>
+                  <td>{{ user.username }}</td>
+                  <td>{{ user.roleName }}</td>
+                  <td>
                     <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(user.state)">
                       {{ user.stateName }}
                     </span>

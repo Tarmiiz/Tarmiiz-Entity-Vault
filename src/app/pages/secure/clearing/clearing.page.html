@@ -1,6 +1,6 @@
 <app-header [title]="'sidebar.clearing' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- Tab bar. The set is derived from the data (do we operate a CCP / are we a member), so a
        tenant that is both sides sees both halves — see visibleTabs() in the component. -->
@@ -105,33 +105,33 @@
         </select>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
             <tr>
-              <th class="px-4 py-2">{{ 'clearing.deliveries.key' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.deliveries.kind' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.deliveries.side' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.deliveries.amount' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.deliveries.proceeds' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.deliveries.deadline' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.status' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+              <th>{{ 'clearing.deliveries.key' | translate }}</th>
+              <th>{{ 'clearing.deliveries.kind' | translate }}</th>
+              <th>{{ 'clearing.deliveries.side' | translate }}</th>
+              <th>{{ 'clearing.deliveries.amount' | translate }}</th>
+              <th>{{ 'clearing.deliveries.proceeds' | translate }}</th>
+              <th>{{ 'clearing.deliveries.deadline' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            @for (d of pagedDeliveries(); track d.deliveryKey; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                <td class="px-4 py-2 text-xs font-mono">{{ shortKey(d.deliveryKey) }}</td>
-                <td class="px-4 py-2 text-xs">{{ deliveryKindName(d.kind) }}</td>
-                <td class="px-4 py-2 text-xs">{{ sideOf(d) }}</td>
+            @for (d of pagedDeliveries(); track d.deliveryKey) {
+              <tr class="transition-colors">
+                <td class="text-xs font-mono">{{ shortKey(d.deliveryKey) }}</td>
+                <td class="text-xs">{{ deliveryKindName(d.kind) }}</td>
+                <td class="text-xs">{{ sideOf(d) }}</td>
                 <!-- Token quantity: plain integer, never money-formatted. -->
-                <td class="px-4 py-2 text-xs">{{ d.amount | number:'1.0-0' }}</td>
-                <td class="px-4 py-2 text-xs">
+                <td class="text-xs">{{ d.amount | number:'1.0-0' }}</td>
+                <td class="text-xs">
                   {{ d.sellerProceeds | money }}
                   <span class="badge-currency ms-1">{{ currencyLabel(d.currencyCode) }}</span>
                 </td>
-                <td class="px-4 py-2 text-xs">{{ d.deadline ? utils.formatTime(d.deadline) : '—' }}</td>
-                <td class="px-4 py-2">
+                <td class="text-xs">{{ d.deadline ? utils.formatTime(d.deadline) : '—' }}</td>
+                <td>
                   <span class="text-xs px-2 py-0.5 rounded-full" [class]="deliveryStatusClass(d.status)">
                     {{ deliveryStatusName(d.status) }}
                   </span>
@@ -141,7 +141,7 @@
                     </span>
                   }
                 </td>
-                <td class="px-4 py-2 whitespace-nowrap">
+                <td class="whitespace-nowrap">
                   <button (click)="toggleDelivery(d)" class="text-xs text-blue-700 hover:underline">
                     {{ (expandedDelivery() === d.deliveryKey ? 'common.hide' : 'common.view') | translate }}
                   </button>
@@ -158,8 +158,8 @@
                 </td>
               </tr>
               @if (expandedDelivery() === d.deliveryKey) {
-                <tr class="bg-gray-50 border-b">
-                  <td class="px-4 py-3" colspan="8">
+                <tr class="bg-gray-50">
+                  <td colspan="8">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs mb-3">
                       <div><span class="text-gray-500">{{ 'clearing.deliveries.venue' | translate }}:</span>
                         <span class="font-mono">{{ d.dexService }}</span></div>
@@ -184,22 +184,22 @@
                     @if (holdsFor(d.deliveryKey).length === 0) {
                       <div class="text-xs text-gray-500">{{ 'clearing.holds.none' | translate }}</div>
                     } @else {
-                      <table class="w-full text-xs text-left text-gray-700">
-                        <thead class="text-gray-500">
+                      <table class="table-v4 w-full text-xs text-left">
+                        <thead>
                           <tr>
-                            <th class="py-1">{{ 'clearing.holds.id' | translate }}</th>
-                            <th class="py-1">{{ 'clearing.holds.placedBy' | translate }}</th>
-                            <th class="py-1">{{ 'clearing.holds.reason' | translate }}</th>
-                            <th class="py-1">{{ 'common.status' | translate }}</th>
+                            <th>{{ 'clearing.holds.id' | translate }}</th>
+                            <th>{{ 'clearing.holds.placedBy' | translate }}</th>
+                            <th>{{ 'clearing.holds.reason' | translate }}</th>
+                            <th>{{ 'common.status' | translate }}</th>
                           </tr>
                         </thead>
                         <tbody>
                           @for (h of holdsFor(d.deliveryKey); track h.holdId) {
-                            <tr class="border-t border-gray-200">
-                              <td class="py-1">{{ h.holdId }}</td>
-                              <td class="py-1 font-mono">{{ h.placedBy }}</td>
-                              <td class="py-1">{{ h.reason || '—' }}</td>
-                              <td class="py-1">
+                            <tr class="border-t">
+                              <td>{{ h.holdId }}</td>
+                              <td class="font-mono">{{ h.placedBy }}</td>
+                              <td>{{ h.reason || '—' }}</td>
+                              <td>
                                 <span class="px-2 py-0.5 rounded-full"
                                   [class]="h.released ? 'bg-gray-200 text-gray-600' : 'bg-amber-100 text-amber-800'">
                                   {{ (h.released ? 'clearing.holds.released' : 'clearing.holds.active') | translate }}
@@ -214,7 +214,7 @@
                 </tr>
               }
             } @empty {
-              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="8">
+              <tr><td class="py-6 text-center text-gray-500 text-sm" colspan="8">
                 {{ 'clearing.deliveries.empty' | translate }}
               </td></tr>
             }
@@ -239,31 +239,31 @@
         <p class="text-xs text-gray-600">{{ 'clearing.members.description' | translate }}</p>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
             <tr>
-              <th class="px-4 py-2">{{ 'clearing.member' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.clearingHouse' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.fundingService' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.status' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.updated' | translate }}</th>
+              <th>{{ 'clearing.member' | translate }}</th>
+              <th>{{ 'clearing.clearingHouse' | translate }}</th>
+              <th>{{ 'clearing.fundingService' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th>{{ 'common.updated' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            @for (m of members(); track (m.clearingHouse + '|' + m.entity); let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                <td class="px-4 py-2 text-xs">{{ entityLabel(m.entity) }}</td>
-                <td class="px-4 py-2 text-xs">{{ entityLabel(m.clearingHouse) }}</td>
-                <td class="px-4 py-2 text-xs font-mono">{{ m.fundingService || '—' }}</td>
-                <td class="px-4 py-2">
+            @for (m of members(); track (m.clearingHouse + '|' + m.entity)) {
+              <tr class="transition-colors">
+                <td class="text-xs">{{ entityLabel(m.entity) }}</td>
+                <td class="text-xs">{{ entityLabel(m.clearingHouse) }}</td>
+                <td class="text-xs font-mono">{{ m.fundingService || '—' }}</td>
+                <td>
                   <span class="text-xs px-2 py-0.5 rounded-full" [class]="memberStateClass(m.state)">
                     {{ memberStateName(m.state) }}
                   </span>
                 </td>
-                <td class="px-4 py-2 text-xs">{{ utils.formatTime(m.updatedAt) }}</td>
+                <td class="text-xs">{{ utils.formatTime(m.updatedAt) }}</td>
               </tr>
             } @empty {
-              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="5">
+              <tr><td class="py-6 text-center text-gray-500 text-sm" colspan="5">
                 {{ 'clearing.members.empty' | translate }}
               </td></tr>
             }
@@ -281,28 +281,28 @@
         <p class="text-xs text-gray-600">{{ 'clearing.memberships.description' | translate }}</p>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
             <tr>
-              <th class="px-4 py-2">{{ 'clearing.clearingHouse' | translate }}</th>
-              <th class="px-4 py-2">{{ 'clearing.fundingService' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.status' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.updated' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+              <th>{{ 'clearing.clearingHouse' | translate }}</th>
+              <th>{{ 'clearing.fundingService' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th>{{ 'common.updated' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            @for (m of memberships(); track m.clearingHouse; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                <td class="px-4 py-2 text-xs">{{ entityLabel(m.clearingHouse) }}</td>
-                <td class="px-4 py-2 text-xs font-mono">{{ m.fundingService || '—' }}</td>
-                <td class="px-4 py-2">
+            @for (m of memberships(); track m.clearingHouse) {
+              <tr class="transition-colors">
+                <td class="text-xs">{{ entityLabel(m.clearingHouse) }}</td>
+                <td class="text-xs font-mono">{{ m.fundingService || '—' }}</td>
+                <td>
                   <span class="text-xs px-2 py-0.5 rounded-full" [class]="memberStateClass(m.state)">
                     {{ memberStateName(m.state) }}
                   </span>
                 </td>
-                <td class="px-4 py-2 text-xs">{{ utils.formatTime(m.updatedAt) }}</td>
-                <td class="px-4 py-2">
+                <td class="text-xs">{{ utils.formatTime(m.updatedAt) }}</td>
+                <td>
                   @if (needsAccept(m) && features.systemFunctionEnabled('clearing-member-accept')) {
                     <button (click)="acceptMembership(m)"
                       class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">
@@ -312,7 +312,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td class="px-4 py-6 text-center text-gray-500 text-sm" colspan="5">
+              <tr><td class="py-6 text-center text-gray-500 text-sm" colspan="5">
                 {{ 'clearing.memberships.empty' | translate }}
               </td></tr>
             }

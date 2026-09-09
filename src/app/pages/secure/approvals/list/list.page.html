@@ -1,6 +1,6 @@
 <app-header [title]="'approvals.title' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- Filters -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
@@ -37,34 +37,34 @@
   <!-- Approvals Table -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">#</th>
-            <th class="px-4 py-2">{{ 'approvals.list.table.category' | translate }}</th>
-            <th class="px-4 py-2">{{ 'approvals.list.table.target' | translate }}</th>
-            <th class="px-4 py-2">{{ 'approvals.list.table.maker' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.createdAt' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            <th>#</th>
+            <th>{{ 'approvals.list.table.category' | translate }}</th>
+            <th>{{ 'approvals.list.table.target' | translate }}</th>
+            <th>{{ 'approvals.list.table.maker' | translate }}</th>
+            <th>{{ 'common.createdAt' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
+            <th>{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
-          @for (a of pagedApprovals(); track a.requestId; let i = $index; let isEven = $even) {
-            <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-              <td class="px-4 py-2">{{ i + 1 }}</td>
-              <td class="px-4 py-2 font-mono text-xs">{{ a.actionCategory }}</td>
-              <td class="px-4 py-2 font-mono text-xs">
+          @for (a of pagedApprovals(); track a.requestId; let i = $index) {
+            <tr class="transition-colors">
+              <td>{{ i + 1 }}</td>
+              <td class="font-mono text-xs">{{ a.actionCategory }}</td>
+              <td class="font-mono text-xs">
                 {{ a.targetLabel || a.targetAddress }}
               </td>
-              <td class="px-4 py-2">{{ a.makerUserName || a.makerUserId }}</td>
-              <td class="px-4 py-2 text-xs">{{ formatDate(a.createdAt) }}</td>
-              <td class="px-4 py-2">
+              <td>{{ a.makerUserName || a.makerUserId }}</td>
+              <td class="text-xs">{{ formatDate(a.createdAt) }}</td>
+              <td>
                 <span class="px-2 py-0.5 rounded text-xs" [ngClass]="stateBadgeClass(a.approvalState)">
                   {{ a.approvalStateName }}
                 </span>
               </td>
-              <td class="px-4 py-2">
+              <td>
                 <div class="flex gap-1">
                   @if (canDecide(a)) {
                     <button (click)="approve(a)" class="text-xs px-2 py-1 rounded bg-green-700 text-white hover:bg-green-800">{{ 'approvals.list.approve' | translate }}</button>
@@ -78,7 +78,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="7" class="py-6 text-center text-gray-500 text-sm">
                 @if (loading()) { {{ 'common.loading' | translate }} }
                 @else            { {{ 'approvals.list.empty' | translate }} }
               </td>

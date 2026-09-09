@@ -1,18 +1,20 @@
 import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
-  IonRouterOutlet, IonSplitPane, IonMenu, IonHeader, IonFooter, IonToolbar,
-  IonContent, IonList, IonItem, IonLabel,
+  IonRouterOutlet, IonSplitPane, IonMenu, IonList, IonItem, IonLabel,
   IonButtons, IonMenuButton, MenuController } from '@ionic/angular/standalone';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { SocketService } from '../../services/socket.service';
 import { FeaturesService } from '../../services/features.service';
 import { ApiService } from '../../services/api.service';
 import { UnreadMessagesService } from '../../services/unread-messages.service';
+import { LiveStatusService } from '../../services/live-status.service';
+import { PageTitleService } from '../../services/page-title.service';
 import { Entity, User } from '../../models/data.model';
 import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/modal-new-thread/modal-new-thread.component";
 
@@ -25,10 +27,6 @@ import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/m
     IonRouterOutlet,
     IonSplitPane,
     IonMenu,
-    IonHeader,
-    IonFooter,
-    IonToolbar,
-    IonContent,
     IonList,
     IonItem,
     IonLabel,
@@ -46,10 +44,48 @@ export class AuthorizedLayoutComponent implements OnDestroy {
   private unreadMessages = inject(UnreadMessagesService);
   private menuController = inject(MenuController);
   private languageService = inject(LanguageService);
+  private router = inject(Router);
   features = inject(FeaturesService);
 
+  /* Live/Refreshing badge. Pages still declare themselves live the same way —
+     <app-live-indicator [refreshing]="refreshing()"> — but that component now
+     reports here instead of drawing, so the badge shows once in the bar rather
+     than as a grey strip on each of 22 pages. */
+  live = inject(LiveStatusService);
+
+  /* Page title, reported by app-header from all 59 pages. */
+  pageTitle = inject(PageTitleService);
+
+  /* ── The GLOBAL TOP BAR lives here now (v4 shell, phase 3) ──────────────────
+     It moved out of header.component because a bar rendered inside a page can
+     only ever span the split-pane's CONTENT pane — it starts where the sidebar
+     ends. v4's bar spans the whole window and carries the logo, so it has to be
+     a sibling ABOVE the split-pane, which is here.
+     header.component keeps the page TITLE (and the entity-restricted banner) and
+     now renders it as a heading inside the content, matching v4 where the panel
+     holds "Company Name Dashboard" and the bar holds the identity + actions.
+     Consequence: these five actions are duplicated from header.component and
+     REMOVED there — do not leave a copy in both. */
   get lang() { return this.languageService.lang(); }
   toggleLang() { this.languageService.toggle(); }
+
+  gotoMessages() { this.router.navigate(['/authorized/messages/list']); }
+
+  // Every role lands on their personal My Profile page.
+  get profileRoute(): string { return '/authorized/users/my-profile'; }
+
+  /* Sidebar collapse (v4: 250px panel ⇄ 64px icon rail). The menu had NO collapse
+     state before — this is new. Persisted so it survives navigation and reloads;
+     the split-pane keeps owning the mobile drawer, so this only affects the
+     docked desktop width. */
+  menuCollapsed = signal<boolean>(this.readCollapsed());
+  toggleMenuCollapsed() {
+    this.menuCollapsed.update(v => !v);
+    try { localStorage.setItem('vault-menu-collapsed', this.menuCollapsed() ? '1' : '0'); } catch { /* private mode */ }
+  }
+  private readCollapsed(): boolean {
+    try { return localStorage.getItem('vault-menu-collapsed') === '1'; } catch { return false; }
+  }
 
   get entityInfo(): Entity { return this.authService.entityInfo; }
   get userInfo(): User { return this.authService.userInfo; }

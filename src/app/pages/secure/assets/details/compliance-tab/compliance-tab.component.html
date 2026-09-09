@@ -145,37 +145,37 @@
             <p class="text-xs text-gray-500 mb-2 max-w-3xl">{{ 'assets.details.compliance.requirementsHint' | translate }}</p>
             @if (activeRequirements().length) {
               <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                  <thead style="background-color:#4a5568" class="text-white">
+                <table class="table-v4 min-w-full text-sm">
+                  <thead>
                     <tr>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.requirement' | translate }}</th>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.role' | translate }}</th>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.obligation' | translate }}</th>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.status' | translate }}</th>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.origin' | translate }}</th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.requirement' | translate }}</th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.role' | translate }}</th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.obligation' | translate }}</th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.status' | translate }}</th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.origin' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (r of activeRequirements(); track r.requirementId; let even = $even) {
                       <tr [class.bg-gray-50]="!even">
-                        <td class="px-3 py-2 text-gray-800">{{ r.name }}</td>
+                        <td class="text-gray-800">{{ r.name }}</td>
                         <!-- The REGULATOR'S named role definition, not the platform's base
                              role. Two rows may name different definitions over the same base
                              role, so printing the base name would make two distinct
                              obligations look like one. The independence marker answers the
                              question the party list cannot: "why was an issuer-owned party
                              accepted here?" — because the regulator waived it (S46). -->
-                        <td class="px-3 py-2 text-gray-600">
+                        <td class="text-gray-600">
                           {{ requirementRoleName(r) || '—' }}
                           @if (r.roleDefinition && independenceWaived(r)) {
                             <span class="ltr:ml-1 rtl:mr-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-semibold">{{ 'assets.details.compliance.independenceWaived' | translate }}</span>
                           }
                         </td>
-                        <td class="px-3 py-2">
+                        <td>
                           <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
                                 [class]="r.state === 1 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">{{ r.stateName }}</span>
                         </td>
-                        <td class="px-3 py-2">
+                        <td>
                           <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="statusClass(requirementStatus(r))">
                             @switch (requirementStatus(r)) {
                               @case ('satisfied') { {{ 'assets.details.compliance.statusSatisfied' | translate }} }
@@ -190,7 +190,7 @@
                             </button>
                           }
                         </td>
-                        <td class="px-3 py-2 text-xs text-gray-600">
+                        <td class="text-xs text-gray-600">
                           {{ (r.composed ? 'assets.details.compliance.composedByUs' : 'assets.details.compliance.fromPolicy') | translate }}
                         </td>
                       </tr>
@@ -516,25 +516,25 @@
 
             @if (registration().parties?.length) {
               <div class="overflow-x-auto mb-4">
-                <table class="min-w-full text-sm">
-                  <thead style="background-color:#4a5568" class="text-white">
+                <table class="table-v4 min-w-full text-sm">
+                  <thead>
                     <tr>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.role' | translate }}</th>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.party' | translate }}</th>
-                      <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.consent' | translate }}</th>
-                      <th class="px-3 py-2"></th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.role' | translate }}</th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.party' | translate }}</th>
+                      <th class="ltr:text-left rtl:text-right font-semibold">{{ 'assets.details.compliance.consent' | translate }}</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (p of registration().parties; track p.party; let even = $even) {
                       <tr [class.bg-gray-50]="!even">
-                        <td class="px-3 py-2 text-gray-800">{{ p.roleName }}</td>
-                        <td class="px-3 py-2 font-mono text-xs text-gray-600">{{ p.party }}</td>
-                        <td class="px-3 py-2">
+                        <td class="text-gray-800">{{ p.roleName }}</td>
+                        <td class="font-mono text-xs text-gray-600">{{ p.party }}</td>
+                        <td>
                           <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
                                 [class]="p.state === 2 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">{{ p.stateName }}</span>
                         </td>
-                        <td class="px-3 py-2 ltr:text-right rtl:text-left">
+                        <td class="ltr:text-right rtl:text-left">
                           @if (canWrite()) {
                             <button type="button" (click)="removeParty(p.party)"
                               class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">

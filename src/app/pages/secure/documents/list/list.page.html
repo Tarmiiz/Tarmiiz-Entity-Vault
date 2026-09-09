@@ -1,6 +1,6 @@
 <app-header [title]="'documents.title' | translate"></app-header>
 
-<div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="flex-grow p-4 pt-4 overflow-y-auto">
 
   @if (features.systemFunctionEnabled('view-documents')) {
 
@@ -75,49 +75,48 @@
   <!-- Documents Table — own documents + inbound shares in ONE list -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'documents.table.title' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'documents.table.owner' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'documents.table.fileType' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'documents.table.cid' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.createdAt' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+            <th scope="col">{{ 'common.id' | translate }}</th>
+            <th scope="col">{{ 'documents.table.title' | translate }}</th>
+            <th scope="col">{{ 'documents.table.owner' | translate }}</th>
+            <th scope="col">{{ 'documents.table.fileType' | translate }}</th>
+            <th scope="col">{{ 'documents.table.cid' | translate }}</th>
+            <th scope="col">{{ 'common.type' | translate }}</th>
+            <th scope="col">{{ 'common.createdAt' | translate }}</th>
+            <th scope="col">{{ 'common.state' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (!loading) {
             @if (rows().length == 0) {
-              <tr class="bg-white border-b">
-                <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
+              <tr class="bg-white">
+                <td colspan="8">{{ 'common.noData' | translate }}</td>
               </tr>
             } @else {
-              @for (row of pagedRows(); track row.kind + ':' + row.owner + ':' + row.id; let i = $index; let isEven = $even) {
-                <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                    [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="view(row)">
-                  <td class="px-6 py-2">{{ i + 1 }}</td>
-                  <td class="px-6 py-2" [title]="row.doc?.description || ''">{{ row.title || ('#' + row.id) }}</td>
-                  <td class="px-6 py-2">
+              @for (row of pagedRows(); track row.kind + ':' + row.owner + ':' + row.id; let i = $index) {
+                <tr class="cursor-pointer transition-colors" (click)="view(row)">
+                  <td>{{ i + 1 }}</td>
+                  <td [title]="row.doc?.description || ''">{{ row.title || ('#' + row.id) }}</td>
+                  <td>
                     @if (row.kind === 'own') {
                       <span class="text-gray-500">{{ 'documents.list.you' | translate }}</span>
                     } @else {
                       <span class="font-mono truncate max-w-[180px] inline-block align-bottom" [title]="row.owner">{{ row.owner }}</span>
                     }
                   </td>
-                  <td class="px-6 py-2 text-gray-500">{{ row.fileType || '—' }}</td>
-                  <td class="px-6 py-2 font-mono truncate max-w-[220px]" [title]="row.cid">{{ row.cid || '—' }}</td>
-                  <td class="px-6 py-2">
+                  <td class="text-gray-500">{{ row.fileType || '—' }}</td>
+                  <td class="font-mono truncate max-w-[220px]" [title]="row.cid">{{ row.cid || '—' }}</td>
+                  <td>
                     @if (row.documentType !== null) {
                       <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="typeClass(row.documentType)">
                         {{ typeLabel(row.documentType) }}
                       </span>
                     } @else { — }
                   </td>
-                  <td class="px-6 py-2">{{ utils.formatDate(row.date) }}</td>
-                  <td class="px-6 py-2">
+                  <td>{{ utils.formatDate(row.date) }}</td>
+                  <td>
                     @if (row.kind === 'own') {
                       <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="stateClass(row.state)">
                         {{ stateLabel(row.state) }}

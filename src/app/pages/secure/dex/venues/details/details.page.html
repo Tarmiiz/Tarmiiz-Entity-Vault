@@ -151,42 +151,41 @@
               </div>
             }
             <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.issuer' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'common.address' | translate }}</th>
+                    <th>{{ 'common.id' | translate }}</th>
+                    <th>{{ 'dex.listings.table.asset' | translate }}</th>
+                    <th>{{ 'common.symbol' | translate }}</th>
+                    <th>{{ 'dex.listings.table.tier' | translate }}</th>
+                    <th>{{ 'dex.venues.details.assetsTable.issuer' | translate }}</th>
+                    <th>{{ 'common.address' | translate }}</th>
                     <!-- This venue's OWN leg on the pairing. Deliberately NOT labelled
                          "state": the row also carries the asset regulator's approval,
                          and conflating the two is what made the venue look powerless. -->
-                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.hosting' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.fees' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.assetsTable.enabled' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'common.actions' | translate }}</th>
+                    <th>{{ 'dex.venues.details.assetsTable.hosting' | translate }}</th>
+                    <th>{{ 'dex.venues.details.assetsTable.fees' | translate }}</th>
+                    <th>{{ 'dex.venues.details.assetsTable.enabled' | translate }}</th>
+                    <th>{{ 'common.actions' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueAssets().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="10">{{ 'dex.venues.details.assetsTable.noAssets' | translate }}</td></tr>
+                    <tr class="bg-white"><td class="text-gray-400" colspan="10">{{ 'dex.venues.details.assetsTable.noAssets' | translate }}</td></tr>
                   } @else {
-                    @for (a of pagedVAssets(); track a.baseAsset + '-' + a.tier; let i = $index; let isEven = $even) {
-                      <tr class="border-b transition-colors"
-                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                        <td class="px-6 py-2 cursor-pointer" (click)="goAsset(a.baseAsset)">{{ i + 1 }}</td>
-                        <td class="px-6 py-2 cursor-pointer" (click)="goAsset(a.baseAsset)">{{ a.assetName || '—' }}</td>
-                        <td class="px-6 py-2 cursor-pointer" (click)="goAsset(a.baseAsset)">@if (a.assetSymbol) { <span class="badge-symbol">{{ a.assetSymbol }}</span> } @else { — }</td>
-                        <td class="px-6 py-2">{{ tierLabelShort(a.tier) }}</td>
+                    @for (a of pagedVAssets(); track a.baseAsset + '-' + a.tier; let i = $index) {
+                      <tr class="transition-colors">
+                        <td class="cursor-pointer" (click)="goAsset(a.baseAsset)">{{ i + 1 }}</td>
+                        <td class="cursor-pointer" (click)="goAsset(a.baseAsset)">{{ a.assetName || '—' }}</td>
+                        <td class="cursor-pointer" (click)="goAsset(a.baseAsset)">@if (a.assetSymbol) { <span class="badge-symbol">{{ a.assetSymbol }}</span> } @else { — }</td>
+                        <td>{{ tierLabelShort(a.tier) }}</td>
                         <!-- issuerEntityName, NOT entityName: the row comes from the
                              (asset, venue) join, whose `entityName` is THIS VENUE's
                              operator — rendering it here labelled the venue as the
                              issuer of every foreign asset it hosts. -->
-                        <td class="px-6 py-2">{{ a.issuerEntityName || '—' }}</td>
-                        <td class="px-6 py-2 font-mono break-all">{{ a.baseAsset }}</td>
-                        <td class="px-6 py-2">
+                        <td>{{ a.issuerEntityName || '—' }}</td>
+                        <td class="font-mono break-all">{{ a.baseAsset }}</td>
+                        <td>
                           <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="hostStateClass(a.hostState)">
                             {{ hostStateLabel(a.hostState) | translate }}
                           </span>
@@ -194,7 +193,7 @@
                             <div class="text-gray-500 mt-1">{{ a.hostHaltReason }}</div>
                           }
                         </td>
-                        <td class="px-6 py-2 whitespace-nowrap">
+                        <td class="whitespace-nowrap">
                           <div>{{ feeLabel(a) }}</div>
                           <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="feeSourceClass(a)">
                             {{ feeSourceKey(a) | translate }}
@@ -204,8 +203,8 @@
                              MILLISECONDS by both writers (plugin System.currentTimeMillis /
                              API Date.now), unlike the chain-derived *_at columns in seconds.
                              formatDate's ×1000 rendered it as the year 58548. -->
-                        <td class="px-6 py-2">{{ a.addedAt ? utils.formatTime(a.addedAt) : '—' }}</td>
-                        <td class="px-6 py-2">
+                        <td>{{ a.addedAt ? utils.formatTime(a.addedAt) : '—' }}</td>
+                        <td>
                           <div class="flex flex-wrap gap-1">
                             @if (userInfo && userInfo.role !== 3 && a.hostState === 1 && features.systemFunctionEnabled('dex-venue-asset-accept')) {
                               <button (click)="acceptHostedAsset(a)"
@@ -257,37 +256,35 @@
         @if (activeTab() === 'orders') {
           <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.ordersTable.orderId' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.orders.table.side' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.orders.table.price' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'common.amount' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.ordersTable.filled' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.ordersTable.status' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'common.createdAt' | translate }}</th>
+                    <th>{{ 'common.id' | translate }}</th>
+                    <th>{{ 'dex.venues.details.ordersTable.orderId' | translate }}</th>
+                    <th>{{ 'dex.listings.table.asset' | translate }}</th>
+                    <th>{{ 'dex.orders.table.side' | translate }}</th>
+                    <th>{{ 'dex.orders.table.price' | translate }}</th>
+                    <th>{{ 'common.amount' | translate }}</th>
+                    <th>{{ 'dex.venues.details.ordersTable.filled' | translate }}</th>
+                    <th>{{ 'dex.venues.details.ordersTable.status' | translate }}</th>
+                    <th>{{ 'common.createdAt' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueOrders().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">{{ 'dex.venues.details.ordersTable.noOrders' | translate }}</td></tr>
+                    <tr class="bg-white"><td colspan="9">{{ 'dex.venues.details.ordersTable.noOrders' | translate }}</td></tr>
                   } @else {
-                    @for (o of pagedVOrders(); track o.ref; let i = $index; let isEven = $even) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                          (click)="goOrder(o.ref)">
-                        <td class="px-6 py-2">{{ i + 1 }}</td>
-                        <td class="px-6 py-2 font-mono" [title]="o.ref">{{ shortRef(o.ref) }}</td>
-                        <td class="px-6 py-2">{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
-                        <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? ('dex.orders.side.buy' | translate) : ('dex.orders.side.sell' | translate)) }}</span></td>
-                        <td class="px-6 py-2">{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
-                        <td class="px-6 py-2">{{ fmtAmount(o.amount) }}</td>
-                        <td class="px-6 py-2">{{ fmtAmount(o.filled) }}</td>
-                        <td class="px-6 py-2"><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStatusClass(o.status)">{{ o.statusName || o.status }}</span></td>
-                        <td class="px-6 py-2">{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</td>
+                    @for (o of pagedVOrders(); track o.ref; let i = $index) {
+                      <tr class="cursor-pointer transition-colors" (click)="goOrder(o.ref)">
+                        <td>{{ i + 1 }}</td>
+                        <td class="font-mono" [title]="o.ref">{{ shortRef(o.ref) }}</td>
+                        <td>{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
+                        <td><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || (o.side === 1 ? ('dex.orders.side.buy' | translate) : ('dex.orders.side.sell' | translate)) }}</span></td>
+                        <td>{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
+                        <td>{{ fmtAmount(o.amount) }}</td>
+                        <td>{{ fmtAmount(o.filled) }}</td>
+                        <td><span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStatusClass(o.status)">{{ o.statusName || o.status }}</span></td>
+                        <td>{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</td>
                       </tr>
                     }
                   }
@@ -305,37 +302,35 @@
         @if (activeTab() === 'trades') {
           <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.tradeId' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'common.amount' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.trades.table.price' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.credit' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.buyer' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.seller' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.venues.details.tradesTable.executed' | translate }}</th>
+                    <th>{{ 'common.id' | translate }}</th>
+                    <th>{{ 'dex.venues.details.tradesTable.tradeId' | translate }}</th>
+                    <th>{{ 'dex.listings.table.asset' | translate }}</th>
+                    <th>{{ 'common.amount' | translate }}</th>
+                    <th>{{ 'dex.trades.table.price' | translate }}</th>
+                    <th>{{ 'dex.venues.details.tradesTable.credit' | translate }}</th>
+                    <th>{{ 'dex.venues.details.tradesTable.buyer' | translate }}</th>
+                    <th>{{ 'dex.venues.details.tradesTable.seller' | translate }}</th>
+                    <th>{{ 'dex.venues.details.tradesTable.executed' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueTrades().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-2" colspan="9">{{ 'dex.venues.details.tradesTable.noTrades' | translate }}</td></tr>
+                    <tr class="bg-white"><td colspan="9">{{ 'dex.venues.details.tradesTable.noTrades' | translate }}</td></tr>
                   } @else {
-                    @for (t of pagedVTrades(); track t.tradeId; let i = $index; let isEven = $even) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                          (click)="goTrade(t.tradeId)">
-                        <td class="px-6 py-2">{{ i + 1 }}</td>
-                        <td class="px-6 py-2 font-mono">#{{ t.tradeId }}</td>
-                        <td class="px-6 py-2">{{ t.assetSymbol || (t.baseAsset.slice(0,10) + '…') }}</td>
-                        <td class="px-6 py-2">{{ fmtAmount(t.amount) }}</td>
-                        <td class="px-6 py-2">{{ fmtPrice(t.price) }} <span class="text-gray-500">{{ t.currencyName || '' }}</span></td>
-                        <td class="px-6 py-2">{{ fmtPrice(t.creditAmount) }}</td>
-                        <td class="px-6 py-2 font-mono">{{ t.buyer.slice(0,10) }}…</td>
-                        <td class="px-6 py-2 font-mono">{{ t.seller.slice(0,10) }}…</td>
-                        <td class="px-6 py-2">{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</td>
+                    @for (t of pagedVTrades(); track t.tradeId; let i = $index) {
+                      <tr class="cursor-pointer transition-colors" (click)="goTrade(t.tradeId)">
+                        <td>{{ i + 1 }}</td>
+                        <td class="font-mono">#{{ t.tradeId }}</td>
+                        <td>{{ t.assetSymbol || (t.baseAsset.slice(0,10) + '…') }}</td>
+                        <td>{{ fmtAmount(t.amount) }}</td>
+                        <td>{{ fmtPrice(t.price) }} <span class="text-gray-500">{{ t.currencyName || '' }}</span></td>
+                        <td>{{ fmtPrice(t.creditAmount) }}</td>
+                        <td class="font-mono">{{ t.buyer.slice(0,10) }}…</td>
+                        <td class="font-mono">{{ t.seller.slice(0,10) }}…</td>
+                        <td>{{ t.executedAt ? utils.formatDate(t.executedAt) : '—' }}</td>
                       </tr>
                     }
                   }
@@ -359,38 +354,38 @@
               </div>
             </div>
             <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.members.table.member' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.members.table.memberEntity' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.members.table.consent' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.members.table.approval' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'dex.members.table.added' | translate }}</th>
-                    <th class="px-6 py-2">{{ 'common.actions' | translate }}</th>
+                    <th>{{ 'common.id' | translate }}</th>
+                    <th>{{ 'dex.members.table.member' | translate }}</th>
+                    <th>{{ 'dex.members.table.memberEntity' | translate }}</th>
+                    <th>{{ 'dex.members.table.consent' | translate }}</th>
+                    <th>{{ 'dex.members.table.approval' | translate }}</th>
+                    <th>{{ 'dex.members.table.added' | translate }}</th>
+                    <th>{{ 'common.actions' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (venueMembers().length === 0) {
-                    <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="7">{{ 'dex.members.table.noMembers' | translate }}</td></tr>
+                    <tr class="bg-white"><td class="text-gray-400" colspan="7">{{ 'dex.members.table.noMembers' | translate }}</td></tr>
                   } @else {
-                    @for (m of pagedVMembers(); track m.memberService; let i = $index; let isEven = $even) {
-                      <tr class="border-b transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                        <td class="px-6 py-2">{{ i + 1 }}</td>
-                        <td class="px-6 py-2">
+                    @for (m of pagedVMembers(); track m.memberService; let i = $index) {
+                      <tr class="transition-colors">
+                        <td>{{ i + 1 }}</td>
+                        <td>
                           <div>{{ m.memberName || '—' }}</div>
                           <div class="font-mono text-gray-500 break-all">{{ m.memberService }}</div>
                         </td>
-                        <td class="px-6 py-2">{{ m.memberEntityName || '—' }}</td>
-                        <td class="px-6 py-2">
+                        <td>{{ m.memberEntityName || '—' }}</td>
+                        <td>
                           @if (m.accepted) {
                             <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'dex.members.consent.acceptedByUs' | translate }}</span>
                           } @else {
                             <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ 'dex.members.consent.awaitingUs' | translate }}</span>
                           }
                         </td>
-                        <td class="px-6 py-2">
+                        <td>
                           @if (m.state === 2) {
                             <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'state.approved' | translate }}</span>
                           } @else {
@@ -398,8 +393,8 @@
                           }
                         </td>
                         <!-- addedAt is in MILLISECONDS — formatMs, never utils.formatDate directly. -->
-                        <td class="px-6 py-2">{{ formatMs(m.addedAt) }}</td>
-                        <td class="px-6 py-2">
+                        <td>{{ formatMs(m.addedAt) }}</td>
+                        <td>
                           <!-- The venue answers a REQUEST here. Accept only while unconsented;
                                Remove works from any state and is therefore also the REJECT. -->
                           @if (userInfo && userInfo.role !== 3 && !m.accepted && features.systemFunctionEnabled('dex-member-accept')) {
@@ -508,18 +503,18 @@
                 <p class="text-xs text-gray-600">{{ 'dex.venues.contract.kitSubtitle' | translate }}</p>
               </div>
               <div class="overflow-x-auto">
-                <table class="w-full text-xs text-left text-gray-700">
-                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <table class="table-v4 w-full text-xs text-left">
+                  <thead>
                     <tr>
-                      <th class="px-6 py-2">{{ 'dex.venues.contract.library' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'dex.venues.contract.address' | translate }}</th>
+                      <th>{{ 'dex.venues.contract.library' | translate }}</th>
+                      <th>{{ 'dex.venues.contract.address' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (l of kitLibraryList(); track l.name; let isEven = $even) {
-                      <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                        <td class="px-6 py-2 font-medium">{{ l.name }}</td>
-                        <td class="px-6 py-2 font-mono break-all">
+                    @for (l of kitLibraryList(); track l.name) {
+                      <tr>
+                        <td class="font-medium">{{ l.name }}</td>
+                        <td class="font-mono break-all">
                           @if (l.address) { {{ l.address }} }
                           @else { <span class="text-red-600">{{ 'dex.venues.contract.notPublished' | translate }}</span> }
                         </td>

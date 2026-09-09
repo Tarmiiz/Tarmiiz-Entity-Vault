@@ -115,58 +115,56 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-6 py-2">{{ 'common.status' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.asset' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.counterparty' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.venue' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.side' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.funding' | translate }}</th>
-            <th class="px-6 py-2 text-right">{{ 'dex.deals.table.amount' | translate }}</th>
-            <th class="px-6 py-2 text-right">{{ 'dex.deals.table.price' | translate }}</th>
-            <th class="px-6 py-2 text-right">{{ 'dex.deals.table.total' | translate }}</th>
-            <th class="px-6 py-2 text-center">{{ 'dex.deals.table.round' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.expires' | translate }}</th>
+            <th>{{ 'common.status' | translate }}</th>
+            <th>{{ 'dex.deals.table.asset' | translate }}</th>
+            <th>{{ 'dex.deals.table.counterparty' | translate }}</th>
+            <th>{{ 'dex.deals.table.venue' | translate }}</th>
+            <th>{{ 'dex.deals.table.side' | translate }}</th>
+            <th>{{ 'dex.deals.table.funding' | translate }}</th>
+            <th class="text-right">{{ 'dex.deals.table.amount' | translate }}</th>
+            <th class="text-right">{{ 'dex.deals.table.price' | translate }}</th>
+            <th class="text-right">{{ 'dex.deals.table.total' | translate }}</th>
+            <th class="text-center">{{ 'dex.deals.table.round' | translate }}</th>
+            <th>{{ 'dex.deals.table.expires' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filtered().length === 0) {
-            <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="11">{{ 'common.noData' | translate }}</td>
+            <tr class="bg-white">
+              <td colspan="11">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (d of paged(); track d.dealKey; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                  (click)="view(d)">
-                <td class="px-6 py-2">
+            @for (d of paged(); track d.dealKey) {
+              <tr class="cursor-pointer transition-colors" (click)="view(d)">
+                <td>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="statusClass(d)">{{ statusLabel(d) }}</span>
                   @if (d.suspended) {
                     <span class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800"
                       [title]="d.suspendedReason || ('dex.deals.suspendedHint' | translate)">{{ 'dex.deals.suspended' | translate }}</span>
                   }
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <div class="font-medium text-gray-800">{{ d.assetName || '—' }}</div>
                   <div class="text-[10px] text-gray-500">{{ d.assetSymbol || (d.baseAsset.slice(0,10) + '…') }}</div>
                 </td>
-                <td class="px-6 py-2">{{ otherParty(d) }}</td>
-                <td class="px-6 py-2">{{ d.dexServiceName || (d.dexService.slice(0,10) + '…') }}</td>
-                <td class="px-6 py-2">{{ sideLabel(d) }}</td>
-                <td class="px-6 py-2">
+                <td>{{ otherParty(d) }}</td>
+                <td>{{ d.dexServiceName || (d.dexService.slice(0,10) + '…') }}</td>
+                <td>{{ sideLabel(d) }}</td>
+                <td>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-medium"
                     [class]="d.funding === 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'"
                     [title]="d.funding === 1 ? ('dex.deals.funding.firmHint' | translate) : ('dex.deals.funding.indicativeHint' | translate)">
                     {{ fundingLabel(d) }}
                   </span>
                 </td>
-                <td class="px-6 py-2 text-right">{{ fmtAmount(d.amount) }}</td>
-                <td class="px-6 py-2 text-right">{{ d.price | money }}</td>
-                <td class="px-6 py-2 text-right">{{ (d.amount * d.price) | money }}</td>
-                <td class="px-6 py-2 text-center">{{ d.round }}</td>
-                <td class="px-6 py-2">{{ expiresIn(d) }}</td>
+                <td class="text-right">{{ fmtAmount(d.amount) }}</td>
+                <td class="text-right">{{ d.price | money }}</td>
+                <td class="text-right">{{ (d.amount * d.price) | money }}</td>
+                <td class="text-center">{{ d.round }}</td>
+                <td>{{ expiresIn(d) }}</td>
               </tr>
             }
           }

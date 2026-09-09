@@ -86,6 +86,30 @@
   --brand-primary-hover: #2c3648;
 }
 
+/* Login page ground (design-components v4 "app shell" language).
+ * The sign-in hero floats a translucent glass card on a gradient, so the
+ * gradient is a SURFACE, not decoration — bg-white/10 over a flat colour is
+ * just grey.
+ *
+ * ⚠️ DERIVED from --brand-primary via color-mix, deliberately NOT hardcoded to
+ * the design's indigo. --brand-primary is overridden at bootstrap by
+ * ConfigService from assets/config.json, so a whitelabelled tenant would
+ * otherwise get its own chrome everywhere and someone else's indigo on the one
+ * page every user sees first. Derivation makes the login follow the brand for
+ * free; a tenant that adopts the v4 palette (brandPrimary #4f46e5) gets the
+ * design's exact ramp.
+ * color-mix is already required by this app — Tailwind v4 emits it for every
+ * /opacity utility — so it adds no browser-support constraint. */
+.login-shell {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--brand-primary) 30%, #06070f) 0%,
+    color-mix(in oklab, var(--brand-primary) 75%, #0a0b1a) 48%,
+    color-mix(in oklab, var(--brand-primary) 92%, #ffffff) 74%,
+    color-mix(in oklab, var(--brand-primary) 32%, #080a1c) 100%
+  );
+}
+
 ion-content {
   --background: #d1d1d1;
   --color: rgb(73, 72, 72);
@@ -242,4 +266,267 @@ html.lang-ar table {
 html.lang-ar table th.text-right,
 html.lang-ar table td.text-right {
   text-align: left;
+}
+
+
+/* ─── Authorized shell: GLOBAL TOP BAR ───────────────────────────────────────
+ * Moved out of authorized-layout.component.scss 2026-09-09: that file hit the
+ * 4 kB anyComponentStyle budget, and a budget ERROR fails the build without
+ * emitting — which then ships a STALE www/ through the docker image. Shell
+ * chrome belongs here anyway, next to .login-shell.
+ * Rendered by AuthorizedLayoutComponent ABOVE ion-split-pane, so it can span the
+ * window; a bar inside the split-pane starts where the sidebar ends. */
+.vault-topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    /* gap 0, NOT 16px: any flex gap here lands between the brand block and the
+       title and pushes the title off the content panel edge by exactly that
+       amount. The actions row carries its own gap, and the title's
+       margin-inline-end:auto supplies the separation before it. */
+    gap: 0;
+    /* No LEFT padding — .vault-topbar-brand owns the left column so it can line
+       up with the sidebar panel beneath it. */
+    padding: 10px 18px 10px 0;
+    color: #e6e8f0;
+}
+
+.vault-topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    /* Spans the sidebar column PLUS half the gap between the two panels, so the
+       separator — its last child, pushed right by margin-inline-start:auto —
+       lands in the MIDDLE of that gap, and the title clears the content panel's
+       left edge. Both numbers come from --vault-side / --vault-gutter on
+       .vault-shell, so this tracks the collapsed rail automatically instead of
+       being a hardcoded offset that silently desyncs. */
+    flex: none;
+    width: calc(var(--vault-side, 250px) + (var(--vault-gutter, 14px) / 2));
+    padding-inline-start: var(--vault-gutter, 14px);
+    box-sizing: border-box;
+
+    /* Tenant logo. BOTH axes are capped on purpose: the avatar is uploaded by
+       the tenant, so an oversized or very wide file would otherwise set the bar's
+       height (or push the actions off the end). height 24px = 0.7x the original
+       34px; max-width stops a wide wordmark doing the same damage sideways,
+       which `width: auto` alone did not. object-fit keeps the aspect ratio
+       inside that box rather than squashing it. */
+    img {
+        height: 24px;
+        max-height: 24px;
+        max-width: 170px;
+        width: auto;
+        object-fit: contain;
+        object-position: left center;
+    }
+}
+
+:host-context([dir='rtl']) .vault-topbar-brand img {
+    object-position: right center;
+}
+
+/* The hamburger only exists below the split-pane breakpoint; on desktop the
+   sidebar is docked and the collapse chevron governs instead. */
+.vault-menu-btn {
+    display: none;
+    --color: #e6e8f0;
+}
+@media (max-width: 767px) {
+    .vault-menu-btn { display: inline-flex; }
+}
+
+.vault-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+}
+
+.vault-welcome {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.82);
+    white-space: nowrap;
+}
+
+.vault-icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.82);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+
+    &:hover { color: #fff; background: rgba(255, 255, 255, 0.10); }
+}
+
+.vault-logout:hover { color: #fca5a5; }
+
+.vault-topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.20);
+}
+
+.vault-badge {
+    position: absolute;
+    top: 2px;
+    inset-inline-end: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 16px;
+}
+
+
+/* Live / Refreshing badge in the authorized top bar. Fed by LiveStatusService;
+   the per-page app-live-indicator no longer renders (see that component). */
+.vault-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  white-space: nowrap;
+}
+.vault-live svg { color: #34d399; }
+.vault-live.is-refreshing { color: #fbbf24; }
+.vault-live.is-refreshing svg { color: #fbbf24; }
+
+/* Page title in the authorized top bar. Reported by app-header from all 59 pages
+   via PageTitleService; the per-page title strip is gone. */
+.vault-title-sep {
+  width: 1px;
+  height: 20px;
+  margin-inline-start: auto;
+  background: rgba(255, 255, 255, 0.18);
+  flex: none;
+}
+.vault-title {
+  margin: 0;
+  /* Half the panel gap clears the separator; the +16px is the pages' own well
+     padding (p-4), so the title sits over the first CARD inside the content
+     panel rather than on the panel's edge. Measured: title and card both at
+     x=280. If the page well padding ever changes, change this with it. */
+  margin-inline-start: calc(var(--vault-gutter, 14px) / 2 + 16px);
+  margin-inline-end: auto;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Below the split-pane breakpoint there is no docked sidebar to align to — the
+   menu is a drawer — so the brand block stops reserving that column. */
+@media (max-width: 767px) {
+  .vault-topbar-brand {
+    width: auto;
+    padding-inline-start: 14px;
+  }
+  .vault-title-sep { margin-inline-start: 4px; }
+}
+
+/* ─── .table-v4 — the v4 data table (design-components v4, adopted 2026-09-09) ──
+ * Signature: a gradient header band with a MATCHING gradient rule beneath it, zebra rows,
+ * hairline separators, no vertical rules.
+ *
+ * ⚠️ THE HEADER GRADIENT IS DARKENED ON PURPOSE — it is the only reason white
+ * 12.5px header text is legible. Measured against the design's hero ramp:
+ *     hero gradient as-is        -> 3.59:1  FAIL (AA wants 4.5 at this size)
+ *     same hues darkened 22%     -> 5.30:1  PASS
+ * The hero's cyan stop sits at 130%, past the element, so the real painted
+ * endpoint is #3488e9 rather than the nominal #0ea5e9 — measure the PAINTED
+ * colour, and measure the right-hand end, which is the worst point.
+ *
+ * First stop derives from --brand-primary (overridden at bootstrap from
+ * assets/config.json) so a whitelabelled tenant leads with its own colour; the
+ * other two are the design's fixed accents. Mixed in srgb because the contrast
+ * numbers above were measured in srgb.
+ *
+ * ⚠️ These rules are UNLAYERED and therefore BEAT Tailwind's layered utilities.
+ * That is why the markup drops px-4/py-2 and the zebra bindings — they would be
+ * overridden anyway and only mislead. Deliberately NO text-align here, or it
+ * would clobber text-right/text-center on numeric columns. */
+/* The 2px rule is a BACKGROUND LAYER, not a border — a border cannot hold a
+   gradient, and a flat rule under a gradient band matched it only at the one
+   point where the band happens to be that colour. Layer 1 = the rule
+   (bottom-anchored, 2px); layer 2 = the band. The rule runs the SAME three hues
+   at FULL strength, i.e. exactly the 22% the band gives up for contrast, so it
+   reads as a lit edge of the band. 90deg, not 120deg: over a ~40px-tall thead a
+   120deg gradient is already almost horizontal, and on a 2px strip only the
+   horizontal component exists — so the rule's colour at any x tracks the band's
+   at that x, whatever --brand-primary a tenant sets. */
+.table-v4 thead tr {
+  background-image:
+    linear-gradient(90deg,
+      var(--brand-primary),
+      #6d5ce8 55%,
+      #0ea5e9 130%),
+    linear-gradient(120deg,
+      color-mix(in srgb, var(--brand-primary) 78%, #0a0b1a),
+      color-mix(in srgb, #6d5ce8 78%, #0a0b1a) 55%,
+      color-mix(in srgb, #0ea5e9 78%, #0a0b1a) 130%);
+  background-size: 100% 2px, 100% 100%;
+  background-position: left bottom, left top;
+  background-repeat: no-repeat;
+}
+.table-v4 thead th {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  padding: 9px 16px;
+  white-space: nowrap;
+  text-transform: none;
+}
+.table-v4 tbody td {
+  font-size: 13px;
+  color: #4b5568;
+  padding: 4px 16px;
+  border-bottom: 1px solid #e8ebf2;
+}
+/* ⚠️ CELL PADDING ALONE CANNOT SET THE ROW HEIGHT — measured, not assumed.
+   At 8px padding a row measured 39.5px, of which the STATUS PILL was 23-24px:
+   8 + 24 + 8. The 13px text (17.3px line-box) never reaches the floor, so trimming
+   padding on its own bottoms out around 32px. Tightening the pill inside the cell is
+   what actually moves it: 4 + 20 + 4 = 28px.
+   The status pills are Tailwind `px-3 py-1 ... rounded-full` spans (py-1 = 4px);
+   this takes them to 2px, matching .badge-symbol/.badge-currency, which are already
+   20px and therefore never the constraint.
+   Scoped to tbody cells so the same pill on a detail page keeps its normal size, and
+   `span` (not `*`) keeps buttons and icon controls out of it. */
+.table-v4 tbody td .pill-v4,
+.table-v4 tbody td span.rounded-full {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+/* Zebra + hover belong to the class, not the template. The hover MUST be
+   stronger than the zebra or hovering a striped row does nothing visible. */
+.table-v4 tbody tr:nth-child(even) { background: #f7f8fb; }
+.table-v4 tbody tr:hover { background: #eef1f6; }
+.table-v4 tbody tr:last-child td { border-bottom: 0; }
+.table-v4 tbody td:first-child { color: #101828; font-weight: 500; }
+/* A full-width message row ("No records found") is NOT a data cell. Without this it
+   would be flattened to the 8px data padding AND — being first-child by definition —
+   pick up the lead-cell ink and weight, rendering an empty state as bold dark text in
+   a cramped row. text-align is deliberately left alone so the template's own
+   text-center still applies, same reason the rules above set none. */
+.table-v4 tbody td[colspan] {
+  padding: 22px 16px;
+  color: #8a93a6;
+  font-weight: 400;
 }

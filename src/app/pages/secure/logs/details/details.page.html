@@ -149,31 +149,28 @@
               <p class="text-[11px] font-mono text-gray-500 break-all">{{ 'logs.details.refNoChainHeader' | translate: { refNo: refNo() } }}</p>
             </div>
             <div class="overflow-x-auto rounded-lg">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th scope="col" class="px-6 py-2">{{ 'logs.table.time' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'logs.table.category' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'logs.table.action' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'logs.table.function' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'logs.table.actor' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'logs.table.contract' | translate }}</th>
+                    <th scope="col">{{ 'logs.table.time' | translate }}</th>
+                    <th scope="col">{{ 'logs.table.category' | translate }}</th>
+                    <th scope="col">{{ 'logs.table.action' | translate }}</th>
+                    <th scope="col">{{ 'logs.table.function' | translate }}</th>
+                    <th scope="col">{{ 'logs.table.actor' | translate }}</th>
+                    <th scope="col">{{ 'logs.table.contract' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
-                  @for (r of chain(); track r.id; let isEven = $even) {
-                    <tr class="border-b transition-colors"
-                        [class.bg-gray-100]="!isEven"
-                        [class.bg-white]="isEven"
-                        [class.bg-indigo-50]="event() && r.id === event()!.id">
-                      <td class="px-6 py-2 whitespace-nowrap">{{ utils.formatTime(r.time) }}</td>
-                      <td class="px-6 py-2">
+                  @for (r of chain(); track r.id) {
+                    <tr class="transition-colors" [class.bg-indigo-50]="event() && r.id === event()!.id">
+                      <td class="whitespace-nowrap">{{ utils.formatTime(r.time) }}</td>
+                      <td>
                         <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">{{ r.category }}</span>
                       </td>
-                      <td class="px-6 py-2 capitalize">{{ actionLabel(r) }}</td>
-                      <td class="px-6 py-2 font-mono" [title]="r.function_signature || r.function_selector">{{ functionLabel(r) }}</td>
-                      <td class="px-6 py-2 font-mono" [title]="r.actor_address">{{ actorLabel(r) }}</td>
-                      <td class="px-6 py-2 font-mono" [title]="r.contract">{{ contractLabel(r) }}</td>
+                      <td class="capitalize">{{ actionLabel(r) }}</td>
+                      <td class="font-mono" [title]="r.function_signature || r.function_selector">{{ functionLabel(r) }}</td>
+                      <td class="font-mono" [title]="r.actor_address">{{ actorLabel(r) }}</td>
+                      <td class="font-mono" [title]="r.contract">{{ contractLabel(r) }}</td>
                     </tr>
                   }
                 </tbody>

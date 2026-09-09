@@ -1,6 +1,6 @@
 <app-header [title]="'dex.listings.title' | translate"></app-header>
 
-<div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="flex-grow p-4 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
@@ -42,33 +42,31 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.id' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.asset' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.symbol' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.listedBy' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.currency' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.country' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.tiers' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.listings.table.listed' | translate }}</th>
+            <th scope="col">{{ 'dex.listings.table.id' | translate }}</th>
+            <th scope="col">{{ 'dex.listings.table.asset' | translate }}</th>
+            <th scope="col">{{ 'common.symbol' | translate }}</th>
+            <th scope="col">{{ 'dex.listings.table.listedBy' | translate }}</th>
+            <th scope="col">{{ 'dex.listings.table.currency' | translate }}</th>
+            <th scope="col">{{ 'common.country' | translate }}</th>
+            <th scope="col">{{ 'dex.listings.table.tiers' | translate }}</th>
+            <th scope="col">{{ 'dex.listings.table.listed' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filteredListings().length == 0) {
-            <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
+            <tr class="bg-white">
+              <td colspan="8">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (l of pagedListings(); track l.baseAsset; let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                  (click)="viewDetails(l)">
-                <td class="px-6 py-2">{{ i + 1 }}</td>
-                <td class="px-6 py-2">{{ l.assetName || '—' }}</td>
-                <td class="px-6 py-2">@if (l.assetSymbol) { <span class="badge-symbol">{{ l.assetSymbol }}</span> } @else { — }</td>
-                <td class="px-6 py-2">
+            @for (l of pagedListings(); track l.baseAsset; let i = $index) {
+              <tr class="cursor-pointer transition-colors" (click)="viewDetails(l)">
+                <td>{{ i + 1 }}</td>
+                <td>{{ l.assetName || '—' }}</td>
+                <td>@if (l.assetSymbol) { <span class="badge-symbol">{{ l.assetSymbol }}</span> } @else { — }</td>
+                <td>
                   <div class="flex items-center gap-2">
                     <span>{{ l.isOwnListing === false ? (l.listedByName || '—') : ('dex.listings.list.scope.own' | translate) }}</span>
                     @if (l.isOwnListing === false) {
@@ -77,9 +75,9 @@
                     }
                   </div>
                 </td>
-                <td class="px-6 py-2">@if (l.assetCurrencyName) { <span class="badge-currency">{{ l.assetCurrencyName }}</span> } @else { — }</td>
-                <td class="px-6 py-2">{{ l.entityCountryName || '—' }}</td>
-                <td class="px-6 py-2">
+                <td>@if (l.assetCurrencyName) { <span class="badge-currency">{{ l.assetCurrencyName }}</span> } @else { — }</td>
+                <td>{{ l.entityCountryName || '—' }}</td>
+                <td>
                   <div class="flex flex-wrap gap-1">
                     @if (l.venueApproved || l.venuePending) {
                       <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
@@ -101,7 +99,7 @@
                     }
                   </div>
                 </td>
-                <td class="px-6 py-2">{{ l.listedAt ? utils.formatDate(l.listedAt) : '—' }}</td>
+                <td>{{ l.listedAt ? utils.formatDate(l.listedAt) : '—' }}</td>
               </tr>
             }
           }

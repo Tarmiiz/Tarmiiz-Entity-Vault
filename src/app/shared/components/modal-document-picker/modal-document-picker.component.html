@@ -45,29 +45,26 @@
           <p class="text-sm text-gray-500 py-6 text-center">{{ 'documentPicker.noMatches' | translate }}</p>
         } @else {
           <div class="overflow-y-auto max-h-80 border border-gray-200 rounded-md">
-            <table class="min-w-full text-sm">
-              <thead style="background-color:#4a5568" class="text-white sticky top-0">
+            <table class="table-v4 min-w-full text-sm">
+              <thead class="sticky top-0">
                 <tr>
-                  <th class="px-3 py-2 w-8"></th>
-                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colTitle' | translate }}</th>
-                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colType' | translate }}</th>
-                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colCreated' | translate }}</th>
-                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colId' | translate }}</th>
+                  <th class="w-8"></th>
+                  <th class="ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colTitle' | translate }}</th>
+                  <th class="ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colType' | translate }}</th>
+                  <th class="ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colCreated' | translate }}</th>
+                  <th class="ltr:text-left rtl:text-right font-semibold">{{ 'documentPicker.colId' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
                 @for (d of filtered(); track d.documentId; let even = $even) {
-                  <tr (click)="select(d.documentId)"
-                      class="cursor-pointer hover:bg-blue-50"
-                      [class.bg-gray-50]="!even && selectedId() !== d.documentId"
-                      [class.bg-blue-100]="selectedId() === d.documentId">
-                    <td class="px-3 py-2">
+                  <tr (click)="select(d.documentId)" class="cursor-pointer hover:bg-blue-50" [class.bg-gray-50]="!even && selectedId() !== d.documentId" [class.bg-blue-100]="selectedId() === d.documentId">
+                    <td>
                       <input type="radio" [checked]="selectedId() === d.documentId" (change)="select(d.documentId)">
                     </td>
-                    <td class="px-3 py-2 text-gray-800">{{ d.title || '—' }}</td>
-                    <td class="px-3 py-2 text-gray-600 text-xs">{{ docTypeName(d.documentType) }}</td>
-                    <td class="px-3 py-2 text-gray-600 text-xs">{{ utils.formatDate(d.createdAt) }}</td>
-                    <td class="px-3 py-2 text-gray-500 text-xs font-mono">#{{ d.documentId }}</td>
+                    <td class="text-gray-800">{{ d.title || '—' }}</td>
+                    <td class="text-gray-600 text-xs">{{ docTypeName(d.documentType) }}</td>
+                    <td class="text-gray-600 text-xs">{{ utils.formatDate(d.createdAt) }}</td>
+                    <td class="text-gray-500 text-xs font-mono">#{{ d.documentId }}</td>
                   </tr>
                 }
               </tbody>

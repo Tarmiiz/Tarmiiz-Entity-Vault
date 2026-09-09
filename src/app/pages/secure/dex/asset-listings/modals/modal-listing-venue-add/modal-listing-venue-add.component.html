@@ -28,31 +28,31 @@
 
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div class="overflow-x-auto rounded-lg">
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <table class="table-v4 w-full text-sm text-left">
+              <thead>
                 <tr>
-                  <th class="px-4 py-2">{{ 'dex.listings.addVenueModal.table.index' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'dex.listings.addVenueModal.venue' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'dex.listings.addVenueModal.table.entity' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'common.country' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'common.address' | translate }}</th>
-                  <th class="px-4 py-2 text-right">{{ 'dex.listings.addVenueModal.table.action' | translate }}</th>
+                  <th>{{ 'dex.listings.addVenueModal.table.index' | translate }}</th>
+                  <th>{{ 'dex.listings.addVenueModal.venue' | translate }}</th>
+                  <th>{{ 'dex.listings.addVenueModal.table.entity' | translate }}</th>
+                  <th>{{ 'common.country' | translate }}</th>
+                  <th>{{ 'common.address' | translate }}</th>
+                  <th class="text-right">{{ 'dex.listings.addVenueModal.table.action' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="text-xs">
                 @if (loading()) {
-                  <tr class="bg-white border-b"><td class="px-4 py-3" colspan="6">{{ 'common.loading' | translate }}</td></tr>
+                  <tr class="bg-white"><td colspan="6">{{ 'common.loading' | translate }}</td></tr>
                 } @else if (candidates().length === 0) {
-                  <tr class="bg-white border-b"><td class="px-4 py-3 text-gray-400" colspan="6">{{ 'dex.listings.addVenueModal.noVenuesAvailable' | translate }}</td></tr>
+                  <tr class="bg-white"><td class="text-gray-400" colspan="6">{{ 'dex.listings.addVenueModal.noVenuesAvailable' | translate }}</td></tr>
                 } @else {
-                  @for (v of candidates(); track v.serviceAddress; let i = $index; let isEven = $even) {
-                    <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                      <td class="px-4 py-2">{{ i + 1 }}</td>
-                      <td class="px-4 py-2">{{ v.serviceName || '—' }}</td>
-                      <td class="px-4 py-2">{{ v.entityName || '—' }}</td>
-                      <td class="px-4 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
-                      <td class="px-4 py-2 font-mono break-all">{{ v.serviceAddress }}</td>
-                      <td class="px-4 py-2 text-right">
+                  @for (v of candidates(); track v.serviceAddress; let i = $index) {
+                    <tr>
+                      <td>{{ i + 1 }}</td>
+                      <td>{{ v.serviceName || '—' }}</td>
+                      <td>{{ v.entityName || '—' }}</td>
+                      <td>{{ v.countryName || v.countryCode || '—' }}</td>
+                      <td class="font-mono break-all">{{ v.serviceAddress }}</td>
+                      <td class="text-right">
                         <button (click)="add(v)"
                           class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                           {{ 'dex.listings.addVenueModal.enableButton' | translate }}

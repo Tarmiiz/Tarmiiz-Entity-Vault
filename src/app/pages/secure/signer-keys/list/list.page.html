@@ -1,6 +1,6 @@
 <app-header [title]="'signerKeys.title' | translate"></app-header>
 
-<div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="flex-grow p-4 pt-4 overflow-y-auto">
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex items-center justify-between">
       <p class="text-xs text-gray-500">{{ 'signerKeys.hint' | translate }}</p>
@@ -16,36 +16,36 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-6 py-2">{{ 'common.id' | translate }}</th>
-            <th class="px-6 py-2">{{ 'signerKeys.table.keyId' | translate }}</th>
-            <th class="px-6 py-2">{{ 'signerKeys.table.signer' | translate }}</th>
-            <th class="px-6 py-2">{{ 'common.description' | translate }}</th>
-            <th class="px-6 py-2">{{ 'common.createdAt' | translate }}</th>
-            <th class="px-6 py-2">{{ 'common.state' | translate }}</th>
-            <th class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
+            <th>{{ 'common.id' | translate }}</th>
+            <th>{{ 'signerKeys.table.keyId' | translate }}</th>
+            <th>{{ 'signerKeys.table.signer' | translate }}</th>
+            <th>{{ 'common.description' | translate }}</th>
+            <th>{{ 'common.createdAt' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
+            <th class="text-right">{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (!loading) {
             @if (keys().length === 0) {
-              <tr class="bg-white border-b">
-                <td class="px-6 py-2" colspan="7">{{ 'signerKeys.empty' | translate }}</td>
+              <tr class="bg-white">
+                <td colspan="7">{{ 'signerKeys.empty' | translate }}</td>
               </tr>
             } @else {
-              @for (k of pagedKeys(); track k.keyId; let i = $index; let isEven = $even) {
-                <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                  <td class="px-6 py-2">{{ i + 1 }}</td>
-                  <td class="px-6 py-2">{{ k.keyId }}</td>
-                  <td class="px-6 py-2 font-mono break-all">{{ k.signer }}</td>
-                  <td class="px-6 py-2">{{ k.description || '—' }}</td>
-                  <td class="px-6 py-2">{{ utils.formatDate(k.createdAt) }}</td>
-                  <td class="px-6 py-2">
+              @for (k of pagedKeys(); track k.keyId; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ k.keyId }}</td>
+                  <td class="font-mono break-all">{{ k.signer }}</td>
+                  <td>{{ k.description || '—' }}</td>
+                  <td>{{ utils.formatDate(k.createdAt) }}</td>
+                  <td>
                     <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="stateClass(k.state)">{{ stateLabel(k.state) }}</span>
                   </td>
-                  <td class="px-6 py-2 text-right">
+                  <td class="text-right">
                     <button (click)="toggleState(k)" class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors mr-1">
                       {{ (k.state === 1 ? 'signerKeys.actions.disable' : 'signerKeys.actions.activate') | translate }}
                     </button>

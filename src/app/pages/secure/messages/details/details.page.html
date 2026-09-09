@@ -370,38 +370,37 @@
             }
 
             <div class="overflow-x-auto">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'common.name' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'messages.details.partyTypeHeader' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'common.address' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'messages.details.statusHeader' | translate }}</th>
-                    <th scope="col" class="px-6 py-2">{{ 'common.actions' | translate }}</th>
+                    <th scope="col">{{ 'common.id' | translate }}</th>
+                    <th scope="col">{{ 'common.name' | translate }}</th>
+                    <th scope="col">{{ 'messages.details.partyTypeHeader' | translate }}</th>
+                    <th scope="col">{{ 'common.address' | translate }}</th>
+                    <th scope="col">{{ 'messages.details.statusHeader' | translate }}</th>
+                    <th scope="col">{{ 'common.actions' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (t.participants.length === 0) {
-                    <tr class="bg-white border-b">
-                      <td class="px-6 py-2" colspan="6">{{ 'common.noData' | translate }}</td>
+                    <tr class="bg-white">
+                      <td colspan="6">{{ 'common.noData' | translate }}</td>
                     </tr>
                   } @else {
-                    @for (p of t.participants; track p.address; let i = $index; let isEven = $even) {
-                      <tr class="border-b transition-colors"
-                          [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                        <td class="px-6 py-2">{{ i + 1 }}</td>
-                        <td class="px-6 py-2">{{ nameFor(p.address) || ('common.notSet' | translate) }}</td>
-                        <td class="px-6 py-2">{{ participantType(resolvedPartyType(p.address, p.partyType)) }}</td>
-                        <td class="px-6 py-2 font-mono break-all">{{ p.address }}</td>
-                        <td class="px-6 py-2">
+                    @for (p of t.participants; track p.address; let i = $index) {
+                      <tr class="transition-colors">
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ nameFor(p.address) || ('common.notSet' | translate) }}</td>
+                        <td>{{ participantType(resolvedPartyType(p.address, p.partyType)) }}</td>
+                        <td class="font-mono break-all">{{ p.address }}</td>
+                        <td>
                           @if (p.state === 1) {
                             <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">{{ 'state.active' | translate }}</span>
                           } @else {
                             <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-600">{{ 'messages.details.participantRemoved' | translate }}</span>
                           }
                         </td>
-                        <td class="px-6 py-2">
+                        <td>
                           @if (!isReadOnly && t.state === 1 && p.state === 1 && isEntityCreator()
                                && p.address.toLowerCase() !== t.creator.toLowerCase()) {
                             <button (click)="removeParticipant(p.address)"

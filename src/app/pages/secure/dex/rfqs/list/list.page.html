@@ -110,58 +110,56 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-6 py-2">{{ 'common.status' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.asset' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.rfqs.table.requester' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.venue' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.side' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.funding' | translate }}</th>
-            <th class="px-6 py-2 text-right">{{ 'dex.rfqs.table.amount' | translate }}</th>
-            <th class="px-6 py-2 text-center">{{ 'dex.rfqs.table.quotes' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.deals.table.expires' | translate }}</th>
+            <th>{{ 'common.status' | translate }}</th>
+            <th>{{ 'dex.deals.table.asset' | translate }}</th>
+            <th>{{ 'dex.rfqs.table.requester' | translate }}</th>
+            <th>{{ 'dex.deals.table.venue' | translate }}</th>
+            <th>{{ 'dex.deals.table.side' | translate }}</th>
+            <th>{{ 'dex.deals.table.funding' | translate }}</th>
+            <th class="text-right">{{ 'dex.rfqs.table.amount' | translate }}</th>
+            <th class="text-center">{{ 'dex.rfqs.table.quotes' | translate }}</th>
+            <th>{{ 'dex.deals.table.expires' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filtered().length === 0) {
-            <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="9">{{ 'common.noData' | translate }}</td>
+            <tr class="bg-white">
+              <td colspan="9">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (q of paged(); track q.requestKey; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                  (click)="view(q)">
-                <td class="px-6 py-2">
+            @for (q of paged(); track q.requestKey) {
+              <tr class="cursor-pointer transition-colors" (click)="view(q)">
+                <td>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="statusClass(q)">{{ statusLabel(q) }}</span>
                   @if (q.suspended) {
                     <span class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800"
                       [title]="q.suspendedReason || ('dex.deals.suspendedHint' | translate)">{{ 'dex.deals.suspended' | translate }}</span>
                   }
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <div class="font-medium text-gray-800">{{ q.assetName || '—' }}</div>
                   <div class="text-[10px] text-gray-500">{{ q.assetSymbol || (q.baseAsset.slice(0,10) + '…') }}</div>
                 </td>
-                <td class="px-6 py-2">{{ requesterName(q) }}</td>
-                <td class="px-6 py-2">{{ q.dexServiceName || (q.dexService.slice(0,10) + '…') }}</td>
-                <td class="px-6 py-2">{{ sideLabel(q) }}</td>
-                <td class="px-6 py-2">
+                <td>{{ requesterName(q) }}</td>
+                <td>{{ q.dexServiceName || (q.dexService.slice(0,10) + '…') }}</td>
+                <td>{{ sideLabel(q) }}</td>
+                <td>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-medium"
                     [class]="q.funding === 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'"
                     [title]="q.funding === 1 ? ('dex.deals.funding.firmHint' | translate) : ('dex.deals.funding.indicativeHint' | translate)">
                     {{ fundingLabel(q) }}
                   </span>
                 </td>
-                <td class="px-6 py-2 text-right">{{ fmtAmount(q.amount) }}</td>
+                <td class="text-right">{{ fmtAmount(q.amount) }}</td>
                 <!-- Totals from the HEADER, never from the dealer board: the board is a
                      sealed auction and a dealer tenant only ever sees its own row. -->
-                <td class="px-6 py-2 text-center">
+                <td class="text-center">
                   {{ q.quoteCount }} / {{ q.openToAll ? ('dex.rfqs.openToAllShort' | translate) : q.invitedCount }}
                 </td>
-                <td class="px-6 py-2">{{ expiresIn(q) }}</td>
+                <td>{{ expiresIn(q) }}</td>
               </tr>
             }
           }

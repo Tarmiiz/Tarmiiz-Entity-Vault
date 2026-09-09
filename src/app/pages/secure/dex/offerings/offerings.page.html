@@ -1,6 +1,6 @@
 <app-header [title]="'sidebar.dexOfferings' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
@@ -16,40 +16,40 @@
       }
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-4 py-2">{{ 'dexOfferings.key' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dexOfferings.asset' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dexOfferings.venue' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dexOfferings.price' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dexOfferings.progress' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
-            <th class="px-4 py-2">{{ 'dexOfferings.createdAt' | translate }}</th>
-            <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+            <th>{{ 'dexOfferings.key' | translate }}</th>
+            <th>{{ 'dexOfferings.asset' | translate }}</th>
+            <th>{{ 'dexOfferings.venue' | translate }}</th>
+            <th>{{ 'dexOfferings.price' | translate }}</th>
+            <th>{{ 'dexOfferings.progress' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
+            <th>{{ 'dexOfferings.createdAt' | translate }}</th>
+            <th>{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
           @for (o of pagedOfferings(); track o.offeringKey; let i = $index) {
             <tr [class.bg-gray-50]="i % 2 === 1">
-              <td class="px-4 py-2">
+              <td>
                 <button (click)="copyToClipboard(o.offeringKey)"
                   class="font-mono text-xs text-indigo-700 hover:underline" [title]="o.offeringKey">
                   {{ shortKey(o.offeringKey) }}
                 </button>
               </td>
-              <td class="px-4 py-2">
+              <td>
                 <div class="font-medium text-gray-800">{{ o.assetName || shortKey(o.baseAsset) }}</div>
                 <div class="text-[10px] text-gray-500">{{ o.assetSymbol || shortKey(o.baseAsset) }}</div>
               </td>
-              <td class="px-4 py-2">
+              <td>
                 <div class="text-gray-800">{{ o.dexServiceName || shortKey(o.dexService) }}</div>
                 @if (o.dexServiceEntityName) {
                   <div class="text-[10px] text-gray-500">{{ o.dexServiceEntityName }}</div>
                 }
               </td>
-              <td class="px-4 py-2">{{ o.price | money }}</td>
-              <td class="px-4 py-2">
+              <td>{{ o.price | money }}</td>
+              <td>
                 <div class="flex items-center gap-2">
                   <span class="text-xs">{{ o.sold | number }} / {{ o.amount | number }}</span>
                   <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -57,7 +57,7 @@
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-2">
+              <td>
                 <div class="flex gap-1">
                   <span class="text-xs px-2 py-0.5 rounded-full" [class]="statusClass(o.status)">{{ statusName(o.status) }}</span>
                   @if (o.suspended) {
@@ -66,8 +66,8 @@
                   }
                 </div>
               </td>
-              <td class="px-4 py-2 text-xs">{{ utils.formatDate(o.createdAt) }}</td>
-              <td class="px-4 py-2">
+              <td class="text-xs">{{ utils.formatDate(o.createdAt) }}</td>
+              <td>
                 <div class="flex gap-2">
                   @if (canBuy(o)) {
                     <button (click)="openBuyModal(o)"
@@ -86,7 +86,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="px-4 py-6 text-center text-gray-500 text-sm">
+              <td colspan="8" class="py-6 text-center text-gray-500 text-sm">
                 @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'dexOfferings.empty' | translate }} }
               </td>
             </tr>

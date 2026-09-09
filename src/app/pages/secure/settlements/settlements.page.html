@@ -1,6 +1,6 @@
 <app-header [title]="'sidebar.settlements' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- Tab bar -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-4 px-4 pt-2 flex gap-1">
@@ -31,22 +31,22 @@
         }
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
             <tr>
-              <th class="px-4 py-2">{{ 'settlements.counterparty' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.currency' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.positions.net' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.updated' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+              <th>{{ 'settlements.counterparty' | translate }}</th>
+              <th>{{ 'settlements.currency' | translate }}</th>
+              <th>{{ 'settlements.positions.net' | translate }}</th>
+              <th>{{ 'settlements.updated' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            @for (p of pagedPositions(); track (p.counterparty + '|' + p.currencyCode); let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                <td class="px-4 py-2 text-xs" [class.font-mono]="!entityName(p.counterparty)">{{ entityLabel(p.counterparty) }}</td>
-                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(p.currencyCode) }}</span></td>
-                <td class="px-4 py-2">
+            @for (p of pagedPositions(); track (p.counterparty + '|' + p.currencyCode); let i = $index) {
+              <tr class="transition-colors">
+                <td class="text-xs" [class.font-mono]="!entityName(p.counterparty)">{{ entityLabel(p.counterparty) }}</td>
+                <td><span class="badge-currency">{{ currencyLabel(p.currencyCode) }}</span></td>
+                <td>
                   @if (p.netOwedBySelf > 0) {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
                       {{ 'settlements.positions.youOwe' | translate }} {{ p.netOwedBySelf | money }}
@@ -59,8 +59,8 @@
                     <span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">0</span>
                   }
                 </td>
-                <td class="px-4 py-2 text-xs">{{ utils.formatTime(p.updatedAt) }}</td>
-                <td class="px-4 py-2">
+                <td class="text-xs">{{ utils.formatTime(p.updatedAt) }}</td>
+                <td>
                   @if (p.netOwedBySelf > 0 && canAct() && features.systemFunctionEnabled('settlement-create')) {
                     <button (click)="openCreateModal(p)"
                       class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
@@ -71,7 +71,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="5" class="px-4 py-6 text-center text-gray-500 text-sm">
+                <td colspan="5" class="py-6 text-center text-gray-500 text-sm">
                   @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'settlements.positions.empty' | translate }} }
                 </td>
               </tr>
@@ -92,42 +92,42 @@
         <p class="text-xs text-gray-600">{{ 'settlements.obligations.description' | translate }}</p>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
             <tr>
-              <th class="px-4 py-2">#</th>
-              <th class="px-4 py-2">{{ 'settlements.direction' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.counterparty' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.currency' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.amount' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.obligations.kind' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.obligations.creditTrx' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.obligations.ref' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.created' | translate }}</th>
+              <th>#</th>
+              <th>{{ 'settlements.direction' | translate }}</th>
+              <th>{{ 'settlements.counterparty' | translate }}</th>
+              <th>{{ 'settlements.currency' | translate }}</th>
+              <th>{{ 'common.amount' | translate }}</th>
+              <th>{{ 'settlements.obligations.kind' | translate }}</th>
+              <th>{{ 'settlements.obligations.creditTrx' | translate }}</th>
+              <th>{{ 'settlements.obligations.ref' | translate }}</th>
+              <th>{{ 'settlements.created' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            @for (o of pagedObligations(); track (o.debtorEntity + o.creditorEntity + o.obligationId); let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                <td class="px-4 py-2 text-xs">{{ o.obligationId }}</td>
-                <td class="px-4 py-2">
+            @for (o of pagedObligations(); track (o.debtorEntity + o.creditorEntity + o.obligationId); let i = $index) {
+              <tr class="transition-colors">
+                <td class="text-xs">{{ o.obligationId }}</td>
+                <td>
                   @if (isDebtor(o)) {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'settlements.payable' | translate }}</span>
                   } @else {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'settlements.receivable' | translate }}</span>
                   }
                 </td>
-                <td class="px-4 py-2 text-xs" [class.font-mono]="!entityName(counterpartyOf(o))">{{ entityLabel(counterpartyOf(o)) }}</td>
-                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(o.currencyCode) }}</span></td>
-                <td class="px-4 py-2">{{ o.amount | money }}</td>
-                <td class="px-4 py-2 text-xs">{{ obligationKindName(o.kind) }}</td>
-                <td class="px-4 py-2 text-xs">{{ o.creditTrxId || '—' }}</td>
-                <td class="px-4 py-2 text-xs">{{ o.ref || '—' }}</td>
-                <td class="px-4 py-2 text-xs">{{ utils.formatTime(o.createdAt) }}</td>
+                <td class="text-xs" [class.font-mono]="!entityName(counterpartyOf(o))">{{ entityLabel(counterpartyOf(o)) }}</td>
+                <td><span class="badge-currency">{{ currencyLabel(o.currencyCode) }}</span></td>
+                <td>{{ o.amount | money }}</td>
+                <td class="text-xs">{{ obligationKindName(o.kind) }}</td>
+                <td class="text-xs">{{ o.creditTrxId || '—' }}</td>
+                <td class="text-xs">{{ o.ref || '—' }}</td>
+                <td class="text-xs">{{ utils.formatTime(o.createdAt) }}</td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="9" class="px-4 py-6 text-center text-gray-500 text-sm">
+                <td colspan="9" class="py-6 text-center text-gray-500 text-sm">
                   @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'settlements.obligations.empty' | translate }} }
                 </td>
               </tr>
@@ -161,40 +161,40 @@
         }
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
             <tr>
-              <th class="px-4 py-2">#</th>
-              <th class="px-4 py-2">{{ 'settlements.direction' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.counterparty' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.currency' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.amount' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.state' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.wireRef' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.receipt' | translate }}</th>
-              <th class="px-4 py-2">{{ 'settlements.updated' | translate }}</th>
-              <th class="px-4 py-2">{{ 'common.actions' | translate }}</th>
+              <th>#</th>
+              <th>{{ 'settlements.direction' | translate }}</th>
+              <th>{{ 'settlements.counterparty' | translate }}</th>
+              <th>{{ 'settlements.currency' | translate }}</th>
+              <th>{{ 'common.amount' | translate }}</th>
+              <th>{{ 'common.state' | translate }}</th>
+              <th>{{ 'settlements.wireRef' | translate }}</th>
+              <th>{{ 'settlements.receipt' | translate }}</th>
+              <th>{{ 'settlements.updated' | translate }}</th>
+              <th>{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody>
-            @for (s of pagedSettlements(); track (s.debtorEntity + s.creditorEntity + s.settlementId); let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                <td class="px-4 py-2 text-xs">{{ s.settlementId }}</td>
-                <td class="px-4 py-2">
+            @for (s of pagedSettlements(); track (s.debtorEntity + s.creditorEntity + s.settlementId); let i = $index) {
+              <tr class="transition-colors">
+                <td class="text-xs">{{ s.settlementId }}</td>
+                <td>
                   @if (isDebtor(s)) {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'settlements.outgoing' | translate }}</span>
                   } @else {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'settlements.incoming' | translate }}</span>
                   }
                 </td>
-                <td class="px-4 py-2 text-xs" [class.font-mono]="!entityName(counterpartyOf(s))">{{ entityLabel(counterpartyOf(s)) }}</td>
-                <td class="px-4 py-2"><span class="badge-currency">{{ currencyLabel(s.currencyCode) }}</span></td>
-                <td class="px-4 py-2">{{ s.amount | money }}</td>
-                <td class="px-4 py-2">
+                <td class="text-xs" [class.font-mono]="!entityName(counterpartyOf(s))">{{ entityLabel(counterpartyOf(s)) }}</td>
+                <td><span class="badge-currency">{{ currencyLabel(s.currencyCode) }}</span></td>
+                <td>{{ s.amount | money }}</td>
+                <td>
                   <span class="text-xs px-2 py-0.5 rounded-full" [class]="settlementStateClass(s.state)">{{ settlementStateName(s.state) }}</span>
                 </td>
-                <td class="px-4 py-2 text-xs">{{ s.wireRef || '—' }}</td>
-                <td class="px-4 py-2 text-xs">
+                <td class="text-xs">{{ s.wireRef || '—' }}</td>
+                <td class="text-xs">
                   @if (s.receiptCid) {
                     <!-- Opens the file itself. Both sides of the wire hold it: the debtor as
                          its own document, the creditor through the DEK wrapped for it at pin
@@ -215,8 +215,8 @@
                     }
                   } @else { — }
                 </td>
-                <td class="px-4 py-2 text-xs">{{ utils.formatTime(s.updatedAt) }}</td>
-                <td class="px-4 py-2">
+                <td class="text-xs">{{ utils.formatTime(s.updatedAt) }}</td>
+                <td>
                   <div class="flex gap-2">
                     @if (isDebtor(s) && s.state === 1 && canAct() && features.systemFunctionEnabled('settlement-confirm-sent')) {
                       <button (click)="openSentModal(s)"
@@ -241,7 +241,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="10" class="px-4 py-6 text-center text-gray-500 text-sm">
+                <td colspan="10" class="py-6 text-center text-gray-500 text-sm">
                   @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'settlements.list.empty' | translate }} }
                 </td>
               </tr>

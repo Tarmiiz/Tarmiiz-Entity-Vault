@@ -76,25 +76,25 @@
           <p class="text-xs text-gray-500 mt-1">{{ 'settings.userGroups.details.menuHint' | translate }}</p>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left text-gray-700">
-            <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <table class="table-v4 w-full text-sm text-left">
+            <thead>
               <tr>
-                <th class="px-4 py-2">{{ 'settings.menu.table.menuItem' | translate }}</th>
-                <th class="px-4 py-2">{{ 'settings.menu.table.key' | translate }}</th>
-                <th class="px-4 py-2 text-right">{{ 'users.details.menu.table.visible' | translate }}</th>
+                <th>{{ 'settings.menu.table.menuItem' | translate }}</th>
+                <th>{{ 'settings.menu.table.key' | translate }}</th>
+                <th class="text-right">{{ 'users.details.menu.table.visible' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               @for (row of menuRows(); track row.menuKey; let i = $index) {
                 <tr [class.bg-gray-50]="i % 2 === 1">
-                  <td class="px-4 py-2">{{ labelFor(row.menuKey) }}</td>
-                  <td class="px-4 py-2 font-mono text-xs text-gray-400">
+                  <td>{{ labelFor(row.menuKey) }}</td>
+                  <td class="font-mono text-xs text-gray-400">
                     <span class="inline-flex items-center gap-2">
                       {{ row.menuKey }}
                       <app-license-pill [license]="row.license" />
                     </span>
                   </td>
-                  <td class="px-4 py-2 text-right">
+                  <td class="text-right">
                     <label class="inline-flex items-center cursor-pointer">
                       <span class="mr-3 text-xs font-medium" [class.text-green-700]="row.effective" [class.text-gray-400]="!row.effective">
                         {{ (row.effective ? 'users.details.menu.shown' : 'users.details.menu.hidden') | translate }}
@@ -109,7 +109,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+                  <td colspan="3" class="py-6 text-center text-gray-500 text-sm">
                     @if (menuLoading()) { {{ 'common.loading' | translate }} } @else { {{ 'users.details.menu.empty' | translate }} }
                   </td>
                 </tr>
@@ -127,25 +127,25 @@
             <p class="text-xs text-gray-500 mt-1">{{ 'settings.userGroups.details.sysFnHint' | translate }}</p>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <table class="table-v4 w-full text-sm text-left">
+              <thead>
                 <tr>
-                  <th class="px-4 py-2">{{ 'users.details.sysfn.table.function' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'settings.menu.table.key' | translate }}</th>
-                  <th class="px-4 py-2 text-right">{{ 'users.details.sysfn.table.available' | translate }}</th>
+                  <th>{{ 'users.details.sysfn.table.function' | translate }}</th>
+                  <th>{{ 'settings.menu.table.key' | translate }}</th>
+                  <th class="text-right">{{ 'users.details.sysfn.table.available' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
                 @for (row of sysFnRows(); track row.functionKey; let i = $index) {
                   <tr [class.bg-gray-50]="i % 2 === 1">
-                    <td class="px-4 py-2">{{ fnLabelFor(row.functionKey) }}</td>
-                    <td class="px-4 py-2 font-mono text-xs text-gray-400">
+                    <td>{{ fnLabelFor(row.functionKey) }}</td>
+                    <td class="font-mono text-xs text-gray-400">
                       <span class="inline-flex items-center gap-2">
                         {{ row.functionKey }}
                         <app-license-pill [license]="row.license" />
                       </span>
                     </td>
-                    <td class="px-4 py-2 text-right">
+                    <td class="text-right">
                       <label class="inline-flex items-center cursor-pointer">
                         <span class="mr-3 text-xs font-medium" [class.text-green-700]="row.effective" [class.text-gray-400]="!row.effective">
                           {{ (row.effective ? 'users.details.sysfn.allowed' : 'users.details.sysfn.blocked') | translate }}
@@ -172,20 +172,20 @@
           <p class="text-xs text-gray-500 mt-1">{{ 'settings.userGroups.details.membersHint' | translate }}</p>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left text-gray-700">
-            <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+          <table class="table-v4 w-full text-sm text-left">
+            <thead>
               <tr>
-                <th class="px-4 py-2">{{ 'settings.userGroups.details.memberUserId' | translate }}</th>
-                <th class="px-4 py-2">{{ 'settings.userGroups.details.memberAssignedAt' | translate }}</th>
-                <th class="px-4 py-2"></th>
+                <th>{{ 'settings.userGroups.details.memberUserId' | translate }}</th>
+                <th>{{ 'settings.userGroups.details.memberAssignedAt' | translate }}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              @for (member of pagedMembers(); track member.userId; let i = $index; let isEven = $even) {
-                <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                  <td class="px-4 py-2 font-mono">{{ member.userId }}</td>
-                  <td class="px-4 py-2 text-xs text-gray-500">{{ member.assignedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                  <td class="px-4 py-2 text-right">
+              @for (member of pagedMembers(); track member.userId; let i = $index) {
+                <tr class="transition-colors">
+                  <td class="font-mono">{{ member.userId }}</td>
+                  <td class="text-xs text-gray-500">{{ member.assignedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                  <td class="text-right">
                     <a [routerLink]="['/authorized/users/details', member.userId]" class="text-xs text-indigo-600 hover:underline">
                       {{ 'settings.userGroups.details.viewUser' | translate }}
                     </a>
@@ -193,7 +193,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="3" class="px-4 py-6 text-center text-gray-500 text-sm">
+                  <td colspan="3" class="py-6 text-center text-gray-500 text-sm">
                     @if (membersLoading()) { {{ 'common.loading' | translate }} } @else { {{ 'settings.userGroups.details.noMembers' | translate }} }
                   </td>
                 </tr>

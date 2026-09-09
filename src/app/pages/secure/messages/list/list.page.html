@@ -75,29 +75,27 @@
   <!-- Threads list -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.lastActivity' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.from' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.subject' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.messages' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'messages.list.table.state' | translate }}</th>
+            <th scope="col">{{ 'messages.list.table.lastActivity' | translate }}</th>
+            <th scope="col">{{ 'messages.list.table.from' | translate }}</th>
+            <th scope="col">{{ 'messages.list.table.subject' | translate }}</th>
+            <th scope="col">{{ 'messages.list.table.messages' | translate }}</th>
+            <th scope="col">{{ 'messages.list.table.state' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filteredThreads().length === 0 && !loadingData) {
-            <tr class="bg-white border-b"><td colspan="5" class="px-6 py-6 text-center text-gray-500">{{ 'common.noData' | translate }}</td></tr>
+            <tr class="bg-white"><td colspan="5" class="py-6 text-center text-gray-500">{{ 'common.noData' | translate }}</td></tr>
           } @else {
-            @for (t of pagedThreads(); track t.id; let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                  (click)="viewDetails(t)">
-                <td class="px-6 py-2 text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : ('common.notSet' | translate) }}</td>
-                <td class="px-6 py-2 text-gray-700">{{ nameFor(t.creator) }}</td>
-                <td class="px-6 py-2 font-medium text-gray-800">{{ t.subject || ('messages.noSubject' | translate) }}</td>
-                <td class="px-6 py-2 text-gray-700">{{ t.messageCount }}</td>
-                <td class="px-6 py-2">
+            @for (t of pagedThreads(); track t.id; let i = $index) {
+              <tr class="cursor-pointer transition-colors" (click)="viewDetails(t)">
+                <td class="text-gray-700">{{ t.lastMessageAt ? utils.formatDate(t.lastMessageAt) : ('common.notSet' | translate) }}</td>
+                <td class="text-gray-700">{{ nameFor(t.creator) }}</td>
+                <td class="font-medium text-gray-800">{{ t.subject || ('messages.noSubject' | translate) }}</td>
+                <td class="text-gray-700">{{ t.messageCount }}</td>
+                <td>
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [ngClass]="stateClass(t.state)">
                     {{ stateName(t.state) }}
                   </span>

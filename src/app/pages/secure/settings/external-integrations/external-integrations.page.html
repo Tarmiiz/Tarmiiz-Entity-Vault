@@ -1,6 +1,6 @@
 <app-header [title]="'settings.externalIntegrations.pageTitle' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3 flex items-start justify-between gap-4">
     <div>
@@ -20,58 +20,57 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.integration' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.categoryLabel' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.status' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.default' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.parameters' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'settings.externalIntegrations.table.lastUpdated' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.actions' | translate }}</th>
+            <th scope="col">{{ 'common.id' | translate }}</th>
+            <th scope="col">{{ 'settings.externalIntegrations.table.integration' | translate }}</th>
+            <th scope="col">{{ 'settings.externalIntegrations.categoryLabel' | translate }}</th>
+            <th scope="col">{{ 'settings.externalIntegrations.table.status' | translate }}</th>
+            <th scope="col">{{ 'settings.externalIntegrations.table.default' | translate }}</th>
+            <th scope="col">{{ 'settings.externalIntegrations.table.parameters' | translate }}</th>
+            <th scope="col">{{ 'settings.externalIntegrations.table.lastUpdated' | translate }}</th>
+            <th scope="col">{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (integrations().length == 0) {
-            <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="8">
+            <tr class="bg-white">
+              <td colspan="8">
                 @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'common.noData' | translate }} }
               </td>
             </tr>
           } @else {
-            @for (p of pagedIntegrations(); track p.name; let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                <td class="px-6 py-2">{{ i + 1 }}</td>
-                <td class="px-6 py-2">
+            @for (p of pagedIntegrations(); track p.name; let i = $index) {
+              <tr class="transition-colors">
+                <td>{{ i + 1 }}</td>
+                <td>
                   <span class="font-medium">{{ p.displayName }}</span>
                   <span class="text-gray-400 font-mono ml-1">({{ p.name }})</span>
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
                     {{ p.category }}
                   </span>
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <span class="px-3 py-1 text-xs font-semibold rounded-full"
                         [class]="p.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
                     {{ (p.enabled ? 'settings.externalIntegrations.enabled' : 'settings.externalIntegrations.disabled') | translate }}
                   </span>
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   @if (p.isDefault) {
                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">{{ 'settings.externalIntegrations.table.default' | translate }}</span>
                   } @else { {{ 'common.notSet' | translate }} }
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <span>{{ 'settings.externalIntegrations.paramsSetCount' | translate: { count: paramsSetCount(p) } }}</span>
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   @if (p.updatedAt != null) { {{ p.updatedAt | date:'dd/MM/yyyy HH:mm:ss' }} } @else { {{ 'common.notSet' | translate }} }
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <div class="flex gap-2">
                     <button (click)="edit(p)" [disabled]="busy()"
                       class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50">

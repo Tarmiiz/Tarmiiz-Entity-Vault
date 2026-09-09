@@ -80,43 +80,41 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th class="px-6 py-2">{{ 'dex.orders.table.id' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.orderId' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.asset' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.side' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.scope' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.price' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.amount' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.filled' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.status' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.venue' | translate }}</th>
-            <th class="px-6 py-2">{{ 'dex.orders.table.createdAt' | translate }}</th>
-            <th class="px-6 py-2"></th>
+            <th>{{ 'dex.orders.table.id' | translate }}</th>
+            <th>{{ 'dex.orders.table.orderId' | translate }}</th>
+            <th>{{ 'dex.orders.table.asset' | translate }}</th>
+            <th>{{ 'dex.orders.table.side' | translate }}</th>
+            <th>{{ 'dex.orders.table.scope' | translate }}</th>
+            <th>{{ 'dex.orders.table.price' | translate }}</th>
+            <th>{{ 'dex.orders.table.amount' | translate }}</th>
+            <th>{{ 'dex.orders.table.filled' | translate }}</th>
+            <th>{{ 'dex.orders.table.status' | translate }}</th>
+            <th>{{ 'dex.orders.table.venue' | translate }}</th>
+            <th>{{ 'dex.orders.table.createdAt' | translate }}</th>
+            <th></th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filtered().length === 0) {
-            <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="12">{{ 'common.noData' | translate }}</td>
+            <tr class="bg-white">
+              <td colspan="12">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (o of pagedOrders(); track o.ref; let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                  (click)="view(o)">
-                <td class="px-6 py-2">{{ i + 1 }}</td>
-                <td class="px-6 py-2 font-mono" [title]="o.ref">{{ shortRef(o.ref) }}</td>
-                <td class="px-6 py-2">{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
-                <td class="px-6 py-2">
+            @for (o of pagedOrders(); track o.ref; let i = $index) {
+              <tr class="cursor-pointer transition-colors" (click)="view(o)">
+                <td>{{ i + 1 }}</td>
+                <td class="font-mono" [title]="o.ref">{{ shortRef(o.ref) }}</td>
+                <td>{{ o.assetSymbol || (o.baseAsset.slice(0,10) + '…') }}</td>
+                <td>
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getSideClass(o.side)">{{ o.sideName || ((o.side === 1 ? 'dex.orders.side.buy' : 'dex.orders.side.sell') | translate) }}</span>
                 </td>
                 <!-- marketScope RETIRED (V36) — this rendered a blank tier. -->
-                <td class="px-6 py-2">{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
-                <td class="px-6 py-2">{{ fmtAmount(o.amount) }}</td>
-                <td class="px-6 py-2">
+                <td>{{ fmtPrice(o.price) }} <span class="text-gray-500">{{ o.currencyName || '' }}</span></td>
+                <td>{{ fmtAmount(o.amount) }}</td>
+                <td>
                   <div class="flex items-center gap-2">
                     <div class="w-16 bg-gray-200 rounded-full h-1.5">
                       <div class="bg-indigo-500 h-1.5 rounded-full" [style.width.%]="fillPct(o)"></div>
@@ -124,12 +122,12 @@
                     <span>{{ fillPct(o) }}%</span>
                   </div>
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStatusClass(o.status)">{{ o.statusName || o.status }}</span>
                 </td>
-                <td class="px-6 py-2">{{ o.dexServiceName || (o.dexService.slice(0,10) + '…') }}</td>
-                <td class="px-6 py-2">{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</td>
-                <td class="px-6 py-2">
+                <td>{{ o.dexServiceName || (o.dexService.slice(0,10) + '…') }}</td>
+                <td>{{ o.createdAt ? utils.formatDate(o.createdAt) : '—' }}</td>
+                <td>
                   @if (isOpen(o) && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-order-cancel')) {
                     <button (click)="cancel(o, $event)"
                       class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">{{ 'common.cancel' | translate }}</button>

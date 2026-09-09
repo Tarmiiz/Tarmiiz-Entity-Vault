@@ -47,41 +47,39 @@
 <!-- Table -->
 <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
   <div class="overflow-x-auto rounded-lg">
-    <table class="w-full text-sm text-left text-gray-700">
-      <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+    <table class="table-v4 w-full text-sm text-left">
+      <thead>
         <tr>
-          <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
-          <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.title' | translate }}</th>
-          <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
-          <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.signed' | translate }}</th>
-          <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.added' | translate }}</th>
-          <th scope="col" class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
+          <th scope="col">{{ 'common.id' | translate }}</th>
+          <th scope="col">{{ 'documentsTab.table.title' | translate }}</th>
+          <th scope="col">{{ 'common.type' | translate }}</th>
+          <th scope="col">{{ 'documentsTab.table.signed' | translate }}</th>
+          <th scope="col">{{ 'documentsTab.table.added' | translate }}</th>
+          <th scope="col" class="text-right">{{ 'common.actions' | translate }}</th>
         </tr>
       </thead>
       <tbody class="text-xs">
         @if (loading()) {
           @for (i of [1,2,3]; track i) {
-            <tr class="bg-white border-b">
-              <td colspan="6" class="px-6 py-2"><div class="h-3 bg-gray-200 rounded w-full animate-pulse"></div></td>
+            <tr class="bg-white">
+              <td colspan="6"><div class="h-3 bg-gray-200 rounded w-full animate-pulse"></div></td>
             </tr>
           }
         } @else if (filteredDocs().length === 0) {
-          <tr class="bg-white border-b">
-            <td class="px-6 py-3 text-gray-400" colspan="6">{{ 'documentsTab.noDocuments' | translate }}</td>
+          <tr class="bg-white">
+            <td class="text-gray-400" colspan="6">{{ 'documentsTab.noDocuments' | translate }}</td>
           </tr>
         } @else {
-          @for (doc of pagedDocs(); track doc.id; let i = $index; let isEven = $even) {
-            <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                (click)="openView(doc)">
-              <td class="px-6 py-2">{{ i + 1 }}</td>
-              <td class="px-6 py-2 font-medium">{{ doc.title }}</td>
-              <td class="px-6 py-2">
+          @for (doc of pagedDocs(); track doc.id; let i = $index) {
+            <tr class="cursor-pointer transition-colors" (click)="openView(doc)">
+              <td>{{ i + 1 }}</td>
+              <td class="font-medium">{{ doc.title }}</td>
+              <td>
                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(doc.documentType)">
                   {{ doc.documentTypeName || (docTypeNames[doc.documentType] | translate) }}
                 </span>
               </td>
-              <td class="px-6 py-2">
+              <td>
                 @if (signedCounts()[doc.id] > 0) {
                   <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                     {{ 'documentsTab.signedYes' | translate: { count: signedCounts()[doc.id] } }}
@@ -90,8 +88,8 @@
                   <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">{{ 'common.no' | translate }}</span>
                 }
               </td>
-              <td class="px-6 py-2">{{ utils.formatDate(doc.createdAt) }}</td>
-              <td class="px-6 py-2 text-right" (click)="$event.stopPropagation()">
+              <td>{{ utils.formatDate(doc.createdAt) }}</td>
+              <td class="text-right" (click)="$event.stopPropagation()">
                 <div class="flex gap-1 justify-end">
                   <button (click)="viewFile(doc)"
                     class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">
@@ -147,24 +145,24 @@
       <p class="text-xs text-gray-500">{{ 'documentsTab.inbound.hint' | translate: { type: resourceType } }}</p>
     </div>
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.title' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.from' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.type' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'documentsTab.table.signed' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'documentsTab.inbound.sharedAt' | translate }}</th>
-            <th scope="col" class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
+            <th scope="col">{{ 'common.id' | translate }}</th>
+            <th scope="col">{{ 'documentsTab.table.title' | translate }}</th>
+            <th scope="col">{{ 'common.from' | translate }}</th>
+            <th scope="col">{{ 'common.type' | translate }}</th>
+            <th scope="col">{{ 'documentsTab.table.signed' | translate }}</th>
+            <th scope="col">{{ 'documentsTab.inbound.sharedAt' | translate }}</th>
+            <th scope="col" class="text-right">{{ 'common.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
-          @for (doc of pagedInbound(); track doc.owner + ':' + doc.documentId; let i = $index; let isEven = $even) {
-            <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-              <td class="px-6 py-2">{{ i + 1 }}</td>
-              <td class="px-6 py-2 font-medium">{{ doc.title || '—' }}</td>
-              <td class="px-6 py-2">
+          @for (doc of pagedInbound(); track doc.owner + ':' + doc.documentId; let i = $index) {
+            <tr>
+              <td>{{ i + 1 }}</td>
+              <td class="font-medium">{{ doc.title || '—' }}</td>
+              <td>
                 <div class="flex items-center gap-2">
                   <span class="text-gray-800">{{ doc.ownerName }}</span>
                   @if (inboundKindLabel(doc.ownerPartyType); as label) {
@@ -172,20 +170,20 @@
                   }
                 </div>
               </td>
-              <td class="px-6 py-2">
+              <td>
                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="getDocTypeClass(doc.documentType)">
                   {{ docTypeNames[doc.documentType] | translate }}
                 </span>
               </td>
-              <td class="px-6 py-2">
+              <td>
                 @if (doc.signed) {
                   <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{ 'documentsTab.signedByYou' | translate }}</span>
                 } @else {
                   <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">—</span>
                 }
               </td>
-              <td class="px-6 py-2">{{ utils.formatDate(doc.sharedAt || doc.createdAt) }}</td>
-              <td class="px-6 py-2 text-right">
+              <td>{{ utils.formatDate(doc.sharedAt || doc.createdAt) }}</td>
+              <td class="text-right">
                 <div class="flex gap-1 justify-end">
                   <button (click)="viewInbound(doc)"
                     class="text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors">

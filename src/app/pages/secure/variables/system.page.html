@@ -1,6 +1,6 @@
 <app-header [title]="'variables.title' | translate"></app-header>
 
-<div class="grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- Tab Navigation -->
   <div class="bg-white rounded-t-lg shadow-md p-2">
@@ -44,33 +44,33 @@
         <!-- Table -->
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div class="overflow-x-auto rounded-lg">
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <table class="table-v4 w-full text-sm text-left">
+              <thead>
                 <tr>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.countriesTab.table.code' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.countriesTab.table.shortName' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.countriesTab.table.fullName' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.countriesTab.table.alpha2' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.countriesTab.table.alpha3' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.countriesTab.table.currencyName' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.countriesTab.table.currencyCode' | translate }}</th>
+                  <th scope="col">{{ 'variables.countriesTab.table.code' | translate }}</th>
+                  <th scope="col">{{ 'variables.countriesTab.table.shortName' | translate }}</th>
+                  <th scope="col">{{ 'variables.countriesTab.table.fullName' | translate }}</th>
+                  <th scope="col">{{ 'variables.countriesTab.table.alpha2' | translate }}</th>
+                  <th scope="col">{{ 'variables.countriesTab.table.alpha3' | translate }}</th>
+                  <th scope="col">{{ 'variables.countriesTab.table.currencyName' | translate }}</th>
+                  <th scope="col">{{ 'variables.countriesTab.table.currencyCode' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="text-xs">
                 @if (filteredCountries().length === 0) {
-                  <tr class="bg-white border-b hover:bg-gray-50">
-                    <td colspan="7" class="px-6 py-2">{{ 'common.noData' | translate }}</td>
+                  <tr class="bg-white">
+                    <td colspan="7">{{ 'common.noData' | translate }}</td>
                   </tr>
                 } @else {
-                  @for (country of pagedCountries(); track country.countryCode; let isEven = $even) {
-                    <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                      <td class="px-6 py-2 font-medium">{{ country.countryCode }}</td>
-                      <td class="px-6 py-2 font-medium">{{ country.nameShort }}</td>
-                      <td class="px-6 py-2">{{ country.nameFull }}</td>
-                      <td class="px-6 py-2">{{ country.alpha2Code }}</td>
-                      <td class="px-6 py-2">{{ country.alpha3Code }}</td>
-                      <td class="px-6 py-2">{{ country.currencyName }}</td>
-                      <td class="px-6 py-2">{{ country.currencyCode }}</td>
+                  @for (country of pagedCountries(); track country.countryCode) {
+                    <tr class="transition-colors">
+                      <td class="font-medium">{{ country.countryCode }}</td>
+                      <td class="font-medium">{{ country.nameShort }}</td>
+                      <td>{{ country.nameFull }}</td>
+                      <td>{{ country.alpha2Code }}</td>
+                      <td>{{ country.alpha3Code }}</td>
+                      <td>{{ country.currencyName }}</td>
+                      <td>{{ country.currencyCode }}</td>
                     </tr>
                   }
                 }
@@ -101,30 +101,30 @@
         <!-- Table -->
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div class="overflow-x-auto rounded-lg">
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <table class="table-v4 w-full text-sm text-left">
+              <thead>
                 <tr>
-                  <th scope="col" class="px-6 py-2 w-1/2">{{ 'variables.table.category' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.table.id' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'variables.table.name' | translate }}</th>
+                  <th scope="col" class="w-1/2">{{ 'variables.table.category' | translate }}</th>
+                  <th scope="col">{{ 'variables.table.id' | translate }}</th>
+                  <th scope="col">{{ 'variables.table.name' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="text-xs">
                 @if (filteredVariables().length === 0) {
-                  <tr class="bg-white border-b hover:bg-gray-50">
-                    <td colspan="3" class="px-6 py-2">{{ 'variables.empty' | translate }}</td>
+                  <tr class="bg-white">
+                    <td colspan="3">{{ 'variables.empty' | translate }}</td>
                   </tr>
                 } @else {
-                  @for (variable of pagedVariables(); track variable.variableId + variable.category; let i = $index; let isEven = $even) {
+                  @for (variable of pagedVariables(); track variable.variableId + variable.category; let i = $index) {
                     @let prevCategory = i > 0 ? filteredVariables()[i-1].category : null;
-                    <tr class="border-b hover:bg-gray-300 transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
+                    <tr class="transition-colors">
                       @if (variable.category !== prevCategory) {
-                        <td class="px-6 py-2 font-semibold">{{ variable.category }}</td>
+                        <td class="font-semibold">{{ variable.category }}</td>
                       } @else {
                         <td></td>
                       }
-                      <td class="px-6 py-2">{{ variable.variableId }}</td>
-                      <td class="px-6 py-2">{{ variable.name }}</td>
+                      <td>{{ variable.variableId }}</td>
+                      <td>{{ variable.name }}</td>
                     </tr>
                   }
                 }

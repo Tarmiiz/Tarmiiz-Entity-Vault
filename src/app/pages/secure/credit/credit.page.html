@@ -123,32 +123,30 @@
   <!-- Table -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'credit.table.subscription' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'credit.table.service' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+            <th scope="col">{{ 'common.id' | translate }}</th>
+            <th scope="col">{{ 'credit.table.subscription' | translate }}</th>
+            <th scope="col">{{ 'credit.table.service' | translate }}</th>
+            <th scope="col">{{ 'common.state' | translate }}</th>
             @for (c of uniqueCurrencies(); track c.currencyCode) {
-              <th scope="col" class="px-6 py-2 text-right">{{ c.currencySymbol }}</th>
+              <th scope="col" class="text-right">{{ c.currencySymbol }}</th>
             }
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filteredRows().length === 0) {
-            <tr class="bg-white border-b">
-              <td class="px-6 py-2" [attr.colspan]="4 + uniqueCurrencies().length">{{ 'common.noData' | translate }}</td>
+            <tr class="bg-white">
+              <td [attr.colspan]="4 + uniqueCurrencies().length">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (row of pagedRows(); track row.subscription; let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                  (click)="viewSubscription(row.subscription)">
-                <td class="px-6 py-2">{{ i + 1 }}</td>
-                <td class="px-6 py-2 font-mono">{{ row.subscription }}</td>
-                <td class="px-6 py-2">{{ row.serviceName }}</td>
-                <td class="px-6 py-2">
+            @for (row of pagedRows(); track row.subscription; let i = $index) {
+              <tr class="cursor-pointer transition-colors" (click)="viewSubscription(row.subscription)">
+                <td>{{ i + 1 }}</td>
+                <td class="font-mono">{{ row.subscription }}</td>
+                <td>{{ row.serviceName }}</td>
+                <td>
                   <div class="flex items-center gap-1.5">
                     <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(row.state)">
                       {{ row.stateName || '—' }}
@@ -160,7 +158,7 @@
                 </td>
                 @for (c of uniqueCurrencies(); track c.currencyCode) {
                   @let bal = balanceFor(row, c.currencyCode);
-                  <td class="px-6 py-2 text-right">
+                  <td class="text-right">
                     @if (bal !== null) {
                       {{ bal | money }}
                     } @else {

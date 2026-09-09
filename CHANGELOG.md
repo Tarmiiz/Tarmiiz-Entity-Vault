@@ -17,6 +17,71 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-09
 
+#### Changed — the v4 design lands: login, app shell, and one table style Vault-wide
+
+The v4 concept in [`Tarmiiz Design Components/v4/`](../../../Tarmiiz%20Design%20Components/v4/)
+is now the Vault's actual look. Three passes, all deliberately additive — every binding, route,
+handler and permission gate was preserved:
+
+**Login.** [login.page.html](src/app/pages/public/user/login/login.page.html) became the v4 hero
+with an inline sign-in card (no marketing sections, no contact form, no footer). All 33 bindings
+carried over, plus a `showPassword` toggle. **Forgot-password is HIDDEN, not deleted** —
+`forgotPasswordEnabled = false`; the page still exists and only lacks a route, so restoring it is
+one flag. The CTA is a white fill with an indigo label rather than the indigo fill the mock used:
+measured against the hero's light band, indigo-on-gradient was **1.01:1**; the inversion is
+**6.37:1**.
+
+**App shell.** [authorized-layout](src/app/shared/layouts/authorized-layout/) gained a global top
+bar spanning the full window (logo, page title, Live, welcome, messages, language, profile,
+logout), the v4 gradient page background, and the `ion-split-pane` restyled into a floating panel
+with a collapse control persisted to `localStorage`. Page titles and the per-page Live indicator
+**moved into that bar** — via two new reporter services,
+[page-title.service.ts](src/app/shared/services/page-title.service.ts) (route-keyed, because
+back-navigation re-runs no lifecycle hook) and
+[live-status.service.ts](src/app/shared/services/live-status.service.ts) (Symbol-keyed, so
+retained pages can report in any order). `app-header` and `app-live-indicator` keep their tags and
+inputs in all 59 templates and simply report instead of rendering, so the move cost **zero page
+edits**; the now-empty per-page title bars were removed.
+
+**Tables.** `.table-v4` (in [global.scss](src/global.scss)) is now on **all 105 tables outside the
+dashboard pages** — 58 files. Signature: a gradient header band with a matching gradient rule
+beneath it, zebra rows, hairline separators, no vertical rules. The hardcoded `#4a5568` header is
+gone Vault-wide. Per table the padding utilities, zebra bindings (`[class.bg-gray-100]`/
+`[class.bg-white]`) and now-dead `let isEven = $even` were removed — the class owns all three, and
+being unlayered it beats Tailwind's layered utilities, so leaving them would only have misled.
+Column alignment, click handlers, `cursor-pointer` and the `row-new` pulses are untouched. The
+**dashboard pages are deliberately excluded** and verifiably unmodified.
+
+Three things here are measurements, not preferences, and each would have caused visible damage:
+
+- **The header band is darkened 22%.** The hero gradient as-is is **3.59:1** against white 12.5px
+  text; its cyan stop sits at 130%, past the element, so the real painted endpoint is `#3488e9`
+  rather than the nominal `#0ea5e9`. Darkening gives **5.30:1** and keeps the gradient.
+- **The rule under the header is a background LAYER, not a border** — a border cannot hold a
+  gradient, and a flat rule matched the band at exactly one point. Same three hues at full
+  strength (the 22% the band gives up), `90deg` because on a 2px strip only the horizontal
+  component of a gradient exists at all.
+- **Row height is floored by the status pill, not the padding.** Measured: at 8px cell padding a
+  row was 39.5px = `8 + 23 (pill) + 8`; the 13px text sits in a 17.3px line-box and never reaches
+  the floor. Trimming padding alone bottoms out near 32px, so the pill is tightened too — scoped
+  to `tbody td` and to `span`, so pills elsewhere and any buttons are unaffected. Result **28.5px**,
+  header unchanged.
+
+A `td[colspan]` carve-out keeps "No records found" rows readable: without it the unlayered cell
+padding would flatten them AND — being `first-child` by definition — they would have picked up the
+lead-cell dark ink and semi-bold weight, rendering an empty state as bold dark text in a cramped
+row. `text-align` is deliberately left unset throughout so each template's own `text-center` /
+`text-right` still applies.
+
+#### Fixed — sidebar menu icons were invisible on a light-mode OS
+
+All 27 menu icons carried `text-gray-800 dark:text-white`. Tailwind compiles `dark:` under
+`@media (prefers-color-scheme: dark)`, so on a machine set to **light** they rendered white on the
+near-white panel — **1.02:1**, i.e. blank space where the icons should be. It looked perfect on a
+dark-mode machine, which is why it survived. All 45 icon colour classes were stripped so the icons
+inherit the row's colour. Same family as the header defect fixed 2026-09-08. Pre-existing, found
+while porting the shell — not introduced by it.
+
 #### Fixed — the Credit page shows the service pools and keeps a currency column at zero
 
 [credit/credit.page](src/app/pages/secure/credit/) rendered only the subscribers' CLAIMS and

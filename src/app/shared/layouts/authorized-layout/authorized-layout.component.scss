@@ -1,101 +1,253 @@
-﻿ion-content {
+/* Authorized layout — v4 app shell (design-components v4/app-shell.html).
+ *
+ * SHAPE: a full-width dark top bar, then a gradient ground carrying two FLOATING
+ * PANELS — the sidebar and the content. The gradient is a SURFACE, not
+ * decoration: the panels read as panels only against it.
+ *
+ * ⚠️ STILL AN ion-split-pane, on purpose. v4's mock is a plain flex shell, but
+ * the split-pane owns the mobile drawer, its backdrop and swipe-to-close, plus
+ * every closeMenuOnMobile() call site. Rebuilding that to match the mock exactly
+ * would trade working responsive behaviour for geometry. So the panel look is
+ * applied AS CSS over the split-pane: Ionic positions ion-menu, we inset it.
+ * The visible cost is that the sidebar detaches slightly less cleanly than the
+ * mock at some widths — accepted deliberately.
+ *
+ * ⚠️ MENU ICONS SET NO TEXT COLOUR — they inherit `ion-item { color }` below.
+ * 45 of them carried `text-gray-800/300 dark:text-white`, which resolved under
+ * @media(prefers-color-scheme: dark) only: on a LIGHT-mode OS that was #1f2937
+ * on the #202a3b sidebar = 1.02:1, invisible, and it looked perfect on a
+ * dark-mode machine. Same bug the header carried until 2026-09-08. Do not
+ * reintroduce a per-icon colour.
+ *
+ * Colours DERIVE from --brand-primary (overridden at bootstrap from
+ * assets/config.json), same rule as .login-shell and the top bar.
+ */
+
+/* ── Shell + ground ─────────────────────────────────────────────────────────*/
+/* 🔴 THIS :host RULE IS LOAD-BEARING — without it the top bar is INVISIBLE.
+   A component host with no display rule is `display: inline`, so .vault-shell's
+   `height: 100%` resolves against nothing and collapses to zero. The panels keep
+   rendering anyway, because `#main-content` carries Ionic's `.ion-page`
+   (`position: absolute; inset: 0`) and simply escapes to the nearest positioned
+   ancestor — covering the bar and the gradient behind it. The symptom is not
+   "the bar is unstyled", it is "the bar and the background are both gone", which
+   is why it reads as a template problem rather than a CSS one. */
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.vault-shell {
+    /* ONE source of truth for the shell geometry. The top bar aligns its title
+       against the CONTENT panel using these, so the bar and the panels cannot
+       drift apart when either is retuned. --vault-side tracks the collapsed rail
+       too (see .menu-collapsed), which is what keeps the title aligned after a
+       collapse. */
+    --vault-gutter: 14px;
+    --vault-side: 250px;
+
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: linear-gradient(
+        160deg,
+        color-mix(in oklab, var(--brand-primary) 30%, #06070f) 0%,
+        color-mix(in oklab, var(--brand-primary) 75%, #0a0b1a) 48%,
+        color-mix(in oklab, var(--brand-primary) 92%, #ffffff) 74%,
+        color-mix(in oklab, var(--brand-primary) 32%, #080a1c) 100%
+    );
+}
+
+/* ── Global top bar ─────────────────────────────────────────────────────────*/
+/* MOVED to src/global.scss (search ".vault-topbar"). It lived here until
+   2026-09-09, when this file hit Angular's 4 kB anyComponentStyle budget and
+   FAILED THE BUILD — which silently shipped a stale bundle, because the docker
+   image is built from www/ and www/ is only rewritten on a successful build.
+   The bar is app-shell chrome, so global.scss is the right home anyway; it sits
+   beside .login-shell there. The .vault-* names are unique, so losing component
+   scoping costs nothing. */
+
+/* ── Split pane, restyled into floating panels ──────────────────────────────*/
+ion-split-pane {
+    flex: 1 1 auto;
+    min-height: 0;
+    --side-min-width: 250px;
+    /* Ionic paints the split-pane background over our gradient. */
+    --ion-background-color: transparent;
+    background: transparent;
+    /* Contain `#main-content`, which carries `.ion-page` (position: absolute).
+       Without a positioned ancestor here it resolves against the router outlet
+       and covers the top bar. */
+    position: relative;
+}
+
+ion-content {
     padding: 0 !important;
 }
 
-ion-split-pane {
-    --side-min-width: 250px !important;
-}
-
+/* ── Sidebar panel ──────────────────────────────────────────────────────────*/
 ion-menu {
     width: 250px;
+    --width: 250px;
+    --background: transparent;
 
-    /* Sidebar typography — matched to the Permissioning Admin's menu (2026-09-01).
-       Its links are plain `text-sm` on a body that opts into greyscale
-       antialiasing; Ionic's ion-label defaults to 1rem and renders with the
-       platform's subpixel smoothing, and those two differences are the whole of
-       what read as heavier and denser here.
+    /* CONTENT-HEIGHT panel: it ends after the last menu item instead of running
+       to the bottom of the window, so the gradient shows beneath it (v4).
+       Ionic's .menu-inner uses `height: var(--height)`, hence --height: auto —
+       but it ALSO sets `contain: strict`, which includes SIZE containment and
+       would make auto-height compute to 0. The contain override below is what
+       makes this work; drop it and the sidebar disappears entirely. */
+    --height: auto;
+    --max-height: calc(100% - 28px);
 
-       Deliberately NOT setting font-family: both apps already resolve to Inter
-       through --ion-font-family, and a direct rule here would beat the INHERITED
-       `html.lang-ar` stack (Noto Kufi Arabic) and drop the Arabic sidebar to a
-       fallback face. Scoped to ion-menu so page content keeps its existing scale. */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
+    &::part(container) {
+        background: #f4f6fa;
+        border-radius: 18px;
+        margin: 0 0 14px 14px;
+        box-shadow: 0 2px 6px rgba(10, 12, 40, 0.06), 0 18px 48px -12px rgba(10, 12, 40, 0.32);
+        overflow: hidden;
+        /* Ionic ships `contain: strict`; size containment must go. */
+        contain: layout style paint;
+        /* 🔴 THE LINE THAT ACTUALLY MAKES IT CONTENT-HEIGHT. Ionic pins the panel
+           with `:host(.menu-side-start) .menu-inner { top: 0; bottom: 0 }`, and an
+           absolutely-positioned box with BOTH edges set stretches — `height: auto`
+           is simply ignored. Releasing the bottom edge lets top + height govern.
+           Without this the panel silently runs full-height and --height: auto
+           looks like it did nothing. */
+        bottom: auto;
+    }
+
     ion-label {
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         font-weight: 400;
     }
+}
 
-    ion-toolbar {
-        width: 250px;
+/* The menu's scroller — a plain div, not ion-content (see the template note).
+   max-height keeps a long menu inside the viewport and scrolls it. */
+.vault-menu-scroll {
+    background: #f4f6fa;
+    border-radius: 18px;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+    padding-bottom: 8px;
+}
 
-        img {
-            width: 170px;
-            margin-top: 10px;
-            margin-left: auto;
-            margin-right: auto;
-            margin-bottom: 10px;
+/* RTL: the panel's gutter is on the other side. */
+:host-context([dir='rtl']) ion-menu::part(container) {
+    margin: 0 14px 14px 0;
+}
+
+/* Collapse control — its own row above the first menu item, pushed right.
+   NOT the overhanging corner chip from v4's mock: inside a real ion-menu that
+   overhang is clipped by Ionic's scroll container. */
+.vault-menu-head {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 10px 2px;
+}
+
+.vault-collapse-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    background: #eceff5;
+
+    &:hover { color: var(--brand-primary); }
+    svg { transition: transform 0.18s; }
+}
+
+/* Hidden on mobile: there the drawer, not the rail, is the affordance. */
+@media (max-width: 767px) {
+    .vault-menu-head { display: none; }
+}
+
+/* ── Collapsed rail (250px ⇄ 64px) ──────────────────────────────────────────*/
+.menu-collapsed {
+    /* Keeps the top-bar title aligned with the content panel after collapsing. */
+    --vault-side: 76px;
+
+    ion-split-pane { --side-min-width: 76px; }
+
+    /* No right edge to hug on a rail — centre the control instead. */
+    .vault-menu-head { justify-content: center; padding-inline: 0; }
+
+    ion-menu {
+        width: 76px;
+        --width: 76px;
+
+        ion-label { display: none; }
+
+        ion-list ion-item {
+            --padding-start: 0;
+            --inner-padding-end: 0;
+            justify-content: center;
+
+            svg { margin-inline: 0 !important; }
+            /* The group chevrons and count badges have no room on a rail. */
+            svg[slot='end'], span[slot='end'] { display: none; }
         }
-        
-        ion-title {
-            text-align: center;
-            font-weight: normal;
-            font-size: 1rem;
-            line-height: 1.3;
-            white-space: normal !important;
-            padding: 8px 0;
-            
-            // Override Ionic's default text truncation
-            .toolbar-title {
-                white-space: normal !important;
-                overflow: visible !important;
-                text-overflow: unset !important;
-            }
-        }
-    }
-
-    ion-content {
-        --background: var(--brand-primary);
     }
 }
 
-// Alternative approach - target the title directly
-ion-menu ion-toolbar ion-title {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: unset !important;
-    
-    // Target the inner title element
-    & > div {
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-    }
-}
-
+/* ── Menu items ─────────────────────────────────────────────────────────────*/
 ion-list {
     background: transparent;
-    
+    padding-inline: 8px;
+
     ion-item {
-        color: white;
-        --background : transparent;
+        color: #4b5568;
+        --background: transparent;
+        --background-hover: #eceff5;
+        --background-hover-opacity: 1;
+        --border-radius: 8px;
+        --padding-start: 10px;
+        --inner-padding-end: 6px;
+        --min-height: 34px;
+        margin-block: 1px;
+        font-size: 0.8125rem;
     }
 
-    ion-icon {
-        margin-right: 10px;
-        color: white;
+    /* Current page. The menu had NO active indicator before the v4 port —
+       routerLinkActive appeared zero times in the template. */
+    ion-item.menu-active {
+        --background: color-mix(in oklab, var(--brand-primary) 10%, #ffffff);
+        color: var(--brand-primary);
+        font-weight: 600;
+
+        ion-label { font-weight: 600; }
     }
+
 }
 
-ion-accordion {
-    background: transparent;
+
+/* ── Content panel ──────────────────────────────────────────────────────────*/
+/* The router outlet's pane becomes the second floating panel. Pages therefore
+   no longer paint their own well — the ~26 `bg-gray-300` page wells were
+   stripped in the same pass, so this surface shows through. */
+#main-content {
+    background: #f4f6fa;
+    border-radius: 18px;
+    margin: 0 14px 14px 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(10, 12, 40, 0.06), 0 18px 48px -12px rgba(10, 12, 40, 0.32);
+
+    ion-content { --background: #f4f6fa; }
 }
 
-.sub-item {
-    --background: #3c495e !important;
-
-    ion-icon {
-        padding-left: 20px;
-    }
-}
+/* Nested items under a collapsible group are indented in the TEMPLATE
+   (`class="pl-2 rtl:pl-0 rtl:pr-2"`), so there is deliberately no rule here.
+   The old `.sub-item { --background: #3c495e }` was DELETED — zero uses, and a
+   dark slab would read as a second menu on a light panel. */

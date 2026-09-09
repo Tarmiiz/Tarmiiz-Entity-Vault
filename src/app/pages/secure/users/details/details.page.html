@@ -250,20 +250,20 @@
                 <div class="text-center py-10 text-gray-500"><p>{{ 'users.details.menu.empty' | translate }}</p></div>
               } @else {
                 <div class="overflow-x-auto">
-                  <table class="min-w-full divide-y divide-gray-200">
+                  <table class="table-v4 min-w-full">
                     <thead>
                       <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.menu.table.menuItem' | translate }}</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.table.key' | translate }}</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.source.column' | translate }}</th>
-                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.menu.table.visible' | translate }}</th>
+                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.menu.table.menuItem' | translate }}</th>
+                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.table.key' | translate }}</th>
+                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.source.column' | translate }}</th>
+                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.menu.table.visible' | translate }}</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                       @for (row of menuRows(); track row.menuKey) {
                         <tr>
-                          <td class="px-4 py-3 text-sm text-gray-800">{{ labelFor(row.menuKey) }}</td>
-                          <td class="px-4 py-3 text-xs text-gray-400 font-mono">
+                          <td class="text-sm text-gray-800">{{ labelFor(row.menuKey) }}</td>
+                          <td class="text-xs text-gray-400 font-mono">
                             <span class="inline-flex items-center gap-2">
                               {{ row.menuKey }}
                               <!-- Granting a module the tenant is not licensed for is legal and
@@ -271,7 +271,7 @@
                               <app-license-pill [license]="row.license" />
                             </span>
                           </td>
-                          <td class="px-4 py-3">
+                          <td>
                             @switch (rowSource(row)) {
                               @case ('override') {
                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-violet-100 text-violet-800">{{ 'users.details.source.override' | translate }}</span>
@@ -284,7 +284,7 @@
                               }
                             }
                           </td>
-                          <td class="px-4 py-3 text-right">
+                          <td class="text-right">
                             <div class="inline-flex items-center gap-3">
                               @if (row.userEnabled !== null) {
                                 <button (click)="resetMenuOverride(row)" [disabled]="menuSaving() === row.menuKey"
@@ -360,20 +360,20 @@
                   </div>
                 </div>
                 <div class="overflow-x-auto">
-                  <table class="min-w-full divide-y divide-gray-200">
+                  <table class="table-v4 min-w-full">
                     <thead>
                       <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.sysfn.table.function' | translate }}</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.table.key' | translate }}</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.source.column' | translate }}</th>
-                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.sysfn.table.available' | translate }}</th>
+                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.sysfn.table.function' | translate }}</th>
+                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.table.key' | translate }}</th>
+                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.source.column' | translate }}</th>
+                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.sysfn.table.available' | translate }}</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                       @for (row of filteredSysFnRows(); track row.functionKey) {
                         <tr>
-                          <td class="px-4 py-3 text-sm text-gray-800">{{ fnLabelFor(row.functionKey) }}</td>
-                          <td class="px-4 py-3 text-xs text-gray-400 font-mono">
+                          <td class="text-sm text-gray-800">{{ fnLabelFor(row.functionKey) }}</td>
+                          <td class="text-xs text-gray-400 font-mono">
                             <span class="inline-flex items-center gap-2">
                               {{ row.functionKey }}
                               <!-- A separate axis from Effective: a key can be granted and still
@@ -381,7 +381,7 @@
                               <app-license-pill [license]="row.license" />
                             </span>
                           </td>
-                          <td class="px-4 py-3">
+                          <td>
                             @switch (rowSource(row)) {
                               @case ('override') {
                                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-violet-100 text-violet-800">{{ 'users.details.source.override' | translate }}</span>
@@ -394,7 +394,7 @@
                               }
                             }
                           </td>
-                          <td class="px-4 py-3 text-right">
+                          <td class="text-right">
                             <div class="inline-flex items-center gap-3">
                               @if (row.userEnabled !== null) {
                                 <button (click)="resetSystemFunctionOverride(row)" [disabled]="sysFnSaving() === row.functionKey"
@@ -419,7 +419,7 @@
                         </tr>
                       } @empty {
                         <tr>
-                          <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-400">{{ 'users.details.sysfn.noMatch' | translate: { query: sysFnFilter() } }}</td>
+                          <td colspan="4" class="py-6 text-center text-sm text-gray-400">{{ 'users.details.sysfn.noMatch' | translate: { query: sysFnFilter() } }}</td>
                         </tr>
                       }
                     </tbody>

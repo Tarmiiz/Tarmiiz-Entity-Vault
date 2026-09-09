@@ -153,44 +153,43 @@
 
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div class="overflow-x-auto rounded-lg">
-                <table class="w-full text-sm text-left text-gray-700">
-                  <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+                <table class="table-v4 w-full text-sm text-left">
+                  <thead>
                     <tr>
-                      <th class="px-6 py-2">{{ 'dex.listings.table.id' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.venueCol' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.entityCol' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'common.country' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'common.address' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'dex.listings.table.tier' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.venueStateCol' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.approvalCol' | translate }}</th>
-                      <th class="px-6 py-2">{{ 'dex.listings.details.venues.hostingCol' | translate }}</th>
-                      <th class="px-6 py-2 text-right">{{ 'common.actions' | translate }}</th>
+                      <th>{{ 'dex.listings.table.id' | translate }}</th>
+                      <th>{{ 'dex.listings.details.venues.venueCol' | translate }}</th>
+                      <th>{{ 'dex.listings.details.venues.entityCol' | translate }}</th>
+                      <th>{{ 'common.country' | translate }}</th>
+                      <th>{{ 'common.address' | translate }}</th>
+                      <th>{{ 'dex.listings.table.tier' | translate }}</th>
+                      <th>{{ 'dex.listings.details.venues.venueStateCol' | translate }}</th>
+                      <th>{{ 'dex.listings.details.venues.approvalCol' | translate }}</th>
+                      <th>{{ 'dex.listings.details.venues.hostingCol' | translate }}</th>
+                      <th class="text-right">{{ 'common.actions' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-xs">
                     @if (enabledVenues().length === 0) {
-                      <tr class="bg-white border-b"><td class="px-6 py-3 text-gray-400" colspan="10">{{ 'dex.listings.details.venues.empty' | translate }}</td></tr>
+                      <tr class="bg-white"><td class="text-gray-400" colspan="10">{{ 'dex.listings.details.venues.empty' | translate }}</td></tr>
                     } @else {
-                      @for (v of pagedEnabledVenues(); track v.dexService; let i = $index; let isEven = $even) {
-                        <tr class="border-b transition-colors"
-                            [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                          <td class="px-6 py-2">{{ i + 1 }}</td>
-                          <td class="px-6 py-2">{{ v.dexServiceName || '—' }}</td>
-                          <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
-                          <td class="px-6 py-2">{{ v.countryName || v.countryCode || '—' }}</td>
-                          <td class="px-6 py-2 font-mono break-all">{{ v.dexService }}</td>
-                          <td class="px-6 py-2">
+                      @for (v of pagedEnabledVenues(); track v.dexService; let i = $index) {
+                        <tr class="transition-colors">
+                          <td>{{ i + 1 }}</td>
+                          <td>{{ v.dexServiceName || '—' }}</td>
+                          <td>{{ v.entityName || '—' }}</td>
+                          <td>{{ v.countryName || v.countryCode || '—' }}</td>
+                          <td class="font-mono break-all">{{ v.dexService }}</td>
+                          <td>
                             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="tierBadgeClass(v.tier)">
                               {{ tierLabel(v.tier) }}
                             </span>
                           </td>
-                          <td class="px-6 py-2">
+                          <td>
                             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.venueState)">
                               {{ (v.venueSuspended ? 'state.suspended' : (v.venueState === 2 ? 'state.active' : v.venueState === 3 ? 'state.paused' : v.venueState === 4 ? 'dex.listings.details.venues.deregistered' : 'state.registered')) | translate }}
                             </span>
                           </td>
-                          <td class="px-6 py-2">
+                          <td>
                             <span class="px-3 py-1 text-xs font-semibold rounded-full"
                                   [class]="v.state === 2 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
                               {{ (v.state === 2 ? 'state.approved' : 'dex.listings.details.venues.awaitingApproval') | translate }}
@@ -199,7 +198,7 @@
                           <!-- The VENUE's own leg — read-only here. Without it a pairing
                                stalled on the venue looks identical to one stalled at the
                                regulator, and the issuer has no way to tell who to chase. -->
-                          <td class="px-6 py-2">
+                          <td>
                             <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.hostState)">
                               {{ (v.hostState === 2 ? 'state.active'
                                   : v.hostState === 3 ? 'state.suspended'
@@ -209,7 +208,7 @@
                               <div class="text-xs text-gray-500 mt-1">{{ v.hostHaltReason }}</div>
                             }
                           </td>
-                          <td class="px-6 py-2 text-right whitespace-nowrap">
+                          <td class="text-right whitespace-nowrap">
                             @if (canManage() && features.systemFunctionEnabled('dex-listing-venue-manage')) {
                               <button (click)="openTierChange(v)"
                                 class="text-xs px-3 py-1.5 rounded bg-indigo-700 text-white hover:bg-indigo-800 transition-colors mr-1">

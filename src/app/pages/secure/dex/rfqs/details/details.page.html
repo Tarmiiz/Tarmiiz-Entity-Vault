@@ -130,34 +130,34 @@
             }
 
             <div class="overflow-x-auto rounded-lg border border-gray-200">
-              <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+              <table class="table-v4 w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <th class="px-4 py-2">{{ 'dex.rfqs.details.dealer' | translate }}</th>
-                    <th class="px-4 py-2">{{ 'dex.rfqs.details.standing' | translate }}</th>
-                    <th class="px-4 py-2 text-right">{{ 'dex.rfqs.details.quotePrice' | translate }}</th>
-                    <th class="px-4 py-2 text-right">{{ 'dex.deals.table.total' | translate }}</th>
-                    <th class="px-4 py-2">{{ 'dex.rfqs.details.quoteStatus' | translate }}</th>
-                    <th class="px-4 py-2">{{ 'dex.rfqs.details.quotedAt' | translate }}</th>
-                    <th class="px-4 py-2 text-right"></th>
+                    <th>{{ 'dex.rfqs.details.dealer' | translate }}</th>
+                    <th>{{ 'dex.rfqs.details.standing' | translate }}</th>
+                    <th class="text-right">{{ 'dex.rfqs.details.quotePrice' | translate }}</th>
+                    <th class="text-right">{{ 'dex.deals.table.total' | translate }}</th>
+                    <th>{{ 'dex.rfqs.details.quoteStatus' | translate }}</th>
+                    <th>{{ 'dex.rfqs.details.quotedAt' | translate }}</th>
+                    <th class="text-right"></th>
                   </tr>
                 </thead>
                 <tbody class="text-xs">
                   @if (dealers().length === 0) {
-                    <tr class="bg-white border-b">
-                      <td class="px-4 py-2" colspan="7">{{ 'dex.rfqs.details.noDealers' | translate }}</td>
+                    <tr class="bg-white">
+                      <td colspan="7">{{ 'dex.rfqs.details.noDealers' | translate }}</td>
                     </tr>
                   } @else {
-                    @for (d of pagedDealers(); track d.dealer; let isEven = $even) {
-                      <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                        <td class="px-4 py-2">
+                    @for (d of pagedDealers(); track d.dealer) {
+                      <tr>
+                        <td>
                           <div class="font-medium text-gray-800">{{ dealerName(d) }}</div>
                           @if (d.dealerServiceName) { <div class="text-[10px] text-gray-500">{{ d.dealerServiceName }}</div> }
                         </td>
-                        <td class="px-4 py-2">
+                        <td>
                           <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="dealerStateClass(d)">{{ dealerStateLabel(d) }}</span>
                         </td>
-                        <td class="px-4 py-2 text-right">
+                        <td class="text-right">
                           @if (d.quotePrice !== null) {
                             <span [class.font-semibold]="isBest(d)" [class.text-emerald-700]="isBest(d)">{{ d.quotePrice | money }}</span>
                             @if (isBest(d)) {
@@ -165,16 +165,16 @@
                             }
                           } @else { — }
                         </td>
-                        <td class="px-4 py-2 text-right">
+                        <td class="text-right">
                           {{ d.quotePrice !== null ? ((d.quotePrice * q.amount) | money) : '—' }}
                         </td>
-                        <td class="px-4 py-2">
+                        <td>
                           @if (d.quoteStatus !== null) {
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" [class]="quoteStatusClass(d.quoteStatus)">{{ quoteStatusLabel(d.quoteStatus) }}</span>
                           } @else { — }
                         </td>
-                        <td class="px-4 py-2">{{ d.quotedAt ? utils.formatTime(d.quotedAt) : '—' }}</td>
-                        <td class="px-4 py-2 text-right whitespace-nowrap">
+                        <td>{{ d.quotedAt ? utils.formatTime(d.quotedAt) : '—' }}</td>
+                        <td class="text-right whitespace-nowrap">
                           @if (d.dealKey) {
                             <button (click)="goDeal(d.dealKey)"
                               class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">

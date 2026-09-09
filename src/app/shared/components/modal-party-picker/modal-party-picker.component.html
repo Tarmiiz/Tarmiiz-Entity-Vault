@@ -43,27 +43,24 @@
           <p class="text-sm text-gray-500 py-6 text-center">{{ 'partyPicker.noMatches' | translate }}</p>
         } @else {
           <div class="overflow-y-auto max-h-80 border border-gray-200 rounded-md">
-            <table class="min-w-full text-sm">
-              <thead style="background-color:#4a5568" class="text-white sticky top-0">
+            <table class="table-v4 min-w-full text-sm">
+              <thead class="sticky top-0">
                 <tr>
-                  <th class="px-3 py-2 w-8"></th>
-                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'partyPicker.colName' | translate }}</th>
-                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'partyPicker.colAddress' | translate }}</th>
-                  <th class="px-3 py-2 ltr:text-left rtl:text-right font-semibold">{{ 'partyPicker.colSource' | translate }}</th>
+                  <th class="w-8"></th>
+                  <th class="ltr:text-left rtl:text-right font-semibold">{{ 'partyPicker.colName' | translate }}</th>
+                  <th class="ltr:text-left rtl:text-right font-semibold">{{ 'partyPicker.colAddress' | translate }}</th>
+                  <th class="ltr:text-left rtl:text-right font-semibold">{{ 'partyPicker.colSource' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
                 @for (p of filtered(); track p.address; let even = $even) {
-                  <tr (click)="select(p.address)"
-                      class="cursor-pointer hover:bg-blue-50"
-                      [class.bg-gray-50]="!even && selected() !== p.address"
-                      [class.bg-blue-100]="selected() === p.address">
-                    <td class="px-3 py-2">
+                  <tr (click)="select(p.address)" class="cursor-pointer hover:bg-blue-50" [class.bg-gray-50]="!even && selected() !== p.address" [class.bg-blue-100]="selected() === p.address">
+                    <td>
                       <input type="radio" [checked]="selected() === p.address" (change)="select(p.address)">
                     </td>
-                    <td class="px-3 py-2 text-gray-800">{{ p.name || '—' }}</td>
-                    <td class="px-3 py-2 font-mono text-xs text-gray-600">{{ p.address }}</td>
-                    <td class="px-3 py-2 text-xs">
+                    <td class="text-gray-800">{{ p.name || '—' }}</td>
+                    <td class="font-mono text-xs text-gray-600">{{ p.address }}</td>
+                    <td class="text-xs">
                       <span class="px-2 py-0.5 rounded-full font-semibold"
                             [class]="p.source === 'owned' ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-700'">
                         {{ (p.source === 'owned' ? 'partyPicker.sourceOwned' : 'partyPicker.sourceEndorsed') | translate }}

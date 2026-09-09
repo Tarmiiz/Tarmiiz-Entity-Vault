@@ -1,49 +1,86 @@
-﻿<div class="flex items-center justify-center min-h-screen bg-gray-100 font-sans">
-  <div class="w-full max-w-5xl flex bg-white rounded-2xl shadow-2xl overflow-hidden my-8">
+<!-- v4 login: sign-in hero on the brand gradient (design-components v4/page-login.html).
+     The gradient is a SURFACE, not decoration — the glass card below is
+     bg-white/10 and reads as grey over a flat colour. `.login-shell` derives it
+     from --brand-primary so it follows a whitelabelled tenant; see global.scss. -->
+<div class="login-shell min-h-screen flex flex-col font-sans">
 
-    <!-- Left Decorative Panel -->
-    <div class="hidden md:flex w-2/5 bg-[var(--brand-primary)] p-10 flex-col justify-center items-start text-white">
-      <div class="mb-8">
-        <img [src]="apiService.avatarUrl" (error)="onLogoError($event)" alt="">
-      </div>
-      <h2 class="text-3xl font-bold leading-tight mb-4">{{ 'login.welcomeBack' | translate }}</h2>
-      <p class="text-indigo-200 text-lg">{{ 'login.helperCopy' | translate }}</p>
+  <!-- Top bar: platform mark + language. No About/Help — this route has no
+       marketing content for them to anchor to. -->
+  <!-- Full-bleed: the logo pins to the left edge and the globe to the right.
+       Deliberately NOT constrained to the hero's max-width — the bar reads as
+       page chrome, so it spans the page. -->
+  <header class="flex items-center justify-between px-6 sm:px-8 py-5">
+    <img src="assets/images/logo.svg" alt="" style="height:39px">
+    <button type="button" (click)="toggleLang()"
+      class="text-white/80 hover:text-white transition-colors"
+      [title]="lang === 'ar' ? 'English' : 'عربي'"
+      [attr.aria-label]="lang === 'ar' ? 'English' : 'عربي'">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0c2.5-2.3 3.75-5.3 3.75-9S14.5 5.3 12 3m0 18c-2.5-2.3-3.75-5.3-3.75-9S9.5 5.3 12 3M3.6 9h16.8M3.6 15h16.8" />
+      </svg>
+    </button>
+  </header>
 
+  <!-- Hero. The inner max-w-5xl is load-bearing: grid-cols-2 splits the FULL
+       viewport, so without it the left column pins to the left edge and the card
+       to the right, leaving a dead gap in the middle that grows with the screen.
+       The card is mx-auto (centred in its column) rather than ms-auto (pushed to
+       its outer edge) — ms-auto adds ~85px of gap for no benefit. -->
+  <div class="flex-grow flex items-center px-6 sm:px-8 pt-6 pb-12 lg:pt-12 lg:pb-16">
+    <div class="w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+
+    <!-- Brand + welcome. The logo is the tenant's avatar, falling back to the
+         static brand mark when the tenant has none (onLogoError). -->
+    <div>
+      <img [src]="apiService.avatarUrl" (error)="onLogoError($event)" alt="" style="height:46px" class="mb-7 lg:mb-9">
+      <h1 class="text-3xl lg:text-4xl font-bold text-white leading-tight mb-4">{{ 'login.welcomeBack' | translate }}</h1>
+      <p class="text-[15px] text-white/70 leading-relaxed max-w-sm">{{ 'login.helperCopy' | translate }}</p>
     </div>
 
-    <!-- Right Form Panel -->
-    <div class="w-full md:w-3/5 p-8 sm:p-12 flex flex-col justify-center">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ 'login.title' | translate }}</h1>
-      <p class="text-gray-500 mb-8">{{ 'login.subtitle' | translate }}</p>
+    <!-- Glass sign-in card -->
+    <div class="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 sm:p-7 max-w-sm w-full lg:mx-auto">
+      <h2 class="text-xl font-bold text-white">{{ 'login.title' | translate }}</h2>
+      <p class="text-[12.5px] text-white/60 mt-1 mb-6">{{ 'login.subtitle' | translate }}</p>
 
       @if (!mfaRequired) {
-      <form [formGroup]="formLogin" (ngSubmit)="login()" class="space-y-5">
+      <form [formGroup]="formLogin" (ngSubmit)="login()" class="space-y-3">
+
+        <input type="text" autocomplete="username" [placeholder]="'login.usernameLabel' | translate" formControlName="email"
+          class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-[14px] text-white placeholder:text-white/50 focus:outline-none focus:border-white/50 transition">
 
         <div class="relative">
-          <svg class="w-8 h-8 text-gray-400 absolute top-7 left-2 rtl:left-auto rtl:right-2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 17v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-4a3 3 0 0 0-3 3Zm8-9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
-          <input type="text" autocomplete="username" [placeholder]="'login.usernameLabel' | translate" formControlName="email" class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block pl-12 rtl:pl-3.5 rtl:pr-12 p-3.5 transition">
-        </div>
-
-        <div class="relative">
-          <svg class="w-8 h-8 text-gray-400 absolute top-7 left-2 rtl:left-auto rtl:right-2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14v3m-3-6V7a3 3 0 1 1 6 0v4m-8 0h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z" />
-          </svg>
-          <input type="password" autocomplete="current-password" [placeholder]="'login.passwordLabel' | translate" formControlName="password" class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block pl-12 rtl:pl-3.5 rtl:pr-12 p-3.5 transition">
-        </div>
-
-        <div class="pt-4">
-          <button type="submit" class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 uppercase">
-            {{ 'login.submit' | translate }}
+          <input [type]="showPassword ? 'text' : 'password'" autocomplete="current-password" [placeholder]="'login.passwordLabel' | translate" formControlName="password"
+            class="w-full px-4 py-3 pe-11 rounded-xl bg-white/10 border border-white/20 text-[14px] text-white placeholder:text-white/50 focus:outline-none focus:border-white/50 transition">
+          <!-- Eye toggle: an unrecoverable salt mismatch surfaces to the user as
+               a wrong password, so being able to re-read what was typed matters
+               more here than on an ordinary login. -->
+          <button type="button" (click)="showPassword = !showPassword"
+            class="absolute inset-y-0 end-3 flex items-center text-white/60 hover:text-white transition-colors"
+            [attr.aria-label]="'login.passwordLabel' | translate">
+            @if (showPassword) {
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.4 5.2A9.6 9.6 0 0112 5c5 0 9 4.5 9 7a12 12 0 01-2.2 3.2M6.2 6.2A12.4 12.4 0 003 12c0 2.5 4 7 9 7a9.5 9.5 0 003.6-.7" /></svg>
+            } @else {
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.04 12.32a1 1 0 0 1 0-.64 10.04 10.04 0 0 1 19.92 0 1 1 0 0 1 0 .64 10.04 10.04 0 0 1-19.92 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+            }
           </button>
         </div>
 
-        <div class="pt-2 flex justify-center">
-          <button type="button" (click)="toggleLang()"
-            class="text-xs font-semibold text-gray-600 hover:text-gray-900 px-4 py-1.5 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors"
-            [title]="lang === 'ar' ? 'English' : 'عربي'">
-            {{ lang === 'ar' ? 'English' : 'عربي' }}
+        <!-- Built and styled, but HIDDEN: the forgot-password page exists and is
+             translated, yet has no route under public/user, so this would
+             dead-end. Register the route, then flip forgotPasswordEnabled. -->
+        @if (forgotPasswordEnabled) {
+          <div class="flex justify-end pt-1">
+            <a routerLink="/public/user/forgot-password"
+              class="text-[12.5px] text-white/70 hover:text-white transition-colors">
+              {{ 'login.forgotPassword' | translate }}
+            </a>
+          </div>
+        }
+
+        <div class="pt-3">
+          <button type="submit" [disabled]="isLoading"
+            class="w-full py-3 rounded-xl bg-white text-[var(--brand-primary)] text-[14px] font-semibold hover:bg-white/90 transition-colors shadow-[0_8px_22px_-6px_rgba(10,12,40,0.55)] disabled:opacity-60">
+            {{ 'login.submit' | translate }}
           </button>
         </div>
       </form>
@@ -53,26 +90,24 @@
            address: the server never tells the client which contact it challenged, because an
            endpoint that echoed it would be an account-enumeration oracle. -->
       @if (mfaRequired) {
-        <form (ngSubmit)="submitMfa()" class="space-y-5">
-          <p class="text-sm text-gray-600">{{ 'login.mfa.sent' | translate }}</p>
+        <form (ngSubmit)="submitMfa()" class="space-y-4">
+          <p class="text-[13px] text-white/70 leading-relaxed">{{ 'login.mfa.sent' | translate }}</p>
 
-          <div>
-            <input
-              type="text"
-              inputmode="numeric"
-              autocomplete="one-time-code"
-              maxlength="6"
-              [(ngModel)]="mfaCode"
-              [ngModelOptions]="{ standalone: true }"
-              [placeholder]="'login.mfa.codeLabel' | translate"
-              class="w-full border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3.5 text-center tracking-[0.5em] text-lg transition">
-          </div>
+          <input
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            [(ngModel)]="mfaCode"
+            [ngModelOptions]="{ standalone: true }"
+            [placeholder]="'login.mfa.codeLabel' | translate"
+            class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-lg text-white placeholder:text-white/50 text-center tracking-[0.5em] focus:outline-none focus:border-white/50 transition">
 
           @if (mfaError) {
-            <p class="text-sm text-red-600">
+            <p class="text-[13px] text-red-200">
               {{ mfaError }}
               @if (mfaAttemptsRemaining !== null && mfaAttemptsRemaining > 0) {
-                <span class="block text-xs text-gray-500 mt-1">
+                <span class="block text-xs text-white/60 mt-1">
                   {{ 'login.mfa.attemptsRemaining' | translate: { count: mfaAttemptsRemaining } }}
                 </span>
               }
@@ -80,16 +115,17 @@
           }
 
           <button type="submit" [disabled]="isLoading"
-            class="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white font-bold py-3.5 px-4 rounded-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 uppercase disabled:opacity-60">
+            class="w-full py-3 rounded-xl bg-white text-[var(--brand-primary)] text-[14px] font-semibold hover:bg-white/90 transition-colors shadow-[0_8px_22px_-6px_rgba(10,12,40,0.55)] disabled:opacity-60">
             {{ 'login.mfa.verify' | translate }}
           </button>
 
           <button type="button" (click)="mfaRequired = false"
-            class="w-full text-sm text-gray-500 hover:text-gray-700 transition">
+            class="w-full text-[13px] text-white/60 hover:text-white transition-colors">
             {{ 'login.mfa.back' | translate }}
           </button>
         </form>
       }
+      </div>
     </div>
   </div>
 </div>

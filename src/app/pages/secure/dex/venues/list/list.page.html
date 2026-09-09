@@ -1,6 +1,6 @@
 <app-header [title]="'dex.venues.title' | translate"></app-header>
 
-<div class="flex-grow p-4 bg-gray-300 pt-4 overflow-y-auto">
+<div class="flex-grow p-4 pt-4 overflow-y-auto">
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
@@ -53,34 +53,32 @@
 
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
           <tr>
-            <th scope="col" class="px-6 py-2">{{ 'common.id' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.venues.table.service' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'partyType.entity' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.country' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.venues.table.tiers' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'state.suspended' | translate }}</th>
-            <th scope="col" class="px-6 py-2">{{ 'dex.venues.table.registered' | translate }}</th>
+            <th scope="col">{{ 'common.id' | translate }}</th>
+            <th scope="col">{{ 'dex.venues.table.service' | translate }}</th>
+            <th scope="col">{{ 'partyType.entity' | translate }}</th>
+            <th scope="col">{{ 'common.country' | translate }}</th>
+            <th scope="col">{{ 'dex.venues.table.tiers' | translate }}</th>
+            <th scope="col">{{ 'common.state' | translate }}</th>
+            <th scope="col">{{ 'state.suspended' | translate }}</th>
+            <th scope="col">{{ 'dex.venues.table.registered' | translate }}</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           @if (filteredVenues().length == 0) {
-            <tr class="bg-white border-b">
-              <td class="px-6 py-2" colspan="8">{{ 'common.noData' | translate }}</td>
+            <tr class="bg-white">
+              <td colspan="8">{{ 'common.noData' | translate }}</td>
             </tr>
           } @else {
-            @for (v of pagedVenues(); track v.serviceAddress; let i = $index; let isEven = $even) {
-              <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors"
-                  [class.bg-gray-100]="!isEven" [class.bg-white]="isEven"
-                  (click)="viewDetails(v)">
-                <td class="px-6 py-2">{{ i + 1 }}</td>
-                <td class="px-6 py-2">{{ v.serviceName || (v.serviceAddress.slice(0,10) + '…') }}</td>
-                <td class="px-6 py-2">{{ v.entityName || '—' }}</td>
-                <td class="px-6 py-2">{{ v.countryName || '—' }}</td>
-                <td class="px-6 py-2">
+            @for (v of pagedVenues(); track v.serviceAddress; let i = $index) {
+              <tr class="cursor-pointer transition-colors" (click)="viewDetails(v)">
+                <td>{{ i + 1 }}</td>
+                <td>{{ v.serviceName || (v.serviceAddress.slice(0,10) + '…') }}</td>
+                <td>{{ v.entityName || '—' }}</td>
+                <td>{{ v.countryName || '—' }}</td>
+                <td>
                   <div class="flex flex-wrap gap-1">
                     @if (v.tier1Approved || v.tier1Pending) {
                       <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
@@ -102,17 +100,17 @@
                     }
                   </div>
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(v.state)">{{ stateName(v.state) }}</span>
                 </td>
-                <td class="px-6 py-2">
+                <td>
                   @if (v.suspended) {
                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ 'common.yes' | translate }}</span>
                   } @else {
                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">{{ 'common.no' | translate }}</span>
                   }
                 </td>
-                <td class="px-6 py-2">{{ v.registeredAt ? utils.formatDate(v.registeredAt) : '—' }}</td>
+                <td>{{ v.registeredAt ? utils.formatDate(v.registeredAt) : '—' }}</td>
               </tr>
             }
           }

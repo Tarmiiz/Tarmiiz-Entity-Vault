@@ -127,16 +127,16 @@
           @if (sharedWith().length === 0) {
             <p class="text-sm text-gray-500">{{ 'documents.details.sharing.empty' | translate }}</p>
           } @else {
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
-                <tr><th class="px-4 py-2">{{ 'common.id' | translate }}</th><th class="px-4 py-2">{{ 'documents.details.sharing.account' | translate }}</th><th class="px-4 py-2 text-right">{{ 'common.actions' | translate }}</th></tr>
+            <table class="table-v4 w-full text-sm text-left">
+              <thead>
+                <tr><th>{{ 'common.id' | translate }}</th><th>{{ 'documents.details.sharing.account' | translate }}</th><th class="text-right">{{ 'common.actions' | translate }}</th></tr>
               </thead>
               <tbody class="text-xs">
-                @for (acc of sharedWith(); track acc; let i = $index; let isEven = $even) {
-                  <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                    <td class="px-4 py-2">{{ i + 1 }}</td>
-                    <td class="px-4 py-2 font-mono break-all">{{ acc }}</td>
-                    <td class="px-4 py-2 text-right">
+                @for (acc of sharedWith(); track acc; let i = $index) {
+                  <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td class="font-mono break-all">{{ acc }}</td>
+                    <td class="text-right">
                       <button (click)="unshare(acc)" class="text-xs px-2 py-1 rounded bg-red-700 text-white hover:bg-red-800 transition-colors">{{ 'documents.details.actions.revoke' | translate }}</button>
                     </td>
                   </tr>
@@ -150,26 +150,26 @@
           @if (signatures().length === 0) {
             <p class="text-sm text-gray-500 p-4">{{ 'documents.details.signatures.empty' | translate }}</p>
           } @else {
-            <table class="w-full text-sm text-left text-gray-700">
-              <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+            <table class="table-v4 w-full text-sm text-left">
+              <thead>
                 <tr>
-                  <th class="px-4 py-2">{{ 'common.id' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'documents.details.signatures.signer' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'documents.details.signatures.submitter' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'documents.details.signatures.signedAt' | translate }}</th>
-                  <th class="px-4 py-2">{{ 'documents.details.signatures.reviewState' | translate }}</th>
-                  <th class="px-4 py-2 text-right">{{ 'common.actions' | translate }}</th>
+                  <th>{{ 'common.id' | translate }}</th>
+                  <th>{{ 'documents.details.signatures.signer' | translate }}</th>
+                  <th>{{ 'documents.details.signatures.submitter' | translate }}</th>
+                  <th>{{ 'documents.details.signatures.signedAt' | translate }}</th>
+                  <th>{{ 'documents.details.signatures.reviewState' | translate }}</th>
+                  <th class="text-right">{{ 'common.actions' | translate }}</th>
                 </tr>
               </thead>
               <tbody class="text-xs">
-                @for (sig of signatures(); track sig.signer + sig.docHash; let i = $index; let isEven = $even) {
-                  <tr class="border-b" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven">
-                    <td class="px-4 py-2">{{ i + 1 }}</td>
-                    <td class="px-4 py-2 font-mono break-all">{{ sig.signer }}</td>
-                    <td class="px-4 py-2 font-mono break-all">{{ sig.submitter }}</td>
-                    <td class="px-4 py-2">{{ utils.formatDate(sig.signedAt) }}</td>
-                    <td class="px-4 py-2">{{ sig.reviewStateName || reviewStateLabel(sig.reviewState) }}</td>
-                    <td class="px-4 py-2 text-right">
+                @for (sig of signatures(); track sig.signer + sig.docHash; let i = $index) {
+                  <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td class="font-mono break-all">{{ sig.signer }}</td>
+                    <td class="font-mono break-all">{{ sig.submitter }}</td>
+                    <td>{{ utils.formatDate(sig.signedAt) }}</td>
+                    <td>{{ sig.reviewStateName || reviewStateLabel(sig.reviewState) }}</td>
+                    <td class="text-right">
                       <button (click)="verifySignature(sig)" class="text-xs px-2 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">{{ 'documents.details.actions.verify' | translate }}</button>
                     </td>
                   </tr>

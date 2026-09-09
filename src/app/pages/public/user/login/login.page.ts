@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, FormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -21,6 +21,7 @@ import { ApiService } from '../../../../shared/services/api.service';
     ReactiveFormsModule,
     FormsModule,
     TranslatePipe,
+    RouterLink,
 ]
 })
 export class LoginPage implements OnInit {
@@ -36,6 +37,21 @@ export class LoginPage implements OnInit {
 
   formLogin!: FormGroup;
   isLoading = false;
+
+  // Reveal toggle on the password field. Worth having here specifically: a
+  // GLOBAL_SALT mismatch is unrecoverable and surfaces to the user as "wrong
+  // password", so letting them re-read what they typed rules out the one cause
+  // they can actually fix.
+  showPassword = false;
+
+  /* The forgot-password PAGE exists (pages/public/user/forgot-password/) and its
+   * i18n key `login.forgotPassword` is translated in both en and ar — but it has
+   * NO ROUTE: app.routes.ts registers only `login`, `claim` and '' under
+   * public/user, so the component is currently unreachable. The control below is
+   * built and styled but gated on this flag rather than deleted, because a link
+   * that dead-ends is worse than a missing one.
+   * TO ENABLE: add the route, then flip this to true. Nothing else changes. */
+  forgotPasswordEnabled = false;
 
   get lang() { return this.languageService.lang(); }
   toggleLang() { this.languageService.toggle(); }

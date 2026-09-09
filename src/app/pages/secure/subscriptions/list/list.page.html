@@ -68,13 +68,13 @@
     <!-- Services Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
       <div class="overflow-x-auto rounded-lg">
-        <table class="w-full text-sm text-left text-gray-700">
-          <thead class="text-xs text-white uppercase" style="background-color: #4a5568;">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
               <tr>
-                  <th scope="col" class="px-6 py-2">{{ 'common.createdAt' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'subscriptions.list.table.subscription' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'subscriptions.filters.service' | translate }}</th>
-                  <th scope="col" class="px-6 py-2">{{ 'common.state' | translate }}</th>
+                  <th scope="col">{{ 'common.createdAt' | translate }}</th>
+                  <th scope="col">{{ 'subscriptions.list.table.subscription' | translate }}</th>
+                  <th scope="col">{{ 'subscriptions.filters.service' | translate }}</th>
+                  <th scope="col">{{ 'common.state' | translate }}</th>
               </tr>
           </thead>
           <tbody class="text-xs">
@@ -84,17 +84,17 @@
             @else {
               <!-- no data -->
               @if(filteredSubscriptions().length == 0) {
-                  <tr class="bg-white border-b hover:bg-gray-50">
-                      <td class="px-6 py-2">{{ 'common.noData' | translate }}</td>
+                  <tr class="bg-white">
+                      <td>{{ 'common.noData' | translate }}</td>
                   </tr>
               }
               @else {
-                  @for(subscription of pagedSubscriptions(); track subscription.subscription; let i = $index; let isEven = $even;) {
-                      <tr class="border-b hover:bg-gray-300 cursor-pointer transition-colors" [class.bg-gray-100]="!isEven" [class.bg-white]="isEven" (click)="viewDetails(subscription)">
-                          <td class="px-6 py-2">{{ subscription.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                          <td class="px-6 py-2">{{ subscription.subscription }}</td>
-                          <td class="px-6 py-2">{{ subscription.serviceName }}</td>
-                          <td class="px-6 py-2">
+                  @for(subscription of pagedSubscriptions(); track subscription.subscription; let i = $index;) {
+                      <tr class="cursor-pointer transition-colors" (click)="viewDetails(subscription)">
+                          <td>{{ subscription.createdAt * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                          <td>{{ subscription.subscription }}</td>
+                          <td>{{ subscription.serviceName }}</td>
+                          <td>
                             <div class="flex items-center gap-1.5">
                               <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="getStateClass(subscription.state)">
                                 {{ subscription.stateName }}
