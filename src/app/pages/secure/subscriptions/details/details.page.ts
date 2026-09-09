@@ -100,7 +100,9 @@ export class DetailsPage implements OnInit {
   // subscriber has none, and this is the only identity data the service will ever see about them.
   // 'none' (404) and 'unreadable' (502) are kept apart on purpose — see ApiService.disclosureRead.
   disclosure      = signal<IdentityDisclosure | null>(null);
-  disclosureState = signal<'idle' | 'none' | 'ok' | 'unreadable'>('idle');
+  /** The API's own wording on a 403 — it names the cause (function key vs licence section). */
+  disclosureError = signal('');
+  disclosureState = signal<'idle' | 'none' | 'ok' | 'unreadable' | 'forbidden'>('idle');
   disclosureFieldRows = computed(() =>
     Object.entries(this.disclosure()?.fields ?? {}).map(([key, value]) => ({ key, label: this.disclosureFieldLabel(key), value })));
   disclosureImages = computed(() => {
@@ -413,8 +415,12 @@ export class DetailsPage implements OnInit {
         this.ekycVerifications.set(await this.apiService.ekycVerifications(hash));
       }
       const disclosed = await disclosedP;
+      // Four states, not three: a 403 is a PERMISSION answer (the system function, or the API's
+      // licence ceiling) and must not be rendered as a decrypt failure — that mislabelling cost
+      // a diagnosis on 2026-09-09.
       if (disclosed.status === 200 && disclosed.data) { this.disclosure.set(disclosed.data); this.disclosureState.set('ok'); }
       else if (disclosed.status === 404)              { this.disclosure.set(null); this.disclosureState.set('none'); }
+      else if (disclosed.status === 403)              { this.disclosure.set(null); this.disclosureState.set('forbidden'); this.disclosureError.set(disclosed.error || ''); }
       else                                            { this.disclosure.set(null); this.disclosureState.set('unreadable'); }
       this.ekycLoaded.set(true);
     } finally {

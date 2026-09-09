@@ -846,6 +846,10 @@
                   <p class="text-sm text-gray-500">{{ 'common.loading' | translate }}</p>
                 } @else if (disclosureState() === 'none' || disclosureState() === 'idle') {
                   <p class="text-sm text-gray-500">{{ 'subscriptions.details.identity.disclosure.empty' | translate }}</p>
+                } @else if (disclosureState() === 'forbidden') {
+                  <!-- A permission answer, not a data one — the API says which gate refused. -->
+                  <p class="text-sm text-amber-800">{{ 'subscriptions.details.identity.disclosure.forbidden' | translate }}
+                    @if (disclosureError()) { <span class="block text-xs text-amber-700 mt-1">{{ disclosureError() }}</span> }</p>
                 } @else if (disclosureState() === 'unreadable') {
                   <!-- A DIFFERENT fact from empty: something was availed and will not open. -->
                   <p class="text-sm text-red-700">{{ 'subscriptions.details.identity.disclosure.unreadable' | translate }}</p>

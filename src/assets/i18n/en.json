@@ -1713,6 +1713,7 @@
           "hint": "The identity field families the regulator has availed this service about this subscriber, delivered as a document encrypted for the service. It holds exactly what was availed — nothing is filtered here, and nothing more can be shown.",
           "empty": "Nothing has been availed to this service for this subscriber.",
           "unreadable": "A disclosure exists for this subscriber but could not be opened — the wrapped key or the pinned document is unavailable. This is not the same as nothing having been availed.",
+          "forbidden": "The API refused this read. This is a permission answer, not a statement about the subscriber: your account needs the View Identity Data function, or the surface is closed by the tenant's licences.",
           "scopes": "Availed",
           "issuedAt": "Issued",
           "document": "Document",
