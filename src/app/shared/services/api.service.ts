@@ -1974,7 +1974,7 @@ export class ApiService {
 
   async vaultGetEntityCreditOverview() {
     const data = await this.vaultGet('/entity/credit-overview');
-    return data ? { totals: data.totals, subscriptions: data.subscriptions } : null;
+    return data ? { totals: data.totals, pools: data.pools, subscriptions: data.subscriptions } : null;
   }
 
   async vaultGetSubscriptionIdentityHash(address: string) {

@@ -25,6 +25,7 @@ import { applyPdfFooter } from '../../../shared/utils/pdf-export.utils';
 
 import { CreditBalance } from '../../../shared/models/data.model';
 import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 
 interface CreditRow {
   subscription: string;
@@ -36,12 +37,23 @@ interface CreditRow {
   balances: CreditBalance[];
 }
 
+/** A service's position in one currency — the POOL it holds and the CLAIMS on it (Reading B). */
+interface ServicePool {
+  service: string;
+  serviceName: string;
+  currencyCode: number;
+  currencyName: string;
+  currencySymbol: string;
+  pool: number;
+  claims: number;
+}
+
 @Component({
   selector: 'app-credit',
   templateUrl: './credit.page.html',
   styleUrls: ['./credit.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, ModalRouteTransferComponent, PaginatorComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, LiveIndicatorComponent, TranslatePipe, ModalRouteTransferComponent, PaginatorComponent, MoneyPipe],
 })
 export class CreditPage implements OnInit {
   private apiService = inject(ApiService);
@@ -60,6 +72,15 @@ export class CreditPage implements OnInit {
 
   totals = signal<CreditBalance[]>([]);
   rows = signal<CreditRow[]>([]);
+  /*
+      The OTHER half of Reading B (2026-09-09). A subscriber holds a CLAIM on its service's POOL;
+      the two are different numbers and this page used to show only the first. Measured on
+      granite: every subscriber's claim was genuinely 0 — each deposit was spent at once through
+      deposit-buy — while the service's pool held 565,000 EGP, and the page said "No credit
+      balances" with no currency column at all. The pools are shown beside the claims, and a
+      currency the service HOLDS a pool in gets a column even when every claim on it is 0.00.
+  */
+  pools = signal<ServicePool[]>([]);
 
   searchSubscription = signal<string>('');
   searchService = signal<string>('');
@@ -67,16 +88,22 @@ export class CreditPage implements OnInit {
   filterBalanceOp = signal<'' | 'gt' | 'lt'>('');
   filterBalanceAmt = signal<number | null>(null);
 
-  activeTotals = computed(() => this.totals().filter(t => t.balance > 0));
+  activeTotals = computed(() => this.totals().filter(t => t.balance !== 0));
+  activePools  = computed(() => this.pools().filter(p => p.pool !== 0 || p.claims !== 0));
 
+  /** Currencies that earn a column: any non-zero claim or hold on any row, or any service pool. */
   uniqueCurrencies = computed(() => {
-    const codesWithBalance = new Set<number>();
-    for (const t of this.totals()) if (t.balance > 0) codesWithBalance.add(t.currencyCode);
-    for (const r of this.rows()) for (const b of r.balances) if (b.balance > 0) codesWithBalance.add(b.currencyCode);
+    const live = new Set<number>();
+    for (const t of this.totals()) if (t.balance !== 0 || t.withheld !== 0) live.add(t.currencyCode);
+    for (const r of this.rows()) for (const b of r.balances) if (b.balance !== 0 || b.withheld !== 0) live.add(b.currencyCode);
+    for (const p of this.pools()) if (p.pool !== 0 || p.claims !== 0) live.add(p.currencyCode);
 
     const map = new Map<number, CreditBalance>();
-    for (const t of this.totals()) if (codesWithBalance.has(t.currencyCode)) map.set(t.currencyCode, t);
-    for (const r of this.rows()) for (const b of r.balances) if (codesWithBalance.has(b.currencyCode) && !map.has(b.currencyCode)) map.set(b.currencyCode, b);
+    for (const t of this.totals()) if (live.has(t.currencyCode)) map.set(t.currencyCode, t);
+    for (const r of this.rows()) for (const b of r.balances) if (live.has(b.currencyCode) && !map.has(b.currencyCode)) map.set(b.currencyCode, b);
+    for (const p of this.pools()) if (live.has(p.currencyCode) && !map.has(p.currencyCode)) {
+      map.set(p.currencyCode, new CreditBalance(p.currencyCode, p.currencyName, p.currencySymbol, 0, 0, 0));
+    }
     return [...map.values()].sort((a, b) => a.currencyCode - b.currencyCode);
   });
 
@@ -144,6 +171,17 @@ export class CreditPage implements OnInit {
           currencyName: t.currencyName,
           currencySymbol: t.currencySymbol,
           balance: Number(t.balance) || 0,
+          withheld: Number(t.withheld) || 0,
+          available: Number(t.available) || 0,
+        })));
+        this.pools.set((data.pools || []).map((p: any) => ({
+          service: p.service,
+          serviceName: p.serviceName || p.service,
+          currencyCode: p.currencyCode,
+          currencyName: p.currencyName,
+          currencySymbol: p.currencySymbol,
+          pool: Number(p.pool) || 0,
+          claims: Number(p.claims) || 0,
         })));
         this.rows.set((data.subscriptions || []).map((r: any) => ({
           subscription: r.subscription,

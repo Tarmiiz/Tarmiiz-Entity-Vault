@@ -2163,6 +2163,9 @@
     },
     "noBalances": "No credit balances",
     "totalCredit": "Total Credit",
+    "subscriberClaims": "Subscriber claims",
+    "servicePool": "Service pool",
+    "claimsOnPool": "Claims on it:",
     "txLabel": "Tx:",
     "loadingOverview": "Loading credit overview…",
     "backdating": {

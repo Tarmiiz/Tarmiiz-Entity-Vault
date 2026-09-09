@@ -17,6 +17,18 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-09
 
+#### Fixed — the Credit page shows the service pools and keeps a currency column at zero
+
+[credit/credit.page](src/app/pages/secure/credit/) rendered only the subscribers' CLAIMS and
+hid every currency column whose claims were all zero — so on granite, where each subscriber's
+deposit was spent at once through deposit-buy, the page read "No credit balances" with no
+balance column at all while the service's pool held 565,000 EGP. The summary now shows both
+halves of Reading B: **Subscriber claims** per currency and **Service pool** per service and
+currency (with the claims on it), and a currency earns a table column whenever any claim, hold
+or pool is non-zero, so the EGP column appears with 0.00 per row. Amounts render through the
+`money` pipe. The overview itself is ~10× faster (see the Entity API changelog). i18n
+`credit.subscriberClaims` / `servicePool` / `claimsOnPool` in en + ar.
+
 #### Fixed — the asset Price chart and exports follow the asset's price mode
 
 On [assets/details](src/app/pages/secure/assets/details/) the Price chart always drew Bid and

@@ -2163,6 +2163,9 @@
     },
     "noBalances": "لا توجد أرصدة",
     "totalCredit": "إجمالي الرصيد",
+    "subscriberClaims": "مطالبات المشتركين",
+    "servicePool": "رصيد الخدمة",
+    "claimsOnPool": "المطالبات عليه:",
     "txLabel": "المعاملة:",
     "loadingOverview": "جارٍ تحميل نظرة عامة على الرصيد…",
     "backdating": {
