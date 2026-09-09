@@ -7,6 +7,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 
 import { AuthService } from '../../../../shared/services/auth.service';
 import { ApiService } from '../../../../shared/services/api.service';
+import { EthersService } from '../../../../shared/services/ethers.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 
@@ -26,6 +27,7 @@ import { User } from '../../../../shared/models/data.model';
 export class MyProfilePage {
   private authService = inject(AuthService);
   private apiService = inject(ApiService);
+  private ethersService = inject(EthersService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
   private fb = inject(FormBuilder);
@@ -78,10 +80,20 @@ export class MyProfilePage {
 
     try {
       this.loadingService.show(this.translate.instant('users.myProfile.updatingPassword'));
-      // The API verifies the current password, then rotates the commitment (password-only).
+      // 18.2 / 18.5 — PROOF-VERIFIED, no plaintext leaves the browser. Prove knowledge of the
+      // CURRENT password with a login proof over the stored { nonce, commitment, salt }, derive the
+      // NEW { commitment, salt } over a fresh per-user salt, and let the contract verify + rotate
+      // (`resetUserPasswordWithProof`). A wrong current password fails ON CHAIN.
+      const username  = this.userInfo.username;
+      const loginHash = await this.ethersService.computeLoginHash(username);
+      const current   = await this.apiService.vaultUserCredentialsData(loginHash);
+      if (!current) throw new Error('Could not read the current credentials');
+      const proof = await this.ethersService.proveCurrentPassword(username, currentPassword ?? '', current);
+      if (!proof) throw new Error('Could not build the login proof');
+      const next = await this.ethersService.deriveCredential(username, password ?? '');
+      if (!next) throw new Error('Could not derive the new credential');
       const res: any = await this.apiService.vaultUserSelfCredentials(String(this.userInfo.userId), {
-        currentPassword: currentPassword ?? '',
-        password: password ?? '',
+        proof, commitment: next.commitment, salt: next.salt,
       });
 
       // ApiService returns { error } rather than throwing (e.g. wrong current password).
@@ -90,8 +102,11 @@ export class MyProfilePage {
         return;
       }
 
+      // The contract REVOKED the on-chain session as part of the rotation and the API revoked its
+      // own (`reloginRequired`), so the only honest next step is the login page.
       this.showCredentialsForm.set(false);
-      this.alertService.info(this.translate.instant('alerts.success'), this.translate.instant('users.myProfile.passwordUpdatedMsg'));
+      await this.alertService.info(this.translate.instant('alerts.success'), this.translate.instant('users.myProfile.passwordUpdatedMsg'));
+      await this.authService.forgetSession();
     } catch (error) {
       this.alertService.info(this.translate.instant('users.myProfile.updateFailedTitle'), this.translate.instant('users.myProfile.updateFailedMsg'));
     } finally {

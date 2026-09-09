@@ -10,6 +10,7 @@ import { HeaderComponent } from "../../../../shared/components/header/header.com
 import { LiveIndicatorComponent } from "../../../../shared/components/live-indicator/live-indicator.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
+import { EthersService } from '../../../../shared/services/ethers.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
@@ -78,6 +79,7 @@ export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private ethersService = inject(EthersService);
   private authService = inject(AuthService);
   private alertService = inject(AlertService);
   private loadingService = inject(LoadingService);
@@ -658,15 +660,21 @@ export class DetailsPage implements OnInit {
       this.loadingService.show(this.translate.instant('users.details.updatingCredentials'));
       await new Promise(resolve => setTimeout(resolve, 0));
 
+      // 18.5 — HASHES ONLY: the new password becomes { loginHash, commitment, salt } HERE (Argon2id
+      // over a fresh per-user salt + the in-circuit stretch); the API rejects a `password` field.
       if (result.username === null) {
-        // password-only change
-        const pwResult = await this.apiService.vaultUpdateUserPassword(String(currentUser.userId), currentUser.username, result.password);
+        // password-only change — the commitment is bound to the target's CURRENT username
+        const credential = await this.ethersService.deriveCredential(currentUser.username, result.password);
+        if (!credential) throw new Error('Failed to derive the login credential');
+        const pwResult = await this.apiService.vaultUpdateUserPassword(String(currentUser.userId), { commitment: credential.commitment, salt: credential.salt });
         if (!pwResult) throw new Error('Failed to update password');
       } else {
         // full credentials change (username + password)
+        const credential = await this.ethersService.deriveCredential(result.username, result.password);
+        if (!credential) throw new Error('Failed to derive the login credential');
         const credResult = await this.apiService.vaultUpdateUserCredentials(String(currentUser.userId), {
           username: result.username,
-          password: result.password,
+          ...credential,
         });
         if (!credResult) throw new Error('Failed to update credentials');
 

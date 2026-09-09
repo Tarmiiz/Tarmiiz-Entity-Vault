@@ -7,6 +7,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 import { ApiService } from '../../../../shared/services/api.service';
+import { EthersService } from '../../../../shared/services/ethers.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AuthService } from '../../../../shared/services/auth.service';
@@ -31,6 +32,7 @@ import { PaginatorComponent, pageSlice } from '../../../../shared/components/pag
 })
 export class ListPage implements OnInit {
   private apiService = inject(ApiService);
+  private ethersService = inject(EthersService);
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
@@ -133,11 +135,16 @@ export class ListPage implements OnInit {
     if (result) {
       this.loadingService.show(this.translate.instant('users.list.addingUser'));
       try {
+        // 18.5 — HASHES ONLY: the password is turned into { loginHash, commitment, salt } HERE
+        // (Argon2id over a fresh per-user salt + the in-circuit stretch) and never sent; the API
+        // rejects a `password` field.
+        const credential = await this.ethersService.deriveCredential(result.username, result.password);
+        if (!credential) throw new Error('Failed to derive the login credential');
         const createRes = await this.apiService.vaultCreateUser({
           name: result.name,
           email: result.email,
           username: result.username,
-          password: result.password,
+          ...credential,
           role: Number(result.role),
         });
         // Surface a create failure (e.g. the entity is not active — user creation is

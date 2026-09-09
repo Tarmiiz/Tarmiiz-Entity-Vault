@@ -2064,8 +2064,10 @@ export class ApiService {
     return data ?? null;
   }
 
-  async vaultUpdateUserPassword(id: string, username: string, password: string) {
-    const data = await this.vaultPut('/staff/' + id + '/password', { username, password });
+  // 18.5 — HASHES ONLY: `{ commitment, salt }` derived in the browser over the target's CURRENT
+  // username (EthersService.deriveCredential); the API rejects a `password` field.
+  async vaultUpdateUserPassword(id: string, body: { commitment: string; salt: string }) {
+    const data = await this.vaultPut('/staff/' + id + '/password', body);
     return data ?? null;
   }
 
@@ -2076,7 +2078,9 @@ export class ApiService {
 
   // Self-service password change (My Profile) — verifies the caller's current password
   // server-side before rotating (password-only; keeps the username).
-  async vaultUserSelfCredentials(id: string, body: { currentPassword: string; password: string }) {
+  // 18.2 — PROOF-VERIFIED: a Groth16 login proof over the CURRENT credentials + the NEW tuple.
+  // The response carries `reloginRequired: true` — the contract revoked the session.
+  async vaultUserSelfCredentials(id: string, body: { proof: { a: string[]; b: string[][]; c: string[]; input: string[] }; commitment: string; salt: string }) {
     const data = await this.vaultPut('/staff/' + id + '/self-credentials', body);
     return data ?? null;
   }
@@ -2382,7 +2386,9 @@ export class ApiService {
 
   // Fetch a user's { nonce, commitment } by loginHash so the ZK login circuit input can be built
   // without a direct RPC read. PUBLIC endpoint — called pre-login (no JWT yet), same as claim-status.
-  async vaultUserCredentialsData(loginHash: string): Promise<{ nonce: string; commitment: string } | null> {
+  // 18.B4: `salt` is the credential's own stored salt (the Argon2id input). 18.B3: an unknown
+  // loginHash gets a stable decoy tuple, never a 4xx — the proof then fails on chain.
+  async vaultUserCredentialsData(loginHash: string): Promise<{ nonce: string; commitment: string; salt: string } | null> {
     try {
       const response = await CapacitorHttp.request({
         method: 'GET',
@@ -2397,8 +2403,10 @@ export class ApiService {
   // Submit the claim transaction. Must be called immediately after a successful login with the
   // placeholder commitment — the just-established admin session is what authenticates the call
   // on chain (contract enforces authorizedUser[msg.sender] == 1).
-  async vaultUserAdminClaim(newCommitment: string, profile?: { name: string; username: string; email: string }) {
-    const data = await this.vaultPost('/staff/admin-claim', { newCommitment, ...(profile || {}) });
+  // 18.B4: the claim stores the admin's own freshly minted `newSalt` beside the new commitment
+  // (the placeholder was committed under the regulator's bootstrap salt).
+  async vaultUserAdminClaim(newCommitment: string, newSalt: string, profile?: { name: string; username: string; email: string }) {
+    const data = await this.vaultPost('/staff/admin-claim', { newCommitment, newSalt, ...(profile || {}) });
     return data ?? null;
   }
 

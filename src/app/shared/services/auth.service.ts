@@ -304,6 +304,17 @@ export class AuthService {
     // otherwise the browser cancels the in-flight HTTP request on route
     // change and the on-chain Auth/Logout audit row never gets emitted.
     try { await this.apiService.entityLogout(); } catch { /* silent */ }
+    await this.forgetSession();
+    this.loadingService.hide();
+  }
+
+  // Drop the local session WITHOUT a confirm and WITHOUT a server logout — for the cases where the
+  // session is already dead on the server: the 18.2 proof-verified password change (the contract
+  // revokes the on-chain session as part of the rotation and the API revokes its own), and any
+  // `reloginRequired` answer. Calling `logout()` there would attempt a logout with a token the
+  // API has already refused.
+  async forgetSession() {
+    this.socketService.disconnect();
     await Promise.all([
       this.storageService.remove('sessionExpiry'),
       this.storageService.remove('rpcNode'),
@@ -316,6 +327,5 @@ export class AuthService {
     // Token gone — re-hydrate features back to the public tenant map.
     await this.featuresService.refresh();
     await this.router.navigate(['/public/user/login']);
-    this.loadingService.hide();
   }
 }

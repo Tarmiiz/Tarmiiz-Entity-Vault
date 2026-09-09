@@ -15,6 +15,32 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-10
+
+#### Security — Phase 18 client legs: Argon2id + stored per-user salt (H1 / 18.B4), hashes-only user management (18.5), proof-verified password change (18.2)
+
+- **`parse-proof.utils.ts` is the ONE derivation** (byte-identical to the ZK repo's client copy;
+  `check-clients.mjs`): `derivePassword` (Argon2id via `hash-wasm`, m=64 MiB / t=3 / p=1 over the
+  per-user salt), `stretch`, `randomSalt`, `generateCommitment` over the stretched value.
+  `passwordToBigInt` is GONE on purpose.
+- **Login builds the proof over the salt the API returns** (`/staff/credentials-data` →
+  `{ nonce, commitment, salt }`), never `environment.globalSalt`; the bootstrap-claim login keeps
+  the RAW OTP path (`passwordIsRawBigInt`) because the placeholder is committed from the raw OTP.
+- **Users page / user details: the password never leaves the browser.** `EthersService.
+  deriveCredential(username, password)` mints a fresh salt and sends `{ loginHash, commitment,
+  salt }` to `POST /staff` / `PUT /staff/:id/credentials`, and `{ commitment, salt }` to
+  `PUT /staff/:id/password`.
+- **My Profile → Change Password is PROOF-VERIFIED**: `proveCurrentPassword` builds a login proof
+  over the current credentials, `deriveCredential` the new tuple, `PUT /staff/:id/self-credentials`
+  carries both, and the contract verifies. The session is revoked by the rotation, so the page
+  drops it (`AuthService.forgetSession()`, new — no confirm, no server logout) and returns to
+  login.
+- **Claim wizard**: `adminClaim(newCommitment, newSalt)` with a freshly minted salt; the optional
+  username rotation derives its own tuple; the entity-DID claim keeps the entity API's globalSalt
+  (identities store no salt until Phase 22.0).
+- `assets/zk/Login.wasm` + `Login_entities.zkey` / `Login_identities.zkey` — the Phase 18 circuit
+  (in-circuit stretch) per-product setups. ⚠️ Dev one-shot; the real ceremony re-installs them.
+
 ### 2026-09-09
 
 #### Changed — the v4 design lands: login, app shell, and one table style Vault-wide

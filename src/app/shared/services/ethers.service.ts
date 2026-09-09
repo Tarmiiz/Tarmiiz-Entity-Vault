@@ -10,7 +10,7 @@ import { Key } from '../models/data.model';
 
 import { StorageService } from './storage.service';
 
-import { ParseProofUtils } from '../utils/parse-proof.utils';
+import { ParseProofUtils, BN254_R } from '../utils/parse-proof.utils';
 
 
 @Injectable({
@@ -107,19 +107,52 @@ export class EthersService {
   }
 
   // Compute the bytes32 commitment that EntityTemplate stores in `proofs[userId].commitment`.
-  // Used during the claim flow to set the new commitment with the entity API's salt + the
-  // user's chosen password (split out so the wizard can pre-compute it before posting).
-  async computeCommitment(username: string, password: string, salt?: string): Promise<string | null> {
+  //
+  // Phase 18 (2026-09-09): `Poseidon3(emailBI, stretch(Argon2id(password, salt)), salt)` over a
+  // PER-USER `salt` that the contract STORES beside the commitment (18.B4) — so every caller that
+  // creates or rotates a credential mints one (`newSalt()`) and sends the pair. The salt is
+  // REQUIRED here on purpose: a fallback to `globalSalt` is exactly the shape 18.B4 retired, and a
+  // commitment derived over a salt the chain does not hold is a lockout that reports success.
+  // ASYNC — Argon2id at 64 MiB takes a few hundred ms in the browser.
+  async computeCommitment(username: string, password: string, salt: string): Promise<string | null> {
     try {
+      if (!salt || /^0x0+$/.test(salt)) throw new Error('a per-user salt is required (Phase 18)');
       await ParseProofUtils.init();
       const usernameBigInt = ParseProofUtils.stringToBigInt(username);
-      const passwordBigInt = ParseProofUtils.passwordToBigInt(password);
-      const saltBigInt     = BigInt(salt ?? this.globalSalt);
+      const saltBigInt     = BigInt(salt);
+      const passwordBigInt = await ParseProofUtils.derivePassword(password, saltBigInt);
       return ParseProofUtils.generateCommitment(usernameBigInt, passwordBigInt, saltBigInt);
     } catch (error: any) {
       console.error('computeCommitment error:', error);
       return null;
     }
+  }
+
+  // A fresh per-user login salt (bytes32 hex, reduced mod r). Minted by whoever creates or
+  // rotates a credential and sent to the API together with the commitment it was derived over.
+  newSalt(): string {
+    return ethers.zeroPadValue(ethers.toBeHex(ParseProofUtils.randomSalt()), 32);
+  }
+
+  // Phase 18 (18.5) — the HASHES-ONLY tuple every create / admin-reset sends to the API:
+  // { loginHash, commitment, salt }, with a fresh per-user salt. The API asserts loginHash matches
+  // the username and rejects a plaintext `password` field. Use `commitment` + `salt` alone for a
+  // password-only reset (the loginHash is the target's CURRENT username, which must not move).
+  async deriveCredential(username: string, password: string): Promise<{ loginHash: string; commitment: string; salt: string } | null> {
+    const salt = this.newSalt();
+    const commitment = await this.computeCommitment(username, password, salt);
+    if (!commitment) return null;
+    return { loginHash: await this.computeLoginHash(username), commitment, salt };
+  }
+
+  // Phase 18 (18.2) — a Groth16 login proof over the caller's CURRENT credentials, in the shape
+  // `resetUserPasswordWithProof` takes ({ a, b, c, input }). Fetches { nonce, commitment, salt }
+  // through the Entity API like a login does; the proof is consumed by the API within the same
+  // nonce, so it is single-use by construction.
+  async proveCurrentPassword(username: string, currentPassword: string, credentials: { nonce: string | number; commitment: string; salt?: string }): Promise<{ a: string[]; b: string[][]; c: string[]; input: string[] } | null> {
+    const payload = await this.createLoginPayload(username, currentPassword, 3600, undefined, false, credentials);
+    if (!payload) return null;
+    return { a: payload.a, b: payload.b, c: payload.c, input: payload.proofInput };
   }
 
   // Pure (no chain): the bytes32 loginHash EntityTemplate keys a user's credentials by. ApiService
@@ -131,14 +164,17 @@ export class EthersService {
     return ParseProofUtils.hashStringForContract(usernameBigInt);
   }
 
-  // `saltOverride` lets the bootstrap admin claim wizard run a login proof against the regulator
-  // API's salt (recorded on chain as EntityTemplate.bootstrapSalt) instead of the entity API's.
+  // 18.B4: the salt the proof is built over is the one STORED with the credential and returned by
+  // /staff/credentials-data (`credentials.salt`) — never `environment.globalSalt`. `saltOverride`
+  // survives for the claim wizard, which has the regulator's bootstrap salt in hand from
+  // /config; the stored salt of an unclaimed admin IS that value, so the two agree.
   // `passwordIsRawBigInt` — when true, treat `password` as a decimal numeric string (e.g. a 6-digit
-  // OTP) and use `BigInt(password)` directly instead of `passwordToBigInt`. The Regulator API
-  // computes the bootstrap commitment with `BigInt(otp)`, so the claim wizard must match.
-  // `credentials` — { nonce, commitment } fetched by ApiService through the Entity API so login
-  // never hits the RPC node (the Vault has no route to it). Required.
-  async createLoginPayload(username: string, password: string, sessionDuration: number, saltOverride: string | undefined, passwordIsRawBigInt: boolean, credentials: { nonce: string | number; commitment: string }) {
+  // OTP) and use `BigInt(password)` directly, skipping Argon2id: the Regulator API computes the
+  // bootstrap placeholder from the RAW OTP (a server-known placeholder, still stretched in-circuit),
+  // so the claim wizard must match. Every real password goes through Argon2id (`derivePassword`).
+  // `credentials` — { nonce, commitment, salt } fetched by ApiService through the Entity API so
+  // login never hits the RPC node (the Vault has no route to it). Required.
+  async createLoginPayload(username: string, password: string, sessionDuration: number, saltOverride: string | undefined, passwordIsRawBigInt: boolean, credentials: { nonce: string | number; commitment: string; salt?: string }) {
     try {
       if (!username || !password || !credentials) return null;
       if (!Number.isInteger(sessionDuration) || sessionDuration <= 0) return null;
@@ -148,8 +184,8 @@ export class EthersService {
 
       // Convert credentials to BigInts
       const usernameBigInt = ParseProofUtils.stringToBigInt(username);
-      const passwordBigInt = passwordIsRawBigInt ? BigInt(password) : ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(saltOverride ?? this.globalSalt);
+      const globalSaltBigInt = BigInt(credentials.salt ?? saltOverride ?? this.globalSalt);
+      const passwordBigInt = passwordIsRawBigInt ? (BigInt(password) % BN254_R) : await ParseProofUtils.derivePassword(password, globalSaltBigInt);
 
       // Generate contract lookup hash
       const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
@@ -213,7 +249,10 @@ export class EthersService {
   // omits the usernameHash arg.
   // `credentials` — { nonce, commitment } fetched by the caller through the Entity API so this
   // never reads the RPC node directly (the Vault has no route to the RPC node).
-  async createIdentityLoginPayload(identityAddress: string, username: string, password: string, sessionDuration: number, saltOverride: string | undefined, passwordIsRawBigInt: boolean, credentials: { nonce: string | number; commitment: string }) {
+  // An IdentityTemplate stores NO salt until Phase 22.0, so the salt is `saltOverride` (the
+  // regulator's bootstrap salt for the DID claim — the placeholder was set to the entity admin's
+  // adminSecret at registration) or the entity API's globalSalt for a claimed DID.
+  async createIdentityLoginPayload(identityAddress: string, username: string, password: string, sessionDuration: number, saltOverride: string | undefined, passwordIsRawBigInt: boolean, credentials: { nonce: string | number; commitment: string; salt?: string }) {
     try {
       if (!identityAddress || !username || !password || !credentials) return null;
       if (!Number.isInteger(sessionDuration) || sessionDuration <= 0) return null;
@@ -221,8 +260,8 @@ export class EthersService {
       await ParseProofUtils.init();
 
       const usernameBigInt   = ParseProofUtils.stringToBigInt(username);
-      const passwordBigInt   = passwordIsRawBigInt ? BigInt(password) : ParseProofUtils.passwordToBigInt(password);
-      const globalSaltBigInt = BigInt(saltOverride ?? this.globalSalt);
+      const globalSaltBigInt = BigInt(credentials.salt ?? saltOverride ?? this.globalSalt);
+      const passwordBigInt   = passwordIsRawBigInt ? (BigInt(password) % BN254_R) : await ParseProofUtils.derivePassword(password, globalSaltBigInt);
 
       const usernameHashHex = ParseProofUtils.hashStringForContract(usernameBigInt);
 

@@ -140,12 +140,15 @@ export class ClaimPage implements OnInit {
     let alertTitle = '';
     let alertMessage = '';
     try {
-      // Compute the rotated commitment using the entity API's own globalSalt (already loaded
-      // into ethersService from /vault/config in step 1).
-      const newCommitment = await this.ethersService.computeCommitment(this.email(), password);
+      // 18.B4: mint the admin's OWN per-user salt and derive the rotated commitment over it
+      // (Argon2id + the in-circuit stretch). The placeholder was committed under the regulator's
+      // bootstrap salt, which is shared by every entity that regulator creates and must not
+      // outlive the claim; `adminClaim(newCommitment, newSalt)` stores the pair.
+      const newSalt = this.ethersService.newSalt();
+      const newCommitment = await this.ethersService.computeCommitment(this.email(), password, newSalt);
       if (!newCommitment) throw new Error('Failed to compute new commitment');
 
-      const claimRes = await this.apiService.vaultUserAdminClaim(newCommitment, { name, username, email: this.email() });
+      const claimRes = await this.apiService.vaultUserAdminClaim(newCommitment, newSalt, { name, username, email: this.email() });
       if (!claimRes) throw new Error('Claim transaction failed');
 
       // adminClaim only rotates the COMMITMENT (still keyed to email's loginHash). If the user
@@ -158,9 +161,11 @@ export class ClaimPage implements OnInit {
           const loginRes: any = await this.apiService.entityLogin(this.email(), password, REKEY_SESSION);
           if (loginRes?.success && loginRes.token) {
             await this.sessionService.setSession(loginRes.token, loginRes.expiresAt, loginRes.refreshExpiresAt);
-            // Server computes loginHash + commitment from (username, password) using its own
-            // GLOBAL_SALT — same salt the next login will use, so the rotated credentials match.
-            await this.apiService.vaultUpdateUserCredentials('1', { username: String(username).trim(), password });
+            // 18.5 — hashes only: derive { loginHash, commitment, salt } for the chosen username
+            // HERE (fresh salt, Argon2id); the API rejects a plaintext password.
+            const rekeyed = await this.ethersService.deriveCredential(String(username).trim(), password);
+            if (!rekeyed) throw new Error('Failed to derive the rotated credential');
+            await this.apiService.vaultUpdateUserCredentials('1', { username: String(username).trim(), ...rekeyed });
           } else {
             console.warn('rekey login failed:', loginRes?.error);
           }
@@ -185,7 +190,11 @@ export class ClaimPage implements OnInit {
             didAddress, this.email(), this.otp(), DID_SESSION_DURATION, this.bootstrapSalt(), true, idCredentials
           ) : null;
           if (idPayload) {
-            const didRes = await this.apiService.vaultIdentityAdminClaim({ ...idPayload, newCommitment });
+            // The entity DID stores NO salt until Phase 22.0, so its commitment is derived over the
+            // entity API's globalSalt (the value the DID App logs into it with) — NOT `newSalt`.
+            const didCommitment = await this.ethersService.computeCommitment(this.email(), password, this.ethersService.globalSalt);
+            if (!didCommitment) throw new Error('Failed to compute the DID commitment');
+            const didRes = await this.apiService.vaultIdentityAdminClaim({ ...idPayload, newCommitment: didCommitment });
             if (didRes && didRes.error) console.warn('DID claim returned error:', didRes.error);
           }
         }
