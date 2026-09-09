@@ -1087,7 +1087,7 @@
         },
         "last30Suffix": "— آخر 30 × {{interval}}",
         "noChartData": "لا تتوفر بيانات سعر لعرضها في الرسم البياني.",
-        "priceColumn": "السعر",
+        "priceColumn": "السعر / صافي قيمة الأصل",
         "savingPrice": "جارٍ حفظ السعر...",
         "showingRecords": "عرض {{showing}} من {{total}} من سجلات الأسعار"
       },

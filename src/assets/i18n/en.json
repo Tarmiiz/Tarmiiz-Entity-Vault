@@ -1087,7 +1087,7 @@
         },
         "last30Suffix": "— Last 30 × {{interval}}",
         "noChartData": "No price data available to chart.",
-        "priceColumn": "Price",
+        "priceColumn": "Price / NAV",
         "savingPrice": "Saving price...",
         "showingRecords": "Showing {{showing}} of {{total}} Price Records"
       },

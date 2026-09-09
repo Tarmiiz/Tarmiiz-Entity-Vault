@@ -279,11 +279,11 @@ export class DetailsPage implements OnInit {
   }
 
   exportPricesExcel() {
-    const rows = this.filteredPriceTable().map(p => ({
-      'Date': this.utils.formatDate(p.timestamp),
-      'Bid': this.utils.roundMoney(p.bid),
-      'Ask': this.utils.roundMoney(p.ask),
-    }));
+    // Same price-mode branch as the table: one Price / NAV column for a fixed-priced asset.
+    const single = this.asset()?.priceMode === 1;
+    const rows = this.filteredPriceTable().map(p => (single
+      ? { 'Date': this.utils.formatDate(p.timestamp), 'Price / NAV': this.utils.roundMoney(p.bid) }
+      : { 'Date': this.utils.formatDate(p.timestamp), 'Bid': this.utils.roundMoney(p.bid), 'Ask': this.utils.roundMoney(p.ask) }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Prices');
@@ -311,24 +311,19 @@ export class DetailsPage implements OnInit {
     doc.text(`Filters: ${filterParts.join('  |  ')}`, pad, 27);
     doc.setTextColor(0);
 
+    const single = asset?.priceMode === 1;
     autoTable(doc, {
       startY: 34,
       margin: { left: pad, right: pad },
       styles: { fontSize: 8 },
       headStyles: { fillColor: [74, 85, 104] },
       columnStyles: { 0: { cellWidth: 10 }, 2: { halign: 'right' }, 3: { halign: 'right' } },
-      head: [[
-        { content: '#' },
-        { content: 'Date' },
-        { content: 'Bid', styles: { halign: 'right' } },
-        { content: 'Ask', styles: { halign: 'right' } },
-      ]],
-      body: prices.map((p, i) => [
-        i + 1,
-        this.utils.formatDate(p.timestamp),
-        this.utils.formatPrice(p.bid),
-        this.utils.formatPrice(p.ask),
-      ]),
+      head: [single
+        ? [{ content: '#' }, { content: 'Date' }, { content: 'Price / NAV', styles: { halign: 'right' } }]
+        : [{ content: '#' }, { content: 'Date' }, { content: 'Bid', styles: { halign: 'right' } }, { content: 'Ask', styles: { halign: 'right' } }]],
+      body: prices.map((p, i) => single
+        ? [i + 1, this.utils.formatDate(p.timestamp), this.utils.formatPrice(p.bid)]
+        : [i + 1, this.utils.formatDate(p.timestamp), this.utils.formatPrice(p.bid), this.utils.formatPrice(p.ask)]),
     });
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
@@ -1437,36 +1432,45 @@ export class DetailsPage implements OnInit {
     const bidData = sorted.map(p => p.bid);
     const askData = sorted.map(p => p.ask);
 
+    // The chart follows the asset's PRICE MODE (V30), as the table below it already does:
+    // 1 = fixed-priced, ONE series and it is the price (NAV) — bid == ask by contract invariant,
+    // so a second line sat exactly on the first and "Bid" named a quote side the asset does
+    // not have; 2 = market-priced, Bid and Ask.
+    const isSingleMode = this.asset()?.priceMode === 1;
+    const datasets: any[] = [
+      {
+        label: this.translate.instant(isSingleMode ? 'assets.details.price.priceColumn' : 'assets.details.price.bid'),
+        data: bidData,
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79, 70, 229, 0.08)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#4f46e5',
+        fill: true,
+        tension: 0.4,
+      },
+    ];
+    if (!isSingleMode) {
+      datasets.push({
+        label: this.translate.instant('assets.details.price.ask'),
+        data: askData,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#10b981',
+        fill: true,
+        tension: 0.4,
+      });
+    }
+
     this.chartInstance = new Chart(canvas, {
       type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: this.translate.instant('assets.details.price.bid'),
-            data: bidData,
-            borderColor: '#4f46e5',
-            backgroundColor: 'rgba(79, 70, 229, 0.08)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#4f46e5',
-            fill: true,
-            tension: 0.4,
-          },
-          {
-            label: this.translate.instant('assets.details.price.ask'),
-            data: askData,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#10b981',
-            fill: true,
-            tension: 0.4,
-          }
-        ]
+        datasets,
       },
       options: {
         responsive: true,

@@ -17,6 +17,16 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-09
 
+#### Fixed — the asset Price chart and exports follow the asset's price mode
+
+On [assets/details](src/app/pages/secure/assets/details/) the Price chart always drew Bid and
+Ask, and both exports always emitted both columns — for a fixed-priced asset (`priceMode` 1)
+that is one line drawn twice under a label naming a quote side the asset does not have. The
+chart, the Excel export and the PDF export now branch on `priceMode` exactly as the table
+already did: one **Price / NAV** series and column for a fixed-priced asset, **Bid** / **Ask**
+for a market-priced one. `assets.details.price.priceColumn` reads "Price / NAV" (was "Price")
+in en + ar.
+
 #### Changed — the credit transaction modal resolves its SP receipt by CID
 
 [modal-credit-trx-info](src/app/shared/components/modal-credit-trx-info/) opened a row's receipt
