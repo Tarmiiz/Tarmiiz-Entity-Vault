@@ -17,6 +17,15 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-09
 
+#### Changed — the credit transaction modal resolves its SP receipt by CID
+
+[modal-credit-trx-info](src/app/shared/components/modal-credit-trx-info/) opened a row's receipt
+by listing the service's documents and matching `dataCid`. The Entity API's service documents
+list now DROPS receipts (they are per-transaction records, not documents of the service), so the
+modal calls the new `serviceDocumentByCid(service, cid)` → `GET /services/:address/documents/by-cid/:cid`
+instead. Same file-view flow after that; a CID nothing carries still shows the existing
+"receipt not found" alert.
+
 #### Added — **Disclosed by your regulator** on the subscription Identity tab (Phase 22.10 / C.5)
 
 The Identity Data tab on [subscriptions/details](src/app/pages/secure/subscriptions/details/)

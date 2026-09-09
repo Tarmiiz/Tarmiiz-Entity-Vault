@@ -2805,6 +2805,11 @@ export class ApiService {
     return await this.authGet('/services/' + address + '/documents', { start: String(start), offset: String(offset) });
   }
   async serviceDocumentGet(address: string, id: any)                           { return await this.authGet('/services/' + address + '/documents/' + id); }
+  /** The service document that points at `cid` — how a credit row's SP receipt is reached now
+   *  that the plain list drops receipts (2026-09-09). 404 when nothing carries the CID. */
+  async serviceDocumentByCid(address: string, cid: string) {
+    return await this.authGet('/services/' + address + '/documents/by-cid/' + encodeURIComponent(cid));
+  }
   async serviceDocumentAdd(address: string, body: any)                         { return await this.authPost('/services/' + address + '/documents', body); }
   async serviceDocumentUpdate(address: string, id: any, body: any)             { return await this.authPut('/services/' + address + '/documents/' + id, body); }
   async serviceDocumentRemove(address: string, id: any)                        { return await this.authDelete('/services/' + address + '/documents/' + id); }

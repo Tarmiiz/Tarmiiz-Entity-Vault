@@ -80,17 +80,18 @@ export class ModalCreditTrxInfoComponent {
   }
 
   // Open the SP-receipt document referenced by trx.dataCid. The receipt doc is owned by the
-  // SERVICE template, so it's resolved through the existing service-documents machinery:
-  // list the service's documents, match by CID, then stream via the standard file-view flow.
-  // The tab is claimed synchronously inside the click gesture (same pattern as documents-tab),
-  // or the deferred window.open is dropped by the popup blocker after the fetch await.
+  // SERVICE template and resolved BY CID (`serviceDocumentByCid`) — the plain documents list
+  // drops receipts since 2026-09-09 (this modal is where a receipt belongs, not a Documents
+  // tab), so matching the list by CID would find nothing. Then stream via the standard
+  // file-view flow. The tab is claimed synchronously inside the click gesture (same pattern
+  // as documents-tab), or the deferred window.open is dropped by the popup blocker.
   async viewReceipt(trx: CreditTransaction): Promise<void> {
     if (!trx.dataCid || !trx.service) return;
     const win = window.open('', '_blank');
     this.loadingService.show(this.translate.instant('credit.trxInfoModal.fetchingReceipt'));
     try {
-      const data = await this.apiService.serviceDocumentsList(trx.service, 1, 200);
-      const doc = (data?.documents ?? []).find((d: any) => d.cid === trx.dataCid);
+      const data = await this.apiService.serviceDocumentByCid(trx.service, trx.dataCid);
+      const doc = data?.document;
       if (!doc) {
         if (win) win.close();
         this.loadingService.hide();
