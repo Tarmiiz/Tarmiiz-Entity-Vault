@@ -31,7 +31,7 @@
           <!-- Additional metadata -->
           <div formArrayName="metadata">
             <div class="flex items-center justify-between mb-2">
-              <label class="text-xs font-medium text-gray-500">{{ 'shared.metadataEditModal.additionalFields' | translate }}</label>
+              <label class="text-xs font-medium text-gray-500 ps-2">{{ 'shared.metadataEditModal.additionalFields' | translate }}</label>
               <button type="button" (click)="addMetadataRow()"
                 class="text-xs text-indigo-600 hover:text-indigo-800">{{ 'shared.metadataEditModal.addField' | translate }}</button>
             </div>
@@ -58,10 +58,10 @@
           </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
-          <button type="button" (click)="onCancel()" class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          <button type="button" (click)="onCancel()" class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
             {{ 'common.cancel' | translate }}
           </button>
-          <button type="submit" [disabled]="!!metadataError()" class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="submit" [disabled]="!!metadataError()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {{ 'shared.metadataEditModal.saveChanges' | translate }}
           </button>
         </div>

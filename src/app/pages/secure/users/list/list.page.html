@@ -6,18 +6,18 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'users.filters.search' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'users.filters.search' | translate }}</label>
         <input
           type="text"
           [placeholder]="'users.filters.searchPlaceholder' | translate"
           [ngModel]="filterSearch()"
           (ngModelChange)="filterSearch.set($event); usersPage.set(1)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+          class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'users.filters.role' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'users.filters.role' | translate }}</label>
         <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); usersPage.set(1)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
+          class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'role.admin' | translate }}</option>
           <option value="2">{{ 'users.roles.executive' | translate }}</option>
@@ -26,9 +26,9 @@
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'users.filters.state' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'users.filters.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); usersPage.set(1)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
+          class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-32">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'state.initiated' | translate }}</option>
           <option value="2">{{ 'state.active' | translate }}</option>
@@ -38,14 +38,14 @@
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ 'common.clear' | translate }}
         </button>
       </div>
       @if (userInfo && userInfo.role === 1) {
       <div class="flex ml-auto items-end">
         <button (click)="openAddModal()"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1">
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
           </svg>

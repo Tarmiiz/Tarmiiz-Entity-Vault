@@ -381,19 +381,19 @@
                   <!-- Mint / Burn: fixed-supply only. Dynamic-supply tokens mint on subscribe / burn on redeem. -->
                   @if (v.canManage && v.supplyMode === 1 && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-mint')) {
                     <button (click)="openMintModal()" [disabled]="!entityActive"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-600">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-600">
                       {{ 'assets.details.info.mintSupply' | translate }}
                     </button>
                   }
                   @if (v.canManage && v.supplyMode === 1 && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-burn')) {
                     <button (click)="openBurnModal()" [disabled]="!entityActive"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600">
                       {{ 'assets.details.info.burnSupply' | translate }}
                     </button>
                   }
                   @if (v.canManage && features.systemFunctionEnabled('asset-change-state')) {
                     <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                       {{ 'assets.details.changeStateBtn' | translate }}
                     </button>
                   }
@@ -429,14 +429,14 @@
 
             <div class="flex justify-between items-center">
               <button (click)="openViewAssetModal()"
-                class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 {{ 'assets.details.publicView.button' | translate }}
               </button>
               @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-edit-metadata')) {
                 <button (click)="openEditMetadataModal()" [disabled]="!entityActive || !canManage()"
                   [title]="canManage() ? '' : ('assets.details.notManager' | translate)"
-                  class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                  class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                   {{ 'assets.details.metadata.edit' | translate }}
                 </button>
               }
@@ -479,7 +479,7 @@
               <div class="flex justify-between items-center mb-2">
                 <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'assets.details.identifiers.title' | translate }}</h4>
                 @if (canEditIdentifiers()) {
-                  <button (click)="openIdentifierModal()" class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                  <button (click)="openIdentifierModal()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                     {{ 'assets.details.identifiers.add' | translate }}
                   </button>
                 }
@@ -562,7 +562,7 @@
                   <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ 'assets.details.media.heading' | translate }}</h4>
                   @if (userInfo && userInfo.role !== 3) {
                     <button (click)="openAddImageModal()" [disabled]="!entityActive"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                       {{ 'assets.details.media.uploadButton' | translate }}
                     </button>
                   }
@@ -629,9 +629,9 @@
             </h3>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
-                <label class="text-xs font-medium text-gray-500">{{ 'assets.details.price.interval' | translate }}</label>
+                <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.price.interval' | translate }}</label>
                 <select [ngModel]="priceInterval()" (ngModelChange)="setPriceInterval($event)"
-                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
+                  class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   @for (i of intervalOptions; track i.value) {
                     <option [value]="i.value">{{ i.label }}</option>
                   }
@@ -640,7 +640,7 @@
               @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-set-price')) {
                 <button (click)="openAddPriceModal()" [disabled]="!entityActive || !canManage()"
                   [title]="canManage() ? '' : ('assets.details.notManager' | translate)"
-                  class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                  class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                   + {{ 'assets.details.price.addPrice' | translate }}
                 </button>
               }
@@ -663,25 +663,25 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mt-6">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.from' | translate }}</label>
                   <input type="date" [ngModel]="filterPriceStartDate()" (ngModelChange)="filterPriceStartDate.set($event); pricePage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.to' | translate }}</label>
                   <input type="date" [ngModel]="filterPriceEndDate()" (ngModelChange)="filterPriceEndDate.set($event); pricePage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearPriceFilter()"
-                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportPricesExcel()"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -690,7 +690,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportPricesPdf()"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -754,35 +754,35 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.holders.holderAddress' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.holders.holderAddress' | translate }}</label>
                   <input type="text" [ngModel]="filterHolder()" (ngModelChange)="filterHolder.set($event); holderPage.set(1)"
                     [placeholder]="'assets.details.holders.searchPlaceholder' | translate"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.holders.balance' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.holders.balance' | translate }}</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterBalanceOp()" (ngModelChange)="filterBalanceOp.set($event); holderPage.set(1)"
-                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                      class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                       <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
                     <input type="number" min="0" [ngModel]="filterBalanceAmt()" (ngModelChange)="filterBalanceAmt.set($event === '' || $event === null ? null : +$event); holderPage.set(1)"
                       [placeholder]="'common.amount' | translate"
-                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+                      class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
                   </div>
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearHolderFilter()"
-                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportHoldersExcel()"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -791,7 +791,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportHoldersPdf()"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -862,9 +862,9 @@
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex flex-wrap gap-2 items-end">
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.trxType' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.transactions.trxType' | translate }}</label>
                   <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); trxPage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     <option value="Subscribe">{{ 'assets.details.transactions.types.subscribe' | translate }}</option>
                     <option value="Redeem">{{ 'assets.details.transactions.types.redeem' | translate }}</option>
@@ -873,9 +873,9 @@
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.service' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.transactions.service' | translate }}</label>
                   <select [ngModel]="filterService()" (ngModelChange)="filterService.set($event); trxPage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (svc of uniqueServices(); track svc[0]) {
                       <option [value]="svc[0]">{{ svc[1] }}</option>
@@ -883,9 +883,9 @@
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.subscription' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.transactions.subscription' | translate }}</label>
                   <select [ngModel]="filterSubscription()" (ngModelChange)="filterSubscription.set($event); trxPage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44">
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-44">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (sub of uniqueSubscriptions(); track sub) {
                       <option [value]="sub">{{ sub }}</option>
@@ -893,9 +893,9 @@
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.currency' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.transactions.currency' | translate }}</label>
                   <select [ngModel]="filterCurrency()" (ngModelChange)="filterCurrency.set($event); trxPage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                     <option value="">{{ 'common.all' | translate }}</option>
                     @for (c of uniqueCurrencies(); track c) {
                       <option [value]="c">{{ c }}</option>
@@ -903,39 +903,39 @@
                   </select>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'assets.details.transactions.tokens' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.details.transactions.tokens' | translate }}</label>
                   <div class="flex items-center gap-1">
                     <select [ngModel]="filterTokensOp()" (ngModelChange)="filterTokensOp.set($event); trxPage.set(1)"
-                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                      class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
                       <option value="">{{ 'common.any' | translate }}</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                     </select>
                     <input type="number" min="0" [ngModel]="filterTokensAmt()" (ngModelChange)="filterTokensAmt.set($event === '' || $event === null ? null : +$event); trxPage.set(1)"
                       [placeholder]="'common.amount' | translate"
-                      class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
+                      class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   </div>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'common.from' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.from' | translate }}</label>
                   <input type="date" [ngModel]="filterStartDate()" (ngModelChange)="filterStartDate.set($event); trxPage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-gray-500">{{ 'common.to' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.to' | translate }}</label>
                   <input type="date" [ngModel]="filterEndDate()" (ngModelChange)="filterEndDate.set($event); trxPage.set(1)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
                 </div>
                 <div class="flex flex-col justify-end">
                   <button (click)="clearFilters()"
-                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ 'common.clear' | translate }}
                   </button>
                 </div>
                 <div class="flex gap-2 ml-auto">
                   @if (features.systemFunctionEnabled('export-excel')) {
                     <button (click)="exportExcel()"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -944,7 +944,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                     <button (click)="exportPdf()"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                       </svg>
@@ -1009,7 +1009,7 @@
                 @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-add-service')) {
                   <button (click)="openAddServiceModal()" [disabled]="!entityActive || !canManage()"
                     [title]="canManage() ? '' : ('assets.details.notManager' | translate)"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
                     + {{ 'assets.details.services.addService' | translate }}
                   </button>
                 }
@@ -1127,7 +1127,7 @@
                 @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-listing-create')) {
                 <button (click)="openDexListingCreate()"
                   [disabled]="!entityActive"
-                  class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   {{ 'assets.details.dex.listAssetBtn' | translate }}
                 </button>
                 }
@@ -1167,7 +1167,7 @@
                 <div class="flex items-center justify-between mb-3">
                   <h3 class="text-base font-semibold text-gray-800">{{ 'assets.details.dex.enabledVenues' | translate }}</h3>
                   <button (click)="goDexListing()"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                     {{ 'assets.details.dex.manageOnDex' | translate }}
                   </button>
                 </div>
@@ -1225,7 +1225,7 @@
               <div class="flex items-center gap-2">
                 <app-refresh-button [loading]="distributionsLoading()" (refresh)="loadDistributions()" />
                 @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-add-distribution')) {
-                  <button class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40"
+                  <button class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40"
                           (click)="openDeclareDistribution()"
                           [disabled]="!entityActive">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1362,7 +1362,7 @@
                     (ngModelChange)="holdersAtDateInput.set($event)">
                 </div>
               }
-              <button class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-40"
+              <button class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-40"
                       (click)="loadHoldersAt()"
                       [disabled]="holdersAtLoading() || (holdersAtMode() === 'block' ? !holdersAtBlockInput() : !holdersAtDateInput())">
                 {{ (holdersAtLoading() ? 'common.loading' : 'assets.details.holdersAt.loadSnapshot') | translate }}
@@ -1396,7 +1396,7 @@
                 <div class="flex gap-2">
                   @if (features.systemFunctionEnabled('export-excel')) {
                   <button (click)="exportHoldersAtExcel()"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                     </svg>
@@ -1405,7 +1405,7 @@
                   }
                   @if (features.systemFunctionEnabled('export-pdf')) {
                   <button (click)="exportHoldersAtPdf()"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M16 6l-4-4-4 4" />
                     </svg>

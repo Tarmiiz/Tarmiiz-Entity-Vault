@@ -29,9 +29,9 @@
     <div class="flex flex-wrap gap-2 items-end">
       @if (activeTab() === 'activity') {
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.table.category' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.table.category' | translate }}</label>
           <select [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
             <option value="">{{ 'common.all' | translate }}</option>
             @for (c of activityCategories; track c) {
               <option [value]="c">{{ c }}</option>
@@ -39,9 +39,9 @@
           </select>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.table.user' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.table.user' | translate }}</label>
           <select [ngModel]="activityUserFilter()" (ngModelChange)="activityUserFilter.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
             <option value="">{{ 'common.all' | translate }}</option>
             @for (u of users(); track u.userId) {
               <option [value]="u.userId">{{ u.name }} (#{{ u.userId }})</option>
@@ -49,26 +49,26 @@
           </select>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.filters.from' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.filters.from' | translate }}</label>
           <input type="date" [ngModel]="activityFromFilter()" (ngModelChange)="activityFromFilter.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.filters.to' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.filters.to' | translate }}</label>
           <input type="date" [ngModel]="activityToFilter()" (ngModelChange)="activityToFilter.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.table.action' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.table.action' | translate }}</label>
           <input type="text" [placeholder]="'logs.filters.actionPlaceholder' | translate"
             [ngModel]="activityActionFilter()" (ngModelChange)="onActionChange($event)"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
         </div>
       } @else {
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'common.type' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.type' | translate }}</label>
           <select [ngModel]="stateTypeFilter()" (ngModelChange)="stateTypeFilter.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
             <option value="">{{ 'common.all' | translate }}</option>
             @for (t of stateTypes; track t) {
               <option [value]="t">{{ t }}</option>
@@ -76,9 +76,9 @@
           </select>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.table.user' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.table.user' | translate }}</label>
           <select [ngModel]="stateUserFilter()" (ngModelChange)="stateUserFilter.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
             <option value="">{{ 'common.all' | translate }}</option>
             @for (u of users(); track u.userId) {
               <option [value]="u.userId">{{ u.name }} (#{{ u.userId }})</option>
@@ -86,31 +86,31 @@
           </select>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.filters.from' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.filters.from' | translate }}</label>
           <input type="date" [ngModel]="stateFromFilter()" (ngModelChange)="stateFromFilter.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.filters.to' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.filters.to' | translate }}</label>
           <input type="date" [ngModel]="stateToFilter()" (ngModelChange)="stateToFilter.set($event); applyFilters()"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'logs.table.action' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'logs.table.action' | translate }}</label>
           <input type="text" [placeholder]="'logs.filters.actionPlaceholder' | translate"
             [ngModel]="stateActionFilter()" (ngModelChange)="onActionChange($event)"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
         </div>
       }
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.clear' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.clear' | translate }}</button>
       </div>
       <div class="flex gap-2 ml-auto items-end">
         <button (click)="exportExcel()"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">{{ 'common.exportExcel' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">{{ 'common.exportExcel' | translate }}</button>
         <button (click)="exportPdf()"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors">{{ 'common.exportPdf' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors">{{ 'common.exportPdf' | translate }}</button>
       </div>
     </div>
   </div>

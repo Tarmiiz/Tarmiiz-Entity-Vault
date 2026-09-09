@@ -119,12 +119,12 @@
               <td>
                 <div class="flex gap-2">
                   <button (click)="toggleAssetHolds(a.address)"
-                    class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                    class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                     {{ (expandedAsset() === a.address ? 'custody.holds.hide' : 'custody.holds.view') | translate }}
                   </button>
                   @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('custody-hold-place')) {
                     <button (click)="openHoldModal(a.address)"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                       {{ 'custody.holds.place' | translate }}
                     </button>
                   }
@@ -204,35 +204,35 @@
       <p class="text-xs text-gray-500 mb-4 font-mono">{{ holdAsset() }}</p>
       <div class="space-y-3">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.actingService' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'custody.holds.actingService' | translate }}</label>
           <select [(ngModel)]="holdCustodianService"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
             @for (s of myCustodianServices(); track s.address) {
               <option [value]="s.address">{{ s.name }}</option>
             }
           </select>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.account' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'custody.holds.account' | translate }}</label>
           <input type="text" [(ngModel)]="holdAccount" placeholder="0x…"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.amountTokens' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'custody.holds.amountTokens' | translate }}</label>
           <input type="number" min="1" step="1" [(ngModel)]="holdAmount"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'common.reason' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.reason' | translate }}</label>
           <input type="text" [(ngModel)]="holdReason" [placeholder]="'common.reasonPlaceholder' | translate"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="holdModalOpen.set(false)"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitHold()" [disabled]="!holdCustodianService || !holdAccount || !holdAmount"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'custody.holds.place' | translate }}
         </button>
       </div>
@@ -248,21 +248,21 @@
       <p class="text-xs text-gray-500 mb-4">#{{ releaseHold()?.holdId }} — {{ 'custody.holds.remaining' | translate }}: {{ releaseHold()?.remaining }}</p>
       <div class="space-y-3">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'custody.holds.amountTokens' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'custody.holds.amountTokens' | translate }}</label>
           <input type="number" min="1" step="1" [(ngModel)]="releaseAmount"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'common.reason' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.reason' | translate }}</label>
           <input type="text" [(ngModel)]="releaseReason" [placeholder]="'common.reasonPlaceholder' | translate"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="releaseModalOpen.set(false)"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitRelease()" [disabled]="!releaseAmount"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'custody.holds.release' | translate }}
         </button>
       </div>

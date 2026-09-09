@@ -6,9 +6,9 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); approvalsPage.set(1); load()"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
+          class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40">
           <option value="">{{ 'common.all' | translate }}</option>
           <option value="1">{{ 'state.pending' | translate }}</option>
           <option value="2">{{ 'state.approved' | translate }}</option>
@@ -18,10 +18,10 @@
         </select>
       </div>
       <div class="flex flex-col gap-1 flex-1 min-w-[200px]">
-        <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.search' | translate }}</label>
         <input type="text" [placeholder]="'approvals.list.filters.searchPlaceholder' | translate"
           [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event); approvalsPage.set(1)"
-          class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-full">
+          class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-full">
       </div>
       <div class="flex items-end gap-3 ml-auto">
         <span class="text-xs text-gray-500 pb-1">

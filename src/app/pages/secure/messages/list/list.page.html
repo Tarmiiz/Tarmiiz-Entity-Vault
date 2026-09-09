@@ -7,7 +7,7 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
     <div class="flex flex-wrap gap-2 items-end">
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.show' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'messages.list.filters.show' | translate }}</label>
         <label class="inline-flex items-center space-x-2 cursor-pointer h-[30px]">
           <span class="text-xs font-medium text-gray-700">{{ 'messages.list.filters.all' | translate }}</span>
           <span class="relative">
@@ -21,21 +21,21 @@
         </label>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.from' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'messages.list.filters.from' | translate }}</label>
         <input type="text" [placeholder]="'messages.list.filters.fromPlaceholder' | translate"
                [ngModel]="searchParticipant()" (ngModelChange)="searchParticipant.set($event); threadsPage.set(1)"
-               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+               class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.subject' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'messages.list.filters.subject' | translate }}</label>
         <input type="text" [placeholder]="'messages.list.filters.searchPlaceholder' | translate"
                [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event); threadsPage.set(1)"
-               class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
+               class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-48">
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'messages.list.filters.type' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'messages.list.filters.type' | translate }}</label>
         <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); threadsPage.set(1)"
-                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="all">{{ 'messages.list.filters.typeAll' | translate }}</option>
           <option value="entity">{{ 'messages.list.filters.typeEntity' | translate }}</option>
           <option value="regulator">{{ 'messages.list.filters.typeRegulator' | translate }}</option>
@@ -43,9 +43,9 @@
         </select>
       </div>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'common.state' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.state' | translate }}</label>
         <select [ngModel]="filterState()" (ngModelChange)="filterState.set($event); threadsPage.set(1)"
-                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
           <option value="all">{{ 'state.all' | translate }}</option>
           <option value="1">{{ 'state.open' | translate }}</option>
           <option value="2">{{ 'state.closed' | translate }}</option>
@@ -54,14 +54,14 @@
       </div>
       <div class="flex flex-col justify-end">
         <button (click)="clearFilters()"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ 'messages.list.filters.clear' | translate }}
         </button>
       </div>
       <div class="flex ml-auto items-end gap-2">
         @if (!isReadOnly) {
           <button (click)="openNewThread()"
-                  class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                  class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
             </svg>

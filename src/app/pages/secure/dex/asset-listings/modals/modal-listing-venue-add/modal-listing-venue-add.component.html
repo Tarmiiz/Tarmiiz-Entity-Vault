@@ -11,17 +11,17 @@
       <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
         <div class="flex flex-wrap gap-2 items-end">
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">{{ 'common.search' | translate }}</label>
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.search' | translate }}</label>
             <input type="text" [placeholder]="'dex.listings.addVenueModal.searchPlaceholder' | translate"
               [ngModel]="search()" (ngModelChange)="search.set($event); reload()"
-              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
+              class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-72">
           </div>
           @if (modalService.input()?.tier === 3) {
             <div class="flex flex-col gap-1">
-              <label class="text-xs font-medium text-gray-500">{{ 'dex.listings.addVenueModal.countryCodeLabel' | translate }}</label>
+              <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dex.listings.addVenueModal.countryCodeLabel' | translate }}</label>
               <input type="number" [placeholder]="'dex.listings.addVenueModal.countryCodePlaceholder' | translate"
                 [ngModel]="countryFilter()" (ngModelChange)="countryFilter.set($event); reload()"
-                class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+                class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
             </div>
           }
         </div>
@@ -54,7 +54,7 @@
                       <td class="font-mono break-all">{{ v.serviceAddress }}</td>
                       <td class="text-right">
                         <button (click)="add(v)"
-                          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                           {{ 'dex.listings.addVenueModal.enableButton' | translate }}
                         </button>
                       </td>
@@ -72,7 +72,7 @@
 
       <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
         <button type="button" (click)="cancel()"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
           {{ 'common.close' | translate }}
         </button>
       </div>

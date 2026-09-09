@@ -88,7 +88,7 @@
                     class="block w-56 max-w-[55vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
                   <button type="button" (click)="saveValue(item)"
                     [disabled]="saving() === item.key || (editValue(item.key) === '')"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ 'settings.appConfig.save' | translate }}
                   </button>
                 }
@@ -103,7 +103,7 @@
                   </select>
                   <button type="button" (click)="saveValue(item)"
                     [disabled]="saving() === item.key || !isDirty(item)"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ 'settings.appConfig.save' | translate }}
                   </button>
                 }
@@ -114,7 +114,7 @@
                     class="block w-40 max-w-[45vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
                   <button type="button" (click)="saveValue(item)"
                     [disabled]="saving() === item.key || !isDirty(item)"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ 'settings.appConfig.save' | translate }}
                   </button>
                 }
@@ -125,7 +125,7 @@
                     class="block w-56 max-w-[55vw] border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black">
                   <button type="button" (click)="saveValue(item)"
                     [disabled]="saving() === item.key || !isDirty(item)"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ 'settings.appConfig.save' | translate }}
                   </button>
                 }
@@ -134,7 +134,7 @@
               @if (!item.isDefault) {
                 <button type="button" (click)="reset(item)"
                   [disabled]="saving() === item.key"
-                  class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                  class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
                   {{ 'settings.appConfig.reset' | translate }}
                 </button>
               }

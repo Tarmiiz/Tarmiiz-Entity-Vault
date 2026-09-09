@@ -40,7 +40,7 @@
       <nav class="md:w-52 shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
         @for (item of RAIL; track item.key) {
           <button type="button" (click)="goTo(item.key)"
-            class="shrink-0 md:w-full ltr:text-left rtl:text-right px-4 py-2.5 rounded-md text-sm font-semibold transition-colors"
+            class="shrink-0 md:w-full ltr:text-left rtl:text-right px-4 py-1.5 border border-transparent.5 rounded-md text-sm font-semibold transition-colors"
             [class]="rail() === item.key
               ? 'bg-blue-600 text-white'
               : 'text-gray-600 hover:bg-gray-100'">
@@ -224,28 +224,28 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <label class="text-sm">
                 <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.holderCap' | translate }}</span>
-                <input type="number" min="0" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                <input type="number" min="0" class="w-full border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
                   [disabled]="!canWrite()"
                   [ngModel]="declarationForm().holderCap"
                   (ngModelChange)="declarationForm.set({ ...declarationForm(), holderCap: $event })" />
               </label>
               <label class="text-sm">
                 <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.minTicket' | translate }}</span>
-                <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
                   [disabled]="!canWrite()"
                   [ngModel]="declarationForm().minTicket"
                   (ngModelChange)="declarationForm.set({ ...declarationForm(), minTicket: $event })" />
               </label>
               <label class="text-sm">
                 <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.maxTicket' | translate }}</span>
-                <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                <input type="number" min="0" step="any" class="w-full border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
                   [disabled]="!canWrite()"
                   [ngModel]="declarationForm().maxTicket"
                   (ngModelChange)="declarationForm.set({ ...declarationForm(), maxTicket: $event })" />
               </label>
               <label class="text-sm">
                 <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.lockupUntil' | translate }}</span>
-                <input type="date" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                <input type="date" class="w-full border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
                   [disabled]="!canWrite()"
                   [ngModel]="declarationForm().lockupUntil"
                   (ngModelChange)="declarationForm.set({ ...declarationForm(), lockupUntil: $event })" />
@@ -253,10 +253,10 @@
               <label class="text-sm">
                 <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.claimTopic' | translate }}</span>
                 @if (unknownClaimTopic()) {
-                  <input type="text" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono text-gray-800 bg-gray-100"
+                  <input type="text" class="w-full border border-gray-300 rounded-xl px-2 py-1.5 text-xs font-mono text-gray-800 bg-gray-100"
                     [value]="unknownClaimTopic()" disabled />
                 } @else {
-                  <select class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                  <select class="w-full border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
                     [disabled]="!canWrite()"
                     [ngModel]="declarationForm().requiredClaimTopic"
                     (ngModelChange)="declarationForm.set({ ...declarationForm(), requiredClaimTopic: $event })">
@@ -269,7 +269,7 @@
               </label>
               <label class="text-sm">
                 <span class="block text-xs text-gray-500 mb-1">{{ 'assets.details.compliance.claimLevel' | translate }}</span>
-                <input type="number" min="0" max="255" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
+                <input type="number" min="0" max="255" class="w-full border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-800 disabled:bg-gray-100"
                   [disabled]="!canWrite()"
                   [ngModel]="declarationForm().requiredClaimLevel"
                   (ngModelChange)="declarationForm.set({ ...declarationForm(), requiredClaimLevel: $event })" />
@@ -302,7 +302,7 @@
               }
               @if (canWrite()) {
                 <div class="flex flex-wrap items-end gap-2">
-                  <select class="border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-800 min-w-56"
+                  <select class="border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-800 min-w-56"
                     [ngModel]="jurisdictionToAdd()" (ngModelChange)="jurisdictionToAdd.set($event)">
                     <option value="">{{ 'assets.details.compliance.jurisdictionPick' | translate }}</option>
                     @for (c of countries(); track c.countryCode) {
@@ -310,7 +310,7 @@
                     }
                   </select>
                   <button type="button" (click)="addJurisdiction()" [disabled]="!jurisdictionToAdd()"
-                    class="text-xs font-medium px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                     {{ 'common.add' | translate }}
                   </button>
                 </div>
@@ -401,7 +401,7 @@
 
               @if (!isFrozen() && canWrite() && features.systemFunctionEnabled('asset-compose')) {
                 <button type="button" (click)="saveComposition()" [disabled]="!compositionDirty() || compositionSaving()"
-                  class="mt-3 text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                  class="mt-3 text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                   {{ 'assets.details.compliance.saveComposition' | translate }}
                 </button>
               }
@@ -411,7 +411,7 @@
           @if (canWrite() && features.systemFunctionEnabled('asset-declaration')) {
             <div class="border-t border-gray-200 pt-4 flex justify-end">
               <button type="button" (click)="saveDeclaration()"
-                class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
+                class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
                 {{ 'assets.details.compliance.saveDeclaration' | translate }}
               </button>
             </div>
@@ -481,7 +481,7 @@
                           type="button"
                           (click)="attachRowDocument(row)"
                           [disabled]="docRowSaving() === row.rowKey"
-                          class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 md:shrink-0">
+                          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 md:shrink-0">
                           {{ (row.documentId ? 'assets.details.compliance.docRowReplace' : 'assets.details.compliance.docRowAttach') | translate }}
                         </button>
                       }
@@ -557,7 +557,7 @@
                 <div class="flex flex-wrap gap-2">
                   @for (r of attachableRoles(); track r.role) {
                     <button type="button" (click)="attachParty(r.role)"
-                      class="text-xs font-medium px-4 py-2 rounded-xl border border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors">
+                      class="text-xs font-medium px-4 py-1.5 rounded-xl border border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors">
                       + {{ r.name }}
                     </button>
                   }

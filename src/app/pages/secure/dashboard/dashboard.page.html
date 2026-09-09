@@ -346,9 +346,9 @@
             </h3>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
-                <label class="text-xs font-medium text-gray-500">{{ 'dashboard.intervalLabel' | translate }}</label>
+                <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dashboard.intervalLabel' | translate }}</label>
                 <select [ngModel]="activityInterval()" (ngModelChange)="setInterval($event)"
-                  class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
+                  class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-24">
                   @for (i of intervalOptions; track i.value) {
                     <option [value]="i.value">{{ i.label }}</option>
                   }
@@ -356,9 +356,9 @@
               </div>
               @if (hasMultipleCurrencies()) {
                 <div class="flex items-center gap-2">
-                  <label class="text-xs font-medium text-gray-500">{{ 'dashboard.currencyLabel' | translate }}</label>
+                  <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dashboard.currencyLabel' | translate }}</label>
                   <select [ngModel]="selectedCurrency()" (ngModelChange)="setCurrency($event)"
-                    class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-20"
+                    class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-20"
                     [title]="selectedCurrencyName()">
                     @for (c of currencies(); track c.code) {
                       <option [value]="c.code" [title]="c.name">{{ c.code }}</option>
@@ -638,7 +638,7 @@
             <p class="text-xs text-amber-700 mt-1">{{ 'dashboard.bootstrapAdminBody' | translate }}</p>
           </div>
           <button (click)="goTo('/authorized/users/list')"
-            class="text-xs font-medium px-4 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1 shrink-0">
+            class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1 shrink-0">
             {{ 'dashboard.bootstrapAdminCta' | translate }}
           </button>
         </div>

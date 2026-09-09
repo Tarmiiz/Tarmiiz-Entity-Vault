@@ -202,18 +202,18 @@
         <div>
           @if (step() > 1) {
             <button type="button" (click)="prev()"
-              class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.back' | translate }}</button>
+              class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.back' | translate }}</button>
           }
         </div>
         <div class="flex space-x-3">
           <button type="button" (click)="onCancel()"
-            class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+            class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
           @if (step() < totalSteps) {
             <button type="button" (click)="next()" [disabled]="(step() === 1 && !isStep1Valid()) || (step() === 2 && !isStep2Valid())"
-              class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.next' | translate }}</button>
+              class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.next' | translate }}</button>
           } @else {
             <button type="button" (click)="onSave()" [disabled]="!reviewConfirmed()"
-              class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.submit' | translate }}</button>
+              class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ 'common.submit' | translate }}</button>
           }
         </div>
       </div>

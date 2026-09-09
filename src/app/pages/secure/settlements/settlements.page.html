@@ -6,7 +6,7 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-4 px-4 pt-2 flex gap-1">
     @for (tab of ['positions', 'obligations', 'settlements']; track tab) {
       <button (click)="activeTab.set($any(tab))"
-        class="text-sm px-4 py-2 border-b-2 transition-colors"
+        class="text-sm px-4 py-1.5 border-b-2 transition-colors"
         [class]="activeTab() === tab
           ? 'border-indigo-600 text-indigo-700 font-semibold'
           : 'border-transparent text-gray-500 hover:text-gray-700'">
@@ -25,7 +25,7 @@
         </div>
         @if (canAct() && features.systemFunctionEnabled('settlement-create')) {
           <button (click)="openCreateModal()"
-            class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
             {{ 'settlements.createBtn' | translate }}
           </button>
         }
@@ -63,7 +63,7 @@
                 <td>
                   @if (p.netOwedBySelf > 0 && canAct() && features.systemFunctionEnabled('settlement-create')) {
                     <button (click)="openCreateModal(p)"
-                      class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                       {{ 'settlements.settleBtn' | translate }}
                     </button>
                   }
@@ -155,7 +155,7 @@
         </div>
         @if (canAct() && features.systemFunctionEnabled('settlement-create')) {
           <button (click)="openCreateModal()"
-            class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+            class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
             {{ 'settlements.createBtn' | translate }}
           </button>
         }
@@ -220,19 +220,19 @@
                   <div class="flex gap-2">
                     @if (isDebtor(s) && s.state === 1 && canAct() && features.systemFunctionEnabled('settlement-confirm-sent')) {
                       <button (click)="openSentModal(s)"
-                        class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                         {{ 'settlements.confirmSentBtn' | translate }}
                       </button>
                     }
                     @if (isDebtor(s) && s.state === 1 && canAct() && features.systemFunctionEnabled('settlement-cancel')) {
                       <button (click)="cancelSettlement(s)"
-                        class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                        class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                         {{ 'common.cancel' | translate }}
                       </button>
                     }
                     @if (!isDebtor(s) && s.state === 2 && canAct() && features.systemFunctionEnabled('settlement-confirm-received')) {
                       <button (click)="openReceivedModal(s)"
-                        class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
+                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
                         {{ 'settlements.confirmReceivedBtn' | translate }}
                       </button>
                     }
@@ -263,14 +263,14 @@
       <p class="text-xs text-gray-500 mb-4">{{ 'settlements.createModal.subtitle' | translate }}</p>
       <div class="space-y-3">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'settlements.counterparty' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.counterparty' | translate }}</label>
           <input type="text" [(ngModel)]="createCounterparty" (blur)="refreshPreflight()" placeholder="0x…"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.currencyCode' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.createModal.currencyCode' | translate }}</label>
           <select [(ngModel)]="createCurrencyCode" (ngModelChange)="refreshPreflight()"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
             <option [ngValue]="0">—</option>
             @for (c of currencyOptions(); track c.code) {
               <option [ngValue]="c.code">{{ c.label }}</option>
@@ -289,21 +289,21 @@
           </div>
         }
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.amount' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.createModal.amount' | translate }}</label>
           <input type="number" min="0" step="any" [(ngModel)]="createAmount"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.memo' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.createModal.memo' | translate }}</label>
           <input type="text" [(ngModel)]="createMemo"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="createModalOpen.set(false)"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitCreate()" [disabled]="!createCounterparty || !createCurrencyCode || !createAmount"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'settlements.createBtn' | translate }}
         </button>
       </div>
@@ -321,27 +321,27 @@
       </p>
       <div class="space-y-3">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'settlements.wireRef' | translate }} *</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.wireRef' | translate }} *</label>
           <input type="text" [(ngModel)]="sentWireRef" [placeholder]="'settlements.sentModal.wireRefPlaceholder' | translate"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'settlements.sentModal.receipt' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.sentModal.receipt' | translate }}</label>
           <input type="file" (change)="onReceiptFileChange($event)"
-            class="text-xs text-gray-600 file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300">
+            class="text-xs text-gray-600 file:mr-2 file:px-3 file:py-1.5 file:rounded-xl file:border-0 file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300">
           <p class="text-xs text-gray-400">{{ 'settlements.sentModal.receiptNote' | translate }}</p>
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'settlements.createModal.memo' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.createModal.memo' | translate }}</label>
           <input type="text" [(ngModel)]="sentMemo"
-            class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="sentModalOpen.set(false)"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitConfirmSent()" [disabled]="!sentWireRef"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'settlements.confirmSentBtn' | translate }}
         </button>
       </div>
@@ -362,15 +362,15 @@
         {{ 'settlements.receivedModal.warning' | translate }}
       </p>
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-gray-500">{{ 'settlements.receivedModal.note' | translate }}</label>
+        <label class="text-xs font-medium text-gray-500 ps-2">{{ 'settlements.receivedModal.note' | translate }}</label>
         <input type="text" [(ngModel)]="receivedNote"
-          class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="receivedModalOpen.set(false)"
-          class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
         <button (click)="submitConfirmReceived()"
-          class="text-xs font-medium px-4 py-2 rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-700 text-white hover:bg-green-800 transition-colors">
           {{ 'settlements.confirmReceivedBtn' | translate }}
         </button>
       </div>

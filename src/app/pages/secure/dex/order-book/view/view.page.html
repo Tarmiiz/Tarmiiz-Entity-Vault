@@ -23,14 +23,14 @@
     <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
       <div class="flex flex-wrap gap-2 items-end">
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.asset' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dex.orderBook.filters.asset' | translate }}</label>
           <input type="text" [ngModel]="baseAsset()" (ngModelChange)="baseAsset.set($event)"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.scope' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dex.orderBook.filters.scope' | translate }}</label>
           <select [ngModel]="scope()" (ngModelChange)="scope.set($event)"
-            class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400">
             <option value="venue">{{ 'dex.orderBook.filters.scopeOptions.venue' | translate }}</option>
             <option value="country">{{ 'dex.orderBook.filters.scopeOptions.country' | translate }}</option>
             <option value="global">{{ 'dex.orderBook.filters.scopeOptions.global' | translate }}</option>
@@ -38,28 +38,28 @@
         </div>
         @if (scope() === 'venue') {
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.venueAddress' | translate }}</label>
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dex.orderBook.filters.venueAddress' | translate }}</label>
             <input type="text" [ngModel]="dexService()" (ngModelChange)="dexService.set($event)"
-              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
+              class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono w-72">
           </div>
         }
         @if (scope() === 'country') {
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.countryCode' | translate }}</label>
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dex.orderBook.filters.countryCode' | translate }}</label>
             <input type="number" [ngModel]="countryCode()" (ngModelChange)="countryCode.set($event)"
-              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+              class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.currencyCode' | translate }}</label>
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dex.orderBook.filters.currencyCode' | translate }}</label>
             <input type="number" [ngModel]="currencyCode()" (ngModelChange)="currencyCode.set($event)"
-              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+              class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
           </div>
         }
         @if (scope() === 'global') {
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500">{{ 'dex.orderBook.filters.currencyCode' | translate }}</label>
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dex.orderBook.filters.currencyCode' | translate }}</label>
             <input type="number" [ngModel]="currencyCode()" (ngModelChange)="currencyCode.set($event)"
-              class="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
+              class="text-xs border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 w-28">
           </div>
         }
         <div class="flex flex-col justify-end">
@@ -68,7 +68,7 @@
         <div class="flex ml-auto items-end gap-2">
           @if (isExec() && features.systemFunctionEnabled('dex-match')) {
             <button (click)="match()" [disabled]="!canMatch()"
-              class="text-xs font-medium px-4 py-2 rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {{ 'dex.orderBook.matchSelected' | translate }}
             </button>
           }

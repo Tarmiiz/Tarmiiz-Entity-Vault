@@ -218,7 +218,7 @@
 
             <div formArrayName="metadata">
               <div class="flex items-center justify-between mb-2">
-                <label class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.additionalMetadataLabel' | translate }}</label>
+                <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.addModal.wizard.additionalMetadataLabel' | translate }}</label>
                 <button type="button" (click)="addMetadataRow()"
                   class="text-xs text-indigo-600 hover:text-indigo-800">{{ 'assets.addModal.wizard.addFieldButton' | translate }}</button>
               </div>
@@ -272,7 +272,7 @@
             <p class="text-sm text-gray-500 mb-2">{{ 'assets.addModal.wizard.step5Intro' | translate }}</p>
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.ownerAddressLabel' | translate }}</label>
+                <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.addModal.wizard.ownerAddressLabel' | translate }}</label>
                 <button type="button" (click)="useSelf('owner')" class="text-xs text-indigo-600 hover:text-indigo-800">{{ 'assets.addModal.wizard.useSelf' | translate }}</button>
               </div>
               <input type="text" placeholder="0x..." formControlName="owner"
@@ -284,7 +284,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.issuerAddressLabel' | translate }}</label>
+                <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.addModal.wizard.issuerAddressLabel' | translate }}</label>
                 <button type="button" (click)="useSelf('issuer')" class="text-xs text-indigo-600 hover:text-indigo-800">{{ 'assets.addModal.wizard.useSelf' | translate }}</button>
               </div>
               <input type="text" placeholder="0x..." formControlName="issuer"
@@ -296,7 +296,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.managerAddressLabel' | translate }}</label>
+                <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.addModal.wizard.managerAddressLabel' | translate }}</label>
                 <button type="button" (click)="useSelf('manager')" class="text-xs text-indigo-600 hover:text-indigo-800">{{ 'assets.addModal.wizard.useSelf' | translate }}</button>
               </div>
               <input type="text" placeholder="0x..." formControlName="manager"
@@ -324,7 +324,7 @@
               <div class="flex items-center gap-2">
                 <input type="checkbox" id="noCreditSettlement" formControlName="noCreditSettlement"
                   [attr.disabled]="selectedServiceHasPaymentProcessor ? null : true"
-                  class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-40">
+                  class="h-4 w-4 rounded-xl border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-40">
                 <label for="noCreditSettlement" class="text-sm" [class]="selectedServiceHasPaymentProcessor ? 'text-gray-700' : 'text-gray-400'">{{ 'assets.addModal.wizard.noCreditSettlementLabel' | translate }}</label>
               </div>
               @if (!selectedServiceHasPaymentProcessor) {
@@ -337,7 +337,7 @@
           @if (currentStep() === 6) {
             <p class="text-sm text-gray-500 mb-2">{{ 'assets.addModal.wizard.stepDocsIntro' | translate }}</p>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.documentsLabel' | translate }}</label>
+              <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.addModal.wizard.documentsLabel' | translate }}</label>
               <label class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">
                 {{ 'assets.addModal.wizard.addFilesButton' | translate }}
                 <input type="file" multiple class="hidden" (change)="onDocFilesSelected($event)">
@@ -379,7 +379,7 @@
           @if (currentStep() === 7) {
             <p class="text-sm text-gray-500 mb-2">{{ 'assets.addModal.wizard.stepImagesIntro' | translate }}</p>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-xs font-medium text-gray-500">{{ 'assets.addModal.wizard.imagesLabel' | translate }}</label>
+              <label class="text-xs font-medium text-gray-500 ps-2">{{ 'assets.addModal.wizard.imagesLabel' | translate }}</label>
               <label class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">
                 {{ 'assets.addModal.wizard.addImagesButton' | translate }}
                 <input type="file" multiple accept="image/*" class="hidden" (change)="onImageFilesSelected($event)">
@@ -577,7 +577,7 @@
             <div class="flex items-start gap-2 mt-2">
               <input type="checkbox" id="reviewConfirmed" [checked]="reviewConfirmed()"
                 (change)="reviewConfirmed.set($any($event.target).checked)"
-                class="h-4 w-4 mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                class="h-4 w-4 mt-0.5 rounded-xl border-gray-300 text-indigo-600 focus:ring-indigo-500">
               <label for="reviewConfirmed" class="text-xs text-gray-600">
                 {{ 'assets.addModal.wizard.confirmReviewLabel' | translate }}
               </label>
@@ -591,24 +591,24 @@
           <div>
             @if (currentStep() > 1) {
               <button type="button" (click)="prevStep()"
-                class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
                 {{ 'common.back' | translate }}
               </button>
             }
           </div>
           <div class="flex space-x-3">
             <button type="button" (click)="onCancel()"
-              class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+              class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
               {{ 'common.cancel' | translate }}
             </button>
             @if (currentStep() < totalSteps) {
               <button type="button" (click)="nextStep()" [disabled]="!isCurrentStepValid()"
-                class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ 'common.next' | translate }}
               </button>
             } @else {
               <button type="submit" [disabled]="addForm.invalid || !reviewConfirmed()"
-                class="text-xs font-medium px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ 'assets.addModal.submit' | translate }}
               </button>
             }

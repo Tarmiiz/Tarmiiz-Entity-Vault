@@ -23,40 +23,40 @@
     -->
     @if (canCounter()) {
       <button (click)="counterDeal()"
-        class="text-xs font-medium px-4 py-2 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
+        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
         {{ 'dex.deals.actions.counter' | translate }}
       </button>
     }
     @if (canAccept()) {
       <button (click)="acceptDeal()"
-        class="text-xs font-medium px-4 py-2 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
         {{ 'dex.deals.actions.accept' | translate }}
       </button>
     }
     @if (canDecline()) {
       <button (click)="declineDeal()"
-        class="text-xs font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+        class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
         {{ 'dex.deals.actions.decline' | translate }}
       </button>
     }
     @if (canWithdraw()) {
       <button (click)="withdrawDeal()"
-        class="text-xs font-medium px-4 py-2 rounded-xl border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
+        class="text-xs font-medium px-4 py-1.5 rounded-xl border border-amber-400 text-amber-800 hover:bg-amber-50 transition-colors">
         {{ 'dex.deals.actions.withdraw' | translate }}
       </button>
     }
     @if (canApprove()) {
       <button (click)="approveCross()"
-        class="text-xs font-medium px-4 py-2 rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
+        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         {{ 'dex.deals.actions.approve' | translate }}
       </button>
     }
     @if (canDecide()) {
       <button (click)="rejectCross()"
-        class="text-xs font-medium px-4 py-2 rounded-xl bg-red-700 text-white hover:bg-red-800 transition-colors">
+        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-red-700 text-white hover:bg-red-800 transition-colors">
         {{ 'dex.deals.actions.reject' | translate }}
       </button>
     }
@@ -104,16 +104,16 @@
         </div>
 
         <div class="flex items-center border-b border-gray-200">
-          <button (click)="tab.set('terms')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors"
+          <button (click)="tab.set('terms')" class="px-4 py-1.5.5 text-xs font-medium border-b-2 transition-colors"
             [class.border-indigo-600]="tab() === 'terms'" [class.text-indigo-700]="tab() === 'terms'"
             [class.border-transparent]="tab() !== 'terms'" [class.text-gray-500]="tab() !== 'terms'">{{ 'dex.deals.details.tabs.terms' | translate }}</button>
-          <button (click)="tab.set('rounds')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors"
+          <button (click)="tab.set('rounds')" class="px-4 py-1.5.5 text-xs font-medium border-b-2 transition-colors"
             [class.border-indigo-600]="tab() === 'rounds'" [class.text-indigo-700]="tab() === 'rounds'"
             [class.border-transparent]="tab() !== 'rounds'" [class.text-gray-500]="tab() !== 'rounds'">
             {{ 'dex.deals.details.tabs.rounds' | translate }}
             <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-700 text-[10px]">{{ rounds().length }}</span>
           </button>
-          <button (click)="tab.set('settlement')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors"
+          <button (click)="tab.set('settlement')" class="px-4 py-1.5.5 text-xs font-medium border-b-2 transition-colors"
             [class.border-indigo-600]="tab() === 'settlement'" [class.text-indigo-700]="tab() === 'settlement'"
             [class.border-transparent]="tab() !== 'settlement'" [class.text-gray-500]="tab() !== 'settlement'">{{ 'dex.deals.details.tabs.settlement' | translate }}</button>
         </div>
