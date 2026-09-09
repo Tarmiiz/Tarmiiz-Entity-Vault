@@ -91,9 +91,17 @@ export class CreditPage implements OnInit {
   activeTotals = computed(() => this.totals().filter(t => t.balance !== 0));
   activePools  = computed(() => this.pools().filter(p => p.pool !== 0 || p.claims !== 0));
 
-  /** Currencies that earn a column: any non-zero claim or hold on any row, or any service pool. */
+  /*
+      The currencies the regulator has APPROVED this entity to operate in (every state — a
+      suspended approval still names a currency the entity has positions in). They are the
+      columns: an entity approved for EGP alone should not see SAR / USD / EUR columns of zeros.
+      A currency with a non-zero claim, hold or pool that is NOT in the approved set is still
+      shown — hiding money is never the right default — but nothing else earns a column.
+  */
+  approvedCodes = signal<Set<number>>(new Set());
+
   uniqueCurrencies = computed(() => {
-    const live = new Set<number>();
+    const live = new Set<number>(this.approvedCodes());
     for (const t of this.totals()) if (t.balance !== 0 || t.withheld !== 0) live.add(t.currencyCode);
     for (const r of this.rows()) for (const b of r.balances) if (b.balance !== 0 || b.withheld !== 0) live.add(b.currencyCode);
     for (const p of this.pools()) if (p.pool !== 0 || p.claims !== 0) live.add(p.currencyCode);
@@ -164,7 +172,14 @@ export class CreditPage implements OnInit {
       this.loadingService.show(this.translate.instant('credit.loadingOverview'));
     }
     try {
-      const data = await this.apiService.vaultGetEntityCreditOverview();
+      const [data, approved] = await Promise.all([
+        this.apiService.vaultGetEntityCreditOverview(),
+        // Non-fatal: without it the columns fall back to the currencies that carry money.
+        this.apiService.vaultGetApprovedCurrencies().catch(() => null),
+      ]);
+      if (approved?.currencies) {
+        this.approvedCodes.set(new Set(approved.currencies.map((c: any) => Number(c.code))));
+      }
       if (data) {
         this.totals.set((data.totals || []).map((t: any) => ({
           currencyCode: t.currencyCode,
@@ -190,11 +205,16 @@ export class CreditPage implements OnInit {
           state: r.state ?? 0,
           stateName: r.stateName || '',
           suspended: !!r.suspended,
+          // ⚠️ `withheld` / `available` MUST be mapped: the column test reads `b.withheld !== 0`,
+          // and an unmapped field is `undefined`, which is `!== 0` — every currency lit up as
+          // "live" and the page showed four columns of zeros (2026-09-09).
           balances: (r.balances || []).map((b: any) => ({
             currencyCode: b.currencyCode,
             currencyName: b.currencyName,
             currencySymbol: b.currencySymbol,
             balance: Number(b.balance) || 0,
+            withheld: Number(b.withheld) || 0,
+            available: Number(b.available) || 0,
           })),
         })));
       }
