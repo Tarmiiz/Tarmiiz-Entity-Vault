@@ -13,7 +13,7 @@ import {
   ClearingDelivery, ClearingHold, ClearingCycle, ClearingPosition, ClearingMember, ClearingAccount,
   DistributionAgreement, PrimaryTrade, DexOffering,
   DexDeal, DexDealRound, DexDealCounterparty, DexRfqRequest, DexRfqDealer,
-  ServiceCoverageAggregate, ServiceLiquidityRow,
+  ServiceCoverageAggregate, ServiceLiquidityRow, IdentityDisclosure,
 } from '../models/data.model';
 
 /**
@@ -1998,6 +1998,31 @@ export class ApiService {
 
   async ekycImages(transactionId: string, didHash?: string) {
     return this.authGet('/ekyc/images', { transactionId, ...(didHash ? { didHash } : {}) });
+  }
+
+  /*
+      Regulator-issued identity DISCLOSURE for one subscriber at one of our services (Phase
+      22.10). The regulator availed the service named field families and encrypted exactly those
+      for it; this reads the projection back. Same `view-identity-data` gate as `/ekyc/*`.
+
+      ⚠️ NOT through `authGet`, on purpose: that helper collapses every non-2xx to null, and here
+      404 and 502 are DIFFERENT FACTS the page must show differently — "nothing has been availed"
+      versus "something was availed and will not open" send an operator to different places.
+  */
+  async disclosureRead(didHash: string, service: string): Promise<{ status: number; data: IdentityDisclosure | null; error?: string }> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + '/disclosures/' + didHash,
+        headers: { 'Content-Type': 'application/json', ...(await this.authHeader()), ...this.getAuditHeaders() },
+        params: { service },
+      });
+      if (response.status === 401) { this._handleAuthFailure(); return { status: 401, data: null }; }
+      if (response.status >= 300) return { status: response.status, data: null, error: response.data?.error };
+      return { status: response.status, data: response.data as IdentityDisclosure };
+    } catch {
+      return { status: 0, data: null };
+    }
   }
 
   // ─── Vault — Users ────────────────────────────────────────────────────────────

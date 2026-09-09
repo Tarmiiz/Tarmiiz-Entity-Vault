@@ -15,6 +15,30 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-09
+
+#### Added — **Disclosed by your regulator** on the subscription Identity tab (Phase 22.10 / C.5)
+
+The Identity Data tab on [subscriptions/details](src/app/pages/secure/subscriptions/details/)
+showed only the verifications THIS entity originated — which, for a subscriber onboarded on the
+plugin (sealed) path, is nothing at all: the regulator held the only key. What the regulator chooses
+to avail this service is now the tab's first section, read from the Entity API's
+`GET /disclosures/:didHash?service=` via the new `ApiService.disclosureRead`.
+
+- Renders the projection **verbatim** — scope pills, issued-at + document id, the source
+  verification's ref / level / custody, a `<dl>` of the availed `fields` (labels reused from the
+  own-originated table where the key is known), the `contacts` block (this service's OWN onboarding
+  contacts only, with the OTP / attested pill), ID images, market identifiers, a collapsed raw
+  provider payload, and **`unfulfilled`** in amber — availed but absent at the source, so a blank is
+  attributable rather than reading as "this person has no address". There is nothing to filter here
+  and nothing was added: the document holds only what was availed.
+- **404 and 502 are kept apart.** `disclosureRead` deliberately bypasses `authGet`, which collapses
+  every non-2xx to null: "nothing has been availed" (grey empty state) and "something was availed
+  and will not open" (red) send an operator to different places.
+- Same `view-identity-data` gate and the same short-circuit as the eKYC reads. The tab's hint copy
+  no longer claims only own-originated verifications are visible. `IdentityDisclosure` model;
+  `subscriptions.details.identity.disclosure.*` i18n in en + ar.
+
 ### 2026-09-08
 
 #### Changed — liquidity shortfall surfaces restored, class-aware and issuer-keyed (Phase 31)

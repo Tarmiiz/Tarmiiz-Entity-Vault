@@ -425,6 +425,35 @@ export class Subscription {
   ) {}
 }
 
+/**
+ * A regulator-issued identity disclosure projection (Phase 22.10), as `GET /disclosures/:didHash`
+ * returns it — the Entity API passes the regulator's document through VERBATIM, so this mirrors
+ * the issuer's `tarmiiz-identity-view-v1` shape. `fields` holds only the granted canonical
+ * fields; `blocks` the granted whole-subtree scopes; `unfulfilled` names what was granted but
+ * absent at the source, so a blank is attributable rather than silent.
+ */
+export interface IdentityDisclosure {
+  status: boolean;
+  subject: { didHash: string; shape: 'individual' | 'entity' | null };
+  service: string;
+  /** The REGULATOR's template — the document owner. Never the subject. */
+  issuer: string;
+  documentId: number;
+  issuedBy: string | null;
+  /** Epoch MILLISECONDS. */
+  issuedAt: number | null;
+  source: { providerTrxRefNo?: string | null; validator?: string | null; level?: number | null; custody?: string | null; masterDocumentId?: number | null } | null;
+  scopes: { id: number; key: string }[];
+  fields: Record<string, any>;
+  blocks: {
+    contacts?: { email: string | null; mobile: string | null; verifiedBy: string | null };
+    images?: { idFront?: string | null; idBack?: string | null };
+    raw?: any;
+    identifiers?: any;
+  };
+  unfulfilled: string[];
+}
+
 export class ValidatorIdentity {
   constructor (
     public identity: string,

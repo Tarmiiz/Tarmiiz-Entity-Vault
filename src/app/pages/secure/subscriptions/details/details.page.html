@@ -832,6 +832,112 @@
              Foreign-originated verifications never appear; the DID number is never shown. -->
         @if (activeTab() === 'identity' && features.systemFunctionEnabled('view-identity-data')) {
           <div class="p-4 space-y-4">
+
+            <!-- Disclosed by the regulator (Phase 22.10). The projection holds ONLY what the
+                 regulator availed this service — there is nothing to filter here and nothing to
+                 add: a field this service may not see is not in the ciphertext it can open. -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div class="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
+                <h3 class="text-sm font-semibold text-indigo-900">{{ 'subscriptions.details.identity.disclosure.title' | translate }}</h3>
+                <p class="text-xs text-indigo-800">{{ 'subscriptions.details.identity.disclosure.hint' | translate }}</p>
+              </div>
+              <div class="p-4">
+                @if (disclosureState() === 'idle' && ekycLoading()) {
+                  <p class="text-sm text-gray-500">{{ 'common.loading' | translate }}</p>
+                } @else if (disclosureState() === 'none' || disclosureState() === 'idle') {
+                  <p class="text-sm text-gray-500">{{ 'subscriptions.details.identity.disclosure.empty' | translate }}</p>
+                } @else if (disclosureState() === 'unreadable') {
+                  <!-- A DIFFERENT fact from empty: something was availed and will not open. -->
+                  <p class="text-sm text-red-700">{{ 'subscriptions.details.identity.disclosure.unreadable' | translate }}</p>
+                } @else if (disclosure(); as d) {
+                  <div class="space-y-3">
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                      <span>{{ 'subscriptions.details.identity.disclosure.scopes' | translate }}:</span>
+                      @for (s of d.scopes; track s.id) {
+                        <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-semibold">{{ s.key }}</span>
+                      }
+                      <span class="ml-auto">
+                        {{ 'subscriptions.details.identity.disclosure.issuedAt' | translate }}:
+                        <span class="text-gray-700">{{ utils.formatTime(d.issuedAt) }}</span>
+                        · {{ 'subscriptions.details.identity.disclosure.document' | translate }} #{{ d.documentId }}
+                      </span>
+                    </div>
+                    @if (d.source?.providerTrxRefNo || d.source?.level) {
+                      <div class="text-xs text-gray-500">
+                        {{ 'subscriptions.details.identity.disclosure.source' | translate }}:
+                        <span class="font-mono text-gray-700">{{ d.source?.providerTrxRefNo || '—' }}</span>
+                        @if (d.source?.level) { <span class="ml-2 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">L{{ d.source?.level }}</span> }
+                        @if (d.source?.custody) { <span class="ml-2 px-2 py-0.5 rounded bg-gray-100 text-gray-700">{{ d.source?.custody }}</span> }
+                      </div>
+                    }
+
+                    @if (disclosureFieldRows().length) {
+                      <dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                        @for (f of disclosureFieldRows(); track f.key) {
+                          <dt class="text-gray-500">{{ f.label }}</dt>
+                          <dd class="font-semibold text-gray-800 break-all">{{ f.value }}</dd>
+                        }
+                      </dl>
+                    }
+
+                    @if (d.blocks?.contacts; as c) {
+                      <div class="text-sm">
+                        <div class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.identity.disclosure.contacts' | translate }}</div>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-1">
+                          @if (c.email)  { <dt class="text-gray-500">{{ 'subscriptions.details.identity.disclosure.email' | translate }}</dt><dd class="font-semibold text-gray-800">{{ c.email }}</dd> }
+                          @if (c.mobile) { <dt class="text-gray-500">{{ 'subscriptions.details.identity.disclosure.mobile' | translate }}</dt><dd class="font-semibold text-gray-800">{{ c.mobile }}</dd> }
+                        </dl>
+                        @if (c.verifiedBy) {
+                          <span class="inline-block mt-1 px-2 py-0.5 rounded text-xs"
+                            [class.bg-emerald-50]="c.verifiedBy === 'otp'" [class.text-emerald-700]="c.verifiedBy === 'otp'"
+                            [class.bg-amber-50]="c.verifiedBy !== 'otp'" [class.text-amber-700]="c.verifiedBy !== 'otp'">
+                            {{ 'subscriptions.details.identity.' + c.verifiedBy | translate }}</span>
+                        }
+                      </div>
+                    }
+
+                    @if (disclosureImages(); as imgs) {
+                      <div class="flex gap-3">
+                        @if (imgs.front) { <img [src]="imgs.front" class="max-h-40 rounded border" alt="ID front" /> }
+                        @if (imgs.back)  { <img [src]="imgs.back"  class="max-h-40 rounded border" alt="ID back" /> }
+                      </div>
+                    }
+
+                    @if (disclosureIdentifiers().length) {
+                      <div class="text-sm">
+                        <div class="text-xs text-gray-500 mb-1">{{ 'subscriptions.details.identity.disclosure.identifiers' | translate }}</div>
+                        <ul class="list-disc ml-5 text-gray-800">
+                          @for (id of disclosureIdentifiers(); track $index) {
+                            <li><span class="text-gray-500">{{ id.name || id.idType }}:</span> <span class="font-mono">{{ id.value }}</span></li>
+                          }
+                        </ul>
+                      </div>
+                    }
+
+                    @if (disclosureRawJson(); as raw) {
+                      <div class="text-sm">
+                        <button (click)="showDisclosureRaw.set(!showDisclosureRaw())"
+                          class="text-xs px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                          {{ (showDisclosureRaw() ? 'subscriptions.details.identity.disclosure.hideRaw' : 'subscriptions.details.identity.disclosure.showRaw') | translate }}
+                        </button>
+                        @if (showDisclosureRaw()) {
+                          <pre class="mt-2 p-3 bg-gray-50 rounded text-xs text-gray-700 overflow-x-auto">{{ raw }}</pre>
+                        }
+                      </div>
+                    }
+
+                    @if (d.unfulfilled.length) {
+                      <!-- Availed but absent at the source — named, so a blank is attributable
+                           rather than reading as "this person has no address". -->
+                      <div class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                        {{ 'subscriptions.details.identity.disclosure.unfulfilled' | translate }}: {{ d.unfulfilled.join(', ') }}
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
             <p class="text-xs text-gray-500">{{ 'subscriptions.details.identity.hint' | translate }}</p>
             @if (ekycLoading() && !ekycVerifications().length) {
               <p class="text-sm text-gray-500">{{ 'common.loading' | translate }}</p>

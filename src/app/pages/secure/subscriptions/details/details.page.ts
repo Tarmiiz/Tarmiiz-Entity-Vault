@@ -15,7 +15,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
-import { AssetTransaction, CreditBalance, CreditTransaction, RegulatorHold, Subscription, SubscriptionHolding, User } from '../../../../shared/models/data.model';
+import { AssetTransaction, CreditBalance, CreditTransaction, IdentityDisclosure, RegulatorHold, Subscription, SubscriptionHolding, User } from '../../../../shared/models/data.model';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalSubscriptionStateService } from '../modals/modal-subscription-state/modal-subscription-state.service';
@@ -92,6 +92,42 @@ export class DetailsPage implements OnInit {
   ekycSelected = signal<string | null>(null);
   ekycDetail = signal<any | null>(null);
   ekycImages = signal<{ front: string | null; back: string | null } | null>(null);
+
+  // ── Regulator-issued disclosure (Phase 22.10) — the SECOND source on the Identity tab ───────
+  // What the regulator availed THIS service about this subscriber, as a projection document
+  // wrapped for the service. Distinct from the own-originated verifications above: those exist
+  // only for subscribers this entity onboarded on the caller-attested path; a plugin-path (sealed)
+  // subscriber has none, and this is the only identity data the service will ever see about them.
+  // 'none' (404) and 'unreadable' (502) are kept apart on purpose — see ApiService.disclosureRead.
+  disclosure      = signal<IdentityDisclosure | null>(null);
+  disclosureState = signal<'idle' | 'none' | 'ok' | 'unreadable'>('idle');
+  disclosureFieldRows = computed(() =>
+    Object.entries(this.disclosure()?.fields ?? {}).map(([key, value]) => ({ key, label: this.disclosureFieldLabel(key), value })));
+  disclosureImages = computed(() => {
+    const img = this.disclosure()?.blocks?.images;
+    if (!img) return null;
+    return {
+      front: img.idFront ? 'data:image/jpeg;base64,' + img.idFront : null,
+      back:  img.idBack  ? 'data:image/jpeg;base64,' + img.idBack  : null,
+    };
+  });
+  disclosureRawJson = computed(() => {
+    const raw = this.disclosure()?.blocks?.raw;
+    return raw == null ? null : JSON.stringify(raw, null, 2);
+  });
+  disclosureIdentifiers = computed(() => {
+    const ids = this.disclosure()?.blocks?.identifiers;
+    if (!ids) return [];
+    return Array.isArray(ids) ? ids : Object.entries(ids).map(([k, v]) => ({ idType: k, value: v }));
+  });
+  showDisclosureRaw = signal(false);
+
+  /** Reuse the own-originated table's labels where the key is known; otherwise humanise the key. */
+  disclosureFieldLabel(key: string): string {
+    const known = this.ekycDisplayFields.find(f => f.key === key);
+    if (known) return this.translate.instant(known.label);
+    return key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+  }
 
   loadingData: boolean = false;
   refreshing = signal(false);
@@ -369,7 +405,17 @@ export class DetailsPage implements OnInit {
         this.identityHash.set(hash);
       }
       if (hash) {
-        this.ekycVerifications.set(await this.apiService.ekycVerifications(hash));
+        const service = this.subscription()?.service;
+        const [verifications, disclosed] = await Promise.all([
+          this.apiService.ekycVerifications(hash),
+          service ? this.apiService.disclosureRead(hash, service) : Promise.resolve(null),
+        ]);
+        this.ekycVerifications.set(verifications);
+        if (disclosed) {
+          if (disclosed.status === 200 && disclosed.data) { this.disclosure.set(disclosed.data); this.disclosureState.set('ok'); }
+          else if (disclosed.status === 404)              { this.disclosure.set(null); this.disclosureState.set('none'); }
+          else                                            { this.disclosure.set(null); this.disclosureState.set('unreadable'); }
+        }
       }
       this.ekycLoaded.set(true);
     } finally {
