@@ -2468,6 +2468,14 @@ export class ApiService {
     return data?.identifiers ?? [];
   }
 
+  // Phase 17 rows whose subject is THIS entity, read from the chain — the asset-issuance row and
+  // the eleven per-class rows the Add Asset picker narrows on. READ ONLY (a grant is the
+  // regulator's act). `null` = the CALL failed; the picker must not hide classes on it.
+  async vaultGetEntityGrants(): Promise<{ readFailed: boolean; classes: { classId: number; key: string; granted: boolean; readable: boolean }[] } | null> {
+    const data = await this.vaultGet('/entity/grants');
+    return data ? { readFailed: !!data.readFailed, classes: Array.isArray(data.classes) ? data.classes : [] } : null;
+  }
+
   async vaultUpdateEntityIdentifier(body: { idType: number; value: string; reason?: string }) {
     const data = await this.vaultPut('/entity/identifiers', body);
     return data ?? null;

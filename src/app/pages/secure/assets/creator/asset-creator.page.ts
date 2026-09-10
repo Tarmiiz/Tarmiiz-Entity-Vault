@@ -94,7 +94,15 @@ export class AssetCreatorPage {
   // '' = fine · 'regulators' = the country's regulators did not load · 'load' = the formula
   // read itself failed. Three states, because two of them are failures that happen to look
   // exactly like the legitimate empty one.
-  formulasError = signal<'' | 'regulators' | 'load'>('');
+  formulasError = signal<'' | 'regulators' | 'load' | 'grants'>('');
+  // Phase 4.2 (as Phase 17 rows, 2026-09-10) — the base classes this ISSUER may issue, read
+  // from the chain with the formulas. The picker offers only formulas over a granted class:
+  // `Assets.registerAsset` refuses the rest, after the token has been deployed. `null` means
+  // the grants read FAILED, and a failed read hides NOTHING — every formula stays offered and
+  // the failure is named — because "you may issue no class" is the reassuring rendering of an
+  // outage and the wrong one.
+  grantedClasses = signal<Set<number> | null>(null);
+  grantsReadFailed = signal(false);
   // ⚠️ V30 MEANING CHANGE, not a relabel. These were 'Single' (bid == ask) and 'Bid/Ask'
   // (spread allowed) — the shape of a QUOTE, which left every book to guess how to trade the
   // asset. They now say how the asset is PRICED. Both vocabularies use 1 and 2, so the old
@@ -783,7 +791,10 @@ export class AssetCreatorPage {
       return;
     }
     try {
-      const rows = await this.apiService.assetClassFormulas({ state: 2 });
+      const [rows, grants] = await Promise.all([
+        this.apiService.assetClassFormulas({ state: 2 }),
+        this.apiService.vaultGetEntityGrants(),
+      ]);
       // `null` is the api service's signal that the CALL failed; `[]` is a real empty answer.
       // Treating the first as the second is the same collapse again, one layer down.
       if (rows === null) {
@@ -792,7 +803,24 @@ export class AssetCreatorPage {
         return;
       }
       const known = new Set(this.regulators().map(r => r.address.toLowerCase()));
-      this.formulas.set(rows.filter((f: ClassFormula) => known.has(String(f.regulator).toLowerCase())));
+      const ofMyRegulators = rows.filter((f: ClassFormula) => known.has(String(f.regulator).toLowerCase()));
+
+      // Phase 4.2 — narrow to the classes this issuer is GRANTED. A failed grants read (the call,
+      // or any single row) keeps every formula and flags it; only a successful read narrows.
+      if (!grants || grants.readFailed) {
+        this.grantedClasses.set(null);
+        this.grantsReadFailed.set(true);
+        this.formulas.set(ofMyRegulators);
+        return;
+      }
+      const granted = new Set(grants.classes.filter(c => c.granted).map(c => Number(c.classId)));
+      this.grantedClasses.set(granted);
+      this.grantsReadFailed.set(false);
+      const usable = ofMyRegulators.filter((f: ClassFormula) => granted.has(Number(f.base_class)));
+      this.formulas.set(usable);
+      // Formulas exist but none is over a class this issuer may issue: a DIFFERENT fact from
+      // "no formulas published", and it names the regulator's grant, not its catalog.
+      if (ofMyRegulators.length > 0 && usable.length === 0) this.formulasError.set('grants');
     } catch {
       this.formulas.set([]);
       this.formulasError.set('load');

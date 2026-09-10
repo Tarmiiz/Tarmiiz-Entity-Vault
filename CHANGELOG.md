@@ -17,6 +17,16 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-10
 
+#### Changed — the Add Asset class picker offers only the classes this issuer is GRANTED (Phase 4.2 as Phase 17 rows)
+
+- [asset-creator.page.ts](src/app/pages/secure/assets/creator/asset-creator.page.ts) reads
+  `GET /entity/grants` alongside the regulator's formulas and narrows the picker to formulas whose
+  base class the issuer holds a `grant.assets.class.<slug>` row for — `Assets.registerAsset`
+  refuses the rest, after the token has been deployed. A **failed grants read hides nothing**: the
+  list stays whole and a footnote says it is un-narrowed (`classGrantsUnread`). A new empty state
+  (`noClassGrants`) distinguishes "definitions exist, none granted to you" from "none published";
+  the fix it names is a Permissions-tab act, not a new definition. en + ar. Production build clean.
+
 #### Changed — navigation is licence-aware: a module the regulator has not licensed is hidden, not opened into a 403
 
 - `FeaturesService.menuEnabled()` now folds THREE server-resolved layers — entity mode, the

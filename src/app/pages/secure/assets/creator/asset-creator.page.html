@@ -83,6 +83,14 @@
                   <div class="rounded-md bg-red-50 border border-red-200 px-3 py-2">
                     <p class="text-sm text-red-800">{{ 'assets.addModal.wizard.formulasLoadFailed' | translate }}</p>
                   </div>
+                } @else if (formulasError() === 'grants') {
+                  <!-- Phase 4.2 — formulas exist, but none is over a class this issuer is GRANTED.
+                       Named as the regulator's grant, not its catalog: the fix is a Permissions-tab
+                       act on the entity, not a new class definition. -->
+                  <div class="rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+                    <p class="text-sm text-amber-800">{{ 'assets.addModal.wizard.noClassGrants' | translate }}</p>
+                    <p class="text-xs text-amber-700 mt-1">{{ 'assets.addModal.wizard.noClassGrantsHint' | translate }}</p>
+                  </div>
                 } @else {
                   <div class="rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
                     <p class="text-sm text-amber-800">{{ 'assets.addModal.wizard.noFormulas' | translate:{ regulators: regulatorNames() } }}</p>
@@ -98,6 +106,10 @@
                   }
                 </select>
                 <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.formulaHint' | translate }}</p>
+                @if (grantsReadFailed()) {
+                  <!-- A failed grants read hides nothing — the list is UNFILTERED and says so. -->
+                  <p class="text-xs text-amber-700 mt-1">{{ 'assets.addModal.wizard.classGrantsUnread' | translate }}</p>
+                }
               }
             </div>
             <!-- Base class + regulator, both DERIVED from the formula. Shown because they are
