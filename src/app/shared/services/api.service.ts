@@ -1064,7 +1064,9 @@ export class ApiService {
     return data ? { totalCount: data.totalCount ?? 0, offerings: (data.offerings ?? []) as DexOffering[] } : null;
   }
 
-  async vaultDexOfferingCreate(payload: { baseAsset: string; dexService: string; price: string; amount: string; minFill?: number; maxPerSubscription?: number; refNo: string }) {
+  // A7 (2026-09-10): the whole ReserveParams — kind 1 window · 2 tap · 3 auction; closesAt in
+  // unix SECONDS (0 for a tap); allocationPolicy 1 FCFS · 2 pro-rata on a window only.
+  async vaultDexOfferingCreate(payload: { baseAsset: string; dexService: string; kind: number; price: string; amount: string; closesAt: number; allocationPolicy: number; refNo: string }) {
     return this.vaultPost('/dex/offerings', payload);
   }
 

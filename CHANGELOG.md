@@ -17,6 +17,22 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-10
 
+#### Changed — DEX Offerings: the create form offers all three kinds; the list shows the kind; Buy is tap-only (Phase 16 A7)
+
+- **Create Offering** gained a kind selector (Tap [default] · Window · Auction) with a per-kind
+  hint, a close-time picker (`datetime-local`, converted to unix SECONDS with the place-order
+  modal's recipe, refused inline when blank or in the past) for window and auction, and an
+  allocation selector (first-come / pro-rata) for a window; the auction's price field is labelled
+  as the reserve price. The two dead inputs — min fill and max per subscription — are gone: the API
+  had ignored them since the 2026-08-28 split, so they promised bounds nobody set.
+  [offerings.page.ts](src/app/pages/secure/dex/offerings/offerings.page.ts),
+  [offerings.page.html](src/app/pages/secure/dex/offerings/offerings.page.html),
+  [api.service.ts](src/app/shared/services/api.service.ts) `vaultDexOfferingCreate`.
+- **The offerings list shows a Kind pill, and the Buy button appears on TAP offerings only.** The
+  fill route relays `offeringTapFill` and the API refuses any other kind; a window or auction is bid
+  through the venue. Without the gate, making those kinds creatable would have put a Buy button on
+  rows whose every click fails. en + ar.
+
 #### Security — Phase 18 client legs: Argon2id + stored per-user salt (H1 / 18.B4), hashes-only user management (18.5), proof-verified password change (18.2)
 
 - **`parse-proof.utils.ts` is the ONE derivation** (byte-identical to the ZK repo's client copy;

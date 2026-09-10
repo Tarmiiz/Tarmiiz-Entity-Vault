@@ -4797,11 +4797,17 @@
   },
   "dexOfferings": {
     "title": "DEX Offerings",
-    "description": "Primary issuance on a venue (IPO facility): standing tap offers at a fixed price, approved per-offering by the asset’s regulator.",
+    "description": "Primary issuance on a venue (IPO facility): a standing tap, a subscription window or an auction, approved per-offering by the asset’s regulator.",
     "createBtn": "Create Offering",
     "key": "Key",
     "asset": "Asset",
     "venue": "Venue",
+    "kind": "Kind",
+    "kinds": {
+      "window": "Window",
+      "tap": "Tap",
+      "auction": "Auction"
+    },
     "price": "Price",
     "progress": "Sold / Total",
     "createdAt": "Created",
@@ -4822,12 +4828,25 @@
     },
     "createModal": {
       "title": "Create Offering",
-      "subtitle": "Standing tap: buyers fill at a fixed price directly against the issuer’s reserve. Venue fees are frozen into the offering at creation.",
+      "subtitle": "The platform holds the reserve; the venue contract runs the clock and the allocation. Venue fees are frozen into the offering at creation.",
       "noVenues": "No regulator-approved venue pairings for this asset - add the asset to a venue and get the pairing approved first.",
+      "kindLabel": "Offering kind",
+      "kindHint": {
+        "1": "Window: bids are collected until the close time, then allocated by the chosen policy. Requires a venue with a bound contract.",
+        "2": "Tap: standing offer at a fixed price, filled first-come until the amount is exhausted.",
+        "3": "Auction: priced bids are collected until the close time, then one clearing price is struck at or above the reserve. Requires a venue with a bound contract."
+      },
       "priceLabel": "Price per token (currency units)",
+      "reservePriceLabel": "Reserve price per token (currency units)",
       "amountLabel": "Amount (tokens)",
-      "minFill": "Min fill (0 = none)",
-      "maxPerSubscription": "Max per subscription (0 = unlimited)",
+      "closesLabel": "Closes at",
+      "closesRequired": "A window or auction needs a close time.",
+      "closesPast": "The close time must be in the future.",
+      "allocationLabel": "Allocation",
+      "allocations": {
+        "fcfs": "First-come, first-served",
+        "proRata": "Pro-rata"
+      },
       "note": "Requires regulator approval before going live. Fixed-supply assets escrow the offered amount from the reserve."
     },
     "buyBtn": "Buy",

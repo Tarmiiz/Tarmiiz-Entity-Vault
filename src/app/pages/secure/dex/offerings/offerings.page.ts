@@ -20,10 +20,16 @@ interface SubscriptionOption { address: string; label: string; }
 
 /**
  * DEX Offerings — the issuer-side IPO facility (issuer/DEX model C1, 2026-08-03).
- * The issuer opens a standing TAP (fixed price, reserve-escrowed for Fixed supply)
- * on a regulator-approved (asset, venue) pairing; the ASSET's regulator then
- * approves each offering from its own dashboard before it goes live. Venue fees
- * are frozen into the offering at create time.
+ * The issuer reserves an offering (reserve-escrowed for Fixed supply) on a
+ * regulator-approved (asset, venue) pairing; the ASSET's regulator then approves it
+ * from its own dashboard before it goes live. Venue fees are frozen in at creation.
+ *
+ * Three KINDS since Phase 16 A7 (2026-09-10) — the venue contract runs the window
+ * clock, the allocation walk and the clearing price, the platform holds the reserve:
+ *   1 Window  — collect over a period, then allocate FCFS or pro-rata
+ *   2 Tap     — standing, fixed price, first-come; the ONLY kind the Buy button fills
+ *   3 Auction — collect priced bids, strike one price at close
+ * Window and auction bids are placed through the venue (offeringCommit), not here.
  */
 @Component({
   selector: 'app-dex-offerings',
@@ -64,8 +70,43 @@ export class OfferingsPage implements OnInit {
   createVenue = '';
   createPrice = '';
   createAmount = '';
-  createMinFill = '';
-  createMaxPerSubscription = '';
+  /** 1 window · 2 tap · 3 auction. A signal so the form's kind-dependent fields react. */
+  createKind = signal<number>(2);
+  /** datetime-local string in the operator's local time; converted to unix SECONDS below. */
+  createClosesLocal = signal<string>('');
+  /** Window only: 1 FCFS · 2 pro-rata. */
+  createAllocationPolicy = signal<number>(1);
+
+  /**
+   * Unix SECONDS for the chain, or 0 for a tap. Same recipe as the place-order modal's
+   * expiry: `datetime-local` has no timezone, `new Date(value)` reads it as LOCAL time and
+   * `getTime()` normalises to UTC; anything unparseable yields 0 rather than NaN.
+   */
+  closesAtSeconds = computed<number>(() => {
+    if (this.createKind() === 2) return 0;
+    const raw = this.createClosesLocal();
+    if (!raw) return 0;
+    const ms = new Date(raw).getTime();
+    return Number.isFinite(ms) ? Math.floor(ms / 1000) : 0;
+  });
+
+  /** Shown inline so the operator sees the venue's refusal before submitting, not as a revert. */
+  closesError = computed<string>(() => {
+    if (this.createKind() === 2) return '';
+    if (!this.createClosesLocal()) return 'dexOfferings.createModal.closesRequired';
+    const secs = this.closesAtSeconds();
+    if (!secs || secs <= Math.floor(Date.now() / 1000)) return 'dexOfferings.createModal.closesPast';
+    return '';
+  });
+
+  kindName(kind: number): string {
+    switch (Number(kind)) {
+      case 1: return this.translate.instant('dexOfferings.kinds.window');
+      case 2: return this.translate.instant('dexOfferings.kinds.tap');
+      case 3: return this.translate.instant('dexOfferings.kinds.auction');
+      default: return String(kind);
+    }
+  }
 
   // ── Buy (fill) modal state ────────────────────────────────────────────────
   buyModalOpen = signal(false);
@@ -143,8 +184,9 @@ export class OfferingsPage implements OnInit {
     this.createVenue = '';
     this.createPrice = '';
     this.createAmount = '';
-    this.createMinFill = '';
-    this.createMaxPerSubscription = '';
+    this.createKind.set(2);
+    this.createClosesLocal.set('');
+    this.createAllocationPolicy.set(1);
     this.assetVenues.set([]);
     this.createModalOpen.set(true);
     if (this.myAssets().length === 0) {
@@ -172,18 +214,25 @@ export class OfferingsPage implements OnInit {
       })));
   }
 
+  canSubmitCreate(): boolean {
+    return !!this.createAsset && !!this.createVenue && Number(this.createPrice) > 0
+      && Number(this.createAmount) > 0 && !this.closesError();
+  }
+
   async submitCreate() {
-    if (!this.createAsset || !this.createVenue || !Number(this.createPrice) || !Number(this.createAmount)) return;
+    if (!this.canSubmitCreate()) return;
+    const kind = this.createKind();
     this.createModalOpen.set(false);
     this.loadingService.show(this.translate.instant('dexOfferings.creating'));
     try {
       const res = await this.apiService.vaultDexOfferingCreate({
         baseAsset: this.createAsset,
         dexService: this.createVenue,
+        kind,
         price: String(this.createPrice),
         amount: String(Math.floor(Number(this.createAmount))),
-        minFill: Math.floor(Number(this.createMinFill)) || 0,
-        maxPerSubscription: Math.floor(Number(this.createMaxPerSubscription)) || 0,
+        closesAt: this.closesAtSeconds(),
+        allocationPolicy: kind === 1 ? this.createAllocationPolicy() : 0,
         refNo: '',
       });
       if (res?.error) {
@@ -211,7 +260,9 @@ export class OfferingsPage implements OnInit {
   // The offering is chosen by the ROW, not a second asset picker: an asset picker could
   // offer an asset that has no live offering, which is not a state the user can act on.
   canBuy(o: DexOffering): boolean {
-    return Number(o.status) === 2 && !o.suspended && this.remaining(o) > 0
+    // Kind 2 only: the fill route relays `offeringTapFill`, and the API refuses any other kind
+    // with "Only tap offerings can be filled" — a window or auction is bid through the venue.
+    return Number(o.kind) === 2 && Number(o.status) === 2 && !o.suspended && this.remaining(o) > 0
       && this.canAct() && this.features.systemFunctionEnabled('dex-offering-fill');
   }
 

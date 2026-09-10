@@ -22,6 +22,7 @@
             <th>{{ 'dexOfferings.key' | translate }}</th>
             <th>{{ 'dexOfferings.asset' | translate }}</th>
             <th>{{ 'dexOfferings.venue' | translate }}</th>
+            <th>{{ 'dexOfferings.kind' | translate }}</th>
             <th>{{ 'dexOfferings.price' | translate }}</th>
             <th>{{ 'dexOfferings.progress' | translate }}</th>
             <th>{{ 'common.state' | translate }}</th>
@@ -48,6 +49,7 @@
                   <div class="text-[10px] text-gray-500">{{ o.dexServiceEntityName }}</div>
                 }
               </td>
+              <td><span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800">{{ kindName(o.kind) }}</span></td>
               <td>{{ o.price | money }}</td>
               <td>
                 <div class="flex items-center gap-2">
@@ -86,7 +88,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="py-6 text-center text-gray-500 text-sm">
+              <td colspan="9" class="py-6 text-center text-gray-500 text-sm">
                 @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'dexOfferings.empty' | translate }} }
               </td>
             </tr>
@@ -130,7 +132,17 @@
           }
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dexOfferings.createModal.priceLabel' | translate }}</label>
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dexOfferings.createModal.kindLabel' | translate }}</label>
+          <select [ngModel]="createKind()" (ngModelChange)="createKind.set(+$event)"
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            <option [ngValue]="2">{{ 'dexOfferings.kinds.tap' | translate }}</option>
+            <option [ngValue]="1">{{ 'dexOfferings.kinds.window' | translate }}</option>
+            <option [ngValue]="3">{{ 'dexOfferings.kinds.auction' | translate }}</option>
+          </select>
+          <p class="text-xs text-gray-400">{{ 'dexOfferings.createModal.kindHint.' + createKind() | translate }}</p>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ (createKind() === 3 ? 'dexOfferings.createModal.reservePriceLabel' : 'dexOfferings.createModal.priceLabel') | translate }}</label>
           <input type="number" min="0" step="any" [(ngModel)]="createPrice"
             class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
@@ -139,24 +151,34 @@
           <input type="number" min="1" step="1" [(ngModel)]="createAmount"
             class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dexOfferings.createModal.minFill' | translate }}</label>
-            <input type="number" min="0" step="1" [(ngModel)]="createMinFill" placeholder="0"
-              class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        @if (createKind() !== 2) {
+          <div class="grid gap-3" [class.grid-cols-2]="createKind() === 1">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dexOfferings.createModal.closesLabel' | translate }}</label>
+              <input type="datetime-local" [ngModel]="createClosesLocal()" (ngModelChange)="createClosesLocal.set($event)"
+                class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+              @if (closesError()) {
+                <p class="text-xs text-red-600">{{ closesError() | translate }}</p>
+              }
+            </div>
+            @if (createKind() === 1) {
+              <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dexOfferings.createModal.allocationLabel' | translate }}</label>
+                <select [ngModel]="createAllocationPolicy()" (ngModelChange)="createAllocationPolicy.set(+$event)"
+                  class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                  <option [ngValue]="1">{{ 'dexOfferings.createModal.allocations.fcfs' | translate }}</option>
+                  <option [ngValue]="2">{{ 'dexOfferings.createModal.allocations.proRata' | translate }}</option>
+                </select>
+              </div>
+            }
           </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'dexOfferings.createModal.maxPerSubscription' | translate }}</label>
-            <input type="number" min="0" step="1" [(ngModel)]="createMaxPerSubscription" placeholder="0"
-              class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
-          </div>
-        </div>
+        }
         <p class="text-xs text-gray-400">{{ 'dexOfferings.createModal.note' | translate }}</p>
       </div>
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="createModalOpen.set(false)"
           class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
-        <button (click)="submitCreate()" [disabled]="!createAsset || !createVenue || !createPrice || !createAmount"
+        <button (click)="submitCreate()" [disabled]="!canSubmitCreate()"
           class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'dexOfferings.createBtn' | translate }}
         </button>
