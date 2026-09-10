@@ -195,6 +195,7 @@
     "home": "الرئيسية",
     "services": "الخدمات",
     "assets": "الأصول",
+    "assetCreator": "منشئ الأصول",
     "subscriptions": "الاشتراكات",
     "subscribers": "المشتركون",
     "transactions": "المعاملات",
@@ -895,6 +896,17 @@
     }
   },
   "assets": {
+    "creator": {
+      "title": "منشئ الأصول",
+      "breadcrumb": "منشئ الأصول",
+      "cancelTitle": "تجاهل هذا الأصل؟",
+      "cancelMsg": "سيُفقد كل ما أُدخل في المعالج.",
+      "leaveTitle": "مغادرة منشئ الأصول؟",
+      "leaveMsg": "لديك عمل غير محفوظ في المعالج. مغادرة هذه الصفحة تتجاهله.",
+      "leaveConfirm": "مغادرة",
+      "createdTitle": "تم إنشاء الأصل",
+      "createdMsg": "تم إنشاء {{name}} ({{symbol}}) وهو بانتظار موافقة المنظم."
+    },
     "title": "الأصول",
     "add": "إضافة أصل",
     "filters": {
@@ -4144,6 +4156,7 @@
     "analytics": "التحليلات",
     "approvals": "الموافقات",
     "assets": "الأصول",
+    "assetCreator": "منشئ الأصول",
     "credit": "الرصيد",
     "custody": "الحفظ",
     "dex": "البورصة",

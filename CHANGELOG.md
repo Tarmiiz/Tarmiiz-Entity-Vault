@@ -17,6 +17,26 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-10
 
+#### Changed — the Asset Creator is a routed PAGE, the app's first stepped page (R18 / Phase 4.9, A2)
+
+- **`modal-asset-add` (864 + 621 lines) is promoted in place to
+  [pages/secure/assets/creator/](src/app/pages/secure/assets/creator/)** — `git mv`, so the history
+  follows the file — as `AssetCreatorPage` at `/authorized/assets/creator`, per frontend Standard
+  2.5 (written 09-04 for exactly this page, before it existed). Same eight steps, same stepper
+  markup; what changed is the shell: Standard 2's header + breadcrumb, the step indicator where a
+  detail page's tab rail sits, a page-anchored footer, no backdrop. **The step lives in `?step=N`**
+  so refresh and back behave. **Cancel confirms when work is in flight and routes to the list, and
+  the route's `canDeactivate` runs the same confirm for the sidebar and browser exits** — guarding
+  only the button would cover one exit of three.
+- **The create-then-upload flow moved from the assets LIST page into the page that owns the
+  data** (it used to await the modal's promise, then create, then upload attachments). Success
+  lands on the new asset's detail page; a failed create keeps everything typed. The modal's
+  promise service is gone; its interfaces survive as `asset-creator.model.ts`.
+- **Reachability is its own menu key, `asset-creator`** (sidebar entry beside Assets; a viewer sees
+  it only when granted, since viewers start with every module hidden). The submit stays gated by
+  the existing `asset-create` System Function — one act, one key. The list's "Add Asset" button now
+  routes to the page. `MENU_LABELS` + en/ar strings added.
+
 #### Changed — DEX Offerings: the create form offers all three kinds; the list shows the kind; Buy is tap-only (Phase 16 A7)
 
 - **Create Offering** gained a kind selector (Tap [default] · Window · Auction) with a per-kind

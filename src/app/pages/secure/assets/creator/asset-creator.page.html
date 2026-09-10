@@ -1,14 +1,33 @@
-﻿@if (addAssetService.isVisible()) {
-  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl m-4 transform transition-all duration-300 ease-in-out scale-100">
+<app-header [title]="'assets.creator.title' | translate"></app-header>
 
-      <!-- Header -->
-      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
-        <h3 class="text-xl leading-6 font-semibold text-gray-100">{{ 'assets.addModal.wizard.title' | translate }}</h3>
-        <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.stepProgress' | translate: { current: visibleIndex, total: visibleTotal, label: stepLabels[currentStep() - 1] } }}</p>
-      </div>
+<!-- Standard 2.5 stepped page (the app's first — R18 / Phase 4.9, A2 2026-09-10). This was
+     `modal-asset-add`, promoted in place: same steps, same stepper markup (Standard 3), no
+     backdrop to lose a 1,400-line wizard to. The step indicator sits where a detail page's tab
+     rail would; the footer is page-anchored, not sticky. -->
+<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+  <nav class="flex" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a routerLink="/authorized/assets/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+          {{ 'assets.title' | translate }}
+        </a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ 'assets.creator.breadcrumb' | translate }}</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+  <p class="text-xs text-gray-500">{{ 'assets.addModal.wizard.stepProgress' | translate: { current: visibleIndex, total: visibleTotal, label: stepLabels[currentStep() - 1] } }}</p>
+</div>
 
-      <!-- Step Indicator -->
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+  <div class="container mx-auto max-w-3xl">
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+
+      <!-- Step Indicator — Standard 3's stepper, verbatim -->
       <div class="flex items-center justify-center gap-1 px-6 py-4 bg-gray-50 border-b">
         @for (step of stepNumbers; track step) {
           <div class="flex items-center">
@@ -32,7 +51,7 @@
       </div>
 
       <form [formGroup]="addForm" (ngSubmit)="onSave()">
-        <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div class="p-6 space-y-4">
 
           <!-- Step 1: Standard & Supply Mode -->
           @if (currentStep() === 1) {
@@ -587,7 +606,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-50 flex justify-between rounded-b-xl">
+        <div class="px-6 py-4 bg-gray-50 border-t flex justify-between">
           <div>
             @if (currentStep() > 1) {
               <button type="button" (click)="prevStep()"
@@ -615,7 +634,6 @@
           </div>
         </div>
       </form>
-
     </div>
   </div>
-}
+</main>

@@ -1,4 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+// asset-creator.model.ts — the wizard's data shapes. Until 2026-09-10 this file was
+// `modal-asset-add.service.ts` and also carried the modal's show/confirm/cancel promise
+// service; the Asset Creator is a routed PAGE now (R18 / Standard 2.5), so only the
+// interfaces survive — the page performs the create itself.
 
 // Attachment collected in the wizard's Documents step — uploaded AFTER the asset is
 // created (docs attach to the asset address, which doesn't exist until create returns).
@@ -54,34 +57,4 @@ export interface AddAssetData {
   // Optional attachments — uploaded post-create by the list page (documents first, then images).
   documents: WizardDocFile[];
   images: WizardImageFile[];
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class ModalAssetAddService {
-  isVisible = signal(false);
-
-  private resolveFn?: (value: AddAssetData | null) => void;
-
-  show(): Promise<AddAssetData | null> {
-    this.isVisible.set(true);
-    return new Promise<AddAssetData | null>((resolve) => {
-      this.resolveFn = resolve;
-    });
-  }
-
-  confirm(data: AddAssetData): void {
-    this.isVisible.set(false);
-    if (this.resolveFn) {
-      this.resolveFn(data);
-    }
-  }
-
-  cancel(): void {
-    this.isVisible.set(false);
-    if (this.resolveFn) {
-      this.resolveFn(null);
-    }
-  }
 }

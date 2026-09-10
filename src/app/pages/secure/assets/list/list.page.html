@@ -1,5 +1,4 @@
 ﻿<app-header [title]="'assets.title' | translate"></app-header>
-<app-modal-asset-add></app-modal-asset-add>
 <app-modal-asset-register-existing></app-modal-asset-register-existing>
 <app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
 
@@ -61,7 +60,9 @@
       </div>
       <div class="flex ml-auto items-end gap-2">
         @if(userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-create')) {
-          <button (click)="openAddModal()" [disabled]="!entityActive"
+          <!-- R18 (Phase 4.9, A2 2026-09-10): the Asset Creator is a routed PAGE, not a dialog —
+               a 1,400-line wizard is a destination, and a page has no backdrop to lose it to. -->
+          <button routerLink="/authorized/assets/creator" [disabled]="!entityActive"
             class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>

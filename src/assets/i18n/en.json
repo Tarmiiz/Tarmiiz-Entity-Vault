@@ -195,6 +195,7 @@
     "home": "Home",
     "services": "Services",
     "assets": "Assets",
+    "assetCreator": "Asset Creator",
     "subscriptions": "Subscriptions",
     "subscribers": "Subscribers",
     "transactions": "Transactions",
@@ -895,6 +896,17 @@
     }
   },
   "assets": {
+    "creator": {
+      "title": "Asset Creator",
+      "breadcrumb": "Asset Creator",
+      "cancelTitle": "Discard this asset?",
+      "cancelMsg": "Everything entered in the wizard will be lost.",
+      "leaveTitle": "Leave the Asset Creator?",
+      "leaveMsg": "You have unsaved work in the wizard. Leaving this page discards it.",
+      "leaveConfirm": "Leave",
+      "createdTitle": "Asset created",
+      "createdMsg": "{{name}} ({{symbol}}) was created and is pending your regulator's approval."
+    },
     "title": "Assets",
     "add": "Add Asset",
     "filters": {
@@ -4144,6 +4156,7 @@
     "analytics": "Analytics",
     "approvals": "Approvals",
     "assets": "Assets",
+    "assetCreator": "Asset Creator",
     "credit": "Credit",
     "custody": "Custody",
     "dex": "DEX",

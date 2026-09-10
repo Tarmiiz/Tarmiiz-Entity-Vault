@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -17,8 +17,6 @@ import { SocketService } from '../../../../shared/services/socket.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
-import { ModalAssetAddService } from '../modals/modal-asset-add/modal-asset-add.service';
-import { ModalAssetAddComponent } from '../modals/modal-asset-add/modal-asset-add.component';
 import { ModalAssetRegisterExistingService } from '../modals/modal-asset-register-existing/modal-asset-register-existing.service';
 import { ModalAssetRegisterExistingComponent } from '../modals/modal-asset-register-existing/modal-asset-register-existing.component';
 import { AuditService } from '../../../../shared/services/audit.service';
@@ -38,7 +36,7 @@ import { PaginatorComponent, pageSlice } from '../../../../shared/components/pag
     CommonModule, FormsModule,
     HeaderComponent,
     LiveIndicatorComponent,
-    ModalAssetAddComponent, ModalAssetRegisterExistingComponent, TranslatePipe,
+    RouterLink, ModalAssetRegisterExistingComponent, TranslatePipe,
     PaginatorComponent,
   ]
 })
@@ -48,7 +46,6 @@ export class ListPage implements OnInit {
   private router = inject(Router);
   private loadingService = inject(LoadingService);
   private alertService = inject(AlertService);
-  private assetAddService = inject(ModalAssetAddService);
   assetRegisterExistingService = inject(ModalAssetRegisterExistingService);
   private utils = inject(UtilsService);
   private authService = inject(AuthService);
@@ -228,89 +225,8 @@ export class ListPage implements OnInit {
     );
   }
 
-  async openAddModal() {
-    const data = await this.assetAddService.show();
-    if (!data) return;
-
-    this.loadingService.show(this.translate.instant('assets.addModal.submitting'));
-    try {
-      const result = await this.apiService.vaultCreateAsset({
-        owner: data.owner,
-        service: data.service,
-        issuer: data.issuer,
-        manager: data.manager,
-        name: data.name,
-        symbol: data.symbol,
-        // `identifiers` is server-owned: the API re-validates and rebuilds it here, and after
-        // creation only PUT/DELETE /assets/:address/identifiers may touch it.
-        metadata: JSON.stringify({
-          description: data.description,
-          ...data.customMetadata,
-          ...(data.identifiers?.length ? { identifiers: data.identifiers } : {}),
-        }),
-        currency: data.currency,
-        regulator: data.regulator,
-        supplyMode: data.supplyMode,
-        priceMode: data.priceMode,
-        creditSettlement: data.creditSettlement,
-        // ⚠️ NO `|| 0` fallback. `assetClass` 0 is not "unspecified", it is INVALID (valid is
-        // 1..11) — sending it would trade the API's clear 400 for an opaque revert inside
-        // registerAsset, on a value that can never be changed afterwards.
-        assetClass: data.assetClass,
-        // 4.9 — the regulator's class formula. ⚠️ NO fallback either, and for a sharper
-        // reason than assetClass: the API refuses a missing formula BEFORE it deploys the
-        // token, precisely because a refusal after the deploy would strand a real contract
-        // holding this name and symbol in this country forever.
-        formula: data.formula,
-        ...(data.supplyMode === 1 ? { initialSupply: data.initialSupply } : {}),
-      });
-      if (result?.type === 'success') {
-        // Attachments upload AFTER create — documents attach to the new asset's address.
-        // The API auto-folds public docs/images into the asset metadata's `media` key per upload.
-        if (result.address && (data.documents.length || data.images.length)) {
-          await this.uploadAssetAttachments(result.address, data);
-        }
-        await this.listAssets();
-      } else {
-        this.alertService.info(this.translate.instant('alerts.error'), result?.error || this.translate.instant('assets.list.createFailed'));
-      }
-    } catch (error) {
-      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
-    } finally {
-      this.loadingService.hide();
-    }
-  }
-
-  // Sequential post-create upload of the wizard's documents + images. Continues past
-  // per-file failures (the asset already exists) and reports them in one summary alert —
-  // failed files can be re-added from the asset's Documents tab / Images section.
-  private async uploadAssetAttachments(address: string, data: { documents: any[]; images: any[] }) {
-    const queue = [
-      ...data.documents.map(d => ({ ...d, imageRole: undefined })),
-      ...data.images.map(d => ({ ...d, imageRole: d.role !== 'gallery' ? d.role : undefined })),
-    ];
-    const failures: string[] = [];
-    for (let i = 0; i < queue.length; i++) {
-      const item = queue[i];
-      const label = item.title || item.file.name;
-      this.loadingService.show(this.translate.instant('assets.addModal.uploadingAttachment', { current: i + 1, total: queue.length, name: label }));
-      const res = await this.apiService.assetDocumentAddMultipart(address, item.file, {
-        title: item.title,
-        description: item.description,
-        fileType: item.file.type,
-        documentType: item.documentType,
-        documentState: 1,
-        ...(item.imageRole ? { imageRole: item.imageRole } : {}),
-      });
-      if (res?.error) failures.push(`${label}: ${res.error}`);
-    }
-    if (failures.length) {
-      this.alertService.info(
-        this.translate.instant('assets.addModal.attachmentFailuresTitle'),
-        this.translate.instant('assets.addModal.attachmentFailuresMessage', { failed: failures.length, total: queue.length }) + '\n' + failures.join('\n')
-      );
-    }
-  }
+  // The create wizard is the routed Asset Creator page since 2026-09-10 (R18 / Standard 2.5);
+  // the create + attachment-upload flow that lived here moved with it.
 
   viewDetails(asset: Asset) {
     this.router.navigate(['/authorized/assets/details/' + asset.address]);

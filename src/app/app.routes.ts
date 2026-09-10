@@ -172,6 +172,18 @@ export const routes: Routes = [
             canActivate: [AuthGuard]
           },
           {
+            // Asset Creator — R18 (Phase 4.9) / A2 2026-09-10: the issuer's wizard as a routed
+            // PAGE (Standard 2.5), the app's first stepped page. Its OWN menu key
+            // (`asset-creator`) decides reachability; the submit is still gated by the existing
+            // `asset-create` System Function — one act, one key. The step lives in `?step=N` so
+            // refresh and back behave; `canDeactivate` guards the sidebar/browser exits, not
+            // only the Cancel button.
+            path: 'creator',
+            loadComponent: () => import('./pages/secure/assets/creator/asset-creator.page').then( m => m.AssetCreatorPage),
+            canActivate: [AuthGuard, menuFeatureGuard('asset-creator')],
+            canDeactivate: [(cmp: { canLeave: () => Promise<boolean> }) => cmp.canLeave()],
+          },
+          {
             path: 'details/:address',
             loadComponent: () => import('./pages/secure/assets/details/details.page').then( m => m.DetailsPage),
             canActivate: [AuthGuard]

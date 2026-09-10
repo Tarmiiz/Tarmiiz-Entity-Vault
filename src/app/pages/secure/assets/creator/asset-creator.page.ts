@@ -1,13 +1,17 @@
-import { Component, ChangeDetectionStrategy, inject, signal, effect, untracked } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ReactiveFormsModule, FormBuilder, FormArray, FormGroup, FormControl, Validators } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { ModalAssetAddService, AddAssetData, WizardDocFile, WizardImageFile } from './modal-asset-add.service';
-import { ApiService } from '../../../../../shared/services/api.service';
-import { UtilsService } from '../../../../../shared/services/utils.service';
-import { FeaturesService } from '../../../../../shared/services/features.service';
-import { ISIN_TYPE_NAME, normalizeIdentifierValue, validateIdentifierValue } from '../../../../../shared/utils/identifier.utils';
+import { HeaderComponent } from '../../../../shared/components/header/header.component';
+import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
+import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
+import { AddAssetData, WizardDocFile, WizardImageFile } from './asset-creator.model';
+import { ApiService } from '../../../../shared/services/api.service';
+import { UtilsService } from '../../../../shared/services/utils.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
+import { ISIN_TYPE_NAME, normalizeIdentifierValue, validateIdentifierValue } from '../../../../shared/utils/identifier.utils';
 
 /**
  * A regulator-authored class formula (Phase 4.9). The `formula` field IS the contract
@@ -32,20 +36,43 @@ interface ClassFormula {
 // service-details page names it: a bare 27 in a filter is indistinguishable from a typo.
 const CLASS_TOKEN_ISSUER = 27;
 
+/**
+ * Asset Creator — the issuer's create wizard as a routed PAGE (R18 / Phase 4.9, A2 2026-09-10;
+ * frontend Standard 2.5, the app's first stepped page).
+ *
+ * Until 2026-09-10 this was `modal-asset-add` (864 + 621 lines) opened from the assets list, and
+ * the list page performed the create + attachment uploads after the dialog resolved. Promoted in
+ * place — same steps, same stepper — because a wizard of this size is a destination, not an
+ * interruption of a list, and a page has no backdrop to lose it to. What changed in the shell:
+ *   · the step lives in `?step=N`, so refresh and back behave (a signal alone would reproduce
+ *     the modal's worst property on a page);
+ *   · Cancel routes to the list behind an AlertService confirm when work is in flight, and the
+ *     route's `canDeactivate` runs the same confirm for the sidebar / browser exits;
+ *   · the create-then-upload flow moved HERE, where the data is, and lands on the new asset.
+ * Reachability: menu key `asset-creator`. The submit stays gated by the `asset-create` System
+ * Function — one act, one key; the page mints no second one.
+ */
 @Component({
-  selector: 'app-modal-asset-add',
-  templateUrl: './modal-asset-add.component.html',
-  styleUrls: ['./modal-asset-add.component.scss'],
+  selector: 'app-asset-creator',
+  templateUrl: './asset-creator.page.html',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslatePipe],
+  imports: [ReactiveFormsModule, TranslatePipe, HeaderComponent, RouterLink],
 })
-export class ModalAssetAddComponent {
+export class AssetCreatorPage {
 
-  addAssetService = inject(ModalAssetAddService);
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private alertService = inject(AlertService);
+  private loadingService = inject(LoadingService);
+  private translate = inject(TranslateService);
   utils = inject(UtilsService);
   features = inject(FeaturesService);
+
+  /** Set once the create has landed, so the leave guard stops asking. */
+  private submitted = false;
 
   // Reference data
   services = signal<{ address: string; name: string; paymentProcessor: string | null }[]>([]);
@@ -108,12 +135,12 @@ export class ModalAssetAddComponent {
       validators and its defaults are all still here and still wired.
   */
   private static readonly HIDDEN_STEPS = new Set<number>([5]);
-  private isHidden = (n: number) => ModalAssetAddComponent.HIDDEN_STEPS.has(n);
+  private isHidden = (n: number) => AssetCreatorPage.HIDDEN_STEPS.has(n);
 
   readonly totalSteps = 8;
   readonly stepLabels = ['Standard & Supply', 'Identity', 'Metadata', 'Service', 'Roles', 'Documents', 'Images', 'Review'];
   /** The dots actually drawn, and the source of the "Step X of Y" counter. */
-  readonly stepNumbers = [1, 2, 3, 4, 5, 6, 7, 8].filter((n) => !ModalAssetAddComponent.HIDDEN_STEPS.has(n));
+  readonly stepNumbers = [1, 2, 3, 4, 5, 6, 7, 8].filter((n) => !AssetCreatorPage.HIDDEN_STEPS.has(n));
   /** Visible count, so the header does not promise a step the user will never see. */
   get visibleTotal(): number { return this.stepNumbers.length; }
   /** 1-based position of the current step AMONG THE VISIBLE ones. */
@@ -313,34 +340,57 @@ export class ModalAssetAddComponent {
     return !!svc?.paymentProcessor;
   }
 
-  constructor() {
-    // Reset and load data each time the modal opens
-    effect(() => {
-      if (this.addAssetService.isVisible()) {
-        this.addForm.reset({ noCreditSettlement: false });
-        this.metadataRows.clear();
-        this.addMetadataRow();
-        this.metadataError.set('');
-        // untracked: resetAttachments reads + writes the attachment signals — tracked here,
-        // that read would register them as effect deps and the writes would re-trigger the
-        // effect forever (fresh [] reference each run), hanging the UI on modal open.
-        untracked(() => this.resetAttachments());
-        this.currentStep.set(1);
-        this.formulasLoaded.set(false);
-        this.formulasError.set('');
-        this.symbolAvailable.set(null);
-        this.symbolCheckPending.set(false);
-        this.reviewConfirmed.set(false);
-        this.ownerName.set('');
-        this.issuerName.set('');
-        this.managerName.set('');
-        this.loadServices();
-        this.loadCountriesAndRegulators();
-        this.loadSupplyModesAndAssetTypes();
-        this.loadKnownAddresses();
-      }
-    });
+  /** Fresh wizard on every entry — the page equivalent of the modal's open-effect reset. */
+  ionViewWillEnter() {
+    this.submitted = false;
+    this.addForm.reset({ noCreditSettlement: false });
+    this.metadataRows.clear();
+    this.addMetadataRow();
+    this.metadataError.set('');
+    this.resetAttachments();
+    this.formulasLoaded.set(false);
+    this.formulasError.set('');
+    this.symbolAvailable.set(null);
+    this.symbolCheckPending.set(false);
+    this.reviewConfirmed.set(false);
+    this.ownerName.set('');
+    this.issuerName.set('');
+    this.managerName.set('');
+    // The route is the step's home. A refresh lands on the step the URL names (its earlier
+    // steps are re-validated by Next, never assumed), anything unparseable or hidden lands on 1.
+    const wanted = Number(this.route.snapshot.queryParamMap.get('step'));
+    const step = Number.isInteger(wanted) && wanted >= 1 && wanted <= this.totalSteps && !this.isHidden(wanted) ? wanted : 1;
+    this.currentStep.set(step);
+    this.syncStepToUrl(step);
+    this.loadServices();
+    this.loadCountriesAndRegulators();
+    this.loadSupplyModesAndAssetTypes();
+    this.loadKnownAddresses();
+  }
 
+  private syncStepToUrl(step: number): void {
+    this.router.navigate([], { relativeTo: this.route, queryParams: { step }, queryParamsHandling: 'merge', replaceUrl: true });
+  }
+
+  /** Anything typed, attached or advanced counts as work in flight. */
+  private hasWorkInFlight(): boolean {
+    return this.addForm.dirty || this.currentStep() > 1 || this.docFiles().length > 0 || this.imageFiles().length > 0;
+  }
+
+  /**
+   * Route `canDeactivate` — the sidebar and the browser are exits too, so the confirm that Cancel
+   * shows is bound to the ROUTE, not only to the one button (Standard 2.5).
+   */
+  async canLeave(): Promise<boolean> {
+    if (this.submitted || !this.hasWorkInFlight()) return true;
+    return this.alertService.show(
+      this.translate.instant('assets.creator.leaveTitle'),
+      this.translate.instant('assets.creator.leaveMsg'),
+      this.translate.instant('assets.creator.leaveConfirm'),
+    );
+  }
+
+  constructor() {
     this.metadataRows.valueChanges.subscribe(() => {
       this.metadataError.set(this.validateMetadata());
     });
@@ -457,11 +507,13 @@ export class ModalAssetAddComponent {
       this.checkSymbolAvailability();
     }
     this.currentStep.update(s => this.step(s, 1));
+    this.syncStepToUrl(this.currentStep());
   }
 
   prevStep(): void {
     if (this.currentStep() > 1) {
       this.currentStep.update(s => this.step(s, -1));
+      this.syncStepToUrl(this.currentStep());
     }
   }
 
@@ -855,10 +907,110 @@ export class ModalAssetAddComponent {
         initialSupply: Number(formValue.initialSupply),
       } : {}),
     };
-    this.addAssetService.confirm(data);
+    void this.submit(data);
   }
 
-  onCancel(): void {
-    this.addAssetService.cancel();
+  /**
+   * The create + attachment uploads. Moved from the assets LIST page (which used to await the
+   * modal's promise) into the page that owns the data. Lands on the new asset's detail page;
+   * a failed create stays here with everything the issuer typed still in place.
+   */
+  private async submit(data: AddAssetData): Promise<void> {
+    this.loadingService.show(this.translate.instant('assets.addModal.submitting'));
+    try {
+      const result = await this.apiService.vaultCreateAsset({
+        owner: data.owner,
+        service: data.service,
+        issuer: data.issuer,
+        manager: data.manager,
+        name: data.name,
+        symbol: data.symbol,
+        // `identifiers` is server-owned: the API re-validates and rebuilds it here, and after
+        // creation only PUT/DELETE /assets/:address/identifiers may touch it.
+        metadata: JSON.stringify({
+          description: data.description,
+          ...data.customMetadata,
+          ...(data.identifiers?.length ? { identifiers: data.identifiers } : {}),
+        }),
+        currency: data.currency,
+        regulator: data.regulator,
+        supplyMode: data.supplyMode,
+        priceMode: data.priceMode,
+        creditSettlement: data.creditSettlement,
+        // ⚠️ NO `|| 0` fallback. `assetClass` 0 is not "unspecified", it is INVALID (valid is
+        // 1..11) — sending it would trade the API's clear 400 for an opaque revert inside
+        // registerAsset, on a value that can never be changed afterwards.
+        assetClass: data.assetClass,
+        // 4.9 — the regulator's class formula. NO fallback either: the API refuses a missing
+        // formula BEFORE it deploys the token, because a refusal after the deploy would strand
+        // a real contract holding this name and symbol in this country forever.
+        formula: data.formula,
+        ...(data.supplyMode === 1 ? { initialSupply: data.initialSupply } : {}),
+      });
+      if (result?.type === 'success') {
+        // Attachments upload AFTER create — documents attach to the new asset's address.
+        // The API auto-folds public docs/images into the asset metadata's `media` key per upload.
+        if (result.address && (data.documents.length || data.images.length)) {
+          await this.uploadAssetAttachments(result.address, data);
+        }
+        this.submitted = true;
+        await this.alertService.info(
+          this.translate.instant('assets.creator.createdTitle'),
+          this.translate.instant('assets.creator.createdMsg', { name: data.name, symbol: data.symbol }),
+        );
+        this.router.navigate(result.address ? ['/authorized/assets/details/' + result.address] : ['/authorized/assets/list']);
+      } else {
+        this.alertService.info(this.translate.instant('alerts.error'), result?.error || this.translate.instant('assets.list.createFailed'));
+      }
+    } catch {
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  // Sequential post-create upload of the wizard's documents + images. Continues past
+  // per-file failures (the asset already exists) and reports them in one summary alert —
+  // failed files can be re-added from the asset's Documents tab / Images section.
+  private async uploadAssetAttachments(address: string, data: { documents: WizardDocFile[]; images: WizardImageFile[] }) {
+    const queue = [
+      ...data.documents.map(d => ({ ...d, imageRole: undefined as string | undefined })),
+      ...data.images.map(d => ({ ...d, imageRole: d.role !== 'gallery' ? d.role : undefined })),
+    ];
+    const failures: string[] = [];
+    for (let i = 0; i < queue.length; i++) {
+      const item = queue[i];
+      const label = item.title || item.file.name;
+      this.loadingService.show(this.translate.instant('assets.addModal.uploadingAttachment', { current: i + 1, total: queue.length, name: label }));
+      const res = await this.apiService.assetDocumentAddMultipart(address, item.file, {
+        title: item.title,
+        description: item.description,
+        fileType: item.file.type,
+        documentType: item.documentType,
+        documentState: 1,
+        ...(item.imageRole ? { imageRole: item.imageRole } : {}),
+      });
+      if (res?.error) failures.push(`${label}: ${res.error}`);
+    }
+    if (failures.length) {
+      await this.alertService.info(
+        this.translate.instant('assets.addModal.attachmentFailuresTitle'),
+        this.translate.instant('assets.addModal.attachmentFailuresMessage', { failed: failures.length, total: queue.length }) + '\n' + failures.join('\n')
+      );
+    }
+  }
+
+  /** Cancel routes to the list; with work in flight it asks first (the route guard asks too). */
+  async onCancel(): Promise<void> {
+    if (this.hasWorkInFlight()) {
+      const ok = await this.alertService.show(
+        this.translate.instant('assets.creator.cancelTitle'),
+        this.translate.instant('assets.creator.cancelMsg'),
+        this.translate.instant('assets.creator.leaveConfirm'),
+      );
+      if (!ok) return;
+    }
+    this.submitted = true;   // the guard has been answered here; do not ask twice
+    this.router.navigate(['/authorized/assets/list']);
   }
 }

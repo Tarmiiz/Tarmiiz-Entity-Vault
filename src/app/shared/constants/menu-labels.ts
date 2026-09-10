@@ -5,6 +5,7 @@
 // result through `| translate` (templates) or pass it to translate.instant() (TS).
 export const MENU_LABELS: Record<string, string> = {
   assets:         'menuLabels.assets',
+  'asset-creator': 'menuLabels.assetCreator',
   services:       'menuLabels.services',
   'service-providers': 'menuLabels.serviceProviders',
   custody:        'menuLabels.custody',
