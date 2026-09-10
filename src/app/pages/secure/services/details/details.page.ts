@@ -339,9 +339,19 @@ export class DetailsPage implements OnInit {
   grantsMirrored  = signal<number | null>(null);
   grantsLoaded    = signal(false);
 
-  /** The catalog groups present, in catalog order, so the card renders one block per family. */
-  grantGroups = computed(() => [...new Set(this.grants().map((g) => g.group))]);
-  grantsIn = (group: string) => this.grants().filter((g) => g.group === group);
+  /* Only GRANTED rows are shown to the entity (2026-09-10). The full catalog stays in `grants`
+     because `grantsMirrored` is judged against it, not against what is rendered. */
+  grantedGrants = computed(() => this.grants().filter((g) => g.granted));
+  /** The groups holding at least one grant, in catalog order, one block per family. */
+  grantGroups = computed(() => [...new Set(this.grantedGrants().map((g) => g.group))]);
+  grantsIn = (group: string) => this.grantedGrants().filter((g) => g.group === group);
+  /** Standard 2.1 rail over the families. Falls back to the first family whenever the chosen one
+      has no granted rows any more (a refresh after the regulator withdrew its last grant). */
+  grantRail = signal('');
+  activeGrantGroup = computed(() => {
+    const groups = this.grantGroups();
+    return groups.includes(this.grantRail()) ? this.grantRail() : (groups[0] ?? '');
+  });
   licenseClassNames = signal<Record<number, string>>({});
 
   licenseClassName  = (id: number) => this.licenseClassNames()[Number(id)] || `Class ${id}`;
@@ -939,43 +949,11 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  /**
-   * The sentence a row's `source` + `level` actually means, in the entity's own terms.
-   *
-   * 🔴 THREE REFUSALS THAT LOOK ALIKE AND ARE NOT. `stale` must never borrow `default`'s wording:
-   * a regulator DID decide, and a later supervisory action (`grantInvalidateAll`) voided it.
-   * Calling that "no decision recorded" would be a false statement about a real event, and it
-   * points the operator at the wrong conversation with their regulator.
-   */
+  /** What a GRANTED row means — only granted rows are rendered, so there is no refusal wording. */
   grantMeaning(g: ServiceGrant): string {
-    if (g.granted) {
-      return g.maxLevel > 1
-        ? `Permitted, at level ${g.level} of ${g.maxLevel}.`
-        : 'Permitted by your regulator.';
-    }
-    if (g.source === 'stale') {
-      return 'Withdrawn. Your regulator granted this and a later supervisory action voided it.';
-    }
-    if (g.source === 'explicit') {
-      return 'Refused. Your regulator considered this and declined it.';
-    }
-    return 'No decision recorded — refused by default.';
-  }
-
-  /** Pill class per row. Only a granted row is green; every refusal is visibly a refusal. */
-  grantPillClass(g: ServiceGrant): string {
-    if (g.granted) return 'bg-emerald-100 text-emerald-800';
-    // Amber for a DECIDED refusal (explicit or withdrawn): a regulator acted, and the entity has
-    // someone to ask. Gray for the default: nobody has looked at it yet.
-    if (g.source === 'explicit' || g.source === 'stale') return 'bg-amber-100 text-amber-800';
-    return 'bg-gray-100 text-gray-600';
-  }
-
-  grantPillLabel(g: ServiceGrant): string {
-    if (g.granted) return 'Permitted';
-    if (g.source === 'stale') return 'Withdrawn';
-    if (g.source === 'explicit') return 'Refused';
-    return 'Not granted';
+    return g.maxLevel > 1
+      ? `Permitted, at level ${g.level} of ${g.maxLevel}.`
+      : 'Permitted by your regulator.';
   }
 
   /** `grant.assets.mint` -> `Mint`. The key is the identifier; this is the reading. */

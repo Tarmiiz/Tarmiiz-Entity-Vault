@@ -640,14 +640,18 @@
 
                  🔴 READ ONLY — NO Grant / Deny / Clear. A grant is the REGULATOR's act, and the
                  Entity API has no setter to call. A control the entity cannot use would imply a
-                 power it does not have, which is worse than showing nothing. -->
+                 power it does not have, which is worse than showing nothing.
+
+                 GRANTED ROWS ONLY (2026-09-10, product ruling). The API still returns the whole
+                 catalog — the `mirrored` sync-health count depends on it — but the entity sees
+                 only what it may do. Default, refused and withdrawn rows are all "not listed". -->
             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3">
               <div class="flex items-center justify-between mb-3">
                 <div>
                   <h3 class="text-sm font-semibold text-gray-700">Function permissions</h3>
                   <p class="text-xs text-gray-500">
-                    What your regulator permits this service to <span class="font-medium">do</span>.
-                    Anything not permitted here is refused, whatever licences the service holds.
+                    The functions your regulator has granted this service. Anything not listed here
+                    is refused, whatever licences the service holds.
                   </p>
                 </div>
                 <app-refresh-button [loading]="grantsLoading()" (refresh)="loadGrants()" />
@@ -665,52 +669,65 @@
               } @else {
                 @if (grantsMirrored() === 0) {
                   <!-- 🔴 A live service with ZERO mirrored cells is a SYNC failure, not a
-                       default-deny. Forty rows of "not granted" is indistinguishable from a
-                       genuinely ungranted service, so it is named rather than rendered. -->
+                       default-deny. An empty granted list is indistinguishable from a genuinely
+                       ungranted service, so it is named rather than rendered. -->
                   <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 mb-3 text-xs text-amber-800">
-                    No permission records have reached this dashboard for this service yet. The rows
-                    below therefore show defaults, not your regulator's decisions. If this service is
+                    No permission records have reached this dashboard for this service yet, so what
+                    is listed below may not reflect your regulator's decisions. If this service is
                     already operating, tell your administrator the permissions mirror is behind.
                   </div>
                 }
 
-                @for (grp of grantGroups(); track grp) {
-                  <div class="mb-3 last:mb-0">
-                    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1 px-1">
-                      {{ grantGroupLabel(grp) }}
-                    </h4>
-                    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                      <div class="overflow-x-auto rounded-lg">
-                        <table class="table-v4 w-full text-sm text-left">
-                          <thead>
-                            <tr>
-                              <th scope="col">Function</th>
-                              <th scope="col">Status</th>
-                              <th scope="col">What this means</th>
-                            </tr>
-                          </thead>
-                          <tbody class="text-xs">
-                            @for (g of grantsIn(grp); track g.key; let isEven = $even) {
-                              <tr class="transition-colors">
-                                <td>
-                                  <div class="font-medium text-gray-800">{{ grantLabel(g.key) }}</div>
-                                  <div class="text-gray-400 font-mono text-[11px]">{{ g.key }}</div>
-                                </td>
-                                <td class="whitespace-nowrap">
-                                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="grantPillClass(g)">
-                                    {{ grantPillLabel(g) }}
-                                  </span>
-                                </td>
-                                <!-- Said in words, because the entity decides nothing here: the
-                                     only useful thing this surface can do is explain the state.
-                                     ⚠️ `stale` gets its OWN sentence — a regulator did decide and
-                                     a later action voided it, so "no decision recorded" would be
-                                     a false statement about a real event. -->
-                                <td class="text-gray-600">{{ grantMeaning(g) }}</td>
+                @if (grantedGrants().length === 0) {
+                  <p class="text-xs text-gray-500 px-1 py-2">
+                    Your regulator has not granted this service any functions yet.
+                  </p>
+                }
+
+                <!-- Standard 2.1 rail: one item per family, its table straight in the pane. The
+                     family name is on the rail, so the pane does not repeat it as a heading. -->
+                @if (grantGroups().length) {
+                  <div class="flex flex-col md:flex-row gap-4">
+                    <nav class="md:w-52 shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
+                      @for (grp of grantGroups(); track grp) {
+                        <button type="button" (click)="grantRail.set(grp)"
+                          class="shrink-0 md:w-full flex items-center justify-between gap-3 ltr:text-left rtl:text-right px-4 py-2.5 rounded-md text-sm font-semibold transition-colors"
+                          [class]="activeGrantGroup() === grp ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                          <span>{{ grantGroupLabel(grp) }}</span>
+                          <span class="text-xs font-normal">{{ grantsIn(grp).length }}</span>
+                        </button>
+                      }
+                    </nav>
+
+                    <div class="grow min-w-0">
+                      <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto rounded-lg">
+                          <table class="table-v4 w-full text-sm text-left">
+                            <thead>
+                              <tr>
+                                <th scope="col">Function</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">What this means</th>
                               </tr>
-                            }
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody class="text-xs">
+                              @for (g of grantsIn(activeGrantGroup()); track g.key) {
+                                <tr class="transition-colors">
+                                  <td>
+                                    <div class="font-medium text-gray-800">{{ grantLabel(g.key) }}</div>
+                                    <div class="text-gray-400 font-mono text-[11px]">{{ g.key }}</div>
+                                  </td>
+                                  <td class="whitespace-nowrap">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                                      Permitted
+                                    </span>
+                                  </td>
+                                  <td class="text-gray-600">{{ grantMeaning(g) }}</td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -17,6 +17,15 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-10
 
+#### Changed — service detail → Licenses: function permissions on a family rail
+
+- The Function permissions section of the service detail Licenses tab shows its families
+  (Entities / Credit / Assets / …) as a Standard 2.1 left rail, each item carrying its granted-row
+  count, with that family's table straight in the pane — the family heading is no longer repeated
+  above each table. The section header, Refresh and the could-not-read / mirror-behind / none-granted
+  notices stay above the rail. A rail selection whose family loses its last grant falls back to the
+  first family.
+
 #### Changed — Custody page split into tabs; the duplicate "My Services" list removed
 
 - [Custody](src/app/pages/secure/custody/custody.page.html) shows its groups — Services Under My
@@ -46,6 +55,17 @@ _Living preamble describing the broad direction this sub-project is currently mo
   known and empty, in both the operator and admin views.
 - System Configuration loses its Entity mode row (the page is content-driven — no page change).
   Production build clean.
+
+#### Changed — service detail → Function permissions lists only the GRANTED functions
+
+- The Licenses tab's Function permissions card rendered the whole Phase 17 catalog, so a fresh
+  service showed rows of "Not granted — refused by default". It now renders only rows with
+  `granted === true` (`grantedGrants` in
+  [details.page.ts](src/app/pages/secure/services/details/details.page.ts)); groups with no grant
+  disappear, and an empty list reads "Your regulator has not granted this service any functions
+  yet". Default, refused and withdrawn rows are no longer shown, and the refusal-only pill/meaning
+  helpers were removed. The API response is unchanged — the full catalog still drives the
+  `mirrored` sync-health warning, whose wording was adjusted. Production build clean.
 
 #### Changed — the Add Asset class picker offers only the classes this issuer is GRANTED (Phase 4.2 as Phase 17 rows)
 
