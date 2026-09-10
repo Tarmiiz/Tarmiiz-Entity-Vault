@@ -663,6 +663,11 @@ export class DetailsPage implements OnInit {
         String(x.amount), String(x.released), String(x.remaining),
         Number(x.state), x.stateName || '', x.reason || '', x.releaseReason || '',
         Number(x.blockNumber || 0), Number(x.createdAt || 0), Number(x.lastUpdate || 0),
+        // 🔴 FIXED 2026-09-11: the API has carried these since 2026-07-30 and the model has had
+        // the two trailing params since then, but this call never passed them — so the
+        // constructor defaults ('') applied and "Placed By" rendered a dash for every hold,
+        // including a custodian-placed one whose whole point is WHO placed it.
+        x.placedBy || '', x.releasedBy || '',
       ));
       this.holdsByAsset.update(m => ({ ...m, [asset]: list }));
     } catch (e) {
