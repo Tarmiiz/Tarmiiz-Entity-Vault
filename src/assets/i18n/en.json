@@ -4315,9 +4315,14 @@
     "serviceStraightThrough": "Service: Straight-Through Transactions"
   },
   "custody": {
+    "tabs": {
+      "services": "My Services",
+      "underCustody": "Services Under My Custody",
+      "assets": "Assets Under Custody"
+    },
     "myServices": {
-      "description": "Your own type-2 services that can act as a custodian for token-issuer services.",
-      "empty": "You have no custodian (type-2) services.",
+      "description": "Your own services. A service acts as a custodian once a token-issuer service attaches it.",
+      "empty": "You have no services.",
       "title": "My custodian services"
     },
     "underCustody": {

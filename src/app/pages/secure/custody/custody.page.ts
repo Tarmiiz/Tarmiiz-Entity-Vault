@@ -66,7 +66,18 @@ export class CustodyPage implements OnInit {
 
   userInfo!: User;
 
-  // The entity's own type-2 (custodian-eligible) services.
+  // One tab per group. Holds live under 'assets', so a hold placed there never switches tabs.
+  readonly tabs = ['services', 'underCustody', 'assets'] as const;
+  activeTab = signal<'services' | 'underCustody' | 'assets'>('services');
+
+  tabCount(tab: 'services' | 'underCustody' | 'assets'): number {
+    if (tab === 'services') return this.myCustodianServices().length;
+    if (tab === 'underCustody') return this.custodyMandates().length;
+    return this.custodiedAssets().length;
+  }
+
+  // The entity's own services — every one is a custodian candidate; the mandates below are what
+  // establish custodianship (see loadOwnCustodianServices).
   myCustodianServices = signal<Service[]>([]);
   /** 1-based, per frontend Standard 1.5. */
   myServicesPage = signal(1);
