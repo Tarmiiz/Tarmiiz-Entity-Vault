@@ -132,8 +132,9 @@ export class UserGroupDetailsPage implements OnInit {
     this.menuLoading.set(true);
     try {
       const rows = (await this.apiService.vaultUserGroupMenuConfigList(this.groupId()))
-        // Tenant-disabled or mode-hidden keys are moot — the tenant map stays the ceiling.
-        .filter(r => r.tenantEnabled && this.features.modeAllows(r.menuKey));
+        // Tenant-disabled keys, and keys the regulator has not licensed or granted, are moot —
+        // hidden, not locked (user ruling 2026-09-10).
+        .filter(r => r.tenantEnabled && r.license?.state !== 'not-covered' && !r.grantDenied);
       rows.sort((a, b) => this.labelFor(a.menuKey).localeCompare(this.labelFor(b.menuKey)));
       this.menuRows.set(rows);
     } catch {
@@ -160,7 +161,8 @@ export class UserGroupDetailsPage implements OnInit {
   async loadSystemFunctionsConfig() {
     this.sysFnLoading.set(true);
     try {
-      const rows = await this.apiService.vaultUserGroupSystemFunctionConfigList(this.groupId());
+      const rows = (await this.apiService.vaultUserGroupSystemFunctionConfigList(this.groupId()))
+        .filter(r => r.license?.state !== 'not-covered' && !r.grantDenied);
       rows.sort((a, b) => this.fnLabelFor(a.functionKey).localeCompare(this.fnLabelFor(b.functionKey)));
       this.sysFnRows.set(rows);
     } catch {

@@ -239,7 +239,9 @@ export class DetailsPage implements OnInit {
   async loadSystemFunctionsConfig() {
     this.sysFnLoading.set(true);
     try {
-      const rows = await this.apiService.vaultUserSystemFunctionConfigList(this.userId());
+      // A function the regulator's licences or grants close controls nothing — hidden, not locked.
+      const rows = (await this.apiService.vaultUserSystemFunctionConfigList(this.userId()))
+        .filter(r => r.license?.state !== 'not-covered' && !r.grantDenied);
       rows.sort((a, b) => this.fnLabelFor(a.functionKey).localeCompare(this.fnLabelFor(b.functionKey)));
       this.sysFnRows.set(rows);
     } catch {
@@ -280,9 +282,9 @@ export class DetailsPage implements OnInit {
     try {
       const rows = (await this.apiService.vaultUserMenuConfigList(this.userId()))
         // Restrict-only: a per-user override can only narrow the tenant menu, so only
-        // tenant-enabled + mode-allowed keys are actionable here. The rest are hidden
-        // for everyone regardless.
-        .filter(r => r.tenantEnabled && this.features.modeAllows(r.menuKey));
+        // tenant-enabled keys the regulator has licensed AND granted are actionable here. The
+        // rest are hidden for everyone regardless (user ruling 2026-09-10: hidden, not locked).
+        .filter(r => r.tenantEnabled && r.license?.state !== 'not-covered' && !r.grantDenied);
       rows.sort((a, b) => this.labelFor(a.menuKey).localeCompare(this.labelFor(b.menuKey)));
       this.menuRows.set(rows);
       this.menuLoaded = true;

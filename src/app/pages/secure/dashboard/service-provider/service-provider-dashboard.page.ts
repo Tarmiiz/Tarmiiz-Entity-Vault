@@ -8,6 +8,7 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { SocketService } from '../../../../shared/services/socket.service';
 import { ApiService } from '../../../../shared/services/api.service';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { FeaturesService } from '../../../../shared/services/features.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { Service, User } from '../../../../shared/models/data.model';
 import { partyClassName } from '../../../../shared/constants/party-class';
@@ -42,6 +43,9 @@ export class ServiceProviderDashboardPage implements OnInit {
   private loadingService = inject(LoadingService);
   private router = inject(Router);
   socketService = inject(SocketService);
+  // The "awaiting licences" state (Phase 28.13): with Entity Mode retired, a fresh entity's surface
+  // is exactly what its regulator has issued — nothing yet — so the home page says why and what next.
+  features = inject(FeaturesService);
 
   userInfo!: User;
 

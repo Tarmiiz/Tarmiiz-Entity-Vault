@@ -479,6 +479,8 @@
     "noTransactionsYet": "لا توجد معاملات بعد",
     "servicePlural": "خدمات",
     "serviceProvider": {
+      "awaitingLicencesTitle": "لم تُصدر أي تراخيص بعد",
+      "awaitingLicencesBody": "تحدد الجهة التنظيمية ما يمكن لهذه الجهة القيام به. أنشئ خدمة واطلب ترخيصًا لها — ستظهر الوحدات هنا عندما توافق الجهة التنظيمية على التراخيص وتمنح الصلاحيات.",
       "activeLabel": "نشطة",
       "inactiveLabel": "غير نشطة",
       "myServicesTitle": "خدماتي",

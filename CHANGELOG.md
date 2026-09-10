@@ -17,6 +17,25 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-10
 
+#### Changed — Entity Mode retired: navigation follows the regulator's licences and grants (Phase 28.13 + Phase 17 A6a)
+
+- [FeaturesService](src/app/shared/services/features.service.ts) dropped `mode` / `modeMenu` /
+  `modeAllows`. `menuEnabled` = licence (`features.licenses`) ∧ the served map (the admin toggle
+  with the regulator's Phase 17 grants folded in server-side). `isServiceProvider()` /
+  `isClearingHouse()` are DERIVED from `features.licenses.held` (Token Issuer 27; Clearing House
+  5 / 6), so the dashboard variant no longer depends on a tenant setting. A fresh entity sees the
+  basic set only.
+- Menu Settings, User Details (Menu Access + System Functions) and the User Group editor **HIDE**
+  rows whose licence is `not-covered` or whose grant is denied (user ruling 2026-09-10: hidden, not
+  locked). **API Endpoints hides the sections its licences do not cover** — their routes 403 every
+  external caller at the licence ceiling whatever the toggle says.
+- `FeaturesService` refreshes on `vault:updated` of type `party_grants` (1 s trailing debounce), so a
+  regulator's grant change reaches a live session.
+- Service-provider dashboard: a "No licences issued yet" state (en + ar) when the licence set is
+  known and empty, in both the operator and admin views.
+- System Configuration loses its Entity mode row (the page is content-driven — no page change).
+  Production build clean.
+
 #### Changed — the Add Asset class picker offers only the classes this issuer is GRANTED (Phase 4.2 as Phase 17 rows)
 
 - [asset-creator.page.ts](src/app/pages/secure/assets/creator/asset-creator.page.ts) reads

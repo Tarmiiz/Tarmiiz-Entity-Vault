@@ -5,11 +5,9 @@ export interface AppConfig {
   socketURL: string;
   brandPrimary?: string;
   brandPrimaryHover?: string;
-  // NOTE: there is deliberately no `vaultMode` here. The entity mode is the Entity API's
-  // app_config VAULT_MODE — an 'Entity Mode' Global Variables variable_id — and arrives on
-  // /vault/features together with its menu allow-list. A static mirror here would be a
-  // second, divergent identifier space; FeaturesService instead defaults to Token Issuer
-  // for the window before the first fetch resolves and keeps the last known value after.
+  // NOTE: there is deliberately no `vaultMode` here — and since 2026-09-10 no entity mode at all
+  // (Phase 28.13). What a tenant sees comes from its regulator's licences and grants, served on
+  // /features; a static mirror here would be a second, divergent source of truth.
 }
 
 const BRAND_DEFAULTS = {

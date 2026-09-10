@@ -17,15 +17,13 @@ import {
 } from '../models/data.model';
 
 /**
- * The tenant feature envelope returned by GET /vault/features[/me].
- * `vaultMode` is the 'Entity Mode' Global Variables variable_id (1 = Token Issuer);
- * `modeMenu` is the menu-key allow-list that mode permits, `null` = unrestricted.
+ * The tenant feature envelope returned by GET /features[/me].
+ * ⚠️ Entity Mode (`vaultMode` / `vaultModeName` / `modeMenu`) was RETIRED 2026-09-10 (Phase 28.13):
+ * the regulator's LICENCES (`licenses`) and GRANTS (already folded into `menu` / `systemFunctions`
+ * server-side) decide what a tenant sees.
  */
 export interface VaultFeatures {
   dex: boolean;
-  vaultMode: number | null;
-  vaultModeName: string | null;
-  modeMenu: string[] | null;
   // Decimal places every MONEY value renders with (app_config CURRENCY_DECIMALS).
   // null = the server did not answer; the caller keeps its current value.
   currencyDecimals: number | null;
@@ -110,8 +108,8 @@ export class ApiService {
     }
   }
 
-  // vaultMode is the 'Entity Mode' Global Variables variable_id; modeMenu is the menu-key
-  // allow-list that mode permits (null = unrestricted, i.e. Token Issuer).
+  // Public (pre-login) tenant features: DEX switch, money precision, licence fold, and the menu
+  // map with the regulator's grant ceiling folded in.
   async vaultFeatures(): Promise<VaultFeatures | null> {
     try {
       const response = await CapacitorHttp.request({
@@ -123,9 +121,6 @@ export class ApiService {
       const features = response.data.features ?? {};
       return {
         dex: !!features.dex,
-        vaultMode: features.vaultMode != null ? Number(features.vaultMode) : null,
-        vaultModeName: features.vaultModeName ?? null,
-        modeMenu: features.modeMenu ?? null,
         currencyDecimals: features.currencyDecimals != null ? Number(features.currencyDecimals) : null,
         licenses: features.licenses ?? null,
         menu: response.data.menu ?? {},
@@ -136,7 +131,7 @@ export class ApiService {
   }
 
   // Menu config (admin Menu Settings page) — JWT-gated under /vault/...
-  async vaultMenuConfigList(): Promise<{ menuKey: string; enabled: boolean; updatedAt: number | null; updatedByUserId: string | null; license: any }[]> {
+  async vaultMenuConfigList(): Promise<{ menuKey: string; enabled: boolean; updatedAt: number | null; updatedByUserId: string | null; license: any; grantDenied: boolean }[]> {
     const data = await this.vaultGet('/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
       menuKey: r.menu_key,
@@ -147,6 +142,8 @@ export class ApiService {
       // named here — and a dropped `license` renders as "unknown", the reassuring answer, on every
       // row. Any future field the licence surface adds must be added here too.
       license: r.license ?? null,
+      // The regulator granted none of the module's rows (Phase 17). Rows it closes are HIDDEN.
+      grantDenied: r.grantDenied === true,
     }));
   }
 
@@ -163,9 +160,6 @@ export class ApiService {
     const features = data.features ?? {};
     return {
       dex: !!features.dex,
-      vaultMode: features.vaultMode != null ? Number(features.vaultMode) : null,
-      vaultModeName: features.vaultModeName ?? null,
-      modeMenu: features.modeMenu ?? null,
       currencyDecimals: features.currencyDecimals != null ? Number(features.currencyDecimals) : null,
       licenses: features.licenses ?? null,
       menu: data.menu ?? {},
@@ -177,7 +171,7 @@ export class ApiService {
   // three layers: userEnabled (explicit override), groupEnabled (assigned User Group's
   // setting — null when no group row / group inert), and the folded effective value.
   async vaultUserMenuConfigList(userId: string | number): Promise<
-    { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean; license: any }[]
+    { menuKey: string; tenantEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean; license: any; grantDenied: boolean }[]
   > {
     const data = await this.vaultGet('/staff/' + userId + '/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
@@ -188,6 +182,7 @@ export class ApiService {
       effective: !!r.effective,
       // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
       license: r.license ?? null,
+      grantDenied: r.grantDenied === true,
     }));
   }
 
@@ -203,7 +198,7 @@ export class ApiService {
   // Per-user System Functions (admin System Functions tab on User Details). Returns only the
   // functions applicable to the target user's role (empty ⇒ tab hidden).
   async vaultUserSystemFunctionConfigList(userId: string | number): Promise<
-    { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean; license: any }[]
+    { functionKey: string; defaultEnabled: boolean; userEnabled: boolean | null; groupEnabled: boolean | null; effective: boolean; license: any; grantDenied: boolean }[]
   > {
     const data = await this.vaultGet('/staff/' + userId + '/system-functions');
     return (data?.functions ?? []).map((r: any) => ({
@@ -214,6 +209,7 @@ export class ApiService {
       effective: !!r.effective,
       // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
       license: r.license ?? null,
+      grantDenied: r.grantDenied === true,
     }));
   }
 
@@ -249,7 +245,7 @@ export class ApiService {
   }
 
   async vaultUserGroupMenuConfigList(groupId: string): Promise<
-    { menuKey: string; tenantEnabled: boolean; groupEnabled: boolean | null; effective: boolean; license: any }[]
+    { menuKey: string; tenantEnabled: boolean; groupEnabled: boolean | null; effective: boolean; license: any; grantDenied: boolean }[]
   > {
     const data = await this.vaultGet('/staff-groups/' + groupId + '/menu-config');
     return (data?.menu ?? []).map((r: any) => ({
@@ -259,6 +255,7 @@ export class ApiService {
       effective: !!r.effective,
       // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
       license: r.license ?? null,
+      grantDenied: r.grantDenied === true,
     }));
   }
 
@@ -267,7 +264,7 @@ export class ApiService {
   }
 
   async vaultUserGroupSystemFunctionConfigList(groupId: string): Promise<
-    { functionKey: string; defaultEnabled: boolean; groupEnabled: boolean | null; effective: boolean; license: any }[]
+    { functionKey: string; defaultEnabled: boolean; groupEnabled: boolean | null; effective: boolean; license: any; grantDenied: boolean }[]
   > {
     const data = await this.vaultGet('/staff-groups/' + groupId + '/system-functions');
     return (data?.functions ?? []).map((r: any) => ({
@@ -277,6 +274,7 @@ export class ApiService {
       effective: !!r.effective,
       // Explicit mapper — an unnamed field is DROPPED, and a dropped licence renders as "unknown".
       license: r.license ?? null,
+      grantDenied: r.grantDenied === true,
     }));
   }
 
@@ -375,7 +373,7 @@ export class ApiService {
   //
   // `encodeURIComponent` on the key, as `setAppConfig` does: registry keys are camelCase today
   // but the path segment must survive whatever a future generated key contains.
-  async vaultApiEndpointsList(): Promise<{ endpoints: any[]; sections: { section: string; items: any[] }[] }> {
+  async vaultApiEndpointsList(): Promise<{ endpoints: any[]; sections: { section: string; items: any[]; license?: any }[] }> {
     const data = await this.vaultGet('/api-endpoints');
     // Registry order is the SERVER's — returned untouched. Do not sort or re-group here.
     return { endpoints: data?.endpoints ?? [], sections: data?.sections ?? [] };

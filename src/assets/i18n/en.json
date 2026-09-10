@@ -479,6 +479,8 @@
     "noTransactionsYet": "No transactions yet",
     "servicePlural": "services",
     "serviceProvider": {
+      "awaitingLicencesTitle": "No licences issued yet",
+      "awaitingLicencesBody": "What this entity can do is decided by its regulator. Create a service and request a licence for it — modules appear here as your regulator approves licences and grants permissions.",
       "activeLabel": "active",
       "inactiveLabel": "inactive",
       "myServicesTitle": "My Services",

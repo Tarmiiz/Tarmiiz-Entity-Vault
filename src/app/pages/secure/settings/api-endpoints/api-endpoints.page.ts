@@ -93,7 +93,11 @@ export class ApiEndpointsPage implements OnInit {
       // generated from the API spec's own domain tags and is the REVIEWED order; re-sorting a
       // 357-row list a human is expected to scan would quietly discard that review.
       const res = await this.apiService.vaultApiEndpointsList();
-      this.sections.set(res?.sections ?? []);
+      // A section the regulator's licences do not cover is HIDDEN (2026-09-10 — the same rule as the
+      // sidebar; user ruling: hidden, not locked). Its routes answer 403 to every external caller
+      // at the licence ceiling whatever the toggle says, so a switch here would control nothing.
+      // `undetermined` stays visible: "we could not read the licences" is not a refusal.
+      this.sections.set((res?.sections ?? []).filter(s => s.license?.state !== 'not-covered'));
     } finally {
       this.loading.set(false);
     }

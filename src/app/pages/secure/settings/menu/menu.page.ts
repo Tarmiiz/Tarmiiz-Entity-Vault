@@ -14,8 +14,10 @@ import { LicensePillComponent, LicenseStatus } from '../../../../shared/componen
 interface MenuConfigRow {
   menuKey: string;
   enabled: boolean;
-  /** What the tenant's licences mean for this module. Surfacing only — never gates the toggle. */
+  /** What the tenant's licences mean for this module. A `not-covered` row is hidden (see load). */
   license?: LicenseStatus | null;
+  /** The regulator granted none of this module's rows (Phase 17). Hidden too. */
+  grantDenied?: boolean;
   updatedAt: number | null;
   updatedByUserId: string | null;
 }
@@ -51,8 +53,11 @@ export class MenuSettingsPage implements OnInit {
   async load() {
     this.loading.set(true);
     try {
+      // A module the regulator has not licensed (`not-covered`) or granted is HIDDEN, not shown
+      // locked — user ruling 2026-09-10, a deliberate departure from Phase 17 amendment ruling 4.
+      // `undetermined` stays: "we could not read the licences" is not a refusal.
       const rows = (await this.apiService.vaultMenuConfigList())
-        .filter(r => this.features.modeAllows(r.menuKey)); // hide no-op toggles for the entity type
+        .filter(r => r.license?.state !== 'not-covered' && !r.grantDenied);
       rows.sort((a, b) => this.labelFor(a.menuKey).localeCompare(this.labelFor(b.menuKey)));
       this.rows.set(rows);
     } finally {

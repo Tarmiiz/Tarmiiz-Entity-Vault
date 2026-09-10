@@ -66,10 +66,11 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layouts/authorized-layout/authorized-layout.component').then(m => m.AuthorizedLayoutComponent),
     canActivate: [AuthGuard],
     children: [
-      // dashboard — issuer vs service-provider variant chosen by vaultMode. Awaits the
-      // features fetch first (same reason as menuFeatureGuard): the mode is server-owned
-      // now, so a hard refresh here would otherwise pick the variant off the config.json
-      // fallback. inject() runs before the first await, as an injection context requires.
+      // dashboard — issuer / service-provider / clearing-house variant, DERIVED from the licences
+      // the tenant's regulator has issued (Entity Mode was retired 2026-09-10, Phase 28.13).
+      // Awaits the features fetch first (same reason as menuFeatureGuard): the licence set is
+      // server-owned, so a synchronous read on a hard refresh would pick a variant before it
+      // lands. inject() runs before the first await, as an injection context requires.
       {
         path: 'dashboard',
         loadComponent: async () => {
