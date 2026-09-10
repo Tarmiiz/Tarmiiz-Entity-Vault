@@ -1,7 +1,6 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { HeaderComponent } from '../../../shared/components/header/header.component';
@@ -60,29 +59,22 @@ export class CustodyPage implements OnInit {
   private loadingService = inject(LoadingService);
   private alertService   = inject(AlertService);
   private translate      = inject(TranslateService);
-  private router         = inject(Router);
   // Public so the template can gate the Hold / Release buttons.
   features = inject(FeaturesService);
 
   userInfo!: User;
 
   // One tab per group. Holds live under 'assets', so a hold placed there never switches tabs.
-  readonly tabs = ['services', 'underCustody', 'assets'] as const;
-  activeTab = signal<'services' | 'underCustody' | 'assets'>('services');
+  readonly tabs = ['underCustody', 'assets'] as const;
+  activeTab = signal<'underCustody' | 'assets'>('underCustody');
 
-  tabCount(tab: 'services' | 'underCustody' | 'assets'): number {
-    if (tab === 'services') return this.myCustodianServices().length;
-    if (tab === 'underCustody') return this.custodyMandates().length;
-    return this.custodiedAssets().length;
+  tabCount(tab: 'underCustody' | 'assets'): number {
+    return tab === 'underCustody' ? this.custodyMandates().length : this.custodiedAssets().length;
   }
 
-  // The entity's own services — every one is a custodian candidate; the mandates below are what
-  // establish custodianship (see loadOwnCustodianServices).
+  // The entity's own services. NOT rendered (a "My Services" tab repeated the Services module's
+  // list); loaded only for the Place Hold "acting service" picker and to mark holds WE placed.
   myCustodianServices = signal<Service[]>([]);
-  /** 1-based, per frontend Standard 1.5. */
-  myServicesPage = signal(1);
-  myServicesPageSize = signal(25);
-  pagedMyServices = computed(() => pageSlice(this.myCustodianServices(), this.myServicesPage(), this.myServicesPageSize()));
 
   // Live reverse index (plugin-written custody_mandates from the ServicePartyChanged
   // announce fan-out): services that attached one of OUR services as their custodian.
@@ -238,10 +230,6 @@ export class CustodyPage implements OnInit {
       case 3: return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  }
-
-  gotoService(addr: string) {
-    this.router.navigate(['/authorized/services/details/' + addr]);
   }
 
   // ── Place hold ────────────────────────────────────────────────────────────

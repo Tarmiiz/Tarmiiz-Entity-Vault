@@ -19,47 +19,9 @@
     }
   </div>
 
-  <!-- My services -->
-  @if (activeTab() === 'services') {
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-    <div class="px-4 py-3 border-b border-gray-200">
-      <h2 class="text-sm font-semibold text-gray-800">{{ 'custody.myServices.title' | translate }}</h2>
-      <p class="text-xs text-gray-600">{{ 'custody.myServices.description' | translate }}</p>
-    </div>
-    <div class="overflow-x-auto">
-      <table class="table-v4 w-full text-sm text-left">
-        <thead>
-          <tr>
-            <th>{{ 'common.name' | translate }}</th>
-            <th>{{ 'common.address' | translate }}</th>
-            <th>{{ 'common.state' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (s of pagedMyServices(); track s.address; let i = $index) {
-            <tr class="cursor-pointer hover:bg-blue-50 transition-colors" (click)="gotoService(s.address)">
-              <td class="font-medium text-gray-900">{{ s.name }}</td>
-              <td class="font-mono text-xs">{{ s.address }}</td>
-              <td>
-                <span class="text-xs px-2 py-0.5 rounded-full" [class]="getStateClass(s.state)">
-                  {{ s.stateName }}{{ s.suspended ? (' (' + ('state.suspended' | translate) + ')') : '' }}
-                </span>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="3" class="py-6 text-center text-gray-500 text-sm">
-                @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.myServices.empty' | translate }} }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-    <app-paginator [total]="myCustodianServices().length" [page]="myServicesPage()" [pageSize]="myServicesPageSize()"
-      (pageChange)="myServicesPage.set($event)" (pageSizeChange)="myServicesPageSize.set($event)" />
-  </div>
-  }
+  <!-- No "My Services" tab: it repeated the Services module's list (the page stopped filtering on
+       service type in Phase 28). Own services are still loaded — the Place Hold picker and the
+       Placed-by labels need them. -->
 
   <!-- Services under my custody (live reverse index) -->
   @if (activeTab() === 'underCustody') {

@@ -4316,14 +4316,8 @@
   },
   "custody": {
     "tabs": {
-      "services": "My Services",
       "underCustody": "Services Under My Custody",
       "assets": "Assets Under Custody"
-    },
-    "myServices": {
-      "description": "Your own services. A service acts as a custodian once a token-issuer service attaches it.",
-      "empty": "You have no services.",
-      "title": "My custodian services"
     },
     "underCustody": {
       "description": "Token-issuer services that have attached one of your services as their custodian.",

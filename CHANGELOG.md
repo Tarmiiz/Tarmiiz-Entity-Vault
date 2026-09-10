@@ -17,14 +17,16 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-10
 
-#### Changed — Custody page split into tabs
+#### Changed — Custody page split into tabs; the duplicate "My Services" list removed
 
-- [Custody](src/app/pages/secure/custody/custody.page.html) shows its three groups — My Services /
-  Services Under My Custody / Assets Under Custody — as tabs (the Settlements / Clearing tab-bar
-  shape) instead of three stacked cards, each tab carrying its row count so an empty group is
-  visible without clicking into it. Holds stay under Assets Under Custody.
-- The My Services copy no longer says "type-2" (en + ar): the page stopped filtering on
-  `serviceType` in Phase 28 step (e), and the mandates, not a service type, establish custodianship.
+- [Custody](src/app/pages/secure/custody/custody.page.html) shows its groups — Services Under My
+  Custody / Assets Under Custody — as tabs (the Settlements / Clearing tab-bar shape) instead of
+  stacked cards, each tab carrying its row count so an empty group is visible without clicking
+  into it. Holds stay under Assets Under Custody.
+- **The "My custodian services" card is gone.** It listed the entity's own type-2 services until
+  Phase 28 step (e) removed the `serviceType` filter, after which it was the Services module's list
+  repeated. The own-services load stays: it feeds the Place Hold "acting service" picker and the
+  Placed-by labels. Its `custody.myServices.*` strings are removed (en + ar).
 
 #### Changed — Entity Mode retired: navigation follows the regulator's licences and grants (Phase 28.13 + Phase 17 A6a)
 
