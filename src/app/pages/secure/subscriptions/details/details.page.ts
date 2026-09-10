@@ -668,6 +668,7 @@ export class DetailsPage implements OnInit {
         // constructor defaults ('') applied and "Placed By" rendered a dash for every hold,
         // including a custodian-placed one whose whole point is WHO placed it.
         x.placedBy || '', x.releasedBy || '',
+        x.placedByName || '', x.releasedByName || '',
       ));
       this.holdsByAsset.update(m => ({ ...m, [asset]: list }));
     } catch (e) {

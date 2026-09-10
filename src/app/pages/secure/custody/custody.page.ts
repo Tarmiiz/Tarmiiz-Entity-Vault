@@ -210,7 +210,11 @@ export class CustodyPage implements OnInit {
       const svc = this.myCustodianServices().find(s => s.address.toLowerCase() === h.placedBy.toLowerCase());
       return svc?.name || h.placedBy;
     }
-    return this.translate.instant('custody.holds.regulator');
+    // Not ours: the API resolves the placer's name from the mirrors (another custodian on the
+    // same asset, or the regulator). Only an UNRESOLVED foreign placer falls back to the
+    // "Regulator" label — before 2026-09-11 every non-own hold read "Regulator", which would
+    // have labelled a second custodian's hold as the regulator's.
+    return (h as any).placedByName || this.translate.instant('custody.holds.regulator');
   }
 
   getStateClass(stateId: number | undefined): string {

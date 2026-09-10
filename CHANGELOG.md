@@ -17,6 +17,10 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-11
 
+#### Changed — Placed By shows the placer's NAME, address in the tooltip
+
+- [subscriptions/details/details.page.html:476](src/app/pages/secure/subscriptions/details/details.page.html#L476) + `RegulatorHold.placedByName/releasedByName` in `data.model.ts` — the Entity API now resolves the acting authority to a name ("MCDR Central Custody"); the cell renders it and keeps the address as `title`, falling back to the shortened address when the API has no name. [custody.page.ts:208](src/app/pages/secure/custody/custody.page.ts#L208) — a non-own hold renders the resolved name too; only an unresolved foreign placer keeps the "Regulator" label (previously every non-own hold did, which would have labelled a second custodian's hold as the regulator's).
+
 #### Fixed — subscription Holdings → Regulator Holds showed "—" under Placed By for every hold
 
 - [subscriptions/details/details.page.ts:661](src/app/pages/secure/subscriptions/details/details.page.ts#L661) — the hold rows are built with `new RegulatorHold(...)`, whose two trailing params `placedBy` / `releasedBy` default to `''`; this call never passed them although the API has carried both since the custodian hold grant (2026-07-30). Found on base on the first custodian-placed hold after the reset (MCDR on a Granite EGP Fund subscriber): the chain and all three mirrors named the custody service, the Vault printed a dash.

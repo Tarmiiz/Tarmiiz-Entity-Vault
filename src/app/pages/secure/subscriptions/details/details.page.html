@@ -473,7 +473,7 @@
                                           {{ hold.stateName }}
                                         </span>
                                       </td>
-                                      <td class="font-mono text-[10px] text-gray-600" [title]="hold.placedBy">{{ hold.placedBy ? (hold.placedBy | slice:0:10) + '…' : '—' }}</td>
+                                      <td class="text-xs text-gray-600" [title]="hold.placedBy">{{ hold.placedByName || (hold.placedBy ? (hold.placedBy | slice:0:10) + '…' : '—') }}</td>
                                       <td class="text-gray-700">{{ hold.reason }}</td>
                                       <td class="text-gray-500">{{ hold.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                                     </tr>

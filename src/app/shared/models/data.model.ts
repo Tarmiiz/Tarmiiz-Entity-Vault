@@ -1003,7 +1003,11 @@ export class RegulatorHold {
     // Acting authority (custodian hold grant, 2026-07-30): the asset's regulator or an
     // attached external custodian service. Empty on pre-cutover rows.
     public placedBy: string = '',
-    public releasedBy: string = ''
+    public releasedBy: string = '',
+    // Display names the API resolves from its mirrors (2026-09-11); empty when unknown —
+    // render the shortened address then, never a guess.
+    public placedByName: string = '',
+    public releasedByName: string = ''
   ) {}
 }
 
