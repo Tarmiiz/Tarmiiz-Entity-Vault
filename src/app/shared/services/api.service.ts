@@ -30,6 +30,9 @@ export interface VaultFeatures {
   // null = the server did not answer; the caller keeps its current value.
   currencyDecimals: number | null;
   menu: Record<string, boolean>;
+  // The tenant's regulator-issued licences folded per menu key (2026-09-10); null = the server
+  // did not answer, and FeaturesService keeps its last known fold.
+  licenses: { determined: boolean; held: number[]; menu: Record<string, { state: string; sections: string[]; covered: number; total: number; note: string }> } | null;
 }
 
 @Injectable({
@@ -124,6 +127,7 @@ export class ApiService {
         vaultModeName: features.vaultModeName ?? null,
         modeMenu: features.modeMenu ?? null,
         currencyDecimals: features.currencyDecimals != null ? Number(features.currencyDecimals) : null,
+        licenses: features.licenses ?? null,
         menu: response.data.menu ?? {},
       };
     } catch {
@@ -163,6 +167,7 @@ export class ApiService {
       vaultModeName: features.vaultModeName ?? null,
       modeMenu: features.modeMenu ?? null,
       currencyDecimals: features.currencyDecimals != null ? Number(features.currencyDecimals) : null,
+      licenses: features.licenses ?? null,
       menu: data.menu ?? {},
       systemFunctions: data.systemFunctions ?? {},
     };

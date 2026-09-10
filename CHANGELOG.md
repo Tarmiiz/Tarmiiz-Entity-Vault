@@ -17,6 +17,18 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-10
 
+#### Changed — navigation is licence-aware: a module the regulator has not licensed is hidden, not opened into a 403
+
+- `FeaturesService.menuEnabled()` now folds THREE server-resolved layers — entity mode, the
+  regulator's licences (new, from `features.licenses`), the admin's menu toggle — so all 26
+  `menuEnabled` call sites in the sidebar and the `menuFeatureGuard` on every module route inherit
+  it with no template change: a hidden module is also unreachable by URL. Only `not-covered`
+  hides; `undetermined` (the API could not read the licence set) stays visible on purpose, because
+  "we could not ask" must never look like "you were refused". A failed fetch keeps the last known
+  fold, like the mode. `licenseFor(key)` is exposed for a surface that wants to explain an absence.
+  [features.service.ts](src/app/shared/services/features.service.ts), `VaultFeatures.licenses` on
+  [api.service.ts](src/app/shared/services/api.service.ts).
+
 #### Changed — the Asset Creator is a routed PAGE, the app's first stepped page (R18 / Phase 4.9, A2)
 
 - **`modal-asset-add` (864 + 621 lines) is promoted in place to

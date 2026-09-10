@@ -47,6 +47,11 @@ export class FeaturesService {
   // the post-login refresh, since these buttons live on authenticated pages).
   systemFunctions = signal<Record<string, boolean>>({});
 
+  // The tenant's REGULATOR-ISSUED LICENCES, as the API folds them per menu key (2026-09-10).
+  // `menu[key].state`: 'available' | 'not-covered' | 'undetermined' | 'core' | 'unknown'.
+  // SERVER-owned like the mode: the Vault never derives licence coverage itself.
+  licenses = signal<{ determined: boolean; held: number[]; menu: Record<string, { state: string; sections: string[]; covered: number; total: number; note: string }> } | null>(null);
+
   private inflight: Promise<void> | null = null;
 
   constructor() {
@@ -82,9 +87,29 @@ export class FeaturesService {
     return allowed === null || allowed.includes(key);
   }
 
-  /** Whether a toggleable menu group is enabled. Unknown keys default to enabled. */
+  /**
+   * Whether the tenant's licences cover a menu key. ONLY `not-covered` closes it: `undetermined`
+   * (the API could not read the licence set) stays open, because "we could not ask" must never
+   * render as "you were refused" — that sends the tenant to its regulator for a licence it may
+   * already hold. Core/unknown/absent all read as covered.
+   */
+  licenseCovers(key: string): boolean {
+    return this.licenses()?.menu?.[key]?.state !== 'not-covered';
+  }
+
+  /** The licence block for one menu key, for a surface that wants to explain a missing module. */
+  licenseFor(key: string) {
+    return this.licenses()?.menu?.[key] ?? null;
+  }
+
+  /**
+   * Whether a toggleable menu group is enabled. Unknown keys default to enabled.
+   * Three layers, all server-resolved: entity MODE, the regulator's LICENCES (2026-09-10), the
+   * admin's menu toggle. The route guard reads this too, so a hidden module is also unreachable.
+   */
   menuEnabled(key: string): boolean {
     if (!this.modeAllows(key)) return false;   // entity-type hard-restrict
+    if (!this.licenseCovers(key)) return false; // regulator-issued licence ceiling
     const m = this.menu();
     return key in m ? m[key] : true;           // admin toggle
   }
@@ -118,6 +143,9 @@ export class FeaturesService {
         // Keep the last known precision when the server didn't answer, for the same
         // reason as the mode above — a blip must not re-render every figure.
         if (features?.currencyDecimals != null) this.currencyDecimals.set(features.currencyDecimals);
+        // Keep the last known licence fold on a blip, for the same reason as the mode: a
+        // failed fetch must not re-show a module the regulator has not licensed.
+        if (features?.licenses) this.licenses.set(features.licenses);
         this.menu.set(features?.menu ?? {});
         // System functions only come back on the authenticated (per-user) call.
         this.systemFunctions.set((features as any)?.systemFunctions ?? {});
