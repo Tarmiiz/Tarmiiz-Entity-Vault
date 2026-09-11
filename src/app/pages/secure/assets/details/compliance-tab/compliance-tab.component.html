@@ -118,7 +118,7 @@
                   } @else if (lambdaPercent() === null) {
                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">{{ 'assets.details.compliance.paramNotSet' | translate }}</span>
                   } @else {
-                    <span class="text-gray-800 font-mono">{{ lambdaPercent() | number:'1.2-2' }}%</span>
+                    <span class="text-gray-800">{{ lambdaPercent() | number:'1.2-2' }}%</span>
                   }
                 </div>
                 @for (p of otherParams(); track p.param_key) {

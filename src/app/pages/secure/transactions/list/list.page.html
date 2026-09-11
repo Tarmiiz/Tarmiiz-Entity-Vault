@@ -130,6 +130,10 @@
             </tr>
           }
           @for (t of pagedTransactions(); track t.trxId) {
+            <!-- This cell shows EITHER a human service name OR a shortened address, so the
+                 typeface has to follow the VALUE, not the column: font-mono means identifier,
+                 and a name like "Granite Mobile App" rendered monospaced is simply wrong. -->
+            @let serviceIsNamed = t.serviceName && t.serviceName !== t.service;
             <tr class="cursor-pointer" [class.row-new]="newTrxIds().has(t.trxId)" (click)="viewDetails(t)">
               <td>{{ utils.formatDate(t.time) }}</td>
               <td>
@@ -137,7 +141,7 @@
               </td>
               <td>{{ t.assetName }}</td>
               <td><span class="badge-symbol">{{ t.assetSymbol }}</span></td>
-              <td class="font-mono">{{ t.serviceName && t.serviceName !== t.service ? t.serviceName : shortAddr(t.from && t.from.toLowerCase() !== t.asset.toLowerCase() ? t.from : t.service) }}</td>
+              <td [class.font-mono]="!serviceIsNamed">{{ serviceIsNamed ? t.serviceName : shortAddr(t.from && t.from.toLowerCase() !== t.asset.toLowerCase() ? t.from : t.service) }}</td>
               <td class="font-mono">{{ shortAddr(partyAddress(t)) }}</td>
               <td class="text-center"><span class="badge-currency">{{ t.currencyCode }}</span></td>
               <td class="text-right">{{ t.tokens | number:'1.0-0' }}</td>

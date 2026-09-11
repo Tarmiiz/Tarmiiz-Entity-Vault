@@ -96,7 +96,7 @@
               @if (shortfallTolerance() !== null) {
                 <p class="text-[11px] text-gray-500 mt-0.5">
                   {{ 'dashboard.liquidity.tolerance' | translate }}:
-                  <span class="font-mono font-semibold text-gray-700">{{ shortfallTolerance() | number:'1.2-6' }}</span>
+                  <span class="font-semibold text-gray-700">{{ shortfallTolerance() | number:'1.2-6' }}</span>
                   <span class="text-gray-400">
                     — {{ (shortfallToleranceIsSet() ? 'dashboard.liquidity.toleranceRegulator'
                                                     : 'dashboard.liquidity.toleranceDefault') | translate }}
@@ -143,18 +143,18 @@
                 <div class="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <p class="text-gray-500 uppercase tracking-wider">{{ 'dashboard.liquidity.obligation' | translate }}</p>
-                    <p class="font-mono font-semibold text-gray-800">{{ row.obligation | money }}</p>
+                    <p class="font-semibold text-gray-800">{{ row.obligation | money }}</p>
                   </div>
                   <div>
                     <p class="text-gray-500 uppercase tracking-wider">{{ 'dashboard.liquidity.liquidityLabel' | translate }}</p>
-                    <p class="font-mono font-semibold text-gray-800">{{ row.liquidity | money }}</p>
+                    <p class="font-semibold text-gray-800">{{ row.liquidity | money }}</p>
                   </div>
                 </div>
                 @if (row.shortfall > 0) {
                   <p class="mt-2 text-xs font-semibold"
                     [class.text-red-700]="!withinShortfallTolerance(row.shortfall)"
                     [class.text-amber-700]="withinShortfallTolerance(row.shortfall)">
-                    {{ 'dashboard.liquidity.shortfallPrefix' | translate }} <span class="font-mono">{{ row.shortfall | money }} {{ row.currency }}</span>
+                    {{ 'dashboard.liquidity.shortfallPrefix' | translate }} <span>{{ row.shortfall | money }} {{ row.currency }}</span>
                     @if (withinShortfallTolerance(row.shortfall)) {
                       <!-- &ngsp; not a literal space: Angular's whitespace removal (preserveWhitespaces:false)
                            drops whitespace-only text nodes, so a plain space before "(" disappears. -->
@@ -214,10 +214,9 @@
                       </td>
                       <td class="px-3 py-2 font-medium text-gray-800">{{ row.serviceName }}</td>
                       <td class="px-3 py-2"><span class="badge-currency">{{ row.currency }}</span></td>
-                      <td class="px-3 py-2 text-right font-mono">{{ row.obligation | money }}</td>
-                      <td class="px-3 py-2 text-right font-mono">{{ row.liquidity | money }}</td>
-                      <td class="px-3 py-2 text-right font-mono"
-                        [class.text-red-700]="row.shortfall > 0 && !withinShortfallTolerance(row.shortfall)"
+                      <td class="px-3 py-2 text-right">{{ row.obligation | money }}</td>
+                      <td class="px-3 py-2 text-right">{{ row.liquidity | money }}</td>
+                      <td class="px-3 py-2 text-right" [class.text-red-700]="row.shortfall> 0 && !withinShortfallTolerance(row.shortfall)"
                         [class.text-amber-700]="withinShortfallTolerance(row.shortfall)"
                         [class.font-semibold]="row.shortfall > 0">
                         @if (row.shortfall > 0) {
@@ -229,7 +228,7 @@
                           }
                         } @else { <span class="text-gray-300">{{ 'common.notSet' | translate }}</span> }
                       </td>
-                      <td class="px-3 py-2 text-right font-mono text-xs font-semibold"
+                      <td class="px-3 py-2 text-right text-xs font-semibold"
                         [class.text-green-700]="tone === 'good'"
                         [class.text-amber-700]="tone === 'warn'"
                         [class.text-red-700]="tone === 'bad'"
@@ -449,10 +448,10 @@
                       <td class="px-4 py-2">
                         <span class="badge-currency">{{ asset.currency }}</span>
                       </td>
-                      <td class="px-4 py-2 text-right font-mono">{{ asset.circulating | number:'1.0-0' }}</td>
-                      <td class="px-4 py-2 text-right font-mono">{{ asset.bid | money }}</td>
-                      <td class="px-4 py-2 text-right font-mono font-semibold text-gray-800">{{ asset.aum | money }}</td>
-                      <td class="px-4 py-2 text-right font-mono text-sm">
+                      <td class="px-4 py-2 text-right">{{ asset.circulating | number:'1.0-0' }}</td>
+                      <td class="px-4 py-2 text-right">{{ asset.bid | money }}</td>
+                      <td class="px-4 py-2 text-right font-semibold text-gray-800">{{ asset.aum | money }}</td>
+                      <td class="px-4 py-2 text-right text-sm">
                         @if (priceChange(asset) === 0) {
                           <span class="text-gray-400">{{ 'common.notSet' | translate }}</span>
                         } @else {
@@ -514,16 +513,16 @@
               } @else {
                 @for (t of latestTransactions(); track t.trxId) {
                   <tr class="border-b hover:bg-gray-50 cursor-pointer" [class.row-new]="newTrxIds().has(t.trxId)" (click)="viewDetails(t)">
-                    <td class="px-4 py-2 whitespace-nowrap font-mono text-xs">{{ utils.formatDate(t.time) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-xs">{{ utils.formatDate(t.time) }}</td>
                     <td class="px-4 py-2">
                       <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="getTrxTypeClass(t.trxType)">{{ t.trxType }}</span>
                     </td>
                     <td class="px-4 py-2">{{ t.assetName }}</td>
                     <td class="px-4 py-2">@if(t.assetSymbol){<span class="badge-symbol">{{ t.assetSymbol }}</span>}</td>
                     <td class="px-4 py-2">{{ t.serviceName }}</td>
-                    <td class="px-4 py-2 text-right font-mono">{{ t.tokens | number:'1.0-0' }}</td>
-                    <td class="px-4 py-2 text-right font-mono">{{ t.price | money }}</td>
-                    <td class="px-4 py-2 text-right font-mono">{{ t.totalPrice | money }}</td>
+                    <td class="px-4 py-2 text-right">{{ t.tokens | number:'1.0-0' }}</td>
+                    <td class="px-4 py-2 text-right">{{ t.price | money }}</td>
+                    <td class="px-4 py-2 text-right">{{ t.totalPrice | money }}</td>
                   </tr>
                 }
               }
@@ -572,7 +571,7 @@
               } @else {
                 @for (s of latestSubscriptions(); track s.subscription) {
                   <tr class="border-b hover:bg-gray-50 cursor-pointer" [class.row-new]="newSubKeys().has(s.subscription)" (click)="goTo('/authorized/subscriptions/details/' + s.subscription)">
-                    <td class="px-4 py-2 whitespace-nowrap font-mono text-xs">{{ utils.formatDate(s.createdAt) }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-xs">{{ utils.formatDate(s.createdAt) }}</td>
                     <td class="px-4 py-2 font-mono text-xs text-gray-400">{{ s.subscription }}</td>
                     <td class="px-4 py-2">{{ s.serviceName }}</td>
                     <td class="px-4 py-2">{{ s.validatorName }}</td>
@@ -617,7 +616,7 @@
                   <td class="px-6 py-2">
                     <span class="badge-symbol">{{ asset.symbol }}</span>
                   </td>
-                  <td class="px-6 py-2 text-right font-mono">{{ asset.circulating | number }}</td>
+                  <td class="px-6 py-2 text-right">{{ asset.circulating | number }}</td>
                 </tr>
               }
             </tbody>

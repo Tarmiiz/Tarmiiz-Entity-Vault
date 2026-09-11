@@ -544,3 +544,22 @@ html.lang-ar table td.text-right {
   color: #8a93a6;
   font-weight: 400;
 }
+
+/* ─── Numbers use the BODY face; `font-mono` means IDENTIFIER ────────────────
+ * One rule, applied 2026-09-10: the monospace face marks an address, hash,
+ * selector or param name — never a quantity. Before this the two halves of the
+ * app disagreed: the dashboard set numbers and dates in mono (16 of its 19
+ * uses) while everywhere else mono meant identifiers, so the same money value
+ * rendered in two different typefaces depending on the page.
+ *
+ * Column alignment is the one thing the monospace face was genuinely buying on
+ * numeric columns, so it is replaced rather than dropped: Inter's TABULAR
+ * FIGURES are fixed-width, so digits still line up down a column without
+ * changing the typeface. Right-aligned cells are numeric by convention across
+ * this app, and the property only affects digits — a right-aligned text cell is
+ * unaffected. NOT scoped to .table-v4 on purpose: the dashboard's tables are
+ * deliberately excluded from that class and need the same alignment. */
+td.text-right,
+th.text-right {
+  font-variant-numeric: tabular-nums;
+}

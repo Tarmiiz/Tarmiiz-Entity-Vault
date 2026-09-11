@@ -761,6 +761,11 @@
         "internalType": "bytes32",
         "name": "newCommitment",
         "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "newSalt",
+        "type": "bytes32"
       }
     ],
     "name": "adminClaim",
@@ -973,6 +978,11 @@
         "type": "bytes32"
       },
       {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
+      },
+      {
         "internalType": "uint8",
         "name": "role",
         "type": "uint8"
@@ -1009,6 +1019,11 @@
       {
         "internalType": "bytes32",
         "name": "commitment",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "salt",
         "type": "bytes32"
       },
       {
@@ -2000,6 +2015,11 @@
         "internalType": "bytes32",
         "name": "commitment",
         "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -2184,8 +2204,13 @@
       },
       {
         "internalType": "bytes32",
-        "name": "bootstrapSalt_",
+        "name": "adminSalt",
         "type": "bytes32"
+      },
+      {
+        "internalType": "bool",
+        "name": "adminClaimed",
+        "type": "bool"
       },
       {
         "components": [
@@ -2828,6 +2853,11 @@
         "internalType": "bytes32",
         "name": "newCommitment",
         "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "newSalt",
+        "type": "bytes32"
       }
     ],
     "name": "resetUserCredentials",
@@ -2846,6 +2876,11 @@
       {
         "internalType": "bytes32",
         "name": "_commitment",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_salt",
         "type": "bytes32"
       }
     ],
@@ -2871,9 +2906,58 @@
         "internalType": "bytes32",
         "name": "newCommitment",
         "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "newSalt",
+        "type": "bytes32"
       }
     ],
     "name": "resetUserPasswordById",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[2]",
+        "name": "a",
+        "type": "uint256[2]"
+      },
+      {
+        "internalType": "uint256[2][2]",
+        "name": "b",
+        "type": "uint256[2][2]"
+      },
+      {
+        "internalType": "uint256[2]",
+        "name": "c",
+        "type": "uint256[2]"
+      },
+      {
+        "internalType": "uint256[4]",
+        "name": "input",
+        "type": "uint256[4]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "newCommitment",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "newSalt",
+        "type": "bytes32"
+      }
+    ],
+    "name": "resetUserPasswordWithProof",
     "outputs": [
       {
         "internalType": "bool",

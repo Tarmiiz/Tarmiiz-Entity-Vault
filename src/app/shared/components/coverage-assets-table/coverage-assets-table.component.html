@@ -35,13 +35,13 @@
               } @else if (!a.lambdaSet || a.lambda === null) {
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">{{ 'dashboard.liquidity.lambdaNotSet' | translate }}</span>
               } @else {
-                <span class="font-mono">{{ a.lambda * 100 | number:'1.2-2' }}%</span>
+                <span>{{ a.lambda * 100 | number:'1.2-2' }}%</span>
               }
             </td>
             <!-- Token quantity — plain integer platform-wide, never `| money`. -->
-            <td class="text-right font-mono">{{ a.outstanding | number:'1.0-0' }}</td>
-            <td class="text-right font-mono">{{ a.bid | money }}</td>
-            <td class="text-right font-mono">{{ a.gross | money }}</td>
+            <td class="text-right">{{ a.outstanding | number:'1.0-0' }}</td>
+            <td class="text-right">{{ a.bid | money }}</td>
+            <td class="text-right">{{ a.gross | money }}</td>
             <td class="text-right font-mono font-semibold">
               @if (a.contribution === null || a.contribution === undefined) {
                 <span class="text-gray-300">—</span>

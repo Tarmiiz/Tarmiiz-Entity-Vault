@@ -1388,7 +1388,7 @@
                 @if (shortfallTolerance() !== null) {
                   <p class="text-[11px] text-gray-500 mt-0.5">
                     {{ 'services.details.liquidity.tolerance' | translate }}:
-                    <span class="font-mono font-semibold text-gray-700">{{ shortfallTolerance() | number:'1.2-6' }}</span>
+                    <span class="font-semibold text-gray-700">{{ shortfallTolerance() | number:'1.2-6' }}</span>
                     <span class="text-gray-400">
                       — {{ (shortfallToleranceIsSet() ? 'services.details.liquidity.toleranceRegulator'
                                                       : 'services.details.liquidity.toleranceDefault') | translate }}
@@ -1446,13 +1446,13 @@
                             <span class="badge-currency">{{ row.currencyAlpha || row.currencySymbol }}</span>
                             <span class="ml-2 text-gray-500">{{ row.currencyName }}</span>
                           </td>
-                          <td class="text-right font-mono">{{ row.balance | money }}</td>
+                          <td class="text-right">{{ row.balance | money }}</td>
                           <td class="text-right font-mono">
                             @if (row.withheld > 0) { <span class="text-amber-700">{{ row.withheld | money }}</span> }
                             @else { <span class="text-gray-300">—</span> }
                           </td>
-                          <td class="text-right font-mono font-semibold">{{ row.available | money }}</td>
-                          <td class="text-right font-mono">
+                          <td class="text-right font-semibold">{{ row.available | money }}</td>
+                          <td class="text-right">
                             @if (row.obligation > 0) { {{ row.obligation | money }} }
                             @else { <span class="text-gray-300">—</span> }
                           </td>
@@ -1588,7 +1588,7 @@
                 <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                   @if (liquidityModalAction() === 'withdraw') {
                     <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600">
-                      {{ 'services.details.liquidity.available' | translate }}: <span class="font-mono font-semibold text-gray-800">{{ liquidityModalAvailable() | money }}</span>
+                      {{ 'services.details.liquidity.available' | translate }}: <span class="font-semibold text-gray-800">{{ liquidityModalAvailable() | money }}</span>
                       <span class="badge-currency ml-1">{{ liquidityModalCurrency()?.symbol }}</span>
                     </div>
                   }
