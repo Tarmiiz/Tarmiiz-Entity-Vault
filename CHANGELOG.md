@@ -17,6 +17,14 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-11
 
+#### Changed — numbers in the body face; `font-mono` means identifiers only
+
+- [global.scss](src/global.scss) adds `font-variant-numeric: tabular-nums` on right-aligned `td`/`th`, so digits still line up down a column in the body face. Money, counts and dates drop `font-mono` on the dashboard, service details, transactions list, asset compliance tab and coverage-assets table; the monospace face now marks addresses, hashes and selectors only. The transactions list's Service cell follows its value: mono for a shortened address, body face for a service name.
+
+#### Fixed — `EntityTemplate.json` ABI matches the compiled contract (Phase 18 salt)
+
+- [src/assets/ABIs/EntityTemplate.json](src/assets/ABIs/EntityTemplate.json) carried the pre-Phase-18 signatures. It now matches the Entities Registry artifact: `createUser`, `createUserWithKey`, `adminClaim`, `resetUserCredentials`, `resetUserPassword(ById)` and `initialize` take the per-user salt, and `resetUserPasswordWithProof` is present. `GlobalVariablesProxy.json` was reformatted only. Both were uncommitted working-tree changes; committed and built into the image shipped to Staging contabo-1.
+
 #### Changed — v4 shell classes renamed `vault-*` → `shell-*`, shared with the Regulator Dashboard
 
 - [global.scss](src/global.scss) + [authorized-layout.component.html](src/app/shared/layouts/authorized-layout/authorized-layout.component.html) / [.scss](src/app/shared/layouts/authorized-layout/authorized-layout.component.scss) / [.ts](src/app/shared/layouts/authorized-layout/authorized-layout.component.ts) — 60 occurrences: `.vault-shell` → `.shell-root`, every other `.vault-*` shell class → `.shell-*`, `--vault-gutter` / `--vault-side` → `--shell-*`, and the collapse key `vault-menu-collapsed` → `shell-menu-collapsed` (a one-time reset of each user's collapsed-rail preference). The Regulator Dashboard took the same v4 shell today under the same names, so the two apps now follow one standard and can be changed in lockstep. Non-class `vault` tokens (`/vault/` paths, `vault:updated`, `tarmiizVaultLang`, method names) are untouched. No visual change intended.
