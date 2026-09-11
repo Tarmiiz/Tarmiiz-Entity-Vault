@@ -81,10 +81,10 @@ export class AuthorizedLayoutComponent implements OnDestroy {
   menuCollapsed = signal<boolean>(this.readCollapsed());
   toggleMenuCollapsed() {
     this.menuCollapsed.update(v => !v);
-    try { localStorage.setItem('vault-menu-collapsed', this.menuCollapsed() ? '1' : '0'); } catch { /* private mode */ }
+    try { localStorage.setItem('shell-menu-collapsed', this.menuCollapsed() ? '1' : '0'); } catch { /* private mode */ }
   }
   private readCollapsed(): boolean {
-    try { return localStorage.getItem('vault-menu-collapsed') === '1'; } catch { return false; }
+    try { return localStorage.getItem('shell-menu-collapsed') === '1'; } catch { return false; }
   }
 
   get entityInfo(): Entity { return this.authService.entityInfo; }

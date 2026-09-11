@@ -25,7 +25,7 @@
 
 /* ── Shell + ground ─────────────────────────────────────────────────────────*/
 /* 🔴 THIS :host RULE IS LOAD-BEARING — without it the top bar is INVISIBLE.
-   A component host with no display rule is `display: inline`, so .vault-shell's
+   A component host with no display rule is `display: inline`, so .shell-root's
    `height: 100%` resolves against nothing and collapses to zero. The panels keep
    rendering anyway, because `#main-content` carries Ionic's `.ion-page`
    (`position: absolute; inset: 0`) and simply escapes to the nearest positioned
@@ -39,14 +39,14 @@
     min-height: 0;
 }
 
-.vault-shell {
+.shell-root {
     /* ONE source of truth for the shell geometry. The top bar aligns its title
        against the CONTENT panel using these, so the bar and the panels cannot
-       drift apart when either is retuned. --vault-side tracks the collapsed rail
+       drift apart when either is retuned. --shell-side tracks the collapsed rail
        too (see .menu-collapsed), which is what keeps the title aligned after a
        collapse. */
-    --vault-gutter: 14px;
-    --vault-side: 250px;
+    --shell-gutter: 14px;
+    --shell-side: 250px;
 
     display: flex;
     flex-direction: column;
@@ -62,7 +62,7 @@
 }
 
 /* ── Global top bar ─────────────────────────────────────────────────────────*/
-/* MOVED to src/global.scss (search ".vault-topbar"). It lived here until
+/* MOVED to src/global.scss (search ".shell-topbar"). It lived here until
    2026-09-09, when this file hit Angular's 4 kB anyComponentStyle budget and
    FAILED THE BUILD — which silently shipped a stale bundle, because the docker
    image is built from www/ and www/ is only rewritten on a successful build.
@@ -131,7 +131,7 @@ ion-menu {
 
 /* The menu's scroller — a plain div, not ion-content (see the template note).
    max-height keeps a long menu inside the viewport and scrolls it. */
-.vault-menu-scroll {
+.shell-menu-scroll {
     background: #f4f6fa;
     border-radius: 18px;
     overflow-y: auto;
@@ -147,13 +147,13 @@ ion-menu {
 /* Collapse control — its own row above the first menu item, pushed right.
    NOT the overhanging corner chip from v4's mock: inside a real ion-menu that
    overhang is clipped by Ionic's scroll container. */
-.vault-menu-head {
+.shell-menu-head {
     display: flex;
     justify-content: flex-end;
     padding: 8px 10px 2px;
 }
 
-.vault-collapse-btn {
+.shell-collapse-btn {
     width: 26px;
     height: 26px;
     border-radius: 8px;
@@ -171,18 +171,18 @@ ion-menu {
 
 /* Hidden on mobile: there the drawer, not the rail, is the affordance. */
 @media (max-width: 767px) {
-    .vault-menu-head { display: none; }
+    .shell-menu-head { display: none; }
 }
 
 /* ── Collapsed rail (250px ⇄ 64px) ──────────────────────────────────────────*/
 .menu-collapsed {
     /* Keeps the top-bar title aligned with the content panel after collapsing. */
-    --vault-side: 76px;
+    --shell-side: 76px;
 
     ion-split-pane { --side-min-width: 76px; }
 
     /* No right edge to hug on a rail — centre the control instead. */
-    .vault-menu-head { justify-content: center; padding-inline: 0; }
+    .shell-menu-head { justify-content: center; padding-inline: 0; }
 
     ion-menu {
         width: 76px;

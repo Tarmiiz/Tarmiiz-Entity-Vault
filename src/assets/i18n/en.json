@@ -235,7 +235,9 @@
     "dexDeals": "Negotiated Deals",
     "dexRfqs": "Requests for Quote",
     "clearing": "Clearing",
-    "apiEndpoints": "API Endpoints"
+    "apiEndpoints": "API Endpoints",
+    "expandMenu": "Expand menu",
+    "collapseMenu": "Collapse menu"
   },
   "login": {
     "title": "Sign In",

@@ -17,6 +17,30 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-11
 
+#### Changed — v4 shell classes renamed `vault-*` → `shell-*`, shared with the Regulator Dashboard
+
+- [global.scss](src/global.scss) + [authorized-layout.component.html](src/app/shared/layouts/authorized-layout/authorized-layout.component.html) / [.scss](src/app/shared/layouts/authorized-layout/authorized-layout.component.scss) / [.ts](src/app/shared/layouts/authorized-layout/authorized-layout.component.ts) — 60 occurrences: `.vault-shell` → `.shell-root`, every other `.vault-*` shell class → `.shell-*`, `--vault-gutter` / `--vault-side` → `--shell-*`, and the collapse key `vault-menu-collapsed` → `shell-menu-collapsed` (a one-time reset of each user's collapsed-rail preference). The Regulator Dashboard took the same v4 shell today under the same names, so the two apps now follow one standard and can be changed in lockstep. Non-class `vault` tokens (`/vault/` paths, `vault:updated`, `tarmiizVaultLang`, method names) are untouched. No visual change intended.
+
+#### Changed — (recorded late) the button + control sweeps of 2026-09-10
+
+- `a385d37` + `c1ac5cc` shipped without an entry: 436 buttons `rounded` → `rounded-xl`, the standard `px-3 py-1.5` buttons → `font-medium px-4 py-1.5`, `border border-transparent` on the 266 borderless ones so a filled button matches the 30px inputs, 196 form fields → `rounded-xl`, 165 filter labels gain `ps-2`. Colours unchanged.
+
+#### Fixed — the top bar's RTL logo rule never matched
+
+- [global.scss](src/global.scss) — `:host-context([dir='rtl']) .vault-topbar-brand img` moved into the global stylesheet with the bar on 2026-09-09, where Angular does not rewrite `:host-context`; the built CSS carried it verbatim and it matched nothing, so an Arabic session kept the logo left-aligned. Now `[dir='rtl'] .shell-topbar-brand img`.
+
+#### Fixed — collapse button tooltip was hardcoded English
+
+- [authorized-layout.component.html](src/app/shared/layouts/authorized-layout/authorized-layout.component.html) — `'Expand menu'` / `'Collapse menu'` → `sidebar.expandMenu` / `sidebar.collapseMenu` (en + ar).
+
+#### Fixed — status-tinted `.table-v4` rows lost their tint on every even row
+
+- [global.scss](src/global.scss) — the zebra + hover rules are unlayered and beat Tailwind's `@layer utilities`, so `services/details` warn/bad rows (`bg-amber-50` / `bg-red-50`), the `subscriptions/details` holds row, the `logs/details` current event (`bg-indigo-50`) and both pickers' selected row (`bg-blue-100`) were repainted on alternate lines. Explicit `.table-v4 tbody tr.bg-*` rules after the zebra restore them.
+
+#### Fixed — messages list All/Unread switch had no fill in light mode
+
+- [messages/list/list.page.html:17-18](src/app/pages/secure/messages/list/list.page.html#L17) — only `dark:` colours; now `bg-gray-300 peer-checked:bg-violet-600` / `bg-white`.
+
 #### Changed — Placed By shows the placer's NAME, address in the tooltip
 
 - [subscriptions/details/details.page.html:476](src/app/pages/secure/subscriptions/details/details.page.html#L476) + `RegulatorHold.placedByName/releasedByName` in `data.model.ts` — the Entity API now resolves the acting authority to a name ("MCDR Central Custody"); the cell renders it and keeps the address as `title`, falling back to the shortened address when the API has no name. [custody.page.ts:208](src/app/pages/secure/custody/custody.page.ts#L208) — a non-own hold renders the resolved name too; only an unresolved foreign placer keeps the "Regulator" label (previously every non-own hold did, which would have labelled a second custodian's hold as the regulator's).

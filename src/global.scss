@@ -276,7 +276,7 @@ html.lang-ar table td.text-right {
  * chrome belongs here anyway, next to .login-shell.
  * Rendered by AuthorizedLayoutComponent ABOVE ion-split-pane, so it can span the
  * window; a bar inside the split-pane starts where the sidebar ends. */
-.vault-topbar {
+.shell-topbar {
     flex: none;
     display: flex;
     align-items: center;
@@ -285,13 +285,13 @@ html.lang-ar table td.text-right {
        amount. The actions row carries its own gap, and the title's
        margin-inline-end:auto supplies the separation before it. */
     gap: 0;
-    /* No LEFT padding — .vault-topbar-brand owns the left column so it can line
+    /* No LEFT padding — .shell-topbar-brand owns the left column so it can line
        up with the sidebar panel beneath it. */
     padding: 10px 18px 10px 0;
     color: #e6e8f0;
 }
 
-.vault-topbar-brand {
+.shell-topbar-brand {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -299,12 +299,12 @@ html.lang-ar table td.text-right {
     /* Spans the sidebar column PLUS half the gap between the two panels, so the
        separator — its last child, pushed right by margin-inline-start:auto —
        lands in the MIDDLE of that gap, and the title clears the content panel's
-       left edge. Both numbers come from --vault-side / --vault-gutter on
-       .vault-shell, so this tracks the collapsed rail automatically instead of
+       left edge. Both numbers come from --shell-side / --shell-gutter on
+       .shell-root, so this tracks the collapsed rail automatically instead of
        being a hardcoded offset that silently desyncs. */
     flex: none;
-    width: calc(var(--vault-side, 250px) + (var(--vault-gutter, 14px) / 2));
-    padding-inline-start: var(--vault-gutter, 14px);
+    width: calc(var(--shell-side, 250px) + (var(--shell-gutter, 14px) / 2));
+    padding-inline-start: var(--shell-gutter, 14px);
     box-sizing: border-box;
 
     /* Tenant logo. BOTH axes are capped on purpose: the avatar is uploaded by
@@ -323,34 +323,37 @@ html.lang-ar table td.text-right {
     }
 }
 
-:host-context([dir='rtl']) .vault-topbar-brand img {
+/* Plain [dir] selector, NOT :host-context — this is a GLOBAL stylesheet, where Angular
+   does no host rewriting, so `:host-context(...)` shipped verbatim and never matched
+   (verified in the built styles-*.css, 2026-09-11). */
+[dir='rtl'] .shell-topbar-brand img {
     object-position: right center;
 }
 
 /* The hamburger only exists below the split-pane breakpoint; on desktop the
    sidebar is docked and the collapse chevron governs instead. */
-.vault-menu-btn {
+.shell-menu-btn {
     display: none;
     --color: #e6e8f0;
 }
 @media (max-width: 767px) {
-    .vault-menu-btn { display: inline-flex; }
+    .shell-menu-btn { display: inline-flex; }
 }
 
-.vault-topbar-actions {
+.shell-topbar-actions {
     display: flex;
     align-items: center;
     gap: 10px;
     flex: none;
 }
 
-.vault-welcome {
+.shell-welcome {
     font-size: 13px;
     color: rgba(255, 255, 255, 0.82);
     white-space: nowrap;
 }
 
-.vault-icon-btn {
+.shell-icon-btn {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -367,15 +370,15 @@ html.lang-ar table td.text-right {
     &:hover { color: #fff; background: rgba(255, 255, 255, 0.10); }
 }
 
-.vault-logout:hover { color: #fca5a5; }
+.shell-logout:hover { color: #fca5a5; }
 
-.vault-topbar-divider {
+.shell-topbar-divider {
     width: 1px;
     height: 20px;
     background: rgba(255, 255, 255, 0.20);
 }
 
-.vault-badge {
+.shell-badge {
     position: absolute;
     top: 2px;
     inset-inline-end: 2px;
@@ -393,7 +396,7 @@ html.lang-ar table td.text-right {
 
 /* Live / Refreshing badge in the authorized top bar. Fed by LiveStatusService;
    the per-page app-live-indicator no longer renders (see that component). */
-.vault-live {
+.shell-live {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -401,26 +404,26 @@ html.lang-ar table td.text-right {
   color: rgba(255, 255, 255, 0.62);
   white-space: nowrap;
 }
-.vault-live svg { color: #34d399; }
-.vault-live.is-refreshing { color: #fbbf24; }
-.vault-live.is-refreshing svg { color: #fbbf24; }
+.shell-live svg { color: #34d399; }
+.shell-live.is-refreshing { color: #fbbf24; }
+.shell-live.is-refreshing svg { color: #fbbf24; }
 
 /* Page title in the authorized top bar. Reported by app-header from all 59 pages
    via PageTitleService; the per-page title strip is gone. */
-.vault-title-sep {
+.shell-title-sep {
   width: 1px;
   height: 20px;
   margin-inline-start: auto;
   background: rgba(255, 255, 255, 0.18);
   flex: none;
 }
-.vault-title {
+.shell-title {
   margin: 0;
   /* Half the panel gap clears the separator; the +16px is the pages' own well
      padding (p-4), so the title sits over the first CARD inside the content
      panel rather than on the panel's edge. Measured: title and card both at
      x=280. If the page well padding ever changes, change this with it. */
-  margin-inline-start: calc(var(--vault-gutter, 14px) / 2 + 16px);
+  margin-inline-start: calc(var(--shell-gutter, 14px) / 2 + 16px);
   margin-inline-end: auto;
   min-width: 0;
   font-size: 15px;
@@ -434,11 +437,11 @@ html.lang-ar table td.text-right {
 /* Below the split-pane breakpoint there is no docked sidebar to align to — the
    menu is a drawer — so the brand block stops reserving that column. */
 @media (max-width: 767px) {
-  .vault-topbar-brand {
+  .shell-topbar-brand {
     width: auto;
     padding-inline-start: 14px;
   }
-  .vault-title-sep { margin-inline-start: 4px; }
+  .shell-title-sep { margin-inline-start: 4px; }
 }
 
 /* ─── .table-v4 — the v4 data table (design-components v4, adopted 2026-09-09) ──
@@ -518,6 +521,17 @@ html.lang-ar table td.text-right {
    stronger than the zebra or hovering a striped row does nothing visible. */
 .table-v4 tbody tr:nth-child(even) { background: #f7f8fb; }
 .table-v4 tbody tr:hover { background: #eef1f6; }
+/* 🔴 ROW HIGHLIGHTS MUST BEAT THE ZEBRA (2026-09-11). The two rules above are
+   unlayered, and an unlayered rule beats Tailwind's `@layer utilities` whatever the
+   specificity — so a status tint written as a utility (`[class.bg-red-50]="tone === 'bad'"`,
+   a picker's `[class.bg-blue-100]` selected row) was silently repainted on every EVEN
+   row and on hover. These restate the tints the tables actually use at equal
+   specificity, placed after the zebra + hover so they win. Add a line here when a table
+   starts tinting rows with another colour. */
+.table-v4 tbody tr.bg-red-50 { background: var(--color-red-50); }
+.table-v4 tbody tr.bg-amber-50 { background: var(--color-amber-50); }
+.table-v4 tbody tr.bg-indigo-50 { background: var(--color-indigo-50); }
+.table-v4 tbody tr.bg-blue-100 { background: var(--color-blue-100); }
 .table-v4 tbody tr:last-child td { border-bottom: 0; }
 .table-v4 tbody td:first-child { color: #101828; font-weight: 500; }
 /* A full-width message row ("No records found") is NOT a data cell. Without this it
