@@ -224,6 +224,10 @@ export class ListPage implements OnInit, OnDestroy {
     try {
       const res = await this.apiService.vaultDexRfqCreate(result);
       if (res?.error) {
+        // Hide BEFORE an awaited alert — the overlay renders ABOVE it and covers its OK button,
+        // so `hide()` in `finally` never runs and the only escape is a reload. `hide()` is a
+        // plain signal set, so the `finally` calling it again is harmless.
+        this.loadingService.hide();
         await this.alertService.info(
           this.translate.instant('alerts.error'), res.error,
           this.translate.instant('alerts.ok'), 'max-w-md');

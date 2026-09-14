@@ -982,6 +982,22 @@ export class AssetCreatorPage {
           await this.uploadAssetAttachments(result.address, data);
         }
         this.submitted = true;
+        /*
+            ⚠️ HIDE BEFORE THE ALERT, NOT IN `finally` — the asset was created and the operator
+            was then stuck (2026-09-14).
+
+            `alertService.info` resolves when the user clicks OK, so awaiting it inside the `try`
+            leaves the loading overlay up for the whole time the alert is on screen — and the
+            overlay renders ABOVE it. "Creating asset on-chain…" sat spinning over a success
+            dialog whose OK button it was covering: the work was finished, the UI said it was
+            still running, and the only escape was a page reload.
+            Only the SUCCESS path had it: the two error branches below do not await, so their
+            `finally` fires immediately. That is why it looked like creation had hung rather
+            than like an overlay bug.
+            `hide()` is a plain signal set, so the `finally` calling it again is harmless — it
+            stays as the backstop for the paths that throw.
+        */
+        this.loadingService.hide();
         await this.alertService.info(
           this.translate.instant('assets.creator.createdTitle'),
           this.translate.instant('assets.creator.createdMsg', { name: data.name, symbol: data.symbol }),
@@ -1021,6 +1037,10 @@ export class AssetCreatorPage {
       if (res?.error) failures.push(`${label}: ${res.error}`);
     }
     if (failures.length) {
+      // Same trap as the create path above: the per-file `show()` in the loop is still up, and an
+      // awaited alert would sit UNDER it with its OK button covered. Hide first; the caller's
+      // `finally` hides again harmlessly.
+      this.loadingService.hide();
       await this.alertService.info(
         this.translate.instant('assets.addModal.attachmentFailuresTitle'),
         this.translate.instant('assets.addModal.attachmentFailuresMessage', { failed: failures.length, total: queue.length }) + '\n' + failures.join('\n')

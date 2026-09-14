@@ -105,6 +105,10 @@ export class MyProfilePage {
       // The contract REVOKED the on-chain session as part of the rotation and the API revoked its
       // own (`reloginRequired`), so the only honest next step is the login page.
       this.showCredentialsForm.set(false);
+      // Hide BEFORE an awaited alert — the overlay renders ABOVE it and covers its OK button, so
+      // `hide()` in `finally` never runs. Worse here than elsewhere: the very next line ends the
+      // session, so a stuck operator cannot even navigate away from a password they HAVE changed.
+      this.loadingService.hide();
       await this.alertService.info(this.translate.instant('alerts.success'), this.translate.instant('users.myProfile.passwordUpdatedMsg'));
       await this.authService.forgetSession();
     } catch (error) {

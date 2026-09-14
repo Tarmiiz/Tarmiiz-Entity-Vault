@@ -16,6 +16,46 @@ _Living preamble describing the broad direction this sub-project is currently mo
 ## Changes
 
 ### 2026-09-14
+
+**Changed**
+
+- **The loading overlay's spinner is now the Tarmiiz mark assembling itself** —
+  [loading.component.html](src/app/shared/components/alerts/loading/loading.component.html) drops the
+  Tailwind `animate-spin` SVG for six `<i>` blocks, with the geometry and keyframes in the previously
+  empty [loading.component.scss](src/app/shared/components/alerts/loading/loading.component.scss).
+  The lattice is measured off `tarmiiz - logo icon@2x.png` — a 64-unit plate, blocks of 10 on an 11
+  pitch, columns at x 21.5 / 32.5 and rows at y 10.5 / 21.5 / 32.5 / 43.5, six of eight cells filled
+  (cyan `#08d1de` rows 1-2 over magenta `#d621ff` rows 3-4). Every offset is one of those units over
+  64, so the whole mark scales off `--tz-size` alone. Blocks fall in furthest-first, overshoot their
+  slot by a third of a block and settle, hold the finished `t`, then fall away and repeat.
+  - The indigo plate is deliberately **off**: the overlay card is already white. The box keeps
+    `overflow: hidden` anyway — that clip is what the blocks fall in from.
+  - `animation-delay` is **negative** on every block, so the loop opens on the assembled mark. A
+    paused frame or a screenshot never catches an empty box.
+  - Positions use `left`, not `inset-inline-start` — this is a logotype and must not mirror under
+    `[dir='rtl']`.
+  - ⚠️ Under `prefers-reduced-motion` nothing falls; the mark simply sits there complete. That costs
+    the overlay its "still working" signal, so the message text carries the status rather than the
+    motion. Other `animate-spin` uses elsewhere in the app are untouched.
+  - The Regulator Dashboard's twin `loading.component` still ships the old spinner — nothing syncs
+    the two copies.
+
+**Fixed**
+
+- **The loading overlay could never be dismissed after a successful asset creation**, and at three
+  more sites with the same shape. The pattern: `await alertService.info(...)` inside a `try`, with
+  `loadingService.hide()` in the `finally`. The overlay renders ABOVE the alert and covers its OK
+  button, so the alert's promise never resolves, so `finally` never runs — the operator is left
+  staring at a spinner over an action that already succeeded. `hide()` now runs BEFORE every awaited
+  alert in [asset-creator.page.ts](src/app/pages/secure/assets/creator/asset-creator.page.ts) (the
+  success path and the attachment-upload failure branch),
+  [dex/deals/list](src/app/pages/secure/dex/deals/list/list.page.ts),
+  [dex/rfqs/list](src/app/pages/secure/dex/rfqs/list/list.page.ts) and
+  [my-profile](src/app/pages/secure/users/my-profile/my-profile.page.ts). The `finally` calls stay —
+  `hide()` is an idempotent signal set, and they still cover the paths that throw. My Profile is the
+  worst of the four: the very next line ends the session, so a stuck operator could not navigate away
+  from a password they had in fact already changed.
+
 **Added**
 
 - **A "download a blank template" row at the top of step 1 of the import wizard**, one button per expected file. Without it an operator had no way to learn the 37 subscriber columns short of opening the Fund Import Tool's repo. Fetched with the session bearer and saved via an object URL rather than a plain `<a href>` — the route is authenticated, so a bare link would download a 401 body saved as `subscribers.csv`, a file that looks like a template until you open it.
