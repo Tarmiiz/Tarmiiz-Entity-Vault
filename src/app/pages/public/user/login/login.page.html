@@ -32,7 +32,16 @@
     <!-- Brand + welcome. The logo is the tenant's avatar, falling back to the
          static brand mark when the tenant has none (onLogoError). -->
     <div>
-      <img [src]="apiService.avatarUrl" (error)="onLogoError($event)" alt="" style="height:46px" class="mb-7 lg:mb-9">
+      <!-- 161px = 3.5x the original 46px (2026-09-14; matches the Regulator Dashboard).
+           This is the sign-in page's one piece of identity, on a half-width hero
+           column, so it carries the branding rather than merely labelling it.
+           `max-width` + `contain` keep a WIDE tenant mark inside the column: height
+           alone would let a wordmark overflow the grid cell, and capping width
+           without `contain` would squash it — which also makes the height a CEILING
+           rather than a promise, since a wide mark binds on width first. -->
+      <img [src]="apiService.avatarUrl" (error)="onLogoError($event)" alt=""
+           style="height:161px;max-width:100%;object-fit:contain;object-position:left center"
+           class="mb-7 lg:mb-9">
       <h1 class="text-3xl lg:text-4xl font-bold text-white leading-tight mb-4">{{ 'login.welcomeBack' | translate }}</h1>
       <p class="text-[15px] text-white/70 leading-relaxed max-w-sm">{{ 'login.helperCopy' | translate }}</p>
     </div>

@@ -307,19 +307,32 @@ html.lang-ar table td.text-right {
     padding-inline-start: var(--shell-gutter, 14px);
     box-sizing: border-box;
 
-    /* Tenant logo. BOTH axes are capped on purpose: the avatar is uploaded by
-       the tenant, so an oversized or very wide file would otherwise set the bar's
-       height (or push the actions off the end). height 24px = 0.7x the original
-       34px; max-width stops a wide wordmark doing the same damage sideways,
-       which `width: auto` alone did not. object-fit keeps the aspect ratio
-       inside that box rather than squashing it. */
+    /* Tenant logo — FILLS this column, CENTRED (2026-09-14; twin of the Regulator
+     * Dashboard's rule, kept in step per the shared shell-* contract).
+     *
+     * The brand block is a FIXED-WIDTH track (`flex: none` + the `width` above,
+     * both derived from --shell-side), so letting the logo fill it cannot push the
+     * title, the actions or the sidebar — there is no width here to take from
+     * anything else. That is what makes "fill the width" safe, and why this must
+     * stay inside .shell-topbar-brand rather than becoming a bare `img` rule.
+     *
+     * `max-width: 170px` was the real constraint — a wide tenant mark (emblem +
+     * wordmark, the common shape) was letterboxed into a fraction of a 250px
+     * column. Gone; `object-fit: contain` now does that job honestly, scaling to
+     * whichever axis binds first and never distorting.
+     *
+     * ⚠️ max-height STILL CAPS THE BAR. The avatar is tenant-uploaded, so a tall or
+     * near-square file would otherwise set the top bar's height for the whole app.
+     * 40px is the largest that leaves the bar's 10px padding intact against the
+     * 20px separator beside it. Raise it only together with the bar's padding. */
     img {
-        height: 24px;
-        max-height: 24px;
-        max-width: 170px;
-        width: auto;
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 100%;
+        height: auto;
+        max-height: 40px;
         object-fit: contain;
-        object-position: left center;
+        object-position: center;
     }
 }
 
@@ -327,7 +340,10 @@ html.lang-ar table td.text-right {
    does no host rewriting, so `:host-context(...)` shipped verbatim and never matched
    (verified in the built styles-*.css, 2026-09-11). */
 [dir='rtl'] .shell-topbar-brand img {
-    object-position: right center;
+    /* Centred in both directions since 2026-09-14 — kept as an explicit rule rather
+       than deleted, so it sits beside its LTR twin instead of reading as an omission
+       next to the other [dir='rtl'] blocks. */
+    object-position: center;
 }
 
 /* The hamburger only exists below the split-pane breakpoint; on desktop the

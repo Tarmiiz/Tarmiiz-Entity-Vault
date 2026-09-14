@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { Subject } from 'rxjs';
+import { asyncScheduler, groupBy, mergeMap, Observable, Subject, throttleTime } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
 import { ConfigService } from './config.service';
@@ -15,8 +15,42 @@ export class SocketService {
 
   private socket: Socket | null = null;
 
-  /** Fires whenever the backend emits `vault:updated` */
-  readonly vaultUpdated$ = new Subject<{ type: string; ts: number }>();
+  /**
+   * Fires whenever the backend emits `vault:updated` — COALESCED PER TYPE (2026-09-14).
+   *
+   * 🔴 THE RAW STREAM IS A BURST, AND EVERY PAGE TREATS ONE EVENT AS ONE FULL RELOAD.
+   * The server emits one `vault:updated` PER MIRRORED ROW (the sync plugin notifies from 11 call
+   * sites), so a backfill, a multi-row write or a multi-recipient send arrives as dozens within
+   * the same second. 25 pages subscribe here and each one re-fetches and re-renders on every
+   * event, which is the visible flicker: the table is rebuilt dozens of times a second.
+   * `UnreadMessagesService` already learned this and debounces its own badge; the pages never
+   * got the same treatment, and the layout's own note records 451 req/s measured from it.
+   *
+   * ⚠️ GROUPED BY `type`, NOT DEBOUNCED FLAT. Several DEX pages filter on `p.type`, so a flat
+   * last-one-wins window would let a `credit` tick swallow the `dex-order` tick that arrived
+   * beside it — those pages would then silently stop refreshing, which is worse than flicker
+   * because nothing on screen says the data is stale.
+   *
+   * ⚠️ `leading: true` is deliberate: the FIRST event of a burst still refreshes immediately, so
+   * live-ness is unchanged; only the repeats inside the window are dropped, with one trailing
+   * emission so the final state is never missed. Do not swap this for `debounceTime`, which
+   * delays every refresh by the window and starves completely under a continuous stream.
+   *
+   * ⚠️ DECLARATION ORDER IS LOAD-BEARING — there is no constructor here, so these are field
+   * initialisers and they run top-to-bottom. The raw Subject and the window MUST be declared
+   * before the piped stream that reads them, or `vaultUpdated$` initialises against `undefined`.
+   */
+  private static readonly VAULT_UPDATE_WINDOW_MS = 750;
+
+  /** The raw socket feed. Private on purpose — nothing outside should subscribe uncoalesced. */
+  private readonly _vaultUpdatedRaw$ = new Subject<{ type: string; ts: number }>();
+
+  readonly vaultUpdated$: Observable<{ type: string; ts: number }> = this._vaultUpdatedRaw$.pipe(
+    groupBy(p => p?.type ?? ''),
+    mergeMap(g => g.pipe(
+      throttleTime(SocketService.VAULT_UPDATE_WINDOW_MS, asyncScheduler, { leading: true, trailing: true }),
+    )),
+  );
 
   /** Fires whenever the backend emits `audit:appended` (new audit rows available) */
   readonly auditAppended$ = new Subject<{ count: number; lastBlock: number }>();
@@ -76,7 +110,7 @@ export class SocketService {
     });
 
     this.socket.on('vault:updated', (payload: { type: string; ts: number }) => {
-      this.vaultUpdated$.next(payload);
+      this._vaultUpdatedRaw$.next(payload);
     });
 
     this.socket.on('audit:appended', (payload: { count: number; lastBlock: number }) => {
