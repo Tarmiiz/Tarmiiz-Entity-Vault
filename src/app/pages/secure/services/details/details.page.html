@@ -145,6 +145,22 @@
             {{ 'services.details.tabs.documents' | translate }}
           </button>
         }
+        <!-- Import. Shown only when the operator holds at least one of the two keys — both are
+             default-DENY on the API, so an ungated tab would offer a surface whose every button
+             403s. A viewer never sees it. -->
+        @if (userInfo && userInfo.role !== 3
+             && (features.systemFunctionEnabled('service-import-subscribers')
+                 || features.systemFunctionEnabled('service-import-balances'))) {
+          <button (click)="setTab('import')"
+            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
+            [class.text-white]="activeTab() === 'import'"
+            [class.border-b-2]="activeTab() === 'import'"
+            [class.border-blue-600]="activeTab() === 'import'"
+            [class.bg-blue-600]="activeTab() === 'import'"
+          >
+            {{ 'services.details.tabs.import' | translate }}
+          </button>
+        }
       </div>
     </div>
 
@@ -793,7 +809,7 @@
                       <!-- A service holds exactly one custodian: once one is attached, Add is closed. -->
                       <button (click)="attachCustodian()" [disabled]="serviceParties().custodians.length > 0"
                         [title]="serviceParties().custodians.length > 0 ? ('services.details.providers.custodianCapTooltip' | translate) : ''"
-                        class="text-xs px-3 py-1.5 rounded bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
+                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
@@ -1642,6 +1658,93 @@
           </div>
         }
 
+        <!-- import tab -->
+        @if (activeTab() === 'import') {
+          <div class="p-4">
+
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 class="text-sm font-semibold text-gray-800">{{ 'services.details.import.tabTitle' | translate }}</h3>
+                <p class="text-xs text-gray-500 mt-1 max-w-3xl">{{ 'services.details.import.tabBlurb' | translate }}</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <app-refresh-button (refresh)="getImportJobs()"></app-refresh-button>
+                @if (features.systemFunctionEnabled('service-import-subscribers')) {
+                  <button (click)="openImport('subscribers')" [disabled]="!entityActive"
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    {{ 'services.details.import.importSubscribers' | translate }}
+                  </button>
+                }
+                @if (features.systemFunctionEnabled('service-import-balances')) {
+                  <button (click)="openImport('balances')" [disabled]="!entityActive"
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    {{ 'services.details.import.importBalances' | translate }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Order matters and is stated: subscribers first, then balances. A holding cannot be
+                 seeded for a subscriber who does not exist yet. -->
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 mb-4">
+              <p class="text-xs text-gray-600">{{ 'services.details.import.orderNote' | translate }}</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div class="overflow-x-auto rounded-lg">
+                <table class="table-v4 w-full text-sm text-left">
+                  <thead>
+                    <tr>
+                      <th scope="col">{{ 'services.details.import.table.started' | translate }}</th>
+                      <th scope="col">{{ 'services.details.import.table.mode' | translate }}</th>
+                      <th scope="col">{{ 'services.details.import.table.status' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'services.details.import.ok' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'services.details.import.skipped' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'services.details.import.failed' | translate }}</th>
+                      <th scope="col" class="text-right">{{ 'services.details.import.partial' | translate }}</th>
+                      <th scope="col">{{ 'services.details.import.table.by' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    @if (!importJobs().length) {
+                      <tr class="bg-white">
+                        <td colspan="8">{{ 'services.details.import.noJobs' | translate }}</td>
+                      </tr>
+                    } @else {
+                      @for (j of importJobs(); track j.id) {
+                        <tr [class]="importStatusClass(j.status)">
+                          <td>{{ j.startedAt ? utils.formatTime(j.startedAt) : utils.formatTime(j.createdAt) }}</td>
+                          <td>{{ 'services.details.import.mode.' + j.mode | translate }}</td>
+                          <td>
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                              [class]="j.status === 'partial' ? 'bg-amber-100 text-amber-800'
+                                     : (j.status === 'failed' || j.status === 'error') ? 'bg-red-100 text-red-800'
+                                     : j.status === 'done' ? 'bg-green-100 text-green-800'
+                                     : 'bg-gray-100 text-gray-700'">
+                              {{ 'services.details.import.status.' + j.status | translate }}
+                            </span>
+                          </td>
+                          <td class="text-right">{{ j.counters?.ok ?? '-' }}</td>
+                          <td class="text-right">{{ j.counters?.skipped ?? '-' }}</td>
+                          <td class="text-right">{{ j.counters?.failed ?? '-' }}</td>
+                          <td class="text-right">{{ j.counters?.partial ?? '-' }}</td>
+                          <td>{{ j.actorUserName || '-' }}</td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        }
+
       }
       @else {
         <div class="text-center py-12 text-gray-500">
@@ -1657,6 +1760,7 @@
 
 <app-modal-service-edit></app-modal-service-edit>
 <app-modal-service-state></app-modal-service-state>
+<app-modal-fund-import></app-modal-fund-import>
 <app-modal-service-validator></app-modal-service-validator>
 <app-modal-service-payment-processor></app-modal-service-payment-processor>
 <app-modal-service-clearing-house></app-modal-service-clearing-house>

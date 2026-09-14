@@ -15,6 +15,20 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-14
+
+**Added**
+
+- **An Import tab on the service detail page**, with the two buttons the fund-onboarding flow needs: **Import Subscribers** and **Import Opening Balances**. A tab rather than two loose buttons because an import is a BACKGROUND job that outlives the modal — progress, the pre-flight report and the run history all need somewhere to live, and bolting them onto the Subscriptions tab would have been the wrong home. The tab is hidden unless the operator holds at least one of the two new System Function keys (both default-DENY on the API), and hidden from viewers.
+- **`modal-fund-import`** — a three-step wizard: pick the CSVs + fund settings, REVIEW, then watch the run. The middle step is the point: the upload validates against live chain state and writes nothing, so the operator sees the reconciliation split (`N already subscribed / N existing identity / N to create`), the execution price, every row-level error with its file and row number, and the warnings — and only then commits. Fatal issues disable the Run button outright; row-level errors offer an explicit "run anyway, skipping these rows".
+- The run step polls the job and tails its log. Closing the wizard mid-run does **not** cancel it — the job is server-side — and says so rather than letting the operator infer they have stopped it.
+- A `partial` outcome gets its own amber banner naming the affected subscribers: on a straight-through service a deposit PERFORMS a purchase, so cash can land while units do not. That is neither a success nor a failure and is not rendered as either — "some buys failed" without names is not something an operator can act on.
+- `api.service.ts` gained `_postMultipartFiles` (many files under one field, with upload progress) plus the six fund-import calls. Unlike the existing multipart helper it **resolves the parsed body on a non-2xx too**: the pre-flight answers 400 with `fatal[]` / `errors[]` / `warnings[]`, and collapsing that to one `error` string would throw away the only thing that says which row.
+
+**Notes**
+
+- ID-card scans cannot be uploaded here, and the wizard says so up front rather than letting it surface at validation. A browser sends files, not the folder that `idFront` / `idBack` paths are relative to; the API refuses such a row instead of onboarding the investor without their scans. Inline base64 in the cell still works, and the Fund Import Tool CLI still reads an `images/` folder.
+
 ### 2026-09-11
 
 #### Changed — numbers in the body face; `font-mono` means identifiers only

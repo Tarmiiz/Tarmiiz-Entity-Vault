@@ -2620,6 +2620,126 @@ export class ApiService {
     });
   }
 
+  /*
+      Multipart POST of MANY files under one field, with upload progress.
+
+      Two differences from `_postMultipartFields` above, both required by the fund importer:
+
+        · MANY files under one field name (`files`), not one under a named field.
+
+        · 🔴 IT RESOLVES THE PARSED BODY ON A NON-2xx TOO, rather than collapsing it to
+          `{ error, status }`. The import pre-flight answers 400 with `fatal[]` / `errors[]` /
+          `warnings[]` — the row-by-row findings the operator has to act on, each naming a file and
+          a row number. Flattening that to one `error` string would show "the upload could not be
+          read" and throw away the only thing that says which row, which is the whole value of
+          having a pre-flight.
+  */
+  private async _postMultipartFiles(
+    path: string,
+    fields: Record<string, string>,
+    files: File[],
+    fileField: string,
+    onProgress?: (percent: number) => void,
+  ): Promise<any> {
+    const token = await this.sessionService.getActiveToken();
+    if (!token) {
+      this._handleAuthFailure();
+      return { error: 'Session expired. Please log in again.', status: 401 };
+    }
+    return new Promise<any>((resolve) => {
+      try {
+        const form = new FormData();
+        for (const [k, v] of Object.entries(fields)) form.append(k, v);
+        for (const f of files || []) form.append(fileField, f, f.name);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', this.apiURL + path);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        const audit = this.getAuditHeaders();
+        for (const [k, v] of Object.entries(audit)) xhr.setRequestHeader(k, v);
+
+        xhr.upload.onprogress = (e) => {
+          if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+
+        xhr.onload = () => {
+          let json: any = null;
+          try { json = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { /* non-JSON body */ }
+          if (xhr.status === 401) {
+            this._handleAuthFailure();
+            resolve({ error: 'Session expired. Please log in again.', status: 401 });
+            return;
+          }
+          if (xhr.status >= 300 || json?.error) {
+            // Spread the body FIRST so its own `error` survives, then stamp the status.
+            resolve({ ...(json || {}), error: json?.error || json?.message || `Request failed (HTTP ${xhr.status})`, status: xhr.status });
+            return;
+          }
+          resolve(json ?? { ok: true });
+        };
+        xhr.onerror = () => resolve({ error: 'Network error', status: 0 });
+        xhr.onabort = () => resolve({ error: 'Request aborted', status: 0 });
+        xhr.timeout = this.UPLOAD_TIMEOUT_MS;
+        xhr.ontimeout = () => resolve({ error: 'Request timed out — the server did not respond.', status: 0 });
+        xhr.send(form);
+      } catch (e: any) {
+        resolve({ error: e?.message || 'Request failed', status: 0 });
+      }
+    });
+  }
+
+  // ─── Fund import ────────────────────────────────────────────────────────────────────────────
+  //
+  // Two steps, always: upload VALIDATES (no chain writes) and returns the pre-flight report;
+  // execute runs it in the background and returns 202. The job is then polled — closing the modal
+  // does not cancel it.
+
+  /**
+   * Upload the template CSVs and run the pre-flight. Writes nothing on chain.
+   *
+   * The mode is in the PATH, not the body — each of the two imports is gated by its own System
+   * Function key on its own route, because creating identities from investor PII and moving cash
+   * are different authorities an operator may hold separately.
+   */
+  async vaultFundImportUpload(
+    service: string,
+    mode: 'subscribers' | 'balances',
+    fundConfig: Record<string, any>,
+    files: File[],
+    onProgress?: (percent: number) => void,
+  ) {
+    return this._postMultipartFiles(
+      '/services/' + service + '/imports/' + mode,
+      { fundConfig: JSON.stringify(fundConfig) },
+      files,
+      'files',
+      onProgress,
+    );
+  }
+
+  /** Start a validated job. `force` skips rows with row-level errors; fatal issues still block. */
+  async vaultFundImportExecute(service: string, jobId: string, force = false) {
+    return this.vaultPost('/services/' + service + '/imports/' + jobId + '/execute', { force });
+  }
+
+  async vaultFundImportJob(service: string, jobId: string) {
+    return this.vaultGet('/services/' + service + '/imports/' + jobId);
+  }
+
+  /** Incremental — pass the last `seq` held to tail a live run. */
+  async vaultFundImportLog(service: string, jobId: string, after = 0, limit = 500) {
+    return this.vaultGet('/services/' + service + '/imports/' + jobId + '/log', { after, limit });
+  }
+
+  async vaultFundImportList(service: string, limit = 50) {
+    return this.vaultGet('/services/' + service + '/imports', { limit });
+  }
+
+  /** The CLI's `--clean`. Admin-only, and destructive to the resume guarantee — see the API route. */
+  async vaultFundImportClearState(service: string) {
+    return this.vaultDelete('/services/' + service + '/imports/state');
+  }
+
   private async _uploadMultipart(
     path: string,
     file: File,
@@ -3291,9 +3411,20 @@ export class ApiService {
 
   // Connect v2 — per-user handles (the "alice" in alice@entityX; admin-assigned).
   async connectHandlesResolve(q: string) { return this.vaultGet('/connect/handles/resolve?q=' + encodeURIComponent(q)); }
-  async vaultUserHandleGet(userId: number | string) { return this.vaultGet(`/users/${userId}/handle`); }
-  async vaultUserHandleSet(userId: number | string, handle: string) { return this.vaultPut(`/users/${userId}/handle`, { handle }); }
-  async vaultUserHandleClear(userId: number | string) { return this.vaultDelete(`/users/${userId}/handle`); }
+  /*
+      ⚠️ `/staff/:id/handle`, NOT `/users/:id/handle` (fixed 2026-09-14).
+      These three were the last per-user Vault calls left on the OLD `/users/` spelling after the
+      Entity API's rename — every sibling here (`menu-config`, `system-functions`, `group`) already
+      says `/staff/`, and the API mounts the handle trio at `/staff/:id/handle` in `vault.js` +
+      `integration.js`. The result was a hard `Cannot PUT /api/v1/users/2/handle` — Express's own
+      404 page, surfaced raw in the error dialog as an HTML document.
+      ⚠️ Do NOT "align" these with the Regulator Dashboard's `/users/:id/handle`: that app is
+      correct for ITS API, which really does mount the trio under `/users/`. The two APIs differ
+      here, so the two frontends must differ too.
+  */
+  async vaultUserHandleGet(userId: number | string) { return this.vaultGet(`/staff/${userId}/handle`); }
+  async vaultUserHandleSet(userId: number | string, handle: string) { return this.vaultPut(`/staff/${userId}/handle`, { handle }); }
+  async vaultUserHandleClear(userId: number | string) { return this.vaultDelete(`/staff/${userId}/handle`); }
 
   // ─── Directory (unified address → name/partyType resolver) ────────────────
   async directoryByAddress(address: string) { return this.vaultGet('/directory/by-address/' + address); }

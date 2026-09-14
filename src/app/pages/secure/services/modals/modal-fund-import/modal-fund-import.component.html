@@ -1,0 +1,238 @@
+<!-- No (click) on the backdrop: a Tarmiiz modal never dismisses on a backdrop click. Here it also
+     guards a long-running job view and a half-filled wizard. -->
+@if (fundImportService.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl m-4 transform transition-all duration-300 ease-in-out scale-100">
+
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-xl leading-6 font-semibold text-gray-100">
+            @if (fundImportService.mode() === 'subscribers') {
+              {{ 'services.details.import.titleSubscribers' | translate }}
+            } @else {
+              {{ 'services.details.import.titleBalances' | translate }}
+            }
+          </h3>
+          <p class="text-xs text-gray-200 mt-1">
+            @switch (step()) {
+              @case ('pick')   { {{ 'services.details.import.stepPick'   | translate }} }
+              @case ('review') { {{ 'services.details.import.stepReview' | translate }} }
+              @case ('run')    { {{ 'services.details.import.stepRun'    | translate }} }
+            }
+          </p>
+        </div>
+        <button type="button" (click)="onClose()" class="text-gray-200 hover:text-white" [attr.aria-label]="'common.close' | translate">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-6 max-h-[60vh] overflow-y-auto">
+
+        <!-- ── STEP 1 — pick files + fund config ─────────────────────────────────────────── -->
+        @if (step() === 'pick') {
+          <p class="text-xs text-gray-500 mb-3">
+            {{ 'services.details.import.expectedFiles' | translate }}
+            <span class="font-medium text-gray-700">{{ expectedFiles().join(', ') }}</span>
+          </p>
+
+          <!-- ⚠️ Stated up front, not discovered at validation: a path here is REFUSED, and the
+               reason is structural rather than a limitation we might lift next week. -->
+          <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <p class="text-xs text-amber-800">{{ 'services.details.import.noImagesNotice' | translate }}</p>
+          </div>
+
+          <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.details.import.filesLabel' | translate }}</label>
+          @if (files().length) {
+            <ul class="mb-2 space-y-1">
+              @for (f of files(); track f.name) {
+                <li class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-1.5">
+                  <span class="text-xs text-gray-800 truncate">{{ f.name }}</span>
+                  <button type="button" (click)="removeFile(f.name)" class="text-xs text-red-600 hover:text-red-800">
+                    {{ 'common.remove' | translate }}
+                  </button>
+                </li>
+              }
+            </ul>
+            <label class="text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer">
+              {{ 'services.details.import.addMoreFiles' | translate }}
+              <input type="file" accept=".csv,text/csv" multiple class="hidden" (change)="onFilesSelected($event)">
+            </label>
+          } @else {
+            <label class="block border border-dashed border-gray-300 rounded-lg p-6 text-center text-xs text-gray-400 cursor-pointer hover:bg-gray-50">
+              {{ 'services.details.import.pickFilesHint' | translate }}
+              <input type="file" accept=".csv,text/csv" multiple class="hidden" (change)="onFilesSelected($event)">
+            </label>
+          }
+
+          <label class="block text-xs font-medium text-gray-500 mt-4 mb-1">{{ 'services.details.import.configLabel' | translate }}</label>
+          <textarea rows="10" (input)="onConfigInput($event)" [value]="fundConfigText()"
+            class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs font-mono text-gray-800 focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)]"></textarea>
+          @if (configError()) {
+            <p class="text-xs text-red-600 mt-1">{{ configError() }}</p>
+          }
+
+          @if (uploadPercent() !== null) {
+            <div class="mt-3 w-full bg-gray-200 rounded-full h-1.5">
+              <div class="bg-indigo-600 h-1.5 rounded-full transition-all" [style.width.%]="uploadPercent()"></div>
+            </div>
+          }
+        }
+
+        <!-- ── STEP 2 — the pre-flight report ───────────────────────────────────────────── -->
+        @if (step() === 'review') {
+          @if (report(); as r) {
+            <div class="rounded-lg border border-gray-200 p-3 mb-4">
+              <h4 class="text-xs font-semibold text-gray-700 mb-2">{{ 'services.details.import.reportTitle' | translate }}</h4>
+              @if (r.reconciliation; as rec) {
+                <p class="text-xs text-gray-600">
+                  {{ 'services.details.import.reconciliation' | translate: {
+                       already: rec.alreadySubscribed, modeA: rec.existingDidModeA, modeB: rec.newIdentity } }}
+                </p>
+              }
+              @if (countsList().length) {
+                <p class="text-xs text-gray-600 mt-1">
+                  <span class="font-medium">{{ 'services.details.import.counts' | translate }}</span>
+                  @for (c of countsList(); track c.label) {
+                    <span class="ms-2">{{ c.label }}: <span class="font-semibold text-gray-800">{{ c.value }}</span></span>
+                  }
+                </p>
+              }
+              <!-- The number the operator should reconcile against: the sheet's nav is only a
+                   slippage bound, the chain books at the asset's own ask. -->
+              @for (p of pricingList(); track p.asset) {
+                <p class="text-xs text-gray-600 mt-1">
+                  {{ 'services.details.import.execPrice' | translate: { asset: p.asset, price: p.ask } }}
+                </p>
+              }
+              @if (r.custody) {
+                <p class="text-xs text-amber-700 mt-1">{{ 'services.details.import.custodyNote' | translate }}</p>
+              }
+            </div>
+          }
+
+          @if (fatal().length) {
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 mb-3">
+              <h4 class="text-xs font-semibold text-red-800 mb-1">{{ 'services.details.import.fatalTitle' | translate }}</h4>
+              <ul class="list-disc ms-5 space-y-0.5">
+                @for (m of fatal(); track m) { <li class="text-xs text-red-700">{{ m }}</li> }
+              </ul>
+            </div>
+          }
+
+          @if (errors().length) {
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 mb-3">
+              <h4 class="text-xs font-semibold text-red-800 mb-1">
+                {{ 'services.details.import.errorsTitle' | translate: { count: errors().length } }}
+              </h4>
+              <ul class="list-disc ms-5 space-y-0.5">
+                @for (m of errors(); track m) { <li class="text-xs text-red-700">{{ m }}</li> }
+              </ul>
+              <label class="mt-2 flex items-center gap-2 text-xs text-red-800">
+                <input type="checkbox" [checked]="force()" (change)="force.set(!force())">
+                {{ 'services.details.import.forceLabel' | translate }}
+              </label>
+            </div>
+          }
+
+          @if (warnings().length) {
+            <div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <h4 class="text-xs font-semibold text-amber-800 mb-1">{{ 'services.details.import.warningsTitle' | translate }}</h4>
+              <ul class="list-disc ms-5 space-y-0.5">
+                @for (m of warnings(); track m) { <li class="text-xs text-amber-800">{{ m }}</li> }
+              </ul>
+            </div>
+          }
+
+          @if (!fatal().length && !errors().length) {
+            <p class="text-xs text-green-700 mt-3">{{ 'services.details.import.readyToRun' | translate }}</p>
+          }
+        }
+
+        <!-- ── STEP 3 — the live run ────────────────────────────────────────────────────── -->
+        @if (step() === 'run') {
+          @if (counters(); as c) {
+            <div class="grid grid-cols-4 gap-2 mb-3">
+              <div class="rounded-lg border border-gray-200 p-2 text-center">
+                <p class="text-lg font-semibold text-gray-800">{{ c.ok }}</p>
+                <p class="text-[11px] text-gray-500">{{ 'services.details.import.ok' | translate }}</p>
+              </div>
+              <div class="rounded-lg border border-gray-200 p-2 text-center">
+                <p class="text-lg font-semibold text-gray-800">{{ c.skipped }}</p>
+                <p class="text-[11px] text-gray-500">{{ 'services.details.import.skipped' | translate }}</p>
+              </div>
+              <div class="rounded-lg border border-gray-200 p-2 text-center">
+                <p class="text-lg font-semibold" [class]="c.failed ? 'text-red-700' : 'text-gray-800'">{{ c.failed }}</p>
+                <p class="text-[11px] text-gray-500">{{ 'services.details.import.failed' | translate }}</p>
+              </div>
+              <div class="rounded-lg border border-gray-200 p-2 text-center">
+                <p class="text-lg font-semibold" [class]="c.partial ? 'text-amber-700' : 'text-gray-800'">{{ c.partial }}</p>
+                <p class="text-[11px] text-gray-500">{{ 'services.details.import.partial' | translate }}</p>
+              </div>
+            </div>
+          }
+
+          <!-- 🔴 A partial is neither success nor failure: cash moved and the units did not. It gets
+               its own banner, naming the subscribers, because "some buys failed" is not actionable. -->
+          @if (jobStatus() === 'partial') {
+            <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 mb-3">
+              <p class="text-xs font-semibold text-amber-900">{{ 'services.details.import.partialTitle' | translate }}</p>
+              <p class="text-xs text-amber-800 mt-1">{{ 'services.details.import.partialBody' | translate }}</p>
+              @if (partialIds().length) {
+                <p class="text-xs text-amber-900 mt-1 font-medium">{{ partialIds().join(', ') }}</p>
+              }
+            </div>
+          }
+
+          @if (jobError()) {
+            <div class="rounded-lg border border-red-200 bg-red-50 p-3 mb-3">
+              <p class="text-xs text-red-700">{{ jobError() }}</p>
+            </div>
+          }
+
+          <div class="rounded-lg border border-gray-200 bg-gray-900 p-3 max-h-64 overflow-y-auto">
+            @if (!logLines().length) {
+              <p class="text-xs text-gray-400">{{ 'services.details.import.waitingForLog' | translate }}</p>
+            }
+            @for (l of logLines(); track $index) {
+              <p class="text-[11px] font-mono text-gray-200 whitespace-pre-wrap">{{ l }}</p>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
+        @if (step() === 'pick') {
+          <button type="button" (click)="onClose()"
+            class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button type="button" (click)="onValidate()" [disabled]="busy() || !files().length"
+            class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'services.details.import.validate' | translate }}
+          </button>
+        }
+        @if (step() === 'review') {
+          <button type="button" (click)="step.set('pick')"
+            class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            {{ 'common.back' | translate }}
+          </button>
+          <!-- Fatal issues are never skippable — not even with force — so the button is disabled,
+               not merely warned about. -->
+          <button type="button" (click)="onExecute()"
+            [disabled]="busy() || !jobId() || fatal().length > 0 || (errors().length > 0 && !force())"
+            class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'services.details.import.runImport' | translate }}
+          </button>
+        }
+        @if (step() === 'run') {
+          <button type="button" (click)="onClose()"
+            class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            {{ (finished() ? 'common.close' : 'services.details.import.runInBackground') | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

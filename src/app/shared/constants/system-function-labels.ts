@@ -33,6 +33,10 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'service-change-visibility':     'systemFunctionLabels.serviceChangeVisibility',
   'service-change-state':          'systemFunctionLabels.serviceChangeState',
   'service-straight-through':      'systemFunctionLabels.serviceStraightThrough',
+  // Fund import — two keys, because they are two authorities: the first bulk-creates identities
+  // from investor PII, the second moves cash and issues units. Both default-DENY on the API.
+  'service-import-subscribers':    'systemFunctionLabels.serviceImportSubscribers',
+  'service-import-balances':       'systemFunctionLabels.serviceImportBalances',
   'subscription-change-state':     'systemFunctionLabels.subscriptionChangeState',
   'asset-change-state':            'systemFunctionLabels.assetChangeState',
   'venue-change-state':            'systemFunctionLabels.venueChangeState',

@@ -22,6 +22,8 @@ import { FeaturesService } from '../../../../shared/services/features.service';
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ModalServiceStateService } from '../modals/modal-service-state/modal-service-state.service';
 import { ModalServiceStateComponent } from "../modals/modal-service-state/modal-service-state.component";
+import { ModalFundImportComponent } from "../modals/modal-fund-import/modal-fund-import.component";
+import { ModalFundImportService } from "../modals/modal-fund-import/modal-fund-import.service";
 import { ModalServiceEditService } from '../modals/modal-service-edit/modal-service-edit.service';
 import { ModalServiceEditComponent } from "../modals/modal-service-edit/modal-service-edit.component";
 import { ModalTransactionInfoService } from '../../../../shared/components/modal-transaction-info/modal-transaction-info.service';
@@ -96,6 +98,7 @@ export interface MediaIndex {
     RouterLink,
     ModalServiceEditComponent,
     ModalServiceStateComponent,
+    ModalFundImportComponent,
     ModalTransactionInfoComponent,
     ModalServiceValidatorComponent,
     ModalServicePaymentProcessorComponent,
@@ -119,6 +122,7 @@ export class DetailsPage implements OnInit {
   private loadingService = inject(LoadingService);
   private serviceEditService = inject(ModalServiceEditService);
   private serviceStateService = inject(ModalServiceStateService);
+  private fundImportService = inject(ModalFundImportService);
   trxInfoService = inject(ModalTransactionInfoService);
   private validatorModalService = inject(ModalServiceValidatorService);
   private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
@@ -140,7 +144,7 @@ export class DetailsPage implements OnInit {
   get entityActive() { return this.authService.entityActive(); }
   private _socketSub: RxSubscription | null = null;
 
-  activeTab = signal<'overview' | 'info' | 'licenses' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs'>('overview');
+  activeTab = signal<'overview' | 'info' | 'licenses' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | 'import'>('overview');
 
   // ── the onc/offc election (S5, S63-S68) ─────────────────────────────────────────────
   // A LIST, not a field: the election is per CURRENCY, so a service may be onc in one and
@@ -531,7 +535,7 @@ export class DetailsPage implements OnInit {
     // election is exactly the surface an operator deep-links to while chasing a regulator's
     // declaration or a pending switch.
     const requested = this.route.snapshot.queryParamMap.get('tab') as
-      ('overview' | 'info' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | null);
+      ('overview' | 'info' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | 'import' | null);
     const allowed = ['overview', 'info', 'providers', 'election', 'metadata', 'assets', 'subscriptions', 'trxs', 'liquidity', 'docs'] as const;
     let initialTab = requested && (allowed as readonly string[]).includes(requested) ? requested : 'overview';
     // Overview is hidden for service-provider tenants — fall back to Information.
@@ -745,7 +749,7 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'licenses' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs') {
+  setTab(tab: 'overview' | 'info' | 'licenses' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | 'import') {
     if (tab === 'election') this.getElections();
     this.activeTab.set(tab);
     if (tab === 'info' || tab === 'metadata' || tab === 'providers') this.getServiceDetails();
@@ -761,6 +765,7 @@ export class DetailsPage implements OnInit {
     if (tab === 'subscriptions') this.getSubscriptions();
     if (tab === 'trxs') this.getTransactions(1, 500);
     if (tab === 'liquidity') this.getLiquidity();
+    if (tab === 'import') this.getImportJobs();
   }   
 
   private readonly stateNames: Record<number, string> = {
@@ -1738,6 +1743,43 @@ export class DetailsPage implements OnInit {
       if (!silent) this.liquidityLoading.set(false);
     }
     this.getLiquidityHistory(silent);
+  }
+
+  // ─── Fund import ─────────────────────────────────────────────────────────────────────────────
+  //
+  // Two buttons and a history table. The history is the reason this is a TAB rather than two loose
+  // buttons: a run is a BACKGROUND job that outlives the modal, so it needs somewhere to be
+  // followed from after the wizard is closed.
+
+  importJobs = signal<any[]>([]);
+  importJobsLoading = signal(false);
+
+  async getImportJobs(silent = false) {
+    if (!silent) this.importJobsLoading.set(true);
+    try {
+      const res = await this.apiService.vaultFundImportList(this.serviceAddress, 50);
+      this.importJobs.set(Array.isArray(res?.jobs) ? res.jobs : []);
+    } finally {
+      if (!silent) this.importJobsLoading.set(false);
+    }
+  }
+
+  async openImport(mode: 'subscribers' | 'balances') {
+    const started = await this.fundImportService.show(mode, this.serviceAddress);
+    // Refresh regardless: a job row exists as soon as the upload validated, even if the operator
+    // never pressed Run — and an abandoned `validated` job is worth seeing.
+    await this.getImportJobs();
+    if (started) await this.reload(true);
+  }
+
+  /** Row tint for the job table. `partial` is amber, NOT red — cash landed; it is not a failure. */
+  importStatusClass(status: string): string {
+    switch (status) {
+      case 'failed':
+      case 'error':   return 'bg-red-50';
+      case 'partial': return 'bg-amber-50';
+      default:        return '';
+    }
   }
 
   async getLiquidityHistory(silent = false) {
