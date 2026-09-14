@@ -16,6 +16,9 @@ _Living preamble describing the broad direction this sub-project is currently mo
 ## Changes
 
 ### 2026-09-14
+**Added**
+
+- **A "download a blank template" row at the top of step 1 of the import wizard**, one button per expected file. Without it an operator had no way to learn the 37 subscriber columns short of opening the Fund Import Tool's repo. Fetched with the session bearer and saved via an object URL rather than a plain `<a href>` — the route is authenticated, so a bare link would download a 401 body saved as `subscribers.csv`, a file that looks like a template until you open it.
 
 **Added**
 

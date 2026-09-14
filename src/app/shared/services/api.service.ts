@@ -2740,6 +2740,43 @@ export class ApiService {
     return this.vaultDelete('/services/' + service + '/imports/state');
   }
 
+  /**
+   * Download a blank template CSV with the exact header the parser expects.
+   *
+   * Fetched with the session bearer and saved via an object URL rather than pointed at with a
+   * plain `<a href>`: the route is authenticated, so a bare link would hit it with no Authorization
+   * header and download a 401 body saved as a .csv — a file that looks like a template until the
+   * operator opens it.
+   */
+  async vaultFundImportTemplate(service: string, file: string): Promise<{ error?: string }> {
+    const token = await this.sessionService.getActiveToken();
+    if (!token) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
+    try {
+      const res = await fetch(
+        this.apiURL + '/services/' + service + '/imports/template?file=' + encodeURIComponent(file),
+        { headers: { Authorization: 'Bearer ' + token } },
+      );
+      if (!res.ok) {
+        let msg = `Could not download the template (HTTP ${res.status})`;
+        try { const j = await res.json(); msg = j?.error || msg; } catch { /* non-JSON error body */ }
+        return { error: msg };
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Revoke on the next tick — revoking synchronously can cancel the download in some browsers.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      return {};
+    } catch (e: any) {
+      return { error: e?.message || 'Could not download the template' };
+    }
+  }
+
   private async _uploadMultipart(
     path: string,
     file: File,

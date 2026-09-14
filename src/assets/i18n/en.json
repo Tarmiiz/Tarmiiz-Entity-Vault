@@ -797,7 +797,8 @@
           "subscribers": "subscribers",
           "holdings": "holdings",
           "balances": "balances"
-        }
+        },
+        "templateHint": "Don't have a file yet? Download a blank template with the right column headers, fill it in, then upload it below."
       }
     },
     "add": "Add Service",

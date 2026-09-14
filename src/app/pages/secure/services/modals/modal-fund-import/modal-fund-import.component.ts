@@ -138,6 +138,14 @@ export class ModalFundImportComponent implements OnDestroy {
 
   // ── step 1 ───────────────────────────────────────────────────────────────────────────────────
 
+  /** Hand the operator a blank CSV with the right header, rather than making them guess 37 columns. */
+  async downloadTemplate(file: string): Promise<void> {
+    const res = await this.apiService.vaultFundImportTemplate(this.fundImportService.serviceAddress(), file);
+    if (res?.error) {
+      this.alertService.info(this.translate.instant('alerts.error'), res.error);
+    }
+  }
+
   onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const picked = Array.from(input.files || []);

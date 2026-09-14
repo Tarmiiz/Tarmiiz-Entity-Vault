@@ -32,10 +32,22 @@
 
         <!-- ── STEP 1 — pick files + fund config ─────────────────────────────────────────── -->
         @if (step() === 'pick') {
-          <p class="text-xs text-gray-500 mb-3">
-            {{ 'services.details.import.expectedFiles' | translate }}
-            <span class="font-medium text-gray-700">{{ expectedFiles().join(', ') }}</span>
-          </p>
+          <!-- Download-the-template row. Sits ABOVE the picker on purpose: an operator who does not
+               yet have a file needs this before anything else on the step. -->
+          <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <p class="text-xs text-gray-600 mb-2">{{ 'services.details.import.templateHint' | translate }}</p>
+            <div class="flex flex-wrap items-center gap-2">
+              @for (f of expectedFiles(); track f) {
+                <button type="button" (click)="downloadTemplate(f)"
+                  class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors inline-flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                  </svg>
+                  {{ f }}
+                </button>
+              }
+            </div>
+          </div>
 
           <!-- ⚠️ Stated up front, not discovered at validation: a path here is REFUSED, and the
                reason is structural rather than a limitation we might lift next week. -->
