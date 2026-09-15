@@ -12,6 +12,11 @@ import {
   ekycRuleApplies, ekycRequiredFieldsForLevel,
 } from '../../../../../shared/constants/ekyc-canonical';
 
+// A token issuer is a service HOLDING licence class 27 — Phase 28 retired `serviceType`, so
+// there is no byte that says so. Same spelling as `modal-transaction-add.component.ts` and
+// `modal-asset-add.component.ts` rather than inventing a second name for the same fact.
+const CLASS_TOKEN_ISSUER = 27;
+
 // The optional canonical identity-data fields (beyond the base required set handled
 // explicitly) — driven by the GENERATED mirror of the platform canonical schema v3
 // (shared/constants/ekyc-canonical.ts; unknown keys are dropped server-side).
@@ -150,7 +155,18 @@ export class ModalAddSubscriptionComponent {
     if (data?.services) {
       this.services.set(
         data.services
-          .filter((s: any) => Number(s.service_type) === 1 && Number(s.state) === 2)
+          // ⚠️ WAS `Number(s.service_type) === 1` — RETIRED BY PHASE 28 step (e), so this read
+          // `Number(undefined) === 1`, was permanently false, and the Service dropdown came back
+          // EMPTY on a tenant holding an active Token Issuer licence. Nothing threw, at any point:
+          // the operator opens Add Subscription and the only option is the placeholder, which reads
+          // as "this entity has no services" rather than as a broken filter. This was the LAST
+          // surviving `service_type` filter in the Vault — the twin at
+          // `modal-transaction-add.component.ts` had the identical bug, already fixed.
+          //
+          // `license_class_ids` is the ACTIVE licence set from the Entity API's `getServices`, so a
+          // suspended licence correctly drops the service out of the list.
+          .filter((s: any) => (s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER)
+                           && Number(s.state) === 2)
           .map((s: any) => ({ address: s.address, name: s.name || s.address }))
       );
     }

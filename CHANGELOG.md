@@ -15,6 +15,30 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-15
+
+**Fixed**
+
+- **The Service dropdown on Add Subscription was permanently empty**, on every tenant, since Phase 28.
+  [modal-add-subscription.component.ts](src/app/pages/secure/subscriptions/modals/modal-add-subscription/modal-add-subscription.component.ts)
+  filtered with `Number(s.service_type) === 1`, and step (e) of Phase 28 DELETED `service_type` — so
+  the test was `Number(undefined) === 1`, false forever. A service is a token issuer because it
+  HOLDS licence class 27, so the filter now reads
+  `(s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER) && Number(s.state) === 2`.
+  - **Nothing threw, at any point.** The operator opens Add Subscription and the only entry is the
+    placeholder, which reads as *"this entity has no services"* rather than as a broken filter —
+    the plausible-answer failure class, not a crash.
+  - `license_class_ids` is the **ACTIVE** licence set (Entity API `db.js`, `WHERE subject = ANY($1)
+    AND state = LICENSE_STATE.ACTIVE`), so a suspended licence correctly drops the service from the
+    list and no caller has to know that.
+  - This was the **last surviving `service_type` filter in the Vault**. Its twin at
+    [modal-transaction-add.component.ts](src/app/pages/secure/transactions/modals/modal-transaction-add/modal-transaction-add.component.ts)
+    had the identical bug with the identical symptom and was already fixed; every other call site
+    carries a ⚠️ comment recording the same correction.
+  - Verified against staging before shipping: MPM's one service returns `service_type=undefined`
+    with `license_class_ids=[27]` and `state=2`, so it passes the corrected filter and fails the old
+    one — the defect and the fix both reproduced on live data rather than argued from source.
+
 ### 2026-09-14
 
 **Changed**
