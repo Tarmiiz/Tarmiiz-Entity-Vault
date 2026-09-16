@@ -156,7 +156,8 @@
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <div>
-          <h2 class="text-sm font-semibold text-gray-800">{{ 'settlements.list.title' | translate }}</h2>
+          <!-- No heading here: the v4 top bar already shows this page's title, so an
+               intro card repeating it is the same words twice. The description stays. -->
           <p class="text-xs text-gray-600">{{ 'settlements.list.description' | translate }}</p>
         </div>
         @if (canAct() && features.systemFunctionEnabled('settlement-create')) {

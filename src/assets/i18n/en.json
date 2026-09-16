@@ -4643,7 +4643,6 @@
       }
     },
     "userGroups": {
-      "title": "User Groups",
       "description": "Named, role-scoped presets of Menu Access and System Functions settings. Assign a group to a user and its settings apply automatically — edit the group later and every member follows. Per-user overrides on top of the group still work.",
       "addGroup": "Add Group",
       "creating": "Creating group…",
@@ -4752,13 +4751,11 @@
         "menuItem": "Menu Item",
         "license": "License"
       },
-      "title": "Menu Settings",
       "disabledState": "Disabled",
       "shownVerb": "shown",
       "hiddenVerb": "hidden"
     },
     "appConfig": {
-      "title": "System Configuration",
       "description": "Runtime settings for this deployment, stored in the database and overriding the .env defaults. Secret values are encrypted at rest and never shown after saving. Changes apply live, except keys marked \"Restart required\", which are read at boot and only take effect after the API is restarted.",
       "restartRequired": "Restart required",
       "customized": "Customized",
@@ -4922,7 +4919,6 @@
       "empty": "No obligations recorded."
     },
     "list": {
-      "title": "Settlements",
       "description": "Net settlements between entity pairs. The debtor confirms the wire was sent; the creditor confirms receipt - only then does the net decrease.",
       "empty": "No settlements yet."
     },
