@@ -32,7 +32,7 @@ import { UserGroup } from '../../../../shared/models/data.model';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { menuLabelFor } from '../../../../shared/constants/menu-labels';
-import { systemFunctionLabelFor, systemFunctionGroupFor, systemFunctionGroupLabelFor } from '../../../../shared/constants/system-function-labels';
+import { systemFunctionLabelFor, systemFunctionGroupFor, systemFunctionGroupLabelFor, systemFunctionLabelInGroup } from '../../../../shared/constants/system-function-labels';
 import { SubTabRailComponent } from '../../../../shared/components/sub-tab-rail/sub-tab-rail.component';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
@@ -243,6 +243,18 @@ export class DetailsPage implements OnInit {
 
   labelFor(key: string): string { return this.translate.instant(menuLabelFor(key)); }
   fnLabelFor(key: string): string { return this.translate.instant(systemFunctionLabelFor(key)); }
+
+  /**
+   * The label as rendered in the group table — the rail item already names the
+   * domain, so the prefix is dropped there and only there. `fnLabelFor` keeps the
+   * full string for the filter, the sort and the confirm dialogs.
+   */
+  fnLabelInGroup(key: string): string {
+    return systemFunctionLabelInGroup(
+      this.fnLabelFor(key),
+      this.translate.instant(systemFunctionGroupLabelFor(systemFunctionGroupFor(key))),
+    );
+  }
 
   /** Per-user Menu Access applies only to non-admin targets (admins bypass menu gating). */
   showMenuTab(): boolean {

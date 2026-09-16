@@ -2,71 +2,84 @@
 
 <div class="grow p-4 pt-4 overflow-y-auto">
 
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
+  <div class="card-v4 p-4 mb-3">
+    <!-- ✅ THIS HEADING STAYS. "Maker / Checker policy" is not the page title
+         ("Approval Settings") — it names the MECHANISM the toggles drive, which the
+         title does not, so it adds information rather than repeating it. The
+         de-duplication rule is equal strings only; a heading that merely sits under
+         a title is not a duplicate. -->
     <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'approvals.policy.heading' | translate }}</h2>
     <p class="text-xs text-gray-600">
       {{ 'approvals.policy.descriptionIntro' | translate }}
       <span class="font-semibold uppercase">{{ 'approvals.roleMaker' | translate }}</span> {{ 'approvals.policy.descriptionMakerToChecker' | translate }}
       <span class="font-semibold uppercase">{{ 'approvals.roleChecker' | translate }}</span> {{ 'approvals.policy.descriptionRest' | translate }}
-      <a routerLink="/authorized/users/list" class="text-blue-700 hover:underline">{{ 'users.title' | translate }}</a> {{ 'approvals.policy.descriptionSuffix' | translate }}
+      <a routerLink="/authorized/users/list" class="text-indigo-600 hover:underline">{{ 'users.title' | translate }}</a> {{ 'approvals.policy.descriptionSuffix' | translate }}
     </p>
+    <!-- Says WHY the list is shorter than the API's category set. Without this an
+         admin looking for a category they know exists reads the absence as a bug. -->
+    <p class="text-xs text-gray-400 mt-2">{{ 'approvals.policy.licensedOnlyNote' | translate }}</p>
   </div>
 
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-    <div class="overflow-x-auto rounded-lg">
-      <table class="table-v4 w-full text-sm text-left">
-        <thead>
-          <tr>
-            <th>{{ 'approvals.policy.table.actionCategory' | translate }}</th>
-            <th>{{ 'common.description' | translate }}</th>
-            <th>{{ 'approvals.policy.table.requiresApproval' | translate }}</th>
-            <th>{{ 'settings.menu.table.license' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rows(); track row.actionCategory; let i = $index) {
-            <tr [class.bg-gray-50]="i % 2 === 1">
-              <td class="font-mono text-xs">{{ row.actionCategory }}</td>
-              <td>{{ labelFor(row.actionCategory) }}</td>
-              <td>
-                <label class="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    [checked]="row.requiresApproval"
-                    (change)="toggle(row, $any($event.target).checked)"
-                    [disabled]="saving() === row.actionCategory"
-                    class="sr-only peer">
-                  <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-600 transition-colors relative">
-                    <div class="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"
-                      [class.translate-x-5]="row.requiresApproval"></div>
-                  </div>
-                  <span class="ml-2 text-xs text-gray-700">
-                    {{ (row.requiresApproval ? 'approvals.policy.required' : 'approvals.policy.directExecute') | translate }}
-                  </span>
-                </label>
-              </td>
-              <!-- A policy on a category this tenant is not licensed for is not WRONG — it is
-                   inert, because no request in that category can be raised. Saying so stops an
-                   admin debugging an approval queue that is empty for a reason nothing states. -->
-              <td><app-license-pill [license]="row.license" /></td>
-            </tr>
-          } @empty {
-            <!-- Standard 3.4 tier 3: while loading, SKELETON ROWS. The two-state form this
-                 replaced printed the empty copy in the loading state, i.e. "no records" while
-                 the answer was still unknown. A table gets skeletons rather than the brand
-                 mark because they show the column shape a spinner hides. -->
-            @if (loading()) {
-              @for (s of [1, 2, 3, 4, 5]; track s) {
-                <tr><td colspan="4"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
-              }
-            } @else {
-              <tr>
-                <td colspan="4" class="py-6 text-center text-gray-500 text-sm">{{ 'approvals.policy.empty' | translate }}</td>
-              </tr>
-            }
-          }
-        </tbody>
-      </table>
+  <div class="card-v4 overflow-hidden">
+    <div class="p-4">
+      <!-- Standard 2.1: ≥3 distinct jobs earns a rail, and twenty-five categories
+           across nine domains is well past that. One flat alphabetical table put
+           `asset_state` between `dex_*` rows and `credit_*` rows with nothing to
+           say they were different kinds of decision. -->
+      <app-loading-state [loading]="loading()" [empty]="!groups().length"
+                         emptyKey="approvals.policy.empty">
+        <app-sub-tab-rail [tabs]="groups()" [active]="activeGroup() || ''" (select)="group.set($event)">
+          <div class="overflow-x-auto rounded-lg">
+            <table class="table-v4 min-w-full text-sm text-left">
+              <thead>
+                <tr>
+                  <th>{{ 'approvals.policy.table.action' | translate }}</th>
+                  <th>{{ 'common.description' | translate }}</th>
+                  <th>{{ 'approvals.policy.table.requiresApproval' | translate }}</th>
+                  <th>{{ 'settings.menu.table.license' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of rowsInGroup(); track row.actionCategory) {
+                  <tr>
+                    <td>
+                      <div class="font-medium text-gray-900">{{ nameFor(row.actionCategory) }}</div>
+                      <!-- The slug stays, demoted to a subtitle: it is what the API,
+                           the audit trail and every support thread call this row, so
+                           dropping it would make the page unmatchable to a log line. -->
+                      <div class="text-[11px] font-mono text-gray-400">{{ row.actionCategory }}</div>
+                    </td>
+                    <td class="text-gray-600">{{ descFor(row.actionCategory) }}</td>
+                    <td>
+                      <label class="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          [checked]="row.requiresApproval"
+                          (change)="toggle(row, $any($event.target).checked)"
+                          [disabled]="saving() === row.actionCategory"
+                          class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-600 transition-colors relative">
+                          <div class="absolute top-0.5 left-0.5 rtl:left-auto rtl:right-0.5 bg-white w-5 h-5 rounded-full transition-transform"
+                            [class.translate-x-5]="row.requiresApproval"
+                            [class.rtl:-translate-x-5]="row.requiresApproval"></div>
+                        </div>
+                        <span class="ml-2 rtl:ml-0 rtl:mr-2 text-xs text-gray-700">
+                          {{ (row.requiresApproval ? 'approvals.policy.required' : 'approvals.policy.directExecute') | translate }}
+                        </span>
+                      </label>
+                    </td>
+                    <!-- Kept even though `not-covered` rows are filtered out: what
+                         survives the filter is `available` (often PARTIAL coverage,
+                         which the pill splits) and `undetermined`, and those two are
+                         not the same answer. -->
+                    <td><app-license-pill [license]="row.license" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </app-sub-tab-rail>
+      </app-loading-state>
     </div>
   </div>
 </div>

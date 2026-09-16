@@ -189,3 +189,38 @@ export function systemFunctionGroupFor(key: string): string {
 export function systemFunctionGroupLabelFor(group: string): string {
   return 'systemFunctionGroups.' + group;
 }
+
+/**
+ * Strip the group name off a function label when the label is rendered INSIDE
+ * that group's rail — "Service - Add Clearing House" under a rail item reading
+ * "Services" is the word twice, and it is the widest column on the table.
+ *
+ * ⚠️ Takes RESOLVED strings, not i18n keys. The two apps' `systemFunctionLabelFor`
+ * deliberately differ in what they return — the Vault an i18n key, the Regulator
+ * display text (that app's call site does not pipe through `translate`) — so the
+ * only layer both can share is after resolution. Keep this function pure for the
+ * same reason: it must not reach for a TranslateService.
+ *
+ * Deliberately NOT applied in `fnLabelFor` itself. That helper also feeds the
+ * search filter, the row sort and the confirm dialogs, where the label appears
+ * with no rail beside it to supply the context — there, "Add Clearing House"
+ * alone is ambiguous across three domains. Group context earns the strip; its
+ * absence is what makes the prefix worth keeping.
+ *
+ * Both separators are real and both ship today: " - " on most rows and ": " on
+ * the two import functions. Matching is case-insensitive and tolerates the
+ * SINGULAR prefix under a PLURAL rail item ("Service" under "Services"), which
+ * is the common case — the rail labels are plural nouns and the prefixes are not.
+ * Anything that does not match is returned untouched, so a label with no prefix
+ * (there are ten) and a group whose name shares no stem with its members
+ * ("General") both pass through unchanged rather than being truncated.
+ */
+export function systemFunctionLabelInGroup(label: string, groupLabel: string): string {
+  if (!label || !groupLabel) return label;
+  const cut = /^(.+?)(\s-\s|:\s)/.exec(label);
+  if (!cut) return label;
+  const head = cut[1].trim().toLowerCase();
+  const group = groupLabel.trim().toLowerCase();
+  const matches = head === group || head + 's' === group || head === group + 's';
+  return matches ? label.slice(cut[0].length).trim() : label;
+}

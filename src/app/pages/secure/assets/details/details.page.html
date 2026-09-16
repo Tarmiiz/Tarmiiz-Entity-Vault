@@ -369,7 +369,7 @@
               @if (parsedMetadata().identifiers.length === 0) {
                 <p class="text-sm text-gray-400 italic py-4 text-center">{{ 'assets.details.identifiers.empty' | translate }}</p>
               } @else {
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-lg">
                   <table class="table-v4 min-w-full text-sm">
                     <thead>
                       <tr class="text-left text-gray-500">
@@ -901,7 +901,7 @@
               @if (v.services.length === 0) {
                 <p class="text-gray-400 py-8 text-center">{{ 'assets.details.services.emptyAssigned' | translate }}</p>
               } @else {
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-lg">
                   <table class="table-v4 w-full text-sm text-left">
                     <thead>
                       <tr>
@@ -1134,7 +1134,7 @@
               </div>
             }
             @else {
-              <div class="overflow-x-auto">
+              <div class="overflow-x-auto rounded-lg">
                 <table class="table-v4 w-full text-sm text-left">
                   <thead>
                     <tr>

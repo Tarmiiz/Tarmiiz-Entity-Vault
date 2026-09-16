@@ -382,9 +382,20 @@ export class ComplianceTabComponent implements OnChanges {
 
   // ── load ──────────────────────────────────────────────────────────────────────
 
+  /**
+   * ⚠️ Raises the OVERLAY, matching every other tab on the asset detail page —
+   * that page calls `loadingService.show()` at 23 sites and this tab was the one
+   * surface rendering its load as an in-pane spinner instead, so switching to
+   * Compliance looked like a different app.
+   *
+   * `registrationLoading` stays: `<app-refresh-button [loading]>` spins on it,
+   * and the manual Refresh control is exactly the case where an overlay would be
+   * wrong — the user asked one card to re-read, not the page.
+   */
   async load() {
     if (!this.address) return;
     this.registrationLoading.set(true);
+    this.loadingService.show(this.translate.instant('common.loadingData'));
     try {
       // Static reference data — fetched once and kept.
       if (!this.classCatalog()) {
@@ -421,6 +432,7 @@ export class ComplianceTabComponent implements OnChanges {
       this.registration.set(null);
     } finally {
       this.registrationLoading.set(false);
+      this.loadingService.hide();
     }
   }
 

@@ -191,8 +191,8 @@
           <div class="card-v4 overflow-hidden max-w-6xl mx-auto">
             <div class="p-4">
               <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">{{ 'users.details.menu.title' | translate }}</h3>
-                <p class="text-sm text-gray-500 mt-1">
+                <!-- No heading: the tab carries the SAME key (users.details.menu.title). -->
+                <p class="text-sm text-gray-500">
                   @if (isViewerTarget()) {
                     <span class="font-medium">{{ v.name }}</span> {{ 'users.details.menu.viewerIntro' | translate }}
                     <span class="font-medium">{{ 'users.details.menu.hiddenWord' | translate }}</span> {{ 'users.details.menu.viewerMiddle' | translate }}
@@ -211,7 +211,7 @@
               } @else if (menuRows().length === 0) {
                 <div class="text-center py-10 text-gray-500"><p>{{ 'users.details.menu.empty' | translate }}</p></div>
               } @else {
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-lg">
                   <table class="table-v4 min-w-full">
                     <thead>
                       <tr>
@@ -336,7 +336,7 @@
                   <p class="py-6 text-center text-sm text-gray-400">{{ 'users.details.sysfn.noMatch' | translate: { query: sysFnFilter() } }}</p>
                 } @else {
                 <app-sub-tab-rail [tabs]="sysFnGroups()" [active]="activeSysFnGroup() || ''" (select)="sysFnGroup.set($event)">
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-lg">
                   <table class="table-v4 min-w-full">
                     <thead>
                       <tr>
@@ -349,7 +349,10 @@
                     <tbody>
                       @for (row of sysFnRowsInGroup(); track row.functionKey) {
                         <tr>
-                          <td class="text-sm text-gray-800">{{ fnLabelFor(row.functionKey) }}</td>
+                          <!-- Group-stripped: the rail beside this table already names the
+                               domain, so "Service - Add Clearing House" under "Services" was
+                               the word twice in the widest column. -->
+                          <td class="text-sm text-gray-800">{{ fnLabelInGroup(row.functionKey) }}</td>
                           <td class="text-xs text-gray-400 font-mono">
                             <span class="inline-flex items-center gap-2">
                               {{ row.functionKey }}
@@ -406,10 +409,17 @@
         }
 
         @if (activeTab() === 'vpn' && showVpnTab()) {
-          <div class="card-v4">
+          <!-- `overflow-hidden max-w-6xl mx-auto` matches the Details / Menu Access /
+               System Functions panes verbatim. Without it this pane ran the full canvas
+               width while its three siblings were centred at 72rem, so switching tabs
+               moved the card. -->
+          <div class="card-v4 overflow-hidden max-w-6xl mx-auto">
             <div class="px-6 py-4 border-b border-gray-200">
-              <h3 class="text-base font-semibold text-gray-900">{{ 'users.details.vpn.title' | translate }}</h3>
-              <p class="mt-1 text-sm text-gray-500">{{ 'users.details.vpn.intro' | translate }}</p>
+              <!-- No heading: the tab that selected this pane is labelled with the SAME
+                   i18n key (users.details.vpn.title, tabDefs in the .ts), so a heading here
+                   is the identical string twice, one line apart. The intro stays — it says
+                   what the title does not. -->
+              <p class="text-sm text-gray-500">{{ 'users.details.vpn.intro' | translate }}</p>
             </div>
 
             <div class="p-6 flex flex-col gap-5">
@@ -451,32 +461,32 @@
                 <p class="text-xs text-gray-500">{{ 'users.details.vpn.profileWarning' | translate }}</p>
               </div>
 
-              @if (vpnLoading()) {
-                <p class="text-sm text-gray-500">{{ 'users.details.vpn.loading' | translate }}</p>
-              } @else if (vpnPeers().length === 0) {
-                <p class="text-sm text-gray-500">{{ 'users.details.vpn.none' | translate }}</p>
-              } @else {
-                <div class="overflow-x-auto">
-                  <table class="min-w-full text-sm">
+              <!-- Standard 3.4: the PANE spinner, never an in-table line of copy. The
+                   `<p>Loading…</p>` this replaced was the one loading look left on this page
+                   while its three sibling tabs already rendered the mark. -->
+              <app-loading-state [loading]="vpnLoading()" [empty]="vpnPeers().length === 0"
+                                 emptyKey="users.details.vpn.none">
+                <div class="overflow-x-auto rounded-lg">
+                  <table class="table-v4 min-w-full">
                     <thead>
-                      <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
-                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.peerName' | translate }}</th>
-                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.address' | translate }}</th>
-                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.status' | translate }}</th>
-                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.created' | translate }}</th>
-                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.expires' | translate }}</th>
-                        <th class="px-3 py-2"></th>
+                      <tr>
+                        <th>{{ 'users.details.vpn.peerName' | translate }}</th>
+                        <th>{{ 'users.details.vpn.address' | translate }}</th>
+                        <th>{{ 'users.details.vpn.status' | translate }}</th>
+                        <th>{{ 'users.details.vpn.created' | translate }}</th>
+                        <th>{{ 'users.details.vpn.expires' | translate }}</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (p of vpnPeers(); track p.peerName) {
-                        <tr class="border-b border-gray-100">
-                          <td class="px-3 py-2">
+                        <tr>
+                          <td>
                             <div class="font-medium text-gray-900">{{ p.person }}</div>
                             @if (p.label) { <div class="text-xs text-gray-500">{{ p.label }}</div> }
                           </td>
-                          <td class="px-3 py-2 font-mono text-gray-700">{{ p.address }}</td>
-                          <td class="px-3 py-2">
+                          <td class="font-mono">{{ p.address }}</td>
+                          <td>
                             <!-- State in FORM as well as word: stale and revoked both mean
                                  "no access", but for different reasons. -->
                             @switch (p.status) {
@@ -494,9 +504,9 @@
                               }
                             }
                           </td>
-                          <td class="px-3 py-2 text-gray-700 tabular-nums">{{ formatTime(p.createdAt) }}</td>
-                          <td class="px-3 py-2 text-gray-700 tabular-nums">{{ formatTime(p.notAfter) }}</td>
-                          <td class="px-3 py-2 text-right">
+                          <td class="tabular-nums">{{ formatTime(p.createdAt) }}</td>
+                          <td class="tabular-nums">{{ formatTime(p.notAfter) }}</td>
+                          <td class="text-right">
                             @if (!p.revokedAt) {
                               <button (click)="revokeVpn(p.person)"
                                       [disabled]="vpnBusy() !== null"
@@ -510,7 +520,7 @@
                     </tbody>
                   </table>
                 </div>
-              }
+              </app-loading-state>
 
             </div>
           </div>

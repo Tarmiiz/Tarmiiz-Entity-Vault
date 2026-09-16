@@ -93,9 +93,51 @@ _Living preamble describing the broad direction this sub-project is currently mo
   `LiveStatusService.present()` — true as soon as any page registers a reporter — so it read
   **Live** with the socket down on a page showing minutes-old data. Three things were called
   Live in one app. Refreshing is layered on top and only while connected.
+- **Approval Settings is railed by domain, licence-filtered, and actually described.** The page
+  had a SIX-entry label map against the API's twenty-five categories, so nineteen rows printed
+  `credit_route_transfer` in the Description column beside `credit_route_transfer` in the Action
+  column — the same string twice, no description — while the six that were mapped read
+  "Asset: state change", giving the column two registers as well as two languages. Now: a
+  `<app-sub-tab-rail>` over nine domains (Standard 2.1 — twenty-five categories across nine
+  domains is well past the ≥3 threshold), a human name plus a **one-sentence description in one
+  consistent shape** for every category (50 new strings × en + ar, parity verified), and rows
+  whose licences read `not-covered` are HIDDEN, because nothing can raise a request in them so
+  the toggle governs nothing. `undetermined` stays visible — that means the licence set could
+  not be READ, and rendering it as "not licensed" asserts something we do not know. The slug
+  survives as a subtitle: it is what the API, the audit trail and every support thread call the
+  row. New [`approval-category-meta.ts`](src/app/shared/constants/approval-category-meta.ts).
+- **System Functions rows no longer repeat their own rail item.** "Service - Add Clearing
+  House" under a rail reading "Services" was the word twice in the widest column. Stripped at
+  the table only — `fnLabelFor` keeps the full label for the search filter, the row sort and
+  the confirm dialogs, where there is no rail beside it to supply the context.
 
 **Fixed**
 
+- **64 `.table-v4` wrappers rendered a SQUARE gradient header inside a rounded card.** A table
+  cannot round its own corners — the header gradient is painted on `thead tr`, a radius on
+  `th` does not clip it, and `overflow` does not apply to a table box — so the radius must come
+  from a wrapper that also clips. A rounded `.card-v4` with padding does not: the table sits
+  inside the padding. 145 wrappers already carried `overflow-x-auto rounded-lg` and 64 carried
+  a bare `overflow-x-auto`; all 209 are now uniform. Invisible to the build and to any checker
+  that inspects classes rather than geometry.
+- **The Asset Creator's step dots counted to 8 while the header read "Step 1 of 7".** The dots
+  printed the ABSOLUTE step id and step 5 is hidden, so they read 1 2 3 4 6 7 8 — two counters
+  for one wizard, disagreeing in the same viewport. The dots are positional now
+  ([`$index + 1`](src/app/pages/secure/assets/creator/asset-creator.page.html)); the absolute
+  ids stay, because `HIDDEN_STEPS`, `nextVisibleStep`, every `currentStep() === N` branch and
+  the `stepLabels` index all key off them.
+- **Two loading looks on one page, twice.** Entity Profile raised the overlay for `getInfo`,
+  `loadMediaImages` and all five of its writes but an in-card mark for the Identifiers tab's
+  fetch; the asset detail page called `loadingService.show()` at 23 sites while its Compliance
+  tab rendered an in-pane mark. Switching to either tab looked like a different application.
+  Both now take the page's own convention — see the new "one look per page" tie-breaker under
+  Standard 3.4, which the four-tier table had not settled.
+- **User Details: the VPN Access pane was the odd one out.** It repeated the tab's own title
+  (the heading and the tab resolved the SAME i18n key), ran the full canvas width while its
+  three siblings were centred at `max-w-6xl`, and rendered a hand-rolled table with its own
+  cell padding and a bare `Loading…` line. Now `.table-v4` in a rounded wrapper, behind
+  `<app-loading-state>`, at the sibling width. The Menu Access pane had the same same-key
+  heading and lost it too.
 - **Twelve invalid Tailwind classes that compiled to NOTHING** — eleven `py-1.5.5` across the
   DEX negotiated-trade tab bars and one `border-transparent.5` on the asset Compliance rail,
   all from a single bad find-and-replace of `py-2.5`. Every one of those controls shipped with

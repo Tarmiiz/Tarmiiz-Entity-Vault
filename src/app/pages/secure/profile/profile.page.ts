@@ -20,7 +20,6 @@ import { ModalImageAddService } from '../../../shared/components/modal-image-add
 import { ModalImageAddComponent } from '../../../shared/components/modal-image-add/modal-image-add.component';
 import { FeaturesService } from '../../../shared/services/features.service';
 import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
-import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
 export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
@@ -36,7 +35,7 @@ export interface MediaIndex {
   templateUrl: './profile.page.html',
   styleUrls: ['./profile.page.scss'],
   standalone: true,
-  imports: [LoadingStateComponent, TabsComponent, 
+  imports: [TabsComponent,
     FormsModule,
     HeaderComponent,
     ModalProfileMetadataEditComponent,
@@ -100,10 +99,21 @@ export class ProfilePage implements OnInit {
 
   // ─── Identifiers (LEI, commercial registry, tax id …) ───────────────────────
 
+  /**
+   * ⚠️ The OVERLAY, not an inline pane spinner — every other fetch on this page
+   * (`getInfo`, `loadMediaImages`, all five writes) goes through `loadingService`,
+   * and this one used a local signal, so the Identifiers tab was the only tab
+   * whose load rendered inside the card while its siblings dimmed the screen.
+   * Two loading looks on one page is worse than either look.
+   *
+   * `identifiersLoading` is kept and still set: the template no longer branches
+   * on it, but Save/Remove read it to disable their buttons mid-flight.
+   */
   identifiersLoading = signal(false);
 
   async loadIdentifiers() {
     this.identifiersLoading.set(true);
+    this.loadingService.show(this.translate.instant('common.loadingData'));
     try {
       // The ID Type vocabulary comes from Global Variables, never a hardcoded list — a
       // chain can seed the category in a different order, and new types are added on-chain
@@ -121,6 +131,7 @@ export class ProfilePage implements OnInit {
       this.identifiers.set([]);
     } finally {
       this.identifiersLoading.set(false);
+      this.loadingService.hide();
     }
   }
 
