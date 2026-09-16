@@ -2,97 +2,319 @@
 
 <div class="grow p-4 pt-4 overflow-y-auto">
 
-  <!-- Intro card.
-       ⚠️ The copy says "external systems", never "disable endpoint". A disabled endpoint 403s
-       NON-HUMAN principals only — a logged-in Vault user is never affected. Integration routes
-       serve both populations, so wording that promised a hard off-switch would be a promise this
-       page does not keep, and would invite an admin to expect a Vault page to go dark. -->
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-3">
-    <h2 class="text-sm font-semibold text-gray-800 mb-1">{{ 'settings.apiEndpoints.title' | translate }}</h2>
-    <p class="text-xs text-gray-600">{{ 'settings.apiEndpoints.description' | translate }}</p>
-    <p class="text-xs text-gray-500 mt-2">
-      {{ 'settings.apiEndpoints.summaryCount' | translate: { total: totalCount(), disabled: disabledCount() } }}
-    </p>
-  </div>
+  <!-- Tab bar. Connectivity first: there is nothing to permit until an external system can
+       reach the API at all.
 
-  <!-- Filter. 357 rows across 39 sections makes this mandatory rather than a convenience. -->
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
-    <input
-      type="text"
-      [ngModel]="filter()"
-      (ngModelChange)="filter.set($event)"
-      [placeholder]="'settings.apiEndpoints.filterPlaceholder' | translate"
-      class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-  </div>
-
-  @if (loading()) {
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 text-sm text-gray-500">
-      {{ 'common.loadingData' | translate }}
+       The Docs "tab" sits OUTSIDE <app-tabs> on purpose — it is not a content tab, it opens the
+       reference in a new window and leaves the current tab selected. Feeding it through the tabs
+       component would make it selectable and give it an aria-selected state it can never hold. -->
+  <div class="flex items-start gap-2 mb-4">
+    <div class="grow min-w-0">
+      <app-tabs [tabs]="TABS" [active]="activeTab()" (select)="setTab($any($event))" />
     </div>
-  } @else if (!filteredSections().length) {
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-4 text-sm text-gray-500">
-      {{ 'settings.apiEndpoints.noMatches' | translate }}
+    <button
+      type="button"
+      (click)="openDocs()"
+      [disabled]="docsBusy()"
+      class="tab-v4 shrink-0 mt-2 px-4 py-1.5 inline-flex items-center gap-1.5 disabled:opacity-50">
+      {{ 'settings.apiManagement.tabs.docs' | translate }}
+      <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10 6H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-5m-6 0 8-8m0 0h-4m4 0v4"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════════════
+       CONNECTIVITY — how an external system reaches this tenant, and what it presents
+       ════════════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'connectivity') {
+
+    <div class="card-v4 p-6">
+      <!-- Shared state, ABOVE the rail: the description covers both panes. -->
+      <p class="text-xs text-gray-600 mb-4">{{ 'settings.apiManagement.connectivityDescription' | translate }}</p>
+
+      <app-sub-tab-rail [tabs]="connectivityRail()" [active]="connRail()" (select)="setConnRail($event)">
+
+      @if (connRail() === 'token') {
+    <!-- ── The access token ──────────────────────────────────────────────────────── -->
+    <div>
+      <!-- NO section header: the rail item that opened this pane already names it. -->
+      <div>
+        <p class="text-xs text-gray-600 mb-3">{{ 'settings.apiManagement.token.description' | translate }}</p>
+
+        @if (!tokenConfigured()) {
+          <!-- A real, legitimate state: an Entity API with no token simply refuses every
+               automation caller, which is correct for a tenant with no integrations. -->
+          <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2.5 text-xs text-gray-600">
+            {{ 'settings.apiManagement.token.none' | translate }}
+          </div>
+        } @else {
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[11px] uppercase tracking-wide text-gray-500">
+                {{ 'settings.apiManagement.token.header' | translate }}
+              </span>
+            </div>
+
+            <!-- Masked until an explicit reveal: opening a settings page must not put a
+                 credential on screen, since these pages get screen-shared. -->
+            <div class="font-mono text-xs bg-gray-50 border border-gray-200 rounded-md px-3 py-2.5 break-all text-gray-800">
+              @if (tokenValue()) {
+                Bearer {{ tokenValue() }}
+              } @else {
+                Bearer ••••••••••••••••••••••••••••••••
+              }
+            </div>
+
+            <div class="text-[11px] text-gray-500">
+              {{ 'settings.apiManagement.token.fingerprint' | translate }}
+              <span class="font-mono text-gray-700">{{ tokenFingerprint() }}</span>
+              <span class="mx-1">·</span>
+              {{ 'settings.apiManagement.token.length' | translate: { n: tokenLength() } }}
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap mt-1">
+              @if (!tokenValue()) {
+                <button
+                  type="button"
+                  (click)="revealToken()"
+                  [disabled]="tokenBusy()"
+                  class="text-xs px-3 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                  {{ 'settings.apiManagement.token.reveal' | translate }}
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  (click)="copyToken()"
+                  class="text-xs px-3 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                  {{ (tokenCopied() ? 'settings.apiManagement.token.copied' : 'settings.apiManagement.token.copy') | translate }}
+                </button>
+                <button
+                  type="button"
+                  (click)="hideToken()"
+                  class="text-xs px-3 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+                  {{ 'settings.apiManagement.token.hide' | translate }}
+                </button>
+              }
+            </div>
+
+            <!-- Rotation is a HOST act (it rewrites the tenant .env and recreates this very
+                 container), so the page states where it lives rather than offering a button
+                 that cannot finish the request that pressed it. -->
+            <p class="text-[11px] text-gray-500 mt-2">
+              {{ 'settings.apiManagement.token.rotateHint' | translate }}
+            </p>
+          </div>
+        }
+      </div>
+    </div>
+      }
+
+    <!-- ── The integration VPN peer ──────────────────────────────────────────────── -->
+    @if (connRail() === 'vpn' && showVpn()) {
+      <div>
+        <!-- NO section header: the rail item that opened this pane already names it. -->
+        <div>
+          <p class="text-xs text-gray-600 mb-3">{{ 'settings.apiManagement.vpn.description' | translate }}</p>
+
+          <!-- An unreachable broker is NOT "no access": saying the peer is gone because a
+               socket is down would report a loss of access that never happened. -->
+          @if (!vpnHostReachable()) {
+            <div class="rounded-md bg-amber-50 border border-amber-200 px-3 py-2.5 text-xs text-amber-800 mb-3">
+              {{ 'settings.apiManagement.vpn.hostUnreachable' | translate }}
+              @if (vpnHostError()) { <span class="block mt-1 font-mono">{{ vpnHostError() }}</span> }
+            </div>
+          }
+
+          @if (vpnLoading()) {
+            <app-loading-state [loading]="true" loadingKey="common.loadingData" />
+          } @else if (integrationPeer() && integrationPeer()!.status !== 'revoked') {
+            <div class="rounded-md border border-gray-200 divide-y divide-gray-200">
+              <div class="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span class="text-xs text-gray-500">{{ 'settings.apiManagement.vpn.status' | translate }}</span>
+                <span class="text-xs font-medium px-2 py-0.5 rounded-full"
+                  [class]="integrationPeer()!.status === 'active' ? 'bg-green-100 text-green-800'
+                         : integrationPeer()!.status === 'stale'  ? 'bg-red-100 text-red-800'
+                         :                                          'bg-gray-100 text-gray-700'">
+                  {{ 'settings.apiManagement.vpn.statusValue.' + integrationPeer()!.status | translate }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span class="text-xs text-gray-500">{{ 'settings.apiManagement.vpn.peerName' | translate }}</span>
+                <span class="text-xs font-mono text-gray-800 break-all">{{ integrationPeer()!.peerName }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span class="text-xs text-gray-500">{{ 'settings.apiManagement.vpn.address' | translate }}</span>
+                <span class="text-xs font-mono text-gray-800">{{ integrationPeer()!.address }}</span>
+              </div>
+              @if (integrationPeer()!.label) {
+                <div class="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <span class="text-xs text-gray-500">{{ 'settings.apiManagement.vpn.label' | translate }}</span>
+                  <span class="text-xs text-gray-800">{{ integrationPeer()!.label }}</span>
+                </div>
+              }
+              <div class="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span class="text-xs text-gray-500">{{ 'settings.apiManagement.vpn.granted' | translate }}</span>
+                <span class="text-xs text-gray-800">{{ formatTime(integrationPeer()!.createdAt) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span class="text-xs text-gray-500">{{ 'settings.apiManagement.vpn.expires' | translate }}</span>
+                <span class="text-xs text-gray-800">
+                  @if (integrationPeer()!.notAfter) {
+                    {{ formatTime(integrationPeer()!.notAfter) }}
+                  } @else {
+                    {{ 'settings.apiManagement.vpn.untilRevoked' | translate }}
+                  }
+                </span>
+              </div>
+            </div>
+
+            <!-- The profile was downloadable ONCE, at grant. Say so plainly — an admin who
+                 expects to re-download it will otherwise lose the integration's only key
+                 and not find out until the system fails to connect. -->
+            <p class="text-[11px] text-gray-500 mt-3">
+              {{ 'settings.apiManagement.vpn.profileOnce' | translate }}
+            </p>
+
+            <div class="mt-3">
+              <button
+                type="button"
+                (click)="revokeIntegration()"
+                [disabled]="vpnBusy()"
+                class="text-xs px-3 py-1.5 rounded-xl border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50 transition-colors">
+                {{ 'settings.apiManagement.vpn.revoke' | translate }}
+              </button>
+            </div>
+          } @else {
+            <!-- No live peer: offer the grant. ONE per tenant, so there is no list here. -->
+            <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-3">
+              <p class="text-xs text-gray-600 mb-3">{{ 'settings.apiManagement.vpn.none' | translate }}</p>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  [ngModel]="integrationLabel()"
+                  (ngModelChange)="integrationLabel.set($event)"
+                  maxlength="80"
+                  [placeholder]="'settings.apiManagement.vpn.labelPlaceholder' | translate"
+                  class="flex-1 px-3 py-1.5 text-sm border border-[#d7dce8] rounded-xl text-black focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-[var(--brand-primary)]" />
+                <button
+                  type="button"
+                  (click)="grantIntegration()"
+                  [disabled]="vpnBusy()"
+                  class="text-xs px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors whitespace-nowrap">
+                  {{ 'settings.apiManagement.vpn.grant' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+      </app-sub-tab-rail>
     </div>
   }
 
-  <!-- Card per section, in REGISTRY order — never re-sorted client-side. -->
-  @for (sec of filteredSections(); track sec.section) {
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
-      <div class="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-700 flex items-center gap-2">
-          {{ sectionLabelKey(sec.section) | translate }}
-          <!-- On the SECTION, not each row: every endpoint in a section shares one license
-               status, so a per-row pill would be the same fact repeated hundreds of times.
-               ⚠️ This is a SECOND, independent axis — the toggle below is the admin's switch for
-               external systems; this is the regulator's ceiling, and it runs first. -->
+  <!-- ════════════════════════════════════════════════════════════════════════════════
+       PERMISSIONS — what an external system may drive once it is in
+       ════════════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'permissions') {
+
+    <div class="card-v4 p-6">
+
+      <!-- SHARED STATE, ABOVE THE RAIL: description, count and filter all govern
+           every section, so they belong to the tab rather than to one pane. -->
+      <p class="text-xs text-gray-600 mb-3">{{ 'settings.apiEndpoints.description' | translate }}</p>
+      <p class="text-xs text-gray-500 mb-3">
+        {{ 'settings.apiEndpoints.summaryCount' | translate: { total: totalCount(), disabled: disabledCount() } }}
+      </p>
+
+    <!-- Filter. 357 rows across 39 sections makes this mandatory rather than a convenience. -->
+    <div class="mb-4">
+      <input
+        type="text"
+        [ngModel]="filter()"
+        (ngModelChange)="filter.set($event)"
+        [placeholder]="'settings.apiEndpoints.filterPlaceholder' | translate"
+        class="w-full px-3 py-1.5 text-sm border border-[#d7dce8] rounded-xl text-black focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-[var(--brand-primary)]" />
+    </div>
+
+    @if (loading() || !filteredSections().length) {
+      <app-loading-state
+        [loading]="loading()"
+        [empty]="!filteredSections().length"
+        loadingKey="common.loadingData"
+        emptyKey="settings.apiEndpoints.noMatches" />
+    } @else {
+
+    <!-- ONE SECTION AT A TIME, on a rail in REGISTRY order — never re-sorted
+         client-side. This was 39 stacked cards, i.e. several hundred rows in a
+         single scroll with no way to reach a domain except by dragging past all
+         the others. -->
+    <app-sub-tab-rail [tabs]="permRailTabs()" [active]="activePermSection() || ''" (select)="permRail.set($event)">
+
+      @if (activeSection(); as sec) {
+      <div>
+        <!-- The licence pill STAYS, even though the rail already names the section:
+             it is not a label, it is a SECOND and independent axis. The toggles below
+             are the admin's switch for external systems; this is the regulator's
+             ceiling, and it runs first. Dropping it as "a repeated heading" would
+             delete a fact, not a duplicate. -->
+        <div class="flex items-center gap-2 mb-3">
           <app-license-pill [license]="sec.license" />
-        </h3>
-      </div>
+        </div>
 
-      <ul class="divide-y divide-gray-200">
-        @for (item of sec.items; track item.key) {
-          <li class="flex flex-col md:flex-row md:items-center gap-2 px-4 py-3">
-            <div class="md:flex-1 min-w-0">
-              <div class="text-sm font-medium text-gray-800">{{ item.summary || item.key }}</div>
-              <div class="text-[11px] font-mono text-gray-500 break-all">
-                {{ item.method }} {{ item.path }}
-              </div>
-              <div class="text-[11px] font-mono text-gray-400 break-all">{{ item.key }}</div>
-            </div>
-
-            <div class="flex items-center gap-3 md:shrink-0">
-              <!-- Only an OVERRIDDEN row offers a reset, so a reader can see at a glance which
-                   switches an admin actually touched. Resetting removes the DECISION; it is not
-                   the same act as enabling. -->
-              @if (item.overridden) {
-                <button
-                  type="button"
-                  (click)="reset(item)"
-                  [disabled]="saving() === item.key"
-                  class="text-xs px-2 py-1 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
-                  {{ 'settings.apiEndpoints.reset' | translate }}
-                </button>
-              }
-
-              <!-- RTL-aware switch, copied from the app-config page (the menu page's variant is
-                   LTR-only and drifts the knob to the wrong side in Arabic). -->
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  [checked]="item.enabled"
-                  (change)="toggle(item, $any($event.target).checked)"
-                  [disabled]="saving() === item.key"
-                  class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-600 transition-colors relative">
-                  <div class="absolute top-0.5 left-0.5 rtl:left-auto rtl:right-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"
-                    [class.translate-x-5]="item.enabled"
-                    [class.rtl:-translate-x-5]="item.enabled"></div>
+        <ul class="divide-y divide-gray-200 border-t border-gray-200">
+          @for (item of sec.items; track item.key) {
+            <li class="flex flex-col md:flex-row md:items-center gap-2 px-4 py-3">
+              <div class="md:flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-800">{{ item.summary || item.key }}</div>
+                <div class="text-[11px] font-mono text-gray-500 break-all">
+                  {{ item.method }} {{ item.path }}
                 </div>
-              </label>
-            </div>
-          </li>
-        }
-      </ul>
+                <div class="text-[11px] font-mono text-gray-400 break-all">{{ item.key }}</div>
+              </div>
+
+              <div class="flex items-center gap-3 md:shrink-0">
+                <!-- Only an OVERRIDDEN row offers a reset, so a reader can see at a glance which
+                     switches an admin actually touched. Resetting removes the DECISION; it is not
+                     the same act as enabling. -->
+                @if (item.overridden) {
+                  <button
+                    type="button"
+                    (click)="reset(item)"
+                    [disabled]="saving() === item.key"
+                    class="text-xs px-2 py-1 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+                    {{ 'settings.apiEndpoints.reset' | translate }}
+                  </button>
+                }
+
+                <!-- RTL-aware switch, copied from the app-config page (the menu page's variant is
+                     LTR-only and drifts the knob to the wrong side in Arabic). -->
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    [checked]="item.enabled"
+                    (change)="toggle(item, $any($event.target).checked)"
+                    [disabled]="saving() === item.key"
+                    class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-600 transition-colors relative">
+                    <div class="absolute top-0.5 left-0.5 rtl:left-auto rtl:right-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"
+                      [class.translate-x-5]="item.enabled"
+                      [class.rtl:-translate-x-5]="item.enabled"></div>
+                  </div>
+                </label>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+      }
+
+    </app-sub-tab-rail>
+    }
+
     </div>
   }
 

@@ -29,6 +29,8 @@ import { ModalAssetServiceStateService } from '../modals/modal-asset-service-sta
 import { ModalAssetServiceStateComponent } from '../modals/modal-asset-service-state/modal-asset-service-state.component';
 import { AuditService } from '../../../../shared/services/audit.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
+import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 import { ComplianceTabComponent } from './compliance-tab/compliance-tab.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
@@ -74,7 +76,7 @@ export interface AssetMedia {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [RefreshButtonComponent, 
+  imports: [RefreshButtonComponent, TabsComponent, LoadingStateComponent,
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
@@ -143,6 +145,41 @@ export class DetailsPage implements OnInit {
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
   activeTab = signal<'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt'>('overview');
+
+  /**
+   * The top tab bar (Standard 2). Twelve tabs — the most of any page in either
+   * dashboard, which is why the shared component's `overflow-x-auto` matters
+   * here: the hand-rolled recipe this replaced was a bare `flex` and squashed
+   * them on a narrow window.
+   *
+   * Two are conditional and both conditions are preserved exactly:
+   *   · Documents — the `view-documents` System Function.
+   *   · DEX — shown while the listing is still loading OR once one is known to
+   *     exist. That deliberate `!loaded() || listing()` shape means the tab does
+   *     not flicker out and back in during the lazy load; do not "simplify" it
+   *     to `listing()`, which would hide the tab until the fetch returns.
+   */
+  tabs = computed<TabDef[]>(() => {
+    const out: TabDef[] = [
+      { key: 'overview',     label: 'assets.details.tabs.overview' },
+      { key: 'info',         label: 'assets.details.tabs.info' },
+      { key: 'registration', label: 'assets.details.compliance.tab' },
+      { key: 'metadata',     label: 'common.metadata' },
+      { key: 'services',     label: 'assets.details.tabs.services' },
+      { key: 'price',        label: 'assets.details.tabs.price' },
+      { key: 'holders',      label: 'assets.details.tabs.holders' },
+      { key: 'trxs',         label: 'assets.details.tabs.transactions' },
+    ];
+    if (this.features.systemFunctionEnabled('view-documents')) {
+      out.push({ key: 'docs', label: 'assets.details.tabs.documents' });
+    }
+    if (!this.dexListingLoaded() || this.dexListing()) {
+      out.push({ key: 'dex', label: 'assets.details.tabs.dex' });
+    }
+    out.push({ key: 'distributions', label: 'assets.details.tabs.distributions' });
+    out.push({ key: 'holdersAt',     label: 'assets.details.tabs.holdersAtBlock' });
+    return out;
+  });
 
   // DEX listing state — populated lazily when the DEX tab opens.
   dexListing       = signal<DexAssetListing | undefined>(undefined);

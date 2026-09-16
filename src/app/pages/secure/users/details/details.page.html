@@ -1,20 +1,20 @@
 ﻿<app-header [title]="'users.details.title' | translate"></app-header>
 
-<!-- breadcrumb -->
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+<!-- Breadcrumb — v4: on the content panel's own canvas, no gray band. The
+     wrapper keeps flex/justify-between because the live indicator sits in it
+     (Standard 3.5). -->
+<div class="px-6 pt-4 pb-3 flex items-center justify-between">
   @if (user(); as op) {
-    <nav class="flex" [attr.aria-label]="'users.details.breadcrumbLabel' | translate">
-      <ol class="inline-flex items-center space-x-1 md:space-x-3">
-        <li class="inline-flex items-center">
-          <a routerLink="/authorized/users/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+    <nav [attr.aria-label]="'users.details.breadcrumbLabel' | translate">
+      <ol class="inline-flex items-center gap-1.5">
+        <li>
+          <a routerLink="/authorized/users/list" class="text-sm font-medium text-gray-500 hover:text-[var(--brand-primary)] transition-colors">
             {{ 'users.title' | translate }}
           </a>
         </li>
-        <li>
-          <div class="flex items-center">
-            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
-            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ op.username }}</span>
-          </div>
+        <li class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-gray-300 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6"/></svg>
+          <span class="text-sm font-semibold text-gray-900">{{ op.username }}</span>
         </li>
       </ol>
     </nav>
@@ -24,52 +24,14 @@
   <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
-    
-    <!-- Content -->
-    <div class="bg-white rounded-lg shadow-md p-2">
-      @if (user(); as v) {
+    @if (user(); as v) {
 
-        <!-- Tabs -->
-        <div class="max-w-6xl mx-auto px-2 pt-2">
-          <div class="flex gap-2 border-b border-gray-200">
-            <button
-              (click)="setTab('details')"
-              class="px-4 py-1.5 border border-transparent text-sm font-medium rounded-t-md transition-colors"
-              [class.text-white]="activeTab() === 'details'"
-              [class.bg-blue-600]="activeTab() === 'details'"
-              [class.text-gray-600]="activeTab() !== 'details'"
-              [class.hover:bg-gray-100]="activeTab() !== 'details'">
-              {{ 'users.details.tabs.details' | translate }}
-            </button>
-            @if (showMenuTab()) {
-              <button
-                (click)="setTab('menu')"
-                class="px-4 py-1.5 border border-transparent text-sm font-medium rounded-t-md transition-colors"
-                [class.text-white]="activeTab() === 'menu'"
-                [class.bg-blue-600]="activeTab() === 'menu'"
-                [class.text-gray-600]="activeTab() !== 'menu'"
-                [class.hover:bg-gray-100]="activeTab() !== 'menu'">
-                {{ 'users.details.menu.title' | translate }}
-              </button>
-            }
-            @if (showSystemFunctionsTab()) {
-              <button
-                (click)="setTab('system-functions')"
-                class="px-4 py-1.5 border border-transparent text-sm font-medium rounded-t-md transition-colors"
-                [class.text-white]="activeTab() === 'system-functions'"
-                [class.bg-blue-600]="activeTab() === 'system-functions'"
-                [class.text-gray-600]="activeTab() !== 'system-functions'"
-                [class.hover:bg-gray-100]="activeTab() !== 'system-functions'">
-                {{ 'users.details.sysfn.title' | translate }}
-              </button>
-            }
-          </div>
-        </div>
+      <app-tabs [tabs]="tabs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
         @if (activeTab() === 'details') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+          <div class="card-v4 overflow-hidden max-w-6xl mx-auto">
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
@@ -226,7 +188,7 @@
         }
 
         @if (activeTab() === 'menu' && showMenuTab()) {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+          <div class="card-v4 overflow-hidden max-w-6xl mx-auto">
             <div class="p-4">
               <div class="mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">{{ 'users.details.menu.title' | translate }}</h3>
@@ -317,11 +279,14 @@
         }
 
         @if (activeTab() === 'system-functions' && showSystemFunctionsTab()) {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden max-w-6xl mx-auto">
+          <div class="card-v4 overflow-hidden max-w-6xl mx-auto">
             <div class="p-4">
+              <!-- SHARED STATE, ABOVE THE RAIL (Standard 2.1): the intro and the
+                   filter govern every group, so they belong to the tab.
+                   NOTE no "System Functions" heading — the tab that chose this
+                   pane already carries that label. -->
               <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">{{ 'users.details.sysfn.title' | translate }}</h3>
-                <p class="text-sm text-gray-500 mt-1">
+                <p class="text-sm text-gray-500">
                   {{ 'users.details.sysfn.intro1' | translate }} <span class="font-medium">{{ v.name }}</span>
                   {{ 'users.details.sysfn.intro2' | translate }}
                   @if (isViewerTarget()) {
@@ -331,14 +296,16 @@
                 </p>
               </div>
 
-              @if (sysFnLoading()) {
-                <div class="text-center py-10 text-gray-500"><p>{{ 'users.details.sysfn.loading' | translate }}</p></div>
-              } @else if (sysFnRows().length === 0) {
-                <div class="text-center py-10 text-gray-500"><p>{{ 'users.details.sysfn.empty' | translate }}</p></div>
+              @if (sysFnLoading() || sysFnRows().length === 0) {
+                <app-loading-state
+                  [loading]="sysFnLoading()"
+                  [empty]="sysFnRows().length === 0"
+                  loadingKey="users.details.sysfn.loading"
+                  emptyKey="users.details.sysfn.empty" />
               } @else {
                 <div class="mb-3">
                   <div class="relative w-full sm:w-72">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <span class="absolute inset-y-0 ltr:left-0 rtl:right-0 flex items-center ltr:pl-3 rtl:pr-3 text-gray-400">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                       </svg>
@@ -348,10 +315,10 @@
                       [value]="sysFnFilter()"
                       (input)="sysFnFilter.set($any($event.target).value)"
                       [placeholder]="'users.details.sysfn.filterPlaceholder' | translate"
-                      class="w-full pl-9 pr-8 py-2 text-sm bg-white text-gray-800 placeholder-gray-400 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      class="w-full ltr:pl-9 ltr:pr-8 rtl:pr-9 rtl:pl-8 py-1.5 text-sm bg-white text-gray-800 placeholder-gray-400 border border-[#d7dce8] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-[var(--brand-primary)]">
                     @if (sysFnFilter()) {
                       <button type="button" (click)="sysFnFilter.set('')"
-                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                        class="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center ltr:pr-3 rtl:pl-3 text-gray-400 hover:text-gray-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -359,18 +326,28 @@
                     }
                   </div>
                 </div>
+
+                <!-- 89 registry keys in one flat table is a scroll, not a control
+                     surface, so they rail by domain (Standard 2.1, grouped-list
+                     case). The rail is rebuilt from the rows that SURVIVE the
+                     filter, so a filter never leaves a rail item with an empty
+                     pane. -->
+                @if (sysFnGroups().length === 0) {
+                  <p class="py-6 text-center text-sm text-gray-400">{{ 'users.details.sysfn.noMatch' | translate: { query: sysFnFilter() } }}</p>
+                } @else {
+                <app-sub-tab-rail [tabs]="sysFnGroups()" [active]="activeSysFnGroup() || ''" (select)="sysFnGroup.set($event)">
                 <div class="overflow-x-auto">
                   <table class="table-v4 min-w-full">
                     <thead>
                       <tr>
-                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.sysfn.table.function' | translate }}</th>
-                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.table.key' | translate }}</th>
-                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.source.column' | translate }}</th>
-                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ 'users.details.sysfn.table.available' | translate }}</th>
+                        <th>{{ 'users.details.sysfn.table.function' | translate }}</th>
+                        <th>{{ 'users.details.table.key' | translate }}</th>
+                        <th>{{ 'users.details.source.column' | translate }}</th>
+                        <th class="text-right">{{ 'users.details.sysfn.table.available' | translate }}</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                      @for (row of filteredSysFnRows(); track row.functionKey) {
+                    <tbody>
+                      @for (row of sysFnRowsInGroup(); track row.functionKey) {
                         <tr>
                           <td class="text-sm text-gray-800">{{ fnLabelFor(row.functionKey) }}</td>
                           <td class="text-xs text-gray-400 font-mono">
@@ -417,31 +394,138 @@
                             </div>
                           </td>
                         </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="4" class="py-6 text-center text-sm text-gray-400">{{ 'users.details.sysfn.noMatch' | translate: { query: sysFnFilter() } }}</td>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                </app-sub-tab-rail>
+                }
+              }
+            </div>
+          </div>
+        }
+
+        @if (activeTab() === 'vpn' && showVpnTab()) {
+          <div class="card-v4">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-base font-semibold text-gray-900">{{ 'users.details.vpn.title' | translate }}</h3>
+              <p class="mt-1 text-sm text-gray-500">{{ 'users.details.vpn.intro' | translate }}</p>
+            </div>
+
+            <div class="p-6 flex flex-col gap-5">
+
+              <!-- The host is the authority, so an unreachable broker is stated plainly
+                   rather than shown as an empty list, which would read as "no access". -->
+              @if (!vpnHostReachable()) {
+                <div class="rounded-md border border-amber-300 bg-amber-50 px-4 py-3">
+                  <p class="text-sm font-medium text-amber-900">{{ 'users.details.vpn.hostUnreachableTitle' | translate }}</p>
+                  <p class="mt-1 text-sm text-amber-800">{{ vpnHostError() || ('users.details.vpn.hostUnreachableMsg' | translate) }}</p>
+                </div>
+              }
+
+              <div class="rounded-md border border-gray-200 p-4 flex flex-col gap-3">
+                <p class="text-sm font-medium text-gray-900">{{ 'users.details.vpn.grantTitle' | translate }}</p>
+                <p class="text-sm text-gray-500">{{ 'users.details.vpn.grantHint' | translate }}</p>
+                <div class="flex flex-wrap items-end gap-3">
+                  <label class="flex flex-col gap-1">
+                    <span class="text-xs font-medium text-gray-700">{{ 'users.details.vpn.peerName' | translate }}</span>
+                    <input type="text" [ngModel]="newPeerPerson()" (ngModelChange)="newPeerPerson.set($event)"
+                           placeholder="alice" autocomplete="off"
+                           class="w-56 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none" />
+                  </label>
+                  <label class="flex flex-col gap-1">
+                    <span class="text-xs font-medium text-gray-700">{{ 'users.details.vpn.label' | translate }}</span>
+                    <input type="text" [ngModel]="newPeerLabel()" (ngModelChange)="newPeerLabel.set($event)"
+                           autocomplete="off"
+                           class="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none" />
+                  </label>
+                  <button (click)="grantVpn()"
+                          [disabled]="!peerNameValid() || vpnBusy() !== null || !vpnHostReachable()"
+                          class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300">
+                    {{ 'users.details.vpn.grantAction' | translate }}
+                  </button>
+                </div>
+                @if (newPeerPerson() && !peerNameValid()) {
+                  <p class="text-xs text-red-600">{{ 'users.details.vpn.nameRule' | translate }}</p>
+                }
+                <p class="text-xs text-gray-500">{{ 'users.details.vpn.profileWarning' | translate }}</p>
+              </div>
+
+              @if (vpnLoading()) {
+                <p class="text-sm text-gray-500">{{ 'users.details.vpn.loading' | translate }}</p>
+              } @else if (vpnPeers().length === 0) {
+                <p class="text-sm text-gray-500">{{ 'users.details.vpn.none' | translate }}</p>
+              } @else {
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-sm">
+                    <thead>
+                      <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.peerName' | translate }}</th>
+                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.address' | translate }}</th>
+                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.status' | translate }}</th>
+                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.created' | translate }}</th>
+                        <th class="px-3 py-2 font-medium">{{ 'users.details.vpn.expires' | translate }}</th>
+                        <th class="px-3 py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (p of vpnPeers(); track p.peerName) {
+                        <tr class="border-b border-gray-100">
+                          <td class="px-3 py-2">
+                            <div class="font-medium text-gray-900">{{ p.person }}</div>
+                            @if (p.label) { <div class="text-xs text-gray-500">{{ p.label }}</div> }
+                          </td>
+                          <td class="px-3 py-2 font-mono text-gray-700">{{ p.address }}</td>
+                          <td class="px-3 py-2">
+                            <!-- State in FORM as well as word: stale and revoked both mean
+                                 "no access", but for different reasons. -->
+                            @switch (p.status) {
+                              @case ('active') {
+                                <span class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">{{ 'users.details.vpn.statusActive' | translate }}</span>
+                              }
+                              @case ('stale') {
+                                <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800" [title]="'users.details.vpn.statusStaleHint' | translate">{{ 'users.details.vpn.statusStale' | translate }}</span>
+                              }
+                              @case ('revoked') {
+                                <span class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{{ 'users.details.vpn.statusRevoked' | translate }}</span>
+                              }
+                              @default {
+                                <span class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600" [title]="'users.details.vpn.statusUnknownHint' | translate">{{ 'users.details.vpn.statusUnknown' | translate }}</span>
+                              }
+                            }
+                          </td>
+                          <td class="px-3 py-2 text-gray-700 tabular-nums">{{ formatTime(p.createdAt) }}</td>
+                          <td class="px-3 py-2 text-gray-700 tabular-nums">{{ formatTime(p.notAfter) }}</td>
+                          <td class="px-3 py-2 text-right">
+                            @if (!p.revokedAt) {
+                              <button (click)="revokeVpn(p.person)"
+                                      [disabled]="vpnBusy() !== null"
+                                      class="rounded-md border border-red-300 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+                                {{ 'users.details.vpn.revokeAction' | translate }}
+                              </button>
+                            }
+                          </td>
                         </tr>
                       }
                     </tbody>
                   </table>
                 </div>
               }
+
             </div>
           </div>
         }
 
-      }
-      @else {
-        <div class="text-center py-12 text-gray-500">
-          <p>{{ 'users.details.loadingFallback' | translate }}</p>
-        </div>
-      }
+    } @else {
+      <!-- Standard 3.4: the page itself is the surface being loaded, so the
+           brand mark goes here rather than a bare "Loading…" line. -->
+      <div class="card-v4">
+        <app-loading-state [loading]="true" loadingKey="users.details.loadingFallback" />
+      </div>
+    }
 
-    </div>
-
-  
   </div>
-</main>  
+</main>
 
 <app-modal-user-edit></app-modal-user-edit>
 <app-modal-user-state></app-modal-user-state>

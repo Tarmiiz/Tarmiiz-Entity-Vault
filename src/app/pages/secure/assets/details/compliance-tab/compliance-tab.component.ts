@@ -15,6 +15,8 @@ import { ModalDocumentPickerComponent } from '../../../../../shared/components/m
 import { ModalDocumentPickerService } from '../../../../../shared/components/modal-document-picker/modal-document-picker.service';
 import { ModalPartyPickerComponent } from '../../../../../shared/components/modal-party-picker/modal-party-picker.component';
 import { ModalPartyPickerService } from '../../../../../shared/components/modal-party-picker/modal-party-picker.service';
+import { SubTabRailComponent } from '../../../../../shared/components/sub-tab-rail/sub-tab-rail.component';
+import { LoadingStateComponent } from '../../../../../shared/components/loading-state/loading-state.component';
 
 /*
     THE ASSET'S COMPLIANCE TAB — the A8 registration lifecycle, the A9 profile, the A24
@@ -71,6 +73,7 @@ type StatusKind = 'satisfied' | 'missing' | 'untracked';
     FormsModule, DecimalPipe, TranslatePipe,
     RefreshButtonComponent, DocumentsTabComponent,
     ModalDocumentPickerComponent, ModalPartyPickerComponent,
+    SubTabRailComponent, LoadingStateComponent,
   ],
 })
 export class ComplianceTabComponent implements OnChanges {
@@ -93,7 +96,9 @@ export class ComplianceTabComponent implements OnChanges {
   isViewer() { return !this.userInfo || this.userInfo.role === 3; }
 
   rail = signal<ComplianceRail>('info');
-  goTo(tab: ComplianceRail) { this.rail.set(tab); }
+  // Accepts a plain string because <app-sub-tab-rail> emits the generic TabDef key;
+  // the cast is safe because RAIL is the only source of those keys.
+  goTo(tab: ComplianceRail | string) { this.rail.set(tab as ComplianceRail); }
 
   /** Hoisted, not inlined in the template — a literal there is a fresh array every check. */
   readonly RAIL: { key: ComplianceRail; label: string }[] = [

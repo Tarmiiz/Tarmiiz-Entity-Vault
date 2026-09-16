@@ -32,7 +32,10 @@ import { UserGroup } from '../../../../shared/models/data.model';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { menuLabelFor } from '../../../../shared/constants/menu-labels';
-import { systemFunctionLabelFor } from '../../../../shared/constants/system-function-labels';
+import { systemFunctionLabelFor, systemFunctionGroupFor, systemFunctionGroupLabelFor } from '../../../../shared/constants/system-function-labels';
+import { SubTabRailComponent } from '../../../../shared/components/sub-tab-rail/sub-tab-rail.component';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
+import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { LicensePillComponent, LicenseStatus } from '../../../../shared/components/license-pill/license-pill.component';
 
 interface UserMenuRow {
@@ -44,6 +47,27 @@ interface UserMenuRow {
   // Surfaced by the Entity API (licenseSurfacing.js). OPTIONAL because an older API response
   // simply omits it, and the pill renders nothing for an absent value.
   license?: LicenseStatus | null;
+}
+
+/* One VPN grant, already reconciled against the host by the API (Phase 34.5/34.6).
+   `status` IS that reconciliation and the four values are not interchangeable:
+     active  — recorded here and present on the host
+     stale   — recorded here but ABSENT on the host, so it confers no access
+     revoked — revoked through the Vault; kept as history, never deleted
+     unknown — the host broker could not be reached, which is NOT "no access" */
+interface VpnPeerRow {
+  peerName: string;
+  person: string;
+  userId: string | null;
+  kind: 'user' | 'integration';
+  cn: string;
+  address: string;
+  label: string | null;
+  createdAt: number;
+  notAfter: number | null;
+  grantedBy: string | null;
+  revokedAt: number | null;
+  status: 'active' | 'stale' | 'revoked' | 'unknown';
 }
 
 interface UserSystemFunctionRow {
@@ -73,7 +97,8 @@ interface UserSystemFunctionRow {
     ModalUserEditCredentialsComponent,
     ModalUserRoleComponent,
     ModalUserApprovalRoleComponent,
-    ModalUserGroupComponent, TranslatePipe, LicensePillComponent]
+    ModalUserGroupComponent, TranslatePipe, LicensePillComponent,
+    TabsComponent, SubTabRailComponent, LoadingStateComponent]
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -128,7 +153,8 @@ export class DetailsPage implements OnInit {
   // Tabs: 'details' (default) + 'menu' (per-user Menu Access, role 2/3 only)
   // + 'system-functions' (per-user action-button gating; shown only when the target
   // user's role has applicable functions — the list drives visibility).
-  activeTab   = signal<'details' | 'menu' | 'system-functions'>('details');
+  // + 'vpn' (Phase 34.5/34.6 — this person's VPN access to the Vault).
+  activeTab   = signal<'details' | 'menu' | 'system-functions' | 'vpn'>('details');
   menuRows    = signal<UserMenuRow[]>([]);
   menuLoading = signal(false);
   menuSaving  = signal<string | null>(null); // menu key currently saving
@@ -147,6 +173,70 @@ export class DetailsPage implements OnInit {
     return rows.filter(r =>
       this.fnLabelFor(r.functionKey).toLowerCase().includes(q) ||
       r.functionKey.toLowerCase().includes(q));
+  });
+
+  /**
+   * The top tab bar (Standard 2). Computed rather than a constant because three
+   * of the four tabs are conditional — Menu Access and System Functions depend
+   * on the TARGET user's role, and VPN on the feature being enabled.
+   *
+   * ⚠️ `activeTab` is NOT reconciled against this list. It does not need to be:
+   * the default is 'details', which is always present, and the only way to
+   * reach another tab is to click it. If a tab ever becomes reachable by URL,
+   * that changes.
+   */
+  tabs = computed<TabDef[]>(() => {
+    const out: TabDef[] = [{ key: 'details', label: 'users.details.tabs.details' }];
+    if (this.showMenuTab())            out.push({ key: 'menu',             label: 'users.details.menu.title' });
+    if (this.showSystemFunctionsTab()) out.push({ key: 'system-functions', label: 'users.details.sysfn.title' });
+    if (this.showVpnTab())             out.push({ key: 'vpn',              label: 'users.details.vpn.title' });
+    return out;
+  });
+
+  // ─── System Functions rail (Standard 2.1, grouped-list case) ───────────────
+  //
+  // 89 registry keys in one flat table is a scroll, not a control surface, so
+  // the tab rails them by domain and shows one group at a time.
+  //
+  // THE RAIL AND THE FILTER COMPOSE, in this order: the filter narrows the
+  // whole registry, and the rail is rebuilt from what SURVIVES it. So a filter
+  // that matches nothing in the selected group makes that group disappear from
+  // the rail rather than showing an empty pane — and `activeSysFnGroup()`
+  // falls back to the first surviving group, which is why it is a computed over
+  // a plain signal rather than the signal itself. The old flat table filtered
+  // in place and had no such interaction to get wrong.
+  sysFnGroup = signal<string | null>(null);
+
+  /** Groups present in the filtered rows, in registry-count order (largest first). */
+  sysFnGroups = computed(() => {
+    const seen = new Map<string, number>();
+    for (const r of this.filteredSysFnRows()) {
+      const g = systemFunctionGroupFor(r.functionKey);
+      seen.set(g, (seen.get(g) ?? 0) + 1);
+    }
+    return [...seen.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([key, count]) => ({ key, label: systemFunctionGroupLabelFor(key), count }));
+  });
+
+  /**
+   * The group actually shown. Falls back to the first available group when
+   * nothing is chosen yet, or when the chosen one has been filtered away —
+   * without that fallback a filter could leave the pane blank with every rail
+   * item looking unselected.
+   */
+  activeSysFnGroup = computed(() => {
+    const groups = this.sysFnGroups();
+    const chosen = this.sysFnGroup();
+    if (chosen && groups.some(g => g.key === chosen)) return chosen;
+    return groups.length ? groups[0].key : null;
+  });
+
+  /** The rows of the selected group only — what the pane renders. */
+  sysFnRowsInGroup = computed(() => {
+    const g = this.activeSysFnGroup();
+    if (!g) return [];
+    return this.filteredSysFnRows().filter(r => systemFunctionGroupFor(r.functionKey) === g);
   });
 
   constructor() { }
@@ -226,9 +316,132 @@ export class DetailsPage implements OnInit {
     return 'default';
   }
 
-  setTab(tab: 'details' | 'menu' | 'system-functions') {
+  setTab(tab: 'details' | 'menu' | 'system-functions' | 'vpn') {
     this.activeTab.set(tab);
     if (tab === 'menu' && !this.menuLoaded) this.loadMenuConfig();
+    if (tab === 'vpn' && !this.vpnLoaded) this.loadVpn();
+  }
+
+  /* ── VPN access (Phase 34.5/34.6) ───────────────────────────────────────────
+     This tenant's Vault is reachable only through the host's OpenVPN instance — the
+     wildcard vhost listens on the tunnel address and nginx refuses any request whose
+     peer address does not map to the hostname being asked for. So a grant on this tab
+     is what lets this person reach the Vault at all, which is why the whole surface
+     sits behind the default-deny `user-vpn-manage` System Function. */
+  vpnPeers         = signal<VpnPeerRow[]>([]);
+  vpnLoading       = signal(false);
+  vpnBusy          = signal<string | null>(null);
+  vpnHostReachable = signal(true);
+  vpnHostError     = signal<string | null>(null);
+  newPeerPerson    = signal('');
+  newPeerLabel     = signal('');
+  private vpnLoaded = false;
+
+  /** Gated by the key, not by role alone — an admin without the grant sees no tab. */
+  showVpnTab(): boolean {
+    return this.features.systemFunctionEnabled('user-vpn-manage');
+  }
+
+  async loadVpn() {
+    this.vpnLoading.set(true);
+    try {
+      const res = await this.apiService.vaultVpnList(this.userId());
+      this.vpnPeers.set(res.peers as VpnPeerRow[]);
+      this.vpnHostReachable.set(res.hostReachable);
+      this.vpnHostError.set(res.hostError);
+      this.vpnLoaded = true;
+    } catch {
+      this.vpnPeers.set([]);
+      // An error is NOT "no access" — say the list could not be read rather than
+      // rendering an empty table, which reads as "this person has none".
+      this.vpnHostReachable.set(false);
+      this.vpnHostError.set(this.translate.instant('users.details.vpn.loadFailed'));
+    } finally {
+      this.vpnLoading.set(false);
+    }
+  }
+
+  /** 2-21 chars: the PERSON half only. The host prefixes the tenant itself. */
+  peerNameValid(): boolean {
+    return /^[a-z0-9][a-z0-9-]{1,20}$/.test(this.newPeerPerson().trim().toLowerCase());
+  }
+
+  async grantVpn() {
+    const person = this.newPeerPerson().trim().toLowerCase();
+    if (!this.peerNameValid() || this.vpnBusy()) return;
+    this.vpnBusy.set(person);
+    try {
+      const res: any = await this.apiService.vaultVpnGrantUser(
+        this.userId(), person, this.newPeerLabel().trim() || undefined);
+      if (res?.error) {
+        await this.alertService.info(this.translate.instant('users.details.vpn.grantFailedTitle'), res.error);
+        return;
+      }
+      // 🔴 THE ONLY COPY. The API stored no key and the host kept none — if this
+      // download does not happen the profile is gone and the peer must be revoked
+      // and re-minted. So it is saved BEFORE anything else, the reload included.
+      this.downloadProfile(res.profileFileName || `${person}.ovpn`, res.profile);
+      await this.loadVpn();
+      this.newPeerPerson.set('');
+      this.newPeerLabel.set('');
+      await this.alertService.info(
+        this.translate.instant('users.details.vpn.grantedTitle'),
+        this.translate.instant('users.details.vpn.grantedMsg', { file: res.profileFileName || `${person}.ovpn` }));
+    } catch {
+      await this.alertService.info(
+        this.translate.instant('users.details.vpn.grantFailedTitle'),
+        this.translate.instant('users.details.vpn.grantFailedMsg'));
+    } finally {
+      this.vpnBusy.set(null);
+    }
+  }
+
+  async revokeVpn(person: string) {
+    // `show`, not `info` — info hides Cancel, and cutting someone's only route to the
+    // Vault must be refusable.
+    const confirmed = await this.alertService.show(
+      this.translate.instant('users.details.vpn.revokeConfirmTitle'),
+      this.translate.instant('users.details.vpn.revokeConfirmMsg', { peer: person }),
+      this.translate.instant('users.details.vpn.revokeConfirmAction'));
+    if (!confirmed || this.vpnBusy()) return;
+    this.vpnBusy.set(person);
+    try {
+      const res: any = await this.apiService.vaultVpnRevoke(person);
+      if (res?.error) {
+        await this.alertService.info(this.translate.instant('users.details.vpn.revokeFailedTitle'), res.error);
+        return;
+      }
+      await this.loadVpn();
+    } catch {
+      await this.alertService.info(
+        this.translate.instant('users.details.vpn.revokeFailedTitle'),
+        this.translate.instant('users.details.vpn.revokeFailedMsg'));
+    } finally {
+      this.vpnBusy.set(null);
+    }
+  }
+
+  /** dd/MM/yyyy HH:mm:ss over a MILLISECOND epoch, per the platform date standard. */
+  formatTime(ms: number | null | undefined): string {
+    if (ms === null || ms === undefined) return '—';
+    const d = new Date(Number(ms));
+    if (isNaN(d.getTime())) return '—';
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} `
+         + `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+
+  /** Save the .ovpn. Blob + object URL, revoked at once — the profile must not linger
+   *  in memory or as a data: URL in the address bar. */
+  private downloadProfile(fileName: string, content: string) {
+    const url = URL.createObjectURL(new Blob([content], { type: 'application/x-openvpn-profile' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   /** Content-driven: the tab shows only when a function applies to this user's role. */

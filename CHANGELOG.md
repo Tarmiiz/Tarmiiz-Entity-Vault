@@ -15,7 +15,54 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-16
+
+**Added**
+
+- **Settings → API Endpoints is now "API Management", with tabs.** One admin surface for
+  standing up an integration, which previously took three places — a page that listed what an
+  external system may call, an integration VPN peer with a working API and **no UI anywhere**,
+  and an access token that existed only in `credentials.txt` on a VM.
+  - **Connectivity** — the tenant's single integration VPN peer (status / address / expiry,
+    grant with one-time profile download, revoke) and the API access token, masked behind an
+    audited Reveal. The page load fetches a **fingerprint only**; the value arrives solely from
+    an explicit Reveal, so opening a settings page never puts a credential on screen — these
+    pages get screen-shared. Rotation is stated, not offered: it rewrites the tenant's `.env`
+    and recreates the API container, which that process cannot do to itself without dropping
+    the request that asked for it.
+  - **Permissions** — the existing per-endpoint switches, unchanged.
+  - **Docs** — not a content tab: it opens the Swagger reference in a new window and leaves the
+    current tab selected. ⚠️ The window is opened **synchronously, before the await** — popup
+    blockers allow `window.open` only while a user gesture is on the stack, and opening it after
+    the session call resolves gets silently swallowed, presenting as "the Docs tab does nothing"
+    with no error anywhere. A blocked popup falls back to navigating this tab rather than losing
+    the click.
+  - The VPN section is **hidden, not disabled**, for an admin without the default-deny
+    `user-vpn-manage` key — an explanatory empty state for a capability never granted reads as a
+    fault in the page.
+  - ⚠️ **Label only** — the route stays `settings/api-endpoints` and the class stays
+    `ApiEndpointsPage`. Renaming identifiers to match a label buys nothing and risks a dangling
+    route; it is safe on the other axis because `api-endpoints` is an admin settings ROUTE, never
+    a `MENU_ITEMS` key, so no stored menu override is orphaned.
+
 ### 2026-09-15
+
+**Added**
+
+- **A VPN Access tab on User Details (Phase 34.5/34.6)** — grant, list and revoke a staff member's
+  VPN access to this Vault, gated by the default-deny `user-vpn-manage` System Function (an admin
+  without the grant sees no tab).
+  - **Grant downloads the `.ovpn` immediately, before the list reload**, because the response body
+    is the only copy of the private key that will ever exist — the API stores none and the host kept
+    none. The blob URL is revoked straight after so the profile does not linger.
+  - Each row carries a reconciled status pill: **Active**, **Not on host** (recorded here but gone
+    on the host, so it grants nothing), **Revoked**, or **Unknown** (the host was unreachable, which
+    is *not* the same as no access). An unreachable host shows an amber banner rather than an empty
+    table, which would read as "this person has none".
+  - Revoke confirms with `alertService.show`, not `info` — `info` hides Cancel, and cutting
+    someone's only route to the Vault must be refusable.
+  - The name field takes only the PERSON half; the host prefixes the tenant, so a tenant can never
+    be named from the browser. en + ar strings; `user-vpn-manage` added to the label map.
 
 **Fixed**
 
@@ -730,7 +777,7 @@ collapsing them into one em-dash is the failure mode:
   "informational/success messages where a Cancel makes no sense" — and nothing ever asked for it,
   so **informational dialogs offer to cancel actions that have already completed**, including a
   mined on-chain transaction. Fixed at this phase's four call sites via a local `notify()` helper;
-  the rest are logged in [Phase 16](../../../Docs/rules/phases/code-fix-phase-16.md), not swept —
+  the rest are logged in [Phase 16](H:/Shared%20drives/Tarmiiz%20Shared%20Drive/06%20-%20Development/Code/Tarmiiz%20Stack/Docs/rules/phases/code-fix-phase-16.md), not swept —
   ⚠️ **flipping the parameter's default would be harmful**, stripping Cancel from the ~200 genuine
   confirmations and removing the ability to DECLINE a destructive action. It is a per-site
   judgement: is this dialog a question or a statement?
@@ -850,7 +897,7 @@ collapsing them into one em-dash is the failure mode:
   under the platform's subpixel smoothing was. **`font-family` is deliberately NOT set here** — the
   Arabic stack (`html.lang-ar` → Noto Kufi Arabic) reaches the menu by inheritance, and a direct
   rule would beat it and drop the Arabic sidebar to a fallback face.
-- [docs/frontend-standards.md](../../../docs/frontend-standards.md) updated in the same pass:
+- [H:/Shared drives/Tarmiiz Shared Drive/06 - Development/Code/Tarmiiz Stack/Docs/frontend-standards.md](H:/Shared%20drives/Tarmiiz%20Shared%20Drive/06%20-%20Development/Code/Tarmiiz%20Stack/Docs/frontend-standards.md) updated in the same pass:
   Standard 4 codified the flat `bg-gray-600` card header, and the app shell (page header bar +
   sidebar) had no standard at all — it is now **Standard 0**.
 
@@ -865,7 +912,7 @@ collapsing them into one em-dash is the failure mode:
   change was needed** — reload and re-run the snapshot. Noted here because the symptom was
   exclusively visible on this tab, and because the page's own comment named the old primitive
   (*"Driven by ITarmiizAsset.balanceOfAt"*) and would have sent the next reader the wrong way. See
-  [Phase 25.4](../../../Docs/rules/phases/code-fix-phase-25.md).
+  [Phase 25.4](H:/Shared%20drives/Tarmiiz%20Shared%20Drive/06%20-%20Development/Code/Tarmiiz%20Stack/Docs/rules/phases/code-fix-phase-25.md).
   - Worth knowing for the export feature built on this tab: every evidence pack produced from a
     custodial asset before 2026-08-31 carries zeroes. Re-export.
 
@@ -990,7 +1037,7 @@ collapsing them into one em-dash is the failure mode:
   `Requirements you compose (A24)`, `Class parties (A2)`, and the Add Asset wizard's
   *"The A1 class this asset belongs to"*. 7 strings here (en + ar); 13 platform-wide with the
   Regulator Dashboard. Code comments keep the notation on purpose. Now
-  [Standard 5.5](../../../docs/frontend-standards.md).
+  [Standard 5.5](H:/Shared%20drives/Tarmiiz%20Shared%20Drive/06%20-%20Development/Code/Tarmiiz%20Stack/Docs/frontend-standards.md).
 
 #### Fixed
 - **"What the approval checks" on the asset Registration tab rendered as three bare ✓/✗ marks with
@@ -1345,7 +1392,7 @@ collapsing them into one em-dash is the failure mode:
   overlays on [custody.page.html](src/app/pages/secure/custody/custody.page.html) and the
   services detail page. The transparent click-away overlays behind dropdowns were deliberately
   left alone — dismiss-on-outside-click is correct there. Now a platform rule in
-  `docs/frontend-standards.md` §Standard 3.
+  `H:/Shared drives/Tarmiiz Shared Drive/06 - Development/Code/Tarmiiz Stack/Docs/frontend-standards.md` §Standard 3.
 
 #### Fixed
 - **The venue Assets tab named the VENUE as the issuer of every asset it hosts.** The ISSUER

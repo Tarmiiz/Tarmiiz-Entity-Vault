@@ -235,7 +235,7 @@
     "dexDeals": "Negotiated Deals",
     "dexRfqs": "Requests for Quote",
     "clearing": "Clearing",
-    "apiEndpoints": "API Endpoints",
+    "apiEndpoints": "API Management",
     "expandMenu": "Expand menu",
     "collapseMenu": "Collapse menu"
   },
@@ -1196,7 +1196,6 @@
       },
       "compliance": {
         "tab": "Compliance",
-        "title": "Compliance",
         "intro": "This asset cannot trade until its regulator approves it. Complete the declaration, pin the legal wrapper, attach any parties your requirements imply, then wait for the decision.",
         "empty": "No compliance record for this asset.",
         "declared": "Awaiting approval",
@@ -1229,7 +1228,6 @@
         "composedByUs": "Composed by us",
         "fromPolicy": "Policy / class default",
         "noRequirements": "This asset requires nothing beyond the declaration.",
-        "parties": "Class parties",
         "partiesHint": "You propose a party; the party accepts for itself. An invitation nobody accepted does not satisfy the role.",
         "partiesSatisfied": "All required roles accepted",
         "partiesUnsatisfied": "A required role is missing or unaccepted",
@@ -2931,6 +2929,42 @@
         "viewerNote": "Viewers default to blocked",
         "viewerNoteSuffix": "— grant access to specific functions individually below."
       },
+      "vpn": {
+        "title": "VPN Access",
+        "intro": "This Vault is reachable only through the entity's VPN. A grant here is what lets this person connect at all.",
+        "grantTitle": "Grant access",
+        "grantHint": "Each person needs their own peer. Two people sharing one profile disconnect each other, because a second connection using the same certificate drops the first.",
+        "peerName": "Peer name",
+        "label": "Label",
+        "nameRule": "2–21 characters: lowercase letters, digits and dashes, starting with a letter or digit.",
+        "grantAction": "Grant & download",
+        "profileWarning": "The profile downloads once and contains the private key. It is not stored anywhere and cannot be re-sent — if it is lost, revoke the peer and grant a new one.",
+        "address": "Tunnel address",
+        "status": "Status",
+        "created": "Granted",
+        "expires": "Expires",
+        "statusActive": "Active",
+        "statusStale": "Not on host",
+        "statusStaleHint": "Recorded here but absent on the host, so it grants no access. Someone removed it outside the Vault.",
+        "statusRevoked": "Revoked",
+        "statusUnknown": "Unknown",
+        "statusUnknownHint": "The host could not be reached, so this grant’s real state is unknown. It has not necessarily stopped working.",
+        "revokeAction": "Revoke",
+        "revokeConfirmTitle": "Revoke VPN access?",
+        "revokeConfirmMsg": "\"{{peer}}\" will be disconnected now and refused on reconnect. This cannot be undone — restoring access means granting a new peer and sending a new profile.",
+        "revokeConfirmAction": "Revoke",
+        "revokeFailedTitle": "Could not revoke",
+        "revokeFailedMsg": "The host did not confirm the revoke. Check the VPN broker on the entity host and try again.",
+        "grantedTitle": "Access granted",
+        "grantedMsg": "{{file}} has been downloaded. Send it to the user through a private channel — it is the only copy.",
+        "grantFailedTitle": "Could not grant access",
+        "grantFailedMsg": "The host did not mint the peer. Check the VPN broker on the entity host and try again.",
+        "loading": "Loading VPN access…",
+        "loadFailed": "The list of grants could not be read, so this may not be complete.",
+        "none": "No VPN access has been granted to this user.",
+        "hostUnreachableTitle": "The entity host is not answering",
+        "hostUnreachableMsg": "Access cannot be granted or revoked until it does. Existing connections are unaffected."
+      },
       "table": {
         "key": "Key"
       },
@@ -4307,6 +4341,7 @@
     "custodyHoldPlace": "Custody - Place Hold",
     "custodyHoldRelease": "Custody - Release Hold",
     "creditBankTransfer": "Credit - Bank Transfer",
+    "userVpnManage": "Access - Manage User VPN Access",
     "creditRouteCredit": "Credit - Route Credit",
     "exportExcel": "Export Excel",
     "exportPdf": "Export PDF",
@@ -4390,6 +4425,21 @@
     "serviceStraightThrough": "Service: Straight-Through Transactions",
     "serviceImportSubscribers": "Service: Import Subscribers",
     "serviceImportBalances": "Service: Import Opening Balances"
+  },
+  "systemFunctionGroups": {
+    "dex": "DEX",
+    "asset": "Assets",
+    "service": "Services",
+    "clearing": "Clearing",
+    "credit": "Credit",
+    "settlement": "Settlements",
+    "entity": "Entity",
+    "subscription": "Subscriptions",
+    "custody": "Custody",
+    "transaction": "Transactions",
+    "distribution": "Distribution",
+    "user": "Users",
+    "general": "General"
   },
   "custody": {
     "tabs": {
@@ -4746,6 +4796,67 @@
       "confirmDisableMsg": "External systems will no longer be able to call \"{{name}}\". Vault users are not affected.",
       "confirmResetTitle": "Reset to default?",
       "confirmResetMsg": "This removes your decision for \"{{name}}\" and returns it to the platform default."
+    },
+    "apiManagement": {
+      "tabs": {
+        "connectivity": "Connectivity",
+        "permissions": "Permissions",
+        "docs": "Docs"
+      },
+      "connectivityDescription": "How an external system reaches this tenant: the VPN connection that makes the API reachable at all, and the access token it presents once connected.",
+      "token": {
+        "title": "API access token",
+        "description": "The bearer token an external system sends on every call. It belongs to THIS tenant only and reaches the automation endpoints on the Permissions tab — never the admin screens a person signs in to.",
+        "header": "Authorization header",
+        "fingerprint": "Fingerprint",
+        "length": "{{n}} characters",
+        "reveal": "Reveal token",
+        "copy": "Copy",
+        "copied": "Copied",
+        "hide": "Hide",
+        "none": "No access token is configured for this tenant, so every external system is refused. That is the correct setting until you have an integration to connect.",
+        "rotateHint": "Rotating the token is done on the host with \"tarmiiz-stack rekey-token <tenant>\". It affects this tenant only, and every system using the old value stops working until you hand it the new one.",
+        "revealFailed": "Could not read the access token.",
+        "copyFailed": "Your browser blocked clipboard access. Select the token and copy it by hand."
+      },
+      "vpn": {
+        "title": "Integration VPN connection",
+        "description": "This tenant’s API is not on the public internet, so an external system needs a VPN connection before its token means anything. There is ONE integration connection per tenant, and it is limited to the API — it cannot reach the Vault sign-in screens.",
+        "status": "Status",
+        "statusValue": {
+          "active": "Connected",
+          "stale": "Not on the host",
+          "revoked": "Revoked",
+          "unknown": "Unknown"
+        },
+        "peerName": "Connection name",
+        "address": "Address",
+        "label": "Label",
+        "granted": "Granted",
+        "expires": "Expires",
+        "untilRevoked": "Until revoked",
+        "profileOnce": "The connection profile was downloaded once, when it was granted, and cannot be downloaded again. If it was lost, revoke this connection and grant a new one.",
+        "none": "No integration connection has been granted yet.",
+        "labelPlaceholder": "What is this connection for? (optional)",
+        "grant": "Grant connection",
+        "revoke": "Revoke connection",
+        "hostUnreachable": "We could not reach the VPN host, so the status below could not be confirmed. This does not mean access was lost.",
+        "loadFailed": "Could not load the VPN connection.",
+        "grantConfirmTitle": "Grant the integration connection?",
+        "grantConfirmMsg": "This creates the tenant’s one integration VPN connection and downloads its profile. The profile contains a private key and is shown only once.",
+        "grantedTitle": "Connection granted",
+        "grantedMsg": "The profile \"{{file}}\" has been downloaded. It is the only copy — store it safely and hand it to the integration.",
+        "grantFailedTitle": "Could not grant the connection",
+        "grantFailedMsg": "The VPN host did not grant the connection. Please try again.",
+        "revokeConfirmTitle": "Revoke the integration connection?",
+        "revokeConfirmMsg": "The external system will lose access to this tenant’s API immediately. Its profile cannot be restored — you will have to grant a new connection.",
+        "revokeConfirmAction": "Revoke",
+        "revokeFailedTitle": "Could not revoke the connection",
+        "revokeFailedMsg": "The VPN host did not revoke the connection. Please try again."
+      },
+      "docs": {
+        "failed": "Could not open the API reference. Please try again."
+      }
     }
   },
   "auth": {

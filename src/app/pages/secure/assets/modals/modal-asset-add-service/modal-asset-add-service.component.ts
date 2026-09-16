@@ -69,10 +69,15 @@ export class ModalAssetAddServiceComponent {
         // NaN, always false — and emptied this picker SILENTLY. Token-issuer now means
         // holding an ACTIVE Token Issuer license (class 27).
         //
-        // 🔴 EMPTY UNTIL THE LICENSE READ ROUTE LANDS (licensing lane): `licenses` is
-        // populated by nothing yet, so this picker is empty either way TODAY. The
-        // difference is that it now fails for a stated reason rather than by accident.
-        .filter((s: any) => ((s.licenses ?? []) as number[]).includes(27))
+        // ⚠️ THE FIELD IS `license_class_ids`, NOT `licenses` (corrected 2026-09-15).
+        // Reading `s.licenses` was the SAME silent-empty defect one word further on:
+        // `services_view` has no licence column at all — `getServices` grafts the active
+        // set onto each row in JS as `license_class_ids` (Entity API db.js:2349-2368), so
+        // `s.licenses` was `undefined` and this picker stayed permanently empty.
+        // The comment here used to say it was "EMPTY UNTIL THE LICENSE READ ROUTE LANDS";
+        // that route HAS landed, which is exactly why a stale blocker note is worse than
+        // none — it tells the next reader the emptiness is expected.
+        .filter((s: any) => ((s.license_class_ids ?? []) as number[]).includes(27))
         .filter(s => !attached.has((s.address || '').toLowerCase()));
       const filtered = q
         ? all.filter(s =>

@@ -1,20 +1,19 @@
 ﻿<app-header [title]="'assets.details.title' | translate"></app-header>
 
-<!-- breadcrumb -->
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+<!-- Breadcrumb — v4: on the content panel's own canvas, no gray band. Keeps
+     flex/justify-between because the live indicator sits in it (Standard 3.5). -->
+<div class="px-6 pt-4 pb-3 flex items-center justify-between">
   @if (asset(); as op) {
-    <nav class="flex" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 md:space-x-3">
-        <li class="inline-flex items-center">
-          <a routerLink="/authorized/assets/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+    <nav aria-label="Breadcrumb">
+      <ol class="inline-flex items-center gap-1.5">
+        <li>
+          <a routerLink="/authorized/assets/list" class="text-sm font-medium text-gray-500 hover:text-[var(--brand-primary)] transition-colors">
             {{ 'assets.title' | translate }}
           </a>
         </li>
-        <li>
-          <div class="flex items-center">
-            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
-            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ op.name }}</span>
-          </div>
+        <li class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-gray-300 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6"/></svg>
+          <span class="text-sm font-semibold text-gray-900">{{ op.name }}</span>
         </li>
       </ol>
     </nav>
@@ -24,130 +23,13 @@
   <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
     
-    <!-- Tab Navigation -->
-    <div class="bg-white rounded-t-lg shadow-md p-2">
-      <div class="flex border-b border-gray-200 items-center">
-
-        <button (click)="setTab('overview')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'overview'"
-          [class.border-b-2]="activeTab() === 'overview'"
-          [class.border-blue-600]="activeTab() === 'overview'"
-          [class.bg-blue-600]="activeTab() === 'overview'"
-        >
-          {{ 'assets.details.tabs.overview' | translate }}
-        </button>
-        <button (click)="setTab('info')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'info'"
-          [class.border-b-2]="activeTab() === 'info'"
-          [class.border-blue-600]="activeTab() === 'info'"
-          [class.bg-blue-600]="activeTab() === 'info'"
-        >
-          {{ 'assets.details.tabs.info' | translate }}
-        </button>
-        <button (click)="setTab('registration')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'registration'"
-          [class.border-b-2]="activeTab() === 'registration'"
-          [class.border-blue-600]="activeTab() === 'registration'"
-          [class.bg-blue-600]="activeTab() === 'registration'"
-        >
-          {{ 'assets.details.compliance.tab' | translate }}
-        </button>
-        <button (click)="setTab('metadata')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'metadata'"
-          [class.border-b-2]="activeTab() === 'metadata'"
-          [class.border-blue-600]="activeTab() === 'metadata'"
-          [class.bg-blue-600]="activeTab() === 'metadata'"
-        >
-          {{ 'common.metadata' | translate }}
-        </button>
-        <button (click)="setTab('services')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'services'"
-          [class.border-b-2]="activeTab() === 'services'"
-          [class.border-blue-600]="activeTab() === 'services'"
-          [class.bg-blue-600]="activeTab() === 'services'"
-        >
-          {{ 'assets.details.tabs.services' | translate }}
-        </button>
-        <button (click)="setTab('price')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'price'"
-          [class.border-b-2]="activeTab() === 'price'"
-          [class.border-blue-600]="activeTab() === 'price'"
-          [class.bg-blue-600]="activeTab() === 'price'"
-        >
-          {{ 'assets.details.tabs.price' | translate }}
-        </button>
-        <button (click)="setTab('holders')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'holders'"
-          [class.border-b-2]="activeTab() === 'holders'"
-          [class.border-blue-600]="activeTab() === 'holders'"
-          [class.bg-blue-600]="activeTab() === 'holders'"
-        >
-          {{ 'assets.details.tabs.holders' | translate }}
-        </button>
-        <button (click)="setTab('trxs')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'trxs'"
-          [class.border-b-2]="activeTab() === 'trxs'"
-          [class.border-blue-600]="activeTab() === 'trxs'"
-          [class.bg-blue-600]="activeTab() === 'trxs'"
-        >
-          {{ 'assets.details.tabs.transactions' | translate }}
-        </button>
-        @if (features.systemFunctionEnabled('view-documents')) {
-          <button (click)="setTab('docs')"
-            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-            [class.text-white]="activeTab() === 'docs'"
-            [class.border-b-2]="activeTab() === 'docs'"
-            [class.border-blue-600]="activeTab() === 'docs'"
-            [class.bg-blue-600]="activeTab() === 'docs'"
-          >
-            {{ 'assets.details.tabs.documents' | translate }}
-          </button>
-        }
-        @if (!dexListingLoaded() || dexListing()) {
-          <button (click)="setTab('dex')"
-            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-            [class.text-white]="activeTab() === 'dex'"
-            [class.border-b-2]="activeTab() === 'dex'"
-            [class.border-blue-600]="activeTab() === 'dex'"
-            [class.bg-blue-600]="activeTab() === 'dex'"
-          >
-            {{ 'assets.details.tabs.dex' | translate }}
-          </button>
-        }
-        <button (click)="setTab('distributions')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'distributions'"
-          [class.border-b-2]="activeTab() === 'distributions'"
-          [class.border-blue-600]="activeTab() === 'distributions'"
-          [class.bg-blue-600]="activeTab() === 'distributions'"
-        >
-          {{ 'assets.details.tabs.distributions' | translate }}
-        </button>
-        <button (click)="setTab('holdersAt')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'holdersAt'"
-          [class.border-b-2]="activeTab() === 'holdersAt'"
-          [class.border-blue-600]="activeTab() === 'holdersAt'"
-          [class.bg-blue-600]="activeTab() === 'holdersAt'"
-        >
-          {{ 'assets.details.tabs.holdersAtBlock' | translate }}
-        </button>
-      </div>
-    </div>
+    <app-tabs [tabs]="tabs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
     <!-- Tab Content -->
-    <div class="bg-white rounded-b-lg shadow-md p-2">
+    <div class="card-v4 p-2">
       @if (asset(); as v) {
 
         <!-- overview tab -->
@@ -1002,10 +884,12 @@
 
         <!-- services tab -->
         @if (activeTab() === 'services') {
-          <div class="bg-white rounded-b-lg shadow-md border border-gray-200 overflow-hidden">
+          <div class="card-v4 overflow-hidden">
             @if (asset(); as v) {
-              <div class="flex items-center justify-between p-4 border-b">
-                <h3 class="text-lg font-semibold text-gray-800">{{ 'assets.details.tabs.services' | translate }}</h3>
+              <!-- No "Services" heading: the tab that opened this pane carries the SAME
+                   i18n key (assets.details.tabs.services). The flex row stays — it is
+                   what right-aligns the Add button. -->
+              <div class="flex items-center justify-end p-4 border-b">
                 @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-add-service')) {
                   <button (click)="openAddServiceModal()" [disabled]="!entityActive || !canManage()"
                     [title]="canManage() ? '' : ('assets.details.notManager' | translate)"
@@ -1220,8 +1104,9 @@
              follow-on; for now declare + execute go through the API directly. -->
         @if (activeTab() === 'distributions') {
           <div class="px-2 py-2">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-base font-semibold text-gray-800">{{ 'assets.details.tabs.distributions' | translate }}</h3>
+            <!-- No "Distributions" heading: the tab carries the SAME i18n key
+                 (assets.details.tabs.distributions). -->
+            <div class="flex items-center justify-end mb-3">
               <div class="flex items-center gap-2">
                 <app-refresh-button [loading]="distributionsLoading()" (refresh)="loadDistributions()" />
                 @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-add-distribution')) {
@@ -1362,21 +1247,25 @@
                     (ngModelChange)="holdersAtDateInput.set($event)">
                 </div>
               }
-              <button class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-40"
+              <!-- Standard 3.6: the LABEL does not swap to "Loading…" while fetching —
+                   that resizes the control under the cursor and shifts the row. The
+                   in-control spinner + disabled state carry it instead (Standard 3.4,
+                   tier 4: a control gets a small circle, never the brand mark). -->
+              <button class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-40 inline-flex items-center gap-1.5"
                       (click)="loadHoldersAt()"
                       [disabled]="holdersAtLoading() || (holdersAtMode() === 'block' ? !holdersAtBlockInput() : !holdersAtDateInput())">
-                {{ (holdersAtLoading() ? 'common.loading' : 'assets.details.holdersAt.loadSnapshot') | translate }}
+                @if (holdersAtLoading()) {
+                  <svg class="w-3.5 h-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                }
+                {{ 'assets.details.holdersAt.loadSnapshot' | translate }}
               </button>
             </div>
 
             @if (holdersAtLoading()) {
-              <div class="flex flex-col items-center justify-center py-10 text-sm text-gray-500">
-                <svg class="animate-spin h-6 w-6 mb-2 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                {{ 'assets.details.holdersAt.reconstructing' | translate }}
-              </div>
+              <app-loading-state [loading]="true" loadingKey="assets.details.holdersAt.reconstructing" />
             }
             @else if (holdersAtQueried() === null) {
               <div class="text-center py-8 text-sm text-gray-500">

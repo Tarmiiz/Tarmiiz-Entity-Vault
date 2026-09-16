@@ -460,6 +460,187 @@ html.lang-ar table td.text-right {
   .shell-title-sep { margin-inline-start: 4px; }
 }
 
+/* ─── .card-v4 — the v4 card surface (design-components v4, adopted 2026-09-16) ─
+ * Transcribed from `Tarmiiz Design Components/assets/src/tarmiiz-ui.src.css`,
+ * whose own header says to do exactly this when an app adopts v4. Only
+ * .table-v4 had been transcribed until now, which is why the detail-page tab
+ * bar could not be migrated: the v4 tab recipe is `<div class="card-v4 p-2">`.
+ *
+ * Literal hexes, not --v4-* tokens, deliberately: this app has no --v4-* token
+ * set (only --brand-primary), and .table-v4 below already hardcodes the same
+ * #e8ebf2 hairline. One convention per file beats a half-imported palette.
+ *
+ * Radius 18px is a STEP BELOW the shell panels' 24px, so panel > card reads as
+ * hierarchy. Do not round it to rounded-2xl (16px) or rounded-xl (12px) —
+ * those are the modal and control radii respectively.
+ * ──────────────────────────────────────────────────────────────────────────── */
+.card-v4 {
+  background: #ffffff;
+  border: 1px solid #e8ebf2;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px -8px rgba(16, 24, 40, 0.08);
+}
+
+/* ─── .tab-v4 — the detail-page tab bar AND the sub-tab rail ─────────────────
+ * ONE active treatment for BOTH levels, so a single visual language says
+ * "you are here" whether the control is horizontal (a tab) or vertical (a rail
+ * item). Standards 2 and 2.1.
+ *
+ * ⚠️ THE ACTIVE TINT IS DERIVED FROM --brand-primary, NOT the design's literal
+ * indigo. `Tarmiiz Design Components/v4` writes `bg-indigo-50
+ * text-[var(--v4-primary)]` because a catalog page shows the DESIGN; an app
+ * must track its tenant, and --brand-primary is overridden at bootstrap by
+ * ConfigService from assets/config.json. A whitelabelled tenant with a green
+ * brand would otherwise get indigo tabs. Same rule as .login-shell and
+ * .table-v4 above.
+ *
+ * Layout (padding, width, shrink) stays on the component as utilities — it is
+ * what differs between the bar and the rail. Only the PAINT lives here.
+ *
+ * Radius 11px is the icon-chip radius, deliberately not the controls'
+ * rounded-xl (12px): a tab is not a button, and the 1px difference is what
+ * stops a tab strip reading as a row of buttons.
+ *
+ * `border: 1px solid transparent` holds the box at the platform's 30px control
+ * height — a filled control with no border sits 2px shorter than every
+ * outlined one beside it.
+ * ──────────────────────────────────────────────────────────────────────────── */
+.tab-v4 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8a93a6;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    color: #101828;
+    background: #f4f6fa;
+  }
+
+  // Specificity 0,2,1 beats the plain :hover above, so an active item does not
+  // flicker to the idle hover fill when the pointer crosses it.
+  &.is-active,
+  &.is-active:hover {
+    font-weight: 600;
+    color: var(--brand-primary);
+    background: color-mix(in srgb, var(--brand-primary) 9%, #ffffff);
+  }
+}
+
+/* Count badge inside a tab / rail item. Neutral on purpose: the number is a
+ * quantity, not a status, so it must not borrow a state colour. */
+.tab-v4-badge {
+  margin-inline-start: 6px;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 400;
+  background: #f1f2f6;
+  color: #8a93a6;
+}
+.tab-v4.is-active .tab-v4-badge {
+  background: #ffffff;
+  color: var(--brand-primary);
+}
+
+/* ─── .tz-mark — the brand loading mark ───────────────────────────────────────
+ * The Tarmiiz icon assembling itself out of six blocks. Replaced the Tailwind
+ * animate-spin SVG in the loading overlay on 2026-09-14.
+ *
+ * ⚠️ MOVED HERE FROM `alerts/loading/loading.component.scss` ON 2026-09-16, and
+ * the move is REQUIRED rather than tidying: Angular's emulated encapsulation
+ * scopes a component's styles to its own DOM, so the inline <app-loading-state>
+ * loader could not see geometry that lived in the overlay component. Global is
+ * the only place both can reach.
+ *
+ * ⚠️ THIS BLOCK IS BYTE-IDENTICAL IN THE ENTITY VAULT AND THE REGULATOR
+ * DASHBOARD, and transcribed into the catalog entry in
+ * `Tarmiiz Design Components/assets/src/tarmiiz-ui.src.css` (flattened to plain
+ * CSS there). Nothing syncs the three, so a change here belongs in all three.
+ * The comment is worded without naming an app precisely so the two app copies
+ * can be compared with `diff` and expected to be empty.
+ *
+ * Lattice measured from `tarmiiz - logo icon@2x.png` and the bullet SVGs: a
+ * 64-unit plate carrying blocks of 10 on an 11 pitch, columns at x 21.5 / 32.5
+ * and rows at y 10.5 / 21.5 / 32.5 / 43.5. Six of the eight cells are filled —
+ * the cyan L (rows 1-2) over the magenta L (rows 3-4) is the `t`.
+ *
+ * Every offset below is one of those units divided by 64, so the whole mark
+ * scales off `--tz-size` alone and stays on the lattice at any pixel size.
+ * 72px in the blocking overlay, 44px in a pane. NEVER below ~40px: each block
+ * is then under 3px and the glyph reads as noise, which is why in-control
+ * loaders (typeahead, button) stay a small circle spinner instead.
+ *
+ * No plate colour: every surface it sits on is already white. `overflow: hidden`
+ * is what the blocks fall in from — with no plate the box is invisible, but it
+ * still does the clipping.
+ *
+ * Positions use `left`, NOT `inset-inline-start`: this is a logotype and must
+ * not mirror under [dir='rtl'].
+ * ──────────────────────────────────────────────────────────────────────────── */
+.tz-mark {
+  --tz-size: 72px;
+  --tz-cy: #08d1de;
+  --tz-mg: #d621ff;
+
+  --tz-dur:  3.2s;   // one full cycle: fall in, hold the mark, fall away
+  --tz-stag: 0.13s;  // gap between one landing and the next
+  --tz-base: -1.6s;  // NEGATIVE on purpose — every block starts mid-cycle, so
+                     // the loader opens on the finished `t` rather than on an
+                     // empty box. A screenshot never catches it half-built.
+
+  position: relative;
+  width: var(--tz-size);
+  height: var(--tz-size);
+  overflow: hidden;
+  flex: none;
+
+  i {
+    position: absolute;
+    width: 15.625%;   // 10 / 64
+    aspect-ratio: 1;
+    animation-name: tz-mark-drop;
+    animation-duration: var(--tz-dur);
+    animation-delay: calc(var(--tz-base) + var(--i) * var(--tz-stag));
+    animation-iteration-count: infinite;
+  }
+
+  // --drop / --exit are travel distances in BLOCK-heights (translateY % is
+  // relative to the element's own box), sized so each block starts just above
+  // the clip and leaves just below it.
+  // --i is the landing order: furthest block first, so the stem stacks off the
+  // floor and the cyan cap arrives last.
+  .tz-b1 { left: 33.59375%; top: 16.40625%; --drop: -208%; --exit: 637%; --i: 5; background: var(--tz-cy); }
+  .tz-b2 { left: 33.59375%; top: 33.59375%; --drop: -317%; --exit: 527%; --i: 3; background: var(--tz-cy); }
+  .tz-b3 { left: 50.78125%; top: 33.59375%; --drop: -317%; --exit: 527%; --i: 4; background: var(--tz-cy); }
+  .tz-b4 { left: 33.59375%; top: 50.78125%; --drop: -427%; --exit: 417%; --i: 2; background: var(--tz-mg); }
+  .tz-b5 { left: 33.59375%; top: 67.96875%; --drop: -537%; --exit: 307%; --i: 0; background: var(--tz-mg); }
+  .tz-b6 { left: 50.78125%; top: 67.96875%; --drop: -537%; --exit: 307%; --i: 1; background: var(--tz-mg); }
+}
+
+/* Accelerate down, overshoot the slot by a third of a block, settle, hold the
+ * assembled mark, then accelerate out of the bottom. */
+@keyframes tz-mark-drop {
+  0%        { transform: translateY(var(--drop)); animation-timing-function: cubic-bezier(.5, 0, .8, .36); }
+  17%       { transform: translateY(0);           animation-timing-function: cubic-bezier(.22, .8, .4, 1); }
+  23%       { transform: translateY(-34%);        animation-timing-function: cubic-bezier(.5, 0, .7, 1); }
+  29%       { transform: translateY(0);           animation-timing-function: linear; }
+  70%       { transform: translateY(0);           animation-timing-function: cubic-bezier(.46, 0, .78, .34); }
+  94%, 100% { transform: translateY(var(--exit)); }
+}
+
+/* Nothing falls — the mark just sits there complete. That costs the loader its
+ * "still working" signal, which is why the message text beside it carries the
+ * status rather than the motion. */
+@media (prefers-reduced-motion: reduce) {
+  .tz-mark i {
+    animation: none;
+    transform: none;
+  }
+}
+
 /* ─── .table-v4 — the v4 data table (design-components v4, adopted 2026-09-09) ──
  * Signature: a gradient header band with a MATCHING gradient rule beneath it, zebra rows,
  * hairline separators, no vertical rules.

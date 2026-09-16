@@ -1,77 +1,15 @@
-/* Brand loading mark — the Tarmiiz icon assembling itself.
+/* Intentionally holds no rules.
  *
- * Lattice measured from `tarmiiz - logo icon@2x.png` and the bullet SVGs: a
- * 64-unit plate carrying blocks of 10 on an 11 pitch, columns at x 21.5 / 32.5
- * and rows at y 10.5 / 21.5 / 32.5 / 43.5. Six of the eight cells are filled —
- * the cyan L (rows 1-2) over the magenta L (rows 3-4) is the `t`.
+ * The brand loading mark (`.tz-mark`) lived here until 2026-09-16 and now lives
+ * in `src/global.scss`. The move was required, not tidying: Angular's emulated
+ * encapsulation scopes a component's styles to its own DOM, so the inline
+ * loader in `<app-loading-state>` could not see geometry defined here. Global
+ * is the only place the overlay and the inline loader can both reach it.
  *
- * Every offset below is one of those units divided by 64, so the whole mark
- * scales off `--tz-size` alone and stays on the lattice at any pixel size.
+ * Do NOT re-add a copy here "so the component is self-contained" — two
+ * definitions of the same glyph is the drift the move closed, and the component
+ * copy would silently WIN inside the overlay (encapsulation attribute selectors
+ * raise its specificity), so the two would diverge without any visible error.
  *
- * The indigo plate is deliberately OFF: the overlay card is already white.
- * `overflow: hidden` on the box is what the blocks fall in from — with no
- * plate the box is invisible, but it still does the clipping.
- *
- * Positions use `left`, NOT `inset-inline-start`: this is a logotype and must
- * not mirror under [dir='rtl'].
+ * The file is kept rather than deleted because `styleUrls` references it.
  */
-.tz-mark {
-  --tz-size: 72px;
-  --tz-cy: #08d1de;
-  --tz-mg: #d621ff;
-
-  --tz-dur:  3.2s;   // one full cycle: fall in, hold the mark, fall away
-  --tz-stag: 0.13s;  // gap between one landing and the next
-  --tz-base: -1.6s;  // NEGATIVE on purpose — every block starts mid-cycle, so
-                     // the overlay opens on the finished `t` rather than on an
-                     // empty box. A screenshot never catches it half-built.
-
-  position: relative;
-  width: var(--tz-size);
-  height: var(--tz-size);
-  overflow: hidden;
-  flex: none;
-
-  i {
-    position: absolute;
-    width: 15.625%;   // 10 / 64
-    aspect-ratio: 1;
-    animation-name: tz-mark-drop;
-    animation-duration: var(--tz-dur);
-    animation-delay: calc(var(--tz-base) + var(--i) * var(--tz-stag));
-    animation-iteration-count: infinite;
-  }
-
-  // --drop / --exit are travel distances in BLOCK-heights (translateY % is
-  // relative to the element's own box), sized so each block starts just above
-  // the clip and leaves just below it.
-  // --i is the landing order: furthest block first, so the stem stacks off the
-  // floor and the cyan cap arrives last.
-  .tz-b1 { left: 33.59375%; top: 16.40625%; --drop: -208%; --exit: 637%; --i: 5; background: var(--tz-cy); }
-  .tz-b2 { left: 33.59375%; top: 33.59375%; --drop: -317%; --exit: 527%; --i: 3; background: var(--tz-cy); }
-  .tz-b3 { left: 50.78125%; top: 33.59375%; --drop: -317%; --exit: 527%; --i: 4; background: var(--tz-cy); }
-  .tz-b4 { left: 33.59375%; top: 50.78125%; --drop: -427%; --exit: 417%; --i: 2; background: var(--tz-mg); }
-  .tz-b5 { left: 33.59375%; top: 67.96875%; --drop: -537%; --exit: 307%; --i: 0; background: var(--tz-mg); }
-  .tz-b6 { left: 50.78125%; top: 67.96875%; --drop: -537%; --exit: 307%; --i: 1; background: var(--tz-mg); }
-}
-
-/* Accelerate down, overshoot the slot by a third of a block, settle, hold the
- * assembled mark, then accelerate out of the bottom. */
-@keyframes tz-mark-drop {
-  0%        { transform: translateY(var(--drop)); animation-timing-function: cubic-bezier(.5, 0, .8, .36); }
-  17%       { transform: translateY(0);           animation-timing-function: cubic-bezier(.22, .8, .4, 1); }
-  23%       { transform: translateY(-34%);        animation-timing-function: cubic-bezier(.5, 0, .7, 1); }
-  29%       { transform: translateY(0);           animation-timing-function: linear; }
-  70%       { transform: translateY(0);           animation-timing-function: cubic-bezier(.46, 0, .78, .34); }
-  94%, 100% { transform: translateY(var(--exit)); }
-}
-
-/* Nothing falls — the mark just sits there complete. That costs the loader its
- * "still working" signal, which is why the message text below it carries the
- * status rather than the motion. */
-@media (prefers-reduced-motion: reduce) {
-  .tz-mark i {
-    animation: none;
-    transform: none;
-  }
-}

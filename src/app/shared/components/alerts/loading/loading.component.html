@@ -1,10 +1,19 @@
 @if (loadingService.isVisible()) {
-  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center transition-opacity duration-300 ease-in-out">
-    <div class="flex flex-col items-center justify-center bg-white rounded-lg shadow-xl p-8">
+  <!-- v4 scrim: ink at 30% + backdrop-blur-[2px], not v1's flat bg-black/40. The
+       blur is what makes the page behind read as "suspended" rather than "dimmed".
+       #101828 is --v4-ink; this app has no --v4-* token set, so it is a literal
+       here exactly as .card-v4 and .table-v4 in global.scss use literals.
+       ⚠️ Do NOT change the z-index to fix a stuck overlay. An overlay that never
+       dismisses after a successful action is the awaited-alert deadlock recorded in
+       BUGS.md — the fix is hide() BEFORE the awaited alert, never a z-index race. -->
+  <div class="fixed inset-0 bg-[#101828]/30 backdrop-blur-[2px] z-50 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div class="flex flex-col items-center justify-center bg-white rounded-2xl shadow-xl p-8">
       <!-- Six blocks of the Tarmiiz mark falling into place. Decorative — the
-           status is carried by the message below. Geometry in the SCSS, which
-           is a byte-identical copy of the Regulator Dashboard's; nothing syncs
-           the two loading components, so a change here belongs in both. -->
+           status is carried by the message below.
+           Geometry moved to global.scss on 2026-09-16 so the inline loader in
+           <app-loading-state> can reach it too; the block there is byte-identical
+           in both dashboards and nothing syncs them, so a change belongs in both
+           (and in the design-components catalog). -->
       <div class="tz-mark" aria-hidden="true">
         <i class="tz-b1"></i><i class="tz-b2"></i><i class="tz-b3"></i>
         <i class="tz-b4"></i><i class="tz-b5"></i><i class="tz-b6"></i>

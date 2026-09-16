@@ -2096,6 +2096,77 @@ export class ApiService {
   // plain list (one Entity API serves one tenant, so every mirrored service IS its own).
   // Kept as a named method because call sites read better with the intent spelled out.
   // NOTE: `start` is a 0-based SQL OFFSET here, not the contracts' 1-based `start`.
+  // ── VPN access grants (Phase 34.5/34.6) ─────────────────────────────────────
+  // This tenant's Vault is reachable only through the host's OpenVPN instance, so a
+  // grant here is what lets a person connect at all. Admin-only, behind the
+  // default-deny `user-vpn-manage` System Function.
+  async vaultVpnList(userId?: string | number) {
+    const data = await this.vaultGet(userId ? `/staff/${userId}/vpn` : '/vpn');
+    return {
+      peers: (data?.peers ?? []).map((p: any) => ({
+        peerName: p.peerName, person: p.person, userId: p.userId ?? null,
+        kind: p.kind === 'integration' ? 'integration' : 'user',
+        cn: p.cn, address: p.address, label: p.label ?? null,
+        createdAt: Number(p.createdAt),
+        notAfter: p.notAfter == null ? null : Number(p.notAfter),
+        grantedBy: p.grantedBy ?? null,
+        revokedAt: p.revokedAt == null ? null : Number(p.revokedAt),
+        status: p.status,
+      })),
+      // Absent rather than false when the key is missing: "we could not tell" must not
+      // render as "the host is down".
+      hostReachable: data?.hostReachable !== false,
+      hostError: data?.hostError ?? null,
+    };
+  }
+
+  // ⚠️ The response carries `profile` — the ONLY copy of the private key that will ever
+  // exist. Not stored by the API and not recoverable: hand it over immediately.
+  async vaultVpnGrantUser(userId: string | number, person: string, label?: string) {
+    return this.vaultPost(`/staff/${userId}/vpn`, { person, label });
+  }
+
+  // THE tenant integration peer — one per tenant; a second is refused with 409.
+  async vaultVpnGrantIntegration(label?: string) {
+    return this.vaultPost('/vpn/integration', { label });
+  }
+
+  // ── API access credential (API Management → Connectivity) ───────────────────
+  // The bearer an external system presents. PER TENANT since 2026-09-16 — which is
+  // what makes it showable here at all: while it was one chain-wide value, revealing
+  // it in one tenant's Vault would have handed that admin every other tenant's
+  // automation credential.
+  //
+  // Two calls on purpose. The page load gets a FINGERPRINT only, so simply opening
+  // the tab never puts a secret on screen or in a response someone may be mirroring;
+  // the value comes back only from the explicit reveal, which the API audits.
+  async vaultApiCredentials(): Promise<{ configured: boolean; fingerprint: string | null; length: number }> {
+    const data = await this.vaultGet('/api-credentials');
+    return {
+      configured: Boolean(data?.configured),
+      fingerprint: data?.fingerprint ?? null,
+      length: Number(data?.length || 0),
+    };
+  }
+
+  async vaultApiCredentialsReveal(): Promise<{ token?: string; error?: string }> {
+    return this.vaultPost('/api-credentials/reveal', {});
+  }
+
+  // Unlock the Swagger page for THIS browser, then the caller opens it.
+  //
+  // Swagger is opened as a LINK, not embedded — an iframe cannot carry our bearer, and the
+  // Regulator API's helmet.frameguard() would refuse framing outright. So the API converts
+  // the admin session into a short-lived HttpOnly cookie that the browser presents on the
+  // docs page and on every asset it pulls. The docs 404 without it.
+  async vaultApiDocsSession(): Promise<{ url?: string; error?: string }> {
+    return this.vaultPost('/api-docs-session', {});
+  }
+
+  async vaultVpnRevoke(person: string) {
+    return this.vaultDelete(`/vpn/${encodeURIComponent(person)}`);
+  }
+
   async vaultGetServicesOwn(start = 0, offset = 50) {
     const data = await this.vaultGet('/services', { start, offset });
     return data ? { count: data.count, services: data.services } : null;

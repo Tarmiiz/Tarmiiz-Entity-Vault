@@ -14,6 +14,9 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   // no 'service-election-declare' entry here — that key is inert on this side, because the
   // SERVICE'S REGULATOR declares the election (P_ELECTION_DECLARE is gated K_REGULATOR_OF).
   'service-election-switch': 'systemFunctionLabels.serviceElectionSwitch',
+  // Phase 34.5/34.6. Default-DENY: a peer is what makes this Vault reachable for a
+  // person at all, so it is a network credential and is granted deliberately.
+  'user-vpn-manage':       'systemFunctionLabels.userVpnManage',
   'credit-bank-transfer': 'systemFunctionLabels.creditBankTransfer',
   'credit-route-credit':  'systemFunctionLabels.creditRouteCredit',
   'service-add-validator':         'systemFunctionLabels.serviceAddValidator',
@@ -132,4 +135,57 @@ export function systemFunctionLabelFor(key: string): string {
   const parts = key.split('-');
   if (parts.length > 1) return title(parts[0]) + ' - ' + parts.slice(1).map(title).join(' ');
   return title(parts[0]);
+}
+
+// ─── Grouping, for the System Functions sub-tab rail ─────────────────────────
+//
+// 89 keys in one flat table is a scroll, not a control surface, so the User
+// Details tab rails them by domain (Standard 2.1's grouped-list case).
+//
+// ⚠️ THE GROUP IS DERIVED FROM THE KEY, NOT FROM THE LABEL, and that is the
+// whole point. Parsing the label's "X - Y" prefix looked easier and is wrong
+// twice over: (1) it is LANGUAGE-DEPENDENT, so the rail would regroup — and in
+// places collapse — under Arabic; (2) the English prefixes are not consistent.
+// Measured 2026-09-16 across the 89 labels: `Asset` (16) sits beside `Assets`
+// (2), `Service` (11) beside `Services` (1), `Subscription` beside
+// `Subscriptions`, and TEN labels carry no prefix at all. Prefix-parsing would
+// therefore have rendered "Asset" and "Assets" as two adjacent rail items and
+// dropped ten functions into a nameless bucket. The keys have none of that:
+// they are always `<domain>-<action>`.
+//
+// Overrides below are only for keys whose first segment is NOT its domain.
+const SYSTEM_FUNCTION_GROUP_OVERRIDES: Record<string, string> = {
+  // A venue is a DEX concept; `venue-change-state` would otherwise be a rail
+  // item of one, next to the 25-row DEX group it belongs in.
+  'venue-change-state': 'dex',
+  // A subscriber IS the subscription surface.
+  'subscriber-onboard': 'subscription',
+  // Cross-cutting capabilities that belong to no single domain: the two export
+  // buttons, the two identity/document read gates and the document write gate.
+  // Their own first segments (`export`, `view`, `manage`) name a VERB, not a
+  // place, which is exactly why they need naming here.
+  'export-excel':       'general',
+  'export-pdf':         'general',
+  'view-documents':     'general',
+  'view-identity-data': 'general',
+  'manage-documents':   'general',
+};
+
+/**
+ * Domain group for a system-function key — the rail item it belongs under.
+ * Returns a stable lowercase slug; render it through
+ * `systemFunctionGroupLabelFor()`.
+ */
+export function systemFunctionGroupFor(key: string): string {
+  return SYSTEM_FUNCTION_GROUP_OVERRIDES[key] ?? key.split('-')[0];
+}
+
+/**
+ * Display label for a group slug. Returns an i18n KEY under
+ * `systemFunctionGroups.*`; ngx-translate renders an unknown key as-is, so a
+ * brand-new domain shows a readable Title-Cased slug until someone translates
+ * it — never a blank rail item.
+ */
+export function systemFunctionGroupLabelFor(group: string): string {
+  return 'systemFunctionGroups.' + group;
 }
