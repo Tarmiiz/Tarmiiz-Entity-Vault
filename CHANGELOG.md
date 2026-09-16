@@ -45,6 +45,69 @@ _Living preamble describing the broad direction this sub-project is currently mo
     route; it is safe on the other axis because `api-endpoints` is an admin settings ROUTE, never
     a `MENU_ITEMS` key, so no stored menu override is orphaned.
 
+- **Three shared UI components, byte-identical to the Regulator Dashboard's copies** —
+  `<app-tabs>`, `<app-sub-tab-rail>` and `<app-loading-state>`. Before them this app carried
+  **five** tab recipes across 24 files in two visual languages, and six hand-rolled loading
+  looks. `<app-tabs>` also evaluates each tab's active predicate ONCE (the hand-rolled recipe
+  restated it in four separate `[class.*]` bindings, so the 12-tab asset page did it 48
+  times), adds the `overflow-x-auto` the old bare `flex` never had, and adds
+  `role=tablist` / `aria-selected` / arrow-key movement — none of the ~200 buttons it
+  replaced had any ARIA. Arrow direction resolves against the document's writing mode, so it
+  does not run backwards in Arabic.
+- **`.card-v4`, `.tab-v4` and `.tz-mark` in `global.scss`**, as a block that is byte-identical
+  in both dashboards (verified by `diff`, and its comments are worded without naming an app so
+  that comparison stays meaningful). `.tab-v4`'s active tint is `color-mix` over
+  `--brand-primary`, **not** the design catalog's literal indigo — same whitelabel rule as
+  `.login-shell` and `.table-v4`.
+- **`scripts/check-v4-recipes.js`, in `npm run check`.** Fails on a hand-rolled tab strip, a v1
+  breadcrumb band or page well, a bare `Loading…`, and — independently of v4 — a **malformed
+  Tailwind class**. It found a tab bar the migration had missed entirely.
+
+**Changed**
+
+- **Every detail-page tab bar is `<app-tabs>`; every breadcrumb is on the canvas; every page
+  well is gone.** The `px-6 py-4 border-b bg-gray-200` band and the `bg-gray-200 p-6` well both
+  read as a third tone on top of the v4 content panel, which IS the surface. Conditional tabs
+  became spread guards in the computed rather than `@if` around markup, so each condition now
+  sits beside the tab it governs.
+- **Both sub-tab rails are `<app-sub-tab-rail>`** (asset Compliance, service Licenses), which
+  owns the `grow min-w-0` that stops a wide table pushing the whole page into horizontal
+  scroll — the main reason it is a component.
+- **Standard 2.1 gained a second trigger: a long list with natural GROUPS.** The User Details
+  **System Functions** table (89 registry keys) and **API Management → Permissions** (39
+  endpoint sections that were 39 stacked cards) now rail instead of scrolling. The group is
+  derived from the function KEY, never the label: label prefixes are language-dependent, and
+  measured across the 89 English labels they are also inconsistent — `Asset` sits beside
+  `Assets`, `Service` beside `Services`, and ten carry no prefix at all, so prefix-parsing
+  would have rendered two adjacent "Asset"/"Assets" rail items *and* regrouped under Arabic.
+- **Loading follows four tiers (new frontend Standard 3.4).** 29 two-state table rows became
+  three-state with 5 skeleton rows — the two-state form printed "no records" while the load was
+  still in flight, which is what `TODO.md` recorded as a regulator being unable to tell a quiet
+  market from a broken connection. ~20 pane-level sites moved to `<app-loading-state>`.
+- **No page names itself twice.** Six headings that repeated the control which opened their
+  pane are gone — four of them through the very same i18n key. The compliance tab said
+  "Compliance" three lines under a "Compliance" tab, itself under an "Asset Details" top bar.
+  Facts beside those headings were KEPT: the parties satisfied/unsatisfied pill and the
+  endpoint licence pill are second axes, not labels.
+- **The top bar's "Live" means the socket connection** (Phase 35 / F2). It was gated on
+  `LiveStatusService.present()` — true as soon as any page registers a reporter — so it read
+  **Live** with the socket down on a page showing minutes-old data. Three things were called
+  Live in one app. Refreshing is layered on top and only while connected.
+
+**Fixed**
+
+- **Twelve invalid Tailwind classes that compiled to NOTHING** — eleven `py-1.5.5` across the
+  DEX negotiated-trade tab bars and one `border-transparent.5` on the asset Compliance rail,
+  all from a single bad find-and-replace of `py-2.5`. Every one of those controls shipped with
+  no vertical padding, a green build and no lint complaint. See `BUGS.md`.
+- **Eight `Loading…` literals that bypassed i18n** and rendered English under `lang-ar`, while
+  `common.loading` already resolved to the same string in both locales.
+- **The Holders at Block button no longer swaps its label to "Loading…"** (Standard 3.6 — it
+  resizes the control under the cursor and shifts the row); an in-control spinner carries it.
+- **A dashboard stat no longer turns `text-indigo-700` when non-zero** (Phase 35 / F9) — indigo
+  is the primary/link colour in v4, so a count read as clickable. The clearing-house twin keeps
+  its amber alert leg, which IS a state.
+
 ### 2026-09-15
 
 **Added**
