@@ -25,6 +25,7 @@ import {
 } from '../rfq-labels';
 import { DEAL_STATUS_LABEL, DEAL_STATUS_CLASS } from '../../deals/deal-labels';
 import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 /**
  * One request for quote: its fixed terms, the dealer board, and the quotes themselves.
@@ -43,7 +44,7 @@ import { PaginatorComponent, pageSlice } from '../../../../../shared/components/
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     HeaderComponent, LiveIndicatorComponent, RefreshButtonComponent, RouterLink, TranslatePipe, MoneyPipe,
     ModalRfqQuoteComponent, ModalDealReasonComponent,
     PaginatorComponent,
@@ -73,6 +74,13 @@ export class DetailsPage implements OnInit, OnDestroy {
   quotes = signal<DexDeal[]>([]);
   refreshing = signal(false);
   tab = signal<'terms' | 'board'>('board');
+
+  /** The tab bar (Standard 2). Board first: it is the answer the page exists for. */
+  readonly tabDefs = computed<TabDef[]>(() => [
+    { key: 'board', label: 'dex.rfqs.details.tabBoard' },
+    { key: 'terms', label: 'dex.rfqs.details.tabTerms' },
+  ]);
+
 
   /** Our own subscriptions — used to decide whether we are the requester or a dealer. */
   private mySubscriptions = signal<Set<string>>(new Set());

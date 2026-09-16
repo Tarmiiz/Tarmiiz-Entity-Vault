@@ -13,6 +13,7 @@ import { AlertService } from '../../../shared/components/alerts/alert/alert.serv
 import { CreditPosition, CreditObligation, CreditSettlement, User } from '../../../shared/models/data.model';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
 
 /**
  * Settlements — the fiat leg of the credit ledger (issuer/DEX model D9-D11).
@@ -26,7 +27,7 @@ import { PaginatorComponent, pageSlice } from '../../../shared/components/pagina
   templateUrl: './settlements.page.html',
   styleUrls: ['./settlements.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, MoneyPipe, PaginatorComponent],
+  imports: [TabsComponent, CommonModule, FormsModule, HeaderComponent, TranslatePipe, MoneyPipe, PaginatorComponent],
 })
 export class SettlementsPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -42,6 +43,11 @@ export class SettlementsPage implements OnInit {
   selfEntity = '';
 
   activeTab = signal<'positions' | 'obligations' | 'settlements'>('positions');
+  /** The tab bar as TabDefs (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => (['positions', 'obligations', 'settlements'] as const).map(t => ({
+    key: t, label: 'settlements.tabs.' + t,
+  })));
+
   loaded = signal(false);
 
   positions   = signal<CreditPosition[]>([]);

@@ -23,6 +23,7 @@ import { PaginatorComponent, pageSlice } from '../../../../../shared/components/
 import { ModalDealTermsComponent } from '../modals/modal-deal-terms/modal-deal-terms.component';
 import { ModalDealTermsService } from '../modals/modal-deal-terms/modal-deal-terms.service';
 import { DEAL_STATUS_LABEL, DEAL_STATUS_CLASS, dealSideLabel, dealFundingLabel } from '../deal-labels';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 /**
  * Negotiated OTC deals — the bilateral surface, in contrast to the anonymous order book.
@@ -42,7 +43,7 @@ import { DEAL_STATUS_LABEL, DEAL_STATUS_CLASS, dealSideLabel, dealFundingLabel }
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     FormsModule, HeaderComponent, LiveIndicatorComponent, RefreshButtonComponent,
     TranslatePipe, PaginatorComponent, MoneyPipe, ModalDealTermsComponent,
   ],
@@ -60,6 +61,14 @@ export class ListPage implements OnInit, OnDestroy {
   features = inject(FeaturesService);
 
   tab = signal<'inbox' | 'approvals' | 'all'>('inbox');
+  /** The tab bar (Standard 2). Counts are omitted when zero so an empty role
+   *  shows no badge rather than a confident 0. */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'inbox',     label: 'dex.deals.tabs.inbox',     count: this.inbox().length || undefined },
+    { key: 'approvals', label: 'dex.deals.tabs.approvals', count: this.approvals().length || undefined, tone: 'attention' as const },
+    { key: 'all',       label: 'dex.deals.tabs.all' },
+  ]);
+
   inbox = signal<DexDeal[]>([]);
   approvals = signal<DexDeal[]>([]);
   all = signal<DexDeal[]>([]);

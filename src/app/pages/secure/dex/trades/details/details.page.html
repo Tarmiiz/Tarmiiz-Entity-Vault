@@ -1,15 +1,15 @@
 <app-header [title]="'dex.trades.title' | translate"></app-header>
 
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
-  <nav class="flex" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+<div class="px-6 pt-4 pb-3 flex items-center justify-between">
+  <nav aria-label="Breadcrumb">
+    <ol class="inline-flex items-center gap-1.5">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/dex/trades/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.trades.details.breadcrumb' | translate }}</a>
+        <a routerLink="/authorized/dex/trades/list" class="text-sm font-medium text-gray-500 hover:text-[var(--brand-primary)] transition-colors">{{ 'dex.trades.details.breadcrumb' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
           <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">#{{ tradeId() }}</span>
+          <span class="text-sm font-semibold text-gray-900">#{{ tradeId() }}</span>
         </div>
       </li>
     </ol>
@@ -17,7 +17,7 @@
   <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
 
     <div class="bg-white rounded-lg shadow-md p-2">

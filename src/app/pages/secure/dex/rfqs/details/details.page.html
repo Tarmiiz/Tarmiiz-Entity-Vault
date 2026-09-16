@@ -1,10 +1,10 @@
 <app-header [title]="'dex.rfqs.title' | translate"></app-header>
 
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
-  <nav class="flex" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+<div class="px-6 pt-4 pb-3 flex items-center justify-between">
+  <nav aria-label="Breadcrumb">
+    <ol class="inline-flex items-center gap-1.5">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/dex/rfqs/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.rfqs.details.breadcrumb' | translate }}</a>
+        <a routerLink="/authorized/dex/rfqs/list" class="text-sm font-medium text-gray-500 hover:text-[var(--brand-primary)] transition-colors">{{ 'dex.rfqs.details.breadcrumb' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -41,7 +41,7 @@
 <app-modal-rfq-quote />
 <app-modal-deal-reason />
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
     @if (request(); as q) {
 
@@ -104,20 +104,7 @@
           </div>
         </div>
 
-        <div class="flex items-center border-b border-gray-200">
-          <button (click)="tab.set('board')"
-            class="px-4 py-1.5.5 text-xs font-medium transition-colors border-b-2"
-            [class.border-indigo-600]="tab() === 'board'" [class.text-indigo-700]="tab() === 'board'"
-            [class.border-transparent]="tab() !== 'board'" [class.text-gray-500]="tab() !== 'board'">
-            {{ 'dex.rfqs.details.tabBoard' | translate }}
-          </button>
-          <button (click)="tab.set('terms')"
-            class="px-4 py-1.5.5 text-xs font-medium transition-colors border-b-2"
-            [class.border-indigo-600]="tab() === 'terms'" [class.text-indigo-700]="tab() === 'terms'"
-            [class.border-transparent]="tab() !== 'terms'" [class.text-gray-500]="tab() !== 'terms'">
-            {{ 'dex.rfqs.details.tabTerms' | translate }}
-          </button>
-        </div>
+        <app-tabs [tabs]="tabDefs()" [active]="tab()" (select)="tab.set($any($event))" />
 
         @if (tab() === 'board') {
           <div class="p-4">

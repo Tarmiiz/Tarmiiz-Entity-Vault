@@ -3296,7 +3296,8 @@
       "tamperEvidenceChain": "(tamper-evidence chain)",
       "tampered": "Tampered",
       "verified": "Verified",
-      "loadingEvent": "Loading audit event…"
+      "loadingEvent": "Loading audit event…",
+      "tabChainShort": "Chain"
     },
     "table": {
       "time": "Time",
@@ -3561,7 +3562,8 @@
         "loadingOrder": "Loading order...",
         "tabs": {
           "info": "Information",
-          "linkedTrades": "Linked Trades ({{count}})"
+          "linkedTrades": "Linked Trades ({{count}})",
+          "linkedTradesShort": "Linked Trades"
         },
         "trades": {
           "buyer": "Buyer",

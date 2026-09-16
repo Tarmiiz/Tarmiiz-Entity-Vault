@@ -3296,7 +3296,8 @@
       "tamperEvidenceChain": "(سلسلة إثبات عدم التلاعب)",
       "tampered": "تم التلاعب",
       "verified": "تم التحقق",
-      "loadingEvent": "جارٍ تحميل حدث التدقيق…"
+      "loadingEvent": "جارٍ تحميل حدث التدقيق…",
+      "tabChainShort": "السلسلة"
     },
     "table": {
       "time": "الوقت",
@@ -3561,7 +3562,8 @@
         "loadingOrder": "جارٍ تحميل الأمر...",
         "tabs": {
           "info": "المعلومات",
-          "linkedTrades": "الصفقات المرتبطة ({{count}})"
+          "linkedTrades": "الصفقات المرتبطة ({{count}})",
+          "linkedTradesShort": "الصفقات المرتبطة"
         },
         "trades": {
           "buyer": "المشتري",

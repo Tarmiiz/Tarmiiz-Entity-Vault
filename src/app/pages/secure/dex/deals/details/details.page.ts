@@ -24,6 +24,7 @@ import {
   dealSideLabel, dealFundingLabel,
 } from '../deal-labels';
 import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 /**
  * One negotiated deal: its terms, its two escrow legs, and the round-by-round trail.
@@ -38,7 +39,7 @@ import { PaginatorComponent, pageSlice } from '../../../../../shared/components/
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     HeaderComponent, LiveIndicatorComponent, RefreshButtonComponent, RouterLink, TranslatePipe, MoneyPipe,
     ModalDealTermsComponent, ModalDealReasonComponent,
     PaginatorComponent,
@@ -67,6 +68,13 @@ export class DetailsPage implements OnInit, OnDestroy {
   pagedRounds = computed(() => pageSlice(this.rounds(), this.roundsPage(), this.roundsPageSize()));
   refreshing = signal(false);
   tab = signal<'terms' | 'rounds' | 'settlement'>('terms');
+  /** The tab bar (Standard 2). The rounds count is a plain tally, so neutral. */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'terms',      label: 'dex.deals.details.tabs.terms' },
+    { key: 'rounds',     label: 'dex.deals.details.tabs.rounds', count: this.rounds().length },
+    { key: 'settlement', label: 'dex.deals.details.tabs.settlement' },
+  ]);
+
 
   /** Our own subscriptions, used to decide which side of a deal (if either) is ours. */
   private mySubscriptions = signal<Set<string>>(new Set());

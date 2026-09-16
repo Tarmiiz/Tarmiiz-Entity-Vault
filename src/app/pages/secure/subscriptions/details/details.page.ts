@@ -35,6 +35,7 @@ import { LiveIndicatorComponent } from '../../../../shared/components/live-indic
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 
 
 
@@ -43,7 +44,7 @@ import { PaginatorComponent, pageSlice } from '../../../../shared/components/pag
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
@@ -80,6 +81,19 @@ export class DetailsPage implements OnInit {
   private _socketSub: RxSubscription | null = null;
 
   activeTab = signal<'overview' | 'info' | 'holdings' | 'trxs' | 'credit' | 'docs' | 'identity'>('overview');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'overview', label: 'subscriptions.details.tabs.overview' },
+    { key: 'info',     label: 'subscriptions.details.tabs.info' },
+    { key: 'holdings', label: 'subscriptions.details.tabs.holdings' },
+    { key: 'trxs',     label: 'subscriptions.details.tabs.transactions' },
+    { key: 'credit',   label: 'subscriptions.details.tabs.credit' },
+    ...(this.features.systemFunctionEnabled('view-documents')
+      ? [{ key: 'docs', label: 'subscriptions.details.tabs.documents' }] : []),
+    ...(this.features.systemFunctionEnabled('view-identity-data')
+      ? [{ key: 'identity', label: 'subscriptions.details.tabs.identity' }] : []),
+  ]);
+
 
   // ── Identity Data (own-originated eKYC verifications — unified-eKYC §2.4) ──────
   // Lists the verifications THIS entity originated for the subscriber's identity and

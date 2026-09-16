@@ -2,30 +2,10 @@
 
 <div class="grow p-4 pt-4 overflow-y-auto">
 
-  <!-- Tab Navigation -->
-  <div class="bg-white rounded-t-lg shadow-md p-2">
-    <div class="flex border-b border-gray-200">
-      <button (click)="setTab('countries')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'countries'"
-        [class.border-b-2]="activeTab() === 'countries'"
-        [class.border-blue-600]="activeTab() === 'countries'"
-        [class.bg-blue-600]="activeTab() === 'countries'">
-        {{ 'variables.tabs.countries' | translate }}
-      </button>
-      <button (click)="setTab('variables')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'variables'"
-        [class.border-b-2]="activeTab() === 'variables'"
-        [class.border-blue-600]="activeTab() === 'variables'"
-        [class.bg-blue-600]="activeTab() === 'variables'">
-        {{ 'variables.title' | translate }}
-      </button>
-    </div>
-  </div>
+  <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
   <!-- Tab Content -->
-  <div class="bg-white rounded-b-lg shadow-md p-2">
+  <div class="card-v4 p-2">
 
     <!-- Countries Tab -->
     @if (activeTab() === 'countries') {

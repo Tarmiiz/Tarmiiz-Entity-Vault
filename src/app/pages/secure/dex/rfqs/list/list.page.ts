@@ -22,6 +22,7 @@ import { PaginatorComponent, pageSlice } from '../../../../../shared/components/
 import { ModalRfqCreateComponent } from '../modals/modal-rfq-create/modal-rfq-create.component';
 import { ModalRfqCreateService } from '../modals/modal-rfq-create/modal-rfq-create.service';
 import { RFQ_STATUS_LABEL, RFQ_STATUS_CLASS, rfqSideLabel, rfqFundingLabel } from '../rfq-labels';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 /**
  * Requests for quote — the competitive surface, where the deals page is bilateral.
@@ -41,7 +42,7 @@ import { RFQ_STATUS_LABEL, RFQ_STATUS_CLASS, rfqSideLabel, rfqFundingLabel } fro
   templateUrl: './list.page.html',
   styleUrls: ['./list.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     FormsModule, HeaderComponent, LiveIndicatorComponent, RefreshButtonComponent,
     TranslatePipe, PaginatorComponent, ModalRfqCreateComponent,
   ],
@@ -59,6 +60,16 @@ export class ListPage implements OnInit, OnDestroy {
   features = inject(FeaturesService);
 
   tab = signal<'inbox' | 'mine' | 'all'>('inbox');
+
+  /** The tab bar (Standard 2). Counts omitted when zero — an empty role shows no
+   *  badge rather than a confident 0. Inbox is `attention` because it is the only
+   *  one of the three that is actually work. */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'inbox', label: 'dex.rfqs.tabs.inbox', count: this.inbox().length || undefined, tone: 'attention' as const },
+    { key: 'mine',  label: 'dex.rfqs.tabs.mine',  count: this.mine().length || undefined },
+    { key: 'all',   label: 'dex.rfqs.tabs.all' },
+  ]);
+
   inbox = signal<DexRfqRequest[]>([]);
   mine = signal<DexRfqRequest[]>([]);
   all = signal<DexRfqRequest[]>([]);

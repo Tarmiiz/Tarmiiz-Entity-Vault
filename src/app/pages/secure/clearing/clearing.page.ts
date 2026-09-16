@@ -17,6 +17,7 @@ import {
 } from '../../../shared/models/data.model';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
 
 type Tab = 'account' | 'deliveries' | 'members' | 'memberships';
 
@@ -38,7 +39,7 @@ type Tab = 'account' | 'deliveries' | 'members' | 'memberships';
   templateUrl: './clearing.page.html',
   styleUrls: ['./clearing.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     CommonModule, FormsModule, HeaderComponent, TranslatePipe, MoneyPipe,
     PaginatorComponent, RefreshButtonComponent,
   ],
@@ -56,6 +57,11 @@ export class ClearingPage implements OnInit {
   selfEntity = '';
 
   activeTab = signal<Tab>('deliveries');
+  /** The tab bar as TabDefs (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => this.visibleTabs().map(t => ({
+    key: t, label: 'clearing.tabs.' + t,
+  })));
+
   loaded = signal(false);
   refreshing = signal(false);
 

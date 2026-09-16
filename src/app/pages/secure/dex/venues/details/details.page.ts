@@ -21,13 +21,14 @@ import { DexVenue, DexOrder, DexTrade, DexVenueMember } from '../../../../../sha
 import { ModalVenueStateService } from '../modals/modal-venue-state/modal-venue-state.service';
 import { ModalVenueStateComponent } from '../modals/modal-venue-state/modal-venue-state.component';
 import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 @Component({
   selector: 'app-dex-venue-details',
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, ModalVenueStateComponent, ModalServiceFeeConfigComponent, TranslatePipe, PaginatorComponent],
+  imports: [TabsComponent, FormsModule, HeaderComponent, LiveIndicatorComponent, RouterLink, ModalVenueStateComponent, ModalServiceFeeConfigComponent, TranslatePipe, PaginatorComponent],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -48,6 +49,16 @@ export class DetailsPage implements OnInit, OnDestroy {
   serviceAddress = signal<string>('');
   venue = signal<DexVenue | undefined>(undefined);
   activeTab = signal<'info' | 'assets' | 'orders' | 'trades' | 'members' | 'contract'>('info');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'info',     label: 'dex.venues.details.tabs.info' },
+    { key: 'assets',   label: 'dex.venues.details.tabs.assets' },
+    { key: 'orders',   label: 'dex.venues.details.tabs.orders' },
+    { key: 'trades',   label: 'dex.venues.details.tabs.trades' },
+    { key: 'members',  label: 'dex.venues.details.tabs.members' },
+    { key: 'contract', label: 'dex.venues.details.tabs.contract' },
+  ]);
+
 
   // ── The venue CONTRACT (Phase 16 A6) ───────────────────────────────────────
   //

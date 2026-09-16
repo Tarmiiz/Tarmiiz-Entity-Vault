@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy , computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -8,6 +8,7 @@ import { ApiService } from '../../../../shared/services/api.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AuditLog } from '../../../../shared/models/data.model';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 
 @Component({
   selector: 'app-logs-details',
@@ -15,7 +16,7 @@ import { AuditLog } from '../../../../shared/models/data.model';
   styleUrls: ['./details.page.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, HeaderComponent, TranslatePipe]
+  imports: [TabsComponent, CommonModule, RouterLink, HeaderComponent, TranslatePipe]
 })
 export class DetailsPage implements OnInit {
   private apiService = inject(ApiService);
@@ -29,6 +30,13 @@ export class DetailsPage implements OnInit {
   chain = signal<AuditLog[]>([]);
   refNo = signal<string>('');
   activeTab = signal<'info' | 'chain'>('info');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'info', label: 'logs.details.tabInfo' },
+    ...(this.chain().length
+      ? [{ key: 'chain', label: 'logs.details.tabChainShort', count: this.chain().length }] : []),
+  ]);
+
 
   setTab(tab: 'info' | 'chain') { this.activeTab.set(tab); }
 

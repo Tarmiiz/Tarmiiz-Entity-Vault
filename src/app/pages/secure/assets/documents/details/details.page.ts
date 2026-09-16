@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal , computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -17,6 +17,7 @@ import { ModalDocumentShareComponent } from '../../../documents/modals/modal-doc
 import { ModalDocumentSignService } from '../../../documents/modals/modal-document-sign/modal-document-sign.service';
 import { ModalDocumentSignComponent } from '../../../documents/modals/modal-document-sign/modal-document-sign.component';
 import { AuthService } from '../../../../../shared/services/auth.service';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 type TabId = 'info' | 'sharing' | 'signatures';
 
@@ -24,7 +25,7 @@ type TabId = 'info' | 'sharing' | 'signatures';
   selector: 'app-asset-document-details',
   templateUrl: './details.page.html',
   standalone: true,
-  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentShareComponent, ModalDocumentSignComponent, TranslatePipe]
+  imports: [TabsComponent, FormsModule, RouterLink, HeaderComponent, ModalDocumentShareComponent, ModalDocumentSignComponent, TranslatePipe]
 })
 export class DetailsPage implements OnInit {
   private apiService = inject(ApiService);
@@ -47,6 +48,13 @@ export class DetailsPage implements OnInit {
   sharedWith = signal<string[]>([]);
   signatures = signal<DocumentSignature[]>([]);
   activeTab = signal<TabId>('info');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'info',       label: 'assets.documents.details.tabs.info' },
+    { key: 'sharing',    label: 'assets.documents.details.tabs.sharing' },
+    { key: 'signatures', label: 'assets.documents.details.tabs.signatures' },
+  ]);
+
 
   docTypes = signal<GlobalVariable[]>([]);
   docStates = signal<GlobalVariable[]>([]);

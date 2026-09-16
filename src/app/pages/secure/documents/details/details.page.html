@@ -1,7 +1,7 @@
 <app-header [title]="'documents.details.title' | translate"></app-header>
 
 <!-- breadcrumb -->
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between gap-3">
+<div class="px-6 pt-4 pb-3 flex items-center justify-between gap-3">
   @if (document(); as doc) {
     <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -43,51 +43,13 @@
   }
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
 
-    <!-- Tab Navigation -->
-    <div class="bg-white rounded-t-lg shadow-md p-2">
-      <div class="flex border-b border-gray-200">
-        <button (click)="setTab('info')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'info'"
-          [class.border-b-2]="activeTab() === 'info'"
-          [class.border-blue-600]="activeTab() === 'info'"
-          [class.bg-blue-600]="activeTab() === 'info'">
-          {{ 'documents.details.tabs.info' | translate }}
-        </button>
-        @if (document()?.documentType === 2) {
-          <button (click)="setTab('sharing')"
-            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-            [class.text-white]="activeTab() === 'sharing'"
-            [class.border-b-2]="activeTab() === 'sharing'"
-            [class.border-blue-600]="activeTab() === 'sharing'"
-            [class.bg-blue-600]="activeTab() === 'sharing'">
-            {{ 'documents.details.tabs.sharing' | translate }} ({{ visibleSharedWith().length }})
-          </button>
-        }
-        <button (click)="setTab('signatures')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'signatures'"
-          [class.border-b-2]="activeTab() === 'signatures'"
-          [class.border-blue-600]="activeTab() === 'signatures'"
-          [class.bg-blue-600]="activeTab() === 'signatures'">
-          {{ 'documents.details.tabs.signatures' | translate }} ({{ signatures().length }})
-        </button>
-        <button (click)="setTab('versions')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'versions'"
-          [class.border-b-2]="activeTab() === 'versions'"
-          [class.border-blue-600]="activeTab() === 'versions'"
-          [class.bg-blue-600]="activeTab() === 'versions'">
-          {{ 'documents.details.tabs.versions' | translate }} ({{ versions().length }})
-        </button>
-      </div>
-    </div>
+    <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
     <!-- Tab content -->
-    <div class="bg-white rounded-b-lg shadow-md p-2">
+    <div class="card-v4 p-2">
       @if (document(); as doc) {
 
         @if (activeTab() === 'info') {

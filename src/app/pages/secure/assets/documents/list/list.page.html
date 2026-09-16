@@ -1,10 +1,10 @@
 <app-header [title]="'documents.title' | translate"></app-header>
 
-<div class="px-6 py-4 border-b bg-gray-200">
-  <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+<div class="px-6 pt-4 pb-3">
+  <nav [attr.aria-label]="'common.breadcrumb' | translate">
+    <ol class="inline-flex items-center gap-1.5">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/assets/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'assets.title' | translate }}</a>
+        <a routerLink="/authorized/assets/list" class="text-sm font-medium text-gray-500 hover:text-[var(--brand-primary)] transition-colors">{{ 'assets.title' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -15,7 +15,7 @@
       <li>
         <div class="flex items-center">
           <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ 'documents.title' | translate }}</span>
+          <span class="text-sm font-semibold text-gray-900">{{ 'documents.title' | translate }}</span>
         </div>
       </li>
     </ol>

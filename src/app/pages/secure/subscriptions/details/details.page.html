@@ -1,7 +1,7 @@
 ﻿<app-header [title]="'subscriptions.details.title' | translate"></app-header>
 
 <!-- breadcrumb -->
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+<div class="px-6 pt-4 pb-3 flex items-center justify-between">
   @if (subscription(); as op) {
     <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
       <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -24,88 +24,13 @@
   <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
     
-    <!-- Tab Navigation -->
-    <div class="bg-white rounded-t-lg shadow-md p-2">
-      <div class="flex border-b border-gray-200">
-
-        <button (click)="setTab('overview')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'overview'"
-          [class.border-b-2]="activeTab() === 'overview'"
-          [class.border-blue-600]="activeTab() === 'overview'"
-          [class.bg-blue-600]="activeTab() === 'overview'"
-        >
-          {{ 'subscriptions.details.tabs.overview' | translate }}
-        </button>
-        <button (click)="setTab('info')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'info'"
-          [class.border-b-2]="activeTab() === 'info'"
-          [class.border-blue-600]="activeTab() === 'info'"
-          [class.bg-blue-600]="activeTab() === 'info'"
-        >
-          {{ 'subscriptions.details.tabs.info' | translate }}
-        </button>
-        <button (click)="setTab('holdings')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'holdings'"
-          [class.border-b-2]="activeTab() === 'holdings'"
-          [class.border-blue-600]="activeTab() === 'holdings'"
-          [class.bg-blue-600]="activeTab() === 'holdings'"
-        >
-          {{ 'subscriptions.details.tabs.holdings' | translate }}
-        </button>
-        <button (click)="setTab('trxs')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'trxs'"
-          [class.border-b-2]="activeTab() === 'trxs'"
-          [class.border-blue-600]="activeTab() === 'trxs'"
-          [class.bg-blue-600]="activeTab() === 'trxs'"
-        >
-          {{ 'subscriptions.details.tabs.transactions' | translate }}
-        </button>
-        <button (click)="setTab('credit')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'credit'"
-          [class.border-b-2]="activeTab() === 'credit'"
-          [class.border-blue-600]="activeTab() === 'credit'"
-          [class.bg-blue-600]="activeTab() === 'credit'"
-        >
-          {{ 'subscriptions.details.tabs.credit' | translate }}
-        </button>
-        @if (features.systemFunctionEnabled('view-documents')) {
-          <button (click)="setTab('docs')"
-            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-            [class.text-white]="activeTab() === 'docs'"
-            [class.border-b-2]="activeTab() === 'docs'"
-            [class.border-blue-600]="activeTab() === 'docs'"
-            [class.bg-blue-600]="activeTab() === 'docs'"
-          >
-            {{ 'subscriptions.details.tabs.documents' | translate }}
-          </button>
-        }
-        <!-- Identity Data is gated by its OWN key, not view-documents: it renders the
-             decrypted eKYC payload (subscriber PII + ID images), which is a different
-             privilege from using the documents module. -->
-        @if (features.systemFunctionEnabled('view-identity-data')) {
-          <button (click)="setTab('identity')"
-            class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-            [class.text-white]="activeTab() === 'identity'"
-            [class.border-b-2]="activeTab() === 'identity'"
-            [class.border-blue-600]="activeTab() === 'identity'"
-            [class.bg-blue-600]="activeTab() === 'identity'"
-          >
-            {{ 'subscriptions.details.tabs.identity' | translate }}
-          </button>
-        }
-      </div>
-    </div>
+    <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
     <!-- Tab Content -->
-    <div class="bg-white rounded-b-lg shadow-md p-2">
+    <div class="card-v4 p-2">
       @if (subscription(); as v) {
 
         <!-- overview tab -->

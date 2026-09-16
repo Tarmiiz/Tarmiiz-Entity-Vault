@@ -19,6 +19,7 @@ import { ModalIdentifierComponent } from '../../../shared/components/modal-ident
 import { ModalImageAddService } from '../../../shared/components/modal-image-add/modal-image-add.service';
 import { ModalImageAddComponent } from '../../../shared/components/modal-image-add/modal-image-add.component';
 import { FeaturesService } from '../../../shared/services/features.service';
+import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
 export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
@@ -34,7 +35,7 @@ export interface MediaIndex {
   templateUrl: './profile.page.html',
   styleUrls: ['./profile.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     FormsModule,
     HeaderComponent,
     ModalProfileMetadataEditComponent,
@@ -54,6 +55,14 @@ export class ProfilePage implements OnInit {
   private translate = inject(TranslateService);
 
   activeTab = signal<'info' | 'metadata' | 'identifiers' | 'images'>('info');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'info',        label: 'profile.tabs.info' },
+    { key: 'metadata',    label: 'profile.tabs.metadata' },
+    { key: 'identifiers', label: 'profile.tabs.identifiers' },
+    { key: 'images',      label: 'media.tabTitle' },
+  ]);
+
   info = signal<Entity | undefined>(undefined);
 
   identifiers = signal<EntityIdentifier[]>([]);

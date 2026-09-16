@@ -10,6 +10,7 @@ import { LoadingService } from '../../../shared/components/alerts/loading/loadin
 
 import { Country, GlobalVariable } from '../../../shared/models/data.model';
 import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
 
 
 @Component({
@@ -17,7 +18,7 @@ import { PaginatorComponent, pageSlice } from '../../../shared/components/pagina
   templateUrl: './system.page.html',
   styleUrls: ['./system.page.scss'],
   standalone: true,
-  imports: [
+  imports: [TabsComponent, 
     FormsModule,
     HeaderComponent, TranslatePipe,
     PaginatorComponent,
@@ -28,6 +29,12 @@ export class SystemPage implements OnInit {
   private apiService = inject(ApiService);
 
   activeTab = signal<'countries' | 'variables'>('countries');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'countries', label: 'variables.tabs.countries' },
+    { key: 'variables', label: 'variables.title' },
+  ]);
+
 
   countriesSearchTerm = signal('');
   variablesSearchTerm = signal('');

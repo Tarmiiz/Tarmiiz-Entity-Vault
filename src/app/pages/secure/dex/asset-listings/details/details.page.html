@@ -1,44 +1,28 @@
 ﻿<app-header [title]="'dex.listings.details.title' | translate"></app-header>
 
-<div class="px-6 py-4 border-b bg-gray-200">
-  <nav class="flex" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+<div class="px-6 pt-4 pb-3">
+  <nav aria-label="Breadcrumb">
+    <ol class="inline-flex items-center gap-1.5">
       <li class="inline-flex items-center">
         <a routerLink="/authorized/dex/asset-listings/list"
-          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.listings.title' | translate }}</a>
+          class="text-sm font-medium text-gray-500 hover:text-[var(--brand-primary)] transition-colors">{{ 'dex.listings.title' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
           <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-          <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ listing()?.assetName || (listing()?.baseAsset?.slice(0,10) + '…') }}</span>
+          <span class="text-sm font-semibold text-gray-900">{{ listing()?.assetName || (listing()?.baseAsset?.slice(0,10) + '…') }}</span>
         </div>
       </li>
     </ol>
   </nav>
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
 
-    <!-- Tab bar -->
-    <div class="bg-white rounded-t-lg shadow-md p-2">
-      <div class="flex border-b border-gray-200">
-        <button (click)="setTab('info')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'info'"
-          [class.border-b-2]="activeTab() === 'info'"
-          [class.border-blue-600]="activeTab() === 'info'"
-          [class.bg-blue-600]="activeTab() === 'info'">{{ 'dex.listings.details.tabs.info' | translate }}</button>
-        <button (click)="setTab('venues')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'venues'"
-          [class.border-b-2]="activeTab() === 'venues'"
-          [class.border-blue-600]="activeTab() === 'venues'"
-          [class.bg-blue-600]="activeTab() === 'venues'">{{ 'dex.listings.details.tabs.venues' | translate }}</button>
-      </div>
-    </div>
+    <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
-    <div class="bg-white rounded-b-lg shadow-md p-2">
+    <div class="card-v4 p-2">
       @if (listing(); as l) {
 
         @if (activeTab() === 'info') {

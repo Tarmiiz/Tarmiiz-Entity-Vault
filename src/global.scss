@@ -545,6 +545,16 @@ html.lang-ar table td.text-right {
   color: var(--brand-primary);
 }
 
+/* The ONE case where a badge is a STATUS rather than a quantity: "there is
+ * something here for you to act on" — a pending-approvals queue, an inbox.
+ * Amber rather than red: it is work waiting, not a failure. Kept legible on the
+ * active pill too, where the neutral rule above would otherwise repaint it. */
+.tab-v4-badge.is-attention,
+.tab-v4.is-active .tab-v4-badge.is-attention {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 /* ─── .tz-mark — the brand loading mark ───────────────────────────────────────
  * The Tarmiiz icon assembling itself out of six blocks. Replaced the Tailwind
  * animate-spin SVG in the loading overlay on 2026-09-14.

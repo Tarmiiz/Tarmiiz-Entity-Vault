@@ -11,6 +11,7 @@ import { LoadingService } from '../../../shared/components/alerts/loading/loadin
 import { AlertService } from '../../../shared/components/alerts/alert/alert.service';
 import { Service, User } from '../../../shared/models/data.model';
 import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
 
 interface CustodyMandate {
   service: string;
@@ -51,7 +52,7 @@ interface CustodyHold {
   templateUrl: './custody.page.html',
   styleUrls: ['./custody.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, PaginatorComponent],
+  imports: [TabsComponent, CommonModule, FormsModule, HeaderComponent, TranslatePipe, PaginatorComponent],
 })
 export class CustodyPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -66,6 +67,18 @@ export class CustodyPage implements OnInit {
 
   // One tab per group. Holds live under 'assets', so a hold placed there never switches tabs.
   readonly tabs = ['underCustody', 'assets'] as const;
+
+  /**
+   * The tab bar as TabDefs (Standard 2). The per-tab COUNT is load-bearing here,
+   * not decoration: it is what tells a custodian where the content is without
+   * clicking through empty tabs. It stays `undefined` until `loaded()`, so an
+   * un-fetched tab shows no badge rather than a confident 0.
+   */
+  tabDefs = computed<TabDef[]>(() => this.tabs.map(t => ({
+    key: t,
+    label: 'custody.tabs.' + t,
+    count: this.loaded() ? this.tabCount(t) : undefined,
+  })));
   activeTab = signal<'underCustody' | 'assets'>('underCustody');
 
   tabCount(tab: 'underCustody' | 'assets'): number {

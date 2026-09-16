@@ -16,6 +16,7 @@ import { ModalServiceFeeConfigComponent } from '../services/modals/modal-service
 import { DistributionAgreement, PrimaryTrade, User } from '../../../shared/models/data.model';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { PaginatorComponent, pageSlice } from '../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
 
 /**
  * Distribution — the distributor side of the issuer/distributor model (D1/D4).
@@ -31,7 +32,7 @@ import { PaginatorComponent, pageSlice } from '../../../shared/components/pagina
   templateUrl: './distribution.page.html',
   styleUrls: ['./distribution.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent, ModalServiceFeeConfigComponent, TranslatePipe, MoneyPipe, PaginatorComponent],
+  imports: [TabsComponent, CommonModule, FormsModule, HeaderComponent, ModalServiceFeeConfigComponent, TranslatePipe, MoneyPipe, PaginatorComponent],
 })
 export class DistributionPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -47,6 +48,11 @@ export class DistributionPage implements OnInit {
   userInfo!: User;
 
   activeTab = signal<'agreements' | 'trades'>('agreements');
+  /** The tab bar as TabDefs (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => (['agreements', 'trades'] as const).map(t => ({
+    key: t, label: 'distribution.tabs.' + t,
+  })));
+
   loaded = signal(false);
 
   agreements = signal<DistributionAgreement[]>([]);

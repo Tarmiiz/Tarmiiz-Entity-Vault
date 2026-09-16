@@ -2,40 +2,17 @@
 <app-live-indicator [refreshing]="refreshing()"></app-live-indicator>
 <app-modal-deal-terms />
 
-<div class="flex-grow p-4 bg-gray-300 overflow-y-auto">
+<div class="flex-grow p-4 overflow-y-auto">
 
   <!-- A deal reaches this tenant in three different roles; one merged table would bury
-       the only two that are actionable. -->
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 mb-3">
-    <div class="flex items-center border-b border-gray-200">
-      <button (click)="setTab('inbox')"
-        class="px-4 py-1.5.5 text-xs font-medium transition-colors border-b-2"
-        [class.border-indigo-600]="tab() === 'inbox'" [class.text-indigo-700]="tab() === 'inbox'"
-        [class.border-transparent]="tab() !== 'inbox'" [class.text-gray-500]="tab() !== 'inbox'">
-        {{ 'dex.deals.tabs.inbox' | translate }}
-        @if (inbox().length) {
-          <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px]">{{ inbox().length }}</span>
-        }
-      </button>
-      <button (click)="setTab('approvals')"
-        class="px-4 py-1.5.5 text-xs font-medium transition-colors border-b-2"
-        [class.border-indigo-600]="tab() === 'approvals'" [class.text-indigo-700]="tab() === 'approvals'"
-        [class.border-transparent]="tab() !== 'approvals'" [class.text-gray-500]="tab() !== 'approvals'">
-        {{ 'dex.deals.tabs.approvals' | translate }}
-        @if (approvals().length) {
-          <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px]">{{ approvals().length }}</span>
-        }
-      </button>
-      <button (click)="setTab('all')"
-        class="px-4 py-1.5.5 text-xs font-medium transition-colors border-b-2"
-        [class.border-indigo-600]="tab() === 'all'" [class.text-indigo-700]="tab() === 'all'"
-        [class.border-transparent]="tab() !== 'all'" [class.text-gray-500]="tab() !== 'all'">
-        {{ 'dex.deals.tabs.all' | translate }}
-      </button>
-      <div class="ml-auto pr-3">
-        <app-refresh-button [loading]="refreshing()" (refresh)="refresh(true)" />
-      </div>
-    </div>
+       the only two that are actionable. The badge on Approvals is `tone: 'attention'` —
+       amber, because that count means work is waiting, not just that rows exist. -->
+  <div class="flex items-start gap-2">
+    <div class="grow min-w-0"><app-tabs [tabs]="tabDefs()" [active]="tab()" (select)="setTab($any($event))" /></div>
+    <div class="mt-2 shrink-0"><app-refresh-button [loading]="refreshing()" (refresh)="refresh(true)" /></div>
+  </div>
+
+  <div class="card-v4 overflow-hidden">
 
     @if (tab() === 'inbox') {
       <p class="px-4 py-2 text-xs text-gray-500 bg-blue-50">{{ 'dex.deals.tabs.inboxHint' | translate }}</p>

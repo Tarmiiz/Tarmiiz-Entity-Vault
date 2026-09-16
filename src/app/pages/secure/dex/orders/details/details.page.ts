@@ -15,13 +15,14 @@ import { UtilsService } from '../../../../../shared/services/utils.service';
 import { DexOrder, DexTrade } from '../../../../../shared/models/data.model';
 import { FeaturesService } from '../../../../../shared/services/features.service';
 import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 @Component({
   selector: 'app-vault-dex-order-details',
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe, PaginatorComponent],
+  imports: [TabsComponent, HeaderComponent, LiveIndicatorComponent, RouterLink, TranslatePipe, PaginatorComponent],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -43,6 +44,12 @@ export class DetailsPage implements OnInit, OnDestroy {
   linkedTradesPageSize = signal(25);
   pagedLinkedTrades = computed(() => pageSlice(this.linkedTrades(), this.linkedTradesPage(), this.linkedTradesPageSize()));
   activeTab = signal<'info' | 'trades'>('info');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'info',   label: 'dex.orders.details.tabs.info' },
+    { key: 'trades', label: 'dex.orders.details.tabs.linkedTradesShort', count: this.linkedTrades().length },
+  ]);
+
   refreshing = signal(false);
 
   private sub?: Subscription;

@@ -17,13 +17,14 @@ import { ModalListingVenueTierChangeService } from '../modals/modal-listing-venu
 import { ModalListingVenueTierChangeComponent } from '../modals/modal-listing-venue-tier-change/modal-listing-venue-tier-change.component';
 import { FeaturesService } from '../../../../../shared/services/features.service';
 import { PaginatorComponent, pageSlice } from '../../../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../../../shared/components/tabs/tabs.component';
 
 @Component({
   selector: 'app-dex-asset-listing-details',
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent, ModalListingVenueTierChangeComponent, TranslatePipe, PaginatorComponent],
+  imports: [TabsComponent, FormsModule, HeaderComponent, RouterLink, ModalListingVenueAddComponent, ModalListingVenueTierChangeComponent, TranslatePipe, PaginatorComponent],
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);
@@ -43,6 +44,12 @@ export class DetailsPage implements OnInit {
   baseAsset  = signal<string>('');
   listing    = signal<DexAssetListing | undefined>(undefined);
   activeTab  = signal<'info' | 'venues'>('info');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'info',   label: 'dex.listings.details.tabs.info' },
+    { key: 'venues', label: 'dex.listings.details.tabs.venues' },
+  ]);
+
   // Initial tier presented in the Add Venue modal (only used at add time; tier is mutable afterwards).
   addInitialTier = signal<1 | 2 | 3>(1);
 

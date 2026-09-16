@@ -17,6 +17,7 @@ import { ModalDocumentShareComponent } from '../modals/modal-document-share/moda
 import { ModalDocumentSignService } from '../modals/modal-document-sign/modal-document-sign.service';
 import { ModalDocumentSignComponent } from '../modals/modal-document-sign/modal-document-sign.component';
 import { AuthService } from '../../../../shared/services/auth.service';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 
 type TabId = 'info' | 'sharing' | 'signatures' | 'versions';
 
@@ -25,7 +26,7 @@ type TabId = 'info' | 'sharing' | 'signatures' | 'versions';
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [FormsModule, RouterLink, HeaderComponent, ModalDocumentShareComponent, ModalDocumentSignComponent, TranslatePipe]
+  imports: [TabsComponent, FormsModule, RouterLink, HeaderComponent, ModalDocumentShareComponent, ModalDocumentSignComponent, TranslatePipe]
 })
 export class DetailsPage implements OnInit {
   private apiService = inject(ApiService);
@@ -57,6 +58,15 @@ export class DetailsPage implements OnInit {
   signatures = signal<DocumentSignature[]>([]);
   versions = signal<DocumentVersion[]>([]);
   activeTab = signal<TabId>('info');
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'info', label: 'documents.details.tabs.info' },
+    ...(this.document()?.documentType === 2
+      ? [{ key: 'sharing', label: 'documents.details.tabs.sharing' }] : []),
+    { key: 'signatures', label: 'documents.details.tabs.signatures' },
+    { key: 'versions',   label: 'documents.details.tabs.versions' },
+  ]);
+
 
   // Replace-file state (the affordance that actually produces versions past v1).
   replacing = signal(false);

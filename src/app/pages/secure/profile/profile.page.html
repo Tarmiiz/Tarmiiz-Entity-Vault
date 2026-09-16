@@ -2,51 +2,10 @@
 
 <div class="grow p-8 pt-8 overflow-y-auto">
 
-  <!-- Tab Navigation -->
-  <div class="bg-white rounded-t-lg shadow-md p-2">
-    <div class="flex border-b border-gray-200">
-
-      <button (click)="setTab('info')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'info'"
-        [class.border-b-2]="activeTab() === 'info'"
-        [class.border-blue-600]="activeTab() === 'info'"
-        [class.bg-blue-600]="activeTab() === 'info'"
-      >
-        {{ 'profile.tabs.info' | translate }}
-      </button>
-      <button (click)="setTab('metadata')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'metadata'"
-        [class.border-b-2]="activeTab() === 'metadata'"
-        [class.border-blue-600]="activeTab() === 'metadata'"
-        [class.bg-blue-600]="activeTab() === 'metadata'"
-      >
-        {{ 'profile.tabs.metadata' | translate }}
-      </button>
-      <button (click)="setTab('identifiers')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'identifiers'"
-        [class.border-b-2]="activeTab() === 'identifiers'"
-        [class.border-blue-600]="activeTab() === 'identifiers'"
-        [class.bg-blue-600]="activeTab() === 'identifiers'"
-      >
-        {{ 'profile.tabs.identifiers' | translate }}
-      </button>
-      <button (click)="setTab('images')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'images'"
-        [class.border-b-2]="activeTab() === 'images'"
-        [class.border-blue-600]="activeTab() === 'images'"
-        [class.bg-blue-600]="activeTab() === 'images'"
-      >
-        {{ 'media.tabTitle' | translate }}
-      </button>
-    </div>
-  </div>
+  <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
   <!-- Tab Content -->
-  <div class="bg-white rounded-b-lg shadow-md p-2">
+  <div class="card-v4 p-2">
     @if (info(); as v) {
 
       <!-- info tab -->

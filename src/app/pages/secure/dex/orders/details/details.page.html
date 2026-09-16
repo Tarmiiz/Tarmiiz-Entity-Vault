@@ -1,6 +1,6 @@
 <app-header [title]="'dex.orders.title' | translate"></app-header>
 
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
+<div class="px-6 pt-4 pb-3 flex items-center justify-between">
   <nav class="flex" [attr.aria-label]="'common.breadcrumb' | translate">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
       <li class="inline-flex items-center">
@@ -17,25 +17,12 @@
   <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
 
-    <div class="bg-white rounded-t-lg shadow-md p-2">
-      <div class="flex border-b border-gray-200">
-        <button (click)="setTab('info')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'info'" [class.border-b-2]="activeTab() === 'info'" [class.border-blue-600]="activeTab() === 'info'" [class.bg-blue-600]="activeTab() === 'info'">
-          {{ 'dex.orders.details.tabs.info' | translate }}
-        </button>
-        <button (click)="setTab('trades')"
-          class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-          [class.text-white]="activeTab() === 'trades'" [class.border-b-2]="activeTab() === 'trades'" [class.border-blue-600]="activeTab() === 'trades'" [class.bg-blue-600]="activeTab() === 'trades'">
-          {{ 'dex.orders.details.tabs.linkedTrades' | translate: { count: linkedTrades().length } }}
-        </button>
-      </div>
-    </div>
+    <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
-    <div class="bg-white rounded-b-lg shadow-md p-2">
+    <div class="card-v4 p-2">
       @if (order(); as o) {
         @if (activeTab() === 'info') {
           <div class="bg-white rounded-lg shadow-md overflow-hidden">

@@ -1,10 +1,10 @@
 <app-header [title]="'sidebar.dexOrderBook' | translate"></app-header>
 
-<div class="px-6 py-4 border-b bg-gray-200 flex items-center justify-between">
-  <nav class="flex" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+<div class="px-6 pt-4 pb-3 flex items-center justify-between">
+  <nav aria-label="Breadcrumb">
+    <ol class="inline-flex items-center gap-1.5">
       <li class="inline-flex items-center">
-        <a routerLink="/authorized/dex/asset-listings/list" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">{{ 'dex.title' | translate }}</a>
+        <a routerLink="/authorized/dex/asset-listings/list" class="text-sm font-medium text-gray-500 hover:text-[var(--brand-primary)] transition-colors">{{ 'dex.title' | translate }}</a>
       </li>
       <li>
         <div class="flex items-center">
@@ -17,7 +17,7 @@
   <app-live-indicator [refreshing]="refreshing()" [bar]="false"></app-live-indicator>
 </div>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-6">
+<main class="flex-1 overflow-x-hidden overflow-y-auto px-6 pb-6">
   <div class="container mx-auto">
 
     <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">

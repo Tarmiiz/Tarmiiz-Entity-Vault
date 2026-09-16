@@ -12,11 +12,30 @@ import { TranslatePipe } from '@ngx-translate/core';
  * `count` renders a small neutral badge after the label. Leave it `undefined`
  * for no badge; `0` DOES render, because "0 holders" and "we have not counted
  * yet" are different facts and a tab is exactly where that distinction is read.
+ *
+ * It is `number | string` because a rail item's badge is not always a tally: the
+ * Regulator's Permissions rail shows `granted/total` per family, which is the
+ * whole reason that rail is scannable — a regulator sees where the gaps are
+ * without opening each group. Anything passed as a string is rendered verbatim,
+ * so keep it short; it is a badge, not a sentence.
  */
 export interface TabDef {
   key: string;
   label: string;
-  count?: number;
+  count?: number | string;
+
+  /**
+   * `attention` tints the badge amber. Use it ONLY where the count means "there
+   * is something here for you to act on" — a pending-approvals queue, an
+   * inbox — never for a plain tally.
+   *
+   * The distinction is worth a field rather than a caller-supplied class,
+   * because it is the one case where a badge is a STATUS and not a quantity.
+   * The DEX deals and RFQ pages tinted these by hand before the component
+   * existed, and flattening them to neutral would have deleted a real signal
+   * (which tab needs you) to satisfy a rule about counts.
+   */
+  tone?: 'neutral' | 'attention';
 }
 
 /**
@@ -76,7 +95,7 @@ export interface TabDef {
             [class.is-active]="tab.key === active">
             {{ tab.label | translate }}
             @if (tab.count !== undefined) {
-              <span class="tab-v4-badge">{{ tab.count }}</span>
+              <span class="tab-v4-badge" [class.is-attention]="tab.tone === 'attention'">{{ tab.count }}</span>
             }
           </button>
         }
