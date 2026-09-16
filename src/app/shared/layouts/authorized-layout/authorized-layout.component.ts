@@ -39,7 +39,9 @@ import { ModalNewThreadComponent } from "../../../pages/secure/messages/modals/m
 })
 export class AuthorizedLayoutComponent implements OnDestroy {
   private authService = inject(AuthService);
-  private socketService = inject(SocketService);
+  // PUBLIC because the top-bar connection badge reads it (Phase 35 / F2 — the
+  // badge used to report "a page is mounted" and call that Live).
+  socketService = inject(SocketService);
   private apiService = inject(ApiService);
   private unreadMessages = inject(UnreadMessagesService);
   private menuController = inject(MenuController);

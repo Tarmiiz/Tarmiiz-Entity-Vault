@@ -93,8 +93,10 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
             } @else {
+              <!-- Phase 35 / F9: the non-alert leg was `text-indigo-700`, i.e. the link
+                   colour on a count. The AMBER alert leg stays — that one is a state. -->
               <p class="text-xl font-bold"
-                [class]="stat.value > 0 ? (stat.alert ? 'text-amber-700' : 'text-indigo-700') : 'text-gray-800'">
+                [class]="stat.value > 0 ? (stat.alert ? 'text-amber-700' : 'text-gray-800') : 'text-gray-400'">
                 {{ stat.value | number }}
               </p>
             }

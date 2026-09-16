@@ -41,7 +41,9 @@
               </thead>
               <tbody class="text-xs">
                 @if (loading()) {
-                  <tr class="bg-white"><td colspan="6">{{ 'common.loading' | translate }}</td></tr>
+                  @for (s of [1, 2, 3, 4, 5]; track s) {
+                    <tr class="bg-white"><td colspan="6"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                  }
                 } @else if (candidates().length === 0) {
                   <tr class="bg-white"><td class="text-gray-400" colspan="6">{{ 'dex.listings.addVenueModal.noVenuesAvailable' | translate }}</td></tr>
                 } @else {

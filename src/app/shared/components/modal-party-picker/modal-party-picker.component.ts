@@ -3,13 +3,14 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { ApiService } from '../../services/api.service';
 import { ModalPartyPickerService, PartyPickerCandidate } from './modal-party-picker.service';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-modal-party-picker',
   templateUrl: './modal-party-picker.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [LoadingStateComponent, TranslatePipe],
 })
 export class ModalPartyPickerComponent {
 

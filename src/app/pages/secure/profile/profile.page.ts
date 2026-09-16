@@ -20,6 +20,7 @@ import { ModalImageAddService } from '../../../shared/components/modal-image-add
 import { ModalImageAddComponent } from '../../../shared/components/modal-image-add/modal-image-add.component';
 import { FeaturesService } from '../../../shared/services/features.service';
 import { TabsComponent, TabDef } from '../../../shared/components/tabs/tabs.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
 export interface MediaEntry { documentId: number; cid: string; title: string; fileType: string; }
@@ -35,7 +36,7 @@ export interface MediaIndex {
   templateUrl: './profile.page.html',
   styleUrls: ['./profile.page.scss'],
   standalone: true,
-  imports: [TabsComponent, 
+  imports: [LoadingStateComponent, TabsComponent, 
     FormsModule,
     HeaderComponent,
     ModalProfileMetadataEditComponent,

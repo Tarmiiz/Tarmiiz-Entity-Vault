@@ -108,11 +108,19 @@
                   </td>
                 </tr>
               } @empty {
-                <tr>
-                  <td colspan="3" class="py-6 text-center text-gray-500 text-sm">
-                    @if (menuLoading()) { {{ 'common.loading' | translate }} } @else { {{ 'users.details.menu.empty' | translate }} }
-                  </td>
-                </tr>
+                <!-- Standard 3.4 tier 3: while loading, SKELETON ROWS. The two-state form this
+                     replaced printed the empty copy in the loading state, i.e. "no records" while
+                     the answer was still unknown. A table gets skeletons rather than the brand
+                     mark because they show the column shape a spinner hides. -->
+                @if (menuLoading()) {
+                  @for (s of [1, 2, 3, 4, 5]; track s) {
+                    <tr><td colspan="3"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                  }
+                } @else {
+                  <tr>
+                    <td colspan="3" class="py-6 text-center text-gray-500 text-sm">{{ 'users.details.menu.empty' | translate }}</td>
+                  </tr>
+                }
               }
             </tbody>
           </table>
@@ -192,11 +200,19 @@
                   </td>
                 </tr>
               } @empty {
-                <tr>
-                  <td colspan="3" class="py-6 text-center text-gray-500 text-sm">
-                    @if (membersLoading()) { {{ 'common.loading' | translate }} } @else { {{ 'settings.userGroups.details.noMembers' | translate }} }
-                  </td>
-                </tr>
+                <!-- Standard 3.4 tier 3: while loading, SKELETON ROWS. The two-state form this
+                     replaced printed the empty copy in the loading state, i.e. "no records" while
+                     the answer was still unknown. A table gets skeletons rather than the brand
+                     mark because they show the column shape a spinner hides. -->
+                @if (membersLoading()) {
+                  @for (s of [1, 2, 3, 4, 5]; track s) {
+                    <tr><td colspan="3"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                  }
+                } @else {
+                  <tr>
+                    <td colspan="3" class="py-6 text-center text-gray-500 text-sm">{{ 'settings.userGroups.details.noMembers' | translate }}</td>
+                  </tr>
+                }
               }
             </tbody>
           </table>

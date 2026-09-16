@@ -15,6 +15,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert/alert.s
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { ConnectThread, ConnectMessage, ConnectMessageRecipient, ConnectAttachmentMeta } from '../../../../shared/models/data.model';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
+import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 
 const ZERO_HASH = '0x' + '0'.repeat(64);
 
@@ -22,7 +23,7 @@ const ZERO_HASH = '0x' + '0'.repeat(64);
   selector: 'app-messages-details',
   templateUrl: './details.page.html',
   standalone: true,
-  imports: [TabsComponent, CommonModule, FormsModule, RouterLink, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
+  imports: [LoadingStateComponent, TabsComponent, CommonModule, FormsModule, RouterLink, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);

@@ -89,7 +89,11 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
             } @else {
-              <p class="text-xl font-bold" [class]="stat.value > 0 ? 'text-indigo-700' : 'text-gray-800'">{{ stat.value | number }}</p>
+              <!-- Phase 35 / F9: was `text-indigo-700` when non-zero. Indigo is the primary /
+                   link colour in v4, so a non-zero count read as clickable. A count is ink,
+                   not a link and not a state — the gray-400 for zero still distinguishes
+                   "none" from "some" without borrowing an interactive colour. -->
+              <p class="text-xl font-bold" [class]="stat.value > 0 ? 'text-gray-800' : 'text-gray-400'">{{ stat.value | number }}</p>
             }
           </div>
         }

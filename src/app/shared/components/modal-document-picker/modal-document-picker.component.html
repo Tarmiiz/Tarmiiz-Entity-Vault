@@ -33,7 +33,7 @@
 
         <!-- List -->
         @if (isLoading()) {
-          <p class="text-sm text-gray-500 py-6 text-center">{{ 'common.loading' | translate }}</p>
+          <app-loading-state [loading]="true" />
         } @else if (!documents().length) {
           <div class="py-6 text-center">
             <p class="text-sm text-gray-500">{{ 'documentPicker.empty' | translate }}</p>

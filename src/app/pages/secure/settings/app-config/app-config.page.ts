@@ -9,13 +9,14 @@ import { FeaturesService } from '../../../../shared/services/features.service';
 import { LoadingService } from '../../../../shared/components/alerts/loading/loading.service';
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AppConfigItem } from '../../../../shared/models/data.model';
+import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-settings-app-config',
   templateUrl: './app-config.page.html',
   styleUrls: ['./app-config.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+  imports: [LoadingStateComponent, CommonModule, FormsModule, TranslatePipe, HeaderComponent],
 })
 export class AppConfigPage implements OnInit {
   private apiService     = inject(ApiService);

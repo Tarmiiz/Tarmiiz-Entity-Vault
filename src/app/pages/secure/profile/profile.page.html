@@ -98,7 +98,7 @@
             </div>
 
             @if (identifiersLoading()) {
-              <p class="text-sm text-gray-400 italic py-6 text-center">{{ 'common.loadingData' | translate }}</p>
+              <app-loading-state [loading]="true" />
             } @else if (!identifiers().length) {
               <p class="text-sm text-gray-400 italic py-6 text-center">{{ 'profile.identifiers.empty' | translate }}</p>
             } @else {

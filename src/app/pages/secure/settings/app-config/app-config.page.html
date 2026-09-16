@@ -22,8 +22,8 @@
   </div>
 
   @if (categories().length === 0) {
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center text-sm text-gray-500">
-      @if (loading()) { {{ 'common.loading' | translate }} } @else { {{ 'common.noData' | translate }} }
+    <div class="card-v4">
+      <app-loading-state [loading]="loading()" [empty]="!loading()" />
     </div>
   }
 

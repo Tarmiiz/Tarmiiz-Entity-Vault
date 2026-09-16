@@ -42,11 +42,19 @@
               <td class="text-xs">{{ m.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
             </tr>
           } @empty {
-            <tr>
-              <td colspan="4" class="py-6 text-center text-gray-500 text-sm">
-                @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.underCustody.empty' | translate }} }
-              </td>
-            </tr>
+            <!-- Standard 3.4 tier 3: while loading, SKELETON ROWS. The two-state form this
+                 replaced printed the empty copy in the loading state, i.e. "no records" while
+                 the answer was still unknown. A table gets skeletons rather than the brand
+                 mark because they show the column shape a spinner hides. -->
+            @if (!loaded()) {
+              @for (s of [1, 2, 3, 4, 5]; track s) {
+                <tr><td colspan="4"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+              }
+            } @else {
+              <tr>
+                <td colspan="4" class="py-6 text-center text-gray-500 text-sm">{{ 'custody.underCustody.empty' | translate }}</td>
+              </tr>
+            }
           }
         </tbody>
       </table>
@@ -153,11 +161,19 @@
               </tr>
             }
           } @empty {
-            <tr>
-              <td colspan="5" class="py-6 text-center text-gray-500 text-sm">
-                @if (!loaded()) { {{ 'common.loading' | translate }} } @else { {{ 'custody.assets.empty' | translate }} }
-              </td>
-            </tr>
+            <!-- Standard 3.4 tier 3: while loading, SKELETON ROWS. The two-state form this
+                 replaced printed the empty copy in the loading state, i.e. "no records" while
+                 the answer was still unknown. A table gets skeletons rather than the brand
+                 mark because they show the column shape a spinner hides. -->
+            @if (!loaded()) {
+              @for (s of [1, 2, 3, 4, 5]; track s) {
+                <tr><td colspan="5"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+              }
+            } @else {
+              <tr>
+                <td colspan="5" class="py-6 text-center text-gray-500 text-sm">{{ 'custody.assets.empty' | translate }}</td>
+              </tr>
+            }
           }
         </tbody>
       </table>

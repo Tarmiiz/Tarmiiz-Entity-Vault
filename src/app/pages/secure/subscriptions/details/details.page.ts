@@ -36,6 +36,7 @@ import { FeaturesService } from '../../../../shared/services/features.service';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
+import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 
 
 
@@ -44,7 +45,7 @@ import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.c
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [TabsComponent, 
+  imports: [LoadingStateComponent, TabsComponent, 
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,

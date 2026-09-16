@@ -36,25 +36,41 @@
     }
 
     <nav class="shell-topbar-actions">
-      <!-- Live / Refreshing. Fed by LiveStatusService, which the (now
-           non-rendering) app-live-indicator in 22 page templates reports into —
-           so the badge appears once here instead of as a grey strip per page. -->
-      @if (live.present()) {
-        <span class="shell-live" [class.is-refreshing]="live.refreshing()">
-          @if (live.refreshing()) {
-            <svg class="animate-spin w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
-            <span>{{ 'shared.liveIndicator.refreshing' | translate }}</span>
-          } @else {
-            <svg class="w-2.5 h-2.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="6"></circle>
-            </svg>
-            <span>{{ 'common.live' | translate }}</span>
-          }
-        </span>
-      }
+      <!-- CONNECTION state, on every page — the same meaning as the Regulator
+           Dashboard's badge, and the same i18n shape.
+
+           🔴 "Live" USED TO MEAN "A PAGE IS MOUNTED" HERE, and that was a false
+           statement (Phase 35 / F2). The badge was gated on `live.present()`,
+           which is true as soon as any page registers an <app-live-indicator>
+           reporter — so it read **Live** with the socket down, on a page showing
+           data minutes old. Three different things were called Live in one app:
+           this, the socket, and a record's own state.
+
+           It now reports `socketService.connected()`, which is what a person
+           reads that word as. REFRESHING is layered on top and only while
+           connected: it is a different fact (a fetch is in flight) and must not
+           be able to overwrite "Offline" — saying "Refreshing data…" while
+           disconnected is the same class of lie this replaced.
+
+           LiveStatusService and the 22 reporter tags are KEPT: `refreshing()`
+           is still what drives the middle state, and it is the only thing that
+           knows a page is mid-fetch. Only `present()` stopped gating the badge. -->
+      <span class="shell-live"
+        [class.is-offline]="!socketService.connected()"
+        [class.is-refreshing]="socketService.connected() && live.refreshing()">
+        @if (socketService.connected() && live.refreshing()) {
+          <svg class="animate-spin w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>{{ 'shared.liveIndicator.refreshing' | translate }}</span>
+        } @else {
+          <svg class="w-2.5 h-2.5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="6"></circle>
+          </svg>
+          <span>{{ (socketService.connected() ? 'common.live' : 'common.offline') | translate }}</span>
+        }
+      </span>
 
       @if (userInfo) {
         <span class="shell-welcome">

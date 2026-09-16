@@ -8,6 +8,7 @@ import { AlertService } from '../alerts/alert/alert.service';
 import { ModalDocumentPickerService, DocumentPickerOwner } from './modal-document-picker.service';
 import { ModalDocumentAddService } from '../../../pages/secure/documents/modals/modal-document-add/modal-document-add.service';
 import { ModalDocumentAddComponent } from '../../../pages/secure/documents/modals/modal-document-add/modal-document-add.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 interface PickerRow {
   documentId: number;
@@ -30,7 +31,7 @@ const DOC_TYPE_NAMES: Record<number, string> = {
   templateUrl: './modal-document-picker.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [TranslatePipe, ModalDocumentAddComponent],
+  imports: [LoadingStateComponent, TranslatePipe, ModalDocumentAddComponent],
 })
 export class ModalDocumentPickerComponent {
 

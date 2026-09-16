@@ -421,8 +421,19 @@ html.lang-ar table td.text-right {
   white-space: nowrap;
 }
 .shell-live svg { color: #34d399; }
-.shell-live.is-refreshing { color: #fbbf24; }
+/* BOTH states are defined in BOTH apps, so the `shell-*` contract stays one
+   design rather than half of it per app. The Vault's badge carries all three
+   (connected / refreshing / offline); the Regulator has no per-page live
+   reporter, so it only ever reaches two — but a later one must not have to add
+   a style to work.
+   Amber for refreshing (work in flight), red for offline (a fact about the
+   connection). Refreshing NEVER shows while offline — the template guards that,
+   because "Refreshing data…" over a dead socket is the false statement this
+   whole change removed. */
+.shell-live.is-refreshing     { color: #fbbf24; }
 .shell-live.is-refreshing svg { color: #fbbf24; }
+.shell-live.is-offline        { color: #fca5a5; }
+.shell-live.is-offline svg    { color: #f87171; }
 
 /* Page title in the authorized top bar. Reported by app-header from all 59 pages
    via PageTitleService; the per-page title strip is gone. */

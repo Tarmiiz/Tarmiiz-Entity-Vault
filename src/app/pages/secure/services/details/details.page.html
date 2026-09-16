@@ -293,7 +293,7 @@
             </div>
 
             @if (electionsLoading()) {
-              <div class="px-6 py-6 text-sm text-gray-500">Loading&hellip;</div>
+              <app-loading-state [loading]="true" />
             } @else if (elections().length === 0) {
               <div class="px-6 py-6 text-sm text-gray-500">
                 <span class="font-semibold text-gray-700">No election declared yet.</span>
@@ -481,7 +481,9 @@
                     </thead>
                     <tbody class="text-xs">
                       @if (licensesLoading()) {
-                        <tr class="bg-white"><td colspan="4">Loading…</td></tr>
+                        @for (s of [1, 2, 3, 4, 5]; track s) {
+                          <tr class="bg-white"><td colspan="4"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                        }
                       } @else if (licenses().length === 0) {
                         <tr class="bg-white">
                           <td colspan="4">
@@ -540,7 +542,7 @@
               </div>
 
               @if (grantsLoading() && !grants().length) {
-                <p class="text-xs text-gray-500 px-1 py-2">Loading…</p>
+                <app-loading-state [loading]="true" [size]="40" />
               } @else if (!grantsLoaded()) {
                 <!-- ⚠️ NOT "no permissions". A failed read and a genuine default-deny produce the
                      same empty list, and an operator would act on the wrong one. -->
@@ -1298,7 +1300,9 @@
                   </thead>
                   <tbody class="text-xs">
                     @if (liquidityLoading()) {
-                      <tr><td colspan="9" class="py-4 text-center text-gray-400">{{ 'common.loading' | translate }}</td></tr>
+                      @for (s of [1, 2, 3, 4, 5]; track s) {
+                        <tr><td colspan="9"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                      }
                     } @else if (liquidityBalances().length === 0) {
                       <tr><td colspan="9" class="py-4 text-center text-gray-400">{{ 'services.details.liquidity.noCurrencies' | translate }}</td></tr>
                     } @else {
@@ -1423,7 +1427,9 @@
                   </thead>
                   <tbody>
                     @if (liquidityHistoryLoading()) {
-                      <tr><td colspan="5" class="py-4 text-center text-gray-400">Loading…</td></tr>
+                      @for (s of [1, 2, 3, 4, 5]; track s) {
+                        <tr><td colspan="5"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                      }
                     } @else if (liquidityHistory().length === 0) {
                       <tr><td colspan="5" class="py-4 text-center text-gray-400">No liquidity changes recorded.</td></tr>
                     } @else {
