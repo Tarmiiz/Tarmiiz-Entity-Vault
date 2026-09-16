@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject , computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -14,6 +14,7 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { ConnectThread, ConnectMessage, ConnectMessageRecipient, ConnectAttachmentMeta } from '../../../../shared/models/data.model';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 
 const ZERO_HASH = '0x' + '0'.repeat(64);
 
@@ -21,7 +22,7 @@ const ZERO_HASH = '0x' + '0'.repeat(64);
   selector: 'app-messages-details',
   templateUrl: './details.page.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
+  imports: [TabsComponent, CommonModule, FormsModule, RouterLink, HeaderComponent, LiveIndicatorComponent, TranslatePipe],
 })
 export class DetailsPage implements OnInit, OnDestroy {
   private apiService     = inject(ApiService);
@@ -79,6 +80,14 @@ export class DetailsPage implements OnInit, OnDestroy {
   toTargets = signal<{ label: string; target: any }[]>([]);
 
   activeTab = signal<'conversation' | 'info' | 'participants'>('conversation');
+
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'conversation',  label: 'messages.details.conversation' },
+    { key: 'info',          label: 'messages.details.infoTab' },
+    { key: 'participants',  label: 'messages.list.table.participants' },
+  ]);
+
   refreshing = signal(false);
   setTab(tab: 'conversation' | 'info' | 'participants') { this.activeTab.set(tab); }
 

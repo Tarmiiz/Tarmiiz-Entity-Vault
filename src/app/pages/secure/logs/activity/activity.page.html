@@ -3,26 +3,7 @@
 <div class="grow p-4 pt-4 overflow-y-auto">
 
   <!-- Tab bar -->
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-2 mb-3">
-    <div class="flex border-b border-gray-200">
-      <button (click)="setTab('activity')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'activity'"
-        [class.border-b-2]="activeTab() === 'activity'"
-        [class.border-blue-600]="activeTab() === 'activity'"
-        [class.bg-blue-600]="activeTab() === 'activity'">
-        {{ 'logs.activity.tabActivity' | translate }}
-      </button>
-      <button (click)="setTab('state')"
-        class="px-5 py-3 font-semibold text-gray-600 focus:outline-none transition-all duration-200"
-        [class.text-white]="activeTab() === 'state'"
-        [class.border-b-2]="activeTab() === 'state'"
-        [class.border-blue-600]="activeTab() === 'state'"
-        [class.bg-blue-600]="activeTab() === 'state'">
-        {{ 'logs.activity.tabState' | translate }}
-      </button>
-    </div>
-  </div>
+  <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
   <!-- Filters -->
   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">

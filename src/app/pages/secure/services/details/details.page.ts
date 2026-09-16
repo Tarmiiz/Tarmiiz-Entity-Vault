@@ -55,6 +55,7 @@ import { RefreshButtonComponent } from '../../../../shared/components/refresh-bu
 import { CoverageAssetsTableComponent } from '../../../../shared/components/coverage-assets-table/coverage-assets-table.component';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 import { ServiceLicense, licenseMeaning, licenseStateClass, licenseStateName } from '../../../../shared/utils/license.utils';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
 /**
@@ -92,7 +93,7 @@ export interface MediaIndex {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [RefreshButtonComponent, CoverageAssetsTableComponent,
+  imports: [TabsComponent, RefreshButtonComponent, CoverageAssetsTableComponent,
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
@@ -145,6 +146,48 @@ export class DetailsPage implements OnInit {
   private _socketSub: RxSubscription | null = null;
 
   activeTab = signal<'overview' | 'info' | 'licenses' | 'providers' | 'election' | 'metadata' | 'assets' | 'subscriptions' | 'trxs' | 'liquidity' | 'docs' | 'import'>('overview');
+
+  /**
+   * The tab bar (Standard 2). TWELVE tabs behind SEVEN conditions — the most
+   * conditional strip in either app, and every guard is carried over exactly:
+   *
+   *   · Overview   — issuer-only; a provider service has no fund to summarise.
+   *   · Licenses   — ALWAYS shown, deliberately. A service holding no licence is
+   *                  exactly the one whose operator needs to see why, and a
+   *                  provider service holds licences too. Hiding the tab would
+   *                  answer the question by removing it.
+   *   · Providers / Election / Assets / Subscriptions / Transactions / Liquidity
+   *                — token-issuer surfaces.
+   *   · Documents  — the `view-documents` System Function.
+   *   · Import     — non-viewer AND at least one of the two import functions;
+   *                  the page's own buttons are gated per-function beneath it.
+   *
+   * 'Licenses' and 'Election' are PRE-EXISTING hardcoded labels carried forward
+   * verbatim — they belong to the recorded Arabic sweep, not to this repaint.
+   */
+  tabDefs = computed<TabDef[]>(() => [
+    ...(!this.isServiceProvider ? [{ key: 'overview', label: 'services.details.tabs.overview' }] : []),
+    { key: 'info',     label: 'services.details.tabs.info' },
+    { key: 'licenses', label: 'Licenses' },
+    ...(this.isTokenProvider() ? [
+      { key: 'providers', label: 'services.details.tabs.providers' },
+      { key: 'election',  label: 'Election' },
+    ] : []),
+    { key: 'metadata', label: 'services.details.tabs.metadata' },
+    ...(this.isTokenProvider() ? [
+      { key: 'assets',        label: 'services.details.tabs.assets' },
+      { key: 'subscriptions', label: 'services.details.tabs.subscriptions' },
+      { key: 'trxs',          label: 'services.details.tabs.transactions' },
+      { key: 'liquidity',     label: 'services.details.tabs.liquidity' },
+    ] : []),
+    ...(this.features.systemFunctionEnabled('view-documents')
+      ? [{ key: 'docs', label: 'services.details.tabs.documents' }] : []),
+    ...(this.userInfo && this.userInfo.role !== 3
+         && (this.features.systemFunctionEnabled('service-import-subscribers')
+             || this.features.systemFunctionEnabled('service-import-balances'))
+      ? [{ key: 'import', label: 'services.details.tabs.import' }] : []),
+  ]);
+
 
   // ── the onc/offc election (S5, S63-S68) ─────────────────────────────────────────────
   // A LIST, not a field: the election is per CURRENCY, so a service may be onc in one and

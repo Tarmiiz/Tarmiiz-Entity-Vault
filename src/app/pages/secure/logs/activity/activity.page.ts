@@ -14,6 +14,7 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { applyPdfFooter } from '../../../../shared/utils/pdf-export.utils';
 import { ActivityLog, User } from '../../../../shared/models/data.model';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
+import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 
 interface StateChangeLog {
   id: number;
@@ -41,7 +42,7 @@ interface StateChangeLog {
   templateUrl: './activity.page.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HeaderComponent, TranslatePipe, PaginatorComponent]
+  imports: [TabsComponent, CommonModule, FormsModule, HeaderComponent, TranslatePipe, PaginatorComponent]
 })
 export class ActivityPage implements OnInit {
   protected apiService = inject(ApiService);
@@ -51,6 +52,13 @@ export class ActivityPage implements OnInit {
   utils = inject(UtilsService);
 
   activeTab = signal<'activity' | 'state'>('activity');
+
+  /** The tab bar (Standard 2). */
+  tabDefs = computed<TabDef[]>(() => [
+    { key: 'activity', label: 'logs.activity.tabActivity' },
+    { key: 'state',    label: 'logs.activity.tabState' },
+  ]);
+
 
   activityRows = signal<ActivityLog[]>([]);
   activityTotal = signal(0);
