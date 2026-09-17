@@ -34,6 +34,20 @@ _Living preamble describing the broad direction this sub-project is currently mo
   enum widened on the API the same day); the Service Providers list filter and Add modal offer
   both classes; en + ar. Whether one is REQUIRED stays the asset class formula's call — no cap
   and no floor on this page, like a clearing house.
+- **Forward pricing surfaces** (Phase 36 A.7, the Vault half of the dealing queue). The Add
+  Transaction flow understands the API's 202 — a `queued` order is reported with its dealing day,
+  valuation time and cut-off instead of a tx hash — and the Transactions page carries a
+  **Dealing Requests** card (in-flight + failed rows; Cancel while pending and before cut-off)
+  over the ledger ([list.page.ts](src/app/pages/secure/transactions/list/list.page.ts)). The
+  asset details Metadata tab gains a **Dealing** section (spot / forward, zone, valuation point,
+  per-side days + cut-off) with
+  [modal-dealing-config](src/app/pages/secure/assets/modals/modal-dealing-config/modal-dealing-config.component.ts)
+  writing `PUT /assets/:address/dealing` (gated `asset-edit-metadata`, the same authority as
+  Edit Metadata; `dealing` joins the reserved keys so it never renders as a raw field). The
+  price-publish modal gains an optional **Effective at** instant — on a forward-priced asset the
+  hint names the valuation point, since that instant is what releases the day's queue.
+  `api.service.ts` exports `PrimaryMarketResponse` / `DealingRequest` and the three new calls.
+  en + ar.
 - **`decimals` on the Add Asset wizard** (Phase 36 A.2) — an integer 0..255 on the Identity step,
   default 0, sent verbatim to `POST /assets` (which has accepted it since 2026-07-30 and was
   unreachable from the UI). 0 = whole units is the platform default and the correct value for

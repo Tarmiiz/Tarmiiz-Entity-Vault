@@ -7,6 +7,42 @@ import { ConfigService } from './config.service';
 import { SessionService } from './session.service';
 import { PARTY_CLASS, ServiceParties } from '../constants/party-class';
 
+/** `POST /transactions/buy|sell` — executed (`result`), refused (`error`) or PARKED (`queued`, Phase 36 A.7). */
+export interface PrimaryMarketResponse {
+  result?: any;
+  error?: string;
+  queued?: boolean;
+  requestId?: string;
+  dealingDay?: string;
+  cutoffAt?: number;    // unix seconds
+  valuationAt?: number; // unix seconds
+}
+
+/** One parked primary-market order, as `GET /transactions/requests` serves it (camelCase on the wire). */
+export interface DealingRequest {
+  requestId: string;
+  asset: string;
+  service: string;
+  subscriber: string;
+  direction: 'buy' | 'sell';
+  tokens: number;
+  value: number;
+  priceBound: number;
+  data: any;
+  dealingDay: string;
+  cutoffAt: number;      // unix seconds
+  valuationAt: number;   // unix seconds
+  status: 'pending' | 'executing' | 'executed' | 'failed' | 'cancelled';
+  submittedAt: number;   // epoch ms
+  actorUserId: string | null;
+  actorUserName: string | null;
+  executedAt: number | null;
+  executedPrice: number | null;
+  executedTokens: number | null;
+  txHash: string | null;
+  error: string | null;
+}
+
 import {
   FeeConfig, ExternalIntegration, UserGroup, AppConfigItem,
   CreditPosition, CreditObligation, CreditSettlement,
@@ -1476,15 +1512,17 @@ export class ApiService {
     return data?.transaction ?? null;
   }
 
-  async transactionBuy(body: { asset: string; service: string; subscriber: string; tokens: number; price?: number; data?: any; timestamp?: number }): Promise<{ result?: any; error?: string }> {
+  // Phase 36 A.7 — on a forward-priced asset (a `dealing` model declared) the API answers 202
+  // and PARKS the order instead of executing it; the `queued` shape carries where it landed.
+  async transactionBuy(body: { asset: string; service: string; subscriber: string; tokens: number; price?: number; data?: any; timestamp?: number }): Promise<PrimaryMarketResponse> {
     return this._postPlain('/transactions/buy', body);
   }
 
-  async transactionSell(body: { asset: string; service: string; subscriber: string; tokens: number; price?: number; data?: any; timestamp?: number }): Promise<{ result?: any; error?: string }> {
+  async transactionSell(body: { asset: string; service: string; subscriber: string; tokens: number; price?: number; data?: any; timestamp?: number }): Promise<PrimaryMarketResponse> {
     return this._postPlain('/transactions/sell', body);
   }
 
-  private async _postPlain(path: string, body: Record<string, any>): Promise<{ result?: any; error?: string }> {
+  private async _postPlain(path: string, body: Record<string, any>): Promise<PrimaryMarketResponse> {
     try {
       const response = await CapacitorHttp.request({
         method: 'POST',
@@ -1500,7 +1538,47 @@ export class ApiService {
       if (response.status >= 400 || response.data?.error) {
         return { error: response.data?.error || ('HTTP ' + response.status) };
       }
+      if (response.status === 202 && response.data?.queued) {
+        const d = response.data;
+        return { queued: true, requestId: d.requestId, dealingDay: d.dealingDay, cutoffAt: Number(d.cutoffAt) || 0, valuationAt: Number(d.valuationAt) || 0 };
+      }
       return { result: response.data?.result };
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
+    }
+  }
+
+  // ─── Dealing requests (Phase 36 A.7) — the parked orders of forward-priced assets ─────
+  // The API already answers camelCase (`dealing.mapRequest`), so no snake_case mapping here.
+  async dealingRequestsList(filters?: { asset?: string; service?: string; status?: string }, start = 0, offset = 50): Promise<{ count: number; requests: DealingRequest[] } | null> {
+    const params: Record<string, any> = { start, offset };
+    if (filters?.asset)   params['asset']   = filters.asset;
+    if (filters?.service) params['service'] = filters.service;
+    if (filters?.status)  params['status']  = filters.status;
+    const data = await this.authGet('/transactions/requests', params);
+    return data ? { count: Number(data.count) || 0, requests: data.requests ?? [] } : null;
+  }
+
+  async dealingRequestCancel(requestId: string): Promise<{ request?: DealingRequest; error?: string } | null> {
+    const data = await this.authDelete('/transactions/requests/' + encodeURIComponent(requestId));
+    return data ?? null;
+  }
+
+  // `{ dealing: config }` sets the model; `{ enabled: false }` clears it (back to spot).
+  async vaultSetAssetDealing(address: string, body: { dealing?: Record<string, any> | null; enabled?: boolean }): Promise<{ type?: string; error?: string; dealing?: any } | null> {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'PUT',
+        url: this.apiURL + '/assets/' + address + '/dealing',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await this.authHeader()),
+          ...this.getAuditHeaders(),
+        },
+        data: body,
+      });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
+      return response.data ?? null;
     } catch (e: any) {
       return { error: e?.message || 'Network error' };
     }

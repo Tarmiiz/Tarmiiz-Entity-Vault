@@ -10,12 +10,16 @@ export interface AssetPriceModalInput {
   symbol: string;
   currentBid?: number;
   currentAsk?: number;
+  // Phase 36 A.7 — when the asset deals FORWARD, the price's effective time is what releases
+  // the day's parked orders, so the modal offers it and hints at the valuation point.
+  forward?: { tz: string; valuationTime: string } | null;
 }
 
 export interface AssetPriceModalResult {
   // Always emits both bid and ask. Single mode sets bid = ask.
   bid: number;
   ask: number;
+  // Unix SECONDS — the price's EFFECTIVE time on the wire. "Now" unless the operator set one.
   timestamp: number;
 }
 

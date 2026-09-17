@@ -106,6 +106,64 @@
     </div>
   </div>
 
+  <!-- Dealing requests (Phase 36 A.7): orders on forward-priced assets waiting for the dealing
+       day's valuation. Shown only while something is in flight or failed — an executed request
+       has become a row in the ledger below, and an empty card would only add noise. -->
+  @if (openDealingRequests().length > 0) {
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
+      <div class="px-4 py-3 border-b border-gray-200 flex items-baseline justify-between">
+        <h3 class="text-sm font-semibold text-gray-800">{{ 'transactions.requests.title' | translate }}</h3>
+        <p class="text-xs text-gray-400">{{ 'transactions.requests.hint' | translate }}</p>
+      </div>
+      <div class="overflow-x-auto rounded-lg">
+        <table class="table-v4 w-full text-sm text-left">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'transactions.requests.submitted' | translate }}</th>
+              <th scope="col">{{ 'transactions.requests.direction' | translate }}</th>
+              <th scope="col">{{ 'transactions.requests.asset' | translate }}</th>
+              <th scope="col">{{ 'transactions.requests.subscriber' | translate }}</th>
+              <th scope="col" class="text-right">{{ 'transactions.requests.amount' | translate }}</th>
+              <th scope="col">{{ 'transactions.requests.dealingDay' | translate }}</th>
+              <th scope="col">{{ 'transactions.requests.valuation' | translate }}</th>
+              <th scope="col">{{ 'transactions.requests.status' | translate }}</th>
+              <th scope="col" class="text-right">{{ 'common.actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            @for (r of openDealingRequests(); track r.requestId) {
+              <tr>
+                <td>{{ utils.formatTime(r.submittedAt) }}</td>
+                <td>{{ (r.direction === 'buy' ? 'transactions.requests.buy' : 'transactions.requests.sell') | translate }}</td>
+                <td>{{ requestAssetLabel(r) }}</td>
+                <td class="font-mono">{{ shortAddr(r.subscriber) }}</td>
+                <td class="text-right">
+                  @if (r.tokens > 0) {
+                    {{ r.tokens | number:'1.0-0' }} {{ 'transactions.requests.tokensUnit' | translate }}
+                  } @else {
+                    {{ r.value | money }} {{ 'transactions.requests.valueUnit' | translate }}
+                  }
+                </td>
+                <td>{{ r.dealingDay }}</td>
+                <td>{{ utils.formatDate(r.valuationAt) }}</td>
+                <td>
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold" [class]="requestStatusClass(r.status)" [title]="r.error || ''">{{ requestStatusKey(r.status) | translate }}</span>
+                </td>
+                <td class="text-right whitespace-nowrap">
+                  @if (canCancelRequest(r)) {
+                    <button (click)="cancelRequest(r)" class="text-xs px-2 py-1 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                      {{ 'transactions.requests.cancel' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
   <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto rounded-lg">
       <table class="table-v4 w-full text-sm text-left">

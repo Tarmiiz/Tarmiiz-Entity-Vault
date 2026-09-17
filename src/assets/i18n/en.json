@@ -1135,6 +1135,22 @@
         "removeTitle": "Remove Identifier",
         "removeMessage": "Remove the {{name}} identifier \"{{value}}\" from this asset?"
       },
+      "dealing": {
+        "title": "Dealing",
+        "spot": "Spot — orders execute on submission at the standing price.",
+        "forward": "Forward — orders wait for the dealing day's valuation.",
+        "tz": "Time zone",
+        "valuationTime": "Valuation point",
+        "buy": "Subscriptions",
+        "sell": "Redemptions",
+        "daily": "daily",
+        "cutoff": "cut-off {{time}}",
+        "dayBefore": "(day before)",
+        "configure": "Configure",
+        "saving": "Saving dealing model...",
+        "clearTitle": "Back to spot pricing",
+        "clearMessage": "Remove the dealing model from {{symbol}}? New orders will execute immediately at the standing price. Orders already queued keep their dealing day."
+      },
       "publicView": {
         "button": "View Asset",
         "contact": "Contact Info",
@@ -1665,7 +1681,24 @@
       "priceModeLine": "Price mode: {{mode}}",
       "save": "Save Price",
       "single": "Single",
-      "singleModeHint": "In Single-price mode the same value is recorded as both bid and ask."
+      "singleModeHint": "In Single-price mode the same value is recorded as both bid and ask.",
+      "effectiveAt": "Effective at",
+      "effectiveAtHint": "Optional. Leave empty to publish as of now. Must not be earlier than the latest published price.",
+      "effectiveAtForwardHint": "This asset deals forward: set the effective time to the valuation point ({{time}} {{tz}}) to release that dealing day's queued orders at this price."
+    },
+    "dealingModal": {
+      "title": "Dealing Model — {{symbol}}",
+      "intro": "Forward pricing: orders placed before the cut-off wait for the dealing day's valuation and execute at the price published effective at that point. Leave unset for spot pricing.",
+      "tz": "Time zone (IANA)",
+      "valuationTime": "Valuation point",
+      "buySide": "Subscriptions (buy)",
+      "sellSide": "Redemptions (sell)",
+      "daily": "Every calendar day",
+      "cutoff": "Cut-off",
+      "cutoffDayBefore": "Cut-off falls on the day before",
+      "invalid": "Each side needs a valid HH:mm cut-off and at least one dealing day.",
+      "save": "Save Model",
+      "clear": "Back to spot"
     },
     "subscribeModal": {
       "title": "Subscribe",
@@ -2139,7 +2172,37 @@
       "submittedMessage": "The transaction was submitted successfully.",
       "submittedTitle": "{{type}} Submitted",
       "submitting": "Submitting {{type}}…",
-      "txPrefix": "Tx:"
+      "txPrefix": "Tx:",
+      "queuedTitle": "{{type}} Queued",
+      "queuedMessage": "This asset deals forward. The order is queued for dealing day {{day}} and will execute at the price published effective {{valuation}}. It can be cancelled until {{cutoff}}.",
+      "requestRef": "Request:"
+    },
+    "requests": {
+      "title": "Dealing Requests",
+      "hint": "Orders on forward-priced assets wait here for the dealing day's valuation.",
+      "empty": "No dealing requests.",
+      "submitted": "Submitted",
+      "direction": "Order",
+      "asset": "Asset",
+      "subscriber": "Subscription",
+      "amount": "Amount",
+      "dealingDay": "Dealing Day",
+      "valuation": "Valuation",
+      "status": "Status",
+      "buy": "Buy",
+      "sell": "Sell",
+      "tokensUnit": "units",
+      "valueUnit": "value",
+      "statusPending": "Pending",
+      "statusExecuting": "Executing",
+      "statusExecuted": "Executed",
+      "statusFailed": "Failed",
+      "statusCancelled": "Cancelled",
+      "cancel": "Cancel",
+      "cancelling": "Cancelling request…",
+      "cancelTitle": "Cancel Dealing Request",
+      "cancelMessage": "Withdraw this {{direction}} order for dealing day {{day}}? This is only possible before the cut-off.",
+      "cancelFailedTitle": "Cancel Failed"
     },
     "infoModal": {
       "asset": "Asset",

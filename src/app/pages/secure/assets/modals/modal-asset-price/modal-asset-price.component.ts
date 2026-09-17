@@ -19,6 +19,10 @@ export class ModalAssetPriceComponent {
     bid:   [null as number | null],
     ask:   [null as number | null],
     price: [null as number | null],
+    // Optional EFFECTIVE time (Phase 36 A.7) as a datetime-local string; empty = now. It is the
+    // instant that releases a forward-priced asset's parked orders, so on such an asset the
+    // operator is told to set it to the valuation point.
+    effectiveAt: [''],
   });
 
   constructor() {
@@ -48,7 +52,18 @@ export class ModalAssetPriceComponent {
       this.form.controls.bid.updateValueAndValidity();
       this.form.controls.ask.updateValueAndValidity();
       this.form.controls.price.updateValueAndValidity();
+      this.form.controls.effectiveAt.setValue('');
     });
+  }
+
+  /** The effective instant in unix SECONDS: the field when set (and parseable), else now. */
+  private effectiveTimestamp(): number {
+    const v = this.form.value.effectiveAt;
+    if (v) {
+      const ms = Date.parse(v);
+      if (Number.isFinite(ms)) return Math.floor(ms / 1000);
+    }
+    return Math.floor(Date.now() / 1000);
   }
 
   isValid(): boolean {
@@ -60,13 +75,15 @@ export class ModalAssetPriceComponent {
       const ask = Number(this.form.value.ask);
       if (!(ask >= bid)) return false;
     }
+    const eff = this.form.value.effectiveAt;
+    if (eff && !Number.isFinite(Date.parse(eff))) return false;
     return true;
   }
 
   onSave(): void {
     const input = this.modal.input();
     if (!input || !this.isValid()) return;
-    const timestamp = Math.floor(Date.now() / 1000);
+    const timestamp = this.effectiveTimestamp();
     if (input.priceMode === 2) {
       const bid = Number(this.form.value.bid);
       const ask = Number(this.form.value.ask);

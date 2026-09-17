@@ -1,0 +1,76 @@
+@if (modal.isVisible()) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          {{ 'assets.dealingModal.title' | translate: { symbol: modal.symbol() } }}
+        </h3>
+        <p class="text-xs text-gray-400 mt-1">{{ 'assets.dealingModal.intro' | translate }}</p>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="dealingTz" class="block text-sm font-medium text-gray-700">{{ 'assets.dealingModal.tz' | translate }}</label>
+              <input id="dealingTz" type="text" formControlName="tz" placeholder="Africa/Cairo"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+            <div>
+              <label for="dealingValuation" class="block text-sm font-medium text-gray-700">{{ 'assets.dealingModal.valuationTime' | translate }}</label>
+              <input id="dealingValuation" type="time" formControlName="valuationTime"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+          </div>
+
+          <!-- One block per direction: daily or chosen weekdays, a cut-off, and whether the
+               cut-off falls on the day before (Cobonat's Sunday-noon rule for a Monday deal). -->
+          @for (side of ['buy', 'sell']; track side) {
+            <div class="border border-gray-200 rounded-xl p-3 space-y-2">
+              <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ (side === 'buy' ? 'assets.dealingModal.buySide' : 'assets.dealingModal.sellSide') | translate }}</h4>
+              <label class="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" [formControlName]="side + 'Daily'" class="rounded border-gray-300" />
+                {{ 'assets.dealingModal.daily' | translate }}
+              </label>
+              @if (!form.get(side + 'Daily')?.value) {
+                <div class="flex flex-wrap gap-2" [formGroupName]="side + 'Days'">
+                  @for (d of weekdays; track d) {
+                    <label class="flex items-center gap-1 text-xs text-gray-700 border border-gray-200 rounded-xl px-2 py-1">
+                      <input type="checkbox" [formControlName]="d" class="rounded border-gray-300" /> {{ d }}
+                    </label>
+                  }
+                </div>
+              }
+              <div class="grid grid-cols-2 gap-3 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">{{ 'assets.dealingModal.cutoff' | translate }}</label>
+                  <input type="time" [formControlName]="side + 'Cutoff'"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+                </div>
+                <label class="flex items-center gap-2 text-sm text-gray-700 pb-2">
+                  <input type="checkbox" [formControlName]="side + 'DayBefore'" class="rounded border-gray-300" />
+                  {{ 'assets.dealingModal.cutoffDayBefore' | translate }}
+                </label>
+              </div>
+            </div>
+          }
+          @if (!isValid()) {
+            <p class="text-xs text-amber-700">{{ 'assets.dealingModal.invalid' | translate }}</p>
+          }
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
+          <button type="button" (click)="onCancel()" class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            {{ 'common.cancel' | translate }}
+          </button>
+          @if (modal.current()) {
+            <button type="button" (click)="onClear()" class="text-xs font-medium px-4 py-1.5 rounded-xl border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+              {{ 'assets.dealingModal.clear' | translate }}
+            </button>
+          }
+          <button type="submit" [disabled]="!isValid()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'assets.dealingModal.save' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

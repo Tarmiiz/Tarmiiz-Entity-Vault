@@ -36,6 +36,18 @@
               <p class="mt-1 text-xs text-gray-500">{{ 'assets.priceModal.singleModeHint' | translate }}</p>
             </div>
           }
+          <!-- Effective time (Phase 36 A.7). Empty = now. On a forward-priced asset this is the
+               instant that releases the day's parked orders, so the hint names the valuation point. -->
+          <div>
+            <label for="effectiveAt" class="block text-sm font-medium text-gray-700">{{ 'assets.priceModal.effectiveAt' | translate }}</label>
+            <input id="effectiveAt" type="datetime-local" formControlName="effectiveAt"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+            @if (input.forward) {
+              <p class="mt-1 text-xs text-amber-700">{{ 'assets.priceModal.effectiveAtForwardHint' | translate: { time: input.forward.valuationTime, tz: input.forward.tz } }}</p>
+            } @else {
+              <p class="mt-1 text-xs text-gray-500">{{ 'assets.priceModal.effectiveAtHint' | translate }}</p>
+            }
+          </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
           <button type="button" (click)="onCancel()" class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">

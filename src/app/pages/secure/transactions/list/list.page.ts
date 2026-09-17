@@ -9,7 +9,7 @@ import * as XLSX from 'xlsx';
 import { Subscription } from 'rxjs';
 
 import { HeaderComponent } from "../../../../shared/components/header/header.component";
-import { ApiService } from '../../../../shared/services/api.service';
+import { ApiService, DealingRequest, PrimaryMarketResponse } from '../../../../shared/services/api.service';
 import { AuthService } from '../../../../shared/services/auth.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { SocketService } from '../../../../shared/services/socket.service';
@@ -57,6 +57,12 @@ export class ListPage implements OnInit {
   transactions = signal<AssetTransaction[]>([]);
   totalCount = signal<number>(0);
   newTrxIds = signal<Set<number>>(new Set());
+
+  // Phase 36 A.7 — the parked orders of forward-priced assets. Loaded beside the ledger and
+  // refreshed on the same socket wake; the API answers camelCase, no mapping needed.
+  dealingRequests = signal<DealingRequest[]>([]);
+  /** Executed rows are in the ledger above; this card is for what is still in flight or failed. */
+  openDealingRequests = computed(() => this.dealingRequests().filter(r => r.status !== 'executed'));
 
   /** 1-based, per frontend Standard 1.5. */
   page = signal(1);
@@ -161,7 +167,11 @@ export class ListPage implements OnInit {
   async load(silent = false) {
     if (!silent) this.loadingService.show(this.translate.instant('transactions.loadingMessage'));
     try {
-      const result = await this.apiService.vaultGetTransactions(undefined, 0, 500);
+      const [result, requests] = await Promise.all([
+        this.apiService.vaultGetTransactions(undefined, 0, 500),
+        this.apiService.dealingRequestsList(undefined, 0, 200).catch(() => null),
+      ]);
+      if (requests) this.dealingRequests.set(requests.requests);
       if (result) {
         const next = result.transactions.map((t: any) => this.mapVaultTransaction(t));
         if (silent) {
@@ -374,7 +384,7 @@ export class ListPage implements OnInit {
 
     const typeLabel = this.translate.instant('transactions.types.' + data.trxType.toLowerCase());
     this.loadingService.show(this.translate.instant('transactions.alerts.submitting', { type: typeLabel }));
-    let result: { result?: any; error?: string };
+    let result: PrimaryMarketResponse;
     try {
       const body = {
         asset: data.asset,
@@ -401,6 +411,21 @@ export class ListPage implements OnInit {
         result.error, 'OK', 'max-w-md');
       return;
     }
+    // Phase 36 A.7 — PARKED, not executed: the asset deals forward. Say where it landed and
+    // until when it can be withdrawn; the Dealing Requests card above the ledger tracks it.
+    if (result.queued) {
+      await this.alertService.info(
+        this.translate.instant('transactions.alerts.queuedTitle', { type: typeLabel }),
+        this.translate.instant('transactions.alerts.queuedMessage', {
+          day: result.dealingDay,
+          valuation: this.utils.formatDate(result.valuationAt || 0),
+          cutoff: this.utils.formatDate(result.cutoffAt || 0),
+        }) + '\n\n' + this.translate.instant('transactions.alerts.requestRef') + ' ' + result.requestId,
+        'OK', 'max-w-md');
+      this.auditService.logView('transaction-queued', { trxType: data.trxType, asset: data.asset, service: data.service, subscription: data.subscription, tokens: data.tokens, requestId: result.requestId });
+      await this.load(true);
+      return;
+    }
     // ⚠️ Same: the transaction IS submitted by the time this renders. Cancel here was inert
     // AND misleading — on a SUCCESS dialog it reads as "undo", which is the one thing it could
     // never do. The tx hash below is why the container fix matters: it is the only actionable
@@ -411,6 +436,54 @@ export class ListPage implements OnInit {
       'OK', 'max-w-md');
     this.auditService.logView('transaction-add', { trxType: data.trxType, asset: data.asset, service: data.service, subscription: data.subscription, tokens: data.tokens });
     await this.load(true);
+  }
+
+  // ─── Dealing requests (Phase 36 A.7) ─────────────────────────────────────────
+
+  requestAssetLabel(r: DealingRequest): string {
+    const known = this.uniqueAssets().find(a => a[0]?.toLowerCase() === r.asset?.toLowerCase());
+    return known ? known[1] : this.shortAddr(r.asset);
+  }
+
+  requestStatusClass(status: string): string {
+    return ({
+      pending:   'bg-amber-100 text-amber-800',
+      executing: 'bg-sky-100 text-sky-800',
+      executed:  'bg-green-100 text-green-800',
+      failed:    'bg-red-100 text-red-800',
+      cancelled: 'bg-gray-100 text-gray-600',
+    } as Record<string, string>)[status] ?? 'bg-gray-100 text-gray-600';
+  }
+
+  requestStatusKey(status: string): string {
+    return 'transactions.requests.status' + status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  /** Cancellable while pending and strictly before the cut-off — the API enforces the same. */
+  canCancelRequest(r: DealingRequest): boolean {
+    return r.status === 'pending' && Math.floor(Date.now() / 1000) < r.cutoffAt
+      && !!this.userInfo && this.userInfo.role !== 3 && this.features.systemFunctionEnabled('transaction-create');
+  }
+
+  async cancelRequest(r: DealingRequest): Promise<void> {
+    const direction = this.translate.instant(r.direction === 'buy' ? 'transactions.requests.buy' : 'transactions.requests.sell');
+    const ok = await this.alertService.show(
+      this.translate.instant('transactions.requests.cancelTitle'),
+      this.translate.instant('transactions.requests.cancelMessage', { direction, day: r.dealingDay }),
+      this.translate.instant('transactions.requests.cancel'));
+    if (!ok) return;
+    this.loadingService.show(this.translate.instant('transactions.requests.cancelling'));
+    try {
+      const res = await this.apiService.dealingRequestCancel(r.requestId);
+      if (!res || res.error) {
+        this.alertService.info(this.translate.instant('transactions.requests.cancelFailedTitle'), res?.error || this.translate.instant('alerts.unexpected'));
+        return;
+      }
+      this.auditService.logView('transaction-request-cancel', { requestId: r.requestId, asset: r.asset, direction: r.direction });
+      await this.load(true);
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
 

@@ -38,6 +38,8 @@ import { ModalListingCreateService } from '../../dex/asset-listings/modals/modal
 import { ModalListingCreateComponent } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.component';
 import { ModalAssetPriceService } from '../modals/modal-asset-price/modal-asset-price.service';
 import { ModalAssetPriceComponent } from '../modals/modal-asset-price/modal-asset-price.component';
+import { ModalDealingConfigService, DealingConfig, DealingSide } from '../modals/modal-dealing-config/modal-dealing-config.service';
+import { ModalDealingConfigComponent } from '../modals/modal-dealing-config/modal-dealing-config.component';
 import { ModalAssetSupplyService } from '../modals/modal-asset-supply/modal-asset-supply.service';
 import { ModalAssetSupplyComponent } from '../modals/modal-asset-supply/modal-asset-supply.component';
 import { ModalDistributionDeclareService } from '../modals/modal-distribution-declare/modal-distribution-declare.service';
@@ -89,6 +91,7 @@ export interface AssetMedia {
     LiveIndicatorComponent,
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
+    ModalDealingConfigComponent,
     ModalAssetSupplyComponent,
     ModalDistributionDeclareComponent,
     MetadataEditModalComponent,
@@ -109,6 +112,7 @@ export class DetailsPage implements OnInit {
   private serviceStateModal = inject(ModalAssetServiceStateService);
   private listingCreateModal = inject(ModalListingCreateService);
   private priceModal = inject(ModalAssetPriceService);
+  private dealingModal = inject(ModalDealingConfigService);
   private supplyModal = inject(ModalAssetSupplyService);
   private metadataEditModal = inject(MetadataEditModalService);
   private identifierModal = inject(ModalIdentifierService);
@@ -472,10 +476,10 @@ export class DetailsPage implements OnInit {
     if (!t || t.length === 0) return null;
     return [...t].sort((a, b) => b.time - a.time)[0];
   });
-  parsedMetadata = computed<{ description: string; contact: ContactInfo; entries: [string, string][]; media: AssetMedia | null; identifiers: AssetIdentifier[]; raw: string; valid: boolean }>(() => {
+  parsedMetadata = computed<{ description: string; contact: ContactInfo; entries: [string, string][]; media: AssetMedia | null; identifiers: AssetIdentifier[]; dealing: DealingConfig | null; raw: string; valid: boolean }>(() => {
     const raw = this.asset()?.metadata ?? '';
     const emptyContact: ContactInfo = { email: '', phone: '', website: '', address: '' };
-    if (!raw) return { description: '', contact: emptyContact, entries: [], media: null, identifiers: [], raw: '', valid: true };
+    if (!raw) return { description: '', contact: emptyContact, entries: [], media: null, identifiers: [], dealing: null, raw: '', valid: true };
     try {
       const obj = JSON.parse(raw);
       if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
@@ -502,16 +506,73 @@ export class DetailsPage implements OnInit {
               .filter((e: AssetIdentifier) => e.idType > 0)
               .sort((a: AssetIdentifier, b: AssetIdentifier) => a.idType - b.idType)
           : [];
-        const RESERVED = new Set(['description', 'media', 'contact', 'identifiers', 'email', 'telephone', 'mobile', 'website', 'address']);
+        // `dealing` (Phase 36 A.7) is the server-owned forward-pricing model — its own section,
+        // excluded from the free-form table like the other reserved keys. Read leniently: the
+        // API validated it at the write, and the section renders what is there.
+        const d = obj.dealing;
+        const dealing: DealingConfig | null = (d && typeof d === 'object' && !Array.isArray(d) && d.buy && d.sell)
+          ? { tz: String(d.tz ?? ''), valuationTime: String(d.valuationTime ?? ''), buy: d.buy as DealingSide, sell: d.sell as DealingSide }
+          : null;
+        const RESERVED = new Set(['description', 'media', 'contact', 'identifiers', 'dealing', 'email', 'telephone', 'mobile', 'website', 'address']);
         const entries = Object.entries(obj)
           .filter(([k]) => !RESERVED.has(k))
           .map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)] as [string, string])
           .sort((a, b) => a[0].localeCompare(b[0]));
-        return { description, contact, entries, media, identifiers, raw, valid: true };
+        return { description, contact, entries, media, identifiers, dealing, raw, valid: true };
       }
     } catch (_) { /* fall through */ }
-    return { description: '', contact: emptyContact, entries: [], media: null, identifiers: [], raw, valid: false };
+    return { description: '', contact: emptyContact, entries: [], media: null, identifiers: [], dealing: null, raw, valid: false };
   });
+
+  // ─── Dealing model (metadata tab, Phase 36 A.7) ──────────────────────────────
+  // Same authority as Edit Metadata (the key rides the same blob and the same route family),
+  // so the same System Function gates it.
+  canEditDealing(): boolean {
+    return this.canManage()
+      && this.userInfo?.role !== 3
+      && this.features.systemFunctionEnabled('asset-edit-metadata');
+  }
+
+  /** "daily · cut-off 10:00" / "MON · cut-off 12:00 (day before)" for the card. */
+  describeDealingSide(side: DealingSide | undefined): string {
+    if (!side) return '';
+    const days = side.days === 'daily'
+      ? this.translate.instant('assets.details.dealing.daily')
+      : (Array.isArray(side.days) ? side.days.join(', ') : '');
+    const cutoff = this.translate.instant('assets.details.dealing.cutoff', { time: side.cutoff });
+    const before = side.cutoffDayBefore ? ' ' + this.translate.instant('assets.details.dealing.dayBefore') : '';
+    return `${days} · ${cutoff}${before}`;
+  }
+
+  async openDealingModal() {
+    const asset = this.asset();
+    if (!asset) return;
+    const current = this.parsedMetadata().dealing;
+    const result = await this.dealingModal.show(asset.symbol, current);
+    if (!result) return;
+    if ('clear' in result) {
+      const ok = await this.alertService.show(
+        this.translate.instant('assets.details.dealing.clearTitle'),
+        this.translate.instant('assets.details.dealing.clearMessage', { symbol: asset.symbol }),
+        this.translate.instant('assets.dealingModal.clear'));
+      if (!ok) return;
+    }
+    this.loadingService.show(this.translate.instant('assets.details.dealing.saving'));
+    try {
+      const res = await this.apiService.vaultSetAssetDealing(asset.address,
+        'clear' in result ? { enabled: false } : { dealing: result.config });
+      if (res?.error) {
+        this.alertService.info(this.translate.instant('alerts.error'), res.error);
+      } else {
+        await this.getAssetDetails();
+      }
+    } catch (error) {
+      console.error('Failed to save the dealing model', error);
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
+  }
 
   hasContact = computed(() => {
     const c = this.parsedMetadata().contact;
@@ -1320,12 +1381,15 @@ export class DetailsPage implements OnInit {
     const asset = this.asset();
     if (!asset) return;
     const lp = this.latestPrice();
+    const dealing = this.parsedMetadata().dealing;
     const result = await this.priceModal.show({
       priceMode: asset.priceMode,
       supplyMode: asset.supplyMode,
       symbol: asset.symbol,
       currentBid: lp?.bid,
       currentAsk: lp?.ask,
+      // On a forward-priced asset the price's effective time releases the day's queue (A.7).
+      forward: dealing ? { tz: dealing.tz, valuationTime: dealing.valuationTime } : null,
     });
     if (!result) return;
     this.loadingService.show(this.translate.instant('assets.details.price.savingPrice'));
