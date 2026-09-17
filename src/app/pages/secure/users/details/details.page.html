@@ -526,12 +526,10 @@
           </div>
         }
 
-    } @else {
-      <!-- Standard 3.4: the page itself is the surface being loaded, so the
-           brand mark goes here rather than a bare "Loading…" line. -->
-      <div class="card-v4">
-        <app-loading-state [loading]="true" loadingKey="users.details.loadingFallback" />
-      </div>
+    <!-- No @else: the page's own load raises the FULL-PAGE overlay (Standard 3.4,
+         "one look per page"), so an in-pane brand mark here rendered a SECOND loader
+         behind it for one fetch — reported 2026-09-17. Nothing renders while the data
+         is missing, by design: the overlay is the loading state. -->
     }
 
   </div>

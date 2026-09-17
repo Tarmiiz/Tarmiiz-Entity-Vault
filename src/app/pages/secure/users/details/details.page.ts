@@ -256,10 +256,25 @@ export class DetailsPage implements OnInit {
     );
   }
 
-  /** Per-user Menu Access applies only to non-admin targets (admins bypass menu gating). */
+  /**
+   * Per-user Menu Access — roles 1, 2 and 3. Twin of the Regulator Dashboard's; keep in step.
+   *
+   * ⚠️ ADMINS INCLUDED SINCE 2026-09-17, on an explicit request: a SUPER ADMIN alongside
+   * admins who see only some modules. The old comment ("applies only to non-admin targets —
+   * admins bypass menu gating") was never true of the server: `db.getEffectiveMenuForUser`
+   * layers `user_override ?? group ?? role default` for every role, restrict-only for 1/2. The
+   * overrides were always stored and honoured; only the tab to set them was missing.
+   *
+   * Role 4 (Auditor) stays out — the `/features/me` role-4 fold forces the audit surface on and
+   * everything else off, so an override there would be overwritten and read as a dead control.
+   *
+   * 🔴 Self-restriction is blocked server-side (`menuConfigController.userSet` self guard, same
+   * pass): hiding your own Menu Settings hides the page that would undo it. Admin A stripping
+   * admin B is NOT floored — see TODO.md for the "last unrestricted admin" item.
+   */
   showMenuTab(): boolean {
     const role = Number(this.user()?.role);
-    return role === 2 || role === 3;
+    return role === 1 || role === 2 || role === 3;
   }
 
   /** Viewer targets are allow-list: modules/functions start blocked and the admin grants them. */
