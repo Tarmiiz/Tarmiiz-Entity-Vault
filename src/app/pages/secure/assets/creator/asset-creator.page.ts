@@ -183,6 +183,8 @@ export class AssetCreatorPage {
     // transactions.
     assetClass: ['', Validators.required],
     initialSupply: [''],
+    // ERC-20 decimals, 0..255, default 0 = whole units (the platform default — see the model).
+    decimals: ['0', [Validators.required, Validators.pattern(/^\d{1,3}$/), Validators.min(0), Validators.max(255)]],
     description: ['', Validators.required],
     service: ['', Validators.required],
     currency: ['', Validators.required],
@@ -925,6 +927,7 @@ export class AssetCreatorPage {
       // The A1 BASE class — derived from the formula above, not chosen. Still sent because
       // the token declares it and `registerAsset` checks the two agree.
       assetClass: Number(formValue.assetClass),
+      decimals: Number(formValue.decimals) || 0,
       creditSettlement: formValue.noCreditSettlement !== true,
       customMetadata,
       identifiers,
@@ -973,6 +976,7 @@ export class AssetCreatorPage {
         // formula BEFORE it deploys the token, because a refusal after the deploy would strand
         // a real contract holding this name and symbol in this country forever.
         formula: data.formula,
+        decimals: data.decimals,
         ...(data.supplyMode === 1 ? { initialSupply: data.initialSupply } : {}),
       });
       if (result?.type === 'success') {

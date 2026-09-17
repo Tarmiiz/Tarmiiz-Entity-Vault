@@ -682,12 +682,28 @@ export class DetailsPage implements OnInit {
     if (!data) return;
     this.loadingService.show(this.translate.instant('assets.details.distributions.declaringLoading'));
     try {
-      const r = await this.apiService.distributionDeclare(this.assetAddress, {
+      const body = {
         distType:      data.distType,
         amount:        data.amount,
         recordBlock:   data.recordBlock,
         sweepResidual: data.sweepResidual,
-      });
+      };
+      let r = await this.apiService.distributionDeclare(this.assetAddress, body);
+      // Phase 36 A.4 — a StockSplit at a ratio that rounds some holder's share to ZERO omits
+      // them from the split entirely (`Distributions.sol` creates no leg for a zero share). The
+      // API refuses with the list; the issuer sees WHO is left out and may proceed knowingly.
+      if (r?.omittedHolders?.length) {
+        this.loadingService.hide();
+        const holders: string[] = r.omittedHolders;
+        const shown = holders.slice(0, 5).join('\n') + (holders.length > 5 ? '\n…' : '');
+        const ok = await this.alertService.show(
+          this.translate.instant('assets.details.distributions.omittedTitle'),
+          this.translate.instant('assets.details.distributions.omittedMessage', { count: holders.length, holders: shown }),
+          this.translate.instant('assets.details.distributions.omittedConfirm'));
+        if (!ok) return;
+        this.loadingService.show(this.translate.instant('assets.details.distributions.declaringLoading'));
+        r = await this.apiService.distributionDeclare(this.assetAddress, { ...body, acknowledgeOmitted: true });
+      }
       if (!r || r.error) {
         this.alertService.info(this.translate.instant('assets.details.distributions.declareFailedTitle'), r?.error || this.translate.instant('assets.details.distributions.declareFailedDefault'));
       } else {

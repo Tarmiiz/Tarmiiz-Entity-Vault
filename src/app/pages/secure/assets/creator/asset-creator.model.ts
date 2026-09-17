@@ -48,6 +48,12 @@ export interface AddAssetData {
   // `registerAsset` can check the token's declaration against the formula's base class.
   assetClass: number;
   initialSupply?: number;
+  // ERC-20 `decimals`, stored VERBATIM on the token. 0 is the platform default and the correct
+  // value for every asset whose quantities are plain integers (all four FRA funds, Phase 36
+  // ruling D4: whole units, round down, residue carried as cash). Non-zero only for an issuer
+  // that genuinely scales its quantities. The API accepted it since 2026-07-30; the wizard
+  // never sent it until 2026-09-17 (A.2), so it was unreachable from the UI.
+  decimals: number;
   creditSettlement: boolean;
   customMetadata: Record<string, string>;
   // Security identifiers (ISIN, …) for the metadata's server-owned `identifiers` key. Empty

@@ -1287,7 +1287,9 @@ export class ApiService {
     return this.authGet('/assets/' + asset + '/distributions/' + distributionId + '/legs', { start, offset });
   }
 
-  async distributionDeclare(asset: string, body: { distType: number; amount: string; recordBlock?: number; sweepResidual?: boolean }) {
+  // `acknowledgeOmitted` (Phase 36 A.4): a StockSplit whose ratio rounds some holder's share to
+  // zero is refused with 400 + `omittedHolders` until the issuer re-posts with it set.
+  async distributionDeclare(asset: string, body: { distType: number; amount: string; recordBlock?: number; sweepResidual?: boolean; acknowledgeOmitted?: boolean }) {
     return this.authPost('/assets/' + asset + '/distributions', body);
   }
 

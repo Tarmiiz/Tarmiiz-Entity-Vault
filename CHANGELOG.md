@@ -34,6 +34,17 @@ _Living preamble describing the broad direction this sub-project is currently mo
   enum widened on the API the same day); the Service Providers list filter and Add modal offer
   both classes; en + ar. Whether one is REQUIRED stays the asset class formula's call — no cap
   and no floor on this page, like a clearing house.
+- **`decimals` on the Add Asset wizard** (Phase 36 A.2) — an integer 0..255 on the Identity step,
+  default 0, sent verbatim to `POST /assets` (which has accepted it since 2026-07-30 and was
+  unreachable from the UI). 0 = whole units is the platform default and the correct value for
+  every fund unit (ruling D4: Sabayek keeps EGP 100 units, round down, residue carried as cash).
+  [asset-creator.page.ts](src/app/pages/secure/assets/creator/asset-creator.page.ts), the model,
+  the template; en + ar.
+- **A StockSplit that would omit a holder asks before declaring** (Phase 36 A.4). The API now
+  answers 400 + `omittedHolders` when the ratio rounds some holder's share to zero (the chain
+  records no leg for a zero share); the asset details page shows who is left out and, on
+  confirmation, re-posts with `acknowledgeOmitted: true`
+  ([details.page.ts](src/app/pages/secure/assets/details/details.page.ts)). en + ar.
 - **A Menu Access tab on ADMIN user details**, so a tenant can hold a Super Admin plus admins who
   see only part of the admin surface. `showMenuTab()` was roles 2/3 only; the module layer already
   resolved per user for every role (`getEffectiveMenuForUser`), so only the tab was withheld.
