@@ -86,6 +86,15 @@ export class ModalSpAddComponent {
         items = (d?.clearingHouses ?? [])
           .filter((c: any) => c.state === 2 && Number(c.classId) === spType)
           .map((c: any) => ({ address: c.address, name: c.name, level: c.level }));
+      } else if (spType === PARTY_CLASS.DEPOSITARY || spType === PARTY_CLASS.FUND_ADMINISTRATOR) {
+        // Phase 4.9's fund-level appointments — each has its own endpoint (no union), but the
+        // class is still asserted on every row so a mis-served list cannot offer a revert.
+        const d = spType === PARTY_CLASS.DEPOSITARY
+          ? (await this.apiService.vaultGetDepositaries(1, 50))?.depositaries
+          : (await this.apiService.vaultGetFundAdministrators(1, 50))?.fundAdministrators;
+        items = (d ?? [])
+          .filter((c: any) => c.state === 2 && Number(c.classId) === spType)
+          .map((c: any) => ({ address: c.address, name: c.name, level: c.level }));
       }
       const existing = this.spAddService.existing();
       this.options.set(items.filter(i => !existing.includes(i.address.toLowerCase())));

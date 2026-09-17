@@ -645,6 +645,8 @@
                     <option value="4">{{ 'services.details.info.partyLabelCustodian' | translate }}</option>
                     <option value="5">{{ 'services.details.info.partyLabelClearingHouse' | translate }}</option>
                     <option value="6">{{ 'services.details.info.partyLabelEscrowClearingHouse' | translate }}</option>
+                    <option value="7">{{ 'services.details.info.partyLabelDepositary' | translate }}</option>
+                    <option value="8">{{ 'services.details.info.partyLabelFundAdministrator' | translate }}</option>
                   </select>
                 </div>
                 <div class="flex flex-col justify-end">
@@ -694,6 +696,27 @@
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                         {{ 'services.details.providers.addClearingHouse' | translate }}
+                      </button>
+                    }
+                    <!-- Phase 4.9's fund-level appointments (classes 7 / 8). Whether one is
+                         REQUIRED is the asset class formula's call, not this page's — so no
+                         cap and no floor here either. -->
+                    @if (features.systemFunctionEnabled('service-add-depositary')) {
+                      <button (click)="attachDepositary()"
+                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ 'services.details.providers.addDepositary' | translate }}
+                      </button>
+                    }
+                    @if (features.systemFunctionEnabled('service-add-fund-administrator')) {
+                      <button (click)="attachFundAdministrator()"
+                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        {{ 'services.details.providers.addFundAdministrator' | translate }}
                       </button>
                     }
                   </div>
@@ -1636,6 +1659,7 @@
 <app-modal-service-validator></app-modal-service-validator>
 <app-modal-service-payment-processor></app-modal-service-payment-processor>
 <app-modal-service-clearing-house></app-modal-service-clearing-house>
+<app-modal-service-fund-party></app-modal-service-fund-party>
 <app-modal-service-custodian></app-modal-service-custodian>
 <app-modal-service-fee-config></app-modal-service-fee-config>
 <!-- Opened in 'switch' mode only — the regulator declares a service's initial election. -->

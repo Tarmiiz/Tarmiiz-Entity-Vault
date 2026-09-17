@@ -564,6 +564,8 @@
         "addPaymentProcessor": "إضافة معالج دفع",
         "addCustodian": "إضافة أمين حفظ",
         "addClearingHouse": "إضافة غرفة مقاصة",
+        "addDepositary": "إضافة أمين إيداع",
+        "addFundAdministrator": "إضافة شركة خدمات إدارة",
         "showing": "عرض {{showing}} من إجمالي {{total}} مزود",
         "active": "نشط",
         "inactive": "غير نشط",
@@ -626,6 +628,8 @@
         "partyLabelCustodian": "أمين الحفظ",
         "partyLabelClearingHouse": "غرفة المقاصة",
         "partyLabelEscrowClearingHouse": "غرفة مقاصة الضمان",
+        "partyLabelDepositary": "أمين الإيداع",
+        "partyLabelFundAdministrator": "شركة خدمات الإدارة",
         "licenses": "التراخيص"
       },
       "assets": {
@@ -943,6 +947,21 @@
       "suspendedSuffix": "(موقوفة)",
       "validatorInactive": "المُحقق غير نشط",
       "validatorInactiveTooltip": "واحد أو أكثر من المُحققين المرتبطين موقوف أو لم يعد معتمدًا من الجهة التنظيمية."
+    },
+    "fundPartyModal": {
+      "submit": "إضافة",
+      "depositary": {
+        "title": "إضافة أمين إيداع",
+        "label": "أمين الإيداع",
+        "placeholder": "اختر أمين إيداع…",
+        "empty": "لا يوجد أمناء إيداع متاحون — سجّل واحدًا في مزوّدي الخدمات أولًا، أو أن جميع أمناء الإيداع المؤهلين مرتبطون بالفعل."
+      },
+      "fundAdministrator": {
+        "title": "إضافة شركة خدمات إدارة",
+        "label": "شركة خدمات الإدارة",
+        "placeholder": "اختر شركة خدمات إدارة…",
+        "empty": "لا توجد شركات خدمات إدارة متاحة — سجّل واحدة في مزوّدي الخدمات أولًا، أو أن جميع الشركات المؤهلة مرتبطة بالفعل."
+      }
     },
     "clearingHouseModal": {
       "label": "غرفة المقاصة",
@@ -4366,7 +4385,9 @@
       "typeValidator": "المُحقق",
       "typePaymentGateway": "بوابة دفع",
       "typeBank": "بنك",
-      "typeEscrowClearingHouse": "غرفة مقاصة ضامنة"
+      "typeEscrowClearingHouse": "غرفة مقاصة ضامنة",
+      "typeDepositary": "أمين إيداع",
+      "typeFundAdministrator": "شركة خدمات إدارة"
     },
     "alerts": {
       "addFailedTitle": "فشلت الإضافة",
@@ -4390,7 +4411,9 @@
       "typePaymentGateway": "بوابة دفع",
       "typeBank": "بنك",
       "typeClearingHouse": "غرفة مقاصة",
-      "typeEscrowClearingHouse": "غرفة مقاصة ضامنة"
+      "typeEscrowClearingHouse": "غرفة مقاصة ضامنة",
+      "typeDepositary": "أمين إيداع",
+      "typeFundAdministrator": "شركة خدمات إدارة"
     },
     "footer": {
       "showing": "عرض {{shown}} من {{total}}"
@@ -4409,6 +4432,8 @@
     "exportPdf": "تصدير إلى PDF",
     "serviceAddCustodian": "الخدمة - إضافة أمين حفظ",
     "serviceAddClearingHouse": "الخدمة - إضافة غرفة مقاصة",
+    "serviceAddDepositary": "الخدمة - إضافة أمين إيداع",
+    "serviceAddFundAdministrator": "الخدمة - إضافة شركة خدمات إدارة",
     "serviceAddPaymentProcessor": "الخدمة - إضافة معالج دفع",
     "serviceAddValidator": "الخدمة - إضافة مُحقق",
     "serviceChangeState": "الخدمة - تغيير الحالة",

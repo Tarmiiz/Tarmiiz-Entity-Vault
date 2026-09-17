@@ -1789,6 +1789,8 @@ export class ApiService {
       custodians:           data.custodians           ?? [],
       clearingHouses:       data.clearingHouses       ?? [],
       escrowClearingHouses: data.escrowClearingHouses ?? [],
+      depositaries:         data.depositaries         ?? [],
+      fundAdministrators:   data.fundAdministrators   ?? [],
     } : null;
   }
 
@@ -1860,6 +1862,8 @@ export class ApiService {
       4: 'custodians',
       5: 'clearingHouses',
       6: 'escrowClearingHouses',
+      7: 'depositaries',
+      8: 'fundAdministrators',
     };
     const bucket = BUCKET[partyType];
     if (!bucket) return { type: 'error', error: `unknown party class ${partyType}` };
@@ -1896,7 +1900,7 @@ export class ApiService {
   // regulator-offered CANDIDATE list (live chain), not `vaultGetServiceProviders()` below,
   // which is the entity's own registered providers (mirror) — different sets, hence the
   // `/available` sub-path rather than a `?type=` on the same endpoint.
-  private async vaultGetProvidersAvailable(type: 'validator' | 'payment-processor' | 'custodian' | 'clearing-house', start = 1, offset = 50) {
+  private async vaultGetProvidersAvailable(type: 'validator' | 'payment-processor' | 'custodian' | 'clearing-house' | 'depositary' | 'fund-administrator', start = 1, offset = 50) {
     return await this.vaultGet('/service-providers/available', { type, start, offset });
   }
 
@@ -1923,6 +1927,19 @@ export class ApiService {
   async vaultGetClearingHouses(start = 1, offset = 50) {
     const data = await this.vaultGetProvidersAvailable('clearing-house', start, offset);
     return data ? { count: data.count, clearingHouses: data.providers } : null;
+  }
+
+  // Phase 4.9's fund-level appointments — Depositary 7 and Fund Administrator 8. Pickable since
+  // 2026-09-17 (Phase 36 A.1): until then the API's `type` enum stopped at clearing-house, so a
+  // class the chain had admitted for eleven days could be neither listed nor attached from here.
+  async vaultGetDepositaries(start = 1, offset = 50) {
+    const data = await this.vaultGetProvidersAvailable('depositary', start, offset);
+    return data ? { count: data.count, depositaries: data.providers } : null;
+  }
+
+  async vaultGetFundAdministrators(start = 1, offset = 50) {
+    const data = await this.vaultGetProvidersAvailable('fund-administrator', start, offset);
+    return data ? { count: data.count, fundAdministrators: data.providers } : null;
   }
 
   // ─── Vault — Entity-curated service providers ────────────────────────────────

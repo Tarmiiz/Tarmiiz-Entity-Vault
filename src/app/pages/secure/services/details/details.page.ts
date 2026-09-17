@@ -34,6 +34,8 @@ import { ModalServicePaymentProcessorService } from '../modals/modal-service-pay
 import { ModalServicePaymentProcessorComponent } from '../modals/modal-service-payment-processor/modal-service-payment-processor.component';
 import { ModalServiceClearingHouseService } from '../modals/modal-service-clearing-house/modal-service-clearing-house.service';
 import { ModalServiceClearingHouseComponent } from '../modals/modal-service-clearing-house/modal-service-clearing-house.component';
+import { ModalServiceFundPartyService } from '../modals/modal-service-fund-party/modal-service-fund-party.service';
+import { ModalServiceFundPartyComponent } from '../modals/modal-service-fund-party/modal-service-fund-party.component';
 import { ModalServiceCustodianService, SELF_CUSTODY_SENTINEL } from '../modals/modal-service-custodian/modal-service-custodian.service';
 import { ModalServiceCustodianComponent } from '../modals/modal-service-custodian/modal-service-custodian.component';
 import { ModalServiceFeeConfigService } from '../modals/modal-service-fee-config/modal-service-fee-config.service';
@@ -105,6 +107,7 @@ export interface MediaIndex {
     ModalServiceValidatorComponent,
     ModalServicePaymentProcessorComponent,
     ModalServiceClearingHouseComponent,
+    ModalServiceFundPartyComponent,
     ModalServiceCustodianComponent,
     ModalServiceFeeConfigComponent,
     ModalServiceElectionComponent,
@@ -129,6 +132,7 @@ export class DetailsPage implements OnInit {
   private validatorModalService = inject(ModalServiceValidatorService);
   private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
   private clearingHouseModalService = inject(ModalServiceClearingHouseService);
+  private fundPartyModalService = inject(ModalServiceFundPartyService);
   private custodianModalService = inject(ModalServiceCustodianService);
   private feeConfigModal = inject(ModalServiceFeeConfigService);
   private electionModalService = inject(ModalServiceElectionService);
@@ -427,11 +431,13 @@ export class DetailsPage implements OnInit {
   custodianName = signal<string>('');
   // 1:N provider attachments for this service (validators / payment processors / custodians).
   // `name` is resolved lazily from the regulator-scoped registries (resolvePartyNames).
-  // FIVE buckets — the API's `listServiceParties` returns escrowClearingHouses as its own,
+  // SEVEN buckets — the API's `listServiceParties` returns escrowClearingHouses as its own,
   // deliberately NOT merged into clearingHouses: a venue's escrow CH is a SEPARATE
   // appointment from the entities' CH. Declaring four here is why those attachments
-  // existed on chain and rendered nowhere.
-  serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[]; clearingHouses: { address: string; active: boolean; name?: string }[]; escrowClearingHouses: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [], clearingHouses: [], escrowClearingHouses: [] });
+  // existed on chain and rendered nowhere — and the same happened again with Phase 4.9's
+  // depositaries / fundAdministrators (classes 7 / 8), which this signal did not name until
+  // 2026-09-17. A bucket the page does not declare is an attachment nobody can see.
+  serviceParties = signal<{ validators: { address: string; active: boolean; name?: string }[]; paymentProcessors: { address: string; active: boolean; name?: string }[]; custodians: { address: string; active: boolean; name?: string }[]; clearingHouses: { address: string; active: boolean; name?: string }[]; escrowClearingHouses: { address: string; active: boolean; name?: string }[]; depositaries: { address: string; active: boolean; name?: string }[]; fundAdministrators: { address: string; active: boolean; name?: string }[] }>({ validators: [], paymentProcessors: [], custodians: [], clearingHouses: [], escrowClearingHouses: [], depositaries: [], fundAdministrators: [] });
 
   // Flattened view of the four 1:N attachment sets for the Service Providers tab's single table.
   // `partyType` is the SHARED platform numbering — the same ids the Add modal's spType uses
@@ -458,6 +464,10 @@ export class DetailsPage implements OnInit {
       ...p.custodians.map(v => row(PARTY_CLASS.CUSTODIAN, 'services.details.info.partyLabelCustodian', v, p.custodians.length > 1)),
       ...p.clearingHouses.map(v => row(PARTY_CLASS.CLEARING_HOUSE, 'services.details.info.partyLabelClearingHouse', v, true)),
       ...(p.escrowClearingHouses ?? []).map(v => row(PARTY_CLASS.ESCROW_CH, 'services.details.info.partyLabelEscrowClearingHouse', v, true)),
+      // Fund-level appointments (Phase 4.9). No floor and no cap, like a clearing house: the
+      // class formula decides whether one is REQUIRED for a given asset, not this page.
+      ...(p.depositaries ?? []).map(v => row(PARTY_CLASS.DEPOSITARY, 'services.details.info.partyLabelDepositary', v, true)),
+      ...(p.fundAdministrators ?? []).map(v => row(PARTY_CLASS.FUND_ADMINISTRATOR, 'services.details.info.partyLabelFundAdministrator', v, true)),
     ];
   });
 
@@ -1057,6 +1067,8 @@ export class DetailsPage implements OnInit {
             custodians: p?.custodians ?? [],
             clearingHouses: p?.clearingHouses ?? [],
             escrowClearingHouses: p?.escrowClearingHouses ?? [],
+            depositaries: p?.depositaries ?? [],
+            fundAdministrators: p?.fundAdministrators ?? [],
           });
           this.resolvePartyNames();
         })
@@ -1229,11 +1241,13 @@ export class DetailsPage implements OnInit {
   private async resolvePartyNames() {
     const parties = this.serviceParties();
     const regulator = this.service()?.regulator;
-    const [valData, ppData, custData, chData] = await Promise.all([
+    const [valData, ppData, custData, chData, depData, faData] = await Promise.all([
       parties.validators.length ? this.apiService.vaultGetValidators(1, 200).catch(() => null) : Promise.resolve(null),
       parties.paymentProcessors.length ? this.apiService.vaultGetPaymentProcessors(1, 200).catch(() => null) : Promise.resolve(null),
       (parties.custodians.length && regulator) ? this.apiService.vaultGetEndorsedCustodians(regulator, 1, 200).catch(() => null) : Promise.resolve(null),
       parties.clearingHouses.length ? this.apiService.vaultGetClearingHouses(1, 200).catch(() => null) : Promise.resolve(null),
+      (parties.depositaries ?? []).length ? this.apiService.vaultGetDepositaries(1, 200).catch(() => null) : Promise.resolve(null),
+      (parties.fundAdministrators ?? []).length ? this.apiService.vaultGetFundAdministrators(1, 200).catch(() => null) : Promise.resolve(null),
     ]);
     const nameFrom = (list: any[] | undefined, addr: string): string | undefined => {
       const m = (list ?? []).find((x: any) => x.address?.toLowerCase() === addr.toLowerCase());
@@ -1247,6 +1261,8 @@ export class DetailsPage implements OnInit {
       // No name lookup: there is no escrow-CH directory endpoint, so the address stands alone
       // rather than borrowing the entities-CH list, which is a DIFFERENT appointment.
       escrowClearingHouses: (parties.escrowClearingHouses ?? []).map(p => ({ ...p, name: '' })),
+      depositaries: (parties.depositaries ?? []).map(p => ({ ...p, name: nameFrom(depData?.depositaries, p.address) })),
+      fundAdministrators: (parties.fundAdministrators ?? []).map(p => ({ ...p, name: nameFrom(faData?.fundAdministrators, p.address) })),
     });
   }
 
@@ -1494,6 +1510,8 @@ export class DetailsPage implements OnInit {
       [PARTY_CLASS.CUSTODIAN]:       'bg-purple-100 text-purple-800',
       [PARTY_CLASS.CLEARING_HOUSE]:  'bg-teal-100 text-teal-800',
       [PARTY_CLASS.ESCROW_CH]:       'bg-amber-100 text-amber-800',
+      [PARTY_CLASS.DEPOSITARY]:      'bg-rose-100 text-rose-800',
+      [PARTY_CLASS.FUND_ADMINISTRATOR]: 'bg-lime-100 text-lime-800',
     } as Record<number, string>)[partyType] ?? 'bg-gray-100 text-gray-700';
   }
 
@@ -1518,6 +1536,8 @@ export class DetailsPage implements OnInit {
       [PARTY_CLASS.CUSTODIAN]:       'services.details.info.partyLabelCustodian',
       [PARTY_CLASS.CLEARING_HOUSE]:  'services.details.info.partyLabelClearingHouse',
       [PARTY_CLASS.ESCROW_CH]:       'services.details.info.partyLabelEscrowClearingHouse',
+      [PARTY_CLASS.DEPOSITARY]:      'services.details.info.partyLabelDepositary',
+      [PARTY_CLASS.FUND_ADMINISTRATOR]: 'services.details.info.partyLabelFundAdministrator',
     } as Record<number, string>)[partyType];
     const label = labelKey ? this.translate.instant(labelKey) : partyClassName(partyType);
     const ok = await this.alertService.show(this.translate.instant('services.details.info.removeProviderTitle'), this.translate.instant('services.details.info.detachConfirm', { label }), this.translate.instant('common.remove'));
@@ -1621,6 +1641,22 @@ export class DetailsPage implements OnInit {
     if (!chosen) return;
     // Role 5 — the SAME id the curated set and the Regulators Registry use.
     await this._attachParty(5, chosen);
+  }
+
+  // Phase 4.9's fund-level appointments — one picker, parameterised by class, and the SAME id at
+  // the picker, the curated set and the attach (no translation anywhere, per the party-class rule).
+  async attachDepositary() {
+    const chosen = await this.fundPartyModalService.show(PARTY_CLASS.DEPOSITARY,
+      (this.serviceParties().depositaries ?? []).map(p => p.address));
+    if (!chosen) return;
+    await this._attachParty(PARTY_CLASS.DEPOSITARY, chosen);
+  }
+
+  async attachFundAdministrator() {
+    const chosen = await this.fundPartyModalService.show(PARTY_CLASS.FUND_ADMINISTRATOR,
+      (this.serviceParties().fundAdministrators ?? []).map(p => p.address));
+    if (!chosen) return;
+    await this._attachParty(PARTY_CLASS.FUND_ADMINISTRATOR, chosen);
   }
 
   async attachCustodian() {

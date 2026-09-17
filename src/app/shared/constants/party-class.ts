@@ -184,4 +184,7 @@ export interface ServiceParties {
   custodians:           ServiceParty[];
   clearingHouses:       ServiceParty[];
   escrowClearingHouses: ServiceParty[];
+  /** Phase 4.9's fund-level appointments (7 / 8) — served by the API since 2026-09-17 (Phase 36 A.1). */
+  depositaries:         ServiceParty[];
+  fundAdministrators:   ServiceParty[];
 }

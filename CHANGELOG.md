@@ -19,6 +19,21 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 **Added**
 
+- **Depositary (7) and Fund Administrator (8) are attachable from the service detail page**
+  (Phase 36 A.1 — the one hard blocker for testing the four FRA fund assessments). The chain has
+  admitted both since Phase 4.9 / Phase 30 (2026-09-06); the Vault never named them, so an
+  attachment could be neither made nor seen. One generic picker,
+  [modal-service-fund-party](src/app/pages/secure/services/modals/modal-service-fund-party/modal-service-fund-party.component.ts),
+  parameterised by role (regulator-endorsed ∩ entity-curated, exactly like the clearing-house
+  modal); two Add buttons gated by the new `service-add-depositary` /
+  `service-add-fund-administrator` System Functions; two new buckets on `ServiceParties`
+  ([party-class.ts](src/app/shared/constants/party-class.ts)), the API mapper, the details-page
+  signal, the flattened providers table (badge colours, labels, filter), and the
+  replace-over-1:N bucket map; `vaultGetDepositaries` / `vaultGetFundAdministrators` on
+  [api.service.ts](src/app/shared/services/api.service.ts) (`/service-providers/available` type
+  enum widened on the API the same day); the Service Providers list filter and Add modal offer
+  both classes; en + ar. Whether one is REQUIRED stays the asset class formula's call — no cap
+  and no floor on this page, like a clearing house.
 - **A Menu Access tab on ADMIN user details**, so a tenant can hold a Super Admin plus admins who
   see only part of the admin surface. `showMenuTab()` was roles 2/3 only; the module layer already
   resolved per user for every role (`getEffectiveMenuForUser`), so only the tab was withheld.

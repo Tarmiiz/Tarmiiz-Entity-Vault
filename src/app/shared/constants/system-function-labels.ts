@@ -23,6 +23,9 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'service-add-payment-processor': 'systemFunctionLabels.serviceAddPaymentProcessor',
   'service-add-custodian':         'systemFunctionLabels.serviceAddCustodian',
   'service-add-clearing-house':    'systemFunctionLabels.serviceAddClearingHouse',
+  // Phase 4.9's fund-level appointments (classes 7 / 8), attachable from the Vault since 2026-09-17.
+  'service-add-depositary':          'systemFunctionLabels.serviceAddDepositary',
+  'service-add-fund-administrator':  'systemFunctionLabels.serviceAddFundAdministrator',
   // Clearing (deferred DvP). The CCP's own acts + a member's consent. The three permissionless
   // triggers (finalize / deliver / fail) have NO key on purpose — anyone may drive them on chain.
   'clearing-member-admit':         'systemFunctionLabels.clearingMemberAdmit',

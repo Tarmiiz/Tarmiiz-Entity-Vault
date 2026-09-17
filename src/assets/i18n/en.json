@@ -564,6 +564,8 @@
         "addPaymentProcessor": "Add Payment Processor",
         "addCustodian": "Add Custodian",
         "addClearingHouse": "Add Clearing House",
+        "addDepositary": "Add Depositary",
+        "addFundAdministrator": "Add Fund Administrator",
         "showing": "Showing {{showing}} of Total {{total}} Providers",
         "active": "Active",
         "inactive": "Inactive",
@@ -626,6 +628,8 @@
         "partyLabelCustodian": "Custodian",
         "partyLabelClearingHouse": "Clearing House",
         "partyLabelEscrowClearingHouse": "Escrow Clearing House",
+        "partyLabelDepositary": "Depositary",
+        "partyLabelFundAdministrator": "Fund Administrator",
         "licenses": "Licenses"
       },
       "assets": {
@@ -943,6 +947,21 @@
       "suspendedSuffix": "(Suspended)",
       "validatorInactive": "Validator inactive",
       "validatorInactiveTooltip": "One or more attached validators are suspended or no longer endorsed by the regulator."
+    },
+    "fundPartyModal": {
+      "submit": "Add",
+      "depositary": {
+        "title": "Add Depositary",
+        "label": "Depositary",
+        "placeholder": "Select a depositary…",
+        "empty": "No depositaries available — register one in Service Providers first, or every eligible depositary is already attached."
+      },
+      "fundAdministrator": {
+        "title": "Add Fund Administrator",
+        "label": "Fund Administrator",
+        "placeholder": "Select a fund administrator…",
+        "empty": "No fund administrators available — register one in Service Providers first, or every eligible fund administrator is already attached."
+      }
     },
     "clearingHouseModal": {
       "label": "Clearing House",
@@ -4366,7 +4385,9 @@
       "typeValidator": "Validator",
       "typePaymentGateway": "Payment Gateway",
       "typeBank": "Bank",
-      "typeEscrowClearingHouse": "Escrow Clearing House"
+      "typeEscrowClearingHouse": "Escrow Clearing House",
+      "typeDepositary": "Depositary",
+      "typeFundAdministrator": "Fund Administrator"
     },
     "alerts": {
       "addFailedTitle": "Add Failed",
@@ -4390,7 +4411,9 @@
       "typePaymentGateway": "Payment Gateway",
       "typeBank": "Bank",
       "typeClearingHouse": "Clearing House",
-      "typeEscrowClearingHouse": "Escrow Clearing House"
+      "typeEscrowClearingHouse": "Escrow Clearing House",
+      "typeDepositary": "Depositary",
+      "typeFundAdministrator": "Fund Administrator"
     },
     "footer": {
       "showing": "Showing {{shown}} of {{total}}"
@@ -4409,6 +4432,8 @@
     "exportPdf": "Export PDF",
     "serviceAddCustodian": "Service - Add Custodian",
     "serviceAddClearingHouse": "Service - Add Clearing House",
+    "serviceAddDepositary": "Service - Add Depositary",
+    "serviceAddFundAdministrator": "Service - Add Fund Administrator",
     "serviceAddPaymentProcessor": "Service - Add Payment Processor",
     "serviceAddValidator": "Service - Add Validator",
     "serviceChangeState": "Service - Change State",
