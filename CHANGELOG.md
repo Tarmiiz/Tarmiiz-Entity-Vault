@@ -15,6 +15,24 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-17
+
+**Changed**
+
+- **System Configuration is railed by section** (Standard 2.1) — **sixteen** sections that were flat
+  cards down one scroll. Fifteen are `app_config` categories; the sixteenth is an `onchain`
+  PSEUDO-category for the API address, which is read from the CHAIN (the entity's `api`
+  external-contract registration) and so has no `category` to group by. It could have stayed a
+  permanent card above the rail, but that keeps the scroll the rail removes, and it is one of the
+  things an admin opens this page to check.
+  - The signals are named `section*` rather than `group*` purely to match the Regulator twin, where
+    `group` is already a private METHOD on the class and a signal of that name would shadow it. Same
+    names both sides, one hazard avoided in both.
+- **Four `app_config` sections had no label.** `categoryLabel` falls back to the raw slug, which
+  reads acceptably as a CSS-uppercased card header ("LOGGING") and badly as a rail item next to
+  "Blockchain" — the rail is what made the gap visible. Added `logging`, `security`, `system`,
+  `registration`, plus the `onchain` rail label, in en and ar with parity verified.
+
 ### 2026-09-16
 
 **Added**

@@ -4839,7 +4839,12 @@
         "email": "البريد الإلكتروني",
         "ipfs": "IPFS",
         "branding": "العلامة التجارية",
-        "shield": "Shield"
+        "shield": "Shield",
+        "logging": "السجلات",
+        "security": "الأمان",
+        "system": "النظام",
+        "registration": "التسجيل",
+        "onchain": "القيم على السلسلة"
       }
     },
     "apiEndpoints": {

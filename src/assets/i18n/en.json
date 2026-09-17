@@ -4839,7 +4839,12 @@
         "email": "Email",
         "ipfs": "IPFS",
         "branding": "Branding",
-        "shield": "Shield"
+        "shield": "Shield",
+        "logging": "Logging",
+        "security": "Security",
+        "system": "System",
+        "registration": "Registration",
+        "onchain": "On-chain values"
       }
     },
     "apiEndpoints": {

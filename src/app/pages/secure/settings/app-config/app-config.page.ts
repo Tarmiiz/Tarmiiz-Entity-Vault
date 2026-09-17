@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -10,13 +10,15 @@ import { LoadingService } from '../../../../shared/components/alerts/loading/loa
 import { AlertService } from '../../../../shared/components/alerts/alert/alert.service';
 import { AppConfigItem } from '../../../../shared/models/data.model';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
+import { SubTabRailComponent } from '../../../../shared/components/sub-tab-rail/sub-tab-rail.component';
+import { TabDef } from '../../../../shared/components/tabs/tabs.component';
 
 @Component({
   selector: 'app-settings-app-config',
   templateUrl: './app-config.page.html',
   styleUrls: ['./app-config.page.scss'],
   standalone: true,
-  imports: [LoadingStateComponent, CommonModule, FormsModule, TranslatePipe, HeaderComponent],
+  imports: [LoadingStateComponent, CommonModule, FormsModule, TranslatePipe, HeaderComponent, SubTabRailComponent],
 })
 export class AppConfigPage implements OnInit {
   private apiService     = inject(ApiService);
@@ -69,6 +71,52 @@ export class AppConfigPage implements OnInit {
       this.loading.set(false);
     }
   }
+
+  // ─── Section rail (Standard 2.1) ────────────────────────────────────────────
+  //
+  // FIFTEEN app_config categories plus the on-chain API address, stacked as flat
+  // cards down one scroll. Standard 2.1's test is "does it remove a scroll, or add
+  // a click?" — sixteen sections answer it.
+  //
+  // ⚠️ `ON_CHAIN` is a PSEUDO-CATEGORY. The API address is read from the CHAIN (an
+  // external-contract registration), so it has no `category` to group by, but it is
+  // still something an admin comes to this page to check. The slug deliberately does
+  // not collide with the real `chain` category, labelled "Blockchain".
+  //
+  // Named `section*`, not `group*`, to match the Regulator twin — there the name
+  // `group` is already a private grouping METHOD on the class, and a signal of the
+  // same name would shadow it and break `load()`. Same names both sides, one hazard
+  // avoided in both.
+
+  /** The pseudo-category holding the chain-read setting. */
+  readonly ON_CHAIN = 'onchain';
+
+  section = signal<string | null>(null);
+
+  sections = computed<TabDef[]>(() => {
+    const out: TabDef[] = [{
+      key: this.ON_CHAIN,
+      label: 'settings.appConfig.categories.onchain',
+      count: 1,
+    }];
+    for (const c of this.categories()) {
+      // Resolved label, not a key: `categoryLabel` falls back to the raw slug for an
+      // unlabelled category, and a rail item must never render blank.
+      out.push({ key: c.category, label: this.categoryLabel(c.category), count: c.items.length });
+    }
+    return out;
+  });
+
+  /** Selected section, falling back to the first rail item so the pane is never blank. */
+  activeSection = computed(() => {
+    const ss = this.sections();
+    const sel = this.section();
+    return sel && ss.some((s) => s.key === sel) ? sel : (ss[0]?.key ?? null);
+  });
+
+  /** The one category on show, or null while the on-chain pane is selected. */
+  activeCategory = computed(() =>
+    this.categories().find((c) => c.category === this.activeSection()) ?? null);
 
   categoryLabel(category: string): string {
     const key = 'settings.appConfig.categories.' + category;

@@ -9,32 +9,24 @@
     <p class="text-xs text-gray-600">{{ 'settings.appConfig.description' | translate }}</p>
   </div>
 
-  <!-- API Endpoint (on-chain external-contract registration, not an app_config value).
-       Read-only: this address MUST match the wallet the Entity API signs with; changing it
-       without rotating that key would brick the API's writes, so rotation is an ops task. -->
-  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
-    <div class="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
-      <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-700">{{ 'profile.api.endpointTitle' | translate }}</h3>
-    </div>
-    <div class="flex flex-col md:flex-row md:items-center gap-2 px-4 py-3">
-      <div class="text-sm font-medium text-gray-800 md:flex-1 min-w-0">{{ 'profile.api.address' | translate }}</div>
-      <div class="text-[11px] font-mono text-gray-500 break-all md:text-right md:shrink-0">{{ apiAddress() || '—' }}</div>
-    </div>
-  </div>
+  <!-- Standard 2.1 section rail. FIFTEEN app_config categories plus the on-chain API
+       address were flat cards down one scroll; the rail removes it rather than adding a
+       click. The pane heading is the rail item, so no card repeats its own section name. -->
+  <div class="card-v4 p-4">
+    <app-loading-state [loading]="loading()" [empty]="!loading() && !categories().length">
+      <app-sub-tab-rail [tabs]="sections()" [active]="activeSection() || ''" (select)="section.set($event)">
 
-  @if (categories().length === 0) {
-    <div class="card-v4">
-      <app-loading-state [loading]="loading()" [empty]="!loading()" />
-    </div>
-  }
+        @if (activeSection() === ON_CHAIN) {
+          <!-- Read from the CHAIN, not app_config. READ-ONLY: the address must match the
+               wallet the Entity API signs with, so rotating it here without rotating that
+               key would brick the API's writes — a coordinated ops task, not an edit. -->
+          <div class="flex flex-col md:flex-row md:items-center gap-2 py-3">
+            <div class="text-sm font-medium text-gray-800 md:flex-1 min-w-0">{{ 'profile.api.address' | translate }}</div>
+            <div class="text-[11px] font-mono text-gray-500 break-all md:text-right md:shrink-0">{{ apiAddress() || '—' }}</div>
+          </div>
+        }
 
-  <!-- One card per category -->
-  @for (group of categories(); track group.category) {
-    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-3">
-      <div class="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
-        <h3 class="text-sm font-semibold text-gray-800">{{ categoryLabel(group.category) }}</h3>
-      </div>
-
+        @if (activeCategory(); as group) {
       <ul class="divide-y divide-gray-100">
         @for (item of group.items; track item.key) {
           <li class="px-4 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -143,6 +135,9 @@
           </li>
         }
       </ul>
-    </div>
-  }
+        }
+
+      </app-sub-tab-rail>
+    </app-loading-state>
+  </div>
 </div>
