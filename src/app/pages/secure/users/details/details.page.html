@@ -208,7 +208,7 @@
 
               @if (menuLoading()) {
                 <div class="text-center py-10 text-gray-500"><p>{{ 'users.details.menu.loading' | translate }}</p></div>
-              } @else if (menuRows().length === 0) {
+              } @else if (visibleMenuRows().length === 0) {
                 <div class="text-center py-10 text-gray-500"><p>{{ 'users.details.menu.empty' | translate }}</p></div>
               } @else {
                 <div class="overflow-x-auto rounded-lg">
@@ -222,7 +222,7 @@
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                      @for (row of menuRows(); track row.menuKey) {
+                      @for (row of visibleMenuRows(); track row.menuKey) {
                         <tr>
                           <td class="text-sm text-gray-800">{{ labelFor(row.menuKey) }}</td>
                           <td class="text-xs text-gray-400 font-mono">

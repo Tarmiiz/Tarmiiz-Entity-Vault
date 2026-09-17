@@ -182,6 +182,11 @@ export const routes: Routes = [
             path: 'creator',
             loadComponent: () => import('./pages/secure/assets/creator/asset-creator.page').then( m => m.AssetCreatorPage),
             canActivate: [AuthGuard, menuFeatureGuard('asset-creator')],
+            // The menu key is NOT the path here (`asset-creator` at `assets/creator`), and the key
+            // is sealed inside the guard's closure — unreadable at runtime. `menu-route-roles.ts`
+            // derives "which roles can reach this module" from THIS table, so without the explicit
+            // key it cannot place this route and the row falls open on every Menu Access tab.
+            data: { menuKey: 'asset-creator' },
             canDeactivate: [(cmp: { canLeave: () => Promise<boolean> }) => cmp.canLeave()],
           },
           {

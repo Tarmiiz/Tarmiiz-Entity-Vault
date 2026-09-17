@@ -17,7 +17,31 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-17
 
+**Added**
+
+- **A Menu Access tab on ADMIN user details**, so a tenant can hold a Super Admin plus admins who
+  see only part of the admin surface. `showMenuTab()` was roles 2/3 only; the module layer already
+  resolved per user for every role (`getEffectiveMenuForUser`), so only the tab was withheld.
+  Self-restriction is blocked server-side (`menuConfigController.userSet` 403s a self target) —
+  hiding your own Menu Settings hides the page that would undo it. Admin A stripping admin B is
+  NOT floored; logged in `TODO.md` as the "last unrestricted admin" item.
+- **`shared/constants/menu-route-roles.ts`** — derives `menuKey -> roles that can reach it` from
+  `Router.config` at runtime. A byte-identical twin ships in the Regulator Dashboard.
+
 **Changed**
+
+- **Menu Access lists only the modules the TARGET USER's role can open.** It listed all 19, so an
+  admin's tab offered toggles for Assets, Custody, DEX, Services, Settlements, Clearing and the
+  rest — every one `allowedRoles: [2, 3]`. Measured against the route table: **admin sees 6 of 19**
+  (`service-providers`, `documents`, `messages`, `variables`, `approvals`, `logs`), executive 18,
+  viewer 16. Same shape as the system-function `roles` defect fixed the same day, one layer over.
+  - **Derived from the routes, not tabulated** — a hand-kept table would drift from
+    `app.routes.ts` the first time a guard moved, silently. Fails OPEN on a key it cannot place: a
+    menu key with no matching route is a registry/route mismatch to fix, not a restriction to
+    assert.
+  - **`assets/creator` carries `data.menuKey: 'asset-creator'`.** It is the app's one route whose
+    menu key is not its path, and the key lives inside `menuFeatureGuard`'s closure where nothing
+    can read it — so without the explicit `data` the row could not be placed and fell open.
 
 - **System Configuration is railed by section** (Standard 2.1) — **sixteen** sections that were flat
   cards down one scroll. Fifteen are `app_config` categories; the sixteenth is an `onchain`
@@ -32,6 +56,15 @@ _Living preamble describing the broad direction this sub-project is currently mo
   reads acceptably as a CSS-uppercased card header ("LOGGING") and badly as a rail item next to
   "Blockchain" — the rail is what made the gap visible. Added `logging`, `security`, `system`,
   `registration`, plus the `onchain` rail label, in en and ar with parity verified.
+
+**Fixed**
+
+- **User Details showed TWO loaders for one fetch** — `getUserDetails()` raises the full-page
+  overlay, and the page-level `@else` branch rendered the brand mark again inside the card. Standard
+  3.4's "one look per page" gives it to the overlay. ⚠️ This page was among five wrongly cleared by
+  an earlier triage that grepped `loadingService.show` under `head -5` and so never saw that call
+  site; the real overlap count across both apps is 6 of 25, not 1. The user's *"user detail tabs
+  still have the two loading indicators"* is what refuted it.
 
 ### 2026-09-16
 

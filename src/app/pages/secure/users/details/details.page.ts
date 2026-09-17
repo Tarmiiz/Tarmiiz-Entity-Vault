@@ -32,6 +32,7 @@ import { UserGroup } from '../../../../shared/models/data.model';
 import { SocketService } from '../../../../shared/services/socket.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
 import { menuLabelFor } from '../../../../shared/constants/menu-labels';
+import { menuRolesFromRoutes, roleCanReachMenu } from '../../../../shared/constants/menu-route-roles';
 import { systemFunctionLabelFor, systemFunctionGroupFor, systemFunctionGroupLabelFor, systemFunctionLabelInGroup } from '../../../../shared/constants/system-function-labels';
 import { SubTabRailComponent } from '../../../../shared/components/sub-tab-rail/sub-tab-rail.component';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
@@ -156,6 +157,28 @@ export class DetailsPage implements OnInit {
   // + 'vpn' (Phase 34.5/34.6 — this person's VPN access to the Vault).
   activeTab   = signal<'details' | 'menu' | 'system-functions' | 'vpn'>('details');
   menuRows    = signal<UserMenuRow[]>([]);
+
+  /**
+   * `menuKey -> roles that can reach it`, read once from the ROUTE TABLE.
+   *
+   * Built from `router.config` rather than a hand-kept table so it cannot drift from the
+   * guards it describes — see `menu-route-roles.ts` for why that mattered enough to derive.
+   */
+  private readonly menuRoleMap = menuRolesFromRoutes(this.router.config);
+
+  /**
+   * The rows the tab actually shows: only modules the TARGET USER's role can open.
+   *
+   * 🔴 The tab listed ALL of them, so an admin's Menu Access offered toggles for modules
+   * `allowedRoles: [2, 3]` keeps them out of — Assets, Custody, DEX, Services, Settlements
+   * and the rest. Same shape as the system-function `roles` defect fixed alongside it: a
+   * control over something the user cannot reach.
+   */
+  visibleMenuRows = computed(() => {
+    const role = Number(this.user()?.role);
+    if (!role) return this.menuRows();
+    return this.menuRows().filter((r) => roleCanReachMenu(this.menuRoleMap, r.menuKey, role));
+  });
   menuLoading = signal(false);
   menuSaving  = signal<string | null>(null); // menu key currently saving
   private menuLoaded = false;
