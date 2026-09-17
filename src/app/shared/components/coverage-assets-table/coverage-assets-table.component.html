@@ -11,11 +11,13 @@
         <th class="text-right">{{ 'dashboard.liquidity.breakdown.bid' | translate }}</th>
         <th class="text-right">{{ 'dashboard.liquidity.breakdown.gross' | translate }}</th>
         <th class="text-right">{{ 'dashboard.liquidity.breakdown.contribution' | translate }}</th>
+        <!-- 33.G G.6: realisations − deployments from the flow identity (origins 16 / 15). -->
+        <th class="text-right">{{ 'dashboard.liquidity.breakdown.deployedNet' | translate }}</th>
       </tr>
     </thead>
     <tbody>
       @if (!assets || assets.length === 0) {
-        <tr><td colspan="9" class="text-center text-gray-400">{{ 'common.noData' | translate }}</td></tr>
+        <tr><td colspan="10" class="text-center text-gray-400">{{ 'common.noData' | translate }}</td></tr>
       } @else {
         @for (a of assets; track a.asset) {
           <tr class="border-t">
@@ -47,6 +49,14 @@
                 <span class="text-gray-300">—</span>
               } @else {
                 {{ a.contribution | money }}
+              }
+            </td>
+            <td class="text-right font-mono">
+              @let net = deployedNetOf(a.asset);
+              @if (net === null) {
+                <span class="text-gray-300">—</span>
+              } @else {
+                {{ net | money }}
               }
             </td>
           </tr>

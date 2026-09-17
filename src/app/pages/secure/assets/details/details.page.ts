@@ -40,6 +40,8 @@ import { ModalAssetPriceService } from '../modals/modal-asset-price/modal-asset-
 import { ModalAssetPriceComponent } from '../modals/modal-asset-price/modal-asset-price.component';
 import { ModalDealingConfigService, DealingConfig, DealingSide } from '../modals/modal-dealing-config/modal-dealing-config.service';
 import { ModalDealingConfigComponent } from '../modals/modal-dealing-config/modal-dealing-config.component';
+import { ModalAttestationService } from '../modals/modal-attestation/modal-attestation.service';
+import { ModalAttestationComponent } from '../modals/modal-attestation/modal-attestation.component';
 import { ModalAssetSupplyService } from '../modals/modal-asset-supply/modal-asset-supply.service';
 import { ModalAssetSupplyComponent } from '../modals/modal-asset-supply/modal-asset-supply.component';
 import { ModalDistributionDeclareService } from '../modals/modal-distribution-declare/modal-distribution-declare.service';
@@ -92,6 +94,7 @@ export interface AssetMedia {
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
     ModalDealingConfigComponent,
+    ModalAttestationComponent,
     ModalAssetSupplyComponent,
     ModalDistributionDeclareComponent,
     MetadataEditModalComponent,
@@ -113,6 +116,7 @@ export class DetailsPage implements OnInit {
   private listingCreateModal = inject(ModalListingCreateService);
   private priceModal = inject(ModalAssetPriceService);
   private dealingModal = inject(ModalDealingConfigService);
+  private attestationModal = inject(ModalAttestationService);
   private supplyModal = inject(ModalAssetSupplyService);
   private metadataEditModal = inject(MetadataEditModalService);
   private identifierModal = inject(ModalIdentifierService);
@@ -935,6 +939,44 @@ export class DetailsPage implements OnInit {
         refuse:      raw.nav_status.refuse === true,
       } : null,
     };
+  }
+
+  // ─── Attestations (33.G G.4) ─────────────────────────────────────────────────
+  // The issuer records; the party signs. Fund units only. Two keys because it is two acts on
+  // the API (a document write + a requirement declaration) and both are gated there.
+  canRecordAttestation(): boolean {
+    const a = this.asset();
+    return !!a && Number(a.assetClass) === 1 && this.canManage()
+      && this.userInfo?.role !== 3
+      && this.features.systemFunctionEnabled('asset-compose')
+      && this.features.systemFunctionEnabled('manage-documents');
+  }
+
+  async openAttestationModal(row: 37 | 38 = 38) {
+    const asset = this.asset();
+    if (!asset) return;
+    const result = await this.attestationModal.show({ symbol: asset.symbol, currencyCode: asset.currencyCode, row });
+    if (!result) return;
+    this.loadingService.show(this.translate.instant('assets.attestationModal.saving'));
+    try {
+      const r: any = await this.apiService.assetAttestationAdd(asset.address, result);
+      if (!r || r.error) {
+        this.alertService.info(this.translate.instant('alerts.error'), r?.error || this.translate.instant('alerts.unexpected'));
+        return;
+      }
+      this.alertService.info(
+        this.translate.instant('assets.attestationModal.doneTitle'),
+        this.translate.instant('assets.attestationModal.doneMessage', {
+          documentId: r.documentId, row: result.row,
+          shared: (r.sharedWith || []).map((s: string) => this.utils.shortAddr(s)).join(', '),
+        }));
+      await this.getAssetDetails();
+    } catch (error) {
+      console.error('Failed to record the attestation', error);
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   /** The NAV badge's colour follows the GATE, not the label: refused is red, unsigned amber. */

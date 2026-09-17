@@ -89,6 +89,8 @@ interface LiquidityCoverageByServiceRow {
   serviceName: string;
   currency: string;
   currencyAlpha?: string;
+  /** ISO numeric — carried by the API row (the λ fold's key); the flow identity is read by it. */
+  currencyCode?: number;
   currencyName: string;
   obligation: number;
   liquidity: number;

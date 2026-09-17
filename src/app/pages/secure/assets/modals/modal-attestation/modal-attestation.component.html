@@ -1,0 +1,74 @@
+@if (modal.isVisible() && modal.input(); as input) {
+  <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4">
+      <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+        <h3 class="text-xl leading-6 font-semibold text-gray-100">
+          {{ 'assets.attestationModal.title' | translate: { symbol: input.symbol } }}
+        </h3>
+        <p class="text-xs text-gray-400 mt-1">{{ 'assets.attestationModal.intro' | translate }}</p>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="attRow" class="block text-sm font-medium text-gray-700">{{ 'assets.attestationModal.row' | translate }}</label>
+              <select id="attRow" formControlName="row"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <option [ngValue]="38">{{ 'assets.attestationModal.rowNav' | translate }}</option>
+                <option [ngValue]="37">{{ 'assets.attestationModal.rowPortfolio' | translate }}</option>
+              </select>
+            </div>
+            <div>
+              <label for="attAsOf" class="block text-sm font-medium text-gray-700">{{ 'assets.attestationModal.asOf' | translate }}</label>
+              <input id="attAsOf" type="datetime-local" formControlName="asOf"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+          </div>
+
+          @if (isNav()) {
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="attBid" class="block text-sm font-medium text-gray-700">{{ 'assets.priceModal.bid' | translate }} ({{ input.currencyCode }})</label>
+                <input id="attBid" type="number" step="any" min="0" formControlName="bid"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+              <div>
+                <label for="attAsk" class="block text-sm font-medium text-gray-700">{{ 'assets.priceModal.ask' | translate }} ({{ input.currencyCode }})</label>
+                <input id="attAsk" type="number" step="any" min="0" formControlName="ask"
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+            </div>
+            <p class="text-xs text-gray-500">{{ 'assets.attestationModal.navHint' | translate }}</p>
+          } @else {
+            <div>
+              <label for="attLines" class="block text-sm font-medium text-gray-700">{{ 'assets.attestationModal.lines' | translate }}</label>
+              <textarea id="attLines" formControlName="lines" rows="6" [placeholder]="'assets.attestationModal.linesPlaceholder' | translate"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-xs font-mono focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+              <p class="mt-1 text-xs text-gray-500">{{ 'assets.attestationModal.linesHint' | translate }}</p>
+            </div>
+            <div>
+              <label for="attCash" class="block text-sm font-medium text-gray-700">{{ 'assets.attestationModal.cashAtDepositary' | translate }} ({{ input.currencyCode }})</label>
+              <input id="attCash" type="number" step="any" formControlName="cashAtDepositary"
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
+          }
+
+          <div>
+            <label for="attBy" class="block text-sm font-medium text-gray-700">{{ 'assets.attestationModal.attestedBy' | translate }}</label>
+            <input id="attBy" type="text" formControlName="attestedBy" [placeholder]="input.defaultAttester || '0x…'"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-black text-sm font-mono focus:ring-indigo-500 focus:border-indigo-500" />
+            <p class="mt-1 text-xs text-gray-500">{{ 'assets.attestationModal.attestedByHint' | translate }}</p>
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-2xl">
+          <button type="button" (click)="onCancel()" class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button type="submit" [disabled]="!isValid()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'assets.attestationModal.submit' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

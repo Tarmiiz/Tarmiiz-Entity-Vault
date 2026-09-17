@@ -1564,6 +1564,27 @@ export class ApiService {
     return data ?? null;
   }
 
+  // ─── 33.G G.3 / G.4 — the flow identity and the attestations ──────────────────────────
+  // The Entity twin of the Regulator's flow-identity route: same fold, same envelope.
+  // `from` / `to` are epoch MILLISECONDS on the wire. `identity` is the fold's object unwrapped.
+  async serviceFlowIdentity(service: string, currencyCode: number, opts?: { asset?: string; from?: number; to?: number }) {
+    const params: Record<string, any> = { currencyCode };
+    if (opts?.asset) params['asset'] = opts.asset;
+    if (opts?.from)  params['from']  = opts.from;
+    if (opts?.to)    params['to']    = opts.to;
+    return this.authGet('/services/' + service + '/flow-identity', params);
+  }
+
+  async assetAttestations(address: string) {
+    return this.authGet('/assets/' + address + '/attestations');
+  }
+
+  // Row 38 (NAV) or 37 (portfolio): the API serialises the JSON, pins it Private, shares it to
+  // the regulator + the attesting party, and declares it against the row. The party then signs.
+  async assetAttestationAdd(address: string, body: { row: 37 | 38; attestation: Record<string, any>; attestedBy?: string }) {
+    return this.authPost('/assets/' + address + '/attestations', body);
+  }
+
   // `{ dealing: config }` sets the model; `{ enabled: false }` clears it (back to spot).
   async vaultSetAssetDealing(address: string, body: { dealing?: Record<string, any> | null; enabled?: boolean }): Promise<{ type?: string; error?: string; dealing?: any } | null> {
     try {

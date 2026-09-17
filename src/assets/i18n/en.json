@@ -469,7 +469,8 @@
         "outstanding": "Outstanding",
         "bid": "Bid",
         "gross": "Gross",
-        "contribution": "Contribution"
+        "contribution": "Contribution",
+        "deployedNet": "Deployed (net)"
       }
     },
     "loadingChart": "Loading chart…",
@@ -1141,7 +1142,8 @@
         "current": "NAV attested",
         "stale": "NAV STALE",
         "cadenceTitle": "The formula requires a signed NAV attestation every {{days}} day(s). Primary dealing is refused while it is stale or missing.",
-        "noCadenceTitle": "No attestation cadence is set on this asset's formula — the status is advisory."
+        "noCadenceTitle": "No attestation cadence is set on this asset's formula — the status is advisory.",
+        "record": "Record attestation"
       },
       "dealing": {
         "title": "Dealing",
@@ -1693,6 +1695,25 @@
       "effectiveAt": "Effective at",
       "effectiveAtHint": "Optional. Leave empty to publish as of now. Must not be earlier than the latest published price.",
       "effectiveAtForwardHint": "This asset deals forward: set the effective time to the valuation point ({{time}} {{tz}}) to release that dealing day's queued orders at this price."
+    },
+    "attestationModal": {
+      "title": "Record Attestation — {{symbol}}",
+      "intro": "The attestation is pinned as a private document shared with the attesting party and the regulator, and declared against its requirement row. It counts once the attesting party signs it from their own Vault.",
+      "row": "Attestation",
+      "rowNav": "NAV (row 38 — fund administrator)",
+      "rowPortfolio": "Portfolio holdings (row 37 — trustee / depositary)",
+      "asOf": "As of",
+      "navHint": "Whole currency units. In Single-price mode enter the same value twice.",
+      "lines": "Holdings",
+      "linesPlaceholder": "instrument | custodian | location | segregated (y/n) | quantity | value\nEGP T-bill 91d | Banque du Caire | Cairo | y | 1000 | 985000",
+      "linesHint": "One holding per line, fields separated by |. Value in whole currency units.",
+      "cashAtDepositary": "Cash at depositary",
+      "attestedBy": "Attesting party",
+      "attestedByHint": "Leave empty to use the default: the service's Fund Administrator for NAV; the asset's Trustee, else the Depositary, for holdings.",
+      "submit": "Pin & Declare",
+      "saving": "Recording attestation...",
+      "doneTitle": "Attestation recorded",
+      "doneMessage": "Document #{{documentId}} was pinned, shared with {{shared}} and declared against row {{row}}. It counts once the attesting party signs it."
     },
     "dealingModal": {
       "title": "Dealing Model — {{symbol}}",

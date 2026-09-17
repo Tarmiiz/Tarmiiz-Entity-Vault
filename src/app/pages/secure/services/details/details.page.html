@@ -1417,7 +1417,7 @@
                         @if (expanded) {
                           <tr class="bg-gray-50">
                             <td colspan="9">
-                              <app-coverage-assets-table [assets]="row.assets" [unsetCount]="row.unsetCount" />
+                              <app-coverage-assets-table [assets]="row.assets" [unsetCount]="row.unsetCount" [service]="serviceAddress" [currencyCode]="row.currencyCode" />
                             </td>
                           </tr>
                         }

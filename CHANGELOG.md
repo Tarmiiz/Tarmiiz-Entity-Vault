@@ -34,6 +34,16 @@ _Living preamble describing the broad direction this sub-project is currently mo
   enum widened on the API the same day); the Service Providers list filter and Add modal offer
   both classes; en + ar. Whether one is REQUIRED stays the asset class formula's call — no cap
   and no floor on this page, like a clearing house.
+- **33.G item G.4 — the issuer's attestation form.** "Record attestation" beside the NAV badge
+  (fund units, manager, `asset-compose` + `manage-documents`) opens
+  [modal-attestation](src/app/pages/secure/assets/modals/modal-attestation/modal-attestation.component.ts):
+  NAV (row 38, bid/ask) or portfolio holdings (row 37, one holding per line + cash at
+  depositary), as-of instant, optional attesting party (the API defaults it). Posts to
+  `POST /assets/:address/attestations`; the party then signs from its own Vault. en + ar.
+- **33.G item G.6 — "Deployed (net)" on the coverage assets table.** `realisations −
+  deployments` per asset from `GET /services/:address/flow-identity` (the Entity twin; the
+  table now takes `[service]` / `[currencyCode]` from its two hosts), computed in the component
+  so the two dashboards cannot drift on the sign; reads 0.00 until origins 15 / 16 exist.
 - **33.G item G.4 — the NAV attestation badge.** The asset details price row carries the NAV
   attestation state on a fund unit (`nav_status` on `GET /assets/:address`, class-1 only):
   `NAV attested` / `unsigned` / `not attested` / `NAV STALE`, red whenever the API's
