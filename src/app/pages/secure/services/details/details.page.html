@@ -1443,6 +1443,9 @@
                     <tr>
                       <th class="text-left">Date</th>
                       <th class="text-left">Action</th>
+                      <!-- 33.G G.6: a deployment (15) / realisation (16) is attributed to an ASSET
+                           (credit_transactions.asset, NULL until 33.C 2b writes it). -->
+                      <th class="text-left">Asset</th>
                       <th class="text-right">Amount</th>
                       <th class="text-left">Currency</th>
                       <th class="text-left">Reference</th>
@@ -1451,21 +1454,22 @@
                   <tbody>
                     @if (liquidityHistoryLoading()) {
                       @for (s of [1, 2, 3, 4, 5]; track s) {
-                        <tr><td colspan="5"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                        <tr><td colspan="6"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
                       }
                     } @else if (liquidityHistory().length === 0) {
-                      <tr><td colspan="5" class="py-4 text-center text-gray-400">No liquidity changes recorded.</td></tr>
+                      <tr><td colspan="6" class="py-4 text-center text-gray-400">No liquidity changes recorded.</td></tr>
                     } @else {
                       @for (row of pagedLiqHistory(); track row.trx_id; let isEven = $even) {
                         <tr class="transition-colors">
                           <td class="text-gray-500 whitespace-nowrap">{{ row.start_time ? (row.start_time * 1000 | date:'dd/MM/yyyy HH:mm:ss') : '—' }}</td>
                           <td>
                             <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                              [class.bg-green-100]="row.origin === 3" [class.text-green-700]="row.origin === 3"
-                              [class.bg-amber-100]="row.origin === 4" [class.text-amber-700]="row.origin === 4">
+                              [class.bg-green-100]="row.origin === 3 || row.origin === 16" [class.text-green-700]="row.origin === 3 || row.origin === 16"
+                              [class.bg-amber-100]="row.origin === 4 || row.origin === 15" [class.text-amber-700]="row.origin === 4 || row.origin === 15">
                               {{ creditOriginLabel(row.origin) }}
                             </span>
                           </td>
+                          <td class="text-gray-800 font-mono">{{ row.asset ? utils.shortAddr(row.asset) : '—' }}</td>
                           <td class="text-right font-mono font-semibold text-gray-800">{{ formatCreditAmount(row.trx_amount) }}</td>
                           <td class="text-gray-800">{{ row.currency_alpha || row.currency_name || row.currency_code }}</td>
                           <td class="text-gray-500">{{ row.trx_ref_no || '—' }}</td>

@@ -313,11 +313,17 @@ export class DetailsPage implements OnInit {
   liqHistoryPageSize = signal(25);
   pagedLiqHistory = computed(() => pageSlice(this.liquidityHistory(), this.liqHistoryPage(), this.liqHistoryPageSize()));
   liquidityHistoryLoading = signal(false);
+  // 15 / 16 (33.G item G.6, 2026-09-17) are the fund cash leg's two POOL terms — a deployment of
+  // pool cash to the backing custodian against an asset, and its realisation back. Neither origin
+  // is emitted by any contract yet (33.C item 2b, a window item), so both read as absent today;
+  // they are named now so the surface is structurally complete the day the rows arrive, rather
+  // than rendering as "Origin 15". The names are agreed with the Regulator Dashboard's copy.
   private readonly creditOriginNames: Record<number, string> = {
     1: 'Deposit', 2: 'Withdraw', 3: 'Liquidity Inject', 4: 'Liquidity Withdraw',
     5: 'Service Send', 6: 'Withhold', 7: 'Settle', 8: 'Cross-Service Settle',
     9: 'Peer-to-Peer', 10: 'Regulator Transfer', 11: 'Settle Fee',
     12: 'Cross-Service Settle Fee', 13: 'Bank Transfer', 14: 'Route Transfer',
+    15: 'Deployment', 16: 'Realisation',
   };
   creditOriginLabel(o: number): string { return this.creditOriginNames[o] ?? ('Origin ' + o); }
   // credit_transactions.trx_amount arrives in whole-currency units since the
@@ -1865,7 +1871,9 @@ export class DetailsPage implements OnInit {
   async getLiquidityHistory(silent = false) {
     if (!silent) this.liquidityHistoryLoading.set(true);
     try {
-      const res = await this.apiService.vaultGetServiceCreditTransactions(this.serviceAddress, { origin: '3,4', offset: 200 });
+      // '3,4' was the whole pool history until 33.G G.6: 15 (deployment) / 16 (realisation) are
+      // the pool's other two movements, present in the filter now and empty until 33.C 2b.
+      const res = await this.apiService.vaultGetServiceCreditTransactions(this.serviceAddress, { origin: '3,4,15,16', offset: 200 });
       this.liquidityHistory.set(Array.isArray(res.transactions) ? res.transactions : []);
     } finally {
       if (!silent) this.liquidityHistoryLoading.set(false);

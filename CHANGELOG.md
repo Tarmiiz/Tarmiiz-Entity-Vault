@@ -34,6 +34,13 @@ _Living preamble describing the broad direction this sub-project is currently mo
   enum widened on the API the same day); the Service Providers list filter and Add modal offer
   both classes; en + ar. Whether one is REQUIRED stays the asset class formula's call — no cap
   and no floor on this page, like a clearing house.
+- **33.G item G.6, the labels half.** The service page's Liquidity Change History names origins
+  15 = Deployment / 16 = Realisation (the fund cash leg's two pool terms, agreed with the
+  Regulator Dashboard's copy), widens its filter to `3,4,15,16`, and gains an Asset column
+  (`credit_transactions.asset`, NULL until 33.C item 2b's plugin write). Neither origin is
+  emitted by any contract yet — the surface is structurally complete for the day the rows arrive
+  rather than rendering "Origin 15". The per-asset "Deployed (net)" column on the coverage
+  assets table follows the Entity flow-identity twin (G.3).
 - **Forward pricing surfaces** (Phase 36 A.7, the Vault half of the dealing queue). The Add
   Transaction flow understands the API's 202 — a `queued` order is reported with its dealing day,
   valuation time and cut-off instead of a tx hash — and the Transactions page carries a
