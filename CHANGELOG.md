@@ -123,6 +123,17 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 **Fixed**
 
+- **A REQUIRED document row with nothing pinned rendered as grey "held off-platform" on the
+  compliance requirements table** — which on an APPROVED asset reads as a pass (Phase 35.5 / FRA
+  report P3, re-measured on base 2026-09-17: the Offering Document is row 1, carries no party
+  role, and `requirementStatus()` only knew the wrapper and the role rows). The tab already loads
+  the R16 requirement-document bindings for the Documents rail, so
+  [compliance-tab.component.ts](src/app/pages/secure/assets/details/compliance-tab/compliance-tab.component.ts)
+  now reads them: a server-classed document row is **Satisfied** when a document is declared
+  against it and **Missing** otherwise, and "Fix here" on a missing one opens the Documents rail.
+  Untracked survives only for the evidence rows with no on-chain slot. Until the bindings have
+  loaded a document row reads untracked, never satisfied. The "What the approval checks" panel's
+  missing fourth row (UX audit D3) is a separate, still-open entry.
 - **User Details showed TWO loaders for one fetch** — `getUserDetails()` raises the full-page
   overlay, and the page-level `@else` branch rendered the brand mark again inside the card. Standard
   3.4's "one look per page" gives it to the overlay. ⚠️ This page was among five wrongly cleared by

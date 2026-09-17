@@ -309,11 +309,16 @@ export class ComplianceTabComponent implements OnChanges {
       never answered "have I done it", which is the question an operator actually brings to
       this table. So `state` is now labelled Obligation and this derives the missing half.
 
-      It mirrors `approveAsset`'s three checks and claims NOTHING further: the profile, the
-      wrapper's non-zero id, and `classPartiesSatisfied`. The remaining evidence rows
-      (Insurance, SPV documentation, Concentration limits, Debtor verification) have no
-      on-chain slot at all — the wrapper is the only evidence field that exists — so they are
+      It mirrors `approveAsset`'s checks and claims NOTHING further: the profile, the wrapper's
+      non-zero id, `classPartiesSatisfied`, and — since 2026-09-17 — `classDocsSatisfied`, read
+      off the R16 `docRows` this tab already loads (Phase 35.5 / P3, measured on base: a
+      REQUIRED Offering Document with no declared document rendered as grey "held off-platform",
+      which on an APPROVED asset reads as a pass; it is a Missing row, and the Documents rail
+      is where it is discharged). The remaining evidence rows (Insurance, SPV documentation,
+      Concentration limits, Debtor verification) have no on-chain slot at all, so they are still
       reported as held off-platform rather than given a tick this platform cannot support.
+      Until `docRows` has loaded a document row reads as untracked for a moment, never as
+      satisfied — the fail direction is the safe one.
   */
   requirementStatus(r: any): StatusKind {
     if (Number(r.requirementId) === REQ_LEGAL_WRAPPER) {
@@ -322,13 +327,23 @@ export class ComplianceTabComponent implements OnChanges {
     if (Number(r.role) > 0) {
       return this.roleSatisfied(Number(r.role)) ? 'satisfied' : 'missing';
     }
+    const doc = this.docRowFor(r);
+    if (doc) return doc.documentId ? 'satisfied' : 'missing';
     return 'untracked';
+  }
+
+  /** The R16 document row behind a catalog requirement, if the server classes it as document-kind. */
+  private docRowFor(r: any) {
+    const key = this.catalogRowKey(Number(r.requirementId)).toLowerCase();
+    return this.docRows().find((d) => String(d.rowKey).toLowerCase() === key) || null;
   }
 
   /** Which sub-tab resolves a Missing row — nothing to offer for the other two kinds. */
   requirementFix(r: any): ComplianceRail | null {
     if (this.requirementStatus(r) !== 'missing') return null;
-    return Number(r.requirementId) === REQ_LEGAL_WRAPPER ? 'declaration' : 'parties';
+    if (Number(r.requirementId) === REQ_LEGAL_WRAPPER) return 'declaration';
+    if (Number(r.role) > 0) return 'parties';
+    return 'documents';
   }
 
   statusClass(kind: StatusKind): string {
