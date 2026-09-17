@@ -34,6 +34,13 @@ _Living preamble describing the broad direction this sub-project is currently mo
   enum widened on the API the same day); the Service Providers list filter and Add modal offer
   both classes; en + ar. Whether one is REQUIRED stays the asset class formula's call — no cap
   and no floor on this page, like a clearing house.
+- **33.G item G.4 — the NAV attestation badge.** The asset details price row carries the NAV
+  attestation state on a fund unit (`nav_status` on `GET /assets/:address`, class-1 only):
+  `NAV attested` / `unsigned` / `not attested` / `NAV STALE`, red whenever the API's
+  primary-market gate would refuse (stale, or none/unsigned while the formula's cadence says one
+  is due), with the newest signature time. `Asset.navStatus` on the model; en + ar. Submitting an
+  attestation is an API act (`POST /assets/:address/attestations`) for now — the issuer-side form
+  follows.
 - **33.G item G.6, the labels half.** The service page's Liquidity Change History names origins
   15 = Deployment / 16 = Realisation (the fund cash leg's two pool terms, agreed with the
   Regulator Dashboard's copy), widens its filter to `3,4,15,16`, and gains an Asset column

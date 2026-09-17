@@ -925,7 +925,25 @@ export class DetailsPage implements OnInit {
       priceModeName: raw.priceModeName ?? raw.price_mode_name ?? (Number(raw.priceMode ?? raw.price_mode ?? 2) === 1 ? this.translate.instant('assets.details.info.priceModeSingle') : this.translate.instant('assets.details.info.priceModeBidAsk')),
       supplyMode: raw.supplyMode ?? raw.supply_mode ?? 1,
       supplyModeName: raw.supplyModeName ?? raw.supply_mode_name ?? (Number(raw.supplyMode ?? raw.supply_mode ?? 1) === 2 ? this.translate.instant('assets.details.info.supplyModeDynamic') : this.translate.instant('assets.details.info.supplyModeFixed')),
+      // 33.G G.4 — served on class-1 assets only; absent = not a fund unit, never "current".
+      navStatus: raw.nav_status && typeof raw.nav_status === 'object' ? {
+        row:         Number(raw.nav_status.row) || 0,
+        documentId:  Number(raw.nav_status.documentId) || 0,
+        signedAt:    raw.nav_status.signedAt != null ? Number(raw.nav_status.signedAt) : null,
+        cadenceDays: raw.nav_status.cadenceDays != null ? Number(raw.nav_status.cadenceDays) : null,
+        status:      raw.nav_status.status,
+        refuse:      raw.nav_status.refuse === true,
+      } : null,
     };
+  }
+
+  /** The NAV badge's colour follows the GATE, not the label: refused is red, unsigned amber. */
+  navBadgeClass(): string {
+    const n = this.asset()?.navStatus;
+    if (!n) return '';
+    if (n.refuse) return 'bg-red-100 text-red-800';
+    if (n.status === 'current') return 'bg-green-100 text-green-800';
+    return 'bg-amber-100 text-amber-800';
   }
 
   private mapVaultTransaction(raw: any): AssetTransaction {

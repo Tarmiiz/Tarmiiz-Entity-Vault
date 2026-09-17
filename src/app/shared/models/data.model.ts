@@ -1055,8 +1055,21 @@ export class Asset {
     // manager-gated write (mint / burn / change state / metadata / fee config)
     // can succeed. It is a capability hint for gating buttons, NOT an
     // authorization check — the contract is the only enforcement.
-    public canManage: boolean = false
+    public canManage: boolean = false,
+    // 33.G G.4 — the NAV attestation status, served on class-1 (Fund Units) assets only:
+    // none | unsigned | current | stale, with `refuse` = the primary-market gate. Absent / null
+    // elsewhere — OPTIONAL so the list pages' literals (which never carry it) still type-check.
+    public navStatus?: AssetNavStatus | null
   ) {}
+}
+
+export interface AssetNavStatus {
+  row: number;
+  documentId: number;
+  signedAt: number | null;      // chain seconds
+  cadenceDays: number | null;
+  status: 'none' | 'unsigned' | 'current' | 'stale';
+  refuse: boolean;
 }
 
 export class AssetPrice {

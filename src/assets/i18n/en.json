@@ -1135,6 +1135,14 @@
         "removeTitle": "Remove Identifier",
         "removeMessage": "Remove the {{name}} identifier \"{{value}}\" from this asset?"
       },
+      "nav": {
+        "none": "NAV not attested",
+        "unsigned": "NAV attestation unsigned",
+        "current": "NAV attested",
+        "stale": "NAV STALE",
+        "cadenceTitle": "The formula requires a signed NAV attestation every {{days}} day(s). Primary dealing is refused while it is stale or missing.",
+        "noCadenceTitle": "No attestation cadence is set on this asset's formula — the status is advisory."
+      },
       "dealing": {
         "title": "Dealing",
         "spot": "Spot — orders execute on submission at the standing price.",

@@ -90,7 +90,18 @@
 
               <!-- Price row -->
               <div class="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ 'assets.details.overview.currentPrice' | translate }}</p>
+                <div class="flex items-center justify-between mb-3">
+                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ 'assets.details.overview.currentPrice' | translate }}</p>
+                  <!-- 33.G G.4: the NAV attestation state on a fund unit. Red = primary dealing is
+                       refused (stale, or none/unsigned while the formula's cadence says one is due). -->
+                  @if (asset()?.navStatus; as nav) {
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="navBadgeClass()"
+                      [title]="nav.cadenceDays !== null ? ('assets.details.nav.cadenceTitle' | translate: { days: nav.cadenceDays }) : ('assets.details.nav.noCadenceTitle' | translate)">
+                      {{ ('assets.details.nav.' + nav.status) | translate }}
+                      @if (nav.signedAt) { · {{ utils.formatDate(nav.signedAt) }} }
+                    </span>
+                  }
+                </div>
                 @if (latestPrice(); as lp) {
                   <div class="grid grid-cols-3 gap-3">
                     <div>
