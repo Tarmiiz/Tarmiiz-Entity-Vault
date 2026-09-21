@@ -1059,7 +1059,11 @@ export class Asset {
     // 33.G G.4 — the NAV attestation status, served on class-1 (Fund Units) assets only:
     // none | unsigned | current | stale, with `refuse` = the primary-market gate. Absent / null
     // elsewhere — OPTIONAL so the list pages' literals (which never carry it) still type-check.
-    public navStatus?: AssetNavStatus | null
+    public navStatus?: AssetNavStatus | null,
+    // AS.1 (33.A) — the asset's ISSUING service (primary-market money account). An asset is
+    // created WITHOUT one and it is set afterwards; empty / null = not set yet, and the regulator
+    // cannot approve the asset to Active until it is.
+    public issuerService?: string | null
   ) {}
 }
 

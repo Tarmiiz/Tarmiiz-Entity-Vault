@@ -2663,6 +2663,11 @@ export class ApiService {
     return data ? { readFailed: !!data.readFailed, classes: Array.isArray(data.classes) ? data.classes : [] } : null;
   }
 
+  // AS.1 (33.A) — set / change the asset's issuing service (`changeIssuerService` on chain).
+  async vaultSetAssetIssuerService(asset: string, service: string) {
+    return (await this.vaultPut('/assets/' + asset + '/issuer-service', { service })) ?? null;
+  }
+
   async vaultUpdateEntityIdentifier(body: { idType: number; value: string; reason?: string }) {
     const data = await this.vaultPut('/entity/identifiers', body);
     return data ?? null;

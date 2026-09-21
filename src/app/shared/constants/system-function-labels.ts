@@ -66,6 +66,8 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'asset-register-existing':     'systemFunctionLabels.assetRegisterExisting',
   'asset-edit-metadata':         'systemFunctionLabels.assetEditMetadata',
   'asset-edit-identifiers':      'systemFunctionLabels.assetEditIdentifiers',
+  // AS.1 (33.A) — set / change the asset's issuing service after creation.
+  'asset-issuer-service':        'systemFunctionLabels.assetIssuerService',
   // A8 registration lifecycle (Phase 15) — four separately delegable acts: filing the
   // declaration is compliance, composing a Custom asset's rows is product, appointing a
   // provider is procurement, and ACCEPTING a role is this tenant answering as a PROVIDER on

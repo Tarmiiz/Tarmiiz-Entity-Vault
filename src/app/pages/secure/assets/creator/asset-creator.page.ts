@@ -32,10 +32,6 @@ interface ClassFormula {
   state: number;              // 1 Draft | 2 Active | 3 Retired
 }
 
-// 27 = Token Issuer on the on-chain `License Class` catalog. Named here for the same reason the
-// service-details page names it: a bare 27 in a filter is indistinguishable from a typo.
-const CLASS_TOKEN_ISSUER = 27;
-
 /**
  * Asset Creator — the issuer's create wizard as a routed PAGE (R18 / Phase 4.9, A2 2026-09-10;
  * frontend Standard 2.5, the app's first stepped page).
@@ -75,7 +71,6 @@ export class AssetCreatorPage {
   private submitted = false;
 
   // Reference data
-  services = signal<{ address: string; name: string; paymentProcessor: string | null }[]>([]);
   countries = signal<{ countryCode: number; nameShort: string; currencyCode: string; currencyName: string }[]>([]);
   regulators = signal<{ address: string; name: string; symbol: string }[]>([]);
   // Supply modes — the 1 = Fixed / 2 = Dynamic choice that the on-chain T20Template carries
@@ -146,7 +141,7 @@ export class AssetCreatorPage {
   private isHidden = (n: number) => AssetCreatorPage.HIDDEN_STEPS.has(n);
 
   readonly totalSteps = 8;
-  readonly stepLabels = ['Standard & Supply', 'Identity', 'Metadata', 'Service', 'Roles', 'Documents', 'Images', 'Review'];
+  readonly stepLabels = ['Standard & Supply', 'Identity', 'Metadata', 'Currency', 'Roles', 'Documents', 'Images', 'Review'];
   /** The dots actually drawn, and the source of the "Step X of Y" counter. */
   readonly stepNumbers = [1, 2, 3, 4, 5, 6, 7, 8].filter((n) => !AssetCreatorPage.HIDDEN_STEPS.has(n));
   /** Visible count, so the header does not promise a step the user will never see. */
@@ -186,7 +181,8 @@ export class AssetCreatorPage {
     // ERC-20 decimals, 0..255, default 0 = whole units (the platform default — see the model).
     decimals: ['0', [Validators.required, Validators.pattern(/^\d{1,3}$/), Validators.min(0), Validators.max(255)]],
     description: ['', Validators.required],
-    service: ['', Validators.required],
+    // AS.1 (33.A) — NO `service` control. An asset is created WITHOUT its issuing service; the
+    // service is set afterwards on the asset's detail page (the Issuing service card).
     currency: ['', Validators.required],
     regulator: ['', Validators.required],
     // Inverted UI control: checked = opt OUT of credit settlement. Credit settlement is the default (unchecked).
@@ -343,13 +339,6 @@ export class AssetCreatorPage {
     return `${f.name} — ${reg ? reg.symbol : f.regulator.slice(0, 8)} · ${cls} · ${short}`;
   }
 
-  get selectedServiceHasPaymentProcessor(): boolean {
-    const serviceAddr = this.addForm.get('service')?.value;
-    if (!serviceAddr) return false;
-    const svc = this.services().find(s => s.address === serviceAddr);
-    return !!svc?.paymentProcessor;
-  }
-
   /** Fresh wizard on every entry — the page equivalent of the modal's open-effect reset. */
   ionViewWillEnter() {
     this.submitted = false;
@@ -372,7 +361,6 @@ export class AssetCreatorPage {
     const step = Number.isInteger(wanted) && wanted >= 1 && wanted <= this.totalSteps && !this.isHidden(wanted) ? wanted : 1;
     this.currentStep.set(step);
     this.syncStepToUrl(step);
-    this.loadServices();
     this.loadCountriesAndRegulators();
     this.loadSupplyModesAndAssetTypes();
     this.loadKnownAddresses();
@@ -405,13 +393,10 @@ export class AssetCreatorPage {
       this.metadataError.set(this.validateMetadata());
     });
 
-    // Force "opt out" when service changes to one without payment processor
-    // (credit settlement is impossible without a payment processor).
-    this.addForm.get('service')!.valueChanges.subscribe(() => {
-      if (!this.selectedServiceHasPaymentProcessor) {
-        this.addForm.get('noCreditSettlement')!.setValue(true);
-      }
-    });
+    // AS.1 (ruling (a), 2026-09-21) — the credit-settlement opt-out is NO LONGER forced by the
+    // chosen service's payment processor: there is no service at creation. The contract never
+    // conditioned the flag on a PP (the gate was UX); the PP warning lives on the Issuing
+    // service card, and the flag stays a manager act afterwards (setCreditSettlement).
 
     // 4.9 — THE FORMULA DERIVES EVERYTHING: base class, supply model, price mode AND the
     // regulator. Each of the four is re-checked on chain against this same formula, so a
@@ -480,7 +465,7 @@ export class AssetCreatorPage {
     1: ['formula', 'supplyMode', 'priceMode', 'assetClass'],
     2: ['name', 'symbol', 'description'],
     3: [],
-    4: ['service', 'currency'],
+    4: ['currency'],
     // `regulator` MOVED OUT (4.9): it is no longer a choice — the class formula's author IS
     // the asset's regulator, and it is set on step 1. Leaving it here would have gated Next
     // on a control the user can no longer see or edit.
@@ -679,10 +664,6 @@ export class AssetCreatorPage {
     return this.priceModes().find(p => p.id === Number(this.addForm.get('priceMode')?.value))?.name ?? '';
   }
 
-  getServiceName(): string {
-    return this.services().find(s => s.address === this.addForm.get('service')?.value)?.name ?? '';
-  }
-
   getCurrencyDisplay(): string {
     const c = this.countries().find(c => c.countryCode === Number(this.addForm.get('currency')?.value));
     return c ? `${c.currencyName} (${c.currencyCode})` : '';
@@ -694,29 +675,6 @@ export class AssetCreatorPage {
   }
 
   // --- Data loading ---
-
-  async loadServices() {
-    const data = await this.apiService.vaultGetServicesOwn(0, 50);
-    if (data?.services) {
-      this.services.set(
-        data.services
-          // 🔴 THE LICENCE, NOT `service_type`. Phase 28 dropped that field, so this read
-          // `undefined === 1` — false for EVERY service — and the Service dropdown was empty on a
-          // tenant whose service held an ACTIVE Token Issuer licence. Nothing errored: an empty
-          // <select> looks exactly like "you have no services yet".
-          //
-          // `license_class_ids` is the ACTIVE set only (Entity API `getServices`), so a suspended
-          // token-issuer licence correctly does NOT offer the service here — it could not host an
-          // asset anyway, and offering it would move the failure to the on-chain submit.
-          .filter((s: any) => (s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER))
-          .map((s: any) => ({
-            address: s.address,
-            name: s.name,
-            paymentProcessor: s.payment_processor ?? null,
-          }))
-      );
-    }
-  }
 
   async loadCountriesAndRegulators() {
     const [countries, entity, approved] = await Promise.all([
@@ -915,7 +873,6 @@ export class AssetCreatorPage {
       name: formValue.name ?? '',
       symbol: formValue.symbol ?? '',
       description: formValue.description ?? '',
-      service: formValue.service ?? '',
       currency: Number(formValue.currency),
       regulator: formValue.regulator ?? '',
       supplyMode,
@@ -951,7 +908,6 @@ export class AssetCreatorPage {
     try {
       const result = await this.apiService.vaultCreateAsset({
         owner: data.owner,
-        service: data.service,
         issuer: data.issuer,
         manager: data.manager,
         name: data.name,

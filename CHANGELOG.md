@@ -15,6 +15,27 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-21 — Phase 33 off-chain ledger (branch `phase33-ledger`, lands with the final redeploy)
+
+**Changed**
+
+- **AS.1 (33.A) — an asset is CREATED WITHOUT its issuing service.** The Add Asset wizard's step 4
+  is now "Currency" only: the `service` control, its Token-Issuer-licensed picker, the review row
+  and the payment-processor gate are gone ([asset-creator.page.ts](src/app/pages/secure/assets/creator/asset-creator.page.ts)).
+  Ruling (a): the credit-settlement opt-out is no longer forced by a service's missing payment
+  processor — the contract never conditioned the flag on one; the warning moved to the card below.
+  en + ar step-4 text.
+
+**Added**
+
+- **An "Issuing service" card** at the top of the asset detail Services tab
+  ([details.page.html](src/app/pages/secure/assets/details/details.page.html)): shows the service
+  (or an amber "not set — cannot be approved to Active until it is"), and — for the manager, a
+  non-viewer holding the new `asset-issuer-service` key — a picker of this tenant's services with an
+  ACTIVE Token Issuer licence plus Set / Change behind an AlertService confirm, calling
+  `PUT /assets/:address/issuer-service`. Warns when the chosen service has no payment processor.
+  `Asset.issuerService` mapped from `issuer_service`; label + en/ar strings.
+
 ### 2026-09-17
 
 **Added**

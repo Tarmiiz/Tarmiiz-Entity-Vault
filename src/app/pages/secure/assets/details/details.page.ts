@@ -938,7 +938,68 @@ export class DetailsPage implements OnInit {
         status:      raw.nav_status.status,
         refuse:      raw.nav_status.refuse === true,
       } : null,
+      issuerService: raw.issuer_service || null,
     };
+  }
+
+  // ─── Issuing service (AS.1, 33.A) ─────────────────────────────────────────────────────────
+  // An asset is created WITHOUT its issuing service; this card sets it (and changes it later).
+  // Offered: this tenant's services holding an ACTIVE Token Issuer licence (27) — the on-chain
+  // re-validation (`requireIssuerService`) refuses anything else. The payment-processor WARNING
+  // moved here from the creation wizard (ruling (a)): credit settlement is not conditioned on a
+  // PP by the contract, but primary money needs a rail for the asset's currency.
+  issuerCandidates = signal<{ address: string; name: string; paymentProcessor: string | null }[]>([]);
+  issuerPick = signal<string>('');
+
+  canSetIssuerService(): boolean {
+    return this.canManage() && this.userInfo?.role !== 3 && this.features.systemFunctionEnabled('asset-issuer-service');
+  }
+
+  issuerServiceName(): string {
+    const a = this.asset();
+    if (!a?.issuerService) return '';
+    const hit = this.issuerCandidates().find(c => c.address.toLowerCase() === a.issuerService!.toLowerCase())
+      ?? a.services.find(s => s.service.toLowerCase() === a.issuerService!.toLowerCase());
+    return (hit as any)?.name ?? (hit as any)?.serviceName ?? '';
+  }
+
+  issuerPickHasNoPP(): boolean {
+    const c = this.issuerCandidates().find(x => x.address === this.issuerPick());
+    return !!c && !c.paymentProcessor;
+  }
+
+  async loadIssuerCandidates() {
+    const data = await this.apiService.vaultGetServicesOwn(0, 50);
+    this.issuerCandidates.set((data?.services ?? [])
+      .filter((s: any) => (s.license_class_ids ?? []).includes(27))   // 27 = Token Issuer licence
+      .map((s: any) => ({ address: s.address, name: s.name, paymentProcessor: s.payment_processor ?? null })));
+  }
+
+  async saveIssuerService() {
+    const a = this.asset();
+    const pick = this.issuerPick();
+    if (!a || !pick) return;
+    const name = this.issuerCandidates().find(c => c.address === pick)?.name ?? pick;
+    const confirmed = await this.alertService.show(
+      this.translate.instant('assets.details.issuerService.confirmTitle'),
+      this.translate.instant(a.issuerService ? 'assets.details.issuerService.confirmChange' : 'assets.details.issuerService.confirmSet', { name }),
+      this.translate.instant('assets.details.issuerService.confirmButton'),
+    );
+    if (!confirmed) return;
+    this.loadingService.show(this.translate.instant('common.loadingData'));
+    try {
+      const r: any = await this.apiService.vaultSetAssetIssuerService(a.address, pick);
+      if (!r || r.error || r.type === 'error') {
+        this.alertService.info(this.translate.instant('alerts.error'), r?.error || this.translate.instant('alerts.unexpected'));
+        return;
+      }
+      this.issuerPick.set('');
+      await this.getAssetDetails(true);
+    } catch {
+      this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   // ─── Attestations (33.G G.4) ─────────────────────────────────────────────────
@@ -1041,6 +1102,7 @@ export class DetailsPage implements OnInit {
         }));
       }
       this.asset.set(asset);
+      if (this.canSetIssuerService() && this.issuerCandidates().length === 0) void this.loadIssuerCandidates();
       if (asset.suspended) {
         const logs = await this.apiService.vaultGetStateChangeLogs(asset.address, 1, 1);
         if (logs?.logs?.length > 0) {
