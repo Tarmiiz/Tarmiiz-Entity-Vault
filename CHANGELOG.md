@@ -54,6 +54,13 @@ _Living preamble describing the broad direction this sub-project is currently mo
   deliberately NOT here: the caller must be the backing custodian, never the fund's own tenant, so
   it lands on the custodian's Custody page. api.service gained the six pool-outflow methods;
   labels for `service-deployment` / `service-realisation`; en + ar.
+- **33.C item 2b — the custodian's side: a "Deployments" tab on the Custody page.** Lists the
+  deployments on OTHER funds' books that name one of this tenant's services as beneficiary
+  (`GET /custody/deployments`), with Confirm (fulfil), Refuse (fail, reason required) and Return
+  (realise: amount, the fund's payment rail, a 32-byte evidence hash) — every action relayed as the
+  beneficiary service (`via`) against the fund's book, because the contract admits only the
+  backing custodian. Fulfil / Refuse gated by `credit-withdraw`, Return by `service-realisation`;
+  hidden for viewers. en + ar.
 
 ### 2026-09-17
 

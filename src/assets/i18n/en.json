@@ -4676,7 +4676,8 @@
   "custody": {
     "tabs": {
       "underCustody": "Services Under My Custody",
-      "assets": "Assets Under Custody"
+      "assets": "Assets Under Custody",
+      "deployments": "Deployments"
     },
     "underCustody": {
       "description": "Token-issuer services that have attached one of your services as their custodian.",
@@ -4711,6 +4712,29 @@
       "releasing": "Releasing hold...",
       "placeFailed": "Failed to place the hold",
       "releaseFailed": "Failed to release the hold"
+    },
+    "deployments": {
+      "title": "Deployments awaiting you",
+      "description": "Cash a fund moved to one of your services as its backing custodian. Only you can confirm it, refuse it, or return it to the fund.",
+      "fund": "Fund (book)",
+      "asset": "Asset",
+      "myService": "My service",
+      "remaining": "Remaining",
+      "currency": "Currency",
+      "fulfil": "Confirm",
+      "fail": "Refuse",
+      "realise": "Return",
+      "fulfilTitle": "Confirm the deployment",
+      "failTitle": "Refuse the deployment",
+      "realiseTitle": "Return cash to the fund (realisation)",
+      "provider": "Payment rail of the fund (address)",
+      "evidence": "Evidence (32-byte hash)",
+      "reference": "Reference",
+      "empty": "No deployments are waiting for you.",
+      "reasonRequired": "A reason is required.",
+      "amountRefRequired": "Enter a positive amount and a reference.",
+      "providerRequired": "Enter the fund's payment rail address.",
+      "evidenceRequired": "Enter a non-zero 32-byte evidence hash."
     }
   },
   "documentsTab": {

@@ -66,7 +66,9 @@ export class CustodyPage implements OnInit {
   userInfo!: User;
 
   // One tab per group. Holds live under 'assets', so a hold placed there never switches tabs.
-  readonly tabs = ['underCustody', 'assets'] as const;
+  // 33.C item 2b — 'deployments': cash a FUND deployed to us as its backing custodian, which only
+  // we may confirm (fulfil), refuse (fail) or later return (realise).
+  readonly tabs = ['underCustody', 'assets', 'deployments'] as const;
 
   /**
    * The tab bar as TabDefs (Standard 2). The per-tab COUNT is load-bearing here,
@@ -79,10 +81,75 @@ export class CustodyPage implements OnInit {
     label: 'custody.tabs.' + t,
     count: this.loaded() ? this.tabCount(t) : undefined,
   })));
-  activeTab = signal<'underCustody' | 'assets'>('underCustody');
+  activeTab = signal<'underCustody' | 'assets' | 'deployments'>('underCustody');
 
-  tabCount(tab: 'underCustody' | 'assets'): number {
+  tabCount(tab: 'underCustody' | 'assets' | 'deployments'): number {
+    if (tab === 'deployments') return this.deployments().length;
     return tab === 'underCustody' ? this.custodyMandates().length : this.custodiedAssets().length;
+  }
+
+  // ── Deployments awaiting us (33.C item 2b) ────────────────────────────────
+  // Every action relays as the BENEFICIARY service (`via`) against the FUND's book (`service`):
+  // the contract admits only the deployment's beneficiary as its fulfiller, and only the asset's
+  // backing custodian as the realiser.
+  deployments = signal<any[]>([]);
+  depModal = signal<'fulfil' | 'fail' | 'realise' | null>(null);
+  depRow = signal<any | null>(null);
+  depAmount = '';
+  depRef = '';
+  depReason = '';
+  depProvider = '';
+  depEvidence = '';
+  depError = signal('');
+
+  canActOnDeployments(): boolean {
+    return !!this.userInfo && this.userInfo.role !== 3;
+  }
+
+  private async loadDeployments() {
+    const data = await this.apiService.vaultCustodyDeployments();
+    this.deployments.set(Array.isArray(data?.deployments) ? data.deployments : []);
+  }
+
+  openDeploymentAction(mode: 'fulfil' | 'fail' | 'realise', d: any) {
+    this.depRow.set(d);
+    this.depAmount = mode === 'fulfil' ? String(d.remaining ?? '') : '';
+    this.depRef = ''; this.depReason = ''; this.depProvider = ''; this.depEvidence = '';
+    this.depError.set('');
+    this.depModal.set(mode);
+  }
+
+  async submitDeploymentAction() {
+    const d = this.depRow(); const mode = this.depModal();
+    if (!d || !mode) return;
+    const via = String(d.beneficiary); const book = String(d.service);
+    let res: any;
+    if (mode === 'fail') {
+      if (!this.depReason.trim()) { this.depError.set(this.translate.instant('custody.deployments.reasonRequired')); return; }
+      res = await this.run(() => this.apiService.vaultServicePoolRequestFail(book, Number(d.request_id), { reason: this.depReason.trim(), providerTrxRefNo: this.depRef.trim(), via }));
+    } else if (mode === 'fulfil') {
+      if (!(Number(this.depAmount) > 0) || !this.depRef.trim()) { this.depError.set(this.translate.instant('custody.deployments.amountRefRequired')); return; }
+      res = await this.run(() => this.apiService.vaultServicePoolRequestFulfil(book, Number(d.request_id), { amount: Number(this.depAmount), providerTrxRefNo: this.depRef.trim(), via }));
+    } else {
+      if (!(Number(this.depAmount) > 0) || !this.depRef.trim()) { this.depError.set(this.translate.instant('custody.deployments.amountRefRequired')); return; }
+      if (!/^0x[0-9a-fA-F]{40}$/.test(this.depProvider.trim())) { this.depError.set(this.translate.instant('custody.deployments.providerRequired')); return; }
+      if (!/^0x[0-9a-fA-F]{64}$/.test(this.depEvidence.trim()) || /^0x0{64}$/.test(this.depEvidence.trim())) { this.depError.set(this.translate.instant('custody.deployments.evidenceRequired')); return; }
+      res = await this.run(() => this.apiService.vaultServiceRealisation(book, {
+        via, asset: String(d.asset), currencyCode: Number(d.currency_code), amount: Number(this.depAmount),
+        provider: this.depProvider.trim(), evidence: this.depEvidence.trim(), providerTrxRefNo: this.depRef.trim(),
+      }));
+    }
+    if (!res || res.error || res.type === 'error') {
+      this.depError.set(res?.error || this.translate.instant('alerts.unexpected'));
+      return;
+    }
+    this.depModal.set(null);
+    await this.loadDeployments();
+  }
+
+  private async run<T>(fn: () => Promise<T>): Promise<T> {
+    this.loadingService.show(this.translate.instant('common.loadingData'));
+    try { return await fn(); } finally { this.loadingService.hide(); }
   }
 
   // The entity's own services. NOT rendered (a "My Services" tab repeated the Services module's
@@ -141,6 +208,7 @@ export class CustodyPage implements OnInit {
         this.loadOwnCustodianServices(),
         this.loadMandates(),
         this.loadCustodiedAssets(),
+        this.loadDeployments(),
       ]);
     } finally {
       this.loadingService.hide();

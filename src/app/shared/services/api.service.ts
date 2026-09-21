@@ -1670,6 +1670,10 @@ export class ApiService {
   async vaultServicePoolRequestFail(address: string, requestId: number, body: { reason: string; providerTrxRefNo?: string; via?: string }) {
     return this.vaultPost('/services/' + address + '/liquidity/requests/' + requestId + '/fail', body);
   }
+  /** 33.C item 2b — deployments on OTHER books naming one of this tenant's services as beneficiary. */
+  async vaultCustodyDeployments() {
+    return this.vaultGet('/custody/deployments');
+  }
   /** Realisation — `address` is the FUND's book; `via` this tenant's party acting as its custodian. */
   async vaultServiceRealisation(address: string, body: { via: string; asset: string; routeId?: number; currencyCode: number; amount: number; provider: string; evidence: string; providerTrxRefNo: string }) {
     return this.vaultPost('/services/' + address + '/liquidity/realisations', body);

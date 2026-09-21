@@ -182,7 +182,112 @@
       (pageChange)="custodiedPage.set($event)" (pageSizeChange)="custodiedPageSize.set($event)" />
   </div>
   }
+
+  <!-- Deployments awaiting us (33.C item 2b) — a fund moved cash to one of our services as its
+       backing custodian. Only we may confirm it (Fulfil), refuse it (Fail) or return it (Realise). -->
+  @if (activeTab() === 'deployments') {
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200">
+      <h2 class="text-sm font-semibold text-gray-800">{{ 'custody.deployments.title' | translate }}</h2>
+      <p class="text-xs text-gray-600">{{ 'custody.deployments.description' | translate }}</p>
+    </div>
+    <div class="overflow-x-auto rounded-lg">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{ 'custody.deployments.fund' | translate }}</th>
+            <th>{{ 'custody.deployments.asset' | translate }}</th>
+            <th>{{ 'custody.deployments.myService' | translate }}</th>
+            <th class="text-right">{{ 'custody.deployments.remaining' | translate }}</th>
+            <th>{{ 'custody.deployments.currency' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @for (d of deployments(); track d.service + '-' + d.request_id) {
+            <tr>
+              <td class="font-mono">{{ d.request_id }}</td>
+              <td class="font-mono">{{ d.service }}</td>
+              <td class="font-mono">{{ d.asset }}</td>
+              <td class="font-mono">{{ d.beneficiary }}</td>
+              <td class="text-right font-mono">{{ d.remaining }}</td>
+              <td>{{ d.currency_code }}</td>
+              <td class="text-right whitespace-nowrap">
+                @if (canActOnDeployments()) {
+                  @if (features.systemFunctionEnabled('credit-withdraw')) {
+                    <button (click)="openDeploymentAction('fulfil', d)" class="text-xs font-medium px-3 py-1 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors mr-1">{{ 'custody.deployments.fulfil' | translate }}</button>
+                    <button (click)="openDeploymentAction('fail', d)" class="text-xs font-medium px-3 py-1 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors mr-1">{{ 'custody.deployments.fail' | translate }}</button>
+                  }
+                  @if (features.systemFunctionEnabled('service-realisation')) {
+                    <button (click)="openDeploymentAction('realise', d)" class="text-xs font-medium px-3 py-1 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors">{{ 'custody.deployments.realise' | translate }}</button>
+                  }
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="py-4 text-center text-gray-400">{{ 'custody.deployments.empty' | translate }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  }
 </div>
+
+<!-- Deployment action modal (fulfil / fail / realise) -->
+@if (depModal(); as mode) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ ('custody.deployments.' + mode + 'Title') | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">#{{ depRow()?.request_id }} — {{ 'custody.deployments.remaining' | translate }}: {{ depRow()?.remaining }}</p>
+      <div class="space-y-3">
+        @if (mode !== 'fail') {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.amount' | translate }}</label>
+            <input type="number" min="0" step="0.01" [(ngModel)]="depAmount"
+              class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          </div>
+        }
+        @if (mode === 'realise') {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'custody.deployments.provider' | translate }}</label>
+            <input type="text" [(ngModel)]="depProvider" placeholder="0x…"
+              class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'custody.deployments.evidence' | translate }}</label>
+            <input type="text" [(ngModel)]="depEvidence" placeholder="0x…"
+              class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          </div>
+        }
+        @if (mode === 'fail') {
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-gray-500 ps-2">{{ 'common.reason' | translate }}</label>
+            <input type="text" [(ngModel)]="depReason" [placeholder]="'common.reasonPlaceholder' | translate"
+              class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+          </div>
+        }
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'custody.deployments.reference' | translate }}</label>
+          <input type="text" [(ngModel)]="depRef"
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        @if (depError()) {
+          <p class="text-xs text-red-700">{{ depError() }}</p>
+        }
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="depModal.set(null)"
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitDeploymentAction()"
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+          {{ ('custody.deployments.' + mode) | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
 <!-- Place-hold modal -->
 @if (holdModalOpen()) {
