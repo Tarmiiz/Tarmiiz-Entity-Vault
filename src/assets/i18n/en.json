@@ -573,8 +573,8 @@
         "required": "Required",
         "selfCustody": "Self-custody",
         "noneAttached": "No providers attached.",
-        "validatorInactiveTooltip": "This validator is suspended or no longer endorsed by the regulator.",
-        "custodianInactiveTooltip": "This custodian is suspended or no longer endorsed by the regulator.",
+        "validatorInactiveTooltip": "This validator is suspended or no longer licensed in this jurisdiction.",
+        "custodianInactiveTooltip": "This custodian is suspended or no longer licensed in this jurisdiction.",
         "lastCustodianTooltip": "A service must keep at least one custodian — attach another before removing this one.",
         "table": {
           "type": "Type",
@@ -978,7 +978,7 @@
       "showingCount": "Showing {{showing}} of Total {{total}} Services",
       "suspendedSuffix": "(Suspended)",
       "validatorInactive": "Validator inactive",
-      "validatorInactiveTooltip": "One or more attached validators are suspended or no longer endorsed by the regulator."
+      "validatorInactiveTooltip": "One or more attached validators are suspended or no longer licensed in this jurisdiction."
     },
     "fundPartyModal": {
       "submit": "Add",
@@ -1020,7 +1020,7 @@
       "submit": "Add",
       "title": "Add Validator",
       "placeholder": "Select a validator…",
-      "empty": "No validators available — every eligible validator is already attached, or none is endorsed at this service’s verification level."
+      "empty": "No validators available — every eligible validator is already attached, or none is licensed in this jurisdiction at this service’s verification level."
     }
   },
   "assets": {
@@ -1984,7 +1984,7 @@
         "entity": "Entity",
         "inactive": "Inactive",
         "ok": "OK",
-        "validatorInactiveTooltip": "The subscription's validator service is inactive or no longer endorsed",
+        "validatorInactiveTooltip": "The subscription's validator service is inactive or no longer licensed in this jurisdiction",
         "validatorVerification": "Validator Verification",
         "verificationIdPrefix": "Verification ID"
       },
@@ -2161,7 +2161,7 @@
         "subscription": "Subscription"
       },
       "validatorInactive": "Validator Inactive",
-      "validatorInactiveTooltip": "The subscription's validator service is inactive or no longer endorsed"
+      "validatorInactiveTooltip": "The subscription's validator service is inactive or no longer licensed in this jurisdiction"
     },
     "sellWithdrawModal": {
       "title": "Sell & Withdraw",
@@ -5501,17 +5501,17 @@
   },
   "partyPicker": {
     "title": "Choose a {{role}}",
-    "subtitle": "Only providers your regulator has admitted for this role are listed, so every one of them can be attached.",
+    "subtitle": "Only providers licensed in your jurisdiction for this role are listed, so every one of them can be attached.",
     "independenceNote": "This role must be independent, so your own services are not listed.",
     "filterPlaceholder": "Filter by name or address…",
-    "empty": "Your regulator has admitted no {{role}} yet.",
-    "emptyHint": "A provider must be registered and admitted for this role before it can be attached.",
+    "empty": "No {{role}} is licensed in your jurisdiction yet.",
+    "emptyHint": "A provider must hold this role's licence in your jurisdiction before it can be attached.",
     "noMatches": "No provider matches that filter.",
     "colName": "Name",
     "colAddress": "Address",
     "colSource": "Source",
-    "sourceOwned": "Own regulator",
-    "sourceEndorsed": "Endorsed",
+    "sourceOwned": "Licensed in this jurisdiction",
+    "sourceEndorsed": "Other jurisdiction",
     "choose": "Propose"
   },
   "apiEndpointSections": {

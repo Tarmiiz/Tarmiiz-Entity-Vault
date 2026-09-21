@@ -65,6 +65,12 @@ _Living preamble describing the broad direction this sub-project is currently mo
   hex): Credit takes the identity and the destination account NAMED, and the API resolves both
   from the hash (controller ruling (a) — an identity contract address never enters a request).
   en + ar.
+- **33.R — provider pickers and badges say "licensed in this jurisdiction", never "endorsed".** A
+  provider is now a service holding its class's licence row on the root in this entity's
+  jurisdiction; endorsement has no successor. Reworded (en + ar, keys unchanged): the party
+  picker's subtitle / empty state / hint and its source tags ("Licensed in this jurisdiction";
+  the never-served second tag reads "Other jurisdiction"), the validator / custodian inactive
+  tooltips on service and subscription pages, and the validator picker's empty state.
 
 ### 2026-09-17
 
