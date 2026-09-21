@@ -2384,7 +2384,9 @@
       "successMsg": "Route transfer executed.",
       "title": "Route Credit to Another Service",
       "trxDate": "Transaction date (optional)",
-      "trxDateNote": "Backdates the ledger row. Leave empty to use the current time."
+      "trxDateNote": "Backdates the ledger row. Leave empty to use the current time.",
+      "didHash": "Subscriber DID hash",
+      "didHashNote": "The subscriber's DID hash from onboarding (0x + 64 hex). The destination is their active account on the destination service."
     },
     "trxInfoModal": {
       "burn": "burn",

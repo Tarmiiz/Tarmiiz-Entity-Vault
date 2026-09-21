@@ -2361,9 +2361,10 @@ export class ApiService {
   // and resolves the subscription server-side, so the subscriber's DID never reaches a service
   // that only needs to know the same person banks elsewhere. Calling the old path would 404.
 
-  // Anonymous service-routed move — the entity's source `service` routes `fromSub`'s credit to the
-  // SAME identity's subscription at `destinationService` (resolved on-chain; the sibling sub + DID are never exposed).
-  async routeTransfer(body: { service: string; fromSub: string; destinationService: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
+  // Service-routed move — the entity's source `service` routes `fromSub`'s credit to the SAME
+  // identity's ACTIVE account at `destinationService`. 33.C 2c: `didHash` (the subscriber's, from
+  // onboarding) is REQUIRED — the API resolves the identity + destination account from it.
+  async routeTransfer(body: { service: string; fromSub: string; destinationService: string; didHash: string; currencyCode: number; amount: number; providerTrxRefNo: string; providerTrxTime?: number; raw?: any }): Promise<{ result?: any; requestId?: string; approvalState?: number; error?: string }> {
     return this._creditMutation('/credit/route-transfer', body);
   }
 

@@ -61,6 +61,10 @@ _Living preamble describing the broad direction this sub-project is currently mo
   beneficiary service (`via`) against the fund's book, because the contract admits only the
   backing custodian. Fulfil / Refuse gated by `credit-withdraw`, Return by `service-realisation`;
   hidden for viewers. en + ar.
+- **33.C stage 2c — the Route Credit modal asks for the subscriber's DID hash** (required, 0x + 64
+  hex): Credit takes the identity and the destination account NAMED, and the API resolves both
+  from the hash (controller ruling (a) — an identity contract address never enters a request).
+  en + ar.
 
 ### 2026-09-17
 
