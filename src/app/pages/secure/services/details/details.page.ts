@@ -56,7 +56,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
 import { CoverageAssetsTableComponent } from '../../../../shared/components/coverage-assets-table/coverage-assets-table.component';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
-import { ServiceLicense, ServiceLicenseRequest, licenseMeaning, licenseStateClass, licenseStateName } from '../../../../shared/utils/license.utils';
+import { ServiceLicense, ServiceLicenseRequest, licenseMeaning, licenseStateClass, licenseStateName, ServiceLicenseApplication, LICENSE_APPLICATION_STATE_LABEL } from '../../../../shared/utils/license.utils';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 
@@ -176,7 +176,7 @@ export class DetailsPage implements OnInit {
     { key: 'licenses', label: 'Licenses' },
     ...(this.isTokenProvider() ? [
       { key: 'providers', label: 'services.details.tabs.providers' },
-      { key: 'election',  label: 'Election' },
+      { key: 'election',  label: 'Settlement Mode' },   // key kept; the term was renamed 2026-09-21 (C.8 / E.13)
     ] : []),
     { key: 'metadata', label: 'services.details.tabs.metadata' },
     ...(this.isTokenProvider() ? [
@@ -395,6 +395,27 @@ export class DetailsPage implements OnInit {
   // `licenseRequestsReadable === false` renders "could not be read", never "none".
   licenseRequests   = signal<ServiceLicenseRequest[]>([]);
   licenseRequestsReadable = signal(true);
+  // 33.E E.1 — every application ever filed (decided ones included), and the Apply modal.
+  licenseApplications = signal<ServiceLicenseApplication[]>([]);
+  licenseApplyOpen       = signal(false);
+  licenseApplyClass      = signal<number | null>(null);
+  licenseApplyReason     = signal('');
+  licenseApplySubmitting = signal(false);
+  licenseApplyError      = signal('');
+  // The market family is a CLOSED set (27 Token Issuer / 28 Exchange / 29 Brokerage) — the same
+  // three the Add Service wizard offers; see the note there on why it is not read live.
+  private static readonly APPLYABLE_LICENSES = [27, 28, 29];
+  /** Classes this service may still apply for: not held, not already Pending. */
+  licenseApplyChoices = computed(() => {
+    const held = new Set(this.licenses().map((l) => Number(l.classId)));
+    const pending = new Set(this.licenseRequests().map((r) => Number(r.classId)));
+    return DetailsPage.APPLYABLE_LICENSES.filter((c) => !held.has(c) && !pending.has(c));
+  });
+  /** The applicant verbs — gated on the SAME key the Entity API enforces on POST/DELETE. */
+  canApplyLicense = computed(() =>
+    !!this.userInfo && this.userInfo.role !== 3 && this.features.systemFunctionEnabled('service-license-request'));
+  licenseApplicationLabel = (state: number) => LICENSE_APPLICATION_STATE_LABEL[Number(state)] || `State ${state}`;
+  decidedLicenseApplications = computed(() => this.licenseApplications().filter((a) => Number(a.state) !== 1));
   licensesLoading   = signal(false);
 
   /*
@@ -996,6 +1017,7 @@ export class DetailsPage implements OnInit {
       const rows: ServiceLicense[] = Array.isArray(res?.licenses) ? res.licenses : [];
       this.licenses.set(rows);
       this.licenseRequests.set(Array.isArray(res?.requests) ? res.requests : []);
+      this.licenseApplications.set(Array.isArray(res?.applications) ? res.applications : []);
       this.licenseRequestsReadable.set(res?.requestsReadable !== false);
       const active = rows.filter((r) => r.active).map((r) => Number(r.classId));
       const svc = this.service();
@@ -1049,6 +1071,54 @@ export class DetailsPage implements OnInit {
 
   grantGroupLabel(group: string): string {
     return String(group || '').replace(/^./, (c) => c.toUpperCase());
+  }
+
+  // ── 33.E E.1 — apply / withdraw ────────────────────────────────────────────────────────
+  openLicenseApply() {
+    this.licenseApplyClass.set(this.licenseApplyChoices()[0] ?? null);
+    this.licenseApplyReason.set('');
+    this.licenseApplyError.set('');
+    this.licenseApplyOpen.set(true);
+  }
+
+  closeLicenseApply() {
+    if (this.licenseApplySubmitting()) return;
+    this.licenseApplyOpen.set(false);
+  }
+
+  async submitLicenseApply() {
+    const classId = Number(this.licenseApplyClass());
+    if (!classId) { this.licenseApplyError.set('Choose a license to apply for.'); return; }
+    this.licenseApplySubmitting.set(true);
+    this.licenseApplyError.set('');
+    try {
+      const res: any = await this.apiService.vaultRequestServiceLicense(
+        this.serviceAddress, classId, this.licenseApplyReason().trim());
+      if (res?.error) { this.licenseApplyError.set(res.error); return; }
+      this.licenseApplyOpen.set(false);
+      await this.loadLicenses();
+    } catch (e: any) {
+      this.licenseApplyError.set(e?.error?.error || this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.licenseApplySubmitting.set(false);
+    }
+  }
+
+  async withdrawLicense(r: ServiceLicenseRequest) {
+    const ok = await this.alertService.show('Withdraw application',
+      `Withdraw this service's application for the ${this.licenseClassName(r.classId)} license? `
+      + 'Your regulator will no longer see it. You can apply again later.');
+    if (!ok) return;
+    this.loadingService.show(this.translate.instant('common.updating'));
+    try {
+      const res: any = await this.apiService.vaultWithdrawServiceLicense(this.serviceAddress, Number(r.classId));
+      if (res?.error) this.alertService.info(this.translate.instant('alerts.updateFailed'), res.error);
+      await this.loadLicenses();
+    } catch (e: any) {
+      this.alertService.info(this.translate.instant('alerts.updateFailed'), e?.error?.error || this.translate.instant('alerts.unexpected'));
+    } finally {
+      this.loadingService.hide();
+    }
   }
 
   /** Class id -> name, from the on-chain catalog. Never a local map — see the note above. */

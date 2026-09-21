@@ -4652,7 +4652,7 @@
     "clearingConfirmPayIn": "المقاصة - تأكيد الدفع",
     "clearingFundingService": "المقاصة - تحديد خدمة التمويل",
     "entityEditIdentifiers": "الملف التعريفي - تعديل معرفات الكيان",
-    "serviceElectionSwitch": "الخدمة - طلب تغيير اختيار On-Chain / Off-Chain",
+    "serviceElectionSwitch": "الخدمة - طلب تغيير نمط التسوية On-Chain / Off-Chain",
     "serviceStraightThrough": "الخدمة: المعاملات المباشرة",
     "serviceImportSubscribers": "الخدمة: استيراد المشتركين",
     "serviceImportBalances": "الخدمة: استيراد الأرصدة الافتتاحية",

@@ -17,6 +17,14 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-21 — Phase 33 off-chain ledger (branch `phase33-ledger`, lands with the final redeploy)
 
+**Added (33.E E.1 — apply for a licence after creation)**
+
+- Service details → Licenses: **Apply for a license** (the market family 27 / 28 / 29, minus held or pending classes; optional reason), **Withdraw** on each pending application, and a **Decided applications** list (Approved / Rejected / Withdrawn). A refusal is now visible rather than a row that silently disappeared. Gated on `service-license-request` (the key the Entity API enforces) and not shown to viewers. The inline modal has no backdrop dismiss.
+
+**Changed (the term — ruling C.8 / E.13)**
+
+- “Election” → “Settlement Mode” in every rendered text node (18) and in two i18n values, plus the Arabic twin: “نمط التسوية”. Identifiers, i18n keys, System Function keys, route paths and audit category strings are unchanged.
+
 **Changed**
 
 - **AS.1 (33.A) — an asset is CREATED WITHOUT its issuing service.** The Add Asset wizard's step 4

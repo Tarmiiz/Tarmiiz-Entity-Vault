@@ -2482,10 +2482,15 @@ export class ApiService {
     return this.vaultGet('/services/' + address + '/grants');
   }
 
-  /** ⚠️ 33.E — the API answers 501: a service applies for its licences at CREATION, and applying later has no
-   *  on-chain path yet. Kept (uncalled) for when the Entities verb exists. */
-  async vaultRequestServiceLicense(address: string, classId: number, countryCode: number) {
-    return this.vaultPost('/services/' + address + '/licenses', { classId, countryCode });
+  /** 33.E E.1 — the service applies for a licence class after creation (`ServiceTemplate.licenseApply`).
+   *  The jurisdiction is resolved on chain; `reason` travels to the regulator's queue. */
+  async vaultRequestServiceLicense(address: string, classId: number, reason = '') {
+    return this.vaultPost('/services/' + address + '/licenses', { classId, reason });
+  }
+
+  /** 33.E E.1 — retract a PENDING application (`ServiceTemplate.licenseWithdraw`) → state 4. */
+  async vaultWithdrawServiceLicense(address: string, classId: number) {
+    return this.vaultDelete('/services/' + address + '/licenses/' + classId);
   }
 
   async vaultGetRegulatorsByCountry(countryCode: string, start = 0, offset = 100) {

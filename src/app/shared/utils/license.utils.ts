@@ -85,9 +85,21 @@ export interface ServiceLicense {
   directGrant: boolean | null;
 }
 
-/** An OPEN licence application — a record on the SERVICE (`ServiceTemplate.licenseRequests()`),
- *  filed at creation and removed when the regulator resolves it (33.E). */
+/** An OPEN licence application — the Pending (state 1) subset of `ServiceLicenseApplication`. */
 export interface ServiceLicenseRequest {
   classId: number;
   countryCode: string;
 }
+
+/** Every application the service ever filed — `ServiceTemplate.licenseApplications()` (Entities
+ *  `9b909b5`, 33.E E.1). One per class; its state FLIPS on resolution and the row is kept. */
+export interface ServiceLicenseApplication {
+  classId: number;
+  countryCode: string;   // the jurisdiction, resolved on chain at filing
+  state: number;         // 1 Pending / 2 Approved / 3 Rejected / 4 Withdrawn
+  updatedAt: number;     // chain seconds
+}
+
+export const LICENSE_APPLICATION_STATE_LABEL: Readonly<Record<number, string>> = Object.freeze({
+  1: 'Pending', 2: 'Approved', 3: 'Rejected', 4: 'Withdrawn',
+});

@@ -912,7 +912,7 @@
       "noClearingHouse": "None — credit is final here",
       "clearingHouseNote": "Optional. Attach a central counterparty if cross-entity trades on this service must settle in a netted cycle. Leave as None when this market’s credit is final and every fill should settle immediately.",
       "hints": {
-        "paymentProviderAfterCreate": "Attached after creation — a payment provider is attached per currency, once this service has an election for that currency. Use the Election and Service Providers tabs."
+        "paymentProviderAfterCreate": "Attached after creation — a payment provider is attached per currency, once this service has a settlement mode for that currency. Use the Settlement Mode and Service Providers tabs."
       },
       "requestLicensesNote": "Select the licenses this service applies for. Each application is submitted to the regulator and confers nothing until approved — a service may hold several, or none."
     },
@@ -4652,7 +4652,7 @@
     "clearingConfirmPayIn": "Clearing - Confirm pay-in",
     "clearingFundingService": "Clearing - Set funding service",
     "entityEditIdentifiers": "Profile - Edit Entity Identifiers",
-    "serviceElectionSwitch": "Service - Request On-Chain / Off-Chain Election Switch",
+    "serviceElectionSwitch": "Service - Request On-Chain / Off-Chain Settlement Mode Switch",
     "serviceStraightThrough": "Service: Straight-Through Transactions",
     "serviceImportSubscribers": "Service: Import Subscribers",
     "serviceImportBalances": "Service: Import Opening Balances",
