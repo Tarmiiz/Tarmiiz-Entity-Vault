@@ -1609,7 +1609,14 @@ export class ApiService {
 
   async vaultGetServices(start = 0, offset = 50) {
     const data = await this.vaultGet('/services', { start, offset });
-    return data ? { count: data.count, services: data.services } : null;
+    // ⚠️ `licenses` MAPPED HERE, once, for every consumer. The API serves each row's ACTIVE
+    // licence classes as `license_class_ids` (Entity API `db.getServices`); ~8 mappers and pickers
+    // read `licenses`, which no route serves — so every one of them read [] and rendered "no
+    // licences" / an empty picker (Route Credit, DEX memberships, Create Venue, the service-edit
+    // token-issuer check, the services list licence column, the SP dashboard). One chokepoint
+    // instead of eight edits; `license_class_ids` stays on the row for the readers that use it.
+    const withLicenses = (rows: any[]) => (rows ?? []).map((s: any) => ({ ...s, licenses: s.license_class_ids ?? s.licenses ?? [] }));
+    return data ? { count: data.count, services: withLicenses(data.services) } : null;
   }
 
   async vaultGetService(address: string) {
@@ -2287,7 +2294,9 @@ export class ApiService {
 
   async vaultGetServicesOwn(start = 0, offset = 50) {
     const data = await this.vaultGet('/services', { start, offset });
-    return data ? { count: data.count, services: data.services } : null;
+    // Same mapping as `vaultGetServices` — see the note there.
+    const withLicenses = (rows: any[]) => (rows ?? []).map((s: any) => ({ ...s, licenses: s.license_class_ids ?? s.licenses ?? [] }));
+    return data ? { count: data.count, services: withLicenses(data.services) } : null;
   }
 
   // provider (the payment-processor service that ran the transaction) + providerTrxRefNo are

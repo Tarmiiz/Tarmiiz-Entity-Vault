@@ -15,6 +15,21 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-21
+
+**Fixed**
+
+- **Every service picker and licence label read a field the API never serves.** The Entity API
+  serves each service row's active licence classes as `license_class_ids`; ~8 Vault consumers
+  read `licenses`, got `[]`, and rendered "no licences" or an EMPTY picker — Route Credit's source
+  service, the DEX memberships and Create Venue pickers, the service-edit token-issuer check, the
+  services list licence column, the SP dashboard. Nothing errored: an empty picker reads as "you
+  have no eligible services". Fixed once, at the chokepoint: `vaultGetServices` and
+  `vaultGetServicesOwn` map `licenses` from `license_class_ids`
+  ([api.service.ts](src/app/shared/services/api.service.ts)). ⚠️ Not covered: the SINGLE-service
+  read (`GET /services/:address`) carries no licence ids at all, so the service details page's
+  token-issuer view still waits for its Licences tab to load — an Entity API change.
+
 ### 2026-09-17
 
 **Added**
