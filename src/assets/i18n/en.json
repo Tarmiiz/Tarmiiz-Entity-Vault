@@ -655,7 +655,14 @@
         "errors": {
           "exceedsAvailable": "Amount exceeds the available balance ({{available}}).",
           "positiveAmount": "Enter a positive amount.",
-          "refRequired": "A reference is required."
+          "refRequired": "A reference is required.",
+          "instrumentRequired": "Enter the payout instrument hash (0x + 64 hex characters).",
+          "minterInvalid": "The minter of record must be an address.",
+          "minterRequired": "A deployment needs a minter of record.",
+          "assetRequired": "Choose the asset this deployment backs.",
+          "beneficiaryRequired": "Enter the beneficiary address (the route's target).",
+          "routeRequired": "Enter the approved route number.",
+          "reasonRequired": "A reason is required."
         },
         "helpText": "Obligation = Σ over this service's issued assets of λ × units outstanding × bid, where λ is the redemption-coverage coefficient the asset's regulator set on its class formula; an asset whose λ is not set contributes nothing and marks the row as not assessed. Coverage = available pool ÷ obligation.",
         "inject": "Inject",
@@ -674,7 +681,31 @@
         "withdraw": "Withdraw",
         "withheld": "Withheld",
         "injectTitle": "Inject Liquidity",
-        "withdrawTitle": "Withdraw Liquidity"
+        "withdrawTitle": "Request a liquidity withdrawal",
+        "deploy": "Deploy",
+        "fulfil": "Fulfil",
+        "fail": "Fail",
+        "deployTitle": "Deploy to a backing custodian",
+        "fulfilTitle": "Fulfil withdrawal request",
+        "failTitle": "Fail withdrawal request",
+        "instrument": "Payout instrument (hash)",
+        "instrumentHint": "The registered payout destination, as its 32-byte hash.",
+        "minterOfRecord": "Minter of record",
+        "pickAsset": "Choose the asset this deployment backs…",
+        "routeId": "Route #",
+        "beneficiary": "Beneficiary (backing custodian)",
+        "deployHint": "The route must be APPROVED on the asset and the beneficiary must be its target. Only the custodian can fulfil the request, from its own Vault.",
+        "openRequests": "Open pool requests",
+        "kind": "Kind",
+        "kindWithdrawal": "Liquidity withdrawal",
+        "kindDeployment": "Deployment",
+        "remaining": "Remaining",
+        "noOpenRequests": "No open pool requests.",
+        "awaitingCustodian": "Awaiting the custodian",
+        "requestOpenedTitle": "Request opened",
+        "requestOpened": "Request #{{id}} is queued. No money has moved yet — it moves when the request is fulfilled.",
+        "asset": "Asset",
+        "currency": "Currency"
       },
       "loading": "Loading service details...",
       "loadingMsgs": {
@@ -4623,7 +4654,9 @@
     "serviceStraightThrough": "Service: Straight-Through Transactions",
     "serviceImportSubscribers": "Service: Import Subscribers",
     "serviceImportBalances": "Service: Import Opening Balances",
-    "assetIssuerService": "Asset - Set Issuing Service"
+    "assetIssuerService": "Asset - Set Issuing Service",
+    "serviceDeployment": "Service - Deploy Liquidity to a Custodian",
+    "serviceRealisation": "Service - Realise a Deployment"
   },
   "systemFunctionGroups": {
     "dex": "DEX",

@@ -1650,6 +1650,31 @@ export class ApiService {
     return this.vaultPost('/services/' + address + '/liquidity/inject', body);
   }
 
+  // ── THE POOL OUTFLOW (33.C item 2b) — the book's OWN money leaving its pool, on the request →
+  // fulfil / fail lifecycle. A request moves NO money; fulfil does. `instrument` is the payout
+  // destination as a HASH, never the account identifier.
+  async vaultServiceLiquidityWithdrawal(address: string, body: { currencyCode: number; amount: number; instrument: string; providerTrxRefNo: string; minterOfRecord?: string }) {
+    return this.vaultPost('/services/' + address + '/liquidity/withdrawals', body);
+  }
+  async vaultServiceDeployment(address: string, body: { currencyCode: number; amount: number; instrument: string; providerTrxRefNo: string; minterOfRecord: string; asset: string; beneficiary: string; routeId: number }) {
+    return this.vaultPost('/services/' + address + '/liquidity/deployments', body);
+  }
+  async vaultServicePoolRequests(address: string, params: { kind?: number; state?: number } = {}) {
+    return this.vaultGet('/services/' + address + '/liquidity/requests', params);
+  }
+  /** `via` = this tenant's own party acting as fulfiller (default: the book). A deployment is
+   *  fulfilled ONLY by its beneficiary, from the custodian's tenant. */
+  async vaultServicePoolRequestFulfil(address: string, requestId: number, body: { amount: number; providerTrxRefNo?: string; via?: string }) {
+    return this.vaultPost('/services/' + address + '/liquidity/requests/' + requestId + '/fulfil', body);
+  }
+  async vaultServicePoolRequestFail(address: string, requestId: number, body: { reason: string; providerTrxRefNo?: string; via?: string }) {
+    return this.vaultPost('/services/' + address + '/liquidity/requests/' + requestId + '/fail', body);
+  }
+  /** Realisation — `address` is the FUND's book; `via` this tenant's party acting as its custodian. */
+  async vaultServiceRealisation(address: string, body: { via: string; asset: string; routeId?: number; currencyCode: number; amount: number; provider: string; evidence: string; providerTrxRefNo: string }) {
+    return this.vaultPost('/services/' + address + '/liquidity/realisations', body);
+  }
+
   // ⚠️ `vaultServiceLiquidityWithdraw` is REMOVED, and there is nothing to point it at. The bare
   // pool drain has no on-chain call left: money leaves a service's pool through the WITHDRAWAL
   // LIFECYCLE (request → fulfil), which is queued, coverage-gated and evidenced. Calling the old

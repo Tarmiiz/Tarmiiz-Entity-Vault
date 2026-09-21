@@ -334,7 +334,20 @@ export class DetailsPage implements OnInit {
     return Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: 6 }) : '0';
   }
   liquidityModalOpen = signal(false);
-  liquidityModalAction = signal<'inject' | 'withdraw'>('inject');
+  liquidityModalAction = signal<'inject' | 'withdraw' | 'deploy' | 'fulfil' | 'fail'>('inject');
+  liquidityModalRequestId = signal<number>(0);
+  liquidityModalReason = signal<string>('');
+  // 33.C item 2b — the pool-outflow REQUEST fields (withdraw + deploy). The instrument is the
+  // payout destination as a HASH; a deployment also names the asset, the approved route and its
+  // target (the backing custodian), and a licensed minter of record.
+  liquidityModalInstrument = signal<string>('');
+  liquidityModalMinter = signal<string>('');
+  liquidityModalAsset = signal<string>('');
+  liquidityModalRouteId = signal<string>('');
+  liquidityModalBeneficiary = signal<string>('');
+  // Open pool-outflow requests on this book (kind 2 liquidity / 3 deployment), from the mirror.
+  poolRequests = signal<any[]>([]);
+  poolRequestsLoading = signal(false);
   liquidityModalCurrency = signal<{ code: number; name: string; symbol: string } | null>(null);
   liquidityModalAvailable = signal<number>(0);
   liquidityModalAmount = signal<string>('');
@@ -1835,6 +1848,46 @@ export class DetailsPage implements OnInit {
       if (!silent) this.liquidityLoading.set(false);
     }
     this.getLiquidityHistory(silent);
+    this.getPoolRequests(silent);
+  }
+
+  // 33.C item 2b — this book's OPEN pool-outflow requests (kinds 2 + 3), newest queue position
+  // first. A deployment is fulfilled from the CUSTODIAN's tenant, so this page offers Fulfil / Fail
+  // only on a liquidity withdrawal (the book's own act under offc).
+  async getPoolRequests(silent = false) {
+    if (!silent) this.poolRequestsLoading.set(true);
+    try {
+      const [w, d]: any[] = await Promise.all([
+        this.apiService.vaultServicePoolRequests(this.serviceAddress, { kind: 2 }),
+        this.apiService.vaultServicePoolRequests(this.serviceAddress, { kind: 3 }),
+      ]);
+      const rows = [...(w?.requests ?? []), ...(d?.requests ?? [])]
+        .filter((r: any) => Number(r.state) === 1 || Number(r.state) === 2);
+      this.poolRequests.set(rows);
+    } catch {
+      this.poolRequests.set([]);
+    } finally {
+      if (!silent) this.poolRequestsLoading.set(false);
+    }
+  }
+
+  isDeploymentRequest(r: any): boolean { return Number(r?.kind) === 3; }
+
+  canSettlePoolRequest(): boolean {
+    return !!this.userInfo && this.userInfo.role !== 3 && this.features.systemFunctionEnabled('credit-withdraw');
+  }
+
+  // Fulfil / Fail reuse the inline liquidity modal (no prompt dialog exists in AlertService):
+  // fulfil prefills the remaining amount and takes the rail's reference; fail takes a MANDATORY
+  // reason — a released request with no stated cause is indistinguishable from one that never ran.
+  openPoolSettle(action: 'fulfil' | 'fail', r: any) {
+    const code = Number(r.currency_code);
+    const bal = this.liquidityBalances().find((b: any) => Number(b.currencyCode) === code);
+    this.openLiquidityModal(action, {
+      currencyCode: code, currencyName: bal?.currencyName ?? String(code), currencySymbol: bal?.currencySymbol ?? '', available: Number(bal?.available ?? 0),
+    });
+    this.liquidityModalRequestId.set(Number(r.request_id));
+    if (action === 'fulfil') this.liquidityModalAmount.set(String(r.remaining ?? ''));
   }
 
   // ─── Fund import ─────────────────────────────────────────────────────────────────────────────
@@ -1886,8 +1939,16 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  openLiquidityModal(action: 'inject' | 'withdraw', row: { currencyCode: number; currencyName: string; currencySymbol: string; available: number }) {
+  openLiquidityModal(action: 'inject' | 'withdraw' | 'deploy' | 'fulfil' | 'fail', row: { currencyCode: number; currencyName: string; currencySymbol: string; available: number }) {
     this.liquidityModalAction.set(action);
+    this.liquidityModalInstrument.set('');
+    this.liquidityModalMinter.set('');
+    this.liquidityModalAsset.set('');
+    this.liquidityModalRouteId.set('');
+    this.liquidityModalBeneficiary.set('');
+    this.liquidityModalRequestId.set(0);
+    this.liquidityModalReason.set('');
+    if (action === 'deploy' && this.assets().length === 0) void this.getAssets(true);
     this.liquidityModalCurrency.set({ code: row.currencyCode, name: row.currencyName, symbol: row.currencySymbol });
     this.liquidityModalAvailable.set(Number(row.available || 0));
     this.liquidityModalAmount.set('');
@@ -1917,17 +1978,60 @@ export class DetailsPage implements OnInit {
       // reference is now REQUIRED and named `providerTrxRefNo` — an injection is a deposit into
       // the pool, so it must say which transfer funded it.
       const ref = this.liquidityModalRefNo().trim();
-      if (!ref) {
+      if (!ref && this.liquidityModalAction() !== 'fail') {
         this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.refRequired'));
         this.liquidityModalSubmitting.set(false);
         return;
       }
-      const body: any = { currencyCode: cur.code, amount: amt, providerTrxRefNo: ref };
-      const result = await this.apiService.vaultServiceLiquidityInject(this.serviceAddress, body);
+      const action = this.liquidityModalAction();
+      let result: any;
+      if (action === 'fulfil' || action === 'fail') {
+        const id = this.liquidityModalRequestId();
+        if (action === 'fail') {
+          const reason = this.liquidityModalReason().trim();
+          if (!reason) { this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.reasonRequired')); this.liquidityModalSubmitting.set(false); return; }
+          result = await this.apiService.vaultServicePoolRequestFail(this.serviceAddress, id, { reason, providerTrxRefNo: ref });
+        } else {
+          result = await this.apiService.vaultServicePoolRequestFulfil(this.serviceAddress, id, { amount: amt, providerTrxRefNo: ref });
+        }
+      } else if (action === 'inject') {
+        result = await this.apiService.vaultServiceLiquidityInject(this.serviceAddress, { currencyCode: cur.code, amount: amt, providerTrxRefNo: ref });
+      } else {
+        // 33.C item 2b — a REQUEST. Validated here only for a readable message; the API and the
+        // chain check everything again (coverage, the route, the minter's licence).
+        const instrument = this.liquidityModalInstrument().trim();
+        const minter = this.liquidityModalMinter().trim();
+        const bad = (k: string) => { this.liquidityModalError.set(this.translate.instant('services.details.liquidity.errors.' + k)); this.liquidityModalSubmitting.set(false); };
+        if (!/^0x[0-9a-fA-F]{64}$/.test(instrument)) return bad('instrumentRequired');
+        if (minter && !/^0x[0-9a-fA-F]{40}$/.test(minter)) return bad('minterInvalid');
+        if (action === 'withdraw') {
+          result = await this.apiService.vaultServiceLiquidityWithdrawal(this.serviceAddress, {
+            currencyCode: cur.code, amount: amt, instrument, providerTrxRefNo: ref, ...(minter ? { minterOfRecord: minter } : {}),
+          });
+        } else {
+          const asset = this.liquidityModalAsset();
+          const beneficiary = this.liquidityModalBeneficiary().trim();
+          const routeId = Number(this.liquidityModalRouteId());
+          if (!asset) return bad('assetRequired');
+          if (!/^0x[0-9a-fA-F]{40}$/.test(beneficiary)) return bad('beneficiaryRequired');
+          if (!Number.isInteger(routeId) || routeId <= 0) return bad('routeRequired');
+          if (!minter) return bad('minterRequired');
+          result = await this.apiService.vaultServiceDeployment(this.serviceAddress, {
+            currencyCode: cur.code, amount: amt, instrument, providerTrxRefNo: ref, minterOfRecord: minter, asset, beneficiary, routeId,
+          });
+        }
+      }
       if (!result || result.error || result.type === 'error') {
         this.liquidityModalError.set(result?.error || this.translate.instant('alerts.failed'));
       } else {
         this.liquidityModalOpen.set(false);
+        if (result?.requestId !== undefined && !result?.approvalState) {
+          // A request: say so, because nothing on the balances changed yet.
+          this.alertService.info(this.translate.instant('services.details.liquidity.requestOpenedTitle'),
+            this.translate.instant('services.details.liquidity.requestOpened', { id: result.requestId ?? '—' }));
+        } else if (result?.requestId && result?.approvalState) {
+          this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'));
+        }
         await this.getLiquidity();
       }
     } catch (e: any) {

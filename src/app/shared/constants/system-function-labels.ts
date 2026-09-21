@@ -89,6 +89,9 @@ export const SYSTEM_FUNCTION_LABELS: Record<string, string> = {
   'service-create':              'systemFunctionLabels.serviceCreate',
   'service-liquidity-inject':    'systemFunctionLabels.serviceLiquidityInject',
   'service-liquidity-withdraw':  'systemFunctionLabels.serviceLiquidityWithdraw',
+  // 33.C item 2b — the deployment (default-deny) and the custodian's realisation.
+  'service-deployment':          'systemFunctionLabels.serviceDeployment',
+  'service-realisation':         'systemFunctionLabels.serviceRealisation',
   'service-fee-config':          'systemFunctionLabels.serviceFeeConfig',
   'entity-edit-metadata':        'systemFunctionLabels.entityEditMetadata',
   'entity-external-contracts':   'systemFunctionLabels.entityExternalContracts',

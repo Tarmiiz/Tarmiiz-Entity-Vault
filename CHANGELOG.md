@@ -43,6 +43,17 @@ _Living preamble describing the broad direction this sub-project is currently mo
   (`ServiceTemplate.licenseRequests()`), with `requestsReadable: false` rendered as "could not be
   read", never "none". Deliberately NO Apply button: applying later has no on-chain path yet (the
   API answers 501). `ServiceLicense.directGrant` is `boolean | null`; new `ServiceLicenseRequest`.
+- **33.C item 2b — the POOL OUTFLOW on the service's Liquidity tab (the fund side).** Withdraw
+  (key `service-liquidity-withdraw`, re-armed) and Deploy (key `service-deployment`, default-deny) are
+  back beside Inject, as REQUESTS: the inline liquidity modal gained both modes (payout instrument
+  hash, minter of record; a deployment also takes the asset, the approved route number and the
+  beneficiary = the backing custodian) and says "request opened — no money has moved" on success.
+  NEW "Open pool requests" table (kinds 2 + 3 from `GET …/liquidity/requests`): Fulfil / Fail for a
+  liquidity withdrawal through the same modal (fail takes a mandatory reason); a deployment reads
+  "Awaiting the custodian" — only its beneficiary may fulfil it, from ITS tenant. REALISE is
+  deliberately NOT here: the caller must be the backing custodian, never the fund's own tenant, so
+  it lands on the custodian's Custody page. api.service gained the six pool-outflow methods;
+  labels for `service-deployment` / `service-realisation`; en + ar.
 
 ### 2026-09-17
 

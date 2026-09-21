@@ -1433,12 +1433,21 @@
                                 {{ 'services.details.liquidity.inject' | translate }}
                               </button>
                             }
-                            <!-- ⚠️ The WITHDRAW button is REMOVED, not hidden. The bare pool drain has no
-                                 on-chain call left (S37/S78): money leaves a service's pool through the
-                                 withdrawal lifecycle — request, then fulfil — which is queued,
-                                 coverage-gated and evidenced. Leaving the button wired would have been
-                                 worse than removing it, because the submit handler is now inject-only:
-                                 clicking "Withdraw" would have ADDED money to the pool. -->
+                            <!-- 33.C item 2b — WITHDRAW and DEPLOY are back as REQUESTS on the withdrawal
+                                 lifecycle (queued, coverage-gated, evidenced): opening one moves no money;
+                                 fulfilment does. The old bare pool drain is gone for good (S37/S78). -->
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-liquidity-withdraw')) {
+                              <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-4 py-1.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
+                                {{ 'services.details.liquidity.withdraw' | translate }}
+                              </button>
+                            }
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-deployment')) {
+                              <button (click)="openLiquidityModal('deploy', row)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-4 py-1.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ 'services.details.liquidity.deploy' | translate }}
+                              </button>
+                            }
                           </td>
                         </tr>
                         @if (expanded) {
@@ -1457,6 +1466,63 @@
             <p class="text-xs text-gray-500">
               {{ 'services.details.liquidity.helpText' | translate }}
             </p>
+
+            <!-- 33.C item 2b — OPEN pool-outflow requests on this book: liquidity withdrawals (kind 2)
+                 and deployments (kind 3). A deployment is fulfilled only by its beneficiary (the
+                 backing custodian) from ITS tenant, so Fulfil / Fail appear on liquidity rows only. -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
+              <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700">{{ 'services.details.liquidity.openRequests' | translate }}</h3>
+                <app-refresh-button (refresh)="getPoolRequests()" />
+              </div>
+              <div class="overflow-x-auto rounded-lg">
+                <table class="table-v4 w-full text-sm text-left">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>{{ 'services.details.liquidity.kind' | translate }}</th>
+                      <th>{{ 'services.details.liquidity.asset' | translate }}</th>
+                      <th class="text-right">{{ 'common.amount' | translate }}</th>
+                      <th class="text-right">{{ 'services.details.liquidity.remaining' | translate }}</th>
+                      <th>{{ 'services.details.liquidity.currency' | translate }}</th>
+                      <th class="text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    @if (poolRequestsLoading()) {
+                      <tr><td colspan="7"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                    } @else if (poolRequests().length === 0) {
+                      <tr><td colspan="7" class="py-4 text-center text-gray-400">{{ 'services.details.liquidity.noOpenRequests' | translate }}</td></tr>
+                    } @else {
+                      @for (r of poolRequests(); track r.request_id) {
+                        <tr>
+                          <td class="font-mono">{{ r.request_id }}</td>
+                          <td>{{ (isDeploymentRequest(r) ? 'services.details.liquidity.kindDeployment' : 'services.details.liquidity.kindWithdrawal') | translate }}</td>
+                          <td class="font-mono">{{ r.asset ? utils.shortAddr(r.asset) : '—' }}</td>
+                          <td class="text-right font-mono">{{ formatCreditAmount(r.amount) }}</td>
+                          <td class="text-right font-mono">{{ formatCreditAmount(r.remaining) }}</td>
+                          <td>{{ r.currency_code }}</td>
+                          <td class="text-right whitespace-nowrap">
+                            @if (!isDeploymentRequest(r) && canSettlePoolRequest()) {
+                              <button (click)="openPoolSettle('fulfil', r)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-3 py-1 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
+                                {{ 'services.details.liquidity.fulfil' | translate }}
+                              </button>
+                              <button (click)="openPoolSettle('fail', r)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-3 py-1 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ 'services.details.liquidity.fail' | translate }}
+                              </button>
+                            } @else {
+                              <span class="text-gray-400">{{ 'services.details.liquidity.awaitingCustodian' | translate }}</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
             <!-- Liquidity change history (plugin-mirrored credit ledger, origin 3=inject / 4=withdraw) -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
@@ -1519,7 +1585,7 @@
                 <!-- Header -->
                 <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
                   <h3 class="text-xl leading-6 font-semibold text-gray-100">
-                    {{ (liquidityModalAction() === 'inject' ? 'services.details.liquidity.injectTitle' : 'services.details.liquidity.withdrawTitle') | translate }}
+                    {{ ('services.details.liquidity.' + liquidityModalAction() + 'Title') | translate }}
                   </h3>
                   <p class="text-xs text-gray-400 mt-1">
                     {{ liquidityModalCurrency()?.name }} ({{ liquidityModalCurrency()?.symbol }})
@@ -1546,6 +1612,53 @@
                       [ngModel]="liquidityModalRefNo()" (ngModelChange)="liquidityModalRefNo.set($event)"
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
                   </div>
+                  @if (liquidityModalAction() === 'withdraw' || liquidityModalAction() === 'deploy') {
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.instrument' | translate }}</label>
+                      <input type="text" placeholder="0x…" [ngModel]="liquidityModalInstrument()" (ngModelChange)="liquidityModalInstrument.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-black font-mono" />
+                      <p class="text-xs text-gray-500 mt-1">{{ 'services.details.liquidity.instrumentHint' | translate }}</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.minterOfRecord' | translate }}
+                        @if (liquidityModalAction() === 'withdraw') { <span class="text-gray-400 font-normal">{{ 'services.details.liquidity.optional' | translate }}</span> }
+                      </label>
+                      <input type="text" placeholder="0x…" [ngModel]="liquidityModalMinter()" (ngModelChange)="liquidityModalMinter.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-black font-mono" />
+                    </div>
+                  }
+                  @if (liquidityModalAction() === 'deploy') {
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.asset' | translate }}</label>
+                      <select [ngModel]="liquidityModalAsset()" (ngModelChange)="liquidityModalAsset.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black">
+                        <option value="">{{ 'services.details.liquidity.pickAsset' | translate }}</option>
+                        @for (a of assets(); track a.address) {
+                          <option [value]="a.address">{{ a.name }} ({{ a.symbol }})</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.routeId' | translate }}</label>
+                        <input type="number" min="1" step="1" [ngModel]="liquidityModalRouteId()" (ngModelChange)="liquidityModalRouteId.set($event)"
+                          class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black" />
+                      </div>
+                      <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.beneficiary' | translate }}</label>
+                        <input type="text" placeholder="0x…" [ngModel]="liquidityModalBeneficiary()" (ngModelChange)="liquidityModalBeneficiary.set($event)"
+                          class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black font-mono" />
+                      </div>
+                    </div>
+                    <p class="text-xs text-gray-500">{{ 'services.details.liquidity.deployHint' | translate }}</p>
+                  }
+                  @if (liquidityModalAction() === 'fail') {
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'common.reason' | translate }}</label>
+                      <textarea rows="2" [ngModel]="liquidityModalReason()" (ngModelChange)="liquidityModalReason.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black"></textarea>
+                    </div>
+                  }
                   @if (liquidityModalError()) {
                     <p class="text-sm text-red-700">{{ liquidityModalError() }}</p>
                   }
@@ -1563,7 +1676,7 @@
                     [class.hover:bg-blue-800]="liquidityModalAction() === 'inject'"
                     [class.bg-red-700]="liquidityModalAction() === 'withdraw'"
                     [class.hover:bg-red-800]="liquidityModalAction() === 'withdraw'">
-                    {{ liquidityModalSubmitting() ? ('services.details.liquidity.submitting' | translate) : ((liquidityModalAction() === 'inject' ? 'services.details.liquidity.inject' : 'services.details.liquidity.withdraw') | translate) }}
+                    {{ liquidityModalSubmitting() ? ('services.details.liquidity.submitting' | translate) : (('services.details.liquidity.' + liquidityModalAction()) | translate) }}
                   </button>
                 </div>
 
