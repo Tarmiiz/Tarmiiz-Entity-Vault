@@ -35,6 +35,14 @@ _Living preamble describing the broad direction this sub-project is currently mo
   ACTIVE Token Issuer licence plus Set / Change behind an AlertService confirm, calling
   `PUT /assets/:address/issuer-service`. Warns when the chosen service has no payment processor.
   `Asset.issuerService` mapped from `issuer_service`; label + en/ar strings.
+- **33.R / 33.E — the service Licences tab reads the root model.** A licence is now a ROOT
+  permission row held by the service, which records no application, decision time or origin, so
+  the Origin and Decided columns are gone (they rendered `directGrant: null` as "You applied") and a
+  Level column is in (the verification cap, for a validator). A held licence on a suspended service
+  reads "Held, not in force". NEW "Pending applications" list from the route's `requests`
+  (`ServiceTemplate.licenseRequests()`), with `requestsReadable: false` rendered as "could not be
+  read", never "none". Deliberately NO Apply button: applying later has no on-chain path yet (the
+  API answers 501). `ServiceLicense.directGrant` is `boolean | null`; new `ServiceLicenseRequest`.
 
 ### 2026-09-17
 

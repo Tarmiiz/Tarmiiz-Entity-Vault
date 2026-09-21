@@ -56,7 +56,7 @@ import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
 import { CoverageAssetsTableComponent } from '../../../../shared/components/coverage-assets-table/coverage-assets-table.component';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
-import { ServiceLicense, licenseMeaning, licenseStateClass, licenseStateName } from '../../../../shared/utils/license.utils';
+import { ServiceLicense, ServiceLicenseRequest, licenseMeaning, licenseStateClass, licenseStateName } from '../../../../shared/utils/license.utils';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 
@@ -378,6 +378,10 @@ export class DetailsPage implements OnInit {
       `Class 14` any more.
   */
   licenses          = signal<ServiceLicense[]>([]);
+  // 33.E — the service's OPEN applications (a record on the service, not on the root).
+  // `licenseRequestsReadable === false` renders "could not be read", never "none".
+  licenseRequests   = signal<ServiceLicenseRequest[]>([]);
+  licenseRequestsReadable = signal(true);
   licensesLoading   = signal(false);
 
   /*
@@ -978,6 +982,8 @@ export class DetailsPage implements OnInit {
       const res: any = await this.apiService.vaultGetServiceLicenses(this.serviceAddress);
       const rows: ServiceLicense[] = Array.isArray(res?.licenses) ? res.licenses : [];
       this.licenses.set(rows);
+      this.licenseRequests.set(Array.isArray(res?.requests) ? res.requests : []);
+      this.licenseRequestsReadable.set(res?.requestsReadable !== false);
       const active = rows.filter((r) => r.active).map((r) => Number(r.classId));
       const svc = this.service();
       if (svc) this.service.set({ ...svc, licenses: active } as any);

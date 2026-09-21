@@ -468,6 +468,10 @@
                 <app-refresh-button (refresh)="loadLicenses()" />
               </div>
 
+              <!-- ⚠️ 33.R: a licence is a ROOT permission row held by this service. The root
+                   records no application, decision time or origin, so those columns are gone;
+                   what it does carry is the LEVEL (the verification cap, for a validator). A held
+                   licence reads NOT in force while the service itself is suspended. -->
               <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto rounded-lg">
                   <table class="table-v4 w-full text-sm text-left">
@@ -475,45 +479,68 @@
                       <tr>
                         <th scope="col">License</th>
                         <th scope="col">State</th>
-                        <th scope="col">Origin</th>
-                        <th scope="col">Decided</th>
+                        <th scope="col">Level</th>
                       </tr>
                     </thead>
                     <tbody class="text-xs">
                       @if (licensesLoading()) {
                         @for (s of [1, 2, 3, 4, 5]; track s) {
-                          <tr class="bg-white"><td colspan="4"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                          <tr class="bg-white"><td colspan="3"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
                         }
                       } @else if (licenses().length === 0) {
                         <tr class="bg-white">
-                          <td colspan="4">
-                            This service holds no licenses and has applied for none. It cannot act
-                            as a token issuer, exchange or brokerage until your regulator grants one.
+                          <td colspan="3">
+                            This service holds no licenses. It cannot act as a token issuer, exchange
+                            or brokerage until your regulator grants one.
                           </td>
                         </tr>
                       } @else {
-                        @for (l of licenses(); track l.classId; let isEven = $even) {
+                        @for (l of licenses(); track l.classId) {
                           <tr class="transition-colors">
                             <td>
                               <div class="font-medium text-gray-800">{{ licenseClassName(l.classId) }}</div>
                             </td>
                             <td>
-                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="licenseStateClass(l.state)">
-                                {{ licenseStateName(l.state) }}
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="licenseStateClass(l.active ? 2 : 3)">
+                                {{ l.active ? 'In force' : 'Held, not in force' }}
                               </span>
-                              <!-- Said in words, because an entity decides nothing here: the only
-                                   useful thing this surface can do is explain what the state
-                                   means for it. -->
-                              <div class="text-gray-600 mt-1">{{ licenseMeaning(l.state, l.active) }}</div>
+                              <div class="text-gray-600 mt-1">
+                                @if (l.active) {
+                                  {{ licenseMeaning(l.state, true) }}
+                                } @else {
+                                  Held, but this service is not active — it confers nothing until the service is active again.
+                                }
+                              </div>
                             </td>
-                            <td>{{ l.directGrant ? 'Granted by your regulator' : 'You applied' }}</td>
-                            <td>{{ l.decidedAt ? utils.formatTime(l.decidedAt) : '—' }}</td>
+                            <td>{{ l.level }}</td>
                           </tr>
                         }
                       }
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              <!-- ── OPEN APPLICATIONS (33.E) — filed when the service was created; each one is
+                   removed when your regulator grants or refuses it. Applying LATER has no
+                   on-chain path yet, so there is deliberately no Apply button here. -->
+              <div class="mt-4">
+                <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Pending applications</h4>
+                @if (!licenseRequestsReadable()) {
+                  <p class="text-xs text-red-700">The pending applications could not be read from the chain. This is not "none".</p>
+                } @else if (licenseRequests().length === 0) {
+                  <p class="text-xs text-gray-400">No applications are waiting for your regulator.</p>
+                } @else {
+                  <ul class="text-xs space-y-1">
+                    @for (r of licenseRequests(); track r.classId + '-' + r.countryCode) {
+                      <li class="flex items-center gap-2">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Applied</span>
+                        <span class="font-medium text-gray-800">{{ licenseClassName(r.classId) }}</span>
+                        <span class="text-gray-500">— waiting for your regulator ({{ r.countryCode }})</span>
+                      </li>
+                    }
+                  </ul>
+                }
               </div>
             </div>
 

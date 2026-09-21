@@ -2452,7 +2452,8 @@ export class ApiService {
     return this.vaultGet('/services/' + address + '/grants');
   }
 
-  /** Apply for a license. It confers NOTHING until the regulator approves — it lands Requested. */
+  /** ⚠️ 33.E — the API answers 501: a service applies for its licences at CREATION, and applying later has no
+   *  on-chain path yet. Kept (uncalled) for when the Entities verb exists. */
   async vaultRequestServiceLicense(address: string, classId: number, countryCode: number) {
     return this.vaultPost('/services/' + address + '/licenses', { classId, countryCode });
   }

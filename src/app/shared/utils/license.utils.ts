@@ -78,7 +78,16 @@ export interface ServiceLicense {
   active: boolean;
   regulator: string;
   countryCode: string;
-  requestedAt: number;   // MILLISECONDS on the wire
+  requestedAt: number;   // MILLISECONDS on the wire — 0 since 33.R (the root records no times)
   decidedAt: number;
-  directGrant: boolean;  // requestedAt === 0 ⇒ the regulator granted it unprompted
+  /** ⚠️ `null` since 33.R — a root permission row records no application, so "granted
+   *  unprompted" is unknowable. Never render null as either origin. */
+  directGrant: boolean | null;
+}
+
+/** An OPEN licence application — a record on the SERVICE (`ServiceTemplate.licenseRequests()`),
+ *  filed at creation and removed when the regulator resolves it (33.E). */
+export interface ServiceLicenseRequest {
+  classId: number;
+  countryCode: string;
 }
