@@ -82,8 +82,9 @@ export class ServiceProviderDashboardPage implements OnInit {
   // Issuer and an Exchange license is counted under each — the counts are per LICENSE, not per
   // service, and they deliberately do not sum to `totalServices`.
   //
-  // 🔴 EMPTY UNTIL THE LICENSE READ ROUTE LANDS (licensing lane) — `Service.licenses` is
-  // populated by nothing yet, so this renders no chips rather than wrong ones.
+  // `Service.licenses` is the ACTIVE licence set, mapped from the API's `license_class_ids` in
+  // `ApiService.vaultGetServicesOwn` (2026-09-21). It was empty until then because nothing mapped
+  // it — not because a licensing lane was pending, which is what this comment used to claim.
   serviceClassCounts = computed<ServiceClassCount[]>(() => {
     const counts = new Map<number, ServiceClassCount>();
     for (const s of this.services()) {
