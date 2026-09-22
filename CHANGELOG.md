@@ -15,6 +15,12 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-22
+
+**Fixed (licence class 30 — Fund Management)**
+
+- [party-class.ts](src/app/shared/constants/party-class.ts): GV now seeds `License Class` 30 = **Fund Management** (Phase 36 D2: the licence a fund manager's service holds, root row `grant.licence.class.30`). It is added to `PARTY_CLASS`, to the display map and to `LICENSE_CLASSES`. The last is the load-bearing part: `DECLARABLE_CLASSES` derives by subtraction and fails open, so without it a service could have declared itself "Fund Management" as a party class. The stale `LicensesProxy.hasLicense` comment is corrected (licences are root rows since 33.E / 33.R). Production build clean.
+
 ### 2026-09-21 — Phase 33 off-chain ledger (branch `phase33-ledger`, lands with the final redeploy)
 
 **Added (33.E E.1 — apply for a licence after creation)**
