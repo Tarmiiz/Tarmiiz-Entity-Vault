@@ -31,6 +31,9 @@ export class ModalRouteTransferComponent {
     service:            ['', Validators.required],
     fromSub:            ['', [Validators.required, Validators.pattern(/^0x[a-fA-F0-9]{40}$/)]],
     destinationService: ['', [Validators.required, Validators.pattern(/^0x[a-fA-F0-9]{40}$/)]],
+    // 33.C 2c — the subscriber's DID hash from onboarding. Credit now takes the identity and the
+    // destination account NAMED; the API resolves both from this hash (never an identity address).
+    didHash:            ['', [Validators.required, Validators.pattern(/^0x[a-fA-F0-9]{64}$/)]],
     currencyCode:       [null as number | null, Validators.required],
     amount:             [null as number | null, [Validators.required, Validators.min(0.000001)]],
     trxRefNo:           ['', Validators.required],
@@ -42,7 +45,7 @@ export class ModalRouteTransferComponent {
     effect(() => {
       if (this.modalService.isVisible()) {
         const first = this.modalService.currencies()[0]?.currencyCode ?? null;
-        this.form.reset({ service: '', fromSub: '', destinationService: '', currencyCode: first, amount: null, trxRefNo: '', trxDate: '', note: '' });
+        this.form.reset({ service: '', fromSub: '', destinationService: '', didHash: '', currencyCode: first, amount: null, trxRefNo: '', trxDate: '', note: '' });
         void this.loadSourceServices();
       }
     });
@@ -78,6 +81,7 @@ export class ModalRouteTransferComponent {
       service:            v.service!,
       fromSub:            v.fromSub!,
       destinationService: v.destinationService!,
+      didHash:            (v.didHash || '').trim(),
       currencyCode:       Number(v.currencyCode),
       amount:             Number(v.amount),
       providerTrxRefNo:   (v.trxRefNo || '').trim(),

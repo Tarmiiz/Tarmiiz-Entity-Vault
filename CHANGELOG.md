@@ -29,6 +29,76 @@ _Living preamble describing the broad direction this sub-project is currently mo
   ([api.service.ts](src/app/shared/services/api.service.ts)). ⚠️ Not covered: the SINGLE-service
   read (`GET /services/:address`) carries no licence ids at all, so the service details page's
   token-issuer view still waits for its Licences tab to load — an Entity API change.
+### 2026-09-22
+
+**Fixed (licence class 30 — Fund Management)**
+
+- [party-class.ts](src/app/shared/constants/party-class.ts): GV now seeds `License Class` 30 = **Fund Management** (Phase 36 D2: the licence a fund manager's service holds, root row `grant.licence.class.30`). It is added to `PARTY_CLASS`, to the display map and to `LICENSE_CLASSES`. The last is the load-bearing part: `DECLARABLE_CLASSES` derives by subtraction and fails open, so without it a service could have declared itself "Fund Management" as a party class. The stale `LicensesProxy.hasLicense` comment is corrected (licences are root rows since 33.E / 33.R). Production build clean.
+
+### 2026-09-21 — Phase 33 off-chain ledger (branch `phase33-ledger`, lands with the final redeploy)
+
+**Added (33.E E.1 — apply for a licence after creation)**
+
+- Service details → Licenses: **Apply for a license** (the market family 27 / 28 / 29, minus held or pending classes; optional reason), **Withdraw** on each pending application, and a **Decided applications** list (Approved / Rejected / Withdrawn). A refusal is now visible rather than a row that silently disappeared. Gated on `service-license-request` (the key the Entity API enforces) and not shown to viewers. The inline modal has no backdrop dismiss.
+
+**Changed (the term — ruling C.8 / E.13)**
+
+- “Election” → “Settlement Mode” in every rendered text node (18) and in two i18n values, plus the Arabic twin: “نمط التسوية”. Identifiers, i18n keys, System Function keys, route paths and audit category strings are unchanged.
+
+**Changed**
+
+- **AS.1 (33.A) — an asset is CREATED WITHOUT its issuing service.** The Add Asset wizard's step 4
+  is now "Currency" only: the `service` control, its Token-Issuer-licensed picker, the review row
+  and the payment-processor gate are gone ([asset-creator.page.ts](src/app/pages/secure/assets/creator/asset-creator.page.ts)).
+  Ruling (a): the credit-settlement opt-out is no longer forced by a service's missing payment
+  processor — the contract never conditioned the flag on one; the warning moved to the card below.
+  en + ar step-4 text.
+
+**Added**
+
+- **An "Issuing service" card** at the top of the asset detail Services tab
+  ([details.page.html](src/app/pages/secure/assets/details/details.page.html)): shows the service
+  (or an amber "not set — cannot be approved to Active until it is"), and — for the manager, a
+  non-viewer holding the new `asset-issuer-service` key — a picker of this tenant's services with an
+  ACTIVE Token Issuer licence plus Set / Change behind an AlertService confirm, calling
+  `PUT /assets/:address/issuer-service`. Warns when the chosen service has no payment processor.
+  `Asset.issuerService` mapped from `issuer_service`; label + en/ar strings.
+- **33.R / 33.E — the service Licences tab reads the root model.** A licence is now a ROOT
+  permission row held by the service, which records no application, decision time or origin, so
+  the Origin and Decided columns are gone (they rendered `directGrant: null` as "You applied") and a
+  Level column is in (the verification cap, for a validator). A held licence on a suspended service
+  reads "Held, not in force". NEW "Pending applications" list from the route's `requests`
+  (`ServiceTemplate.licenseRequests()`), with `requestsReadable: false` rendered as "could not be
+  read", never "none". Deliberately NO Apply button: applying later has no on-chain path yet (the
+  API answers 501). `ServiceLicense.directGrant` is `boolean | null`; new `ServiceLicenseRequest`.
+- **33.C item 2b — the POOL OUTFLOW on the service's Liquidity tab (the fund side).** Withdraw
+  (key `service-liquidity-withdraw`, re-armed) and Deploy (key `service-deployment`, default-deny) are
+  back beside Inject, as REQUESTS: the inline liquidity modal gained both modes (payout instrument
+  hash, minter of record; a deployment also takes the asset, the approved route number and the
+  beneficiary = the backing custodian) and says "request opened — no money has moved" on success.
+  NEW "Open pool requests" table (kinds 2 + 3 from `GET …/liquidity/requests`): Fulfil / Fail for a
+  liquidity withdrawal through the same modal (fail takes a mandatory reason); a deployment reads
+  "Awaiting the custodian" — only its beneficiary may fulfil it, from ITS tenant. REALISE is
+  deliberately NOT here: the caller must be the backing custodian, never the fund's own tenant, so
+  it lands on the custodian's Custody page. api.service gained the six pool-outflow methods;
+  labels for `service-deployment` / `service-realisation`; en + ar.
+- **33.C item 2b — the custodian's side: a "Deployments" tab on the Custody page.** Lists the
+  deployments on OTHER funds' books that name one of this tenant's services as beneficiary
+  (`GET /custody/deployments`), with Confirm (fulfil), Refuse (fail, reason required) and Return
+  (realise: amount, the fund's payment rail, a 32-byte evidence hash) — every action relayed as the
+  beneficiary service (`via`) against the fund's book, because the contract admits only the
+  backing custodian. Fulfil / Refuse gated by `credit-withdraw`, Return by `service-realisation`;
+  hidden for viewers. en + ar.
+- **33.C stage 2c — the Route Credit modal asks for the subscriber's DID hash** (required, 0x + 64
+  hex): Credit takes the identity and the destination account NAMED, and the API resolves both
+  from the hash (controller ruling (a) — an identity contract address never enters a request).
+  en + ar.
+- **33.R — provider pickers and badges say "licensed in this jurisdiction", never "endorsed".** A
+  provider is now a service holding its class's licence row on the root in this entity's
+  jurisdiction; endorsement has no successor. Reworded (en + ar, keys unchanged): the party
+  picker's subtitle / empty state / hint and its source tags ("Licensed in this jurisdiction";
+  the never-served second tag reads "Other jurisdiction"), the validator / custodian inactive
+  tooltips on service and subscription pages, and the validator picker's empty state.
 
 ### 2026-09-17
 

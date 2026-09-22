@@ -279,7 +279,7 @@
         @if (activeTab() === 'election') {
           <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
             <div class="px-6 py-3 border-b border-gray-100">
-              <h3 class="text-sm font-semibold text-gray-700">On-Chain / Off-Chain Election</h3>
+              <h3 class="text-sm font-semibold text-gray-700">On-Chain / Off-Chain Settlement Mode</h3>
               <p class="text-xs text-gray-500 mt-1">
                 Whether this service's money is <span class="font-semibold">On-Chain</span> (fiat already in
                 reserve, so a movement is final) or <span class="font-semibold">Off-Chain</span> (credit records
@@ -287,7 +287,7 @@
                 <span class="font-semibold">regulator declares it</span>, <span class="font-semibold">per
                 currency</span> &mdash; so this service can be one in EGP and the other in USD, and the
                 regulator may allow one of its services to run On-Chain while refusing another. You may
-                <span class="font-semibold">request a switch</span> of a declared election; your regulator
+                <span class="font-semibold">request a switch</span> of a declared settlement mode; your regulator
                 approves it in both directions. Once approved, anyone may drive the migration.
               </p>
             </div>
@@ -296,13 +296,13 @@
               <app-loading-state [loading]="true" />
             } @else if (elections().length === 0) {
               <div class="px-6 py-6 text-sm text-gray-500">
-                <span class="font-semibold text-gray-700">No election declared yet.</span>
-                This service's <span class="font-semibold">regulator</span> declares its election, one
+                <span class="font-semibold text-gray-700">No settlement mode declared yet.</span>
+                This service's <span class="font-semibold">regulator</span> declares its settlement mode, one
                 currency at a time &mdash; it is not something this service sets for itself, because an
-                An On-Chain election lets it mint credit against fiat it claims to hold in reserve.
+                An On-Chain settlement mode lets it mint credit against fiat it claims to hold in reserve.
                 <span class="block mt-1">
                   Until the regulator declares one, <span class="font-semibold">no payment provider can be
-                  attached</span> for that currency: a provider's role is validated against the election,
+                  attached</span> for that currency: a provider's role is validated against the settlement mode,
                   so before it exists there is nothing to validate against.
                 </span>
               </div>
@@ -312,7 +312,7 @@
                   <thead>
                     <tr>
                       <th class="text-left font-semibold">Currency</th>
-                      <th class="text-left font-semibold">Election</th>
+                      <th class="text-left font-semibold">Settlement Mode</th>
                       <th class="text-left font-semibold">Pending request</th>
                       <th class="text-left font-semibold">Payment providers</th>
                       <th class="text-right font-semibold">Actions</th>
@@ -468,6 +468,10 @@
                 <app-refresh-button (refresh)="loadLicenses()" />
               </div>
 
+              <!-- ⚠️ 33.R: a licence is a ROOT permission row held by this service. The root
+                   records no application, decision time or origin, so those columns are gone;
+                   what it does carry is the LEVEL (the verification cap, for a validator). A held
+                   licence reads NOT in force while the service itself is suspended. -->
               <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto rounded-lg">
                   <table class="table-v4 w-full text-sm text-left">
@@ -475,45 +479,100 @@
                       <tr>
                         <th scope="col">License</th>
                         <th scope="col">State</th>
-                        <th scope="col">Origin</th>
-                        <th scope="col">Decided</th>
+                        <th scope="col">Level</th>
                       </tr>
                     </thead>
                     <tbody class="text-xs">
                       @if (licensesLoading()) {
                         @for (s of [1, 2, 3, 4, 5]; track s) {
-                          <tr class="bg-white"><td colspan="4"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                          <tr class="bg-white"><td colspan="3"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
                         }
                       } @else if (licenses().length === 0) {
                         <tr class="bg-white">
-                          <td colspan="4">
-                            This service holds no licenses and has applied for none. It cannot act
-                            as a token issuer, exchange or brokerage until your regulator grants one.
+                          <td colspan="3">
+                            This service holds no licenses. It cannot act as a token issuer, exchange
+                            or brokerage until your regulator grants one.
                           </td>
                         </tr>
                       } @else {
-                        @for (l of licenses(); track l.classId; let isEven = $even) {
+                        @for (l of licenses(); track l.classId) {
                           <tr class="transition-colors">
                             <td>
                               <div class="font-medium text-gray-800">{{ licenseClassName(l.classId) }}</div>
                             </td>
                             <td>
-                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="licenseStateClass(l.state)">
-                                {{ licenseStateName(l.state) }}
+                              <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="licenseStateClass(l.active ? 2 : 3)">
+                                {{ l.active ? 'In force' : 'Held, not in force' }}
                               </span>
-                              <!-- Said in words, because an entity decides nothing here: the only
-                                   useful thing this surface can do is explain what the state
-                                   means for it. -->
-                              <div class="text-gray-600 mt-1">{{ licenseMeaning(l.state, l.active) }}</div>
+                              <div class="text-gray-600 mt-1">
+                                @if (l.active) {
+                                  {{ licenseMeaning(l.state, true) }}
+                                } @else {
+                                  Held, but this service is not active — it confers nothing until the service is active again.
+                                }
+                              </div>
                             </td>
-                            <td>{{ l.directGrant ? 'Granted by your regulator' : 'You applied' }}</td>
-                            <td>{{ l.decidedAt ? utils.formatTime(l.decidedAt) : '—' }}</td>
+                            <td>{{ l.level }}</td>
                           </tr>
                         }
                       }
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              <!-- ── APPLICATIONS (33.E E.1, Entities 9b909b5) — filed at creation OR later through
+                   Apply. An application's state FLIPS when your regulator decides (or you withdraw);
+                   decided ones stay listed below, so a refusal is visible rather than a row that
+                   silently disappeared. -->
+              <div class="mt-4">
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending applications</h4>
+                  @if (canApplyLicense() && licenseApplyChoices().length > 0) {
+                    <button type="button" (click)="openLicenseApply()"
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl text-white bg-[var(--brand-primary)] hover:opacity-90 transition-opacity">
+                      Apply for a license
+                    </button>
+                  }
+                </div>
+                @if (!licenseRequestsReadable()) {
+                  <p class="text-xs text-red-700">The pending applications could not be read from the chain. This is not "none".</p>
+                } @else if (licenseRequests().length === 0) {
+                  <p class="text-xs text-gray-400">No applications are waiting for your regulator.</p>
+                } @else {
+                  <ul class="text-xs space-y-1">
+                    @for (r of licenseRequests(); track r.classId + '-' + r.countryCode) {
+                      <li class="flex items-center gap-2">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Applied</span>
+                        <span class="font-medium text-gray-800">{{ licenseClassName(r.classId) }}</span>
+                        <span class="text-gray-500">— waiting for your regulator ({{ r.countryCode }})</span>
+                        @if (canApplyLicense()) {
+                          <button type="button" (click)="withdrawLicense(r)"
+                            class="ml-auto text-xs font-medium px-3 py-1 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                            Withdraw
+                          </button>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+                @if (decidedLicenseApplications().length > 0) {
+                  <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4 mb-2">Decided applications</h4>
+                  <ul class="text-xs space-y-1">
+                    @for (a of decidedLicenseApplications(); track a.classId) {
+                      <li class="flex items-center gap-2">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full"
+                          [class.bg-green-100]="a.state === 2" [class.text-green-800]="a.state === 2"
+                          [class.bg-red-100]="a.state === 3" [class.text-red-800]="a.state === 3"
+                          [class.bg-gray-100]="a.state === 4" [class.text-gray-700]="a.state === 4">
+                          {{ licenseApplicationLabel(a.state) }}
+                        </span>
+                        <span class="font-medium text-gray-800">{{ licenseClassName(a.classId) }}</span>
+                        <span class="text-gray-500">({{ a.countryCode }})</span>
+                      </li>
+                    }
+                  </ul>
+                }
               </div>
             </div>
 
@@ -1406,12 +1465,21 @@
                                 {{ 'services.details.liquidity.inject' | translate }}
                               </button>
                             }
-                            <!-- ⚠️ The WITHDRAW button is REMOVED, not hidden. The bare pool drain has no
-                                 on-chain call left (S37/S78): money leaves a service's pool through the
-                                 withdrawal lifecycle — request, then fulfil — which is queued,
-                                 coverage-gated and evidenced. Leaving the button wired would have been
-                                 worse than removing it, because the submit handler is now inject-only:
-                                 clicking "Withdraw" would have ADDED money to the pool. -->
+                            <!-- 33.C item 2b — WITHDRAW and DEPLOY are back as REQUESTS on the withdrawal
+                                 lifecycle (queued, coverage-gated, evidenced): opening one moves no money;
+                                 fulfilment does. The old bare pool drain is gone for good (S37/S78). -->
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-liquidity-withdraw')) {
+                              <button (click)="openLiquidityModal('withdraw', row)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-4 py-1.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
+                                {{ 'services.details.liquidity.withdraw' | translate }}
+                              </button>
+                            }
+                            @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('service-deployment')) {
+                              <button (click)="openLiquidityModal('deploy', row)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-4 py-1.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ 'services.details.liquidity.deploy' | translate }}
+                              </button>
+                            }
                           </td>
                         </tr>
                         @if (expanded) {
@@ -1430,6 +1498,63 @@
             <p class="text-xs text-gray-500">
               {{ 'services.details.liquidity.helpText' | translate }}
             </p>
+
+            <!-- 33.C item 2b — OPEN pool-outflow requests on this book: liquidity withdrawals (kind 2)
+                 and deployments (kind 3). A deployment is fulfilled only by its beneficiary (the
+                 backing custodian) from ITS tenant, so Fulfil / Fail appear on liquidity rows only. -->
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
+              <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700">{{ 'services.details.liquidity.openRequests' | translate }}</h3>
+                <app-refresh-button (refresh)="getPoolRequests()" />
+              </div>
+              <div class="overflow-x-auto rounded-lg">
+                <table class="table-v4 w-full text-sm text-left">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>{{ 'services.details.liquidity.kind' | translate }}</th>
+                      <th>{{ 'services.details.liquidity.asset' | translate }}</th>
+                      <th class="text-right">{{ 'common.amount' | translate }}</th>
+                      <th class="text-right">{{ 'services.details.liquidity.remaining' | translate }}</th>
+                      <th>{{ 'services.details.liquidity.currency' | translate }}</th>
+                      <th class="text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    @if (poolRequestsLoading()) {
+                      <tr><td colspan="7"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+                    } @else if (poolRequests().length === 0) {
+                      <tr><td colspan="7" class="py-4 text-center text-gray-400">{{ 'services.details.liquidity.noOpenRequests' | translate }}</td></tr>
+                    } @else {
+                      @for (r of poolRequests(); track r.request_id) {
+                        <tr>
+                          <td class="font-mono">{{ r.request_id }}</td>
+                          <td>{{ (isDeploymentRequest(r) ? 'services.details.liquidity.kindDeployment' : 'services.details.liquidity.kindWithdrawal') | translate }}</td>
+                          <td class="font-mono">{{ r.asset ? utils.shortAddr(r.asset) : '—' }}</td>
+                          <td class="text-right font-mono">{{ formatCreditAmount(r.amount) }}</td>
+                          <td class="text-right font-mono">{{ formatCreditAmount(r.remaining) }}</td>
+                          <td>{{ r.currency_code }}</td>
+                          <td class="text-right whitespace-nowrap">
+                            @if (!isDeploymentRequest(r) && canSettlePoolRequest()) {
+                              <button (click)="openPoolSettle('fulfil', r)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-3 py-1 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mr-1">
+                                {{ 'services.details.liquidity.fulfil' | translate }}
+                              </button>
+                              <button (click)="openPoolSettle('fail', r)" [disabled]="!entityActive"
+                                class="text-xs font-medium px-3 py-1 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ 'services.details.liquidity.fail' | translate }}
+                              </button>
+                            } @else {
+                              <span class="text-gray-400">{{ 'services.details.liquidity.awaitingCustodian' | translate }}</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
             <!-- Liquidity change history (plugin-mirrored credit ledger, origin 3=inject / 4=withdraw) -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mt-4">
@@ -1484,6 +1609,50 @@
             </div>
           </div>
 
+          <!-- inline licence-application modal (33.E E.1). No backdrop dismiss — the platform rule. -->
+          @if (licenseApplyOpen()) {
+            <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center">
+              <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg m-4">
+                <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
+                  <h3 class="text-xl leading-6 font-semibold text-gray-100">Apply for a license</h3>
+                  <p class="text-xs text-gray-400 mt-1">
+                    Your regulator decides. An application confers nothing until it is approved.
+                  </p>
+                </div>
+                <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">License</label>
+                    <select [ngModel]="licenseApplyClass()" (ngModelChange)="licenseApplyClass.set(+$event)"
+                      class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black">
+                      @for (c of licenseApplyChoices(); track c) {
+                        <option [ngValue]="c">{{ licenseClassName(c) }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Reason <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <textarea rows="3" [ngModel]="licenseApplyReason()" (ngModelChange)="licenseApplyReason.set($event)"
+                      placeholder="Shown to your regulator with the application"
+                      class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black"></textarea>
+                  </div>
+                  @if (licenseApplyError()) {
+                    <p class="text-sm text-red-700">{{ licenseApplyError() }}</p>
+                  }
+                </div>
+                <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+                  <button type="button" (click)="closeLicenseApply()" [disabled]="licenseApplySubmitting()"
+                    class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ 'common.cancel' | translate }}
+                  </button>
+                  <button type="button" (click)="submitLicenseApply()" [disabled]="licenseApplySubmitting() || !licenseApplyClass()"
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl text-white bg-[var(--brand-primary)] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ licenseApplySubmitting() ? 'Applying…' : 'Apply' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- inline liquidity modal -->
           @if (liquidityModalOpen()) {
             <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center">
@@ -1492,7 +1661,7 @@
                 <!-- Header -->
                 <div class="p-6 border-b bg-[var(--brand-primary)] rounded-t-xl">
                   <h3 class="text-xl leading-6 font-semibold text-gray-100">
-                    {{ (liquidityModalAction() === 'inject' ? 'services.details.liquidity.injectTitle' : 'services.details.liquidity.withdrawTitle') | translate }}
+                    {{ ('services.details.liquidity.' + liquidityModalAction() + 'Title') | translate }}
                   </h3>
                   <p class="text-xs text-gray-400 mt-1">
                     {{ liquidityModalCurrency()?.name }} ({{ liquidityModalCurrency()?.symbol }})
@@ -1519,6 +1688,53 @@
                       [ngModel]="liquidityModalRefNo()" (ngModelChange)="liquidityModalRefNo.set($event)"
                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
                   </div>
+                  @if (liquidityModalAction() === 'withdraw' || liquidityModalAction() === 'deploy') {
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.instrument' | translate }}</label>
+                      <input type="text" placeholder="0x…" [ngModel]="liquidityModalInstrument()" (ngModelChange)="liquidityModalInstrument.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-black font-mono" />
+                      <p class="text-xs text-gray-500 mt-1">{{ 'services.details.liquidity.instrumentHint' | translate }}</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.minterOfRecord' | translate }}
+                        @if (liquidityModalAction() === 'withdraw') { <span class="text-gray-400 font-normal">{{ 'services.details.liquidity.optional' | translate }}</span> }
+                      </label>
+                      <input type="text" placeholder="0x…" [ngModel]="liquidityModalMinter()" (ngModelChange)="liquidityModalMinter.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm text-black font-mono" />
+                    </div>
+                  }
+                  @if (liquidityModalAction() === 'deploy') {
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.asset' | translate }}</label>
+                      <select [ngModel]="liquidityModalAsset()" (ngModelChange)="liquidityModalAsset.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black">
+                        <option value="">{{ 'services.details.liquidity.pickAsset' | translate }}</option>
+                        @for (a of assets(); track a.address) {
+                          <option [value]="a.address">{{ a.name }} ({{ a.symbol }})</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.routeId' | translate }}</label>
+                        <input type="number" min="1" step="1" [ngModel]="liquidityModalRouteId()" (ngModelChange)="liquidityModalRouteId.set($event)"
+                          class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black" />
+                      </div>
+                      <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">{{ 'services.details.liquidity.beneficiary' | translate }}</label>
+                        <input type="text" placeholder="0x…" [ngModel]="liquidityModalBeneficiary()" (ngModelChange)="liquidityModalBeneficiary.set($event)"
+                          class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black font-mono" />
+                      </div>
+                    </div>
+                    <p class="text-xs text-gray-500">{{ 'services.details.liquidity.deployHint' | translate }}</p>
+                  }
+                  @if (liquidityModalAction() === 'fail') {
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">{{ 'common.reason' | translate }}</label>
+                      <textarea rows="2" [ngModel]="liquidityModalReason()" (ngModelChange)="liquidityModalReason.set($event)"
+                        class="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 sm:text-sm text-black"></textarea>
+                    </div>
+                  }
                   @if (liquidityModalError()) {
                     <p class="text-sm text-red-700">{{ liquidityModalError() }}</p>
                   }
@@ -1536,7 +1752,7 @@
                     [class.hover:bg-blue-800]="liquidityModalAction() === 'inject'"
                     [class.bg-red-700]="liquidityModalAction() === 'withdraw'"
                     [class.hover:bg-red-800]="liquidityModalAction() === 'withdraw'">
-                    {{ liquidityModalSubmitting() ? ('services.details.liquidity.submitting' | translate) : ((liquidityModalAction() === 'inject' ? 'services.details.liquidity.inject' : 'services.details.liquidity.withdraw') | translate) }}
+                    {{ liquidityModalSubmitting() ? ('services.details.liquidity.submitting' | translate) : (('services.details.liquidity.' + liquidityModalAction()) | translate) }}
                   </button>
                 </div>
 

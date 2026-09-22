@@ -292,19 +292,9 @@
             </div>
           }
 
-          <!-- Step 4: Service & Currency -->
+          <!-- Step 4: Currency (AS.1 — the issuing service is set after creation) -->
           @if (currentStep() === 4) {
             <p class="text-sm text-gray-500 mb-2">{{ 'assets.addModal.wizard.step4Intro' | translate }}</p>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.serviceLabel' | translate }}</label>
-              <select formControlName="service"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
-                <option value="" disabled selected hidden>{{ 'assets.addModal.wizard.selectServicePlaceholder' | translate }}</option>
-                @for (svc of services(); track svc.address) {
-                  <option [value]="svc.address">{{ svc.name }}</option>
-                }
-              </select>
-            </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'assets.addModal.wizard.currencyLabel' | translate }}</label>
               <select formControlName="currency"
@@ -373,13 +363,9 @@
             <div class="pt-2">
               <div class="flex items-center gap-2">
                 <input type="checkbox" id="noCreditSettlement" formControlName="noCreditSettlement"
-                  [attr.disabled]="selectedServiceHasPaymentProcessor ? null : true"
                   class="h-4 w-4 rounded-xl border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-40">
-                <label for="noCreditSettlement" class="text-sm" [class]="selectedServiceHasPaymentProcessor ? 'text-gray-700' : 'text-gray-400'">{{ 'assets.addModal.wizard.noCreditSettlementLabel' | translate }}</label>
+                <label for="noCreditSettlement" class="text-sm" class="text-gray-700">{{ 'assets.addModal.wizard.noCreditSettlementLabel' | translate }}</label>
               </div>
-              @if (!selectedServiceHasPaymentProcessor) {
-                <p class="text-xs text-gray-400 mt-1">{{ 'assets.addModal.wizard.noPaymentProcessorHint' | translate }}</p>
-              }
             </div>
           }
 
@@ -548,10 +534,6 @@
             <div class="mb-4">
               <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'assets.addModal.wizard.serviceCurrencyHeading' | translate }}</h4>
               <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-500">{{ 'assets.addModal.wizard.serviceLabel' | translate }}</span>
-                  <span class="text-black font-medium">{{ getServiceName() }}</span>
-                </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">{{ 'assets.addModal.wizard.currencyLabel' | translate }}</span>
                   <span class="text-black font-medium">{{ getCurrencyDisplay() }}</span>

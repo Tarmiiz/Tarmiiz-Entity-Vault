@@ -928,6 +928,43 @@
 
         <!-- services tab -->
         @if (activeTab() === 'services') {
+          <!-- AS.1 (33.A) — the ISSUING service: set after creation, required before approval. -->
+          @if (asset(); as v) {
+            <div class="card-v4 p-4 mb-4">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ 'assets.details.issuerService.title' | translate }}</p>
+                  @if (v.issuerService) {
+                    <p class="text-sm font-medium text-gray-800 mt-1">{{ issuerServiceName() || v.issuerService }}</p>
+                    <p class="font-mono text-xs text-gray-500">{{ v.issuerService }}</p>
+                  } @else {
+                    <p class="text-sm text-amber-800 mt-1">{{ 'assets.details.issuerService.notSet' | translate }}</p>
+                  }
+                </div>
+                @if (canSetIssuerService()) {
+                  <div class="flex items-center gap-2">
+                    <select [ngModel]="issuerPick()" (ngModelChange)="issuerPick.set($event)" [disabled]="!entityActive"
+                      class="text-sm border border-gray-300 rounded-xl py-1.5 px-3 text-gray-800">
+                      <option value="">{{ 'assets.details.issuerService.pick' | translate }}</option>
+                      @for (c of issuerCandidates(); track c.address) {
+                        <option [value]="c.address" [disabled]="c.address.toLowerCase() === (v.issuerService || '').toLowerCase()">{{ c.name }}</option>
+                      }
+                    </select>
+                    <button (click)="saveIssuerService()" [disabled]="!entityActive || !issuerPick()"
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
+                      {{ (v.issuerService ? 'assets.details.issuerService.change' : 'assets.details.issuerService.set') | translate }}
+                    </button>
+                  </div>
+                }
+              </div>
+              @if (issuerPickHasNoPP()) {
+                <p class="text-xs text-amber-800 mt-2">{{ 'assets.details.issuerService.noPaymentProcessor' | translate }}</p>
+              }
+              @if (canSetIssuerService() && issuerCandidates().length === 0) {
+                <p class="text-xs text-gray-400 mt-2">{{ 'assets.details.issuerService.noCandidates' | translate }}</p>
+              }
+            </div>
+          }
           <div class="card-v4 overflow-hidden">
             @if (asset(); as v) {
               <!-- No "Services" heading: the tab that opened this pane carries the SAME

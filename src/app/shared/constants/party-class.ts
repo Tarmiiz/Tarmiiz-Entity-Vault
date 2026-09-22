@@ -66,11 +66,13 @@ export const PARTY_CLASS = {
   SETTLEMENT_OPERATOR:24,
   COMMS_OPERATOR:     25,
   IDENTITY_ISSUER:    26,   // verified against IdentitiesProxy.CLASS_IDENTITY_ISSUER = 26
-  // 27..29 — LICENSE classes (Phase 28). Not a party a service declares: a license its
-  // regulator grants, read through `LicensesProxy.hasLicense`.
+  // 27..30 — LICENSE classes. Not a party a service declares: a license its regulator grants,
+  // held as the root row `grant.licence.class.<id>` since 33.E/33.R (it read "through
+  // `LicensesProxy.hasLicense`" until then; that contract is retired).
   TOKEN_ISSUER:       27,
   EXCHANGE:           28,
   BROKERAGE:          29,
+  FUND_MANAGEMENT:    30,   // Phase 36 D2 — a fund manager's service; GV `License Class` id 30
 } as const;
 
 // ── THREE BANDS, THREE QUESTIONS ───────────────────────────────────────────────────────────
@@ -98,9 +100,9 @@ export const OPERATOR_CLASSES: readonly number[] = [
   PARTY_CLASS.MARKET_OPERATOR, PARTY_CLASS.SETTLEMENT_OPERATOR,
   PARTY_CLASS.COMMS_OPERATOR, PARTY_CLASS.IDENTITY_ISSUER,
 ];
-/** License classes (Phase 28) — granted by a regulator, never declared by a service. */
+/** License classes — granted by a regulator, never declared by a service. */
 export const LICENSE_CLASSES: readonly number[] = [
-  PARTY_CLASS.TOKEN_ISSUER, PARTY_CLASS.EXCHANGE, PARTY_CLASS.BROKERAGE,
+  PARTY_CLASS.TOKEN_ISSUER, PARTY_CLASS.EXCHANGE, PARTY_CLASS.BROKERAGE, PARTY_CLASS.FUND_MANAGEMENT,
 ];
 /**
  * What a type-2 service may DECLARE — everything but the operator AND license classes.
@@ -155,6 +157,7 @@ export const PARTY_CLASS_NAME: Record<number, string> = {
   [PARTY_CLASS.TOKEN_ISSUER]:        'Token Issuer',
   [PARTY_CLASS.EXCHANGE]:            'Exchange',
   [PARTY_CLASS.BROKERAGE]:           'Brokerage',
+  [PARTY_CLASS.FUND_MANAGEMENT]:     'Fund Management',
 };
 
 /** Falls back to the raw id rather than a wrong name — an unknown class is a fact, not 'Other'. */

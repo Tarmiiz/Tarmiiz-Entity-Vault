@@ -78,7 +78,28 @@ export interface ServiceLicense {
   active: boolean;
   regulator: string;
   countryCode: string;
-  requestedAt: number;   // MILLISECONDS on the wire
+  requestedAt: number;   // MILLISECONDS on the wire — 0 since 33.R (the root records no times)
   decidedAt: number;
-  directGrant: boolean;  // requestedAt === 0 ⇒ the regulator granted it unprompted
+  /** ⚠️ `null` since 33.R — a root permission row records no application, so "granted
+   *  unprompted" is unknowable. Never render null as either origin. */
+  directGrant: boolean | null;
 }
+
+/** An OPEN licence application — the Pending (state 1) subset of `ServiceLicenseApplication`. */
+export interface ServiceLicenseRequest {
+  classId: number;
+  countryCode: string;
+}
+
+/** Every application the service ever filed — `ServiceTemplate.licenseApplications()` (Entities
+ *  `9b909b5`, 33.E E.1). One per class; its state FLIPS on resolution and the row is kept. */
+export interface ServiceLicenseApplication {
+  classId: number;
+  countryCode: string;   // the jurisdiction, resolved on chain at filing
+  state: number;         // 1 Pending / 2 Approved / 3 Rejected / 4 Withdrawn
+  updatedAt: number;     // chain seconds
+}
+
+export const LICENSE_APPLICATION_STATE_LABEL: Readonly<Record<number, string>> = Object.freeze({
+  1: 'Pending', 2: 'Approved', 3: 'Rejected', 4: 'Withdrawn',
+});

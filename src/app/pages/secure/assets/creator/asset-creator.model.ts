@@ -26,7 +26,6 @@ export interface AddAssetData {
   name: string;
   symbol: string;
   description: string;
-  service: string;
   currency: number;
   // DERIVED from `formula` since 4.9 — the regulator that authored the chosen class formula
   // IS the asset's regulator, which is the pairing `registerAsset` enforces on chain.
