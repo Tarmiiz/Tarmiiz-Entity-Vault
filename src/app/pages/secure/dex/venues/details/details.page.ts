@@ -70,12 +70,16 @@ export class DetailsPage implements OnInit, OnDestroy {
   // neither generates nor holds an implementation. What this page adds is the two things
   // that were genuinely missing: the published kit-library addresses to link against, and
   // a route to a CREATE that the tenant relay wallet cannot perform itself.
-  venueTemplates = signal<any[]>([]);
-  kitLibraries = signal<Record<string, string | null>>({});
-  kitLibraryList = computed(() => Object.entries(this.kitLibraries()).map(([name, address]) => ({ name, address })));
+  // 33.D: the market is composed from the module catalog under an approved rulebook.
+  marketModules = signal<any[]>([]);
+  rulebook = signal<any | null>(null);
+  marketLoaded = signal(false);
+  selectedModules: Record<string, boolean> = {};
+  filingClearingMode = 1;       // 1 venue-cleared / 2 clearing house — the chain checks it EQUALS the venue row
+  filingHaltPolicy = 1;         // 1 operator / 2 supervised
+  filingTier = 1;
+  poolSubscription = '';
   contractCandidate = '';
-  contractCreationCode = '';
-  contractName = '';
   verifyReport = signal<any | null>(null);
   contractBusy = signal(false);
   venueOrders = signal<DexOrder[]>([]);
@@ -168,15 +172,20 @@ export class DetailsPage implements OnInit, OnDestroy {
 
   setTab(tab: 'info' | 'assets' | 'orders' | 'trades' | 'members' | 'contract') {
     this.activeTab.set(tab);
-    if (tab === 'contract' && this.venueTemplates().length === 0) void this.loadTemplates();
+    if (tab === 'contract' && !this.marketLoaded()) void this.loadMarket();
   }
 
   // ── The venue CONTRACT ─────────────────────────────────────────────────────
 
-  async loadTemplates() {
-    const r = await this.apiService.vaultDexVenueTemplates();
-    this.venueTemplates.set(r?.templates ?? []);
-    this.kitLibraries.set(r?.libraries ?? {});
+  async loadMarket() {
+    const [mods, rb] = await Promise.all([
+      this.apiService.vaultDexVenueModules(this.serviceAddress()),
+      this.apiService.vaultDexVenueRulebook(this.serviceAddress()),
+    ]);
+    this.marketModules.set(mods ?? []);
+    this.rulebook.set(rb ?? null);
+    this.marketLoaded.set(true);
+    for (const m of mods ?? []) if (m.declared) this.selectedModules[m.address] = true;
   }
 
   /**
@@ -220,7 +229,7 @@ export class DetailsPage implements OnInit, OnDestroy {
   }
 
   /** Shared tail for the three write paths — they differ only in payload and prompt. */
-  private async _setContract(body: { creationCode?: string; name?: string; venueContract?: string | null }, loadingKey: string) {
+  private async _setContract(body: { deployCore?: boolean; poolSubscription?: string; venueContract?: string | null }, loadingKey: string) {
     this.loadingService.show(this.translate.instant(loadingKey));
     try {
       const r = await this.apiService.vaultDexVenueContractSet(this.serviceAddress(), body);
@@ -235,23 +244,53 @@ export class DetailsPage implements OnInit, OnDestroy {
       if (r?.notice) {
         this.notify('dex.venues.contract.doneTitle', r.notice);
       }
-      this.contractCreationCode = '';
       this.contractCandidate = '';
       this.verifyReport.set(null);
       await this.loadVenue();
     } finally { this.loadingService.hide(); }
   }
 
-  async deployAndBind() {
-    const code = this.contractCreationCode.trim();
-    if (!code) return;
+  selectedModuleList(): string[] {
+    return this.marketModules().filter(m => this.selectedModules[m.address]).map(m => m.address);
+  }
+  poolDeclared(): boolean {
+    return (this.rulebook()?.inForce?.modules ?? []).some((a: string) =>
+      this.marketModules().find(m => m.address.toLowerCase() === a.toLowerCase())?.kind === 'liquidity-pool');
+  }
+
+  async fileRulebook() {
+    const modules = this.selectedModuleList();
+    if (!modules.length) return;
     const ok = await this.alertService.show(
-      this.translate.instant('dex.venues.contract.deployTitle'),
-      this.translate.instant('dex.venues.contract.deployConfirm'),
-      this.translate.instant('dex.venues.contract.deployAction'),
+      this.translate.instant('dex.venues.contract.fileTitle'),
+      this.translate.instant('dex.venues.contract.fileConfirm', { n: modules.length }),
+      this.translate.instant('dex.venues.contract.fileAction'),
     );
     if (!ok) return;
-    await this._setContract({ creationCode: code, name: this.contractName.trim() || undefined }, 'dex.venues.contract.deploying');
+    this.loadingService.show(this.translate.instant('dex.venues.contract.filing'));
+    try {
+      const r = await this.apiService.vaultDexVenueRulebookDeclare(this.serviceAddress(), {
+        modules, clearingMode: Number(this.filingClearingMode),
+        feeSchedule: { makerBps: 0, takerBps: 0 }, sessions: { continuous: true },
+        haltPolicy: Number(this.filingHaltPolicy), orderTypes: 1, tickSize: '0', lotSize: '0',
+        memberClasses: [], tierRequested: Number(this.filingTier),
+      });
+      if (r) this.notify('dex.venues.contract.doneTitle', r.notice || this.translate.instant('dex.venues.contract.filed'));
+      await this.loadMarket();
+    } finally { this.loadingService.hide(); }
+  }
+
+  async deployCore() {
+    const ok = await this.alertService.show(
+      this.translate.instant('dex.venues.contract.coreTitle'),
+      this.translate.instant('dex.venues.contract.coreConfirm'),
+      this.translate.instant('dex.venues.contract.coreAction'),
+    );
+    if (!ok) return;
+    const body: any = { deployCore: true };
+    if (this.poolDeclared()) body.poolSubscription = this.poolSubscription.trim();
+    await this._setContract(body, 'dex.venues.contract.deploying');
+    await this.loadMarket();
   }
 
   async bindExisting() {
@@ -278,9 +317,10 @@ export class DetailsPage implements OnInit, OnDestroy {
     await this._setContract({ venueContract: null }, 'dex.venues.contract.unbinding');
   }
 
+  // Kind 9 is the platform venue core (33.D); the four template kinds are retired.
   templateName(kind: number | undefined | null): string {
-    const t = this.venueTemplates().find(x => x.kind === Number(kind));
-    return t?.label || (kind == null ? '—' : String(kind));
+    if (kind == null) return '—';
+    return Number(kind) === 9 ? this.translate.instant('dex.venues.contract.coreKind') : String(kind);
   }
 
   tierLabelShort(tier: number): string {

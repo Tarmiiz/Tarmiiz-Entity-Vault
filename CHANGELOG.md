@@ -31,6 +31,10 @@ _Living preamble describing the broad direction this sub-project is currently mo
   token-issuer view still waits for its Licences tab to load — an Entity API change.
 ### 2026-09-22
 
+**Changed (33.D item 7 — the venue's market picker)**
+
+- Venue details → Contract: the template / kit-library / creation-code UI is replaced by the module catalog (approved / in the rulebook / attached) with a rulebook filing form (clearing mode, halt policy, tier), and a **Deploy core** action that deploys the platform core, attaches the approved rulebook's modules and binds it (a pool subscription is asked for when the rulebook declares the liquidity pool). Verify / bind an existing core / unbind are unchanged. en + ar. Production build clean.
+
 **Fixed (licence class 30 — Fund Management)**
 
 - [party-class.ts](src/app/shared/constants/party-class.ts): GV now seeds `License Class` 30 = **Fund Management** (Phase 36 D2: the licence a fund manager's service holds, root row `grant.licence.class.30`). It is added to `PARTY_CLASS`, to the display map and to `LICENSE_CLASSES`. The last is the load-bearing part: `DECLARABLE_CLASSES` derives by subtraction and fails open, so without it a service could have declared itself "Fund Management" as a party class. The stale `LicensesProxy.hasLicense` comment is corrected (licences are root rows since 33.E / 33.R). Production build clean.

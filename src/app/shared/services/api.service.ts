@@ -735,9 +735,19 @@ export class ApiService {
   // addresses are public bytecode literals, and check-route-audience enforces that
   // split); the other two are vault routes behind requireExecutive. `vaultGet` serves
   // both — it is "authenticated GET", not a vault-only prefix.
-  async vaultDexVenueTemplates() {
-    const data = await this.vaultGet('/dex/venue-templates');
-    return data ? { templates: data.templates ?? [], libraries: data.libraries ?? {} } : null;
+  // 33.D: a venue is the platform core + market modules composed under an approved RULEBOOK.
+  /** The module catalog as this venue's jurisdiction sees it (approved / declared / attached). */
+  async vaultDexVenueModules(address: string) {
+    const data = await this.vaultGet(`/dex/venues/${address}/modules`);
+    return data ? (data.modules ?? []) : null;
+  }
+  /** Filed versions (mirror vocabulary) + working / in-force (chain vocabulary) + a summary. */
+  async vaultDexVenueRulebook(address: string) {
+    return this.vaultGet(`/dex/venues/${address}/rulebook`);
+  }
+  /** File or amend the rulebook; the venue's regulator approves it. */
+  async vaultDexVenueRulebookDeclare(address: string, filing: any) {
+    return this.vaultPost(`/dex/venues/${address}/rulebook`, filing);
   }
   /** Read-only dry run of the on-chain conformance checks. POST only because it takes a body. */
   async vaultDexVenueContractVerify(address: string, candidate: string) {
@@ -749,7 +759,7 @@ export class ApiService {
    * ⚠️ A successful bind AUTO-SUSPENDS the venue — a change to the reviewed thing resets
    * the review — so the caller must surface `notice`, not just a success toast.
    */
-  async vaultDexVenueContractSet(address: string, body: { creationCode?: string; name?: string; venueContract?: string | null }) {
+  async vaultDexVenueContractSet(address: string, body: { deployCore?: boolean; poolSubscription?: string; venueContract?: string | null }) {
     return this.vaultPut(`/dex/venues/${address}/contract`, body);
   }
 

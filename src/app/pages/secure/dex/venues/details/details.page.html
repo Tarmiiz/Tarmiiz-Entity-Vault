@@ -463,46 +463,64 @@
               </div>
             }
 
-            <!-- The published kit — the addresses an operator must LINK against -->
+            <!-- 33.D: the rulebook + the module catalog. The core attaches only what the IN-FORCE
+                 rulebook declares, so a filing (approved by the regulator) comes first. -->
             <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div class="px-4 py-3 border-b border-gray-200">
-                <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.kitTitle' | translate }}</h2>
-                <p class="text-xs text-gray-600">{{ 'dex.venues.contract.kitSubtitle' | translate }}</p>
+                <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.marketTitle' | translate }}</h2>
+                <p class="text-xs text-gray-600">{{ rulebook()?.summary || ('dex.venues.contract.marketSubtitle' | translate) }}</p>
               </div>
               <div class="overflow-x-auto rounded-lg">
                 <table class="table-v4 w-full text-xs text-left">
                   <thead>
                     <tr>
-                      <th>{{ 'dex.venues.contract.library' | translate }}</th>
+                      <th></th>
+                      <th>{{ 'dex.venues.contract.module' | translate }}</th>
                       <th>{{ 'dex.venues.contract.address' | translate }}</th>
+                      <th>{{ 'dex.venues.contract.moduleStatus' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (l of kitLibraryList(); track l.name) {
+                    @for (m of marketModules(); track m.address) {
                       <tr>
-                        <td class="font-medium">{{ l.name }}</td>
-                        <td class="font-mono break-all">
-                          @if (l.address) { {{ l.address }} }
-                          @else { <span class="text-red-600">{{ 'dex.venues.contract.notPublished' | translate }}</span> }
+                        <td><input type="checkbox" [(ngModel)]="selectedModules[m.address]" [disabled]="!m.approved" /></td>
+                        <td class="font-medium">{{ m.name || m.kind }} <span class="text-gray-500">v{{ m.version }}</span></td>
+                        <td class="font-mono break-all">{{ m.address }}</td>
+                        <td>
+                          @if (!m.approved) { <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800">{{ 'dex.venues.contract.notApproved' | translate }}</span> }
+                          @if (m.declared) { <span class="px-2 py-0.5 me-1 rounded-full bg-green-100 text-green-800">{{ 'dex.venues.contract.declared' | translate }}</span> }
+                          @if (m.attached) { <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">{{ 'dex.venues.contract.attached' | translate }}</span> }
                         </td>
                       </tr>
                     }
                   </tbody>
                 </table>
               </div>
-              <div class="px-4 py-3 border-t text-xs text-gray-600">
-                @for (t of venueTemplates(); track t.kind) {
-                  <div class="mb-1">
-                    <span class="font-medium text-gray-800">{{ t.label }}</span>
-                    <span class="text-gray-500"> — {{ t.description }}</span>
-                    @if (!t.available) {
-                      <span class="ms-1 px-2 py-0.5 rounded-full bg-red-100 text-red-800">
-                        {{ 'dex.venues.contract.unavailable' | translate: { libs: t.missingLibraries.join(', ') } }}
-                      </span>
-                    }
-                  </div>
-                }
-              </div>
+              @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-venue-rulebook-declare')) {
+                <div class="px-4 py-3 border-t flex flex-wrap items-end gap-3 text-xs">
+                  <label class="flex flex-col gap-1">{{ 'dex.venues.contract.clearingMode' | translate }}
+                    <select [(ngModel)]="filingClearingMode" class="border border-gray-300 rounded-xl px-2 py-1.5 text-gray-800">
+                      <option [ngValue]="1">{{ 'dex.venues.contract.venueCleared' | translate }}</option>
+                      <option [ngValue]="2">{{ 'dex.venues.contract.clearingHouse' | translate }}</option>
+                    </select>
+                  </label>
+                  <label class="flex flex-col gap-1">{{ 'dex.venues.contract.haltPolicy' | translate }}
+                    <select [(ngModel)]="filingHaltPolicy" class="border border-gray-300 rounded-xl px-2 py-1.5 text-gray-800">
+                      <option [ngValue]="1">{{ 'dex.venues.contract.haltOperator' | translate }}</option>
+                      <option [ngValue]="2">{{ 'dex.venues.contract.haltSupervised' | translate }}</option>
+                    </select>
+                  </label>
+                  <label class="flex flex-col gap-1">{{ 'dex.venues.contract.tierRequested' | translate }}
+                    <select [(ngModel)]="filingTier" class="border border-gray-300 rounded-xl px-2 py-1.5 text-gray-800">
+                      <option [ngValue]="1">1</option><option [ngValue]="2">2</option><option [ngValue]="3">3</option>
+                    </select>
+                  </label>
+                  <button (click)="fileRulebook()" [disabled]="selectedModuleList().length === 0"
+                    class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    {{ 'dex.venues.contract.fileAction' | translate }}
+                  </button>
+                </div>
+              }
             </div>
 
             @if (userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('dex-venue-set-contract')) {
@@ -549,24 +567,20 @@
                 </div>
               </div>
 
-              <!-- Deploy through the platform deployer.
-                   ⚠️ The tenant's relay wallet is not on the Besu deployer allow-list and
-                   never will be, so this is the ONLY route to a CREATE. The code must
-                   already be LINKED — unlinked artifact bytecode carries __$…$__
-                   placeholders and is rejected with an explanation. -->
+              <!-- Deploy the platform core, attach every module the in-force rulebook declares, bind. -->
               <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-200">
-                  <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.deployTitle' | translate }}</h2>
-                  <p class="text-xs text-gray-600">{{ 'dex.venues.contract.deploySubtitle' | translate }}</p>
+                  <h2 class="text-sm font-semibold text-gray-800">{{ 'dex.venues.contract.coreTitle' | translate }}</h2>
+                  <p class="text-xs text-gray-600">{{ 'dex.venues.contract.coreSubtitle' | translate }}</p>
                 </div>
                 <div class="p-4 space-y-3">
-                  <input [(ngModel)]="contractName" type="text" [placeholder]="'dex.venues.contract.namePlaceholder' | translate"
-                    class="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <textarea [(ngModel)]="contractCreationCode" rows="5" placeholder="0x60806040…"
-                    class="w-full text-xs font-mono border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                  <button (click)="deployAndBind()" [disabled]="contractBusy() || !contractCreationCode || contractChangeBlocked()"
+                  @if (poolDeclared()) {
+                    <input [(ngModel)]="poolSubscription" type="text" [placeholder]="'dex.venues.contract.poolSubscription' | translate"
+                      class="w-full text-xs font-mono border border-gray-300 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  }
+                  <button (click)="deployCore()" [disabled]="contractBusy() || !rulebook()?.inForce || contractChangeBlocked() || (poolDeclared() && !poolSubscription)"
                     class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                    {{ 'dex.venues.contract.deployAction' | translate }}
+                    {{ 'dex.venues.contract.coreAction' | translate }}
                   </button>
                 </div>
               </div>
