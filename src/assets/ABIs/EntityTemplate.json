@@ -168,6 +168,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "string",
+        "name": "cid",
+        "type": "string"
+      }
+    ],
+    "name": "DocumentPinSkipped",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "caller",
@@ -801,6 +814,72 @@
       }
     ],
     "name": "apiAddressRemove",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
+    "name": "approvalCancel",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "actKey",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "threshold",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "role",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "timelock",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "ttl",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct IApprovals.Policy",
+        "name": "policy",
+        "type": "tuple"
+      }
+    ],
+    "name": "approvalPolicySet",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
+    "name": "approvalRevoke",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
