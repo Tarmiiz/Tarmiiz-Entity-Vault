@@ -33,6 +33,7 @@ import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.c
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { DocumentsTabComponent } from '../../../../shared/components/documents-tab/documents-tab.component';
 import { ComplianceTabComponent } from './compliance-tab/compliance-tab.component';
+import { ModulesTabComponent } from './modules-tab/modules-tab.component';
 import { LiveIndicatorComponent } from '../../../../shared/components/live-indicator/live-indicator.component';
 import { ModalListingCreateService } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.service';
 import { ModalListingCreateComponent } from '../../dex/asset-listings/modals/modal-listing-create/modal-listing-create.component';
@@ -91,6 +92,7 @@ export interface AssetMedia {
     ModalAssetServiceStateComponent,
     DocumentsTabComponent,
     ComplianceTabComponent,
+    ModulesTabComponent,
     LiveIndicatorComponent,
     ModalListingCreateComponent,
     ModalAssetPriceComponent,
@@ -153,7 +155,7 @@ export class DetailsPage implements OnInit {
 
   @ViewChild('priceChart') priceChartRef!: ElementRef<HTMLCanvasElement>;
 
-  activeTab = signal<'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt'>('overview');
+  activeTab = signal<'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'modules' | 'docs' | 'dex' | 'distributions' | 'holdersAt'>('overview');
 
   /**
    * The top tab bar (Standard 2). Twelve tabs — the most of any page in either
@@ -175,6 +177,7 @@ export class DetailsPage implements OnInit {
       { key: 'registration', label: 'assets.details.compliance.tab' },
       { key: 'metadata',     label: 'common.metadata' },
       { key: 'services',     label: 'assets.details.tabs.services' },
+      { key: 'modules',      label: 'assets.details.tabs.modules' },
       { key: 'price',        label: 'assets.details.tabs.price' },
       { key: 'holders',      label: 'assets.details.tabs.holders' },
       { key: 'trxs',         label: 'assets.details.tabs.transactions' },
@@ -645,7 +648,7 @@ export class DetailsPage implements OnInit {
     }
   }
 
-  setTab(tab: 'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'docs' | 'dex' | 'distributions' | 'holdersAt') {
+  setTab(tab: 'overview' | 'info' | 'registration' | 'metadata' | 'price' | 'holders' | 'trxs' | 'services' | 'modules' | 'docs' | 'dex' | 'distributions' | 'holdersAt') {
     this.activeTab.set(tab);
     if (tab === 'info') this.getAssetDetails();
     // 'registration' needs no fetch here — the @if creates <app-asset-compliance-tab>, whose

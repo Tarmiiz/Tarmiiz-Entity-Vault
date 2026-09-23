@@ -17,6 +17,10 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-23
 
+**Added (asset details → Modules tab)**
+
+- [modules-tab](src/app/pages/secure/assets/details/modules-tab/) — a new `<app-asset-modules-tab>` (own load, like the Compliance tab) showing which capability modules the asset's PRODUCT requires or permits, which are attached and at what version, and what an attach would install; required-but-missing modules are counted in a red banner. **Attach** for a required or permitted module that is not attached, **Detach** for an attached one the product does not require (the core refuses a required one, so it is not offered); both behind the same gates as the API routes (not a viewer, the asset's manager, entity active, `asset-edit-metadata`), and the chain's refusal — e.g. a version not approved in the jurisdiction — is shown verbatim. An asset whose product names no modules says so and points at who can change it (the regulator's Asset Class Builder → Modules), which is exactly the state that left Granite EGP Fund's issuing service at "Unknown". Backed by the Entity API's new `GET /assets/:address/modules` plus the existing attach / detach routes, which the Vault had never called. en + ar.
+
 **Removed (the ISIN field from the Add Asset wizard)**
 
 - [asset-creator](src/app/pages/secure/assets/creator/asset-creator.page.ts): step 3's optional ISIN input is gone, by user ruling, with its `'ID Type - Asset'` lookup, validation and submit leg; the create path now sends `identifiers: []`. An ISIN is usually assigned after issuance, and the asset details page's **Identifiers** section records it at any time (`PUT /assets/:address/identifiers`, unchanged). The metadata editor still rejects `identifiers` / `isin` as keys; its message now points at the details page instead of the removed field. The API still accepts `identifiers` on create, so nothing server-side changed.

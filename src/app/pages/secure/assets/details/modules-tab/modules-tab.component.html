@@ -1,0 +1,112 @@
+<div class="p-3">
+
+  <p class="text-xs text-gray-600 mb-3">{{ 'assets.details.modules.intro' | translate }}</p>
+
+  @if (!loading() && loadFailed()) {
+    <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3 text-xs text-red-800">
+      {{ 'assets.details.modules.loadFailed' | translate }}
+    </div>
+  } @else if (!loading() && !formula()) {
+    <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3 text-xs text-amber-900">
+      {{ 'assets.details.modules.unbound' | translate }}
+    </div>
+  } @else if (!loading() && modules().length === 0) {
+    <!-- The state that left Granite EGP Fund's issuing service at "Unknown": said plainly, with
+         who can change it — the issuer cannot, only the regulator's product can. -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3 text-xs text-amber-900">
+      <span class="font-semibold">{{ 'assets.details.modules.noneNamedTitle' | translate }}</span>
+      {{ 'assets.details.modules.noneNamed' | translate }}
+    </div>
+  }
+
+  @if (missingRequired().length > 0) {
+    <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3 text-xs text-red-800">
+      {{ 'assets.details.modules.missingRequired' | translate: { count: missingRequired().length } }}
+    </div>
+  }
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 p-3 mb-3">
+    <div class="flex flex-wrap gap-2 items-end">
+      <div class="text-xs text-gray-500">
+        {{ 'assets.details.modules.product' | translate }}:
+        <span class="font-mono text-gray-700">{{ formula() || '—' }}</span>
+      </div>
+      <div class="flex ml-auto rtl:ml-0 rtl:mr-auto items-end gap-2">
+        <app-refresh-button (refresh)="load()" />
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto rounded-lg">
+      <table class="table-v4 w-full text-sm text-left rtl:text-right">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">{{ 'assets.details.modules.colModule' | translate }}</th>
+            <th scope="col">{{ 'assets.details.modules.colPolicy' | translate }}</th>
+            <th scope="col">{{ 'assets.details.modules.colStatus' | translate }}</th>
+            <th scope="col">{{ 'assets.details.modules.colVersion' | translate }}</th>
+            <th scope="col" class="text-right rtl:text-left">{{ 'common.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          @if (loading()) {
+            @for (s of [1, 2, 3, 4]; track s) {
+              <tr class="bg-white"><td colspan="6"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+            }
+          } @else if (modules().length === 0) {
+            <tr class="bg-white"><td colspan="6">{{ 'common.noData' | translate }}</td></tr>
+          } @else {
+            @for (m of modules(); track m.moduleId; let i = $index) {
+              <tr class="bg-white">
+                <td class="text-gray-500">{{ i + 1 }}</td>
+                <td>
+                  <div class="font-medium text-gray-800">{{ label(m) }}</div>
+                  <div class="font-mono text-[10px] text-gray-500" [title]="m.moduleId">{{ m.moduleId }}</div>
+                </td>
+                <td>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="policyClass(m.policy)">{{ policyKey(m.policy) | translate }}</span>
+                  @if (m.policy > 0 && m.minVersion > 0) {
+                    <div class="text-gray-500 mt-1">{{ 'assets.details.modules.minVersion' | translate: { version: m.minVersion } }}</div>
+                  }
+                </td>
+                <td>
+                  <span class="px-3 py-1 text-xs font-semibold rounded-full" [class]="statusClass(m)">{{ statusKey(m) | translate }}</span>
+                </td>
+                <td class="text-gray-700">
+                  @if (m.attached) {
+                    v{{ m.attachedVersion ?? '?' }}
+                    @if (m.latestVersion && m.attachedVersion && m.latestVersion > m.attachedVersion) {
+                      <div class="text-gray-500">{{ 'assets.details.modules.latest' | translate: { version: m.latestVersion } }}</div>
+                    }
+                  } @else {
+                    <span class="text-gray-500">{{ m.latestVersion ? ('assets.details.modules.willInstall' | translate: { version: m.latestVersion }) : '—' }}</span>
+                  }
+                </td>
+                <td class="text-right rtl:text-left">
+                  <div class="flex justify-end gap-1 flex-wrap">
+                    @if (canAttach(m)) {
+                      <button (click)="attach(m)"
+                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                        {{ 'assets.details.modules.attach' | translate }}
+                      </button>
+                    }
+                    @if (canDetach(m)) {
+                      <button (click)="detach(m)"
+                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-red-700 text-white hover:bg-red-800 transition-colors">
+                        {{ 'assets.details.modules.detach' | translate }}
+                      </button>
+                    }
+                    @if (!canAttach(m) && !canDetach(m)) { <span class="text-gray-400">—</span> }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

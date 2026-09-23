@@ -1302,6 +1302,21 @@ export class ApiService {
     return data ? { count: data.count, history: data.history } : null;
   }
 
+  /** The asset's capability modules (2026-09-23): what its product requires / permits and what is
+   *  attached — `{ formula, modules: [{ moduleId, name, policy, minVersion, attached, attachedVersion,
+   *  latestVersion }] }`. `formula` is null for an unbound core. */
+  async vaultGetAssetModules(address: string) {
+    return await this.vaultGet('/assets/' + address + '/modules');
+  }
+  /** Attach a module at the catalog's latest version; the chain's refusal comes back verbatim. */
+  async vaultAttachAssetModule(address: string, moduleId: string) {
+    return await this.vaultPost('/assets/' + address + '/modules', { moduleId });
+  }
+  /** Detach — the core refuses a required or load-bearing module. */
+  async vaultDetachAssetModule(address: string, moduleId: string) {
+    return await this.vaultDelete('/assets/' + address + '/modules/' + moduleId);
+  }
+
   async vaultGetAssetServices(address: string) {
     const data = await this.vaultGet('/assets/' + address + '/services');
     return data?.services ?? null;

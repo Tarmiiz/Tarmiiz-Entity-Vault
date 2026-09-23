@@ -928,6 +928,19 @@
           </div>
         }
 
+        <!-- modules tab (2026-09-23) — the product's required / permitted modules, what is attached,
+             attach / detach. Owns its own load like the compliance tab; @if re-creates it on entry,
+             so re-opening the tab is itself the refresh. -->
+        @if (activeTab() === 'modules') {
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <app-asset-modules-tab
+              [address]="assetAddress"
+              [entityActive]="entityActive"
+              [canManage]="canManage()">
+            </app-asset-modules-tab>
+          </div>
+        }
+
         <!-- services tab -->
         @if (activeTab() === 'services') {
           <!-- AS.1 (33.A) — the ISSUING service: set after creation, required before approval. -->
