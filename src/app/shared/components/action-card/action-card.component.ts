@@ -29,11 +29,15 @@ import { TranslatePipe } from '@ngx-translate/core';
  * glance, with exactly one filled (primary) button and the rest outlined.
  *
  * WHEN NOT —
- *   · ONE action: it stays a button in the pane. A card around one row is chrome.
+ *   · ONE action on a pane with nothing after the fields: it stays a button in the
+ *     pane. A card around one row is chrome. (A record FOLLOWED BY A TABLE takes
+ *     the card even with one action — see below.)
  *   · A FIELD-SCOPED control (rename this handle, assign this group) stays with
  *     its field. The card is for acts on the RECORD; moving a field's own
  *     control away from the field makes the user look in two places.
- *   · Table-heavy panes: the card would sit beside a wide table and squeeze it.
+ *   · A record FOLLOWED BY A TABLE: the record + card form the top row and the
+ *     table goes BELOW in its own full-width .card-v4 — never beside the card
+ *     (squeezed), never with the record's actions after it (custodians/details).
  *
  * TONES — exactly one `primary` per card (the routine act, filled), `danger` for an
  * act that can remove someone's access or a record's standing, everything
