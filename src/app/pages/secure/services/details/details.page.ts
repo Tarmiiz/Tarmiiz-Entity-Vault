@@ -58,6 +58,7 @@ import { CoverageAssetsTableComponent } from '../../../../shared/components/cove
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 import { ServiceLicense, ServiceLicenseRequest, licenseMeaning, licenseStateClass, licenseStateName, ServiceLicenseApplication, LICENSE_APPLICATION_STATE_LABEL } from '../../../../shared/utils/license.utils';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
+import { ActionCardComponent, ActionItemComponent } from '../../../../shared/components/action-card/action-card.component';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 
 // Entry inside a metadata `media` key (server-owned public docs/images index).
@@ -96,7 +97,7 @@ export interface MediaIndex {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [LoadingStateComponent, TabsComponent, RefreshButtonComponent, CoverageAssetsTableComponent,
+  imports: [LoadingStateComponent, TabsComponent, ActionCardComponent, ActionItemComponent, RefreshButtonComponent, CoverageAssetsTableComponent,
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,

@@ -28,6 +28,12 @@ _Living preamble describing the broad direction this sub-project is currently mo
   - ⚠️ Buttons, not list rows: a dot + chevron row was tried first the same day and ruled out —
     a chevron reads as navigation, and each of these opens a modal that changes the record.
 
+- **Service details → Information: Change Visibility + Change State moved into the same side
+  card** — Change Visibility primary, Change State danger; both keep their
+  `service-change-visibility` / `service-change-state` keys and the `entityActive` disable, and
+  the card is wrapped in the union of the two keys so a user holding neither sees no empty card.
+  Enable (straight-through) and Manage Providers stay beside their own fields.
+
 **Added (the action card)**
 
 - [shared/components/action-card/action-card.component.ts](src/app/shared/components/action-card/action-card.component.ts)
