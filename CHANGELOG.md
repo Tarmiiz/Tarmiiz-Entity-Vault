@@ -34,6 +34,11 @@ _Living preamble describing the broad direction this sub-project is currently mo
   the card is wrapped in the union of the two keys so a user holding neither sees no empty card.
   Enable (straight-through) and Manage Providers stay beside their own fields.
 
+- **Asset details → Information: Mint, Burn and Change State moved into the side card** — Mint
+  primary, Burn and Change State danger. Gates copied verbatim. When this entity is not the asset's
+  on-chain manager the card carries only the amber "not manager" note (the row's only content in
+  that case before).
+
 **Added (the action card)**
 
 - [shared/components/action-card/action-card.component.ts](src/app/shared/components/action-card/action-card.component.ts)

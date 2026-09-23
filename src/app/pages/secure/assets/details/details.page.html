@@ -163,7 +163,10 @@
 
         <!-- info tab -->
         @if (activeTab() === 'info') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <!-- Record + side action card (Standard 2.2). flex, not grid: a gated-away card
+               leaves the record the full width. -->
+          <div class="flex flex-col lg:flex-row gap-4 items-start">
+          <div class="bg-white rounded-lg shadow-md overflow-hidden flex-1 min-w-0 w-full">
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
@@ -268,40 +271,39 @@
                 </div>
               </div>
               
-              @if(userInfo && userInfo.role !== 3) {
-                <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
-                  <!-- Manager-gated actions are hidden unless this entity's template IS the
-                       asset's on-chain manager: TarmiizT20._chkManager is a strict equality
-                       against the address the API relays as, so otherwise every one of these
-                       reverts. See `canManage` on the Asset model. -->
-                  @if (!v.canManage) {
-                    <span class="text-xs px-3 py-1.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                      {{ 'assets.details.notManager' | translate }}
-                    </span>
-                  }
-                  <!-- Mint / Burn: fixed-supply only. Dynamic-supply tokens mint on subscribe / burn on redeem. -->
-                  @if (v.canManage && v.supplyMode === 1 && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-mint')) {
-                    <button (click)="openMintModal()" [disabled]="!entityActive"
-                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-green-600">
-                      {{ 'assets.details.info.mintSupply' | translate }}
-                    </button>
-                  }
-                  @if (v.canManage && v.supplyMode === 1 && userInfo && userInfo.role !== 3 && features.systemFunctionEnabled('asset-burn')) {
-                    <button (click)="openBurnModal()" [disabled]="!entityActive"
-                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600">
-                      {{ 'assets.details.info.burnSupply' | translate }}
-                    </button>
-                  }
-                  @if (v.canManage && features.systemFunctionEnabled('asset-change-state')) {
-                    <button (click)="openChangeStateModal()" [disabled]="!entityActive"
-                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-primary)]">
-                      {{ 'assets.details.changeStateBtn' | translate }}
-                    </button>
-                  }
-                </div>
-              }
-    
             </div>
+          </div>
+
+          <!-- Record-level acts as a side card (Standard 2.2). Mint primary; Burn and Change
+               State danger, last. Gates copied verbatim. When this entity is NOT the asset's
+               on-chain manager the card still renders, carrying only the amber note, because
+               "why are there no actions here" is the question that note answers — it was the
+               row's only content in that case before, too. -->
+          @if (userInfo && userInfo.role !== 3 && (!v.canManage
+                || (v.supplyMode === 1 && (features.systemFunctionEnabled('asset-mint') || features.systemFunctionEnabled('asset-burn')))
+                || features.systemFunctionEnabled('asset-change-state'))) {
+            <app-action-card>
+              <!-- Manager-gated actions are hidden unless this entity's template IS the
+                   asset's on-chain manager: TarmiizT20._chkManager is a strict equality
+                   against the address the API relays as, so otherwise every one of these
+                   reverts. See `canManage` on the Asset model. -->
+              @if (!v.canManage) {
+                <p class="mx-2 mb-1 text-xs px-3 py-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                  {{ 'assets.details.notManager' | translate }}
+                </p>
+              }
+              <!-- Mint / Burn: fixed-supply only. Dynamic-supply tokens mint on subscribe / burn on redeem. -->
+              @if (v.canManage && v.supplyMode === 1 && features.systemFunctionEnabled('asset-mint')) {
+                <button appAction="primary" (click)="openMintModal()" [disabled]="!entityActive">{{ 'assets.details.info.mintSupply' | translate }}</button>
+              }
+              @if (v.canManage && v.supplyMode === 1 && features.systemFunctionEnabled('asset-burn')) {
+                <button appAction="danger" (click)="openBurnModal()" [disabled]="!entityActive">{{ 'assets.details.info.burnSupply' | translate }}</button>
+              }
+              @if (v.canManage && features.systemFunctionEnabled('asset-change-state')) {
+                <button appAction="danger" (click)="openChangeStateModal()" [disabled]="!entityActive">{{ 'assets.details.changeStateBtn' | translate }}</button>
+              }
+            </app-action-card>
+          }
           </div>
         }
 

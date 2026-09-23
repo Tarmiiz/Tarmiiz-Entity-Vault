@@ -58,6 +58,7 @@ import { ModalAssetPublicViewComponent } from '../modals/modal-asset-public-view
 import { DexAssetListing, DexAssetListingVenue } from '../../../../shared/models/data.model';
 import { MoneyPipe } from '../../../../shared/pipes/money.pipe';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
+import { ActionCardComponent, ActionItemComponent } from '../../../../shared/components/action-card/action-card.component';
 import { PaginatorComponent, pageSlice } from '../../../../shared/components/paginator/paginator.component';
 
 // Entry inside the asset metadata's server-owned `media` key (public docs/images index).
@@ -80,7 +81,7 @@ export interface AssetMedia {
   templateUrl: './details.page.html',
   styleUrls: ['./details.page.scss'],
   standalone: true,
-  imports: [RefreshButtonComponent, TabsComponent, LoadingStateComponent,
+  imports: [ActionCardComponent, ActionItemComponent, RefreshButtonComponent, TabsComponent, LoadingStateComponent,
     CommonModule, FormsModule,
     HeaderComponent,
     RouterLink,
