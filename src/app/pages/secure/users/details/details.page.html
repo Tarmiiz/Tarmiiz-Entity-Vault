@@ -31,7 +31,11 @@
       <app-tabs [tabs]="tabs()" [active]="activeTab()" (select)="setTab($any($event))" />
 
         @if (activeTab() === 'details') {
-          <div class="card-v4 overflow-hidden max-w-6xl mx-auto">
+          <!-- Record + side action card (Standard 2.2). flex, not grid: the card
+               can be gated away, and the record must then take the full width
+               rather than leave an empty column. -->
+          <div class="flex flex-col lg:flex-row gap-4 items-start max-w-6xl mx-auto">
+          <div class="card-v4 overflow-hidden flex-1 min-w-0 w-full">
             <div class="p-4">
               <div class="flex items-start justify-between mb-4">
                 <div>
@@ -160,30 +164,27 @@
                 }
               </div>
 
-              <div class="mt-8 pt-6 border-t flex flex-wrap items-center justify-end gap-3">
-                <button (click)="openEditModal()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-hover)] transition-colors">
-                  {{ 'users.details.actions.editUser' | translate }}
-                </button>
-                <button (click)="openCredentialsModal()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-colors">
-                  {{ 'users.details.actions.changeCredentials' | translate }}
-                </button>
-                <!-- Never on your own record: the API 403s a self-targeted role change. -->
-                @if (!isSelf()) {
-                  <button (click)="openChangeRoleModal()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition-colors">
-                    {{ 'users.details.actions.changeRole' | translate }}
-                  </button>
-                }
-                @if (isExecutive(v.role)) {
-                  <button (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    {{ 'users.details.actions.changeApprovalRole' | translate }}
-                  </button>
-                }
-                <button (click)="openChangeStateModal()" class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors">
-                  {{ 'users.details.actions.changeState' | translate }}
-                </button>
-              </div>
-    
             </div>
+          </div>
+
+          <!-- The five record-level acts, as a side card (Standard 2.2). This row
+               shipped FIVE colours at equal weight (Phase 35 B2 / S6 / B4). One
+               primary — Edit User, the routine act — Change State as the one
+               destructive row, and the rest default. The field-scoped controls
+               (group, handle, messages access) stay with their fields. -->
+          <app-action-card>
+            <button appAction="primary" (click)="openEditModal()">{{ 'users.details.actions.editUser' | translate }}</button>
+            <button appAction (click)="openCredentialsModal()">{{ 'users.details.actions.changeCredentials' | translate }}</button>
+            <!-- Never on your own record: the API 403s a self-targeted role change. -->
+            @if (!isSelf()) {
+              <button appAction (click)="openChangeRoleModal()">{{ 'users.details.actions.changeRole' | translate }}</button>
+            }
+            @if (isExecutive(v.role)) {
+              <button appAction (click)="openChangeApprovalRoleModal()" [disabled]="approvalRoleSaving()">{{ 'users.details.actions.changeApprovalRole' | translate }}</button>
+            }
+            <!-- Destructive: it can deactivate a person's access. -->
+            <button appAction="danger" (click)="openChangeStateModal()">{{ 'users.details.actions.changeState' | translate }}</button>
+          </app-action-card>
           </div>
         }
 

@@ -37,6 +37,7 @@ import { systemFunctionLabelFor, systemFunctionGroupFor, systemFunctionGroupLabe
 import { SubTabRailComponent } from '../../../../shared/components/sub-tab-rail/sub-tab-rail.component';
 import { TabsComponent, TabDef } from '../../../../shared/components/tabs/tabs.component';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
+import { ActionCardComponent, ActionItemComponent } from '../../../../shared/components/action-card/action-card.component';
 import { LicensePillComponent, LicenseStatus } from '../../../../shared/components/license-pill/license-pill.component';
 
 interface UserMenuRow {
@@ -99,7 +100,7 @@ interface UserSystemFunctionRow {
     ModalUserRoleComponent,
     ModalUserApprovalRoleComponent,
     ModalUserGroupComponent, TranslatePipe, LicensePillComponent,
-    TabsComponent, SubTabRailComponent, LoadingStateComponent]
+    TabsComponent, SubTabRailComponent, LoadingStateComponent, ActionCardComponent, ActionItemComponent]
 })
 export class DetailsPage implements OnInit {
   private route = inject(ActivatedRoute);

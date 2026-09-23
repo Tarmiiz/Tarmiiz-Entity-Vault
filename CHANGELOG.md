@@ -17,6 +17,24 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-23
 
+**Changed (User Details — record actions in a side action card, Standard 2.2)**
+
+- Edit User / Change Credentials / Change Role / Change Approval Role / Change State were a
+  horizontal row below every field — the last thing on the page, in five colours at equal weight (Phase 35 B2 / S6 / B4).
+  They are now a card beside the record: full-width buttons, ONE filled primary (Edit User,
+  first), the rest outlined, Change State outlined rose that fills on hover (last). Every gate
+  moved with its button unchanged; field-scoped controls (group, handle, messages access) stay
+  with their fields. `flex`, not `grid`, so a gated-away card leaves no empty column.
+  - ⚠️ Buttons, not list rows: a dot + chevron row was tried first the same day and ruled out —
+    a chevron reads as navigation, and each of these opens a modal that changes the record.
+
+**Added (the action card)**
+
+- [shared/components/action-card/action-card.component.ts](src/app/shared/components/action-card/action-card.component.ts)
+  — `<app-action-card>` + attribute component `button[appAction]` (default / `primary` /
+  `danger`), painted by `.action-v4` in [global.scss](src/global.scss) from `--brand-primary`.
+  Both BYTE-IDENTICAL with the Regulator Dashboard copies.
+
 **Removed (licence applications and the Linked Services step from Add Service)**
 
 - [modal-service-add](src/app/pages/secure/services/modals/modal-service-add/modal-service-add.component.ts): step 1's three checkboxes (Token Issuer 27 / Exchange 28 / Brokerage 29) are gone, by user ruling. Each only filed an on-chain APPLICATION inside `serviceCreate` — it granted nothing — and a licence is the regulator's to give: the regulator grants directly (Regulator API `POST /licenses/subjects/:address/grant`, "Ruling 6", requested or not), or the entity applies from the service's **Licenses** tab (`POST /services/:address/licenses`). A service is now created with `requestLicenses: []`, the contract's neutral case.

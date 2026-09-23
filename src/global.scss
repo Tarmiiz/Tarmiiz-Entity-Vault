@@ -566,6 +566,67 @@ html.lang-ar table td.text-right {
   color: #92400e;
 }
 
+/* ─── .action-v4 — a button in the side action card (Standard 2.2) ────────────
+ * Painted here, laid out by `shared/components/action-card`. Colours derive from
+ * --brand-primary (never the catalog's literal indigo), like .tab-v4 above.
+ *
+ * Full-width stacked BUTTONS, not list rows: a chevron / link-style row reads as
+ * navigation, and every action here opens a modal that changes the record.
+ * Hierarchy: ONE filled primary, the rest outlined neutral, the destructive act
+ * outlined rose that fills on hover. Five FILLED buttons would rebuild the
+ * equal-weight row this replaced.
+ *
+ * ⚠️ BYTE-IDENTICAL IN THE ENTITY VAULT AND THE REGULATOR DASHBOARD.
+ * ──────────────────────────────────────────────────────────────────────────── */
+.action-v4 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #344054;
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &.is-primary {
+    color: #ffffff;
+    background: var(--brand-primary);
+    border-color: transparent;
+  }
+  &.is-primary:hover:not(:disabled) {
+    color: #ffffff;
+    background: var(--brand-primary-hover, var(--brand-primary));
+    border-color: transparent;
+  }
+
+  &.is-danger {
+    color: #e11d48;
+    border-color: #fecdd3;
+  }
+  &.is-danger:hover:not(:disabled) {
+    color: #ffffff;
+    background: #e11d48;
+    border-color: #e11d48;
+  }
+}
+
 /* ─── .tz-mark — the brand loading mark ───────────────────────────────────────
  * The Tarmiiz icon assembling itself out of six blocks. Replaced the Tailwind
  * animate-spin SVG in the loading overlay on 2026-09-14.
