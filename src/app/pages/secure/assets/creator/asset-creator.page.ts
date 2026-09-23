@@ -11,7 +11,6 @@ import { AddAssetData, WizardDocFile, WizardImageFile } from './asset-creator.mo
 import { ApiService } from '../../../../shared/services/api.service';
 import { UtilsService } from '../../../../shared/services/utils.service';
 import { FeaturesService } from '../../../../shared/services/features.service';
-import { ISIN_TYPE_NAME, normalizeIdentifierValue, validateIdentifierValue } from '../../../../shared/utils/identifier.utils';
 
 /**
  * A regulator-authored class formula (Phase 4.9). The `formula` field IS the contract
@@ -228,10 +227,11 @@ export class AssetCreatorPage {
       if (key.toLowerCase() === 'contact') {
         return '"contact" is reserved — set contact info from the asset details page after creation.';
       }
-      // Both are reserved by the Identifiers field on this step. `isin` is called out by name
-      // because it is what people typed before that field existed — this hint used to suggest it.
+      // Both are reserved: `identifiers` is server-owned, written only by the asset details page's
+      // Identifiers section. `isin` is called out by name because it is what people typed before
+      // that section existed — this hint used to suggest it.
       if (key.toLowerCase() === 'identifiers' || key.toLowerCase() === 'isin') {
-        return '"identifiers" and "isin" are reserved — use the ISIN field on this step, or the asset details page later.';
+        return '"identifiers" and "isin" are reserved — record the ISIN from the asset details page after creation.';
       }
       if (seen.has(key)) {
         return `Duplicate key: "${key}".`;
@@ -808,33 +808,12 @@ export class AssetCreatorPage {
     if (assetClassesRaw) {
       this.assetClasses.set(assetClassesRaw.map((v: any) => ({ id: v.variable_id, name: v.name })));
     }
-
-    // ISIN's numeric id is Global Variables insertion order, so resolve it by NAME. A chain
-    // without the 'ID Type - Asset' category seeded leaves this 0 and the field stays hidden
-    // rather than submitting an idType the API would reject.
-    try {
-      const idTypesRaw = await this.apiService.vaultGetGlobalVariablesByCategory('ID Type - Asset');
-      const isin = (idTypesRaw ?? []).find((v: any) => String(v.name).toUpperCase() === ISIN_TYPE_NAME);
-      this.isinTypeId.set(isin ? Number(isin.variable_id) : 0);
-    } catch {
-      this.isinTypeId.set(0);
-    }
   }
 
-  // --- ISIN (optional at creation) ---
-  // Deliberately ONE optional field rather than the full type picker the detail page uses: an
-  // ISIN is frequently assigned after issuance, so the post-creation route is the primary
-  // path and this is a convenience for issuers who already have the number.
-
-  isinTypeId = signal(0);
-  isinValue = signal('');
-  isinError = signal('');
-
-  onIsinChanged(value: string) {
-    this.isinValue.set(value);
-    // Empty is fine — the field is optional. Only a typed value is judged.
-    this.isinError.set(value.trim() ? validateIdentifierValue(ISIN_TYPE_NAME, value) : '');
-  }
+  // --- No ISIN at creation (removed 2026-09-23, user ruling) ---
+  // The wizard used to carry one optional ISIN field. An ISIN is usually assigned after
+  // issuance, and the asset details page's Identifiers section records it at any time, so the
+  // create path sends no `identifiers` (the API still accepts them, and rebuilds them if sent).
 
   // --- Form submission ---
 
@@ -846,15 +825,6 @@ export class AssetCreatorPage {
       return;
     }
 
-    // Re-check the ISIN before emitting — a paste can bypass the input event.
-    const isinRaw = this.isinValue().trim();
-    if (isinRaw) {
-      const err = validateIdentifierValue(ISIN_TYPE_NAME, isinRaw);
-      if (err) { this.isinError.set(err); return; }
-    }
-    const identifiers = (isinRaw && this.isinTypeId() > 0)
-      ? [{ idType: this.isinTypeId(), name: ISIN_TYPE_NAME, value: normalizeIdentifierValue(ISIN_TYPE_NAME, isinRaw) }]
-      : [];
 
     const customMetadata: Record<string, string> = {};
     for (const ctrl of this.metadataRows.controls) {
@@ -887,7 +857,7 @@ export class AssetCreatorPage {
       decimals: Number(formValue.decimals) || 0,
       creditSettlement: formValue.noCreditSettlement !== true,
       customMetadata,
-      identifiers,
+      identifiers: [],
       documents: this.docFiles().map(d => ({ ...d, title: d.title.trim() || d.file.name })),
       images: this.imageFiles().map(d => ({ ...d, title: d.title.trim() || d.file.name })),
       // Initial supply is Fixed-supply-only (minted to the contract at init).

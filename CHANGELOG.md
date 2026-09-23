@@ -17,6 +17,10 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-23
 
+**Removed (the ISIN field from the Add Asset wizard)**
+
+- [asset-creator](src/app/pages/secure/assets/creator/asset-creator.page.ts): step 3's optional ISIN input is gone, by user ruling, with its `'ID Type - Asset'` lookup, validation and submit leg; the create path now sends `identifiers: []`. An ISIN is usually assigned after issuance, and the asset details page's **Identifiers** section records it at any time (`PUT /assets/:address/identifiers`, unchanged). The metadata editor still rejects `identifiers` / `isin` as keys; its message now points at the details page instead of the removed field. The API still accepts `identifiers` on create, so nothing server-side changed.
+
 **Changed (User Details — record actions in a side action card, Standard 2.2)**
 
 - Edit User / Change Credentials / Change Role / Change Approval Role / Change State were a
