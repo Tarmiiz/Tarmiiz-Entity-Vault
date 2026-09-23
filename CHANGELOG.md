@@ -15,6 +15,16 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-23
+
+**Removed (licence applications and the Linked Services step from Add Service)**
+
+- [modal-service-add](src/app/pages/secure/services/modals/modal-service-add/modal-service-add.component.ts): step 1's three checkboxes (Token Issuer 27 / Exchange 28 / Brokerage 29) are gone, by user ruling. Each only filed an on-chain APPLICATION inside `serviceCreate` — it granted nothing — and a licence is the regulator's to give: the regulator grants directly (Regulator API `POST /licenses/subjects/:address/grant`, "Ruling 6", requested or not), or the entity applies from the service's **Licenses** tab (`POST /services/:address/licenses`). A service is now created with `requestLicenses: []`, the contract's neutral case.
+- The **Linked Services** step (validator / custodian / clearing house) is removed with them. The Token Issuer box was what revealed it, and it could never have succeeded: `ServiceTemplate.partyAttach` requires an ACTIVE market licence (a brand-new service's is at most requested) AND the regulator's per-service `grant.entities.provider-attach` row, for every role including validator. Providers attach from the service's detail page once the regulator has licensed and granted it. The wizard is four steps for every service; the step indicator and its comment say so.
+- **Fixed in passing: an unlicensed service was created at verification level 0.** The Token Issuer box was the only thing keeping the (hidden) verification level at its default of 2; unticked, an effect cleared it. The level is the minimum KYC claim `SubscriptionCreateLib` demands of every subscriber, so it now always travels as the default.
+- The step-1 subtitle read "Select the service type, verification level, and regulator" — neither of the first two is on that step (service type was retired in Phase 28, and the level picker is hidden). Now "Select the regulator and visibility", in en and ar (using the file's own terms for both fields).
+- Dead code removed with the step: the validator / custodian / clearing-house signals, loaders and getters, four form controls, and a regulator subscription that re-fetched custodians on every change. `AddServiceData` keeps its provider fields, sent empty, because the Entity API route still accepts them.
+
 ### 2026-09-21
 
 **Fixed**

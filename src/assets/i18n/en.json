@@ -874,7 +874,7 @@
       },
       "header": "Add Service",
       "intro": {
-        "config": "Select the service type, verification level, and regulator.",
+        "config": "Select the regulator and visibility.",
         "contact": "Provide the service's contact details.",
         "identity": "Define the service's name and description.",
         "linked": "Attach the validator, payment processor, and custodian this service will use.",

@@ -10,11 +10,10 @@
 
       <!-- Step Indicator -->
       <div class="flex items-center justify-center gap-1 px-6 py-3 bg-gray-50 border-b">
-        <!-- Must cover totalSteps() EXACTLY — a token provider is 5 steps again now that
-             'Currency & Payments' is gone. Too few hides the last dot and leaves the connector
-             after it dangling (`step < totalSteps()` stays true); too many renders a dot past
-             the end of the wizard. -->
-        @for (step of [1, 2, 3, 4, 5]; track step) {
+        <!-- Must cover totalSteps() EXACTLY — four for every service since the Linked Services step
+             went (2026-09-23). Too few hides the last dot and leaves the connector after it
+             dangling (`step < totalSteps()` stays true); too many renders a dot past the end. -->
+        @for (step of [1, 2, 3, 4]; track step) {
           @if (step <= totalSteps()) {
             <div class="flex items-center">
               <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
@@ -43,30 +42,9 @@
           <!-- Step 1: Configuration -->
           @if (currentStep() === 1) {
             <p class="text-sm text-gray-500 mb-2">{{ 'services.addModal.intro.config' | translate }}</p>
-            <!-- ⚠️ LICENSE APPLICATIONS replace the serviceType + partyClass/marketClass trio
-                 (Phase 28 step (e), 2026-09-03). The wizard no longer asks what the service IS;
-                 it asks what the service APPLIES TO DO. Multi-select, because a service may hold
-                 several licenses.
-
-                 ⚠️ NOT REQUIRED, and that is deliberate rather than an oversight: an empty
-                 selection is the legal neutral case on chain, and a service that applied for
-                 nothing can simply do nothing until it applies later. Making it required here
-                 would invent a constraint the contract does not have. -->
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.requestLicenses' | translate }}</label>
-              <div class="space-y-2 mt-1">
-                @for (lc of licenseClasses(); track lc.classId) {
-                  <label class="flex items-start gap-2 text-sm text-gray-700">
-                    <input type="checkbox" class="mt-0.5"
-                           [checked]="isLicenseSelected(lc.classId)"
-                           (change)="toggleLicense(lc.classId)" />
-                    <span>{{ lc.name }}</span>
-                  </label>
-                }
-              </div>
-              <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.requestLicensesNote' | translate }}</p>
-            </div>
-            <!-- Verification Level is hidden for now — token-issuer services default to level 2 (eKYC). -->
+            <!-- No licence checkboxes (removed 2026-09-23): a licence is the regulator's to grant, or
+                 the entity applies from the service's Licenses tab — see the component. Verification
+                 Level is hidden; every service is created at level 2 (eKYC). -->
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.regulator' | translate }}</label>
               <select formControlName="regulator"
@@ -164,63 +142,6 @@
             </div>
           }
 
-          <!-- Step 4: Linked Services (Token Provider only) -->
-          @if (isTokenProvider() && currentStep() === 4) {
-            <p class="text-sm text-gray-500 mb-2">{{ 'services.addModal.intro.linked' | translate }}</p>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.validatorOptional' | translate }}</label>
-              <select formControlName="validator"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">{{ 'common.none' | translate }}</option>
-                @for (v of validators(); track v.address) {
-                  <option [value]="v.address">{{ v.name || v.address }}</option>
-                }
-              </select>
-            </div>
-            <!--
-              A payment provider is NOT a create-time argument and cannot become one. It attaches
-              per CURRENCY with a payRole that must match that currency's ELECTION (S6/S66), and
-              the election is declared by the service's REGULATOR — so at create time there is
-              nothing to validate a role against. Offering a picker here would collect a choice
-              the platform refuses.
-
-              The other three (validator / custodian / clearing house) are currency-less and are
-              attached by the API right after the create, which is why they stay on this step.
-            -->
-            <div class="rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
-              <p class="text-xs font-medium text-gray-500 mb-0.5">{{ 'services.addModal.fields.paymentProcessorOptional' | translate }}</p>
-              <p class="text-xs text-gray-500">
-                Attached later, per currency, from the service's Service Providers tab &mdash; and only
-                once your regulator has declared this service's on-chain / off-chain settlement mode for that
-                currency, since the provider's role is derived from it.
-              </p>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.custodian' | translate }}</label>
-              <select formControlName="custodian"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                <option [value]="SELF_CUSTODY">{{ 'services.addModal.selfCustodyRecommended' | translate }}</option>
-                @for (c of custodians(); track c.address) {
-                  <option [value]="c.address">{{ c.name || c.address }}</option>
-                }
-              </select>
-              <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.custodianNote' | translate }}</p>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">{{ 'services.addModal.fields.clearingHouse' | translate }}</label>
-              <!-- No "recommended" default, unlike custody: leaving this empty is a real answer,
-                   not an omission — it says this market's credit is final. -->
-              <select formControlName="clearingHouse"
-                class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 rounded-md sm:text-sm text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">{{ 'services.addModal.noClearingHouse' | translate }}</option>
-                @for (c of clearingHouses(); track c.address) {
-                  <option [value]="c.address">{{ c.name || c.address }}</option>
-                }
-              </select>
-              <p class="mt-1 text-xs text-gray-400">{{ 'services.addModal.clearingHouseNote' | translate }}</p>
-            </div>
-          }
-
           <!-- Review & Confirm (last step) -->
           @if (currentStep() === totalSteps()) {
             <p class="text-sm text-gray-500 mb-4">{{ 'services.addModal.intro.review' | translate }}</p>
@@ -228,15 +149,6 @@
             <div class="mb-4">
               <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'services.addModal.sections.configuration' | translate }}</h4>
               <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-500">{{ 'services.addModal.fields.requestLicenses' | translate }}</span>
-                  <!-- The amber "pending" note is KEPT and is now more accurate than it was: every
-                       entry lands LICENSE_REQUESTED and confers nothing until a regulator approves.
-                       Under the retired fields it described a confirmation flag; here it describes
-                       the license's own lifecycle state. -->
-                  <span class="text-black font-medium">{{ getSelectedLicenseNames() }}
-                    <span class="text-amber-600">{{ 'services.addModal.pendingConfirmation' | translate }}</span></span>
-                </div>
                 <div class="flex justify-between">
                   <span class="text-gray-500">{{ 'services.addModal.fields.regulator' | translate }}</span>
                   <span class="text-black font-medium">{{ getRegulatorDisplay() }}</span>
@@ -275,29 +187,6 @@
                 </div>
               </div>
             </div>
-
-            @if (isTokenProvider()) {
-              <div class="mb-4">
-                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ 'services.addModal.sections.linkedServices' | translate }}</h4>
-                <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.validator' | translate }}</span>
-                    <span class="text-black font-medium">{{ getValidatorName() }}</span>
-                  </div>
-                  <!-- No Payment Provider row: the wizard cannot set one (it attaches per currency
-                       under a role derived from the regulator-declared election), so the row could
-                       only ever read "None" — which reads as a choice the operator made. -->
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.custodian' | translate }}</span>
-                    <span class="text-black font-medium">{{ getCustodianDisplay() }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-gray-500">{{ 'services.addModal.fields.clearingHouse' | translate }}</span>
-                    <span class="text-black font-medium">{{ getClearingHouseName() }}</span>
-                  </div>
-                </div>
-              </div>
-            }
 
             <!-- Confirmation checkbox -->
             <div class="flex items-start gap-2 mt-2">
