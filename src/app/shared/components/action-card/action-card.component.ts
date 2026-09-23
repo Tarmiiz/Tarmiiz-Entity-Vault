@@ -5,14 +5,20 @@ import { TranslatePipe } from '@ngx-translate/core';
  * The side ACTION CARD for a detail pane (frontend Standard 2.2, v4).
  *
  * Usage:
- *   <div class="flex flex-col lg:flex-row gap-4 items-start max-w-6xl mx-auto">
- *     <div class="card-v4 flex-1 min-w-0 w-full"> …field grid… </div>
+ *   <div class="flex flex-col lg:flex-row gap-4 items-start">
+ *     <div class="card-v4 overflow-hidden flex-1 min-w-0 w-full"> title row + field grid </div>
  *     <app-action-card>
  *       <button appAction="primary" (click)="edit()">{{ 'x.edit' | translate }}</button>
  *       <button appAction (click)="credentials()">…</button>
  *       <button appAction="danger" (click)="changeState()">…</button>
  *     </app-action-card>
  *   </div>
+ *
+ * LAYOUT — the same on every page (a user compared two and they differed):
+ * the row fills its container (NO max-w-6xl), the record is a .card-v4 with its
+ * TITLE + state pill INSIDE it, and any extra block the tab carries (coverage,
+ * a financials hero) goes UNDER the record in the same left column, so the
+ * card stays beside the record it acts on.
  *
  * WHEN — a pane that is a SHORT FIELD GRID carrying TWO OR MORE record-level
  * actions. That is where a bottom button row goes wrong: the row sits below

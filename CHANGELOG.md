@@ -39,6 +39,16 @@ _Living preamble describing the broad direction this sub-project is currently mo
   on-chain manager the card carries only the amber "not manager" note (the row's only content in
   that case before).
 
+**Fixed (the action-card pages did not share one layout)**
+
+- Compared side by side, the migrated pages differed: some capped the row at `max-w-6xl` and
+  centred it, some filled the tab; the record was `.card-v4` on one page and the older
+  `bg-white rounded-lg shadow-md` on others; and the Regulator's entity page put its title ABOVE
+  the row with an empty strip at the top of the record. Now ONE layout: the row fills its
+  container, the record is a `.card-v4` with its title + state pill inside, and extra blocks
+  (entity coverage + financials hero) sit under the record in the same left column. Recorded in
+  Standard 2.2, the v4 catalog snippet, the component header and this app's CLAUDE.md.
+
 **Added (the action card)**
 
 - [shared/components/action-card/action-card.component.ts](src/app/shared/components/action-card/action-card.component.ts)
