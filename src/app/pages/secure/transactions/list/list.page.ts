@@ -441,6 +441,9 @@ export class ListPage implements OnInit {
   // ─── Dealing requests (Phase 36 A.7) ─────────────────────────────────────────
 
   requestAssetLabel(r: DealingRequest): string {
+    // The API joins the name + symbol; the ledger fallback below is empty until a fund's first
+    // order has executed, which is exactly when the queue is the only thing on this page.
+    if (r.assetName) return r.assetSymbol ? `${r.assetName} (${r.assetSymbol})` : r.assetName;
     const known = this.uniqueAssets().find(a => a[0]?.toLowerCase() === r.asset?.toLowerCase());
     return known ? known[1] : this.shortAddr(r.asset);
   }

@@ -22,6 +22,8 @@ export interface PrimaryMarketResponse {
 export interface DealingRequest {
   requestId: string;
   asset: string;
+  assetName?: string | null;
+  assetSymbol?: string | null;
   service: string;
   subscriber: string;
   direction: 'buy' | 'sell';

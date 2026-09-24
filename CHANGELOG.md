@@ -15,6 +15,12 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-24
+
+**Fixed**
+
+- The Transactions page's **Dealing Requests** table showed a raw asset address where the fund name belongs. [list.page.ts](src/app/pages/secure/transactions/list/list.page.ts) `requestAssetLabel` could only label an asset that already appeared in the executed-transaction ledger, and that ledger is empty exactly when a forward-priced fund's first orders are waiting. It now uses the `assetName` / `assetSymbol` the Entity API returns with each request, and falls back to the ledger, then to the address. Seen on Beltone's three funds on base.
+
 ### 2026-09-23
 
 **Added (asset details → Modules tab)**
