@@ -12,16 +12,16 @@
             <label for="spType" class="block text-sm font-medium text-gray-700">{{ 'common.type' | translate }}</label>
             <select id="spType" formControlName="spType" (change)="onTypeChange()"
               class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-black">
+              <!-- §H (2026-09-28): no Custodian (4) and no Fund Administrator (8) — both take a seat on the
+                   ASSET now, and EntityTemplate.addServiceProvider refuses them. -->
               <!-- Bound to PARTY_CLASS, never to digits. The literal ids here were the
                    pre-split numbering, so "Custodian" submitted class 3 (now Bank). -->
               <option [ngValue]="PC.VALIDATOR">{{ 'serviceProviders.addModal.typeValidator' | translate }}</option>
               <option [ngValue]="PC.PAYMENT_GATEWAY">{{ 'serviceProviders.addModal.typePaymentGateway' | translate }}</option>
               <option [ngValue]="PC.BANK">{{ 'serviceProviders.addModal.typeBank' | translate }}</option>
-              <option [ngValue]="PC.CUSTODIAN">{{ 'serviceProviders.addModal.typeCustodian' | translate }}</option>
               <option [ngValue]="PC.CLEARING_HOUSE">{{ 'serviceProviders.addModal.typeClearingHouse' | translate }}</option>
               <option [ngValue]="PC.ESCROW_CH">{{ 'serviceProviders.addModal.typeEscrowClearingHouse' | translate }}</option>
               <option [ngValue]="PC.DEPOSITARY">{{ 'serviceProviders.addModal.typeDepositary' | translate }}</option>
-              <option [ngValue]="PC.FUND_ADMINISTRATOR">{{ 'serviceProviders.addModal.typeFundAdministrator' | translate }}</option>
             </select>
           </div>
           <div>

@@ -450,6 +450,24 @@ export class ApiService {
     }
   }
 
+  /** `vaultGet` that keeps the server's error text (`{ error }`) instead of collapsing it to null — for reads whose
+   *  refusal IS the answer (§H: a seat without `view-holdings` must say "not granted", not show an empty table). */
+  private async vaultGetOrError(path: string, params?: Record<string, any>) {
+    try {
+      const response = await CapacitorHttp.request({
+        method: 'GET',
+        url: this.apiURL + path,
+        headers: { 'Content-Type': 'application/json', ...(await this.authHeader()) },
+        params,
+      });
+      if (response.status === 401) { this._handleAuthFailure(); return { error: 'Session expired. Please log in again.' }; }
+      if (response.data?.type !== 'success') return { error: this.extractError(response) };
+      return response.data;
+    } catch (e: any) {
+      return { error: e?.message || 'Network error' };
+    }
+  }
+
   private extractError(response: any): string {
     const d = response?.data;
     if (d && typeof d === 'object') {
@@ -1761,6 +1779,27 @@ export class ApiService {
   }
 
   // Custodian hold authority (2026-07-30) — this tenant acting AS a custodian.
+  // ─── §H — Administered assets (Fund Administrator / Asset Custodian seats on FOREIGN assets) ───────────
+  async vaultAdministeredAssets() {
+    return this.vaultGet('/administered/assets');
+  }
+  async vaultAdministeredHolders(asset: string, start = 1, offset = 100) {
+    return this.vaultGetOrError('/administered/assets/' + asset + '/holders', { start, offset });
+  }
+  async vaultAdministeredTransactions(asset: string, start = 1, offset = 100) {
+    return this.vaultGetOrError('/administered/assets/' + asset + '/transactions', { start, offset });
+  }
+  async vaultAdministeredPrices(asset: string, start = 1, offset = 100) {
+    return this.vaultGetOrError('/administered/assets/' + asset + '/price/history', { start, offset });
+  }
+  async vaultAdministeredPublishPrice(asset: string, body: { bid: number; ask: number; timestamp?: number }) {
+    return this.vaultPost('/administered/assets/' + asset + '/price', body);
+  }
+  /** Accept a proposed seat — the same route as `assetPartyAccept`, but keeping the chain's refusal text. */
+  async vaultAdministeredAccept(asset: string, service: string) {
+    return this.vaultPut('/asset-class/' + asset + '/parties/' + service + '/accept', {});
+  }
+
   async vaultCustodyMandates(partyType?: number) {
     return this.vaultGet('/custody/mandates', partyType != null ? { partyType } : undefined);
   }
@@ -2050,11 +2089,6 @@ export class ApiService {
 
   async vaultSetServicePaymentProcessor(address: string, paymentProcessor: string) {
     return this._replaceServiceParty(address, PARTY_CLASS.PAYMENT_GATEWAY, paymentProcessor);
-  }
-
-  // ⚠️ Was `3` — which is now BANK. This sent every custodian reassignment to the wrong class.
-  async vaultSetServiceCustodian(address: string, custodian: string) {
-    return this._replaceServiceParty(address, PARTY_CLASS.CUSTODIAN, custodian);
   }
 
   // ─── Vault — Validators & Payment Processors ─────────────────────────────────

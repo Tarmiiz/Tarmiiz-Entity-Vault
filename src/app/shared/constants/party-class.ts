@@ -84,11 +84,14 @@ export const PARTY_CLASS = {
 // Sets, never ranges. Both bands happen to be contiguous after 4.9 — but they are still written
 // as sets, because that was true of the asset band once before (9..14 + 19) and stopped being
 // true QUIETLY. A range check is a claim about future ids that nobody is in a position to make.
+// §H (post-code-fix H.2, 2026-09-28): Custodian (4) and Fund Administrator (8) LEFT the service band — they
+// take ONE seat on the ASSET now (asset roles 14 and 13, `AssetClassLib.partyClassForRole`), and the chain
+// refuses them as service roles. They are still registered party classes; `ATTACH_ASSET_SEAT_CLASSES` names them.
 export const ATTACH_SERVICE_CLASSES: readonly number[] = [
   PARTY_CLASS.VALIDATOR, PARTY_CLASS.PAYMENT_GATEWAY, PARTY_CLASS.BANK,
-  PARTY_CLASS.CUSTODIAN, PARTY_CLASS.CLEARING_HOUSE, PARTY_CLASS.ESCROW_CH,
-  PARTY_CLASS.DEPOSITARY, PARTY_CLASS.FUND_ADMINISTRATOR,
+  PARTY_CLASS.CLEARING_HOUSE, PARTY_CLASS.ESCROW_CH, PARTY_CLASS.DEPOSITARY,
 ];
+export const ATTACH_ASSET_SEAT_CLASSES: readonly number[] = [PARTY_CLASS.CUSTODIAN, PARTY_CLASS.FUND_ADMINISTRATOR];
 export const ATTACH_ASSET_CLASSES: readonly number[] = [
   PARTY_CLASS.VALUER, PARTY_CLASS.STATUTORY_AUDITOR, PARTY_CLASS.SHARIA_ADVISOR,
   PARTY_CLASS.PHYSICAL_CUSTODIAN, PARTY_CLASS.REGISTRAR, PARTY_CLASS.SERVICER,

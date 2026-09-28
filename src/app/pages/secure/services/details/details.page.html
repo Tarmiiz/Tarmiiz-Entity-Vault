@@ -739,17 +739,6 @@
                         {{ 'services.details.providers.addPaymentProcessor' | translate }}
                       </button>
                     }
-                    @if (features.systemFunctionEnabled('service-add-custodian')) {
-                      <!-- A service holds exactly one custodian: once one is attached, Add is closed. -->
-                      <button (click)="attachCustodian()" [disabled]="serviceParties().custodians.length > 0"
-                        [title]="serviceParties().custodians.length > 0 ? ('services.details.providers.custodianCapTooltip' | translate) : ''"
-                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        {{ 'services.details.providers.addCustodian' | translate }}
-                      </button>
-                    }
                     @if (features.systemFunctionEnabled('service-add-clearing-house')) {
                       <!-- No cap and no floor: an EMPTY clearing-house set is itself meaningful
                            ("this market's credit is final"), so unlike custody there is nothing
@@ -762,7 +751,9 @@
                         {{ 'services.details.providers.addClearingHouse' | translate }}
                       </button>
                     }
-                    <!-- Phase 4.9's fund-level appointments (classes 7 / 8). Whether one is
+                    <!-- §H (2026-09-28): a custodian (4) and a fund administrator (8) no longer attach to a
+                         SERVICE — each takes one seat on the ASSET (asset detail → Parties). Only the
+                         depositary (7) remains here. Phase 4.9's fund-level appointment. Whether one is
                          REQUIRED is the asset class formula's call, not this page's — so no
                          cap and no floor here either. -->
                     @if (features.systemFunctionEnabled('service-add-depositary')) {
@@ -772,15 +763,6 @@
                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                         {{ 'services.details.providers.addDepositary' | translate }}
-                      </button>
-                    }
-                    @if (features.systemFunctionEnabled('service-add-fund-administrator')) {
-                      <button (click)="attachFundAdministrator()"
-                        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        {{ 'services.details.providers.addFundAdministrator' | translate }}
                       </button>
                     }
                   </div>
@@ -1885,7 +1867,6 @@
 <app-modal-service-payment-processor></app-modal-service-payment-processor>
 <app-modal-service-clearing-house></app-modal-service-clearing-house>
 <app-modal-service-fund-party></app-modal-service-fund-party>
-<app-modal-service-custodian></app-modal-service-custodian>
 <app-modal-service-fee-config></app-modal-service-fee-config>
 <!-- Opened in 'switch' mode only — the regulator declares a service's initial election. -->
 <app-modal-service-election></app-modal-service-election>

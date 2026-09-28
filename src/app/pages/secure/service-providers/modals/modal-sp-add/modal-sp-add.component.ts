@@ -74,10 +74,6 @@ export class ModalSpAddComponent {
         items = (d?.paymentProcessors ?? [])
           .filter((s: any) => s.state === 2 && Number(s.classId) === spType)
           .map((s: any) => ({ address: s.address, name: s.name, level: s.serviceLevel ?? s.level }));
-      } else if (spType === PARTY_CLASS.CUSTODIAN) {
-        const d = await this.apiService.vaultGetEndorsedCustodians('', 1, 50);
-        items = (d?.custodians ?? []).filter((c: any) => c.state === 2 || c.state === 1 || c.state === true)
-          .map((c: any) => ({ address: c.address, name: c.name, level: c.level }));
       } else if (spType === PARTY_CLASS.CLEARING_HOUSE || spType === PARTY_CLASS.ESCROW_CH) {
         // Same union + same narrowing as the rail classes above: this endpoint returns BOTH
         // clearing classes (5 entities' CH + 6 venue escrow CH), and they are separate
@@ -86,12 +82,11 @@ export class ModalSpAddComponent {
         items = (d?.clearingHouses ?? [])
           .filter((c: any) => c.state === 2 && Number(c.classId) === spType)
           .map((c: any) => ({ address: c.address, name: c.name, level: c.level }));
-      } else if (spType === PARTY_CLASS.DEPOSITARY || spType === PARTY_CLASS.FUND_ADMINISTRATOR) {
-        // Phase 4.9's fund-level appointments — each has its own endpoint (no union), but the
-        // class is still asserted on every row so a mis-served list cannot offer a revert.
-        const d = spType === PARTY_CLASS.DEPOSITARY
-          ? (await this.apiService.vaultGetDepositaries(1, 50))?.depositaries
-          : (await this.apiService.vaultGetFundAdministrators(1, 50))?.fundAdministrators;
+      } else if (spType === PARTY_CLASS.DEPOSITARY) {
+        // Phase 4.9's fund-level appointment — its own endpoint (no union), but the class is still
+        // asserted on every row so a mis-served list cannot offer a revert. (The fund administrator
+        // left this picker with §H: it takes a seat on the ASSET.)
+        const d = (await this.apiService.vaultGetDepositaries(1, 50))?.depositaries;
         items = (d ?? [])
           .filter((c: any) => c.state === 2 && Number(c.classId) === spType)
           .map((c: any) => ({ address: c.address, name: c.name, level: c.level }));

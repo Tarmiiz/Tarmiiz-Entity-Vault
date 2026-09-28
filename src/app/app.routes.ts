@@ -161,6 +161,13 @@ export const routes: Routes = [
         canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('custody')],
         data: { allowedRoles: [2, 3] },
       },
+      // §H — administered assets: the Fund Administrator / Asset Custodian surface over FOREIGN assets
+      {
+        path: 'administered',
+        loadComponent: () => import('./pages/secure/administered/administered.page').then(m => m.AdministeredPage),
+        canActivate: [AuthGuard, RoleGuard, menuFeatureGuard('administered')],
+        data: { allowedRoles: [2, 3] },
+      },
       // assets
       {
         path: 'assets',

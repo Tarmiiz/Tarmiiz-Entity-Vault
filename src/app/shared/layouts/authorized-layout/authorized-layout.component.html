@@ -246,6 +246,16 @@
             </ion-item>
           }
 
+          <!-- exec/viewer only: administered assets (§H — Fund Administrator / Asset Custodian seats) -->
+          @if(userInfo && (userInfo.role == 2 || userInfo.role == 3) && features.menuEnabled('administered')) {
+            <ion-item button routerLink="/authorized/administered" routerDirection="root" routerLinkActive="menu-active" (click)="closeMenuOnMobile()">
+              <svg class="w-5 h-5 mr-2 rtl:mr-0 rtl:ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m-6 4h6m-6 4h4M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/>
+              </svg>
+              <ion-label>{{ 'sidebar.administered' | translate }}</ion-label>
+            </ion-item>
+          }
+
           <!-- admin only: home/dashboard -->
           @if(userInfo && userInfo.role == 1) {
             <ion-item button routerLink="/authorized/dashboard" routerDirection="root" routerLinkActive="menu-active" (click)="closeMenuOnMobile()">

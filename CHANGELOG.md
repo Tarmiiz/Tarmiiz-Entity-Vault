@@ -17,6 +17,20 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ### 2026-09-28
 
+**Added** (post-code-fix §H.6)
+- **Administered Assets** page (`/authorized/administered`, menu key `administered`): the Fund Administrator /
+  Asset Custodian seats this entity holds on foreign assets — Accept a proposed seat, then Register /
+  Transactions / Price history tabs (a contract refusal renders as "not granted", never as an empty table) and
+  **Publish Price** for an accepted Fund Administrator (`asset-fa-price-publish`). New `vaultGetOrError` keeps the
+  server's refusal text.
+
+**Removed**
+- The service page's **Add Custodian** and **Add Fund Administrator** buttons, their handlers, the dead
+  `openChangeCustodianModal`, the `modal-service-custodian` component and `vaultSetServiceCustodian` — both roles
+  take one seat on the ASSET now and the chain refuses them on a service. The Service Providers curation modal
+  no longer offers Custodian or Fund Administrator. Existing attachments still display and can be detached.
+- `ATTACH_SERVICE_CLASSES` drops 4 and 8; `ATTACH_ASSET_SEAT_CLASSES` names them.
+
 **Fixed** — Add Service ([list.page.ts](src/app/pages/secure/services/list/list.page.ts)): a validator / custodian /
 clearing house chosen in the wizard that the Entity API could not attach after create is now named in an alert
 (`services.list.attachFailed`, en + ar). It was silently dropped — the service came up without it and nothing said

@@ -9,6 +9,7 @@ export const MENU_LABELS: Record<string, string> = {
   services:       'menuLabels.services',
   'service-providers': 'menuLabels.serviceProviders',
   custody:        'menuLabels.custody',
+  administered:   'menuLabels.administered',
   subscriptions:  'menuLabels.subscriptions',
   transactions:   'menuLabels.transactions',
   credit:         'menuLabels.credit',

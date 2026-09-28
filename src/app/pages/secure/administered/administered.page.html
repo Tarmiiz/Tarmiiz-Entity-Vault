@@ -1,0 +1,209 @@
+<app-header [title]="'sidebar.administered' | translate"></app-header>
+
+<div class="grow p-4 pt-4 overflow-y-auto">
+
+  @if (!selected()) {
+  <!-- The seats: one row per asset this entity serves as Fund Administrator or Asset Custodian. -->
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-200">
+      <h2 class="text-sm font-semibold text-gray-800">{{ 'administered.title' | translate }}</h2>
+      <p class="text-xs text-gray-600">{{ 'administered.description' | translate }}</p>
+    </div>
+    <div class="overflow-x-auto rounded-lg">
+      <table class="table-v4 w-full text-sm text-left">
+        <thead>
+          <tr>
+            <th>{{ 'common.name' | translate }}</th>
+            <th>{{ 'common.symbol' | translate }}</th>
+            <th>{{ 'administered.role' | translate }}</th>
+            <th>{{ 'administered.myService' | translate }}</th>
+            <th>{{ 'common.state' | translate }}</th>
+            <th>{{ 'common.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of seats(); track (s.asset + s.service + s.baseRole)) {
+            <tr>
+              <td class="font-medium text-gray-900">{{ s.name || s.asset }}</td>
+              <td>
+                @if (s.symbol) {
+                  <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-50 text-indigo-700">{{ s.symbol }}</span>
+                }
+              </td>
+              <td>{{ roleLabel(s) }}</td>
+              <td>{{ s.serviceName || s.service }}</td>
+              <td>
+                @if (s.accepted) {
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{{ 'administered.accepted' | translate }}</span>
+                } @else {
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">{{ 'administered.proposed' | translate }}</span>
+                }
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  @if (s.accepted) {
+                    <button (click)="open(s)"
+                      class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+                      {{ 'administered.open' | translate }}
+                    </button>
+                  } @else if (canAct() && features.systemFunctionEnabled('asset-party-accept')) {
+                    <button (click)="accept(s)"
+                      class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+                      {{ 'administered.accept' | translate }}
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!loaded()) {
+              @for (k of [1, 2, 3]; track k) {
+                <tr><td colspan="6"><div class="h-3 bg-gray-200 rounded-full animate-pulse"></div></td></tr>
+              }
+            } @else {
+              <tr><td colspan="6" class="py-6 text-center text-gray-500 text-sm">{{ 'administered.empty' | translate }}</td></tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  } @else {
+  <!-- One administered asset: its register, its ledger, its price. -->
+  <nav class="text-xs text-gray-500 mb-3">
+    <button (click)="close()" class="hover:underline">{{ 'sidebar.administered' | translate }}</button>
+    <span class="mx-1">/</span>
+    <span class="text-gray-800 font-medium">{{ selected()!.name || selected()!.asset }}</span>
+  </nav>
+
+  <div class="flex items-center justify-between mb-2">
+    <p class="text-xs text-gray-600">{{ roleLabel(selected()!) }} · <span class="font-mono">{{ selected()!.asset }}</span></p>
+    @if (canPublish(selected())) {
+      <button (click)="openPriceModal()"
+        class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
+        {{ 'administered.price.publish' | translate }}
+      </button>
+    }
+  </div>
+
+  <app-tabs [tabs]="tabDefs()" [active]="activeTab()" (select)="setTab($any($event))" />
+
+  <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    @if (tabLoading()) {
+      <div class="p-4 space-y-2">
+        @for (k of [1, 2, 3]; track k) { <div class="h-3 bg-gray-200 rounded-full animate-pulse"></div> }
+      </div>
+    } @else if (tabError()) {
+      <!-- A refusal is an ANSWER (the regulator has not granted this row), never "no records". -->
+      <p class="p-4 text-sm text-amber-800 bg-amber-50">{{ tabError() }}</p>
+    } @else {
+      <div class="overflow-x-auto rounded-lg">
+        @if (activeTab() === 'register') {
+          <table class="table-v4 w-full text-sm text-left">
+            <thead><tr>
+              <th>{{ 'administered.holder' | translate }}</th>
+              <th>{{ 'administered.units' | translate }}</th>
+              <th>{{ 'administered.cost' | translate }}</th>
+            </tr></thead>
+            <tbody>
+              @for (h of holders() ?? []; track h.holder) {
+                <tr>
+                  <td class="font-mono text-xs">{{ h.holder }}</td>
+                  <td>{{ h.balance }}</td>
+                  <td>{{ h.cost | money }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="py-6 text-center text-gray-500 text-sm">{{ 'administered.noHolders' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        }
+        @if (activeTab() === 'transactions') {
+          <table class="table-v4 w-full text-sm text-left">
+            <thead><tr>
+              <th>{{ 'common.id' | translate }}</th>
+              <th>{{ 'administered.from' | translate }}</th>
+              <th>{{ 'administered.to' | translate }}</th>
+              <th>{{ 'administered.units' | translate }}</th>
+              <th>{{ 'administered.price.price' | translate }}</th>
+              <th>{{ 'administered.date' | translate }}</th>
+            </tr></thead>
+            <tbody>
+              @for (t of transactions() ?? []; track t.trxId) {
+                <tr>
+                  <td>{{ t.trxId }}</td>
+                  <td class="font-mono text-xs">{{ t.from }}</td>
+                  <td class="font-mono text-xs">{{ t.to }}</td>
+                  <td>{{ t.tokens }}</td>
+                  <td>{{ t.price | money }}</td>
+                  <td class="text-xs">{{ utils.formatDate(t.time) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="py-6 text-center text-gray-500 text-sm">{{ 'administered.noTransactions' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        }
+        @if (activeTab() === 'prices') {
+          <table class="table-v4 w-full text-sm text-left">
+            <thead><tr>
+              <th>{{ 'administered.price.bid' | translate }}</th>
+              <th>{{ 'administered.price.ask' | translate }}</th>
+              <th>{{ 'administered.price.effective' | translate }}</th>
+            </tr></thead>
+            <tbody>
+              @for (p of prices() ?? []; track p.timestamp) {
+                <tr>
+                  <td>{{ p.bid | money }}</td>
+                  <td>{{ p.ask | money }}</td>
+                  <td class="text-xs">{{ utils.formatDate(p.timestamp) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="py-6 text-center text-gray-500 text-sm">{{ 'administered.noPrices' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+  </div>
+  }
+</div>
+
+<!-- Publish-price modal (Fund Administrator only). Closes only via Cancel or a completed action. -->
+@if (priceModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-5">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'administered.price.publish' | translate }}</h3>
+      <p class="text-xs text-gray-500 mb-4">{{ 'administered.price.hint' | translate }}</p>
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'administered.price.bid' | translate }}</label>
+          <input type="number" min="0" step="any" [(ngModel)]="priceBid"
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'administered.price.ask' | translate }}</label>
+          <input type="number" min="0" step="any" [(ngModel)]="priceAsk" [placeholder]="priceBid"
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500 ps-2">{{ 'administered.price.effective' | translate }}</label>
+          <input type="datetime-local" [(ngModel)]="priceDate"
+            class="text-sm border border-gray-300 rounded-xl px-2 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+        </div>
+        @if (priceError()) {
+          <p class="text-xs text-red-700">{{ priceError() }}</p>
+        }
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button (click)="priceModalOpen.set(false)"
+          class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
+        <button (click)="submitPrice()" [disabled]="!priceBid"
+          class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          {{ 'administered.price.publish' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -36,8 +36,6 @@ import { ModalServiceClearingHouseService } from '../modals/modal-service-cleari
 import { ModalServiceClearingHouseComponent } from '../modals/modal-service-clearing-house/modal-service-clearing-house.component';
 import { ModalServiceFundPartyService } from '../modals/modal-service-fund-party/modal-service-fund-party.service';
 import { ModalServiceFundPartyComponent } from '../modals/modal-service-fund-party/modal-service-fund-party.component';
-import { ModalServiceCustodianService, SELF_CUSTODY_SENTINEL } from '../modals/modal-service-custodian/modal-service-custodian.service';
-import { ModalServiceCustodianComponent } from '../modals/modal-service-custodian/modal-service-custodian.component';
 import { ModalServiceFeeConfigService } from '../modals/modal-service-fee-config/modal-service-fee-config.service';
 import { ModalServiceFeeConfigComponent } from '../modals/modal-service-fee-config/modal-service-fee-config.component';
 // Opened in 'switch' mode ONLY. Its 'declare' mode is unreachable from here by design — the
@@ -109,7 +107,6 @@ export interface MediaIndex {
     ModalServicePaymentProcessorComponent,
     ModalServiceClearingHouseComponent,
     ModalServiceFundPartyComponent,
-    ModalServiceCustodianComponent,
     ModalServiceFeeConfigComponent,
     ModalServiceElectionComponent,
     MetadataEditModalComponent,
@@ -134,7 +131,6 @@ export class DetailsPage implements OnInit {
   private paymentProcessorModalService = inject(ModalServicePaymentProcessorService);
   private clearingHouseModalService = inject(ModalServiceClearingHouseService);
   private fundPartyModalService = inject(ModalServiceFundPartyService);
-  private custodianModalService = inject(ModalServiceCustodianService);
   private feeConfigModal = inject(ModalServiceFeeConfigService);
   private electionModalService = inject(ModalServiceElectionService);
   private metadataEditModal = inject(MetadataEditModalService);
@@ -1739,6 +1735,8 @@ export class DetailsPage implements OnInit {
     await this._attachParty(5, chosen);
   }
 
+  // §H (2026-09-28): attachCustodian / attachFundAdministrator / openChangeCustodianModal were removed —
+  // both roles take a seat on the ASSET now and the chain refuses them on a service.
   // Phase 4.9's fund-level appointments — one picker, parameterised by class, and the SAME id at
   // the picker, the curated set and the attach (no translation anywhere, per the party-class rule).
   async attachDepositary() {
@@ -1746,29 +1744,6 @@ export class DetailsPage implements OnInit {
       (this.serviceParties().depositaries ?? []).map(p => p.address));
     if (!chosen) return;
     await this._attachParty(PARTY_CLASS.DEPOSITARY, chosen);
-  }
-
-  async attachFundAdministrator() {
-    const chosen = await this.fundPartyModalService.show(PARTY_CLASS.FUND_ADMINISTRATOR,
-      (this.serviceParties().fundAdministrators ?? []).map(p => p.address));
-    if (!chosen) return;
-    await this._attachParty(PARTY_CLASS.FUND_ADMINISTRATOR, chosen);
-  }
-
-  async attachCustodian() {
-    const currentService = this.service();
-    if (!currentService) return;
-    // The attached list stores self-custody as the service's OWN address, which the picker
-    // reads to drop the Self-custody option once it is taken.
-    const chosen = await this.custodianModalService.show(currentService.address, '', currentService.regulator,
-      this.serviceParties().custodians.map(p => p.address));
-    if (!chosen) return;
-    // ⚠️ Role 4 — this passed the literal 3, the PRE-SPLIT id for Custodian. Since BANK was
-    // inserted at 3, `partyAttach` checked `isPartyFor(regulator, party, 3)` against a class-4
-    // custodian and ALWAYS reverted "party not authorised for regulator" — attaching a custodian
-    // from this page could never succeed. `attachClearingHouse` directly above was corrected to 5
-    // and this one was missed, which is why the constant is used here now.
-    await this._attachParty(PARTY_CLASS.CUSTODIAN, chosen);
   }
 
   // Self-custody sentinel detection for the custodian list label.
@@ -1807,38 +1782,6 @@ export class DetailsPage implements OnInit {
   // bucket, so a "change" would silently drop the service's other currencies' providers.
   // A payment provider attaches per CURRENCY via `attachPaymentProcessor()` above; there is no
   // "the service's payment processor" to change.
-
-  async openChangeCustodianModal() {
-    const currentService = this.service();
-    if (!currentService) return;
-
-    const newCustodian = await this.custodianModalService.show(
-      currentService.address,
-      currentService.custodian,
-      currentService.regulator,
-    );
-    if (newCustodian === null) return;
-
-    // Normalize: treat the self-custody sentinel as a distinct selection.
-    // We send what the user picked (either the sentinel or an external address) straight to the API.
-    const zeroAddr = '0x0000000000000000000000000000000000000000';
-    const currentNormalized = (currentService.custodian && currentService.custodian !== zeroAddr) ? currentService.custodian : '';
-    if (newCustodian === currentNormalized) return;
-
-    this.loadingService.show(this.translate.instant('services.details.loadingMsgs.updatingCustodian'));
-    try {
-      const res = await this.apiService.vaultSetServiceCustodian(currentService.address, newCustodian);
-      await this.getServiceDetails();
-      if (res?.requestId) {
-        this.alertService.info(this.translate.instant('approvals.submittedTitle'), this.translate.instant('approvals.submittedMessage'), this.translate.instant('alerts.ok'));
-      }
-    } catch (error) {
-      console.error('Failed to change custodian', error);
-      this.alertService.info(this.translate.instant('alerts.updateFailed'), this.translate.instant('services.details.info.updateCustodianError'));
-    } finally {
-      this.loadingService.hide();
-    }
-  }
 
   // Venue-side per-(this service, asset) fee config (Phase B, all-flows).
   // Stacks on top of the asset issuer's own cut on every credit-settled flow.

@@ -237,7 +237,8 @@
     "clearing": "المقاصة",
     "apiEndpoints": "إدارة واجهة البرمجة",
     "expandMenu": "توسيع القائمة",
-    "collapseMenu": "طي القائمة"
+    "collapseMenu": "طي القائمة",
+    "administered": "الأصول المُدارة"
   },
   "login": {
     "title": "تسجيل الدخول",
@@ -4567,7 +4568,8 @@
     "variables": "متغيرات النظام",
     "settlements": "التسويات",
     "distribution": "التوزيع",
-    "clearing": "المقاصة"
+    "clearing": "المقاصة",
+    "administered": "الأصول المُدارة"
   },
   "serviceProviders": {
     "actions": {
@@ -4715,7 +4717,8 @@
     "serviceImportBalances": "الخدمة: استيراد الأرصدة الافتتاحية",
     "assetIssuerService": "الأصل - تحديد الخدمة المُصدِرة",
     "serviceDeployment": "الخدمة - توظيف السيولة لدى أمين حفظ",
-    "serviceRealisation": "الخدمة - تسييل توظيف"
+    "serviceRealisation": "الخدمة - تسييل توظيف",
+    "assetFaPricePublish": "الأصول المُدارة - نشر السعر (مسؤول إدارة الصندوق)"
   },
   "systemFunctionGroups": {
     "dex": "البورصة اللامركزية",
@@ -5619,5 +5622,42 @@
     "retired": "No longer in use",
     "frontendOnly": "No endpoint",
     "unknown": "Unmapped"
+  },
+  "administered": {
+    "title": "الأصول التي تديرها",
+    "description": "أصول تشغل فيها إحدى خدماتك مقعد مسؤول إدارة الصندوق أو أمين الحفظ. صلاحيات كل مقعد يمنحها المنظم لتلك الخدمة.",
+    "role": "الدور",
+    "myService": "خدمتك",
+    "accepted": "مقبول",
+    "proposed": "مقترح",
+    "open": "فتح",
+    "accept": "قبول",
+    "empty": "لا تشغل أي من خدماتك مقعدًا في أي أصل بعد.",
+    "roleFa": "مسؤول إدارة الصندوق",
+    "roleCustodian": "أمين حفظ الأصل",
+    "tabs": {
+      "register": "السجل",
+      "transactions": "المعاملات",
+      "prices": "سجل الأسعار"
+    },
+    "holder": "المالك",
+    "units": "الوحدات",
+    "cost": "التكلفة",
+    "from": "من",
+    "to": "إلى",
+    "date": "التاريخ",
+    "noHolders": "لا يوجد مالكون.",
+    "noTransactions": "لا توجد معاملات.",
+    "noPrices": "لم يُنشر سعر بعد.",
+    "readFailed": "تعذرت قراءة هذا من السلسلة.",
+    "price": {
+      "publish": "نشر السعر",
+      "bid": "سعر الشراء",
+      "ask": "سعر البيع",
+      "price": "السعر",
+      "effective": "وقت السريان",
+      "hint": "بصفتك مسؤول إدارة الصندوق فأنت الناشر الوحيد لهذا السعر. اترك الوقت فارغًا لاستخدام وقت الكتلة.",
+      "invalid": "يجب أن يكون سعرا الشراء والبيع موجبين."
+    }
   }
 }

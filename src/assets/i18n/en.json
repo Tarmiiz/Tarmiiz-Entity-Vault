@@ -237,7 +237,8 @@
     "clearing": "Clearing",
     "apiEndpoints": "API Management",
     "expandMenu": "Expand menu",
-    "collapseMenu": "Collapse menu"
+    "collapseMenu": "Collapse menu",
+    "administered": "Administered Assets"
   },
   "login": {
     "title": "Sign In",
@@ -4567,7 +4568,8 @@
     "variables": "System Variables",
     "settlements": "Settlements",
     "distribution": "Distribution",
-    "clearing": "Clearing"
+    "clearing": "Clearing",
+    "administered": "Administered Assets"
   },
   "serviceProviders": {
     "actions": {
@@ -4715,7 +4717,8 @@
     "serviceImportBalances": "Service: Import Opening Balances",
     "assetIssuerService": "Asset - Set Issuing Service",
     "serviceDeployment": "Service - Deploy Liquidity to a Custodian",
-    "serviceRealisation": "Service - Realise a Deployment"
+    "serviceRealisation": "Service - Realise a Deployment",
+    "assetFaPricePublish": "Administered Assets - Publish Price (Fund Administrator)"
   },
   "systemFunctionGroups": {
     "dex": "DEX",
@@ -5619,5 +5622,42 @@
     "retired": "No longer in use",
     "frontendOnly": "No endpoint",
     "unknown": "Unmapped"
+  },
+  "administered": {
+    "title": "Assets you administer",
+    "description": "Assets on which one of your services is the Fund Administrator or the Asset Custodian. What each seat may do is your regulator's grant on that service.",
+    "role": "Role",
+    "myService": "Your service",
+    "accepted": "Accepted",
+    "proposed": "Proposed",
+    "open": "Open",
+    "accept": "Accept",
+    "empty": "None of your services holds a seat on an asset yet.",
+    "roleFa": "Fund Administrator",
+    "roleCustodian": "Asset Custodian",
+    "tabs": {
+      "register": "Register",
+      "transactions": "Transactions",
+      "prices": "Price history"
+    },
+    "holder": "Holder",
+    "units": "Units",
+    "cost": "Cost",
+    "from": "From",
+    "to": "To",
+    "date": "Date",
+    "noHolders": "No holders.",
+    "noTransactions": "No transactions.",
+    "noPrices": "No price published yet.",
+    "readFailed": "Could not read this from the chain.",
+    "price": {
+      "publish": "Publish Price",
+      "bid": "Bid",
+      "ask": "Ask",
+      "price": "Price",
+      "effective": "Effective time",
+      "hint": "As the Fund Administrator you are the only publisher of this price. Leave the time empty to use the block time; Ask defaults to Bid.",
+      "invalid": "Bid and Ask must be positive."
+    }
   }
 }
