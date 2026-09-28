@@ -974,6 +974,7 @@
     },
     "list": {
       "createFailed": "Failed to create service.",
+      "attachFailed": "The service was created, but these providers could not be attached: {{list}}. Attach them from the service's Service Providers tab.",
       "creatingService": "Creating service...",
       "showingCount": "Showing {{showing}} of Total {{total}} Services",
       "suspendedSuffix": "(Suspended)",

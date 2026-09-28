@@ -290,6 +290,12 @@ export class ListPage implements OnInit {
         // provider — whose payRole is validated against that election — has nothing to attach
         // under until the regulator has acted.
         await this.listServices();
+        // The service exists either way; a provider that did not attach is named, not swallowed.
+        const failed: { party: string; error: string }[] = result?.attachFailures ?? [];
+        if (failed.length) {
+          this.alertService.info(this.translate.instant('alerts.error'), this.translate.instant('services.list.attachFailed',
+            { list: failed.map((f) => `${f.party} (${f.error})`).join(', ') }));
+        }
       } else {
         this.alertService.info(this.translate.instant('alerts.error'), result?.error || this.translate.instant('services.list.createFailed'));
       }

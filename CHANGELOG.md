@@ -15,6 +15,13 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-28
+
+**Fixed** — Add Service ([list.page.ts](src/app/pages/secure/services/list/list.page.ts)): a validator / custodian /
+clearing house chosen in the wizard that the Entity API could not attach after create is now named in an alert
+(`services.list.attachFailed`, en + ar). It was silently dropped — the service came up without it and nothing said
+so.
+
 ### 2026-09-24
 
 **Fixed**
