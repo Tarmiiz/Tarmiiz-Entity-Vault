@@ -52,7 +52,11 @@
 
         <!-- Conversation tab -->
         @if (activeTab() === 'conversation') {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <!-- Standard 2.2 layout: the conversation with Send + Attach in the side action card (user ruling
+               2026-09-29 — an explicit EXCEPTION to the card's "a field-scoped control stays with its field"
+               rule: the compose box's two acts sat in a strip under it, the last thing on the page). -->
+          <div class="flex flex-col lg:flex-row gap-4 items-start">
+          <div class="card-v4 overflow-hidden flex-1 min-w-0 w-full">
             <div class="p-4">
 
               <div class="flex items-start justify-between mb-4">
@@ -194,35 +198,30 @@
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black"
                             [placeholder]="'messages.details.compose.textPlaceholder' | translate"></textarea>
 
-                  <!-- Attachments picker -->
-                  <div class="mt-2 flex items-center gap-2 flex-wrap">
-                    <label class="text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors flex items-center gap-1 cursor-pointer">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                      </svg>
-                      {{ 'messages.details.compose.attach' | translate }}
-                      <input type="file" multiple class="hidden" (change)="onFilesSelected($event)">
-                    </label>
-                    @for (f of composeFiles(); track f.name; let fi = $index) {
-                      <span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 border border-gray-300 text-gray-700 inline-flex items-center gap-1">
-                        {{ f.name }}
-                        <button (click)="removeComposeFile(fi)" class="text-red-600 font-bold">×</button>
-                      </span>
-                    }
-                    <div class="flex-1"></div>
-                    <button (click)="send()" [disabled]="!composeText()"
-                            class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l14-7-7 14-2-5-5-2z"/>
-                      </svg>
-                      {{ 'messages.details.sendButton' | translate }}
-                    </button>
-                  </div>
+                  <!-- Selected attachments (picked from the action card's Attach) -->
+                  @if (composeFiles().length > 0) {
+                    <div class="mt-2 flex items-center gap-2 flex-wrap">
+                      @for (f of composeFiles(); track f.name; let fi = $index) {
+                        <span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 border border-gray-300 text-gray-700 inline-flex items-center gap-1">
+                          {{ f.name }}
+                          <button (click)="removeComposeFile(fi)" class="text-red-600 font-bold">×</button>
+                        </span>
+                      }
+                    </div>
+                  }
                   <p class="mt-1 text-[10px] text-gray-500">{{ 'messages.details.compose.attachHint' | translate }}</p>
                 </div>
               }
 
             </div>
+          </div>
+          @if (!isReadOnly && t.state === 1 && isEntityParticipant()) {
+            <app-action-card>
+              <button appAction="primary" (click)="send()" [disabled]="!composeText()">{{ 'messages.details.sendButton' | translate }}</button>
+              <button appAction (click)="composeFileInput.click()">{{ 'messages.details.compose.attach' | translate }}</button>
+              <input #composeFileInput type="file" multiple class="hidden" (change)="onFilesSelected($event)">
+            </app-action-card>
+          }
           </div>
         }
 

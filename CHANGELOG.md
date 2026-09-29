@@ -15,6 +15,15 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-29
+
+**Changed**
+- Message thread page: **Send** and **Attach** leave the strip under the compose box for a side action card on the
+  Conversation tab ([details.page.html](src/app/pages/secure/messages/details/details.page.html)) — Send is the
+  card's primary act, Attach opens the same hidden file input. Selected files and the size hint stay under the
+  textarea. User ruling: an explicit exception to the card's "a field-scoped control stays with its field" rule,
+  recorded in-source. Same change in the Regulator Dashboard.
+
 ### 2026-09-28
 
 **Added** (post-code-fix §H.6)
