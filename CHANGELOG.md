@@ -18,6 +18,11 @@ _Living preamble describing the broad direction this sub-project is currently mo
 ### 2026-09-29
 
 **Changed**
+- Home **Liquidity Shortfall** card: an unset λ surfaces only beside an assessed one
+  ([dashboard.page.ts](src/app/pages/secure/dashboard/dashboard.page.ts), `_surfaces`). A row with NO λ at all
+  carries no figure that could read healthy, and λ is the regulator's parameter, so the amber card was an alarm the
+  entity could not act on. Real shortfalls and assets with no issuing service still surface. Same rule on the
+  Regulator Dashboard home.
 - Message thread page: **Send** and **Attach** leave the strip under the compose box for a side action card on the
   Conversation tab ([details.page.html](src/app/pages/secure/messages/details/details.page.html)) — Send is the
   card's primary act, Attach opens the same hidden file input. Selected files and the size hint stay under the

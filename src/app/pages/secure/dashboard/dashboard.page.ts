@@ -249,6 +249,9 @@ export class DashboardPage implements OnInit {
   // Phase 31 (λ): a row surfaces when it has a shortfall OR an asset whose λ is UNSET — a total
   // that silently omits an unassessed asset must never read healthy by omission. The λ counts
   // are coerced so an older API that lacks them cannot hide a row behind `undefined > 0`.
+  // ⚠️ NARROWED 2026-09-29 (user): an unset λ surfaces only BESIDE an assessed one. A row with NO λ at
+  // all carries no figure that could read healthy, and λ is the REGULATOR's parameter, so an amber card
+  // on the entity's home was an alarm it could not act on. `_surfaces` is the one predicate for both.
   liquidityCoverage = computed(() => (this.dashboardSummary()?.liquidityCoverage ?? [])
     .map(r => ({
       ...r,
@@ -256,7 +259,7 @@ export class DashboardPage implements OnInit {
       unsetCount:    Number(r.unsetCount ?? 0),
       assessedCount: Number(r.assessedCount ?? 0),
     }))
-    .filter(r => r.shortfall > 0 || r.unsetCount > 0));
+    .filter(r => this._surfaces(r)));
   liquidityCoverageByService = computed(() => (this.dashboardSummary()?.liquidityCoverageByService ?? [])
     .map(r => ({
       ...r,
@@ -265,7 +268,10 @@ export class DashboardPage implements OnInit {
       assessedCount: Number(r.assessedCount ?? 0),
       assets:        r.assets ?? [],
     }))
-    .filter(r => r.shortfall > 0 || r.unsetCount > 0));
+    .filter(r => this._surfaces(r)));
+  private _surfaces(r: { shortfall: number; unsetCount: number; assessedCount: number }): boolean {
+    return r.shortfall > 0 || (r.unsetCount > 0 && r.assessedCount > 0);
+  }
   // Assets with a NULL issuer service — reported on the card, never folded into any pool.
   unattributedAssets = computed(() => this.dashboardSummary()?.unattributedAssets ?? []);
   hasLiquidityWarnings = computed(() =>
