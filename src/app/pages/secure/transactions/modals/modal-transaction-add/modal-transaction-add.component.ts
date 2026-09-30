@@ -10,6 +10,10 @@ import { ApiService } from '../../../../../shared/services/api.service';
 // there is no byte that says so. Named once here, matching `modal-asset-add.component.ts`
 // rather than inventing a second spelling of the same fact.
 const CLASS_TOKEN_ISSUER = 27;
+// A DISTRIBUTOR sells other issuers' funds on the primary market — the Brokerage licence (29). Its assets come from
+// its accepted distribution agreements, never from `GET /assets`, which is the issuance section and licence-gated
+// to 27 (user report 2026-09-30: Telda — a distributor only — saw no service here at all).
+const CLASS_BROKERAGE = 29;
 
 @Component({
   selector: 'app-modal-transaction-add',
@@ -23,7 +27,7 @@ export class ModalTransactionAddComponent {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
 
-  services = signal<{ address: string; name: string }[]>([]);
+  services = signal<{ address: string; name: string; issuer: boolean }[]>([]);
   assets = signal<{ address: string; name: string; symbol: string }[]>([]);
   subscriptions = signal<{ address: string; service: string }[]>([]);
 
@@ -82,24 +86,31 @@ export class ModalTransactionAddComponent {
           //
           // `license_class_ids` is the ACTIVE licence set from the Entity API's `getServices`,
           // so a suspended licence correctly drops the service out of the list.
-          .filter((s: any) => (s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER)
+          .filter((s: any) => ((s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER)
+                            || (s.license_class_ids ?? []).includes(CLASS_BROKERAGE))
                            && (s.state === 2 || s.state === '2'))
-          .map((s: any) => ({ address: s.address, name: s.name }))
+          .map((s: any) => ({ address: s.address, name: s.name,
+                              issuer: (s.license_class_ids ?? []).includes(CLASS_TOKEN_ISSUER) }))
       );
     }
   }
 
+  /** The assets this service may sell: its OWN issued assets (token issuers only — `GET /assets` is gated to 27) plus
+   *  the funds it DISTRIBUTES under an accepted, regulator-activated agreement. */
   async loadAssetsForService(service: string) {
-    const data = await this.apiService.vaultGetAssets(0, 200, service);
-    if (data?.assets) {
-      this.assets.set(
-        data.assets.map((a: any) => ({
-          address: a.address,
-          name: a.name,
-          symbol: a.symbol,
-        }))
-      );
+    const svc = service.toLowerCase();
+    const isIssuer = this.services().find(s => s.address.toLowerCase() === svc)?.issuer ?? false;
+    const [own, agreements] = await Promise.all([
+      isIssuer ? this.apiService.vaultGetAssets(0, 200, service) : Promise.resolve(null),
+      this.apiService.vaultDistributionInbound().catch(() => []),
+    ]);
+    const out = new Map<string, { address: string; name: string; symbol: string }>();
+    for (const a of own?.assets ?? []) out.set(String(a.address).toLowerCase(), { address: a.address, name: a.name, symbol: a.symbol });
+    for (const g of agreements ?? []) {
+      if (String(g.service).toLowerCase() !== svc || Number(g.state) !== 2 || !g.distributionAccepted) continue;
+      out.set(String(g.asset).toLowerCase(), { address: g.asset, name: g.assetName ?? g.asset, symbol: g.assetSymbol ?? "" });
     }
+    if (this.selectedService().toLowerCase() === svc) this.assets.set([...out.values()]);
   }
 
   async loadSubscriptions() {

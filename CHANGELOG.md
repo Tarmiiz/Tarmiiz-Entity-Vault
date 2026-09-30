@@ -15,6 +15,15 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-09-30
+
+**Fixed**
+- **Add Transaction** ([modal-transaction-add.component.ts](src/app/pages/secure/transactions/modals/modal-transaction-add/modal-transaction-add.component.ts)):
+  a DISTRIBUTOR's service (Brokerage, licence 29) is now offered beside token-issuer services (27), and a service's
+  assets are its own issued ones PLUS the funds it distributes under an accepted, regulator-activated agreement.
+  Telda (a distributor only) saw no service at all — and `GET /assets` is issuance-gated to 27, so the agreements
+  are the only list a distributor has.
+
 ### 2026-09-29
 
 **Changed**
