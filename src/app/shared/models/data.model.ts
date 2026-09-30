@@ -504,6 +504,8 @@ export interface CreditPosition {
   currencyCode: number;
   currencyName?: string;
   netOwedBySelf: number;
+  /** Covered by a settlement already in flight (sent, awaiting receipt); only the rest can be settled. */
+  inFlightOwedBySelf?: number | null;
   blockNumber: number;
   updatedAt: number;
 }

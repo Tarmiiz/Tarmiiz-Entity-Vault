@@ -41,6 +41,9 @@
                     <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
                       {{ 'settlements.positions.youOwe' | translate }} {{ p.netOwedBySelf | money }}
                     </span>
+                    @if ((p.inFlightOwedBySelf ?? 0) > 0) {
+                      <span class="text-xs text-gray-500 ms-2">{{ 'settlements.positions.inFlight' | translate: { amount: (p.inFlightOwedBySelf! | money) } }}</span>
+                    }
                   } @else if (p.netOwedBySelf < 0) {
                     <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">
                       {{ 'settlements.positions.owedToYou' | translate }} {{ -p.netOwedBySelf | money }}
@@ -51,7 +54,11 @@
                 </td>
                 <td class="text-xs">{{ utils.formatTime(p.updatedAt) }}</td>
                 <td>
-                  @if (p.netOwedBySelf > 0 && canAct() && features.systemFunctionEnabled('settlement-create')) {
+                  @if (p.netOwedBySelf > 0 && p.netOwedBySelf - (p.inFlightOwedBySelf ?? 0) <= 0) {
+                    <!-- Fully covered by a settlement in flight: a new one would be refused ("amount exceeds
+                         uncovered net"), so say what is actually pending instead of offering the button. -->
+                    <span class="text-xs text-gray-500">{{ 'settlements.positions.awaitingConfirmation' | translate }}</span>
+                  } @else if (p.netOwedBySelf > 0 && canAct() && features.systemFunctionEnabled('settlement-create')) {
                     <button (click)="openCreateModal(p)"
                       class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors">
                       {{ 'settlements.settleBtn' | translate }}
@@ -317,7 +324,10 @@
       <div class="mt-5 flex justify-end gap-2">
         <button (click)="createModalOpen.set(false)"
           class="text-xs font-medium px-4 py-1.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">{{ 'common.cancel' | translate }}</button>
-        <button (click)="submitCreate()" [disabled]="!createCounterparty || !createCurrencyCode || !createAmount"
+        @if (exceedsAvailable()) {
+          <p class="text-xs text-amber-700">{{ 'settlements.createModal.exceedsAvailable' | translate }}</p>
+        }
+        <button (click)="submitCreate()" [disabled]="!createCounterparty || !createCurrencyCode || !createAmount || exceedsAvailable()"
           class="text-xs font-medium px-4 py-1.5 border border-transparent rounded-xl bg-blue-700 text-white hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           {{ 'settlements.createBtn' | translate }}
         </button>

@@ -5226,7 +5226,9 @@
       "net": "Net Position",
       "youOwe": "You owe",
       "owedToYou": "Owed to you",
-      "empty": "No open positions."
+      "empty": "No open positions.",
+      "inFlight": "{{amount}} in flight",
+      "awaitingConfirmation": "Awaiting the counterparty's confirmation"
     },
     "obligations": {
       "title": "Obligations",
@@ -5257,7 +5259,8 @@
       "memo": "Memo",
       "netOwed": "Net owed by you",
       "inFlight": "Already in-flight",
-      "available": "Available to settle"
+      "available": "Available to settle",
+      "exceedsAvailable": "More than is available to settle — a settlement already in flight covers the rest. Wait for the counterparty to confirm receipt."
     },
     "sentModal": {
       "title": "Confirm Funds Sent",

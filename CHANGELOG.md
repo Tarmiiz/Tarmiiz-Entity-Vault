@@ -15,6 +15,16 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-10-01
+
+**Fixed**
+- Settlements ([settlements.page.html](src/app/pages/secure/settlements/settlements.page.html)): a net already covered
+  by a settlement in flight (sent, awaiting the counterparty's receipt) offered "Settle" anyway, and the create modal
+  accepted any amount — so the user met the raw contract refusal "amount exceeds uncovered net" (Telda ↔ Beltone,
+  2026-09-30: settlement #3 covered the whole EGP 1,000). The row now shows the in-flight amount and "Awaiting the
+  counterparty's confirmation" when nothing is uncovered, and the modal refuses an amount above what is available,
+  with an explanation (en + ar).
+
 ### 2026-09-30
 
 **Fixed**

@@ -103,6 +103,13 @@ export class SettlementsPage implements OnInit {
     return Number.isFinite(avail) ? avail : null;
   });
 
+  /** The amount asks for more than the chain will settle — the rest is covered by a settlement already in flight. */
+  exceedsAvailable(): boolean {
+    const avail = this.availableToSettle();
+    const amt = Number(this.createAmount);
+    return avail !== null && amt > 0 && amt > avail;
+  }
+
   ngOnInit() {}
 
   async ionViewWillEnter() {
