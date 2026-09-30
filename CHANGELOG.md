@@ -15,19 +15,21 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
-### 2026-10-01
+### 2026-09-30
 
 **Fixed**
+- Settlements, Obligations tab ([settlements.page.ts](src/app/pages/secure/settlements/settlements.page.ts)): every
+  row read as a RECEIVABLE with the debtor as counterparty, whichever side the tenant was on. `isSelf` compared only
+  the ENTITY address, but an obligation names the two SERVICES that traded (the ledger is service-keyed since 33.K), so
+  it never matched — Telda's ten buy obligations read "receivable from Telda App" when they are payable to Beltone
+  Trade. "Us" is now the entity OR one of its own services (loaded from `GET /services`). The Reference column also
+  shows "—" for an all-zero reference instead of `0x000…0`: the chain hex-formats a trade's empty `refNo`.
 - Settlements ([settlements.page.html](src/app/pages/secure/settlements/settlements.page.html)): a net already covered
   by a settlement in flight (sent, awaiting the counterparty's receipt) offered "Settle" anyway, and the create modal
   accepted any amount — so the user met the raw contract refusal "amount exceeds uncovered net" (Telda ↔ Beltone,
   2026-09-30: settlement #3 covered the whole EGP 1,000). The row now shows the in-flight amount and "Awaiting the
   counterparty's confirmation" when nothing is uncovered, and the modal refuses an amount above what is available,
   with an explanation (en + ar).
-
-### 2026-09-30
-
-**Fixed**
 - **Add Transaction** ([modal-transaction-add.component.ts](src/app/pages/secure/transactions/modals/modal-transaction-add/modal-transaction-add.component.ts)):
   a DISTRIBUTOR's service (Brokerage, licence 29) is now offered beside token-issuer services (27), and a service's
   assets are its own issued ones PLUS the funds it distributes under an accepted, regulator-activated agreement.

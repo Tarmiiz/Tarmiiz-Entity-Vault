@@ -41,6 +41,8 @@ export class SettlementsPage implements OnInit {
 
   userInfo!: User;
   selfEntity = '';
+  /** This entity's OWN services — an obligation row names SERVICES (the ledger is service-keyed since 33.K). */
+  private ownServices = new Set<string>();
 
   activeTab = signal<'positions' | 'obligations' | 'settlements'>('positions');
   /** The tab bar as TabDefs (Standard 2). */
@@ -119,6 +121,8 @@ export class SettlementsPage implements OnInit {
     // which side of the pair we are.
     await this.authService.ensureEntityInfo();
     this.selfEntity = (this.authService.entityInfo?.address || '').toLowerCase();
+    const own = await this.apiService.vaultGetServicesOwn(0, 200).catch(() => null);
+    this.ownServices = new Set((own?.services ?? []).map((s: any) => String(s.address || '').toLowerCase()));
     this.loadingService.show(this.translate.instant('common.loadingData'));
     try {
       await Promise.all([
@@ -217,8 +221,18 @@ export class SettlementsPage implements OnInit {
     this.entityNames.set(next);
   }
 
+  // ⚠️ "US" = this entity OR one of its own services (2026-09-30). Obligation rows name the SERVICES that traded
+  // (Telda App / Beltone Trade), never the entities, so an entity-only test matched nothing: every row rendered as a
+  // Receivable with the DEBTOR as counterparty — on Telda's page all ten buy obligations read "receivable from
+  // Telda App" when they are payable to Beltone Trade. Settlement rows still name entities and still match.
   isSelf(addr: string): boolean {
-    return (addr || '').toLowerCase() === this.selfEntity;
+    const a = (addr || '').toLowerCase();
+    return a === this.selfEntity || this.ownServices.has(a);
+  }
+
+  /** An all-zero bytes32 reference is "none supplied" — the chain hex-formats the trade's empty refNo. */
+  refLabel(ref: string | null | undefined): string {
+    return !ref || /^0x0+$/i.test(ref) ? '—' : ref;
   }
 
   counterpartyOf(row: { debtorEntity: string; creditorEntity: string }): string {

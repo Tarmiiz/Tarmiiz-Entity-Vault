@@ -127,7 +127,7 @@
                 <td>{{ o.amount | money }}</td>
                 <td class="text-xs">{{ obligationKindName(o.kind) }}</td>
                 <td class="text-xs">{{ o.creditTrxId || '—' }}</td>
-                <td class="text-xs">{{ o.ref || '—' }}</td>
+                <td class="text-xs">{{ refLabel(o.ref) }}</td>
                 <td class="text-xs">{{ utils.formatTime(o.createdAt) }}</td>
               </tr>
             } @empty {
