@@ -1717,11 +1717,12 @@
       "lookingUp": "Looking up...",
       "lookingUpService": "Looking up service...",
       "noMatches": "No matches. Try a shorter term, or enter an address manually below.",
+      "otherEntity": "Other entity",
       "searchPlaceholder": "Service name or address (leave blank to list all)...",
       "searching": "Searching...",
       "serviceAddressLabel": "Service Address",
       "serviceFound": "Service Found",
-      "subtitle": "Pick one of your services by name, or enter an address manually."
+      "subtitle": "Pick one of your services or another entity's service (a distributor) by name, or enter an address."
     },
     "stateModal": {
       "title": "Change Asset State",

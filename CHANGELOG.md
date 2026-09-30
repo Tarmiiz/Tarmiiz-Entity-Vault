@@ -18,6 +18,13 @@ _Living preamble describing the broad direction this sub-project is currently mo
 ### 2026-09-30
 
 **Fixed**
+- Asset → Services → Add Service could not add ANOTHER entity's service, which is what a distributor always is
+  (user report 2026-09-30: NI Capital adding Telda App to SIULA). The search listed only this entity's own
+  token-issuer services, and the manual address look-up read this tenant's own mirror, so a foreign address
+  answered "No matches" and then "Service not found". The on-chain registration accepts any service; only the
+  picker refused. The search now also lists the ACTIVE public Directory services of the entity's country, tagged
+  "Other entity" (`vaultDirectoryList`), and the manual look-up falls back to `GET /directory/by-address`
+  ([modal-asset-add-service.component.ts](src/app/pages/secure/assets/modals/modal-asset-add-service/modal-asset-add-service.component.ts)).
 - Settlements, Obligations tab ([settlements.page.ts](src/app/pages/secure/settlements/settlements.page.ts)): every
   row read as a RECEIVABLE with the debtor as counterparty, whichever side the tenant was on. `isSelf` compared only
   the ENTITY address, but an obligation names the two SERVICES that traded (the ledger is service-keyed since 33.K), so

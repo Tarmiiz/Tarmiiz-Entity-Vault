@@ -33,7 +33,9 @@
                        [class.bg-indigo-50]="isPicked(r)"
                        (click)="pick(r)">
                     <div class="min-w-0">
-                      <div class="text-sm font-medium text-gray-800 truncate">{{ r.name }}</div>
+                      <div class="text-sm font-medium text-gray-800 truncate">{{ r.name }}
+                        @if (r.foreign) { <span class="ml-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ 'assets.addServiceModal.otherEntity' | translate }}</span> }
+                      </div>
                       <div class="text-[11px] font-mono text-gray-500 truncate">{{ r.address }}</div>
                     </div>
                     <input type="radio" name="addServiceRecipient"

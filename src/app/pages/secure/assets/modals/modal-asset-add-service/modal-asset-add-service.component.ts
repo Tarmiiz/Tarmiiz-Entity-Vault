@@ -5,10 +5,16 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { ModalAssetAddServiceService } from './modal-asset-add-service.service';
 import { ApiService } from '../../../../../shared/services/api.service';
+import { AuthService } from '../../../../../shared/services/auth.service';
+
+// The Directory's party type for a SERVICE (Directory.sol: 1 regulator, 2 entity, 3 identity, 4 service, …).
+const DIR_SERVICE = 4;
 
 interface Candidate {
   address: string;
   name: string;
+  /** true = another entity's service, found in the public Directory (a distributor, typically). */
+  foreign?: boolean;
 }
 
 interface ServicePreview {
@@ -28,6 +34,7 @@ export class ModalAssetAddServiceComponent {
 
   addServiceModal = inject(ModalAssetAddServiceService);
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
 
   query    = signal('');
   results  = signal<Candidate[]>([]);
@@ -61,7 +68,17 @@ export class ModalAssetAddServiceComponent {
     const q = this.query().trim().toLowerCase();
     this.searching.set(true);
     try {
-      const resp = await this.apiService.vaultGetServicesOwn(0, 200);
+      // ⚠️ OWN SERVICES ONLY until 2026-09-30, and the MANUAL path read our own mirror too, so a DISTRIBUTOR —
+      // by definition another entity's service — could not be added from this modal at all: its address
+      // searched to "No matches" and looked up to "Service not found" (user report, NI Capital adding Telda
+      // App to SIULA). The chain accepts any service; only this picker refused. Foreign services now come
+      // from the PUBLIC Directory of this entity's country (a hidden service stays reachable by address).
+      await this.authService.ensureEntityInfo().catch(() => {});
+      const country = Number(this.authService.entityInfo?.countryCode) || 0;
+      const [resp, dir] = await Promise.all([
+        this.apiService.vaultGetServicesOwn(0, 200),
+        country ? this.apiService.vaultDirectoryList(country, DIR_SERVICE).catch(() => []) : Promise.resolve([]),
+      ]);
       const attached = new Set(this.addServiceModal.currentServices().map(a => a.toLowerCase()));
       const all = ((resp?.services || []) as any[])
         // ⚠️ WAS `service_type === 1` (Phase 28 step (e)). That column is GONE from
@@ -88,6 +105,13 @@ export class ModalAssetAddServiceComponent {
         address: s.address,
         name:    s.name || s.address,
       }));
+      const ours = new Set(((resp?.services || []) as any[]).map(s => (s.address || '').toLowerCase()));
+      for (const e of dir) {
+        const a = (e.target || '').toLowerCase();
+        if (!e.active || ours.has(a) || attached.has(a)) continue;
+        if (q && !(e.name || '').toLowerCase().includes(q) && !a.includes(q)) continue;
+        rows.push({ address: e.target, name: e.name || e.target, foreign: true });
+      }
       this.results.set(rows);
     } finally {
       this.searching.set(false);
@@ -137,12 +161,21 @@ export class ModalAssetAddServiceComponent {
 
     try {
       const data = await this.apiService.vaultGetService(address);
+      // Not ours ⇒ the mirror has no row; ask the Directory, which names every registered service.
+      const dir = data ? null : await this.apiService.vaultDirectoryByAddress(address).catch(() => null);
       if (data) {
         this.lookedUpService.set({
           address:   data.address,
           name:      data.name ?? data.address,
           state:     data.state,
           stateName: data.state_name ?? String(data.state),
+        });
+      } else if (dir && Number(dir.partyType) === DIR_SERVICE) {
+        this.lookedUpService.set({
+          address:   dir.target,
+          name:      dir.name || dir.target,
+          state:     dir.active ? 2 : 4,
+          stateName: dir.active ? 'Active' : 'Inactive',
         });
       } else {
         this.lookupError.set('Service not found. Please check the address and try again.');

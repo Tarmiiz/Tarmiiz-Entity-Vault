@@ -2573,6 +2573,12 @@ export class ApiService {
     return data?.entry ?? null;
   }
 
+  /** PUBLIC Directory entries of one party type in a country (4 = service) — every tenant's, not just ours. */
+  async vaultDirectoryList(countryCode: number, partyType: number, start = 1, offset = 200) {
+    const data = await this.vaultGet('/directory/list', { countryCode, partyType, start, offset });
+    return (data?.entries ?? []) as { target: string; name: string; partyType: number; active: boolean }[];
+  }
+
   // ─── Vault — Entity auth ──────────────────────────────────────────────────────
 
   async entityLogin(username: string, password: string, sessionDuration: number, saltOverride?: string, passwordIsRawBigInt: boolean = false) {
