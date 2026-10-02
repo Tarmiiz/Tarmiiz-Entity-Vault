@@ -27,6 +27,13 @@ _Living preamble describing the broad direction this sub-project is currently mo
   "behind" (BUGS 2026-09-10). A read failure still says "could not be read"
   ([services/details](src/app/pages/secure/services/details/details.page.html)).
 
+**Security**
+- **Login proofs are bound to the sender (Security A1, BUGS 2026-09-28).** [ethers.service.ts](src/app/shared/services/ethers.service.ts)
+  proves with `bindLoginNonce(entityContract, this.key.address, nonce)` — `this.key` is the per-session wallet the
+  Entity API sends `login` and `resetUserPasswordWithProof` from — and the DID-claim login with
+  `bindLoginNonce(identityAddress, didEphemeral.address, nonce)` (the ephemeral is now minted before proving). New
+  checked copy [login-nonce.utils.ts](src/app/shared/utils/login-nonce.utils.ts). ⚠️ Source-only until base is redeployed (the dev chain is redeployed later): until then the updated clients do NOT log in against the deployed contracts, which still compare the bare counter — expected.
+
 ### 2026-09-30
 
 **Fixed**

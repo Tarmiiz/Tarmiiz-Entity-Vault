@@ -11,6 +11,7 @@ import { Key } from '../models/data.model';
 import { StorageService } from './storage.service';
 
 import { ParseProofUtils, BN254_R } from '../utils/parse-proof.utils';
+import { bindLoginNonce } from '../utils/login-nonce.utils';
 
 
 @Injectable({
@@ -201,6 +202,13 @@ export class EthersService {
       const usernameHashBigInt = BigInt(usernameHashHex);
       const usernameHashString = usernameHashBigInt.toString();
 
+      // Security A1 — the nonce input is BOUND to the verifying EntityTemplate and to the address
+      // that sends the transaction: `this.key`, the per-session wallet the Entity API relays the
+      // login (and, later, resetUserPasswordWithProof) with. A proof copied from the tx pool then
+      // verifies for nobody else.
+      if (!this.entityContractAddress) throw new Error('entity contract address is not configured');
+      const boundNonce = bindLoginNonce(this.entityContractAddress, this.key.address, BigInt(nonce));
+
       // Prepare circuit input
       const circuitInput = {
         email: usernameBigInt.toString(),
@@ -208,7 +216,7 @@ export class EthersService {
         salt: globalSaltBigInt.toString(),
         emailHash: usernameHashString,
         storedCommitment: storedCommitmentString,
-        nonce: nonce.toString()
+        nonce: boundNonce.toString()
       };
 
       // Generate proof
@@ -270,13 +278,19 @@ export class EthersService {
       const storedCommitmentString = BigInt(storedCommitmentHex).toString();
       const usernameHashString     = BigInt(usernameHashHex).toString();
 
+      // Use a fresh ephemeral wallet for the DID session — keeps it independent of the entity session.
+      // Created BEFORE proving: Security A1 binds the nonce input to (IdentityTemplate, this wallet),
+      // the address the Entity API sends IdentityTemplate.login from.
+      const didEphemeral = ethers.Wallet.createRandom();
+      const boundNonce = bindLoginNonce(identityAddress, didEphemeral.address, BigInt(nonceVal));
+
       const circuitInput = {
         email: usernameBigInt.toString(),
         password: passwordBigInt.toString(),
         salt: globalSaltBigInt.toString(),
         emailHash: usernameHashString,
         storedCommitment: storedCommitmentString,
-        nonce: nonceVal.toString(),
+        nonce: boundNonce.toString(),
       };
 
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
@@ -286,8 +300,6 @@ export class EthersService {
       );
       const { a, b, c, input: proofInput } = await ParseProofUtils.parseProof({ proof, publicSignals });
 
-      // Use a fresh ephemeral wallet for the DID session — keeps it independent of the entity session.
-      const didEphemeral = ethers.Wallet.createRandom();
       const message = ethers.solidityPacked(['string', 'address'], ['Set owner to:', didEphemeral.address]);
       const messageHash = ethers.keccak256(message);
       const signedMessage = await didEphemeral.signMessage(ethers.getBytes(messageHash));
