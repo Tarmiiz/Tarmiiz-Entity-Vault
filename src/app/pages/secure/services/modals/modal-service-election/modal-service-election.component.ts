@@ -93,7 +93,7 @@ export class ModalServiceElectionComponent {
     const el = this.election();
     if (el !== ELECTION_ONC && el !== ELECTION_OFFC) return '';
     return el === ELECTION_ONC
-      ? 'Fiat lands in this service\'s reserve and the provider mints credit against it.'
+      ? 'Fiat lands in this channel\'s reserve and the provider mints credit against it.'
       : 'The provider moves real fiat; credit only records that the movement happened.';
   });
 

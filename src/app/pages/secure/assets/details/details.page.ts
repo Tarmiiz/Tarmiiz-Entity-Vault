@@ -1976,7 +1976,7 @@ export class DetailsPage implements OnInit {
       : 'None';
     const filterParts = [
       `Type: ${this.filterType() || 'None'}`,
-      `Service: ${svcLabel}`,
+      `Channel: ${svcLabel}`,
       `Subscription: ${this.filterSubscription() || 'None'}`,
       `Tokens: ${tokensLabel}`,
       `From: ${this.filterStartDate() || 'None'}`,
@@ -2032,7 +2032,7 @@ export class DetailsPage implements OnInit {
         { content: '#' },
         { content: 'Time' },
         { content: 'Type' },
-        { content: 'Service' },
+        { content: 'Channel' },
         { content: 'Subscription', styles: { halign: 'center' } },
         { content: 'Currency', styles: { halign: 'center' } },
         { content: 'Tokens', styles: { halign: 'right' } },
@@ -2062,7 +2062,7 @@ export class DetailsPage implements OnInit {
     const rows = this.filteredTransactions().map(t => ({
       'Time': this.utils.formatDate(t.time),
       'Type': t.trxType,
-      'Service': t.serviceName,
+      'Channel': t.serviceName,
       'Subscription': t.subscription,
       'Tokens': t.tokens,
       'Price': this.utils.roundMoney(t.price),

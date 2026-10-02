@@ -150,7 +150,7 @@ export class ModalAssetAddServiceComponent {
   private async resolveAddress(address: string) {
     const current = this.addServiceModal.currentServices();
     if (current.includes(address)) {
-      this.lookupError.set('This service is already associated with the asset.');
+      this.lookupError.set('This channel is already associated with the asset.');
       this.lookedUpService.set(null);
       return;
     }
@@ -178,7 +178,7 @@ export class ModalAssetAddServiceComponent {
           stateName: dir.active ? 'Active' : 'Inactive',
         });
       } else {
-        this.lookupError.set('Service not found. Please check the address and try again.');
+        this.lookupError.set('Channel not found. Please check the address and try again.');
       }
     } finally {
       this.isLooking.set(false);

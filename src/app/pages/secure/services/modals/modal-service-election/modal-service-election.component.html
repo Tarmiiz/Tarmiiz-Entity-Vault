@@ -13,7 +13,7 @@
             Your regulator approves the switch. Once approved, every subscription in this currency is
             converted page by page before the new settlement mode takes effect.
           } @else {
-            Declared per currency &mdash; this service can be one in EGP and the other in USD.
+            Declared per currency &mdash; this channel can be one in EGP and the other in USD.
           }
         </p>
       </div>
@@ -34,7 +34,7 @@
             </div>
           } @else if (modal.input().currencies.length === 0) {
             <p class="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-              No currency is available to declare. Every currency this service handles already carries
+              No currency is available to declare. Every currency this channel handles already carries
               a settlement mode &mdash; change one with a switch request instead.
             </p>
           } @else {
@@ -125,7 +125,7 @@
             <p class="text-xs text-amber-800 mt-1">
               Changing it later is not an edit. It takes a switch request, approval by your regulator,
               and a paged migration over <span class="font-semibold">every subscription</span> in this
-              currency &mdash; during which this service cannot transact in it at all. Undoing a switch
+              currency &mdash; during which this channel cannot transact in it at all. Undoing a switch
               is a new switch in the opposite direction, needing its own approval.
             </p>
           </div>

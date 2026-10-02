@@ -286,12 +286,12 @@
             <div class="px-6 py-3 border-b border-gray-100">
               <h3 class="text-sm font-semibold text-gray-700">On-Chain / Off-Chain Settlement Mode</h3>
               <p class="text-xs text-gray-500 mt-1">
-                Whether this service's money is <span class="font-semibold">On-Chain</span> (fiat already in
+                Whether this channel's money is <span class="font-semibold">On-Chain</span> (fiat already in
                 reserve, so a movement is final) or <span class="font-semibold">Off-Chain</span> (credit records
                 the movement and real fiat settles behind it). Your
                 <span class="font-semibold">regulator declares it</span>, <span class="font-semibold">per
-                currency</span> &mdash; so this service can be one in EGP and the other in USD, and the
-                regulator may allow one of its services to run On-Chain while refusing another. You may
+                currency</span> &mdash; so this channel can be one in EGP and the other in USD, and the
+                regulator may allow one of its channels to run On-Chain while refusing another. You may
                 <span class="font-semibold">request a switch</span> of a declared settlement mode; your regulator
                 approves it in both directions. Once approved, anyone may drive the migration.
               </p>
@@ -302,8 +302,8 @@
             } @else if (elections().length === 0) {
               <div class="px-6 py-6 text-sm text-gray-500">
                 <span class="font-semibold text-gray-700">No settlement mode declared yet.</span>
-                This service's <span class="font-semibold">regulator</span> declares its settlement mode, one
-                currency at a time &mdash; it is not something this service sets for itself, because an
+                This channel's <span class="font-semibold">regulator</span> declares its settlement mode, one
+                currency at a time &mdash; it is not something this channel sets for itself, because an
                 An On-Chain settlement mode lets it mint credit against fiat it claims to hold in reserve.
                 <span class="block mt-1">
                   Until the regulator declares one, <span class="font-semibold">no payment provider can be
@@ -438,7 +438,7 @@
               </div>
               <div class="px-6 py-3 border-t border-gray-100 text-xs text-gray-500">
                 A migration is <span class="font-semibold">forward-only</span> and its remaining pages are
-                permissionlessly executable &mdash; anyone may drive it, and since this service cannot
+                permissionlessly executable &mdash; anyone may drive it, and since this channel cannot
                 transact in that currency while it runs, sooner is strictly better. Undoing a switch is a
                 new switch in the opposite direction, needing its own approval.
               </div>
@@ -466,7 +466,7 @@
                 <div>
                   <h3 class="text-sm font-semibold text-gray-700">Licenses</h3>
                   <p class="text-xs text-gray-500">
-                    What your regulator permits this service to do. Only a license
+                    What your regulator permits this channel to do. Only a license
                     <span class="font-medium">in force</span> confers anything.
                   </p>
                 </div>
@@ -495,7 +495,7 @@
                       } @else if (licenses().length === 0) {
                         <tr class="bg-white">
                           <td colspan="3">
-                            This service holds no licenses. It cannot act as a token issuer, exchange
+                            This channel holds no licenses. It cannot act as a token issuer, exchange
                             or brokerage until your regulator grants one.
                           </td>
                         </tr>
@@ -513,7 +513,7 @@
                                 @if (l.active) {
                                   {{ licenseMeaning(l.state, true) }}
                                 } @else {
-                                  Held, but this service is not active — it confers nothing until the service is active again.
+                                  Held, but this channel is not active — it confers nothing until the channel is active again.
                                 }
                               </div>
                             </td>
@@ -598,8 +598,8 @@
                 <div>
                   <h3 class="text-sm font-semibold text-gray-700">Function permissions</h3>
                   <p class="text-xs text-gray-500">
-                    The functions your regulator has granted this service. Anything not listed here
-                    is refused, whatever licences the service holds.
+                    The functions your regulator has granted this channel. Anything not listed here
+                    is refused, whatever licences the channel holds.
                   </p>
                 </div>
                 <app-refresh-button [loading]="grantsLoading()" (refresh)="loadGrants()" />
@@ -612,23 +612,17 @@
                      same empty list, and an operator would act on the wrong one. -->
                 <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   Your permissions could not be read just now. This is not a decision about what
-                  this service may do — try Refresh.
+                  this channel may do — try Refresh.
                 </div>
               } @else {
-                @if (grantsMirrored() === 0) {
-                  <!-- 🔴 A live service with ZERO mirrored cells is a SYNC failure, not a
-                       default-deny. An empty granted list is indistinguishable from a genuinely
-                       ungranted service, so it is named rather than rendered. -->
-                  <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 mb-3 text-xs text-amber-800">
-                    No permission records have reached this dashboard for this service yet, so what
-                    is listed below may not reflect your regulator's decisions. If this service is
-                    already operating, tell your administrator the permissions mirror is behind.
-                  </div>
-                }
+                <!-- ⚠️ No "permissions mirror is behind" warning on ZERO rows (removed 2026-10-02, BUGS 2026-09-10): a
+                     regulator that has decided nothing writes no cell, so zero rows is the NORMAL state of every new
+                     channel — the count cannot tell "never decided" from "mirror behind". A real read failure still
+                     renders "could not be read" above; a genuine lag signal would need the plugin cursor or a live read. -->
 
                 @if (grantedGrants().length === 0) {
                   <p class="text-xs text-gray-500 px-1 py-2">
-                    Your regulator has not granted this service any functions yet.
+                    Your regulator has not granted this channel any functions yet.
                   </p>
                 }
 

@@ -268,7 +268,7 @@ export class CreditPage implements OnInit {
       const base: any = {
         '#': i + 1,
         'Subscription': r.subscription,
-        'Service': r.serviceName,
+        'Channel': r.serviceName,
         'State': r.stateName,
       };
       for (const c of currencies) {
@@ -322,7 +322,7 @@ export class CreditPage implements OnInit {
     const head: any[] = [
       { content: '#' },
       { content: 'Subscription' },
-      { content: 'Service' },
+      { content: 'Channel' },
       { content: 'State' },
     ];
     for (const c of currencies) head.push({ content: c.currencySymbol, styles: { halign: 'right' } });

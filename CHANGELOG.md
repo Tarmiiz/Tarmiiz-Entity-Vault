@@ -15,6 +15,17 @@ _Living preamble describing the broad direction this sub-project is currently mo
 
 ## Changes
 
+### 2026-10-02
+
+**Changed**
+- the on-screen label "Services" becomes **"Channels"** (product-owner ruling 2026-09-29) — English and Arabic (قناة / قنوات): menus, titles, tabs, breadcrumbs, column and export headers, modals, empty states. LABEL ONLY — i18n keys, routes, API fields and the on-chain concept are unchanged. A PROVIDER's own service (validator, payment processor, bank, custodian, depositary, fund administrator) keeps "Service"; "Service Provider(s)" is unchanged; names that must match stored data (transaction origins, audit categories) are unchanged. 221 en / 219 ar strings + 44 hard-coded.
+
+**Fixed**
+- The channel's Licenses tab no longer warns "the permissions mirror is behind" whenever the regulator has decided
+  nothing: zero permission rows is the normal state of a new channel, and the count cannot tell "never decided" from
+  "behind" (BUGS 2026-09-10). A read failure still says "could not be read"
+  ([services/details](src/app/pages/secure/services/details/details.page.html)).
+
 ### 2026-09-30
 
 **Fixed**

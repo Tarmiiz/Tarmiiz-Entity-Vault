@@ -1103,7 +1103,7 @@ export class DetailsPage implements OnInit {
 
   async withdrawLicense(r: ServiceLicenseRequest) {
     const ok = await this.alertService.show('Withdraw application',
-      `Withdraw this service's application for the ${this.licenseClassName(r.classId)} license? `
+      `Withdraw this channel's application for the ${this.licenseClassName(r.classId)} license? `
       + 'Your regulator will no longer see it. You can apply again later.');
     if (!ok) return;
     this.loadingService.show(this.translate.instant('common.updating'));
@@ -2080,7 +2080,7 @@ export class DetailsPage implements OnInit {
   }
 
   exportAssetsPdf() {
-    const svcName = this.service()?.name ?? 'Service';
+    const svcName = this.service()?.name ?? 'Channel';
     const assetsList = this.filteredAssets();
     const doc = new jsPDF({ orientation: 'landscape' });
     const pad = 14;
@@ -2152,7 +2152,7 @@ export class DetailsPage implements OnInit {
   }
 
   exportSubsPdf() {
-    const svcName = this.service()?.name ?? 'Service';
+    const svcName = this.service()?.name ?? 'Channel';
     const subs = this.filteredSubscriptions();
     const doc = new jsPDF({ orientation: 'landscape' });
     const pad = 14;
@@ -2228,7 +2228,7 @@ export class DetailsPage implements OnInit {
   }
 
   exportTrxPdf() {
-    const svcName = this.service()?.name ?? 'Service';
+    const svcName = this.service()?.name ?? 'Channel';
     const txs = this.filteredTrxs();
     const doc = new jsPDF({ orientation: 'landscape' });
     const pad = 14;
@@ -2244,7 +2244,7 @@ export class DetailsPage implements OnInit {
       ? (this.uniqueTrxAssets().find(a => a[0] === this.filterTrxAsset())?.[1] ?? this.filterTrxAsset())
       : 'None';
     const filterParts = [
-      `Service: ${svcName}`,
+      `Channel: ${svcName}`,
       `Type: ${this.filterTrxType() || 'None'}`,
       `Asset: ${assetLabel}`,
       `Subscription: ${this.filterTrxSubscription() || 'None'}`,

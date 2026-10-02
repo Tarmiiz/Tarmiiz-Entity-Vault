@@ -174,7 +174,7 @@ export class ModalCreditTrxInfoComponent {
     row('Type', trx.trxTypeName);
     row('Currency', `${trx.currencySymbol} (${trx.currencyCode})`);
     if (trx.trxRefNo) row('Reference No', trx.trxRefNo, true);
-    if (trx.service) row('Service', trx.serviceName || trx.service, !trx.serviceName);
+    if (trx.service) row('Channel', trx.serviceName || trx.service, !trx.serviceName);
     divider();
 
     const label = trx.serviceName || trx.service;

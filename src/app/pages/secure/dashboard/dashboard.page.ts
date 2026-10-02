@@ -209,7 +209,7 @@ export class DashboardPage implements OnInit {
   subscriptionsLoading = signal(true);
 
   stats = signal<StatCard[]>([
-    { title: 'Total Services', value: 0, path: '/authorized/services/list', loading: true, icon: 'M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Zm16 14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2ZM4 13a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6Zm16-2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6Z' },
+    { title: 'Total Channels', value: 0, path: '/authorized/services/list', loading: true, icon: 'M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Zm16 14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2ZM4 13a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6Zm16-2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6Z' },
     { title: 'Total Assets', value: 0, path: '/authorized/assets/list', loading: true, icon: 'M16.872 9.687 20 6.56 17.44 4 4 17.44 6.56 20 16.873 9.687Zm0 0-2.56-2.56M6 7v2m0 0v2m0-2H4m2 0h2m7 7v2m0 0v2m0-2h-2m2 0h2M8 4h.01v.01H8V4Zm2 2h.01v.01H10V6Zm2-2h.01v.01H12V4Zm8 8h.01v.01H20V12Zm-2 2h.01v.01H18V14Zm2 2h.01v.01H20V16Z' },
     { title: 'Total Subscriptions', value: 0, path: '/authorized/subscriptions/list', loading: true, icon: 'M7 6H5m2 3H5m2 3H5m2 3H5m2 3H5m11-1a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2M7 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm8 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z' },
     { title: 'Total Transactions', value: 0, path: '/authorized/transactions/list', loading: true, icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3Z' },
@@ -525,7 +525,7 @@ export class DashboardPage implements OnInit {
     if (status) {
       this.lastSynced = status.lastSync ? Number(status.lastSync) : 0;
       const next = [
-        { value: status.serviceCount, title: 'Total Services'      },
+        { value: status.serviceCount, title: 'Total Channels'      },
         { value: status.assetCount,   title: 'Total Assets'        },
         { value: status.subCount,     title: 'Total Subscriptions' },
         { value: status.trxCount,     title: 'Total Transactions'  },

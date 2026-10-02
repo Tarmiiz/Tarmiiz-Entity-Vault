@@ -121,7 +121,7 @@ export class ModalServiceFeeConfigComponent {
 
   validateSide(mode: number, valueStr: string): string {
     if (this.isDefaultMode() && mode === 2) {
-      return 'A Fixed fee cannot be used as the service default — set it on the asset instead.';
+      return 'A Fixed fee cannot be used as the channel default — set it on the asset instead.';
     }
     if (mode === 0) {
       if (valueStr && valueStr !== '0') return 'When mode is None, value must be empty or 0.';

@@ -116,12 +116,12 @@ export class ModalTransactionInfoComponent {
     }
     divider();
 
-    row('Service Trx ID', String(trx.serviceTrxId), true);
+    row('Channel Trx ID', String(trx.serviceTrxId), true);
     row('Date & Time', formatDate(trx.time));
     if (trx.trxRefNo) row('Ref No', trx.trxRefNo, true);
     divider();
 
-    row('Service', trx.serviceName);
+    row('Channel', trx.serviceName);
     row('Manager', trx.managerName);
     divider();
 

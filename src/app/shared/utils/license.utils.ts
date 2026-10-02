@@ -60,7 +60,7 @@ export function licenseStateClass(state: number): string {
     entity discovers it by hitting a revert.
 */
 export function licenseMeaning(state: number, active: boolean): string {
-  if (active) return 'In force — this service may act under it.';
+  if (active) return 'In force — this channel may act under it.';
   switch (Number(state)) {
     case LICENSE_STATE.REQUESTED: return 'Applied for. It confers nothing until your regulator approves it.';
     case LICENSE_STATE.SUSPENDED: return 'Suspended by your regulator. It confers NOTHING while suspended — anything relying on it will now fail.';
